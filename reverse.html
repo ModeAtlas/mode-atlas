@@ -3,14 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="refresh" content="0; url=writing/" />
+  <meta http-equiv="refresh" content="0; url=/writing/" />
   <link rel="canonical" href="https://mode-atlas.app/writing/" />
   <title>Redirecting • Mode Atlas</title>
   <script>
-    location.replace('writing/' + location.search + location.hash);
+    (function() {
+      var target = new URL('/writing/', location.origin);
+      var source = new URLSearchParams(location.search);
+      source.forEach(function(value, key) { if (key !== 'build' && key !== 'v' && key !== 'reload') target.searchParams.set(key, value); });
+      target.hash = location.hash;
+      location.replace(target.href);
+    })();
   </script>
 </head>
 <body>
-  <p>Redirecting to <a href="writing/">writing/</a>…</p>
+  <p>Redirecting to <a href="/writing/">/writing/</a>…</p>
 </body>
 </html>

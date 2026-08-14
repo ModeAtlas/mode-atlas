@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="../assets/app/mode-atlas-version.js"></script>
-<script src="../assets/app/mode-atlas-head-bootstrap.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_START -->
+<script src="../assets/app/mode-atlas-version.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-legacy-sw-retirement.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-version-check.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-head-bootstrap.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_END -->
 
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -25,41 +29,64 @@
 <meta property="og:url" content="https://mode-atlas.app/kana/" />
   <meta property="og:image" content="https://mode-atlas.app/assets/social-preview.svg" />
 <meta name="twitter:card" content="summary" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.css">
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-polish.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-dev-console.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-theme.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-kana-page.css">
+<!-- MODE_ATLAS_STYLE_ASSETS_START -->
+<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-dev-console.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-theme.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-components.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-navigation.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-kana-page.assets-2.30.0.css" />
+<!-- MODE_ATLAS_STYLE_ASSETS_END -->
 </head>
-<body><script src="../assets/app/mode-atlas-early-loader.js"></script><div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite"><div class="ma-loading-card"><div class="ma-loading-head"><div class="ma-loading-mark">学</div><div><div class="ma-loading-title">Mode Atlas</div><div class="ma-loading-sub">Preparing your study space…</div></div></div><div class="ma-skeleton"></div><div class="ma-skeleton"></div><div class="ma-skeleton short"></div></div></div>
-<div class="shell">
-        <nav class="branch-nav" aria-label="Kana Trainer navigation">
-            <a class="branch-brand" href="../" aria-label="Back to Mode Atlas">
-                <div class="branch-mark kana-mark">かな</div>
-                <div class="branch-meta">
-                    <div class="branch-kicker">Mode Atlas</div>
-                    <div class="branch-name">Kana Trainer</div>
-                </div>
-            </a>
-
-            <div class="branch-links">
-                <a class="branch-link atlas" href="../">Atlas</a>
-                <a class="branch-link active overview" href="./">Overview</a>
-                <a class="branch-link reading" href="../reading/">Reading</a>
-                <a class="branch-link writing" href="../writing/">Writing</a>
-                <a class="branch-link results" href="../results/">Results</a>
-                <button class="profile-trigger" id="profileOpenBtn" type="button">
-                    <span class="profile-dot" id="topProfileDot">M</span>
-                    <span>Profile</span>
-                </button>
-            </div>
-        </nav>
-
-    <section class="kana-hub-hero glass">
+<body class="ma-kana-page"><!-- MODE_ATLAS_EARLY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-early-loader.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_EARLY_ASSETS_END --><!-- MODE_ATLAS_LOADER_START -->
+<div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite">
+  <div class="ma-loading-card">
+    <div class="ma-loading-head">
+      <div class="ma-loading-mark">学</div>
+      <div>
+        <div class="ma-loading-title">Mode Atlas</div>
+        <div class="ma-loading-sub">Preparing your study space…</div>
+      </div>
+    </div>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton short"></div>
+  </div>
+</div>
+<!-- MODE_ATLAS_LOADER_END -->
+<div class="shell ma-page-frame">
+<!-- MODE_ATLAS_NAV_START -->
+<nav class="ma-nav ma-nav--kana" data-ma-navigation="shared" data-ma-page="kana" aria-label="Mode Atlas navigation">
+  <a class="ma-nav__brand" href="/" aria-label="Mode Atlas home">
+    <span class="ma-nav__mark" aria-hidden="true">かな</span>
+    <span class="ma-nav__brand-copy">
+      <span class="ma-nav__kicker">Mode Atlas</span>
+      <span class="ma-nav__title">Kana Trainer</span>
+    </span>
+  </a>
+  <div class="ma-nav__content">
+    <div class="ma-nav__links"><a class="ma-nav__link" data-ma-nav-item="atlas" href="/">Atlas</a> <a class="ma-nav__link is-active" data-ma-nav-item="kana" href="/kana/" aria-current="page">Kana</a> <a class="ma-nav__link" data-ma-nav-item="reading" href="/reading/">Reading</a> <a class="ma-nav__link" data-ma-nav-item="writing" href="/writing/">Writing</a> <a class="ma-nav__link" data-ma-nav-item="results" href="/results/">Results</a> <a class="ma-nav__link" data-ma-nav-item="wordbank" href="/wordbank/">Word Bank</a></div>
+      <div class="ma-nav__actions">
+        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
+          <span class="ma-nav__avatar" id="topProfileDot" aria-hidden="true">M</span>
+          <span class="ma-nav__action-label">Profile</span>
+        </button>
+        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="settingsDrawer" aria-label="Open settings" title="Settings">
+          <span class="ma-nav__settings-icon" aria-hidden="true">⚙</span>
+          <span class="ma-nav__action-label">Settings</span>
+        </button>
+        
+      </div>
+  </div>
+</nav>
+<!-- MODE_ATLAS_NAV_END -->
+    <section class="kana-hub-hero glass ma-card ma-page-hero">
         <div class="kana-hero-main">
             <div class="hero-tagline">
                 <span>かな</span>
@@ -67,68 +94,71 @@
             </div>
             <h1>Kana Trainer</h1>
             <p class="kana-hero-lead">Build recognition, recall, speed, and mastery one focused session at a time.</p>
-            <div class="kana-hero-actions">
-                <a class="kana-primary-action" id="kanaContinueAction" href="../reading/">
+            <div class="kana-hero-actions ma-action-row">
+                <a class="kana-primary-action ma-button" id="kanaContinueAction" href="/reading/">
                     <span>Continue practice</span>
                     <strong id="kanaContinueHint">Recommended next step</strong>
                 </a>
-                <div class="kana-hero-secondary-actions" aria-label="Kana hub shortcuts">
-                    <a class="kana-action reading" href="../reading/">Reading</a>
-                    <a class="kana-action writing" href="../writing/">Writing</a>
-                    <a class="kana-action results" href="../results/">Results</a>
+                <div class="kana-hero-secondary-actions ma-action-row" aria-label="Kana hub shortcuts">
+                    <a class="kana-action reading ma-button" href="/reading/">Reading</a>
+                    <a class="kana-action writing ma-button" href="/writing/">Writing</a>
+                    <a class="kana-action results ma-button" href="/results/">Results</a>
                 </div>
             </div>
         </div>
-        <div class="kana-today-card" id="kanaTodayCard" aria-live="polite"></div>
+        <div class="kana-today-card ma-card ma-card--flat" id="kanaTodayCard" aria-live="polite"></div>
     </section>
 
-    <main class="kana-hub" id="kanaHub">
-        <section class="kana-section kana-next-panel glass" id="kanaNextPanel"></section>
+    <main class="kana-hub ma-page-section" id="kanaHub">
+        <section class="kana-section kana-next-panel glass ma-card" id="kanaNextPanel"></section>
 
-        <section class="kana-section kana-mastery-panel glass">
-            <div class="kana-section-head">
+        <section class="kana-section kana-mastery-panel glass ma-card">
+            <div class="kana-section-head ma-section-head">
                 <div>
-                    <span class="kana-section-kicker">Mastery overview</span>
+                    <span class="kana-section-kicker ma-kicker">Mastery overview</span>
                     <h2>Kana mastery</h2>
                     <p>Watch your kana move from first practice to confident recall.</p>
                 </div>
-                <div class="kana-head-actions">
-                    <button type="button" class="kana-ghost-action" data-ma-mastery-help>How mastery works</button>
-                    <button type="button" class="kana-map-action" data-ma-mastery-open>Open Mastery Map</button>
+                <div class="kana-head-actions ma-action-row">
+                    <button type="button" class="kana-ghost-action ma-button" data-ma-mastery-help>How mastery works</button>
+                    <button type="button" class="kana-map-action ma-button" data-ma-mastery-open>Open Mastery Map</button>
                 </div>
             </div>
             <div class="kana-mastery-grid" id="kanaMasteryGrid"></div>
             <div class="kana-mastery-focus" id="kanaMasteryFocus"></div>
         </section>
 
-        <section class="kana-section kana-preset-panel glass" id="kanaPresetPanel"></section>
+        <section class="kana-section kana-preset-panel glass ma-card" id="kanaPresetPanel"></section>
 
-        <section class="kana-section kana-records-panel glass" id="kanaRecordsPanel"></section>
+        <section class="kana-section kana-records-panel glass ma-card" id="kanaRecordsPanel"></section>
     </main>
 </div>
-<script src="../assets/app/mode-atlas-toast.js"></script>
-<script src="../assets/app/mode-atlas-theme.js"></script>
-<script src="../assets/app/mode-atlas-display-mode.js"></script>
-<script src="../assets/app/mode-atlas-storage.js"></script>
-<script src="../assets/app/mode-atlas-save-repair.js"></script>
-<script src="../assets/app/mode-atlas-page-state.js"></script>
-<script src="../assets/app/mode-atlas-dev-console.js"></script>
-<script src="../assets/app/mode-atlas-pwa.js"></script>
-<script src="../assets/app/mode-atlas-about.js"></script>
-<script src="../assets/app/mode-atlas-loader.js"></script>
-<script src="../assets/app/mode-atlas-visit-flows.js"></script>
-<script src="../assets/app/mode-atlas-import-export.js"></script>
-<script src="../assets/achievements/mode-atlas-achievements-ui.js"></script>
-<script src="../assets/app/mode-atlas-presets.js"></script>
-<script src="../assets/app/mode-atlas-kana-metrics.js"></script>
-<script src="../firebase-config.js"></script>
-<script src="../cloud-sync.js"></script>
-<script src="../assets/ui/mode-atlas-profile-menu.js"></script>
-<script src="../assets/ui/mode-atlas-settings-menu.js"></script>
-<script src="../assets/ui/mode-atlas-profile-drawer-bindings.js"></script>
-<script src="../assets/pages/mode-atlas-kana-page.js"></script>
-<script src="../assets/app/mode-atlas-confusable-mode.js"></script>
-<script src="../assets/ui/mode-atlas-verified-preset-confusable.js"></script>
-<script src="../assets/app/mode-atlas-sounds.js"></script>
+<!-- MODE_ATLAS_BODY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-toast.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dialog.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-feedback.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-theme.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-display-mode.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-storage.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-save-repair.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-page-state.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dev-console.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-pwa.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-about.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-visit-flows.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-import-export.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-date.assets-2.30.0.js" defer></script>
+<script src="../assets/data/mode-atlas-kana-data.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-kana-metrics.assets-2.30.0.js" defer></script>
+<script src="../assets/achievements/mode-atlas-achievements-ui.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-presets.assets-2.30.0.js" defer></script>
+<script src="../firebase-config.assets-2.30.0.js" defer></script>
+<script src="../cloud-sync.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-menu.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-settings-menu.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-drawer-bindings.assets-2.30.0.js" defer></script>
+<script src="../assets/pages/mode-atlas-kana-page.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-sounds.assets-2.30.0.js" defer></script>
+<!-- MODE_ATLAS_BODY_ASSETS_END -->
 </body>
 </html>

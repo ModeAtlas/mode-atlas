@@ -1,4 +1,189 @@
+## 2.30.0 - 2026-08-14
+- Centralized public-page JS/CSS dependency ownership in one build-time manifest, preserving each page's existing load order while eliminating hand-maintained shared stacks from individual HTML files.
+- Made the early loading-screen markup a build-time shared component so every public page receives the same static loader without adding a runtime fragment request or changing loader timing.
+- Generated the five legacy compatibility redirect documents from one destination map, preserving query/hash forwarding while removing five hand-maintained copies of the same redirect implementation.
+- Added explicit build markers and regression/audit guards for dependency regions, required ordering, loader ownership, redirect generation, and future-release determinism. Runtime trainer, cloud, storage, Service Worker/update, and visual behaviour are unchanged.
+
+## 2.29.0 - 2026-08-14
+- Established the UI foundation for the next standardisation pass: canonical page geometry, typography, semantic accent, page-background, spacing, radius, and responsive tokens now live in the shared theme owner.
+- Rebuilt the shared page stylesheet around document behaviour, typography, loader presentation, and small utilities only; removed duplicate backgrounds, stale navigation/profile selectors, duplicated responsive ownership, empty remnants, and the accidental global `--ma-radius-lg` override.
+- Made the responsive stylesheet the single shared owner of display-mode/page-frame gutters while leaving page-internal grids with their page styles, and added shared `ma-page-frame`, `ma-page-hero`, `ma-page-section`, and page-stack composition primitives.
+- Migrated Atlas, Kana, Results, Word Bank, navigation, shared modals, and key trainer status presentation toward semantic theme tokens; removed page-local legacy root palettes and Arial overrides, and moved light-mode page backgrounds onto semantic body classes.
+- Tokenised Word Bank and the shared structural/component/modal/navigation layers so they no longer carry literal colours, while preserving page-specific data visualisation colours and trainer behaviour.
+- Added regression and release-audit guards for token ownership, retired selectors, page-frame semantics, responsive boundaries, shared typography, and structural colour ownership. Backend, cloud sync, update/version behaviour, save formats, and trainer logic are unchanged.
+
+## 2.28.0 - 2026-08-14
+- Completed a full-project ownership, dead-code, lifecycle, accessibility, CSS, build-tooling, and runtime-efficiency audit from the stable 2.27.0 baseline.
+- Fixed an unreachable release-audit guard, retired the duplicate GitHub workflow that independently rewrote `CHANGELOG.md`, and moved Visit Flow developer actions into the current Dev Diagnostics owner, eliminating a whole-document observer that was waiting for deleted UI.
+- Removed production MutationObservers from the sound system in favour of explicit trainer/toast/session event boundaries, canonicalised sound preference storage to `modeAtlasSound`, and retained read-only migration from legacy sound keys.
+- Added shared Profile/Settings drawer focus trapping and focus return, removed obsolete profile/page-state/loader/import compatibility globals and lifecycle owners, and removed verified dead runtime helpers.
+- Corrected duplicate/stale CSS ownership including the light-theme drawer selector, trainer preset styling in Achievements, obsolete developer-panel rules, redundant responsive globals, empty page token blocks, and an unclosed Results mobile media block.
+- Added accessible names to Reading/Writing answer inputs and updated browser smoke specifications for current drawers, Word Bank Add, cross-page theme persistence, heatmap/modifiers, and Pause.
+- Strengthened the release audit so these ownership, accessibility, and canonical CSS-structure regressions cannot silently return; cloud sync, update/version, save-schema, and storage-boundary behaviour remain otherwise unchanged.
+
+## 2.27.0 - 2026-08-13
+- Consolidated Kana, Results, and Word Bank page-level cards, stats, pills, action rows, section headers, kickers, and empty states onto the shared Mode Atlas component primitives.
+- Made the shared button primitive variable-driven for page-specific height, padding, radius, weight, border-hover, and hover-transform customisation without duplicating button mechanics.
+- Migrated Kana hub actions, mastery/next/preset/record surfaces and headers to shared card/button/action primitives while keeping Kana data and mastery behaviour unchanged.
+- Migrated Results hero/detail/stat/tag/row cards and dynamic result tiles onto shared surfaces and removed dead Results summary-row UI ownership.
+- Simplified Word Bank page CSS around shared stat, pill, card, form, action, and empty-state ownership while preserving the fixed Add Word flow and storage/cloud behaviour.
+- Added regression coverage that prevents these three pages from reintroducing local ownership of the shared page UI mechanics.
+
+## 2.26.0 - 2026-08-13
+- Completed the post-trainer-consolidation audit and fixed the remaining Pause overlay target so paused sessions mount their overlay on the shared trainer card.
+- Moved Pause/session presentation out of the Achievements stylesheet and into the shared trainer stylesheet, restoring one visual owner per feature.
+- Converted runtime modifier controls to real shared button elements and migrated generated empty-state cards/actions plus developer controls onto the shared card/button primitives.
+- Removed obsolete app-polish, legacy display/save/settings control CSS, dead pre-shared modal rules, and the old display-button compatibility selector.
+- Removed the temporary public feature-harness page used during dialog consolidation and added release guards preventing development harness pages from shipping.
+- Updated browser smoke coverage to the current shared dialog shell and added regression guards for critical trainer IDs, heatmap/modifier mechanics, and Pause overlay ownership.
+
+## 2.25.1 - 2026-08-13
+- Fixed trainer-shell consolidation regressions in Reading and Writing.
+- Restored score/history row layout, heatmap colour tokens and clickable detail popup geometry.
+- Normalised Time Trial, Combo Kana and heatmap popup visibility to the shared HTML `hidden` state contract.
+- Restored the modifiers tray as a fixed bottom control and removed the inappropriate card-surface class.
+- Side panels now clear the sticky navigation on desktop and revert to in-flow panels on tablet/phone.
+- Corrected shared-trainer selector specificity so responsive layouts are no longer overridden by desktop base rules.
+
+## 2.25.0
+- Added one build-time Reading/Writing trainer shell source so shared score strips, session controls, score panels, trial controls and modifier structure are no longer duplicated across both HTML pages.
+- Migrated trainer buttons, inputs, score pills, cards and panel surfaces onto shared Mode Atlas component primitives while preserving Reading/Writing accent variants.
+- Consolidated duplicated Reading/Writing shell CSS into mode-atlas-study-shared.css; page CSS now owns only mode-specific tokens and Writing-only answer-choice presentation.
+- Added frontend audit/regression guards preventing duplicated trainer HTML/CSS ownership from returning.
+
+## 2.24.1
+- Fixed Appearance persistence across page navigation by applying the saved Dark / Light / System preference in the head bootstrap before CSS paints.
+- Theme controller now falls back directly to localStorage until the shared storage module is available and reapplies changes from other tabs.
+
+# Mode Atlas 2.23.0
+
+- Added shared Card, Field/Input/Select/Textarea, Checkbox, and generic Drawer primitives to the frontend design system.
+- Migrated Profile/Settings drawer shells and card surfaces onto the shared primitives instead of maintaining separate profile/settings surface ownership.
+- Migrated Word Bank static and dynamically generated controls/cards onto shared form/card primitives and removed its duplicate global input/select/textarea styling.
+- Extended the shared dialog owner with feature-content mode and moved Kana guide, mastery help, and Daily Challenge history onto that single modal/backdrop/focus owner.
+- Moved onboarding/Welcome Back presentation out of runtime-injected JavaScript CSS and into the normal shared stylesheet pipeline; visit-flow actions/panels now consume shared UI primitives.
+- Added frontend audit/regression rules preventing reintroduction of duplicate Kana modal shells, runtime visit-flow CSS injection, page-local Word Bank form ownership, and split Profile/Settings drawer shells.
+
+# Mode Atlas 2.22.3
+
+- Fixed Word Bank Add Word native form submission causing page reloads and `?kana_word=` URLs before the page controller was ready.
+- Word Bank Add is now fully JavaScript-owned with a normal button, composition-safe Enter handling, and an initially disabled control that is enabled only after bindings are installed.
+- Moved the Word Bank page controller earlier in the page's deferred script order so basic input ownership is not delayed by cloud/profile modules.
+
 # Changelog
+
+## 2.22.1
+- Fixed a cloud-sync race where a Firestore read started before a local edit could later overwrite that newer Word Bank/progress change using a stale captured section timestamp.
+- Cloud sync now re-reads each live local section after the Firestore read returns and before deciding whether remote data is newer.
+- Word Bank persistence now writes local data before stamping/scheduling cloud sync, reports success only after persistence succeeds, and leaves input intact on local-save failure.
+- Added backend regression coverage for in-flight sync/local-edit races and frontend regression coverage for Word Bank Add persistence.
+
+## 2.22.0
+- Added one shared Mode Atlas dialog owner for destructive confirmations and blocking information, with Escape/backdrop handling, focus trapping, focus return, and shared button styling.
+- Added a shared feedback facade defining Dialog vs Toast vs Inline Status behavior and migrated save/reset/import, Word Bank, cloud sign-in, Repair, and update status onto those primitives.
+- Removed all remaining native runtime alert()/confirm() calls.
+- Removed the obsolete Reading/Writing trainer Import/Reset modal and its duplicate page/controller/modifier-menu save ownership; Settings is now the sole app save-management UI.
+- Moved the save/import status into the shared Settings drawer and migrated the import preview onto the shared dialog shell.
+- Migrated Word Bank controls and inline feedback to shared button/status primitives and shared destructive dialogs.
+- Removed duplicate Achievement and Writing toast implementations so transient notifications have one owner.
+- Added frontend audit/regression rules preventing native prompts, duplicate trainer save UI, duplicate toast creation, and missing shared feedback/dialog dependencies.
+
+## 2.21.2
+- Fixed the Settings sound-mode state owner so On/Loud/Off persist and refresh correctly instead of failing on an out-of-scope storage reference.
+- Removed Word Bank's remaining extra top spacing above the shared navigation.
+- Returned the hidden-trainer Show navigation handle to the bottom-right safe-area position while keeping it above the modifiers overlay.
+
+## 2.21.1
+- Normalized shared navigation top spacing on Kana, Reading, Writing, and Results so page frame padding no longer adds a second top gap.
+- Fixed Settings sound controls by giving the global sound module one direct, idempotent binding owner for On/Loud/Off.
+- Moved the hidden-trainer Show navigation control above the modifiers overlay and into the top utility layer.
+
+## 2.21.0
+- Introduced the first shared frontend foundation: central spacing/radius/control/motion tokens plus semantic Button, Inline Status, Surface, Pill, and Toast primitives.
+- Replaced the Atlas, Kana, Reading, Writing, Results, Word Bank, Privacy, and Terms navigation copies with one build-time navigation component source while keeping shipped HTML static and accessible.
+- Moved Profile and Settings actions into the shared navigation parent; drawer bindings now only own drawer behaviour and no longer manufacture page-specific Settings controls.
+- Removed the obsolete Atlas-only profile/cloud binding module so the shared Profile drawer binding is the single profile/avatar behaviour owner on every app page.
+- Consolidated navigation styling into one canonical stylesheet and removed the old topbar/branch-nav/study-nav selector owners instead of overriding them.
+- Standardized toast feedback to success/info/warning/error semantics with legacy alias normalization and ARIA live/status behaviour.
+- Migrated shared Profile/Settings controls onto the new button/status primitives and centralized duplicated theme/font tokens.
+- Added frontend regression tests and release-audit rules for shared navigation, drawer ownership, toast semantics, legacy selector removal, and future revision generation.
+
+## 2.20.21
+- Added one authoritative Mode Atlas browser-storage inventory with separate reset/runtime and backup/import boundaries.
+- Replaced origin-wide localStorage/sessionStorage clearing with scoped Mode Atlas reset so unrelated same-origin data survives Reset.
+- Backup export now includes only explicitly registered Mode Atlas backup keys rather than heuristic/prefix-matched origin storage.
+- Emergency import fallback now accepts only registered backup keys and ignores unknown or unrelated keys.
+- Added backend regression coverage for scoped reset, backup filtering, import whitelisting, and unrelated origin storage preservation.
+
+## 2.20.20
+- Fixed Settings → Repair save data when the shared Settings drawer is mounted after the save-repair module.
+- Repair now uses one delegated document-level action owner, so dynamically mounted/re-mounted Settings drawers cannot miss or duplicate the handler.
+- Manual repair still syncs to cloud only when the repair actually changes save data.
+
+## 2.20.19
+- Made `ModeAtlasKanaData` the single canonical kana inventory owner (240 kana) and moved Kana Metrics/Achievements to consume the same collections and mastery rules.
+- Replaced per-page automatic save repair with explicit save-schema migrations; clean page loads no longer schedule cloud sync, while genuine repairs and post-hydration legacy fixes sync once.
+- Made Firebase module/setup promises in-flight-only and retryable after transient startup failures, including the reconnect race where online returned while the failed setup was still settling.
+- Centralized app version, cache revision, save schema, backup format, cloud snapshot format, and build date in `mode-atlas-version.js`; npm/README metadata now follows the release source.
+- Moved formal test result date keys to the shared local-calendar date helper.
+- Removed the unused loader compatibility bridge and unused dynamic-module bootstrap code; page-state and achievement lifecycle work is now BFCache/event driven instead of repeating on ordinary focus/pageshow.
+- Extended backend tests and release audit rules for canonical kana counts, save-repair sync behavior, Firebase retry recovery, release metadata ownership, and shared dependency order.
+
+## 2.20.18
+- Removed obsolete Confusable Kana compatibility modules so trainer-controls.js is the single behavior owner for presets/confusable mode.
+- Removed the dormant Results insights module/CSS whose missing metrics dependency meant it never rendered, preserving the current Results UI instead of enabling an unintended frontend change.
+- Converted shared Kana metrics to one storage snapshot per calculation pass, eliminating repeated full stats/timing reads in shared mastery helpers.
+- Added a shared local calendar-date helper and moved Daily Challenge/Kana streak date keys off UTC-based toISOString dates.
+- Trimmed redundant trainer-controls lifecycle reinstalls; initial setup is once-only, pageshow work is BFCache-only, and preset changes only refresh active-state UI.
+- Removed dead trainer-setting mutation code from modifier-menu.js so modifier-menu owns rendering while trainer-controls owns behavior.
+- Extended the release audit/backend tests to enforce these ownership boundaries and verify snapshot reads plus local calendar dates.
+
+## 2.20.16
+- Fixed cloud-sync JSON fallbacks so missing ModeAtlasStorage falls back directly to localStorage instead of recursively calling itself.
+- Made cloud UI binding idempotent so profile cloud-status updates cannot stack duplicate sign-in/sign-out listeners.
+- Gave Firebase auth restoration sole ownership of initial cloud hydration, closing the slow-auth gap without page-level hydration retries.
+- Separated cloud connection/status events from actual cloud save-data changes; Kana, Reading, Writing, Results and Word Bank now refresh only when relevant data is written locally.
+- Removed focus/visibility/status-driven trainer hydration and kept BFCache/local UI refreshes local-only.
+- Safely retired the destructive one-time clean_urls.py migration and added audit_project.py plus npm audit/release-check commands for future release validation.
+- Removed obsolete version constants from the retirement-only Service Worker.
+- Serialized Firestore save writes behind one in-flight sync owner and discard stale completions if the signed-in account changes mid-operation.
+- Protected manual imports and full resets from overlapping hydration/sync races so authoritative local data cannot be overwritten during those mutations.
+- Preserved first-visit/welcome-back decisions by letting visit flows await auth-owned initial hydration without starting their own cloud read.
+- Made trainer runtime/import-preview bindings idempotent and removed duplicate initial pageshow boot work; cloud-loaded empty-state cards now add/remove from real data changes.
+
+## 2.20.15
+- Fixed cold Atlas → Kana startup stalls by making Firebase setup and cloud hydration single-owner/in-flight-deduplicated.
+- Fixed cloud startup deadlines continuing after successful completion and later emitting false timeout/offline states.
+- Removed duplicate cloud status dispatches and stopped Import/Export lifecycle events from rebroadcasting global UI refreshes.
+- Coalesced Kana dashboard refresh bursts into one render and removed Kana's duplicate explicit hydration request.
+- Returned normal internal navigation to clean canonical URLs; build/reload parameters are now used only for explicit update reloads.
+- Kept Kana stats automatic: local data renders immediately and a fresh storage snapshot is taken after genuine cloud/BFCache/progress refreshes.
+
+## 2.20.12
+- Retired legacy Service Worker registrations/caches with a one-time migration and self-unregistering sw.js.
+- Added build-revision document URLs for internal navigation so new builds cannot reuse stale page documents.
+- Added BFCache restore handling for the once-per-4am-day version check without polling normal navigation.
+
+## 2.20.11
+- Replaced query-string-only JS/CSS cache busting with revisioned asset filenames so old Settings/page scripts cannot be reused under a new build.
+- Deferred non-critical shared/page scripts while preserving execution order, so the first cold navigation no longer waits on sequential cloud/profile/achievement/script downloads before the page can render.
+- Simplified automatic update checking to one successful 4am-day flag plus a per-session attempt guard; Settings and browser reload remain explicit retry paths.
+- Kept Service Worker update/fetch logic out of Settings and normal navigation.
+
+## 2.20.10
+- Removed automatic Service Worker registration from normal page startup so SW lifecycle work cannot race page-to-page navigation.
+- Automatic deployed-version checks now skip same-origin internal navigation and back/forward navigation entirely.
+- A direct/external app entry checks only when the current reset-day flag is missing; a page reload forces a no-store version-file check.
+- Settings checks always perform a fresh no-store version-file read after the previous check completes; only genuinely overlapping requests are deduplicated.
+
+
+## 2.20.09
+- Centralized deployed-version reads in one version-file checker shared by the 4am check and Settings.
+- Deduplicated overlapping/repeat version checks and added a hard Promise deadline so the Settings control cannot remain stuck on Checking.
+- Deferred Service Worker registration until after page load and limited it to once per build revision per tab session.
+- Removed the progress cursor from the disabled Check for updates button.
+- Restored single loader ownership: early-loader owns hide timing; loader.js is now only a compatibility bridge and no longer writes sync state.
+- Revised local JS/CSS asset URLs to assets-2.20.09.
 
 All notable changes to this project will be documented here.
 

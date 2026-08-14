@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="../assets/app/mode-atlas-version.js"></script>
-<script src="../assets/app/mode-atlas-head-bootstrap.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_START -->
+<script src="../assets/app/mode-atlas-version.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-legacy-sw-retirement.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-version-check.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-head-bootstrap.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_END -->
 
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -25,40 +29,64 @@
 <meta property="og:url" content="https://mode-atlas.app/results/" />
   <meta property="og:image" content="https://mode-atlas.app/assets/social-preview.svg" />
 <meta name="twitter:card" content="summary" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.css">
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-polish.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-dev-console.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-results-insights.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-theme.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-test-page.css">
+<!-- MODE_ATLAS_STYLE_ASSETS_START -->
+<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-dev-console.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-theme.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-components.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-navigation.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-test-page.assets-2.30.0.css" />
+<!-- MODE_ATLAS_STYLE_ASSETS_END -->
 </head>
-<body class="results-page"><script src="../assets/app/mode-atlas-early-loader.js"></script><div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite"><div class="ma-loading-card"><div class="ma-loading-head"><div class="ma-loading-mark">学</div><div><div class="ma-loading-title">Mode Atlas</div><div class="ma-loading-sub">Preparing your study space…</div></div></div><div class="ma-skeleton"></div><div class="ma-skeleton"></div><div class="ma-skeleton short"></div></div></div>
-
-
-<nav class="branch-nav" aria-label="Kana Trainer navigation">
-    <a class="branch-brand" href="../kana/">
-        <div class="branch-mark">測</div>
-        <div class="branch-meta">
-            <div class="branch-kicker">Kana Trainer</div>
-            <div class="branch-name">Test Results</div>
-        </div>
-    </a>
-    <div class="branch-links">
-        <a class="branch-link atlas" href="../">Atlas</a>
-        <a class="branch-link overview" href="../kana/">Overview</a>
-        <a class="branch-link reading" href="../reading/">Reading</a>
-        <a class="branch-link writing" href="../writing/">Writing</a>
-        <a class="branch-link active overview" href="./">Results</a>
-        <button class="profile-trigger" id="profileOpenBtn" type="button">Profile <span class="profile-dot" id="profileDot">●</span></button>
+<body class="results-page ma-results-page"><!-- MODE_ATLAS_EARLY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-early-loader.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_EARLY_ASSETS_END --><!-- MODE_ATLAS_LOADER_START -->
+<div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite">
+  <div class="ma-loading-card">
+    <div class="ma-loading-head">
+      <div class="ma-loading-mark">学</div>
+      <div>
+        <div class="ma-loading-title">Mode Atlas</div>
+        <div class="ma-loading-sub">Preparing your study space…</div>
+      </div>
     </div>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton short"></div>
+  </div>
+</div>
+<!-- MODE_ATLAS_LOADER_END -->
+<!-- MODE_ATLAS_NAV_START -->
+<nav class="ma-nav ma-nav--results" data-ma-navigation="shared" data-ma-page="results" aria-label="Mode Atlas navigation">
+  <a class="ma-nav__brand" href="/kana/" aria-label="Mode Atlas home">
+    <span class="ma-nav__mark" aria-hidden="true">測</span>
+    <span class="ma-nav__brand-copy">
+      <span class="ma-nav__kicker">Kana Trainer</span>
+      <span class="ma-nav__title">Test Results</span>
+    </span>
+  </a>
+  <div class="ma-nav__content">
+    <div class="ma-nav__links"><a class="ma-nav__link" data-ma-nav-item="atlas" href="/">Atlas</a> <a class="ma-nav__link" data-ma-nav-item="kana" href="/kana/">Kana</a> <a class="ma-nav__link" data-ma-nav-item="reading" href="/reading/">Reading</a> <a class="ma-nav__link" data-ma-nav-item="writing" href="/writing/">Writing</a> <a class="ma-nav__link is-active" data-ma-nav-item="results" href="/results/" aria-current="page">Results</a> <a class="ma-nav__link" data-ma-nav-item="wordbank" href="/wordbank/">Word Bank</a></div>
+      <div class="ma-nav__actions">
+        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
+          <span class="ma-nav__avatar" id="topProfileDot" aria-hidden="true">M</span>
+          <span class="ma-nav__action-label">Profile</span>
+        </button>
+        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="settingsDrawer" aria-label="Open settings" title="Settings">
+          <span class="ma-nav__settings-icon" aria-hidden="true">⚙</span>
+          <span class="ma-nav__action-label">Settings</span>
+        </button>
+        
+      </div>
+  </div>
 </nav>
-
-<div class="shell">
-    <section class="hero glass">
+<!-- MODE_ATLAS_NAV_END -->
+<div class="shell ma-page-frame">
+    <section class="hero glass ma-card ma-page-hero">
         <div class="hero-grid compact-title">
             <div class="hero-title-block">
                                 <h1 class="hero-title">Test Results</h1>
@@ -69,16 +97,16 @@
             </div>
 
             <div class="hero-side compact">
-                <div class="mini-panel quick-preview">
-                    <div class="mini-label">Quick preview</div>
-                    <div class="duo-grid">
-                        <div class="duo-chip">
-                            <div class="name">Stored results</div>
-                            <div class="value" id="heroStoredTests">0</div>
+                <div class="mini-panel quick-preview ma-card ma-card--flat">
+                    <div class="mini-label ma-kicker">Quick preview</div>
+                    <div class="duo-grid ma-stat-grid">
+                        <div class="duo-chip ma-stat ma-card ma-card--flat">
+                            <div class="name ma-stat__label">Stored results</div>
+                            <div class="value ma-stat__value" id="heroStoredTests">0</div>
                         </div>
-                        <div class="duo-chip">
-                            <div class="name">Best score</div>
-                            <div class="value" id="heroBestScore">0%</div>
+                        <div class="duo-chip ma-stat ma-card ma-card--flat">
+                            <div class="name ma-stat__label">Best score</div>
+                            <div class="value ma-stat__value" id="heroBestScore">0%</div>
                         </div>
                     </div>
                 </div>
@@ -87,8 +115,8 @@
     </section>
 
     <div class="stage">
-        <section class="card glass">
-            <div class="card-head">
+        <section class="card glass ma-card">
+            <div class="card-head ma-section-head">
                 <div>
                     <h2 class="card-title">Overall snapshot</h2>
                     <div class="card-sub">A large headline score plus a quick breakdown of the currently selected result.</div>
@@ -98,28 +126,28 @@
 
             <div class="summary-grid">
                 <div class="summary-left">
-                    <div class="mega-score average" id="overallScoreCard">
-                        <div class="mega-kicker" id="overallKicker">Selected result score</div>
+                    <div class="mega-score average ma-card ma-card--flat" id="overallScoreCard">
+                        <div class="mega-kicker ma-kicker" id="overallKicker">Selected result score</div>
                         <div class="overall-selected-title" id="overallSelectedName">No result selected</div>
                         <div class="mega-value" id="overallScore">0%</div>
                         <div class="mega-sub" id="overallSub">Pick a result to see the full breakdown.</div>
 
-                        <div class="meta-grid">
-                            <div class="metric">
-                                <div class="label">Type</div>
-                                <div class="value" id="overallMode">—</div>
+                        <div class="meta-grid ma-stat-grid">
+                            <div class="metric ma-stat ma-card ma-card--flat">
+                                <div class="label ma-stat__label">Type</div>
+                                <div class="value ma-stat__value" id="overallMode">—</div>
                             </div>
-                            <div class="metric">
-                                <div class="label">Correct</div>
-                                <div class="value" id="overallCorrect">0</div>
+                            <div class="metric ma-stat ma-card ma-card--flat">
+                                <div class="label ma-stat__label">Correct</div>
+                                <div class="value ma-stat__value" id="overallCorrect">0</div>
                             </div>
-                            <div class="metric">
-                                <div class="label">Wrong</div>
-                                <div class="value" id="overallWrong">0</div>
+                            <div class="metric ma-stat ma-card ma-card--flat">
+                                <div class="label ma-stat__label">Wrong</div>
+                                <div class="value ma-stat__value" id="overallWrong">0</div>
                             </div>
-                            <div class="metric">
-                                <div class="label">Time</div>
-                                <div class="value" id="overallTime">—</div>
+                            <div class="metric ma-stat ma-card ma-card--flat">
+                                <div class="label ma-stat__label">Time</div>
+                                <div class="value ma-stat__value" id="overallTime">—</div>
                             </div>
                         </div>
 
@@ -130,9 +158,9 @@
             </div>
         </section>
 
-        <section class="results-layout">
-            <div class="card glass">
-                <div class="card-head">
+        <section class="results-layout ma-page-section">
+            <div class="card glass ma-card">
+                <div class="card-head ma-section-head">
                     <div>
                         <h2 class="card-title">Stored tests</h2>
                         <div class="card-sub">Includes pinned overall averages for Reading and Writing at the top, then individual saved test runs below.</div>
@@ -143,8 +171,8 @@
                 <div class="tests-grid" id="testsGrid"></div>
             </div>
 
-            <div class="card glass">
-                <div class="card-head">
+            <div class="card glass ma-card">
+                <div class="card-head ma-section-head">
                     <div>
                         <h2 class="card-title">Selected result details</h2>
                         <div class="card-sub">Click a result on the left, then inspect the kana grouped by row with fastest and slowest markers.</div>
@@ -152,7 +180,7 @@
                     <div class="accent"></div>
                 </div>
 
-                <div class="detail-panel">
+                <div class="detail-panel ma-card ma-card--flat">
                     <div class="detail-head">
                         <div>
                             <div class="detail-title" id="detailTitle">No result selected</div>
@@ -161,19 +189,19 @@
                     </div>
 
                     <div class="detail-controls">
-                        <button class="inline-toggle-btn" id="hideUnusedBtn" type="button">Hide unused kana</button>
+                        <button class="inline-toggle-btn ma-button ma-button--small" id="hideUnusedBtn" type="button">Hide unused kana</button>
                     </div>
 
-                    <div class="detail-metrics" id="detailMetrics"></div>
+                    <div class="detail-metrics ma-stat-grid" id="detailMetrics"></div>
 
                     <div class="heatmap-wrap">
                         <div class="heatmap-title">Full kana result heatmap</div>
                         <div class="heatmap" id="testHeatmap"></div>
                         <div class="legend">
-                            <div class="legend-chip"><span class="legend-box correct"></span> Correct</div>
-                            <div class="legend-chip"><span class="legend-box wrong"></span> Wrong</div>
-                            <div class="legend-chip"><span class="legend-box unanswered"></span> Modifier kana off</div>
-                            <div class="legend-chip"><span class="legend-box unused"></span> Not included</div>
+                            <div class="legend-chip ma-pill"><span class="legend-box correct"></span> Correct</div>
+                            <div class="legend-chip ma-pill"><span class="legend-box wrong"></span> Wrong</div>
+                            <div class="legend-chip ma-pill"><span class="legend-box unanswered"></span> Modifier kana off</div>
+                            <div class="legend-chip ma-pill"><span class="legend-box unused"></span> Not included</div>
                         </div>
                     </div>
 
@@ -183,44 +211,34 @@
         </section>
     </div>
 </div>
-<div class="modal-backdrop" id="kanaModalBackdrop">
-    <div class="modal">
-        <button class="modal-close" id="kanaModalClose" type="button">×</button>
-        <h3 class="modal-title" id="kanaModalTitle">Kana result</h3>
-        <div class="modal-sub" id="kanaModalSub">Kana test details</div>
-        <div class="modal-grid">
-            <div class="modal-kana">
-                <div class="char" id="kanaModalChar">—</div>
-                <div class="romaji" id="kanaModalRomaji">—</div>
-            </div>
-            <div class="modal-stats" id="kanaModalStats"></div>
-        </div>
-    </div>
-</div>
-<script src="../assets/app/mode-atlas-toast.js"></script>
-<script src="../assets/app/mode-atlas-theme.js"></script>
-<script src="../assets/app/mode-atlas-display-mode.js"></script>
-<script src="../assets/app/mode-atlas-storage.js"></script>
-<script src="../assets/app/mode-atlas-save-repair.js"></script>
-<script src="../assets/app/mode-atlas-page-state.js"></script>
-<script src="../assets/app/mode-atlas-dev-console.js"></script>
-<script src="../assets/app/mode-atlas-pwa.js"></script>
-<script src="../assets/app/mode-atlas-about.js"></script>
-<script src="../assets/app/mode-atlas-loader.js"></script>
-<script src="../assets/app/mode-atlas-visit-flows.js"></script>
-<script src="../assets/app/mode-atlas-import-export.js"></script>
-<script src="../assets/achievements/mode-atlas-achievements-ui.js"></script>
-<script src="../firebase-config.js"></script>
-<script src="../cloud-sync.js"></script>
-<script src="../assets/ui/mode-atlas-profile-menu.js"></script>
-<script src="../assets/ui/mode-atlas-settings-menu.js"></script>
-<script src="../assets/ui/mode-atlas-profile-drawer-bindings.js"></script>
-<script src="../assets/data/mode-atlas-kana-data.js"></script>
-<script src="../assets/results/mode-atlas-results-storage.js"></script>
-<script src="../assets/results/mode-atlas-results-engine.js"></script>
-<script src="../assets/results/mode-atlas-results-ui.js"></script>
-<script src="../assets/pages/mode-atlas-test-page.js"></script>
-<script src="../assets/results/mode-atlas-results-insights.js"></script>
-<script src="../assets/app/mode-atlas-sounds.js"></script>
+<!-- MODE_ATLAS_BODY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-toast.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dialog.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-feedback.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-theme.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-display-mode.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-storage.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-save-repair.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-page-state.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dev-console.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-pwa.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-about.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-visit-flows.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-import-export.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-date.assets-2.30.0.js" defer></script>
+<script src="../assets/data/mode-atlas-kana-data.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-kana-metrics.assets-2.30.0.js" defer></script>
+<script src="../assets/achievements/mode-atlas-achievements-ui.assets-2.30.0.js" defer></script>
+<script src="../firebase-config.assets-2.30.0.js" defer></script>
+<script src="../cloud-sync.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-menu.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-settings-menu.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-drawer-bindings.assets-2.30.0.js" defer></script>
+<script src="../assets/results/mode-atlas-results-storage.assets-2.30.0.js" defer></script>
+<script src="../assets/results/mode-atlas-results-engine.assets-2.30.0.js" defer></script>
+<script src="../assets/results/mode-atlas-results-ui.assets-2.30.0.js" defer></script>
+<script src="../assets/pages/mode-atlas-test-page.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-sounds.assets-2.30.0.js" defer></script>
+<!-- MODE_ATLAS_BODY_ASSETS_END -->
 </body>
 </html>

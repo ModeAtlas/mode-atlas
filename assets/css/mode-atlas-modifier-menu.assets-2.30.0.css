@@ -1,0 +1,87 @@
+/* Mode Atlas trainer modifier menu styling. Visual ownership for the trainer modifier drawer lives here. */
+.bottom-shell.ma-modifiers-only .drawer-content{
+  max-height:min(72vh,720px) ;
+  overflow:auto ;
+}
+.bottom-shell.ma-modifiers-only .options-stack{
+  width:min(1280px,100%) ;
+  display:grid ;
+  grid-template-columns:1fr ;
+  gap:14px ;
+}
+.bottom-shell.ma-modifiers-only .options-stack > div,
+.bottom-shell.ma-modifiers-only .ma-settings-section{
+  padding:16px ;
+  border-radius:22px ;
+}
+.ma-structured-modifiers{
+  display:grid ;
+  grid-template-columns:repeat(3,minmax(0,1fr)) ;
+  gap:14px ;
+}
+.ma-modifier-group{
+  padding:14px;
+  border:1px solid var(--ma-border,rgba(255,255,255,.08));
+  border-radius:20px;
+  background:rgba(255,255,255,.035);
+}
+.ma-modifier-group-title{
+  color:var(--muted,#aab4c5);
+  text-transform:uppercase;
+  font-weight:900;
+  letter-spacing:.13em;
+  font-size:11px;
+  margin-bottom:10px;
+}
+.ma-modifier-group-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.ma-structured-toggle{
+  min-height:48px ;
+  display:flex ;
+  align-items:center ;
+  justify-content:center ;
+  text-align:center ;
+  line-height:1.05 ;
+  padding:10px ;
+}
+.ma-preset-toggle{
+  flex-direction:column ;
+  gap:4px ;
+  min-height:62px ;
+  padding:10px 12px ;
+}
+.ma-preset-toggle span{
+  display:block;
+  font-size:16px;
+  line-height:1.05;
+  font-weight:950;
+}
+.ma-preset-toggle small{
+  display:block;
+  max-width:100%;
+  font-size:11px;
+  line-height:1.2;
+  font-weight:850;
+  color:var(--ma-muted,#aab4c5);
+}
+.ma-reading-page .ma-preset-toggle.active,
+.ma-reading-page .ma-structured-toggle.active{
+  background:linear-gradient(180deg,rgba(86,210,126,.28),rgba(86,210,126,.13)) ;
+  border-color:rgba(86,210,126,.75) ;
+  color:#e8fff0 ;
+  box-shadow:0 0 0 2px rgba(86,210,126,.22),0 14px 34px rgba(74,222,128,.12) ;
+}
+.ma-writing-page .ma-preset-toggle.active,
+.ma-writing-page .ma-structured-toggle.active{
+  background:linear-gradient(180deg,rgba(96,165,250,.30),rgba(96,165,250,.15)) ;
+  border-color:rgba(96,165,250,.82) ;
+  color:#eef6ff ;
+  box-shadow:0 0 0 2px rgba(96,165,250,.24),0 14px 34px rgba(59,130,246,.14) ;
+}
+
+@media (max-width:900px){
+  .ma-structured-modifiers{grid-template-columns:1fr ;}
+}

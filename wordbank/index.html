@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="../assets/app/mode-atlas-version.js"></script>
-<script src="../assets/app/mode-atlas-head-bootstrap.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_START -->
+<script src="../assets/app/mode-atlas-version.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-legacy-sw-retirement.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-version-check.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-head-bootstrap.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_END -->
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -25,82 +29,112 @@
 <meta property="og:url" content="https://mode-atlas.app/wordbank/" />
   <meta property="og:image" content="https://mode-atlas.app/assets/social-preview.svg" />
 <meta name="twitter:card" content="summary" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.css">
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-polish.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-dev-console.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-theme.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-wordbank-page.css">
+<!-- MODE_ATLAS_STYLE_ASSETS_START -->
+<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-dev-console.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-theme.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-components.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-navigation.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-wordbank-page.assets-2.30.0.css" />
+<!-- MODE_ATLAS_STYLE_ASSETS_END -->
 </head>
-<body><script src="../assets/app/mode-atlas-early-loader.js"></script><div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite"><div class="ma-loading-card"><div class="ma-loading-head"><div class="ma-loading-mark">学</div><div><div class="ma-loading-title">Mode Atlas</div><div class="ma-loading-sub">Preparing your study space…</div></div></div><div class="ma-skeleton"></div><div class="ma-skeleton"></div><div class="ma-skeleton short"></div></div></div>
-<div class="wrap">
-    <nav class="branch-nav" aria-label="Word Bank navigation">
-      <a class="branch-brand" href="../" aria-label="Back to Mode Atlas">
-        <div class="branch-mark">語</div>
-        <div class="branch-meta">
-          <div class="branch-kicker">Mode Atlas</div>
-          <div class="branch-name">Word Bank</div>
-        </div>
-      </a>
-
-      <div class="branch-links">
-        <a class="branch-link atlas" href="../">Atlas</a>
-        <a class="branch-link kana" href="../kana/">Kana Trainer</a>
-        <a class="branch-link words active" href="./">Word Bank</a>
-        <button class="profile-trigger" id="profileOpenBtn" type="button">Profile <span class="profile-dot" id="topProfileDot">M</span></button>
+<body class="ma-wordbank-page"><!-- MODE_ATLAS_EARLY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-early-loader.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_EARLY_ASSETS_END --><!-- MODE_ATLAS_LOADER_START -->
+<div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite">
+  <div class="ma-loading-card">
+    <div class="ma-loading-head">
+      <div class="ma-loading-mark">学</div>
+      <div>
+        <div class="ma-loading-title">Mode Atlas</div>
+        <div class="ma-loading-sub">Preparing your study space…</div>
       </div>
-    </nav>
-
-    <section class="hero">
-      <div class="topline">
+    </div>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton short"></div>
+  </div>
+</div>
+<!-- MODE_ATLAS_LOADER_END -->
+<div class="wrap ma-page-frame">
+<!-- MODE_ATLAS_NAV_START -->
+<nav class="ma-nav ma-nav--words" data-ma-navigation="shared" data-ma-page="wordbank" aria-label="Mode Atlas navigation">
+  <a class="ma-nav__brand" href="/" aria-label="Mode Atlas home">
+    <span class="ma-nav__mark" aria-hidden="true">語</span>
+    <span class="ma-nav__brand-copy">
+      <span class="ma-nav__kicker">Mode Atlas</span>
+      <span class="ma-nav__title">Word Bank</span>
+    </span>
+  </a>
+  <div class="ma-nav__content">
+    <div class="ma-nav__links"><a class="ma-nav__link" data-ma-nav-item="atlas" href="/">Atlas</a> <a class="ma-nav__link" data-ma-nav-item="kana" href="/kana/">Kana</a> <a class="ma-nav__link" data-ma-nav-item="reading" href="/reading/">Reading</a> <a class="ma-nav__link" data-ma-nav-item="writing" href="/writing/">Writing</a> <a class="ma-nav__link" data-ma-nav-item="results" href="/results/">Results</a> <a class="ma-nav__link is-active" data-ma-nav-item="wordbank" href="/wordbank/" aria-current="page">Word Bank</a></div>
+      <div class="ma-nav__actions">
+        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
+          <span class="ma-nav__avatar" id="topProfileDot" aria-hidden="true">M</span>
+          <span class="ma-nav__action-label">Profile</span>
+        </button>
+        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="settingsDrawer" aria-label="Open settings" title="Settings">
+          <span class="ma-nav__settings-icon" aria-hidden="true">⚙</span>
+          <span class="ma-nav__action-label">Settings</span>
+        </button>
+        
+      </div>
+  </div>
+</nav>
+<!-- MODE_ATLAS_NAV_END -->
+    <section class="hero ma-card ma-page-hero">
+      <div class="topline ma-section-head">
         <div>
-          <div class="hero-titleline">Collection branch</div>
+          <div class="hero-titleline ma-kicker">Collection branch</div>
           <h1>Word Bank</h1>
           <p class="subtitle">A quiet place for the words worth keeping.</p>
         </div>
       </div>
-      <div class="pill-row">
-        <div class="pill">Kana · Romaji · Meaning</div>
-        <div class="pill">Favourites</div>
-        <div class="pill">Search & sort</div>
+      <div class="pill-row ma-action-row">
+        <div class="pill ma-pill">Kana · Romaji · Meaning</div>
+        <div class="pill ma-pill">Favourites</div>
+        <div class="pill ma-pill">Search & sort</div>
       </div>
-      <div class="stats">
-        <div class="stat"><div class="label">Total Words</div><div class="value" id="statTotal">0</div></div>
-        <div class="stat"><div class="label">With English</div><div class="value" id="statEnglish">0</div></div>
-        <div class="stat"><div class="label">Favourites</div><div class="value" id="statFavorites">0</div></div>
-        <div class="stat"><div class="label">Missing English</div><div class="value" id="statMissing">0</div></div>
+      <div class="stats ma-stat-grid">
+        <div class="stat ma-stat ma-card ma-card--soft"><div class="label ma-stat__label">Total Words</div><div class="value ma-stat__value" id="statTotal">0</div></div>
+        <div class="stat ma-stat ma-card ma-card--soft"><div class="label ma-stat__label">With English</div><div class="value ma-stat__value" id="statEnglish">0</div></div>
+        <div class="stat ma-stat ma-card ma-card--soft"><div class="label ma-stat__label">Favourites</div><div class="value ma-stat__value" id="statFavorites">0</div></div>
+        <div class="stat ma-stat ma-card ma-card--soft"><div class="label ma-stat__label">Missing English</div><div class="value ma-stat__value" id="statMissing">0</div></div>
       </div>
     </section>
 
-    <section class="grid">
-      <div class="panel">
+    <section class="grid ma-page-section">
+      <div class="panel ma-card">
         <div class="panel-inner">
-          <h2>Add New Word</h2>
+          <h2 id="wordBankAddTitle">Add New Word</h2>
           <p>Type a word in kana and press Enter. The app will save it immediately and generate romaji for you.</p>
 
-          <label for="kanaInput">Kana Word</label>
-          <input id="kanaInput" type="text" name="kana_word" placeholder="e.g. ねこ / コーヒー" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" inputmode="text" />
-          <div class="hint">Works with hiragana, katakana, small kana, っ / ッ, and ー. Duplicate kana words are blocked.</div>
+          <div id="wordBankAddGroup" class="wordbank-add-group" role="group" aria-labelledby="wordBankAddTitle">
+            <label class="ma-field__label" for="kanaInput">Kana Word</label>
+            <input class="ma-input" id="kanaInput" type="text" name="kana_word" placeholder="e.g. ねこ / コーヒー" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" inputmode="text" />
+            <div class="ma-field__hint">Works with hiragana, katakana, small kana, っ / ッ, and ー. Duplicate kana words are blocked.</div>
 
-          <div class="btn-row">
-            <button class="btn-primary" id="addWordBtn" type="button">Add Word</button>
-            <button class="btn-secondary" id="clearInputBtn" type="button">Clear</button>
+            <div class="btn-row ma-action-row">
+              <button class="ma-button ma-button--primary" id="addWordBtn" type="button" disabled aria-disabled="true">Add Word</button>
+              <button class="ma-button ma-button--ghost" id="clearInputBtn" type="button">Clear</button>
+            </div>
+
+            <div class="ma-status" id="statusMsg" role="status" aria-live="polite"></div>
           </div>
-
-          <div class="status" id="statusMsg"></div>
 
           <hr class="ma-divider-soft" />
 
           <h2>Tools</h2>
           <p>Export a backup, import an older bank, or clear the collection.</p>
 
-          <div class="btn-row">
-            <button class="btn-blue" id="exportBtn" type="button">Export JSON</button>
-            <label class="button-like btn-secondary" for="importFile">Import JSON</label>
-            <button class="btn-danger" id="clearAllBtn" type="button">Clear All Words</button>
+          <div class="btn-row ma-action-row">
+            <button class="ma-button ma-button--primary" id="exportBtn" type="button">Export JSON</button>
+            <label class="ma-button ma-button--ghost" for="importFile">Import JSON</label>
+            <button class="ma-button ma-button--danger" id="clearAllBtn" type="button">Clear All Words</button>
           </div>
           <input id="importFile" class="ma-file-input" type="file" accept="application/json" hidden />
 
@@ -110,19 +144,19 @@
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel ma-card">
         <div class="panel-inner">
           <h2>Saved Words</h2>
           <p>Search through your bank, sort the list, and update English or notes whenever you want.</p>
 
           <div class="toolbar">
-            <div class="field">
-              <label for="searchInput">Search</label>
-              <input id="searchInput" type="text" name="wordbank_search" placeholder="Search kana, romaji, English, or notes" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
+            <div class="field ma-field">
+              <label class="ma-field__label" for="searchInput">Search</label>
+              <input class="ma-input" id="searchInput" type="text" name="wordbank_search" placeholder="Search kana, romaji, English, or notes" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
             </div>
-            <div class="field">
-              <label for="sortSelect">Sort</label>
-              <select id="sortSelect">
+            <div class="field ma-field">
+              <label class="ma-field__label" for="sortSelect">Sort</label>
+              <select class="ma-select" id="sortSelect">
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
                 <option value="kanaAZ">Kana A-Z</option>
@@ -132,9 +166,9 @@
                 <option value="updated">Recently updated</option>
               </select>
             </div>
-            <div class="field">
-              <label for="filterSelect">Filter</label>
-              <select id="filterSelect">
+            <div class="field ma-field">
+              <label class="ma-field__label" for="filterSelect">Filter</label>
+              <select class="ma-select" id="filterSelect">
                 <option value="all">All entries</option>
                 <option value="favorites">Favourites only</option>
                 <option value="missingEnglish">Missing English</option>
@@ -151,25 +185,31 @@
       </div>
     </section>
   </div>
-<script src="../assets/app/mode-atlas-toast.js"></script>
-<script src="../assets/app/mode-atlas-theme.js"></script>
-<script src="../assets/app/mode-atlas-display-mode.js"></script>
-<script src="../assets/app/mode-atlas-storage.js"></script>
-<script src="../assets/app/mode-atlas-save-repair.js"></script>
-<script src="../assets/app/mode-atlas-page-state.js"></script>
-<script src="../assets/app/mode-atlas-dev-console.js"></script>
-<script src="../assets/app/mode-atlas-pwa.js"></script>
-<script src="../assets/app/mode-atlas-about.js"></script>
-<script src="../assets/app/mode-atlas-loader.js"></script>
-<script src="../assets/app/mode-atlas-visit-flows.js"></script>
-<script src="../assets/app/mode-atlas-import-export.js"></script>
-<script src="../assets/achievements/mode-atlas-achievements-ui.js"></script>
-<script src="../firebase-config.js"></script>
-<script src="../cloud-sync.js"></script>
-<script src="../assets/ui/mode-atlas-profile-menu.js"></script>
-<script src="../assets/ui/mode-atlas-settings-menu.js"></script>
-<script src="../assets/ui/mode-atlas-profile-drawer-bindings.js"></script>
-<script src="../assets/pages/mode-atlas-wordbank-page.js"></script>
-<script src="../assets/app/mode-atlas-sounds.js"></script>
+<!-- MODE_ATLAS_BODY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-toast.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dialog.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-feedback.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-theme.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-display-mode.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-storage.assets-2.30.0.js" defer></script>
+<script src="../assets/pages/mode-atlas-wordbank-page.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-save-repair.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-page-state.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dev-console.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-pwa.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-about.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-visit-flows.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-import-export.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-date.assets-2.30.0.js" defer></script>
+<script src="../assets/data/mode-atlas-kana-data.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-kana-metrics.assets-2.30.0.js" defer></script>
+<script src="../assets/achievements/mode-atlas-achievements-ui.assets-2.30.0.js" defer></script>
+<script src="../firebase-config.assets-2.30.0.js" defer></script>
+<script src="../cloud-sync.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-menu.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-settings-menu.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-drawer-bindings.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-sounds.assets-2.30.0.js" defer></script>
+<!-- MODE_ATLAS_BODY_ASSETS_END -->
 </body>
 </html>

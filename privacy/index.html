@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="../assets/app/mode-atlas-version.js"></script>
-<script src="../assets/app/mode-atlas-head-bootstrap.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_START -->
+<script src="../assets/app/mode-atlas-version.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-legacy-sw-retirement.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-version-check.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-head-bootstrap.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_END -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Privacy Policy · Mode Atlas</title>
@@ -12,17 +16,47 @@
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
   <meta name="theme-color" content="#121a2b" />
   <meta name="description" content="Privacy Policy for Mode Atlas." />
-<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-polish.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-theme.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-home-page.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.css" />
+<!-- MODE_ATLAS_STYLE_ASSETS_START -->
+<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-theme.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-home-page.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-components.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-navigation.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.assets-2.30.0.css" />
+<!-- MODE_ATLAS_STYLE_ASSETS_END -->
 </head>
-<body><script src="../assets/app/mode-atlas-early-loader.js"></script><div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite"><div class="ma-loading-card"><div class="ma-loading-head"><div class="ma-loading-mark">学</div><div><div class="ma-loading-title">Mode Atlas</div><div class="ma-loading-sub">Preparing your study space…</div></div></div><div class="ma-skeleton"></div><div class="ma-skeleton"></div><div class="ma-skeleton short"></div></div></div>
-  <header class="topbar">
-    <a class="brand" href="../" aria-label="Mode Atlas home"><div class="brand-mark">あア</div><div class="brand-text"><div class="brand-name">Mode Atlas</div><div class="brand-sub">Study ecosystem</div></div></a>
-    <nav class="nav" aria-label="Primary navigation"><a class="nav-link" href="../">Home</a></nav>
-  </header>
+<body><!-- MODE_ATLAS_EARLY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-early-loader.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_EARLY_ASSETS_END --><!-- MODE_ATLAS_LOADER_START -->
+<div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite">
+  <div class="ma-loading-card">
+    <div class="ma-loading-head">
+      <div class="ma-loading-mark">学</div>
+      <div>
+        <div class="ma-loading-title">Mode Atlas</div>
+        <div class="ma-loading-sub">Preparing your study space…</div>
+      </div>
+    </div>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton short"></div>
+  </div>
+</div>
+<!-- MODE_ATLAS_LOADER_END -->
+<!-- MODE_ATLAS_NAV_START -->
+<nav class="ma-nav ma-nav--atlas" data-ma-navigation="shared" data-ma-page="privacy" aria-label="Mode Atlas navigation">
+  <a class="ma-nav__brand" href="/" aria-label="Mode Atlas home">
+    <span class="ma-nav__mark" aria-hidden="true">あア</span>
+    <span class="ma-nav__brand-copy">
+      <span class="ma-nav__kicker">Mode Atlas</span>
+      <span class="ma-nav__title">Privacy Policy</span>
+    </span>
+  </a>
+  <div class="ma-nav__content">
+    <div class="ma-nav__links"><a class="ma-nav__link" data-ma-nav-item="atlas" href="/">Atlas</a> <a class="ma-nav__link is-active" data-ma-nav-item="privacy" href="/privacy/" aria-current="page">Privacy</a> <a class="ma-nav__link" data-ma-nav-item="terms" href="/terms/">Terms</a></div>
+  </div>
+</nav>
+<!-- MODE_ATLAS_NAV_END -->
   <main class="shell">
     <section class="hero glass" aria-labelledby="privacyTitle">
       <div class="section-kicker">Legal</div>
@@ -30,17 +64,18 @@
       <p class="hero-line">This page is reserved for Mode Atlas privacy information.</p>
       <div class="about-card"><p>This page will include what data is stored, how account sync works, and how users can contact support.</p></div>
           <div class="hero-actions ma-actions-row">
-        <a class="nav-link" href="../?setup=1">Back to setup</a>
-        <a class="nav-link" href="../terms/">Terms of Use</a>
+        <a class="ma-button" href="/?setup=1">Back to setup</a>
+        <a class="ma-button" href="/terms/">Terms of Use</a>
       </div>
 </section>
-    <footer class="footer"><div><strong>Mode Atlas</strong> · Privacy Policy</div><div><a href="../terms/">Terms of Use</a> · <a href="mailto:support@mode-atlas.com">support@mode-atlas.com</a></div></footer>
+    <footer class="footer"><div><strong>Mode Atlas</strong> · Privacy Policy</div><div><a href="/terms/">Terms of Use</a> · <a href="mailto:support@mode-atlas.com">support@mode-atlas.com</a></div></footer>
   </main>
 
-<script src="../assets/app/mode-atlas-toast.js"></script>
-<script src="../assets/app/mode-atlas-theme.js"></script>
-<script src="../assets/app/mode-atlas-display-mode.js"></script>
-<script src="../assets/app/mode-atlas-page-state.js"></script>
-<script src="../assets/app/mode-atlas-loader.js"></script>
+<!-- MODE_ATLAS_BODY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-toast.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-theme.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-display-mode.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-page-state.assets-2.30.0.js" defer></script>
+<!-- MODE_ATLAS_BODY_ASSETS_END -->
 </body>
 </html>

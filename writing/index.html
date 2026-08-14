@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="../assets/app/mode-atlas-version.js"></script>
-<script src="../assets/app/mode-atlas-head-bootstrap.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_START -->
+<script src="../assets/app/mode-atlas-version.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-legacy-sw-retirement.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-version-check.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-head-bootstrap.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_HEAD_ASSETS_END -->
 
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -25,69 +29,89 @@
 <meta property="og:url" content="https://mode-atlas.app/writing/" />
   <meta property="og:image" content="https://mode-atlas.app/assets/social-preview.svg" />
 <meta name="twitter:card" content="summary" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.css">
-<link rel="stylesheet" href="../assets/css/mode-atlas-study-shared.css">
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-polish.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-dev-console.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-modifier-menu.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-theme.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-reverse-page.css"></head>
-<body class="ma-writing-page"><script src="../assets/app/mode-atlas-early-loader.js"></script><div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite"><div class="ma-loading-card"><div class="ma-loading-head"><div class="ma-loading-mark">学</div><div><div class="ma-loading-title">Mode Atlas</div><div class="ma-loading-sub">Preparing your study space…</div></div></div><div class="ma-skeleton"></div><div class="ma-skeleton"></div><div class="ma-skeleton short"></div></div></div>
-
-
-<nav class="study-nav" id="studyNav" aria-label="Study navigation">
-    <a class="study-brand" href="../" aria-label="Mode Atlas home">
-        <span class="study-mark writing-mark">書</span>
-        <span class="study-brand-text">
-            <span class="study-platform">Mode Atlas</span>
-            <span class="study-title">Kana Trainer · Writing Practice</span>
-        </span>
-    </a>
-    <div class="study-links">
-        <a class="study-link atlas" href="../">Atlas</a>
-        <a class="study-link kana" href="../kana/">Kana Home</a>
-        <a class="study-link reading" href="../reading/">Reading</a>
-        <a class="study-link writing active" href="./">Writing</a>
-        <a class="study-link results" href="../results/">Results</a>
+<!-- MODE_ATLAS_STYLE_ASSETS_START -->
+<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-study-shared.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-dev-console.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-modifier-menu.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-theme.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-components.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-navigation.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-reverse-page.assets-2.30.0.css" />
+<!-- MODE_ATLAS_STYLE_ASSETS_END --></head>
+<body class="ma-writing-page"><!-- MODE_ATLAS_EARLY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-early-loader.assets-2.30.0.js"></script>
+<!-- MODE_ATLAS_EARLY_ASSETS_END --><!-- MODE_ATLAS_LOADER_START -->
+<div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite">
+  <div class="ma-loading-card">
+    <div class="ma-loading-head">
+      <div class="ma-loading-mark">学</div>
+      <div>
+        <div class="ma-loading-title">Mode Atlas</div>
+        <div class="ma-loading-sub">Preparing your study space…</div>
+      </div>
     </div>
-    <div class="study-nav-actions">
-        <button class="study-nav-btn profile profile-trigger" id="studyProfileBtn" type="button">
-            <span class="profile-dot" id="studyTopProfileDot">M</span>
-            <span>Profile</span>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton"></div>
+    <div class="ma-skeleton short"></div>
+  </div>
+</div>
+<!-- MODE_ATLAS_LOADER_END -->
+<!-- MODE_ATLAS_NAV_START -->
+<nav class="ma-nav ma-nav--writing" id="studyNav" data-ma-navigation="shared" data-ma-page="writing" aria-label="Mode Atlas navigation">
+  <a class="ma-nav__brand" href="/" aria-label="Mode Atlas home">
+    <span class="ma-nav__mark" aria-hidden="true">書</span>
+    <span class="ma-nav__brand-copy">
+      <span class="ma-nav__kicker">Kana Trainer</span>
+      <span class="ma-nav__title">Writing Practice</span>
+    </span>
+  </a>
+  <div class="ma-nav__content">
+    <div class="ma-nav__links"><a class="ma-nav__link" data-ma-nav-item="atlas" href="/">Atlas</a> <a class="ma-nav__link" data-ma-nav-item="kana" href="/kana/">Kana</a> <a class="ma-nav__link" data-ma-nav-item="reading" href="/reading/">Reading</a> <a class="ma-nav__link is-active" data-ma-nav-item="writing" href="/writing/" aria-current="page">Writing</a> <a class="ma-nav__link" data-ma-nav-item="results" href="/results/">Results</a> <a class="ma-nav__link" data-ma-nav-item="wordbank" href="/wordbank/">Word Bank</a></div>
+      <div class="ma-nav__actions">
+        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
+          <span class="ma-nav__avatar" id="topProfileDot" aria-hidden="true">M</span>
+          <span class="ma-nav__action-label">Profile</span>
         </button>
-        <button class="study-nav-btn hide" id="studyNavHideBtn" type="button">Hide nav</button>
-    </div>
+        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="settingsDrawer" aria-label="Open settings" title="Settings">
+          <span class="ma-nav__settings-icon" aria-hidden="true">⚙</span>
+          <span class="ma-nav__action-label">Settings</span>
+        </button>
+        <button class="ma-nav__action ma-nav__action--quiet" id="studyNavHideBtn" type="button">Hide nav</button>
+      </div>
+  </div>
 </nav>
-<button class="study-nav-handle" id="studyNavShowBtn" type="button">Show nav</button>
-
-<div class="app-shell">
-    <div class="main">
+<button class="ma-nav-handle" id="studyNavShowBtn" type="button">Show navigation</button>
+<!-- MODE_ATLAS_NAV_END -->
+<!-- MODE_ATLAS_TRAINER_START -->
+<div class="app-shell ma-trainer-shell" data-ma-trainer-shell="shared" data-ma-trainer-mode="writing">
+    <div class="main ma-card ma-trainer-card">
         <div class="beta-badge writing-beta-badge">Experimental Feature <span class="beta-badge-muted">Beta</span></div>
         <h1>Writing Practice</h1>
         <div class="subline">Match the romaji prompt to the correct kana</div>
-        <div id="dailyBadge" class="daily-badge">Daily Challenge · First try sets today's official score</div>
+        <div id="dailyBadge" class="daily-badge">Writing Daily Challenge · First try sets today&#x27;s official score</div>
         <div id="testBadge" class="daily-badge test-badge-writing" hidden>Writing Test Mode · Full kana test run</div>
 
-        <div class="scoreline">
-            <div class="score-pill">Streak: <span id="streak">0</span></div>
-            <div class="score-pill">High Score: <span id="highScore">0</span></div>
-            <div class="score-pill" id="endlessTotalPill" hidden>Total: <span id="endlessTotal">0</span></div>
-            <div class="score-pill" id="endlessWrongPill" hidden>Incorrect: <span id="endlessWrong">0</span></div>
-            <div class="score-pill" id="trialTimerPill" hidden>Time Left: <span id="trialTimer">0</span></div>
-            <div class="score-pill" id="dailyProgressPill" hidden>Question: <span id="dailyProgress">0</span>/20</div>
-            <div class="score-pill" id="dailyCorrectPill" hidden>Correct: <span id="dailyCorrect">0</span></div>
-            <div class="score-pill" id="dailyWrongPill" hidden>Wrong: <span id="dailyWrong">0</span></div>
-            <div class="score-pill" id="dailyOfficialPill" hidden>Official: <span id="dailyOfficial">—</span></div>
-            <div class="score-pill" id="testQuestionPill" hidden>Question: <span id="testQuestion">0</span>/<span id="testTotal">0</span></div>
-            <div class="score-pill" id="testCorrectPill" hidden>Correct: <span id="testCorrect">0</span></div>
-            <div class="score-pill" id="testWrongPill" hidden>Wrong: <span id="testWrong">0</span></div>
+        <div class="scoreline" data-ma-trainer-scores="shared">
+            <div class="score-pill ma-pill ma-trainer-score">Streak: <span id="streak">0</span></div>
+            <div class="score-pill ma-pill ma-trainer-score">High Score: <span id="highScore">0</span></div>
+            <div class="score-pill ma-pill ma-trainer-score" id="endlessTotalPill" hidden>Total: <span id="endlessTotal">0</span></div>
+            <div class="score-pill ma-pill ma-trainer-score" id="endlessWrongPill" hidden>Incorrect: <span id="endlessWrong">0</span></div>
+            <div class="score-pill ma-pill ma-trainer-score" id="trialTimerPill" hidden>Time Left: <span id="trialTimer">0</span></div>
+            <div class="score-pill ma-pill ma-trainer-score" id="dailyProgressPill" hidden>Question: <span id="dailyProgress">0</span>/20</div>
+            <div class="score-pill ma-pill ma-trainer-score" id="dailyCorrectPill" hidden>Correct: <span id="dailyCorrect">0</span></div>
+            <div class="score-pill ma-pill ma-trainer-score" id="dailyWrongPill" hidden>Wrong: <span id="dailyWrong">0</span></div>
+            <div class="score-pill ma-pill ma-trainer-score" id="dailyOfficialPill" hidden>Official: <span id="dailyOfficial">—</span></div>
+            <div class="score-pill ma-pill ma-trainer-score" id="testQuestionPill" hidden>Question: <span id="testQuestion">0</span>/<span id="testTotal">0</span></div>
+            <div class="score-pill ma-pill ma-trainer-score" id="testCorrectPill" hidden>Correct: <span id="testCorrect">0</span></div>
+            <div class="score-pill ma-pill ma-trainer-score" id="testWrongPill" hidden>Wrong: <span id="testWrong">0</span></div>
         </div>
 
-        <div class="prompt-wrap">
+        <div class="prompt-wrap ma-trainer-prompt-wrap">
             <div id="prompt" class="prompt">—</div>
             <div id="hint" class="hint"></div>
             <div id="comboTierNotice" class="combo-tier-notice"></div>
@@ -95,193 +119,121 @@
 
         <div id="choiceGrid" class="choice-grid cols-2"></div>
 
-        <div class="keyboard-wrap" id="keyboardWrap" hidden>
-            <input id="input" type="text" placeholder="Type kana..." autocomplete="off" spellcheck="false" disabled />
+        <div class="keyboard-wrap ma-trainer-answer-wrap" id="keyboardWrap" hidden>
+            <input class="ma-input ma-trainer-input" id="input" type="text" placeholder="Type kana..." aria-label="Type the kana answer" autocomplete="off" spellcheck="false" disabled />
             <div class="keyboard-note">Keyboard mode is optional. Buttons are the default writing practice input method.</div>
         </div>
 
-        <div class="trial-config" id="trialConfig">
-            <div class="trial-box">
-                <label for="trialTime">Time (mins)</label>
-                <input id="trialTime" type="number" min="0.1" step="0.1" value="0.5" />
-            </div>
-            <div class="trial-box">
-                <label for="trialTarget">Target</label>
-                <input id="trialTarget" type="number" min="1" step="1" value="20" />
-            </div>
+        <div class="trial-config" id="trialConfig" hidden>
+            <div class="trial-box"><label for="trialTime">Time (mins)</label><input class="ma-input ma-trainer-input ma-trainer-input--number" id="trialTime" type="number" min="0.1" step="0.1" value="0.5" /></div>
+            <div class="trial-box"><label for="trialTarget">Target</label><input class="ma-input ma-trainer-input ma-trainer-input--number" id="trialTarget" type="number" min="1" step="1" value="20" /></div>
         </div>
 
-        <div class="trial-config" id="comboConfig">
-            <div class="trial-box">
-                <label>Kana Combos</label>
-                <div class="bottom-actions">
-                    <button class="btn" id="comboSameRowBtn" type="button">Same Row</button>
-                    <button class="btn" id="comboRandomBtn" type="button">Random</button>
-                </div>
-            </div>
+        <div class="trial-config" id="comboConfig" hidden>
+            <div class="trial-box"><label>Kana Combos</label><div class="bottom-actions">
+                <button class="btn ma-button ma-trainer-button" id="comboSameRowBtn" type="button">Same Row</button>
+                <button class="btn ma-button ma-trainer-button" id="comboRandomBtn" type="button">Random</button>
+            </div></div>
         </div>
 
-        <div class="start-wrap" id="startWrap">
-            <button class="btn btn-start" id="startBtn" type="button">Start</button>
-        </div>
-
+        <div class="start-wrap" id="startWrap"><button class="btn btn-start ma-button ma-button--accent ma-trainer-button" id="startBtn" type="button">Start</button></div>
         <div class="session-actions" id="sessionActions" hidden>
-            <button class="btn btn-secondary" id="skipKanaBtn" type="button">I don’t know</button>
-            <button class="btn btn-secondary" id="pauseSessionBtn" type="button">Pause</button>
-            <button class="btn btn-secondary" id="endSessionBtn" type="button">End Session</button>
+            <button class="btn btn-secondary ma-button ma-trainer-button" id="skipKanaBtn" type="button">I don’t know</button>
+            <button class="btn btn-secondary ma-button ma-trainer-button" id="pauseSessionBtn" type="button">Pause</button>
+            <button class="btn btn-secondary ma-button ma-trainer-button" id="endSessionBtn" type="button">End Session</button>
         </div>
-
-        <div id="gameOver" class="game-over" hidden>
-            <div class="game-over-title">Wrong</div>
-            <div id="gameOverAnswer" class="game-over-answer"></div>
-            <button class="btn" id="retryBtn" type="button" hidden>Try Again</button>
-        </div>
+        <div id="gameOver" class="game-over" hidden><div class="game-over-title">Wrong</div><div id="gameOverAnswer" class="game-over-answer"></div><button class="btn ma-button ma-trainer-button" id="retryBtn" type="button" hidden>Try Again</button></div>
     </div>
 
-    <div class="side-panel left-panel">
-        <div class="panel-header" id="scoresHeader">
-            <span>Scores</span>
-            <span id="scoresChevron">▼</span>
-        </div>
+    <div class="side-panel ma-card ma-card--flat ma-trainer-side-panel left-panel">
+        <div class="panel-header" id="scoresHeader"><span>Scores</span><span id="scoresChevron">▼</span></div>
         <div class="panel-content" id="scoresContent">
-            <div class="score-block">
+            <div class="score-block ma-card ma-card--flat ma-trainer-score-card">
                 <h3>Endless Best</h3>
                 <div class="score-row"><span>Total</span><span id="bestEndlessTotal">0</span></div>
                 <div class="score-row"><span>Correct</span><span id="bestEndlessCorrect">0</span></div>
                 <div class="score-row"><span>Wrong</span><span id="bestEndlessWrong">0</span></div>
             </div>
-
-            <div class="score-block">
+            <div class="score-block ma-card ma-card--flat ma-trainer-score-card">
                 <h3>Combo Kana Best</h3>
                 <div class="score-row"><span>Same Row</span><span id="comboSameRowBest">0</span></div>
                 <div class="score-row"><span>Random</span><span id="comboRandomBest">0</span></div>
             </div>
-
-            <div class="score-block">
+            <div class="score-block ma-card ma-card--flat ma-trainer-score-card">
                 <h3>Writing Daily Challenge</h3>
                 <div class="score-row"><span>Today</span><span id="dailyTodayScore">—</span></div>
                 <div class="score-row"><span>Attempts</span><span id="dailyTodayAttempts">0</span></div>
                 <div class="score-subtitle">Previous Days</div>
                 <div id="dailyHistoryList"></div>
             </div>
-
-            <div class="score-block">
-                <h3>Speed Run Top 3</h3>
-                <div id="speedRunTop3"></div>
-            </div>
-
-            <div class="score-block">
-                <h3>Time Trial Top 3</h3>
-                <div id="timeTrialTop3"></div>
-            </div>
+            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>Speed Run Top 3</h3><div id="speedRunTop3"></div></div>
+            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>Time Trial Top 3</h3><div id="timeTrialTop3"></div></div>
         </div>
     </div>
 
-    <div class="side-panel right-panel">
-        <div class="panel-header" id="statsHeader">
-            <span>Stats</span>
-            <span id="statsChevron">▼</span>
-        </div>
-        <div class="panel-content" id="statsContent">
-            <div id="heatmap" class="heatmap"></div>
-        </div>
+    <div class="side-panel ma-card ma-card--flat ma-trainer-side-panel right-panel">
+        <div class="panel-header" id="statsHeader"><span>Stats</span><span id="statsChevron">▼</span></div>
+        <div class="panel-content" id="statsContent"><div id="heatmap" class="heatmap"></div></div>
     </div>
 </div>
 
+<div id="popup" class="popup" hidden></div>
 
-<div id="popup" class="popup"></div>
-
-<div class="bottom-shell ma-modifiers-only">
-    <div class="tab-row">
-        <div class="tab-button" id="modifiersTab">Modifiers ▼</div>
-    </div>
-
+<div class="bottom-shell ma-modifiers-only" data-ma-trainer-modifiers="shared">
+    <div class="tab-row"><div class="tab-button" id="modifiersTab">Modifiers ▼</div></div>
     <div class="drawer-content" id="modifiersContent">
         <div class="options-stack">
-            <div>
-                <div class="section-title">Modes</div>
-                <div id="modifierOptions" class="button-grid"></div>
-            </div>
-
+            <div><div class="section-title">Modes</div><div id="modifierOptions" class="button-grid"></div></div>
             <div>
                 <div class="section-title">Answer Input</div>
                 <div class="button-grid tight">
-                    <button class="btn" id="buttonsModeBtn" type="button">Buttons</button>
-                    <button class="btn" id="keyboardModeBtn" type="button">Keyboard</button>
-                    <button class="btn" id="choice4Btn" type="button">4 Choices</button>
-                    <button class="btn" id="choice6Btn" type="button">6 Choices</button>
-                    <button class="btn" id="choice8Btn" type="button">8 Choices</button>
+                    <button class="btn ma-button ma-trainer-button" id="buttonsModeBtn" type="button">Buttons</button>
+                    <button class="btn ma-button ma-trainer-button" id="keyboardModeBtn" type="button">Keyboard</button>
+                    <button class="btn ma-button ma-trainer-button" id="choice4Btn" type="button">4 Choices</button>
+                    <button class="btn ma-button ma-trainer-button" id="choice6Btn" type="button">6 Choices</button>
+                    <button class="btn ma-button ma-trainer-button" id="choice8Btn" type="button">8 Choices</button>
                 </div>
             </div>
-
-            <div>
-                <div class="section-title">Hiragana Rows</div>
-                <div id="rowOptions" class="rows-grid"></div>
-            </div>
-
-            <div>
-                <div class="section-title">Katakana Rows</div>
-                <div id="katakanaRowOptions" class="rows-grid"></div>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<div class="modal-backdrop" id="sessionModalBackdrop">
-    <div class="modal">
-        <h2>Session Stats</h2>
-        <div class="modal-grid" id="sessionStatsGrid"></div>
-        <div class="session-list" id="sessionHardList" hidden></div>
-        <div class="session-list" id="sessionEasyList" hidden></div>
-        <div class="modal-actions">
-            <button class="btn" id="closeSessionModalBtn" type="button">Close</button>
+            <div><div class="section-title">Hiragana Rows</div><div id="rowOptions" class="rows-grid"></div></div>
+            <div><div class="section-title">Katakana Rows</div><div id="katakanaRowOptions" class="rows-grid"></div></div>
         </div>
     </div>
 </div>
-
-<div class="modal-backdrop" id="importModalBackdrop">
-    <div class="modal import-modal">
-        <h2>Import Save Data</h2>
-        <p class="ma-muted-copy">Paste exported JSON below, or use the file picker.</p>
-        <textarea id="importTextarea" placeholder="Paste save JSON here..."></textarea>
-            <input class="file-input ma-file-input" id="importFile" type="file" accept=".json,application/json" hidden />
-        <div class="modal-actions">
-            <button class="btn" id="importFileBtn" type="button">Choose File</button>
-            <button class="btn btn-secondary" id="confirmImportBtn" type="button">Import</button>
-            <button class="btn" id="closeImportModalBtn" type="button">Cancel</button>
-        </div>
-    </div>
-</div>
-<script src="../assets/app/mode-atlas-toast.js"></script>
-<script src="../assets/app/mode-atlas-theme.js"></script>
-<script src="../assets/app/mode-atlas-display-mode.js"></script>
-<script src="../assets/app/mode-atlas-storage.js"></script>
-<script src="../assets/app/mode-atlas-save-repair.js"></script>
-<script src="../assets/app/mode-atlas-page-state.js"></script>
-<script src="../assets/app/mode-atlas-dev-console.js"></script>
-<script src="../assets/app/mode-atlas-pwa.js"></script>
-<script src="../assets/app/mode-atlas-about.js"></script>
-<script src="../assets/app/mode-atlas-loader.js"></script>
-<script src="../assets/app/mode-atlas-visit-flows.js"></script>
-<script src="../assets/app/mode-atlas-import-export.js"></script>
-<script src="../assets/achievements/mode-atlas-achievements-ui.js"></script>
-<script src="../assets/app/mode-atlas-presets.js"></script>
-<script src="../firebase-config.js"></script>
-<script src="../cloud-sync.js"></script>
-<script src="../assets/ui/mode-atlas-profile-menu.js"></script>
-<script src="../assets/ui/mode-atlas-settings-menu.js"></script>
-<script src="../assets/ui/mode-atlas-profile-drawer-bindings.js"></script>
-<script src="../assets/ui/mode-atlas-study-nav-hidden.js"></script>
-<script src="../assets/data/mode-atlas-kana-data.js"></script>
-<script src="../assets/trainer/mode-atlas-trainer-core.js"></script>
-<script src="../assets/trainer/mode-atlas-trainer-shared.js"></script>
-<script src="../assets/results/mode-atlas-results-storage.js"></script>
-<script src="../assets/pages/mode-atlas-reverse-page.js"></script>
-<script src="../assets/trainer/mode-atlas-input-controls.js"></script>
-<script src="../assets/trainer/mode-atlas-modifier-menu.js"></script>
-<script src="../assets/trainer/mode-atlas-session-controls.js"></script>
-<script src="../assets/trainer/mode-atlas-trainer-controls.js"></script>
-<script src="../assets/app/mode-atlas-sounds.js"></script>
+<!-- MODE_ATLAS_TRAINER_END -->
+<!-- MODE_ATLAS_BODY_ASSETS_START -->
+<script src="../assets/app/mode-atlas-toast.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dialog.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-feedback.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-theme.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-display-mode.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-storage.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-save-repair.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-page-state.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dev-console.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-pwa.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-about.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-visit-flows.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-import-export.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-date.assets-2.30.0.js" defer></script>
+<script src="../assets/data/mode-atlas-kana-data.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-kana-metrics.assets-2.30.0.js" defer></script>
+<script src="../assets/achievements/mode-atlas-achievements-ui.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-presets.assets-2.30.0.js" defer></script>
+<script src="../firebase-config.assets-2.30.0.js" defer></script>
+<script src="../cloud-sync.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-menu.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-settings-menu.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-drawer-bindings.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-study-nav-hidden.assets-2.30.0.js" defer></script>
+<script src="../assets/trainer/mode-atlas-trainer-core.assets-2.30.0.js" defer></script>
+<script src="../assets/trainer/mode-atlas-trainer-shared.assets-2.30.0.js" defer></script>
+<script src="../assets/results/mode-atlas-results-storage.assets-2.30.0.js" defer></script>
+<script src="../assets/pages/mode-atlas-reverse-page.assets-2.30.0.js" defer></script>
+<script src="../assets/trainer/mode-atlas-input-controls.assets-2.30.0.js" defer></script>
+<script src="../assets/trainer/mode-atlas-modifier-menu.assets-2.30.0.js" defer></script>
+<script src="../assets/trainer/mode-atlas-session-controls.assets-2.30.0.js" defer></script>
+<script src="../assets/trainer/mode-atlas-trainer-controls.assets-2.30.0.js" defer></script>
+<script src="../assets/app/mode-atlas-sounds.assets-2.30.0.js" defer></script>
+<!-- MODE_ATLAS_BODY_ASSETS_END -->
 </body>
 </html>

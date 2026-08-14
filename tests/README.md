@@ -38,3 +38,21 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:smoke
 ```
 
 On normal local machines, prefer the standard Playwright browser install.
+
+## Backend ownership tests
+
+These do not need a browser or Firebase connection:
+
+```bash
+npm run test:backend
+```
+
+They exercise the localStorage fallback, idempotent cloud UI binding, stale-account hydration protection, and serialized/coalesced Firestore sync ownership.
+
+## Release validation
+
+```bash
+npm run release:check
+```
+
+This rebuilds revisioned assets, runs the static ownership/file-structure audit, and runs both backend and frontend regression tests.
