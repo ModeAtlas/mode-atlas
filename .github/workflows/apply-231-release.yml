@@ -22,7 +22,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .mode-atlas-release/patch-*.b64 | base64 -d | gunzip > /tmp/mode-atlas-2.31.patch
+          cat \
+            .mode-atlas-release/patch-00.b64 \
+            .mode-atlas-release/patch-01.b64 \
+            .mode-atlas-release/patch-02.b64 \
+            .mode-atlas-release/patch-03a.b64 \
+            .mode-atlas-release/patch-03b.b64 \
+            .mode-atlas-release/patch-04.b64 \
+            | base64 -d | gunzip > /tmp/mode-atlas-2.31.patch
           echo "427790f4f2fdf5985056fb761cbe6df15c75074890668fc6af73b0322b48e4bc  /tmp/mode-atlas-2.31.patch" | sha256sum -c -
           git apply --check /tmp/mode-atlas-2.31.patch
           git apply /tmp/mode-atlas-2.31.patch
