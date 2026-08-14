@@ -118,8 +118,10 @@ test('Profile and Settings drawers consume shared component primitives without m
   assert.match(profile, /ma-button/);
   assert.match(settings, /ma-button/);
   assert.match(settings, /ma-status\s+ma-settings-status/);
-  assert.equal(fs.existsSync(path.join(ROOT, 'assets/pages/mode-atlas-home-page.js')), false, 'Atlas must not keep a second profile/cloud binding owner');
-  assert.doesNotMatch(read('index.html'), /mode-atlas-home-page\.assets-[^\"']+\.js/);
+  const home = read('assets/pages/mode-atlas-home-page.js');
+  assert.equal(fs.existsSync(path.join(ROOT, 'assets/pages/mode-atlas-home-page.js')), true, 'Atlas returning-user UI should have one page controller');
+  assert.match(read('index.html'), /mode-atlas-home-page\.assets-[^\"']+\.js/);
+  assert.doesNotMatch(home, /ModeAtlasProfile|KanaCloudSync|profileDrawer|settingsDrawer/, 'Atlas page controller must not duplicate profile, settings, or cloud ownership');
 });
 
 class ElementMock {
@@ -215,8 +217,9 @@ test('shared shell regression guards keep nav spacing, sound controls, and train
   assert.match(resultsCss, /padding:\s*0 22px 22px;/, 'Results top frame padding must not stack above shared nav');
   assert.match(studyCss, /body\.ma-reading-page,[\s\S]*?body\.ma-writing-page\{[\s\S]*?padding:0 24px 24px;/,
     'Reading/Writing top frame padding must be owned by the shared trainer stylesheet');
-  assert.match(wordbankCss, /\.wrap\s*\{[\s\S]*?margin:\s*0 auto 56px;/, 'Word Bank wrapper must not add top spacing above shared nav');
-  assert.doesNotMatch(wordbankCss, /\.wrap\s*\{[^}]*margin-top\s*:/, 'Word Bank responsive wrappers must not reintroduce top spacing');
+  assert.match(read('wordbank/index.html'), /class="wrap ma-page-frame"/, 'Word Bank must use the shared page frame');
+  assert.match(wordbankCss, /\.ma-wordbank-page \.wrap\s*\{[\s\S]*?margin-bottom:\s*56px;/, 'Word Bank wrapper may own bottom rhythm only');
+  assert.doesNotMatch(wordbankCss, /\.ma-wordbank-page \.wrap\s*\{[^}]*margin-top\s*:/, 'Word Bank wrapper must not reintroduce top spacing');
 
   assert.match(navCss, /\.ma-nav-handle\s*\{[\s\S]*?top:auto;[\s\S]*?bottom:max\(18px,calc\(env\(safe-area-inset-bottom,0px\) \+ 8px\)\);[\s\S]*?z-index:10020;/,
     'Show navigation handle must stay bottom-accessible on phones and above the modifiers layer');
@@ -507,6 +510,7 @@ function runWordBankAddHarness({ saveSucceeds = true } = {}) {
   const document = {
     getElementById(id) { return elements[id] || null; },
     createElement(tag) { return new WordBankElementMock(tag); },
+    createElementNS(_namespace, tag) { return new WordBankElementMock(tag); },
     createDocumentFragment() { return new WordBankElementMock('fragment'); },
     querySelector() { return null; },
     querySelectorAll() { return []; },
@@ -576,7 +580,7 @@ test('shared drawer, card, and form primitives replace page-local surface owners
   const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
 
   for (const marker of ['.ma-card{', '.ma-field{', '.ma-input,.ma-select,.ma-textarea{', '.ma-check{']) {
-    assert.match(components, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `missing shared primitive ${marker}`);
+    assert.ok(components.includes(marker), `missing 2.31 shared primitive ${marker}`);
   }
   assert.match(profile, /class="ma-drawer ma-shared-profile-drawer"/);
   assert.match(settings, /class="ma-drawer ma-shared-settings-drawer"/);
@@ -586,8 +590,8 @@ test('shared drawer, card, and form primitives replace page-local surface owners
 
   assert.match(wordbankHtml, /class="ma-input" id="kanaInput"/);
   assert.match(wordbankHtml, /class="ma-select" id="sortSelect"/);
-  assert.match(wordbankHtml, /class="stat ma-stat ma-card ma-card--soft"/);
-  assert.match(wordbankHtml, /class="panel ma-card"/);
+  assert.match(wordbankHtml, /class="stat ma-stat ma-card ma-card--flat"/);
+  assert.match(wordbankHtml, /class="panel [^"]*ma-card"/);
   assert.match(wordbankJs, /field-small ma-field/);
   assert.match(wordbankJs, /input\.className = "ma-input"/);
   assert.match(wordbankJs, /notes\.className = "ma-textarea"/);
@@ -798,7 +802,7 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
 
   for (const marker of ['.ma-section-head{', '.ma-action-row{', '.ma-kicker{', '.ma-stat-grid{', '.ma-stat{', '.ma-empty-state{']) {
-    assert.match(components, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `missing shared page primitive ${marker}`);
+    assert.ok(components.includes(marker), `missing 2.31 shared primitive ${marker}`);
   }
   assert.match(components, /min-height:var\(--ma-button-min-height,var\(--ma-control-height\)\)/);
   assert.match(components, /border-radius:var\(--ma-button-radius,var\(--ma-radius-control\)\)/);
@@ -826,7 +830,9 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
     'dead Results summary-row surface owner should remain removed');
 
   assert.match(wordbankHtml, /stats ma-stat-grid/);
-  assert.match(wordbankHtml, /pill ma-pill/);
+  assert.match(wordbankHtml, /hero ma-card ma-page-hero ma-page-intro/);
+  assert.match(wordbankHtml, /ma-toolbar-shared ma-toolbar-shared--sticky/);
+  assert.match(wordbankHtml, /<details class="wordbank-tools">/);
   assert.match(wordbankJs, /empty ma-card ma-empty-state/);
   const wordbankStatBlock = wordbankCss.match(/\.stats?\s*\{([\s\S]*?)\n\}/)?.[1] || '';
   assert.doesNotMatch(wordbankStatBlock, /(^|\n)\s*border\s*:/,
@@ -834,6 +840,58 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   const wordbankEmptyBlock = wordbankCss.match(/\.empty\s*\{([\s\S]*?)\n\}/)?.[1] || '';
   assert.doesNotMatch(wordbankEmptyBlock, /(^|\n)\s*border\s*:/,
     'Word Bank empty state should configure variables instead of re-owning its border');
+});
+
+test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and collection contracts', () => {
+  const icons = read('assets/mode-atlas-icons.svg');
+  const components = read('assets/css/mode-atlas-components.css');
+  const profile = read('assets/ui/mode-atlas-profile-menu.js');
+  const settings = read('assets/ui/mode-atlas-settings-menu.js');
+  const atlas = read('index.html');
+  const kana = read('kana/index.html');
+  const reading = read('reading/index.html');
+  const writing = read('writing/index.html');
+  const results = read('results/index.html');
+  const resultsJs = read('assets/pages/mode-atlas-test-page.js');
+  const wordbank = read('wordbank/index.html');
+  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
+
+  for (const id of ['icon-settings','icon-user','icon-focus','icon-search','icon-star','icon-edit','icon-delete','icon-chart']) {
+    assert.match(icons, new RegExp(`id="${id}"`), `missing shared icon ${id}`);
+  }
+  for (const marker of ['.ma-page-intro{','.ma-setting-row{','.ma-status-chip{','.ma-progress{','.ma-skeleton-block,','.ma-trend{']) {
+    assert.ok(components.includes(marker), `missing 2.31 shared primitive ${marker}`);
+  }
+
+  assert.doesNotMatch(profile, /Branches|data-ma-nav-item|\/reading\/|\/writing\//, 'Profile must not duplicate navigation');
+  assert.match(settings, /Preferences/);
+  assert.match(settings, /Data & app/);
+  assert.match(settings, /ma-setting-row/);
+
+  assert.match(atlas, /id="homeContinueCard"/);
+  assert.match(atlas, /Reading Comprehension/);
+  assert.match(kana, /id="kanaContinueAction"/);
+  assert.match(kana, /ma-skeleton-block/);
+
+  for (const trainer of [reading, writing]) {
+    assert.match(trainer, /Practice setup ▼/);
+    assert.match(trainer, /id="sessionProgressBar"/);
+    assert.match(trainer, />Focus mode<|Focus mode<\/span>/);
+    assert.match(trainer, /Exit focus mode/);
+    assert.doesNotMatch(trainer, />Hide nav<|>Show navigation<|>Modifiers ▼</);
+  }
+
+  assert.match(results, /id="resultsGuidanceCard"/);
+  assert.match(results, /id="resultsTrend"/);
+  assert.match(resultsJs, /function renderGuidance\(/);
+  assert.match(resultsJs, /function renderTrend\(/);
+
+  const libraryIndex = wordbank.indexOf('class="panel library-panel ma-card"');
+  const addIndex = wordbank.indexOf('id="wordBankAddPanel"');
+  assert.ok(libraryIndex >= 0 && addIndex > libraryIndex, 'Word Bank collection must precede quick capture in document order');
+  assert.match(wordbank, /id="wordBankAddJumpBtn"/);
+  assert.match(wordbank, /<details class="wordbank-tools">/);
+  assert.match(wordbankJs, /createIcon\(entry\.favorite \? "star-filled" : "star"\)/);
 });
 
 test('UI foundation keeps global geometry, responsive layout, themes, and page frames under shared ownership', () => {

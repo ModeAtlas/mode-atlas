@@ -68,7 +68,7 @@ body::before {
     gap: 8px;
     align-items: center;
     margin-bottom: 12px;
-    color: #d7f8e5;
+    color: var(--ma-kana);
     font-weight: 950;
     letter-spacing: .13em;
     text-transform: uppercase;
@@ -81,21 +81,21 @@ body::before {
     width: 42px;
     height: 42px;
     border-radius: 16px;
-    color: #061018;
-    background: linear-gradient(135deg, rgba(117,227,168,.95), rgba(125,181,255,.95));
+    color: var(--ma-app-bg);
+    background: linear-gradient(135deg,var(--ma-reading),var(--ma-writing));
     letter-spacing: -.12em;
     font-size: 1rem;
 }
 
 .kana-hub-hero,
 .kana-section {
-    --ma-card-radius:34px;
-    --ma-card-border:rgba(255,255,255,0.10);
+    --ma-card-radius:var(--ma-page-card-radius);
+    --ma-card-border:var(--ma-border);
     --ma-card-bg:
-        radial-gradient(circle at 12% 0%, rgba(103,215,139,0.12), transparent 34%),
-        radial-gradient(circle at 88% 5%, rgba(102,168,255,0.12), transparent 36%),
-        linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.024));
-    --ma-card-shadow:0 28px 80px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05);
+        radial-gradient(circle at 12% 0%,color-mix(in srgb,var(--ma-reading) 8%,transparent),transparent 36%),
+        radial-gradient(circle at 88% 5%,color-mix(in srgb,var(--ma-writing) 8%,transparent),transparent 38%),
+        var(--ma-surface);
+    --ma-card-shadow:var(--ma-shadow-soft);
     position: relative;
     overflow: hidden;
 }
@@ -141,10 +141,10 @@ body::before {
 .kana-ghost-action,
 .kana-map-action,
 .kana-inline-btn {
-    --ma-button-bg:rgba(255,255,255,0.055);
-    --ma-button-bg-hover:rgba(255,255,255,0.055);
-    --ma-button-border:rgba(255,255,255,0.12);
-    --ma-button-border-hover:rgba(255,255,255,0.24);
+    --ma-button-bg:var(--ma-control);
+    --ma-button-bg-hover:var(--ma-control-hover);
+    --ma-button-border:var(--ma-border);
+    --ma-button-border-hover:var(--ma-border-strong);
     --ma-button-hover-transform:translateY(-2px);
     --ma-button-color:var(--ma-text, #f8fbff);
     --ma-button-radius:999px;
@@ -157,38 +157,43 @@ body::before {
 .kana-primary-action {
     flex: 1 1 300px;
     max-width: 440px;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    min-width: min(100%, 270px);
-    --ma-button-border:rgba(117,227,168,0.34);
-    --ma-button-bg:linear-gradient(135deg, rgba(28,91,58,0.58), rgba(45,87,122,0.48));
-    --ma-button-bg-hover:linear-gradient(135deg, rgba(28,91,58,0.58), rgba(45,87,122,0.48));
-    --ma-button-padding:11px 20px;
+    flex-direction:row;
+    justify-content:flex-start;
+    align-items:center;
+    text-align:left;
+    min-width:min(100%,270px);
+    --ma-button-border:color-mix(in srgb,var(--ma-kana) 46%,var(--ma-border));
+    --ma-button-bg:linear-gradient(135deg,color-mix(in srgb,var(--ma-kana) 20%,var(--ma-card-2)),color-mix(in srgb,var(--ma-reading) 13%,var(--ma-card-3)));
+    --ma-button-bg-hover:linear-gradient(135deg,color-mix(in srgb,var(--ma-kana) 27%,var(--ma-card-2)),color-mix(in srgb,var(--ma-reading) 18%,var(--ma-card-3)));
+    --ma-button-padding:12px 18px;
+    --ma-button-min-height:58px;
 }
 
+.kana-primary-action__copy{display:grid;gap:3px;min-width:0;}
+.kana-primary-action__copy > span{font-weight:900;}
 .kana-primary-action strong {
-    font-size: .82rem;
-    color: #bcebd0;
+    font-size:.78rem;
+    color:var(--ma-text-soft);
+    font-weight:700;
 }
 
 .kana-action.reading,
 .kana-inline-btn[href*="reading"] {
-    --ma-button-border:rgba(103,215,139,0.34);
-    --ma-button-bg:rgba(103,215,139,0.10);
-    --ma-button-bg-hover:rgba(103,215,139,0.10);
+    --ma-button-border:color-mix(in srgb,var(--ma-reading) 34%,var(--ma-border));
+    --ma-button-bg:color-mix(in srgb,var(--ma-reading) 10%,var(--ma-card-3));
+    --ma-button-bg-hover:color-mix(in srgb,var(--ma-reading) 15%,var(--ma-card-3));
 }
 
 .kana-action.writing {
-    --ma-button-border:rgba(102,168,255,0.34);
-    --ma-button-bg:rgba(102,168,255,0.11);
-    --ma-button-bg-hover:rgba(102,168,255,0.11);
+    --ma-button-border:color-mix(in srgb,var(--ma-writing) 34%,var(--ma-border));
+    --ma-button-bg:color-mix(in srgb,var(--ma-writing) 10%,var(--ma-card-3));
+    --ma-button-bg-hover:color-mix(in srgb,var(--ma-writing) 15%,var(--ma-card-3));
 }
 
 .kana-action.results {
-    --ma-button-border:rgba(255,255,255,0.18);
-    --ma-button-bg:rgba(255,255,255,0.075);
-    --ma-button-bg-hover:rgba(255,255,255,0.075);
+    --ma-button-border:color-mix(in srgb,var(--ma-results) 32%,var(--ma-border));
+    --ma-button-bg:color-mix(in srgb,var(--ma-results) 8%,var(--ma-card-3));
+    --ma-button-bg-hover:color-mix(in srgb,var(--ma-results) 13%,var(--ma-card-3));
 }
 
 .kana-hero-secondary-actions .kana-action {
@@ -205,16 +210,16 @@ body::before {
 .kana-map-action:hover,
 .kana-inline-btn:hover,
 .kana-next-card.primary:hover {
-    box-shadow:0 16px 34px rgba(0,0,0,0.28);
+    box-shadow:var(--ma-shadow-control);
 }
 .kana-next-card.primary:hover { transform:translateY(-2px); }
 
 .kana-today-card {
-    --ma-card-border:rgba(255,255,255,0.10);
-    --ma-card-radius:28px;
+    --ma-card-border:var(--ma-border);
+    --ma-card-radius:var(--ma-radius-lg);
     --ma-card-bg:
-        radial-gradient(circle at 100% 0%, rgba(125,181,255,0.18), transparent 38%),
-        rgba(255,255,255,0.045);
+        radial-gradient(circle at 100% 0%,color-mix(in srgb,var(--ma-writing) 13%,transparent),transparent 40%),
+        var(--ma-surface-inset);
     min-height: 100%;
     padding: clamp(18px, 2.4vw, 28px);
     display: grid;
@@ -281,7 +286,7 @@ body::before {
 
 .kana-next-grid {
     display: grid;
-    grid-template-columns: 1.2fr .9fr .9fr;
+    grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr) minmax(0,.8fr);
     gap: 14px;
 }
 
@@ -290,9 +295,10 @@ body::before {
 .kana-record-card,
 .kana-preset-card,
 .kana-accuracy-card {
-    --ma-card-radius:24px;
-    --ma-card-border:rgba(255,255,255,0.09);
-    --ma-card-bg:rgba(255,255,255,0.045);
+    --ma-card-radius:var(--ma-radius-card);
+    --ma-card-border:var(--ma-border);
+    --ma-card-bg:var(--ma-surface-inset);
+    --ma-card-shadow:none;
     padding:18px;
 }
 
@@ -306,17 +312,17 @@ body::before {
 }
 
 .kana-next-card.primary {
-    --ma-card-border:rgba(117,227,168,0.30);
+    --ma-card-border:color-mix(in srgb,var(--ma-reading) 34%,var(--ma-border));
     --ma-card-bg:
-        radial-gradient(circle at 15% 0%, rgba(117,227,168,0.18), transparent 42%),
-        rgba(255,255,255,0.055);
+        radial-gradient(circle at 15% 0%,color-mix(in srgb,var(--ma-reading) 15%,transparent),transparent 44%),
+        var(--ma-surface-soft);
 }
 
 .kana-next-card.primary.writing {
-    --ma-card-border:rgba(102,168,255,0.30);
+    --ma-card-border:color-mix(in srgb,var(--ma-writing) 34%,var(--ma-border));
     --ma-card-bg:
-        radial-gradient(circle at 15% 0%, rgba(102,168,255,0.18), transparent 42%),
-        rgba(255,255,255,0.055);
+        radial-gradient(circle at 15% 0%,color-mix(in srgb,var(--ma-writing) 15%,transparent),transparent 44%),
+        var(--ma-surface-soft);
 }
 
 .kana-next-card strong {
@@ -332,7 +338,7 @@ body::before {
 }
 
 .kana-next-card em {
-    color: #c8f7dc;
+    color: var(--ma-reading);
     font-style: normal;
     font-weight: 950;
 }
@@ -351,9 +357,9 @@ body::before {
 }
 
 .kana-stage-card {
-    --ma-card-border:rgba(255,255,255,0.10);
-    --ma-card-radius:24px;
-    --ma-card-bg:rgba(255,255,255,0.045);
+    --ma-card-border:var(--ma-border);
+    --ma-card-radius:var(--ma-radius-card);
+    --ma-card-bg:var(--ma-surface-inset);
     appearance:none;
     text-align:left;
     color:inherit;
@@ -382,9 +388,9 @@ body::before {
     display: block;
     height: 10px;
     border-radius: 999px;
-    background: rgba(255,255,255,0.08);
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.08);
+    background:color-mix(in srgb,var(--ma-border) 72%,transparent);
+    overflow:hidden;
+    border:1px solid var(--ma-border);
 }
 
 .kana-stage-card i b,
@@ -393,7 +399,7 @@ body::before {
     height: 100%;
     width: var(--ma-progress, 0%);
     border-radius: inherit;
-    background: linear-gradient(90deg, #75e3a8, #7db5ff);
+    background:linear-gradient(90deg,var(--ma-reading),var(--ma-writing));
 }
 
 .kana-stage-card.new { --ma-card-border:rgba(148,163,184,0.18); }
@@ -492,7 +498,7 @@ body::before {
 }
 
 .kana-preset-card span {
-    color: #fff;
+    color: var(--ma-text-strong);
     font-size: clamp(.95rem, 1.02vw, 1.05rem);
     font-weight: 900;
     white-space: nowrap;
@@ -502,7 +508,7 @@ body::before {
     display: block;
     margin-top: 10px;
     font-style: normal;
-    color: #cbd5e1;
+    color: var(--ma-muted);
     font-weight: 950;
     text-transform: uppercase;
     font-size: clamp(.82rem, .9vw, .92rem);

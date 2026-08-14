@@ -91,6 +91,14 @@ const DETAIL_TITLE = document.getElementById("detailTitle");
 const DETAIL_SUB = document.getElementById("detailSub");
 const DETAIL_METRICS = document.getElementById("detailMetrics");
 const TEST_HEATMAP = document.getElementById("testHeatmap");
+const RESULTS_GUIDANCE_CARD = document.getElementById("resultsGuidanceCard");
+const RESULTS_GUIDANCE_TITLE = document.getElementById("resultsGuidanceTitle");
+const RESULTS_GUIDANCE_TEXT = document.getElementById("resultsGuidanceText");
+const RESULTS_GUIDANCE_KANA = document.getElementById("resultsGuidanceKana");
+const RESULTS_PRACTICE_ACTION = document.getElementById("resultsPracticeAction");
+const RESULTS_TREND = document.getElementById("resultsTrend");
+const RESULTS_TREND_SUMMARY = document.getElementById("resultsTrendSummary");
+const RESULTS_TREND_NOTE = document.getElementById("resultsTrendNote");
 
 
 let DEBUG_PANEL = null;
@@ -388,8 +396,116 @@ function renderHero() {
     const testsOnly = STORED_RESULTS.filter(item => item.type !== "average");
     const best = testsOnly.length ? testsOnly.reduce((max, item) => Math.max(max, Number(item.overallScore || 0)), 0) : 0;
 
-    if (HERO_STORED_TESTS) HERO_STORED_TESTS.textContent = String(testsOnly.length);
-    if (HERO_BEST_SCORE) HERO_BEST_SCORE.textContent = testsOnly.length ? `${best}%` : "—";
+    if (HERO_STORED_TESTS) {
+        HERO_STORED_TESTS.textContent = String(testsOnly.length);
+        HERO_STORED_TESTS.classList.remove("ma-skeleton-text");
+    }
+    if (HERO_BEST_SCORE) {
+        HERO_BEST_SCORE.textContent = testsOnly.length ? `${best}%` : "—";
+        HERO_BEST_SCORE.classList.remove("ma-skeleton-text");
+    }
+}
+
+function getWeakKana(result, limit = 5) {
+    if (!result?.kana) return [];
+    return Object.entries(result.kana)
+        .map(([kana, record]) => {
+            const correct = Number(record?.correct || 0);
+            const wrong = Number(record?.wrong || 0);
+            const attempts = correct + wrong;
+            const accuracy = attempts ? Math.round((correct / attempts) * 100) : 0;
+            const avgMs = Number(record?.avgMs || 0);
+            return { kana, attempts, accuracy, avgMs };
+        })
+        .filter(item => item.attempts > 0)
+        .sort((a, b) => (a.accuracy - b.accuracy) || (b.avgMs - a.avgMs) || (a.attempts - b.attempts))
+        .slice(0, limit);
+}
+
+function getWeakestRow(result) {
+    if (!result) return null;
+    const rows = computeRowPerformance(result, REGULAR_ROW_GROUPS, false).rows
+        .filter(row => row.total > 0 && !row.isOff);
+    return rows.length
+        ? [...rows].sort((a, b) => (a.accuracy - b.accuracy) || (b.avgMs - a.avgMs) || (b.wrong - a.wrong))[0]
+        : null;
+}
+
+function renderGuidance(result) {
+    if (!RESULTS_GUIDANCE_TITLE || !RESULTS_GUIDANCE_TEXT || !RESULTS_GUIDANCE_KANA || !RESULTS_PRACTICE_ACTION) return;
+    RESULTS_GUIDANCE_TEXT.classList.remove("ma-skeleton-block");
+    RESULTS_GUIDANCE_KANA.replaceChildren();
+
+    if (!result) {
+        RESULTS_GUIDANCE_CARD?.classList.remove("reading", "writing");
+        RESULTS_GUIDANCE_TITLE.textContent = "Complete a formal test";
+        RESULTS_GUIDANCE_TEXT.textContent = "A Reading or Writing Test Mode result gives Mode Atlas enough information to recommend a focused review.";
+        RESULTS_PRACTICE_ACTION.href = "/reading/";
+        RESULTS_PRACTICE_ACTION.querySelector("span").textContent = "Start a Reading test";
+        return;
+    }
+
+    const mode = result.mode === "writing" ? "writing" : "reading";
+    const weakKana = getWeakKana(result, 5);
+    const weakRow = getWeakestRow(result);
+    RESULTS_GUIDANCE_CARD?.classList.toggle("reading", mode === "reading");
+    RESULTS_GUIDANCE_CARD?.classList.toggle("writing", mode === "writing");
+
+    if (weakKana.length) {
+        RESULTS_GUIDANCE_TITLE.textContent = weakRow ? `Review the ${weakRow.key} row` : `Review your weakest ${mode} kana`;
+        RESULTS_GUIDANCE_TEXT.textContent = weakRow
+            ? `${weakRow.key} is the weakest regular row in this ${result.type === "average" ? "overall summary" : "result"} at ${weakRow.accuracy}% accuracy${weakRow.avgMs ? ` and ${formatDuration(weakRow.avgMs)} average response time` : ""}.`
+            : `These kana currently have the weakest combination of accuracy and response time in the selected ${mode} result.`;
+        weakKana.forEach(item => {
+            const chip = createResultEl("span", "results-focus-kana__item ma-pill", item.kana);
+            chip.title = `${item.accuracy}% accuracy${item.avgMs ? ` · ${formatDuration(item.avgMs)}` : ""}`;
+            RESULTS_GUIDANCE_KANA.append(chip);
+        });
+    } else {
+        RESULTS_GUIDANCE_TITLE.textContent = `Build more ${mode} history`;
+        RESULTS_GUIDANCE_TEXT.textContent = "There is not enough kana-level history in this result to rank a focused review yet.";
+    }
+
+    RESULTS_PRACTICE_ACTION.href = `/${mode}/?focusWeak=1`;
+    RESULTS_PRACTICE_ACTION.querySelector("span").textContent = `Practice ${mode === "reading" ? "Reading" : "Writing"} weak kana`;
+}
+
+function renderTrend() {
+    if (!RESULTS_TREND || !RESULTS_TREND_SUMMARY || !RESULTS_TREND_NOTE) return;
+    const tests = STORED_RESULTS
+        .filter(item => item.type !== "average")
+        .sort((a, b) => parseStoredResultTimestamp(a) - parseStoredResultTimestamp(b))
+        .slice(-8);
+
+    if (!tests.length) {
+        RESULTS_TREND.replaceChildren(createResultEl("div", "results-trend-empty", "Complete a formal test to start your trend."));
+        RESULTS_TREND.style.setProperty("--ma-trend-count", "1");
+        RESULTS_TREND_SUMMARY.textContent = "No history yet";
+        RESULTS_TREND_NOTE.textContent = "Only formal Reading and Writing Test Mode results appear in this trend.";
+        return;
+    }
+
+    RESULTS_TREND.style.setProperty("--ma-trend-count", String(tests.length));
+    const bars = tests.map(item => {
+        const score = Math.max(0, Math.min(100, Number(item.overallScore || 0)));
+        const bar = createResultEl("div", "ma-trend__bar");
+        bar.style.setProperty("--ma-trend-height", `${Math.max(8, score)}%`);
+        bar.style.setProperty("--ma-trend-color", item.mode === "writing" ? "var(--ma-writing)" : "var(--ma-reading)");
+        bar.title = `${item.mode === "writing" ? "Writing" : "Reading"} · ${score}% · ${item.date || "Saved test"}`;
+        bar.setAttribute("aria-label", bar.title);
+        return bar;
+    });
+    RESULTS_TREND.replaceChildren(...bars);
+
+    const first = Number(tests[0].overallScore || 0);
+    const last = Number(tests[tests.length - 1].overallScore || 0);
+    const delta = Math.round(last - first);
+    RESULTS_TREND_SUMMARY.textContent = tests.length === 1
+        ? `${last}% latest`
+        : Math.abs(delta) <= 2 ? "Steady" : `${delta > 0 ? "+" : ""}${delta} pts`;
+    RESULTS_TREND_NOTE.textContent = tests.length === 1
+        ? "One formal test saved. More tests will make the direction clearer."
+        : `${tests.length} most recent formal tests · latest score ${last}%.`;
 }
 
 function getModifierTags(result) {
@@ -602,6 +718,8 @@ function renderAll() {
     const result = getSelectedResult();
     renderHero();
     renderResultsList();
+    renderGuidance(result);
+    renderTrend();
     if (!result) {
         OVERALL_KICKER.textContent = "Selected result score";
         OVERALL_SELECTED_NAME.textContent = "No test results yet";

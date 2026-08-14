@@ -502,7 +502,6 @@ def main() -> int:
         fail(errors, "trainer controls do not limit pageshow reinstall to BFCache restoration")
 
     obsolete_owners = [
-        ROOT / "assets/pages/mode-atlas-home-page.js",
         ROOT / "assets/app/mode-atlas-confusable-mode.js",
         ROOT / "assets/ui/mode-atlas-verified-preset-confusable.js",
         ROOT / "assets/results/mode-atlas-results-insights.js",
@@ -636,6 +635,16 @@ def main() -> int:
     if 'ma-drawer ma-shared-profile-drawer' not in profile_menu or 'ma-drawer ma-shared-settings-drawer' not in settings_menu:
         fail(errors, 'Profile/Settings do not consume the shared drawer shell')
 
+    home_page = text(ROOT / 'assets/pages/mode-atlas-home-page.js')
+    if not home_page or 'homeContinueAction' not in home_page:
+        fail(errors, 'Atlas returning-user UI is missing its page controller')
+    if any(marker in home_page for marker in ('ModeAtlasProfile', 'KanaCloudSync', 'profileDrawer', 'settingsDrawer')):
+        fail(errors, 'Atlas page controller takes over shared Profile/Settings/cloud ownership')
+    if 'Branches' in profile_menu or 'data-ma-nav-item' in profile_menu:
+        fail(errors, 'Profile drawer duplicates shared navigation')
+    if 'ma-setting-row' not in settings_menu or 'Data & app' not in settings_menu:
+        fail(errors, 'Settings drawer is missing the standard preference/data hierarchy')
+
     wordbank_html = text(ROOT / 'wordbank/index.html')
     wordbank_css = text(ROOT / 'assets/css/mode-atlas-wordbank-page.css')
     if 'class="ma-input" id="kanaInput"' not in wordbank_html or 'class="ma-select" id="sortSelect"' not in wordbank_html:
@@ -726,6 +735,39 @@ def main() -> int:
                    '--ma-page-bg-atlas:', '--ma-page-bg-kana:', '--ma-page-bg-results:', '--ma-page-bg-words:'):
         if marker not in theme_css:
             fail(errors, f'theme stylesheet missing canonical UI foundation token: {marker}')
+
+    icon_sprite = text(ROOT / 'assets/mode-atlas-icons.svg')
+    for marker in ('icon-settings', 'icon-user', 'icon-focus', 'icon-search', 'icon-star', 'icon-edit', 'icon-delete', 'icon-chart'):
+        if f'id="{marker}"' not in icon_sprite:
+            fail(errors, f'shared icon sprite missing: {marker}')
+    for marker in ('.ma-page-intro{', '.ma-setting-row{', '.ma-status-chip{', '.ma-progress{', '.ma-skeleton-block,', '.ma-trend{'):
+        if marker not in components:
+            fail(errors, f'shared visual vocabulary missing: {marker}')
+
+    atlas_markup = text(ROOT / 'index.html')
+    if 'id="homeContinueCard"' not in atlas_markup or 'Reading Comprehension' not in atlas_markup:
+        fail(errors, 'Atlas returning-user hierarchy or future branch naming drifted')
+    kana_markup = text(ROOT / 'kana/index.html')
+    if 'id="kanaContinueAction"' not in kana_markup or 'ma-skeleton-block' not in kana_markup:
+        fail(errors, 'Kana hub recommendation/loading hierarchy drifted')
+    trainer_ui_markup = text(ROOT / 'reading/index.html') + text(ROOT / 'writing/index.html')
+    for marker in ('Practice setup ▼', 'id="sessionProgressBar"', 'Focus mode', 'Exit focus mode'):
+        if marker not in trainer_ui_markup:
+            fail(errors, f'trainer standardisation marker missing: {marker}')
+    for marker in ('>Hide nav<', '>Show navigation<', '>Modifiers ▼<'):
+        if marker in trainer_ui_markup:
+            fail(errors, f'legacy trainer UI wording returned: {marker}')
+    results_markup = text(ROOT / 'results/index.html')
+    results_page_js = text(ROOT / 'assets/pages/mode-atlas-test-page.js')
+    if 'id="resultsGuidanceCard"' not in results_markup or 'id="resultsTrend"' not in results_markup:
+        fail(errors, 'Results actionable guidance/trend UI is missing')
+    if 'function renderGuidance(' not in results_page_js or 'function renderTrend(' not in results_page_js:
+        fail(errors, 'Results page no longer renders actionable guidance/trend data')
+    wordbank_markup = text(ROOT / 'wordbank/index.html')
+    library_pos = wordbank_markup.find('class="panel library-panel ma-card"')
+    add_pos = wordbank_markup.find('id="wordBankAddPanel"')
+    if library_pos < 0 or add_pos <= library_pos or 'id="wordBankAddJumpBtn"' not in wordbank_markup or '<details class="wordbank-tools">' not in wordbank_markup:
+        fail(errors, 'Word Bank library-first hierarchy or secondary tools disclosure drifted')
 
     framed_pages = {
         ROOT / 'index.html': 'ma-atlas-page',

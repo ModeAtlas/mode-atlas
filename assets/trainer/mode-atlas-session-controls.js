@@ -75,7 +75,7 @@
       paused = !paused;
       document.body.classList.toggle('ma-session-paused', paused);
       const btn = document.getElementById('pauseSessionBtn');
-      if (btn) btn.textContent = paused ? 'Resume' : 'Pause';
+      if (btn) { const label = btn.querySelector('[data-ma-pause-label]'); if (label) label.textContent = paused ? 'Resume' : 'Pause'; else btn.textContent = paused ? 'Resume' : 'Pause'; }
       if (paused) { pauseTimers(); locked = true; setInputDisabled(true); }
       else { locked = false; setInputDisabled(false); resumeTimers(); focusInputIfNeeded(); }
     } catch (e) { console.warn('Pause toggle failed', e); }

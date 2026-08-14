@@ -107,7 +107,7 @@ def render_navigation(config: NavConfig) -> str:
     if config.account_actions:
         hide_action = ''
         if config.hideable:
-            hide_action = '<button class="ma-nav__action ma-nav__action--quiet" id="studyNavHideBtn" type="button">Hide nav</button>'
+            hide_action = '<button class="ma-nav__action ma-nav__action--quiet ma-nav__focus" id="studyNavHideBtn" type="button" aria-label="Enter focus mode" title="Focus mode"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span class="ma-nav__action-label">Focus mode</span></button>'
         action_markup = f'''
       <div class="ma-nav__actions">
         <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
@@ -115,7 +115,7 @@ def render_navigation(config: NavConfig) -> str:
           <span class="ma-nav__action-label">Profile</span>
         </button>
         <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="settingsDrawer" aria-label="Open settings" title="Settings">
-          <span class="ma-nav__settings-icon" aria-hidden="true">⚙</span>
+          <svg class="ma-icon ma-nav__settings-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-settings"></use></svg>
           <span class="ma-nav__action-label">Settings</span>
         </button>
         {hide_action}
@@ -124,7 +124,7 @@ def render_navigation(config: NavConfig) -> str:
     nav_id = ' id="studyNav"' if config.hideable else ''
     handle = ''
     if config.hideable:
-        handle = '\n<button class="ma-nav-handle" id="studyNavShowBtn" type="button">Show navigation</button>'
+        handle = '\n<button class="ma-nav-handle" id="studyNavShowBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span>Exit focus mode</span></button>'
 
     return f'''{NAV_START}
 <nav class="ma-nav ma-nav--{_attr(config.accent)}"{nav_id} data-ma-navigation="shared" data-ma-page="{_attr(config.key)}" aria-label="Mode Atlas navigation">
@@ -260,7 +260,7 @@ def _interactive_scripts(
 PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
     'index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-home-page.css',),
-        body_scripts=_interactive_scripts(include_presets=True),
+        body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-home-page.js',)),
     ),
     'kana/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kana-page.css',),
@@ -472,19 +472,25 @@ def apply_legacy_redirects(root: Path = ROOT) -> list[Path]:
 
 
 def _trainer_scoreline() -> str:
-    return '''        <div class="scoreline" data-ma-trainer-scores="shared">
-            <div class="score-pill ma-pill ma-trainer-score">Streak: <span id="streak">0</span></div>
-            <div class="score-pill ma-pill ma-trainer-score">High Score: <span id="highScore">0</span></div>
-            <div class="score-pill ma-pill ma-trainer-score" id="endlessTotalPill" hidden>Total: <span id="endlessTotal">0</span></div>
-            <div class="score-pill ma-pill ma-trainer-score" id="endlessWrongPill" hidden>Incorrect: <span id="endlessWrong">0</span></div>
-            <div class="score-pill ma-pill ma-trainer-score" id="trialTimerPill" hidden>Time Left: <span id="trialTimer">0</span></div>
-            <div class="score-pill ma-pill ma-trainer-score" id="dailyProgressPill" hidden>Question: <span id="dailyProgress">0</span>/20</div>
-            <div class="score-pill ma-pill ma-trainer-score" id="dailyCorrectPill" hidden>Correct: <span id="dailyCorrect">0</span></div>
-            <div class="score-pill ma-pill ma-trainer-score" id="dailyWrongPill" hidden>Wrong: <span id="dailyWrong">0</span></div>
-            <div class="score-pill ma-pill ma-trainer-score" id="dailyOfficialPill" hidden>Official: <span id="dailyOfficial">—</span></div>
-            <div class="score-pill ma-pill ma-trainer-score" id="testQuestionPill" hidden>Question: <span id="testQuestion">0</span>/<span id="testTotal">0</span></div>
-            <div class="score-pill ma-pill ma-trainer-score" id="testCorrectPill" hidden>Correct: <span id="testCorrect">0</span></div>
-            <div class="score-pill ma-pill ma-trainer-score" id="testWrongPill" hidden>Wrong: <span id="testWrong">0</span></div>
+    return '''        <div class="ma-session-hud" data-ma-session-hud="shared">
+            <div class="scoreline" data-ma-trainer-scores="shared">
+                <div class="score-pill ma-pill ma-trainer-score">Streak <strong id="streak">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score">Best <strong id="highScore">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="endlessTotalPill" hidden>Total <strong id="endlessTotal">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="endlessWrongPill" hidden>Incorrect <strong id="endlessWrong">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="trialTimerPill" hidden>Time <strong id="trialTimer">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="dailyProgressPill" hidden>Question <strong><span id="dailyProgress">0</span>/20</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="dailyCorrectPill" hidden>Correct <strong id="dailyCorrect">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="dailyWrongPill" hidden>Wrong <strong id="dailyWrong">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="dailyOfficialPill" hidden>Official <strong id="dailyOfficial">—</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="testQuestionPill" hidden>Question <strong><span id="testQuestion">0</span>/<span id="testTotal">0</span></strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="testCorrectPill" hidden>Correct <strong id="testCorrect">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="testWrongPill" hidden>Wrong <strong id="testWrong">0</strong></div>
+            </div>
+            <div class="ma-session-progress" id="sessionProgressBar" hidden aria-live="polite">
+                <div class="ma-session-progress__meta"><span id="sessionProgressLabel">Session progress</span><strong id="sessionProgressValue">0 / 0</strong></div>
+                <div class="ma-progress"><span class="ma-progress__fill" id="sessionProgressFill"></span></div>
+            </div>
         </div>'''
 
 
@@ -515,8 +521,9 @@ def _trainer_prompt(config: TrainerConfig) -> str:
 
 def _trainer_score_panels(config: TrainerConfig) -> str:
     return f'''    <div class="side-panel ma-card ma-card--flat ma-trainer-side-panel left-panel">
-        <div class="panel-header" id="scoresHeader"><span>Scores</span><span id="scoresChevron">▼</span></div>
+        <div class="panel-header" id="scoresHeader"><span>Records</span><span id="scoresChevron">▼</span></div>
         <div class="panel-content" id="scoresContent">
+            <a class="ma-button ma-button--small ma-button--wide ma-trainer-results-link" href="/results/"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-chart"></use></svg><span>View full Results</span></a>
             <div class="score-block ma-card ma-card--flat ma-trainer-score-card">
                 <h3>Endless Best</h3>
                 <div class="score-row"><span>Total</span><span id="bestEndlessTotal">0</span></div>
@@ -541,7 +548,7 @@ def _trainer_score_panels(config: TrainerConfig) -> str:
     </div>
 
     <div class="side-panel ma-card ma-card--flat ma-trainer-side-panel right-panel">
-        <div class="panel-header" id="statsHeader"><span>Stats</span><span id="statsChevron">▼</span></div>
+        <div class="panel-header" id="statsHeader"><span>Mastery</span><span id="statsChevron">▼</span></div>
         <div class="panel-content" id="statsContent"><div id="heatmap" class="heatmap"></div></div>
     </div>'''
 
@@ -551,7 +558,7 @@ def _trainer_modifier_shell(config: TrainerConfig) -> str:
     if config.answer_input_controls:
         input_controls = '''
             <div>
-                <div class="section-title">Answer Input</div>
+                <div class="section-title">Input method</div>
                 <div class="button-grid tight">
                     <button class="btn ma-button ma-trainer-button" id="buttonsModeBtn" type="button">Buttons</button>
                     <button class="btn ma-button ma-trainer-button" id="keyboardModeBtn" type="button">Keyboard</button>
@@ -563,12 +570,13 @@ def _trainer_modifier_shell(config: TrainerConfig) -> str:
     return f'''<div id="popup" class="popup" hidden></div>
 
 <div class="bottom-shell ma-modifiers-only" data-ma-trainer-modifiers="shared">
-    <div class="tab-row"><div class="tab-button" id="modifiersTab">Modifiers ▼</div></div>
+    <div class="tab-row"><div class="tab-button" id="modifiersTab">Practice setup ▼</div></div>
     <div class="drawer-content" id="modifiersContent">
+        <div class="ma-practice-setup-head"><div><span class="ma-kicker">Before you start</span><h2>Practice setup</h2><p>Choose a preset or customise the question flow, input and kana included in this session.</p></div></div>
         <div class="options-stack">
-            <div><div class="section-title">Modes</div><div id="modifierOptions" class="button-grid"></div></div>{input_controls}
-            <div><div class="section-title">Hiragana Rows</div><div id="rowOptions" class="rows-grid"></div></div>
-            <div><div class="section-title">Katakana Rows</div><div id="katakanaRowOptions" class="rows-grid"></div></div>
+            <div class="ma-settings-section"><div id="modifierOptions" class="button-grid"></div></div>{input_controls}
+            <div class="ma-kana-selection"><div><div class="section-title">Hiragana rows</div><div id="rowOptions" class="rows-grid"></div></div>
+            <div><div class="section-title">Katakana rows</div><div id="katakanaRowOptions" class="rows-grid"></div></div></div>
         </div>
     </div>
 </div>'''
@@ -603,11 +611,11 @@ def render_trainer_shell(config: TrainerConfig) -> str:
             </div></div>
         </div>
 
-        <div class="start-wrap" id="startWrap"><button class="btn btn-start ma-button ma-button--accent ma-trainer-button" id="startBtn" type="button">Start</button></div>
+        <div class="start-wrap" id="startWrap"><button class="btn btn-start ma-button ma-button--accent ma-trainer-button" id="startBtn" type="button"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg><span>Start practice</span></button></div>
         <div class="session-actions" id="sessionActions" hidden>
-            <button class="btn btn-secondary ma-button ma-trainer-button" id="skipKanaBtn" type="button">I don’t know</button>
-            <button class="btn btn-secondary ma-button ma-trainer-button" id="pauseSessionBtn" type="button">Pause</button>
-            <button class="btn btn-secondary ma-button ma-trainer-button" id="endSessionBtn" type="button">End Session</button>
+            <button class="btn btn-secondary ma-button ma-button--ghost ma-trainer-button ma-trainer-skip" id="skipKanaBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-skip"></use></svg><span>I don’t know</span></button>
+            <button class="btn btn-secondary ma-button ma-trainer-button" id="pauseSessionBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-pause"></use></svg><span data-ma-pause-label>Pause</span></button>
+            <button class="btn btn-secondary ma-button ma-trainer-button" id="endSessionBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-stop"></use></svg><span>End session</span></button>
         </div>
         <div id="gameOver" class="game-over" hidden><div class="game-over-title">Wrong</div><div id="gameOverAnswer" class="game-over-answer"></div><button class="btn ma-button ma-trainer-button" id="retryBtn" type="button" hidden>Try Again</button></div>
     </div>
