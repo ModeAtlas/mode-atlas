@@ -221,6 +221,10 @@ function updateDailyChallengePills() {
         testCorrectEl.textContent = testCorrect;
         testWrongEl.textContent = testWrong;
     }
+
+    if (testActive) updateSessionProgressBar(Math.min(testIndex + 1, testSequence.length || 0), testSequence.length || 0, 'Test progress', true);
+    else if (dailyActive) updateSessionProgressBar(Math.min(dailyIndex + 1, 20), 20, 'Daily challenge', true);
+    else updateSessionProgressBar(0, 0, 'Session progress', false);
 }
 
 function updateComboKanaBestScore() {
@@ -290,7 +294,7 @@ function applyPanelStates() {
     modifiersTabEl.classList.toggle("active", settings.activeBottomTab === "modifiers");
     if (optionsTabEl) optionsTabEl.classList.toggle("active", false);
 
-    modifiersTabEl.textContent = settings.activeBottomTab === "modifiers" ? "Modifiers ▲" : "Modifiers ▼";
+    modifiersTabEl.textContent = settings.activeBottomTab === "modifiers" ? "Practice setup ▲" : "Practice setup ▼";
     if (optionsTabEl) optionsTabEl.textContent = "Options ▼";
 
     statsContentEl.classList.toggle("hidden", !settings.statsVisible);

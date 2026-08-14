@@ -132,7 +132,7 @@
     drawer.addEventListener('click', () => {
       try { settings.activeBottomTab = 'modifiers'; } catch {}
       drawer.classList.add('open');
-      if (tab) { tab.classList.add('active'); tab.textContent = 'Modifiers ▲'; }
+      if (tab) { tab.classList.add('active'); tab.textContent = 'Practice setup ▲'; }
     }, true);
   }
 

@@ -335,6 +335,23 @@ function renderDailyChallengeSummary() {
     renderDailyChallengeHistory();
 }
 
+function updateSessionProgressBar(current, total, label, visible = true) {
+    const root = document.getElementById("sessionProgressBar");
+    const fill = document.getElementById("sessionProgressFill");
+    const labelEl = document.getElementById("sessionProgressLabel");
+    const valueEl = document.getElementById("sessionProgressValue");
+    if (!root || !fill || !labelEl || !valueEl) return;
+    const safeTotal = Math.max(0, Number(total || 0));
+    const safeCurrent = Math.max(0, Math.min(safeTotal || Number(current || 0), Number(current || 0)));
+    const show = !!visible && safeTotal > 0;
+    setElementVisible(root, show);
+    if (!show) { fill.style.setProperty('--ma-progress', '0%'); return; }
+    const percent = Math.max(0, Math.min(100, (safeCurrent / safeTotal) * 100));
+    labelEl.textContent = label || 'Session progress';
+    valueEl.textContent = `${safeCurrent} / ${safeTotal}`;
+    fill.style.setProperty('--ma-progress', `${percent}%`);
+}
+
 function updateTopStats() {
     streakEl.textContent = streak;
     highScoreEl.textContent = highScore;

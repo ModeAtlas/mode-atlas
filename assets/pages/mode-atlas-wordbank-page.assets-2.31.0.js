@@ -21,7 +21,9 @@ function refreshProfileShell() {
       statTotal: document.getElementById('statTotal'),
       statEnglish: document.getElementById('statEnglish'),
       statFavorites: document.getElementById('statFavorites'),
-      statMissing: document.getElementById('statMissing')
+      statMissing: document.getElementById('statMissing'),
+      addJumpBtn: document.getElementById('wordBankAddJumpBtn'),
+      addPanel: document.getElementById('wordBankAddPanel')
     };
 
     const baseMap = {
@@ -398,6 +400,7 @@ function refreshProfileShell() {
       elements.statEnglish.textContent = withEnglish;
       elements.statFavorites.textContent = favorites;
       elements.statMissing.textContent = missingEnglish;
+      [elements.statTotal, elements.statEnglish, elements.statFavorites, elements.statMissing].forEach(el => el?.classList.remove('ma-skeleton-text'));
     }
 
     function formatDate(iso) {
@@ -415,6 +418,17 @@ function refreshProfileShell() {
       if (className) el.className = className;
       if (text !== "") el.textContent = text;
       return el;
+    }
+
+    function createIcon(name, className = "ma-icon") {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", className);
+      svg.setAttribute("aria-hidden", "true");
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      const base = window.ModeAtlasVersionFile?.appUrl?.('/assets/mode-atlas-icons.svg') || '/assets/mode-atlas-icons.svg';
+      use.setAttribute("href", `${base}#icon-${name}`);
+      svg.append(use);
+      return svg;
     }
 
     function safeEntryDomId(id) {
@@ -463,24 +477,32 @@ function refreshProfileShell() {
       summary.dataset.id = entryId;
 
       const main = createEl("div", "card-summary-main");
+      const wordLine = createEl("div", "wordbank-word-line");
+      wordLine.append(createEl("div", "kana", entry.kana || ""));
+      if (entry.favorite) {
+        const favouriteMark = createEl("span", "wordbank-favourite-mark");
+        favouriteMark.title = "Favourite";
+        favouriteMark.append(createIcon("star-filled", "ma-icon ma-icon--small"));
+        wordLine.append(favouriteMark);
+      }
       main.append(
-        createEl("div", "kana", entry.kana || ""),
+        wordLine,
+        createEl("div", `wordbank-meaning ${englishMissing ? "is-missing" : ""}`.trim(), entry.english || "Add English meaning"),
         createEl("div", "romaji", entry.romaji || "—")
       );
-
-      const englishCol = createEl("div", "summary-col");
-      englishCol.append(createEl("div", "summary-label ma-kicker", "English"), createEl("div", "summary-value", entry.english || "—"));
 
       const typeCol = createEl("div", "summary-col");
       typeCol.append(
         createEl("div", "summary-label ma-kicker", "Type"),
-        createEl("div", "summary-value", `${type}${entry.favorite ? " · ★" : ""}${englishMissing ? " · missing" : ""}`)
+        createEl("div", "summary-value", `${type}${englishMissing ? " · missing English" : ""}`)
       );
 
       const dateCol = createEl("div", "summary-col summary-date");
-      dateCol.append(createEl("div", "summary-label ma-kicker", "Date added"), createEl("div", "summary-value", formatDate(entry.createdAt)));
+      dateCol.append(createEl("div", "summary-label ma-kicker", "Added"), createEl("div", "summary-value", formatDate(entry.createdAt)));
 
-      summary.append(main, englishCol, typeCol, dateCol, createEl("div", "summary-toggle", isExpanded ? "−" : "+"));
+      const toggle = createEl("div", "summary-toggle");
+      toggle.append(createIcon("chevron", "ma-icon ma-icon--small"));
+      summary.append(main, typeCol, dateCol, toggle);
 
       const body = createEl("div", "card-body");
       const cardTop = createEl("div", "card-top ma-section-head");
@@ -488,11 +510,13 @@ function refreshProfileShell() {
       meta.append(createEl("span", "tag ma-pill ma-pill--small", type));
       if (englishMissing) meta.append(createEl("span", "tag ma-pill ma-pill--small", "missing English"));
 
-      const star = createEl("button", "ma-button ma-button--small ma-button--ghost star-btn", entry.favorite ? "★" : "☆");
+      const star = createEl("button", "ma-icon-button star-btn");
       star.type = "button";
       star.dataset.action = "favorite";
       star.dataset.id = entryId;
-      star.title = "Toggle favourite";
+      star.title = entry.favorite ? "Remove from favourites" : "Add to favourites";
+      star.setAttribute("aria-label", star.title);
+      star.append(createIcon(entry.favorite ? "star-filled" : "star"));
       meta.append(star);
       cardTop.append(meta);
 
@@ -534,10 +558,13 @@ function refreshProfileShell() {
       save.type = "button";
       save.dataset.action = "save";
       save.dataset.id = entryId;
-      const del = createEl("button", "ma-button ma-button--danger", "Delete");
+      const del = createEl("button", "ma-icon-button wordbank-delete-btn");
       del.type = "button";
       del.dataset.action = "delete";
       del.dataset.id = entryId;
+      del.title = "Delete word";
+      del.setAttribute("aria-label", `Delete ${entry.kana || 'word'}`);
+      del.append(createIcon("delete"));
       inline.append(save, del);
       actions.append(inline);
 
@@ -551,7 +578,7 @@ function refreshProfileShell() {
       const items = getFilteredEntries();
 
       if (!items.length) {
-        elements.entries.replaceChildren(createEl("div", "empty ma-card ma-empty-state", "No matching words yet. Add one above to get started."));
+        elements.entries.replaceChildren(createEl("div", "empty ma-card ma-empty-state", "No matching words yet. Add a word from the quick-capture panel to start your collection."));
         return;
       }
 
@@ -565,6 +592,11 @@ function refreshProfileShell() {
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
+
+    elements.addJumpBtn?.addEventListener('click', () => {
+      elements.addPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.setTimeout(() => elements.kanaInput?.focus(), 220);
+    });
 
     elements.addWordBtn.addEventListener('click', addWord);
     elements.kanaInput.addEventListener('keydown', (event) => {
@@ -591,8 +623,6 @@ function refreshProfileShell() {
       const id = details.dataset.id || details.id.replace('entry-', '');
       if (details.open) expandedEntries.add(id);
       else expandedEntries.delete(id);
-      const toggleEl = details.querySelector('.summary-toggle');
-      if (toggleEl) toggleEl.textContent = details.open ? '−' : '+';
     });
 
     elements.entries.addEventListener('click', event => {

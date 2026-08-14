@@ -72,7 +72,9 @@
     button.disabled = !!busy;
     button.dataset.maUpdateBusy = busy ? '1' : '0';
     button.setAttribute('aria-busy', busy ? 'true' : 'false');
-    button.textContent = busy ? 'Checking…' : 'Check for updates';
+    const label = button.querySelector('[data-ma-update-label]');
+    if (label) label.textContent = busy ? 'Checking…' : 'Check for updates';
+    else button.textContent = busy ? 'Checking…' : 'Check for updates';
   }
 
   function rememberUpdateStatus(message, tone){
@@ -337,6 +339,12 @@
     if (detail) detail.textContent = status.user ? 'Signed in with Google. Cloud sync updates automatically when progress changes.' : 'Not signed in. Your progress is saved locally on this device.';
     if (meta) meta.textContent = 'Last cloud sync: ' + formatTime(status.lastSync || storageGet('modeAtlasLastCloudSyncAt', '0'));
     if (dot) dot.className = 'ma-sync-dot ' + tone;
+    const chip = document.getElementById('profileSyncChip');
+    if (chip) {
+      const normalizedTone = ['ok','cloud','success'].includes(tone) ? 'success' : ['warning','offline'].includes(tone) ? 'warning' : ['error','danger'].includes(tone) ? 'danger' : 'info';
+      chip.className = 'ma-status-chip ma-status-chip--' + normalizedTone;
+      chip.textContent = status.user ? (normalizedTone === 'success' ? 'Synced' : status.state || 'Cloud') : 'Local only';
+    }
     updateProfileDot();
     const ach = document.getElementById('profileAchievementCount');
     if (ach) ach.textContent = String(countUnlockedAchievements());

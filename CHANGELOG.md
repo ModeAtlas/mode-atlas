@@ -1,3 +1,13 @@
+## 2.31.0 - 2026-08-14
+- Introduced the first full visual-standardisation release: shared icons, page-introduction/setting/status/progress/trend/skeleton primitives, semantic UI tokens, and consistent utility controls now form one reusable visual vocabulary.
+- Reworked Profile and Settings around their real jobs: Profile now owns account/sync/achievement information only, while Settings uses conventional preference rows with secondary Data & app actions instead of duplicating navigation or presenting every control at equal visual weight.
+- Refocused Reading and Writing around active practice with a compact session HUD, Daily/Test progress bar, quieter skip action, Practice setup terminology, and intentional Focus mode while preserving every existing trainer controller ID and behavioural contract.
+- Reframed Atlas as a returning-user study home with a Continue studying recommendation/status area, calmer branch discovery, retained constellation identity, and clearer future Reading Comprehension naming.
+- Improved the Kana hub hierarchy without duplicating its existing mastery logic: Continue practice and the recommended next step are visually dominant, secondary surfaces are quieter, and dynamic dashboard regions use lightweight skeleton states.
+- Added actionable Results guidance and a recent formal-test trend, plus a desktop master/detail layout so weak kana/rows lead directly back into focused Reading or Writing practice.
+- Reworked Word Bank around the saved collection rather than the add form: library/search/sort/filter now lead the page, quick capture sits in a secondary rail, backup/destructive tools are disclosed on demand, and saved-word rows emphasise kana, meaning, and romaji with compact icon actions.
+- Kept cloud sync, save formats, Service Worker/version checking, and core trainer scoring/SRS behaviour outside this visual release; UI changes consume the existing data owners instead of creating competing systems.
+
 ## 2.30.0 - 2026-08-14
 - Centralized public-page JS/CSS dependency ownership in one build-time manifest, preserving each page's existing load order while eliminating hand-maintained shared stacks from individual HTML files.
 - Made the early loading-screen markup a build-time shared component so every public page receives the same static loader without adding a runtime fragment request or changing loader timing.

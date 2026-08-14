@@ -48,6 +48,14 @@
   --ma-page-card-radius-phone:22px;
   --ma-motion-fast:160ms;
   --ma-motion-medium:240ms;
+  --ma-icon-size:20px;
+  --ma-section-gap:18px;
+  --ma-surface-inset:color-mix(in srgb,var(--ma-card-3) 78%,transparent);
+  --ma-surface-elevated:var(--ma-surface);
+  --ma-status-success-bg:color-mix(in srgb,var(--ma-success) 12%,transparent);
+  --ma-status-warning-bg:color-mix(in srgb,var(--ma-warning) 12%,transparent);
+  --ma-status-danger-bg:color-mix(in srgb,var(--ma-danger) 12%,transparent);
+  --ma-status-info-bg:color-mix(in srgb,var(--ma-info) 12%,transparent);
 
   --ma-app-bg:#090d18;
   --ma-app-bg-soft:#0d1321;

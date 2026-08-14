@@ -211,3 +211,15 @@ html[data-ma-theme="light"] .ma-nav__link.is-active{color:var(--ma-text-strong);
 @media(prefers-reduced-motion:reduce){
   .ma-nav__link,.ma-nav__action{transition:none;}
 }
+
+/* 2.31 utility actions use the shared icon vocabulary. */
+.ma-nav__settings-icon{width:18px;height:18px;font-size:inherit;}
+.ma-nav__focus{gap:7px;}
+.ma-nav-handle{gap:8px;}
+@media(max-width:1080px){
+  .ma-nav__focus{width:44px;min-width:44px;padding:0;}
+  .ma-nav__focus .ma-nav__action-label{display:none;}
+}
+@media(max-width:520px){
+  .ma-nav__focus{display:inline-flex;}
+}

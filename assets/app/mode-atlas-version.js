@@ -5,8 +5,8 @@
    BACKUP_FORMAT_VERSION identifies exported backup envelopes.
    CLOUD_SNAPSHOT_VERSION identifies the Firestore snapshot envelope. */
 (function ModeAtlasVersionSource(root){
-  var VERSION = '2.30.0';
-  var CACHE_REVISION = 'assets-2.30.0';
+  var VERSION = '2.31.0';
+  var CACHE_REVISION = 'assets-2.31.0';
   var SAVE_SCHEMA_VERSION = 3;
   var BACKUP_FORMAT_VERSION = 2;
   var CLOUD_SNAPSHOT_VERSION = 2;

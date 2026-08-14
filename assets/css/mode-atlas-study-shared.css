@@ -1241,7 +1241,7 @@ body.ma-writing-page{
 .ma-trainer-button:hover:not(:disabled){border-color:color-mix(in srgb,var(--ma-trainer-accent) 58%,var(--ma-border));box-shadow:0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 24%,transparent);}
 .ma-trainer-button.active,
 .ma-trainer-button[aria-pressed="true"],
-.ma-trainer-button.btn-secondary{
+.ma-trainer-button.btn-secondary:not(.ma-trainer-skip){
   background:linear-gradient(180deg,color-mix(in srgb,var(--ma-trainer-accent) 24%,var(--ma-card-2)),color-mix(in srgb,var(--ma-trainer-accent) 12%,var(--ma-card-3)));
   border-color:color-mix(in srgb,var(--ma-trainer-accent) 58%,var(--ma-border));
   color:var(--ma-trainer-active-text);
@@ -1472,3 +1472,141 @@ html[data-effective-display-mode="phone"] body .ma-trainer-side-panel{
   margin:10px auto;
 }
 body[data-effective-display-mode="phone"].study-nav-hidden .ma-trainer-side-panel{position:static;max-height:none;}
+
+/* === 2.31 focused trainer workspace === */
+.ma-session-hud{
+  display:grid;
+  gap:10px;
+  width:100%;
+  margin:0 auto 16px;
+}
+.ma-session-hud .scoreline{margin-bottom:0;}
+.ma-session-hud .ma-trainer-score{
+  min-height:34px;
+  height:auto;
+  padding:7px 11px;
+  gap:7px;
+  color:var(--ma-muted);
+  font-size:.82rem;
+  font-weight:700;
+}
+.ma-session-hud .ma-trainer-score strong{
+  color:var(--ma-text-strong);
+  font-size:.92rem;
+  font-variant-numeric:tabular-nums;
+}
+.ma-session-progress{
+  width:min(520px,100%);
+  margin:0 auto;
+  padding:10px 12px;
+  border:1px solid color-mix(in srgb,var(--ma-trainer-accent) 18%,var(--ma-border));
+  border-radius:var(--ma-radius-control);
+  background:var(--ma-surface-inset);
+}
+.ma-session-progress__meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:7px;
+  color:var(--ma-muted);
+  font-size:.76rem;
+  font-weight:800;
+}
+.ma-session-progress__meta strong{color:var(--ma-text-strong);font-variant-numeric:tabular-nums;}
+.ma-session-progress .ma-progress__fill{--ma-progress-color:var(--ma-trainer-accent);}
+
+.start-wrap .ma-button,
+.session-actions .ma-button{gap:8px;}
+.start-wrap .ma-button{min-width:170px;}
+.ma-trainer-skip{
+  color:var(--ma-muted);
+  background:transparent;
+  border-color:var(--ma-border);
+  box-shadow:none;
+}
+.ma-trainer-skip:hover:not(:disabled){
+  color:var(--ma-text);
+  background:var(--ma-control-hover);
+  border-color:var(--ma-border-strong);
+  box-shadow:none;
+}
+.ma-trainer-results-link{margin-bottom:10px;gap:7px;}
+
+.ma-practice-setup-head{
+  width:min(1080px,100%);
+  margin:0 auto 14px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+}
+.ma-practice-setup-head h2{
+  margin:4px 0 0;
+  color:var(--ma-text-strong);
+  font-family:var(--ma-font-display);
+  font-size:1.35rem;
+  letter-spacing:-.03em;
+}
+.ma-practice-setup-head p{margin:5px 0 0;color:var(--ma-muted);font-size:.84rem;line-height:1.45;}
+.ma-kana-selection{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+.ma-kana-selection>div{
+  padding:14px;
+  border:1px solid var(--ma-border);
+  border-radius:var(--ma-radius-md);
+  background:var(--ma-surface-inset);
+}
+
+/* Setup and active practice are distinct visual states. Session state is
+   derived from the existing start control's hidden state; no second JS owner. */
+.ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-card{
+  width:min(620px,calc(100vw - 32px));
+  padding-bottom:34px;
+  border-color:color-mix(in srgb,var(--ma-trainer-accent) 34%,var(--ma-border));
+}
+.ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel{
+  opacity:.32;
+  transform:scale(.985);
+  transition:opacity var(--ma-motion-fast) ease,transform var(--ma-motion-fast) ease;
+}
+.ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel:hover,
+.ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel:focus-within{
+  opacity:1;
+  transform:none;
+}
+body:has(#startWrap[hidden]) .bottom-shell.ma-modifiers-only{
+  opacity:0;
+  transform:translateY(102%);
+  pointer-events:none;
+  transition:opacity var(--ma-motion-fast) ease,transform var(--ma-motion-medium) ease;
+}
+body:not(:has(#startWrap[hidden])) .bottom-shell.ma-modifiers-only{
+  opacity:1;
+  transform:translateY(0);
+  transition:opacity var(--ma-motion-fast) ease,transform var(--ma-motion-medium) ease;
+}
+body.study-nav-hidden .ma-trainer-side-panel{display:none;}
+body.study-nav-hidden .ma-trainer-card{width:min(700px,calc(100vw - 32px));}
+
+@media(max-width:900px){
+  .ma-kana-selection{grid-template-columns:1fr;}
+}
+@media(max-width:760px){
+  .ma-session-hud .scoreline{gap:7px;}
+  .ma-session-hud .ma-trainer-score{width:auto!important;min-width:0!important;flex:1 1 calc(50% - 7px);font-size:.78rem;}
+  .ma-session-hud .ma-trainer-score strong{font-size:.86rem;}
+  .ma-practice-setup-head{align-items:flex-start;}
+  .ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-card{width:100%;padding-bottom:28px;margin-bottom:18px;min-height:calc(100svh - 150px);}
+  .ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel{display:none;}
+  .session-actions .ma-button{min-width:0;flex:1 1 auto;}
+  .session-actions .ma-trainer-skip{flex-basis:100%;order:3;}
+}
+@media(prefers-reduced-motion:reduce){
+  .ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel,
+  body:has(#startWrap[hidden]) .bottom-shell.ma-modifiers-only,
+  body:not(:has(#startWrap[hidden])) .bottom-shell.ma-modifiers-only{transition:none;}
+}
