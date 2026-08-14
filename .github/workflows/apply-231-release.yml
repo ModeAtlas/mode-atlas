@@ -67,6 +67,7 @@ jobs:
           if heading not in current:
               changelog.write_text(entry + current)
           PY
+          rm -f .github/workflows/apply-231-release.yml
 
       - name: Validate Mode Atlas 2.31.0
         shell: bash
