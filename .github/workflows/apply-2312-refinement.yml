@@ -1,0 +1,176 @@
+name: Apply Mode Atlas 2.31.2 refinement
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.31.2-ui-refinement
+
+permissions:
+  contents: write
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+
+jobs:
+  apply-refinement:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply source-level UI refinement
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace(path, old, new, count=1):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'Expected source block not found in {path}: {old[:90]!r}')
+              p.write_text(text.replace(old, new, count))
+
+          # Shared icon-button owner: reset native browser styling and add focus/hover states.
+          replace('assets/css/mode-atlas-components.css',
+          '''.ma-icon-button{\n  width:var(--ma-control-height);\n  min-width:var(--ma-control-height);\n  height:var(--ma-control-height);\n  padding:0;\n  display:inline-grid;\n  place-items:center;\n  border-radius:var(--ma-radius-pill);\n}''',
+          '''.ma-icon-button{\n  appearance:none;\n  -webkit-appearance:none;\n  width:var(--ma-control-height);\n  min-width:var(--ma-control-height);\n  height:var(--ma-control-height);\n  padding:0;\n  display:inline-grid;\n  place-items:center;\n  border:1px solid var(--ma-border);\n  border-radius:var(--ma-radius-pill);\n  background:var(--ma-surface-inset);\n  color:var(--ma-text-soft);\n  box-shadow:none;\n  font:inherit;\n  cursor:pointer;\n  transition:background var(--ma-motion-fast) ease,border-color var(--ma-motion-fast) ease,color var(--ma-motion-fast) ease,transform var(--ma-motion-fast) ease;\n}\n.ma-icon-button:hover:not(:disabled){background:var(--ma-control-hover);border-color:var(--ma-border-strong);color:var(--ma-text);transform:translateY(-1px);}\n.ma-icon-button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}\n.ma-icon-button:disabled{opacity:.48;cursor:not-allowed;transform:none;}''')
+
+          # Shared setting-row owner for forced tablet/phone modes.
+          components = Path('assets/css/mode-atlas-components.css')
+          ct = components.read_text()
+          marker = '''@media(max-width:760px){\n  .ma-page-intro{grid-template-columns:1fr;align-items:start;}'''
+          if marker not in ct:
+              raise SystemExit('Shared component responsive marker missing')
+          effective = '''body[data-effective-display-mode="tablet"] .ma-setting-row,\nbody[data-effective-display-mode="phone"] .ma-setting-row{grid-template-columns:1fr;gap:var(--ma-space-3);align-items:start;}\nbody[data-effective-display-mode="tablet"] .ma-setting-row__control,\nbody[data-effective-display-mode="phone"] .ma-setting-row__control{justify-self:stretch;width:100%;}\n\n'''
+          ct = ct.replace(marker, effective + marker, 1)
+          components.write_text(ct)
+
+          # Remove the now-redundant drawer-specific setting-row workaround.
+          replace('assets/css/mode-atlas-profile-settings.css',
+          '''  .ma-setting-row{grid-template-columns:1fr;gap:var(--ma-space-3);align-items:start;}\n  .ma-setting-row__control{justify-self:stretch;width:100%;}\n  .ma-settings-segmented,.ma-settings-segmented--display{min-width:0;width:100%;}''',
+          '''  .ma-settings-segmented,.ma-settings-segmented--display{min-width:0;width:100%;}''')
+
+          # Word Bank: library-first full-width page, modal add form, corrected chevrons/tools/focus.
+          wbcss = Path('assets/css/mode-atlas-wordbank-page.css')
+          w = wbcss.read_text()
+          w = w.replace('''/* Collection first; capture tools remain available in a compact rail. */\n.grid{\n  display:grid;\n  grid-template-columns:minmax(0,1fr) minmax(300px,350px);\n  gap:var(--ma-space-4);\n  align-items:start;\n}\n.panel{min-width:0;overflow:visible;}''',
+          '''/* Collection-first layout. Adding a word is invoked through the shared dialog. */\n.grid{display:grid;grid-template-columns:1fr;gap:var(--ma-space-4);align-items:start;}\n.panel{min-width:0;overflow:visible;}''')
+          w = re.sub(r'''\.add-panel\{.*?\}\n\.add-panel > \.panel-inner > \.ma-kicker\{.*?\}\n''', '', w, flags=re.S)
+          w = w.replace('.wordbank-add-group{margin-top:var(--ma-space-5);}', '.wordbank-add-host{display:none;}\n.wordbank-add-dialog-content{display:grid;gap:var(--ma-space-4);}\n.wordbank-add-dialog-content .wordbank-add-group{margin-top:0;}')
+          w = w.replace('''.card-summary:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}''',
+                        '''.card-summary:focus-visible{outline:0;background:color-mix(in srgb,var(--ma-control-active) 24%,transparent);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--ma-control-active-border) 72%,transparent);}''')
+          w = w.replace('''details[open] .summary-toggle{transform:rotate(180deg);color:var(--ma-text);}''',
+                        '''.summary-toggle .ma-icon{transform:rotate(90deg);transition:transform var(--ma-motion-fast) ease;}\ndetails[open] .summary-toggle .ma-icon{transform:rotate(-90deg);}\ndetails[open] .summary-toggle{color:var(--ma-text);}''')
+          w = w.replace('''.wordbank-tools__chevron{transition:transform var(--ma-motion-fast) ease;}\n.wordbank-tools[open] .wordbank-tools__chevron{transform:rotate(180deg);}''',
+                        '''.wordbank-tools__chevron{transform:rotate(90deg);transition:transform var(--ma-motion-fast) ease;}\n.wordbank-tools[open] .wordbank-tools__chevron{transform:rotate(-90deg);}''')
+          w = w.replace('''.wordbank-tools__actions{display:grid;grid-template-columns:1fr 1fr;}''',
+                        '''.wordbank-tools__actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--ma-space-3);}\n.wordbank-tools__actions .ma-button{min-width:0;white-space:nowrap;}''')
+          w = re.sub(r'''@media\(max-width:1040px\)\{\n  \.grid\{grid-template-columns:1fr;\}\n  \.add-panel\{position:static;\}\n  \.library-panel\{order:1;\}\n  \.add-panel\{order:2;\}\n\}\n\n''', '', w)
+          w = w.replace('''body[data-effective-display-mode="tablet"] .grid{grid-template-columns:1fr;}\nbody[data-effective-display-mode="tablet"] .add-panel{position:static;}\nbody[data-effective-display-mode="tablet"] .library-panel{order:1;}\nbody[data-effective-display-mode="tablet"] .add-panel{order:2;}\n''', '')
+          w = w.replace('''body[data-effective-display-mode="phone"] .add-panel{position:static;}\n''', '')
+          wbcss.write_text(w)
+
+          # Replace Word Bank permanent add rail with hidden dialog content and move Collection tools into library.
+          html = Path('wordbank/index.html')
+          h = html.read_text()
+          aside_re = re.compile(r'''\n      <aside class="panel add-panel ma-card" id="wordBankAddPanel">.*?\n      </aside>''', re.S)
+          if not aside_re.search(h):
+              raise SystemExit('Word Bank add rail not found')
+          add_host = '''\n      <div class="wordbank-add-host" aria-hidden="true">\n        <div class="wordbank-add-dialog-content" id="wordBankAddPanel">\n          <div id="wordBankAddGroup" class="wordbank-add-group" role="group" aria-label="Add a word">\n            <label class="ma-field__label" for="kanaInput">Kana Word</label>\n            <input class="ma-input" id="kanaInput" type="text" name="kana_word" placeholder="e.g. ねこ / コーヒー" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" inputmode="text" />\n            <div class="ma-field__hint">Hiragana, katakana, small kana, っ / ッ, and ー are supported. Duplicate kana words are blocked.</div>\n            <div class="btn-row ma-action-row">\n              <button class="ma-button ma-button--primary" id="addWordBtn" type="button" disabled aria-disabled="true">Add Word</button>\n              <button class="ma-button ma-button--ghost" id="clearInputBtn" type="button">Clear</button>\n            </div>\n            <div class="ma-status" id="statusMsg" role="status" aria-live="polite"></div>\n          </div>\n        </div>\n      </div>'''
+          h = aside_re.sub(add_host, h, count=1)
+          entries = '''          <div class="entries" id="entries">\n            <div class="ma-skeleton-block" aria-hidden="true"></div>\n            <div class="ma-skeleton-block" aria-hidden="true"></div>\n          </div>'''
+          if entries not in h:
+              raise SystemExit('Word Bank entries block not found')
+          tools = entries + '''\n\n          <details class="wordbank-tools">\n            <summary>\n              <span><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-download"></use></svg> Collection tools</span>\n              <svg class="ma-icon wordbank-tools__chevron" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-chevron"></use></svg>\n            </summary>\n            <div class="wordbank-tools__body">\n              <p>Export or import a backup. Imported entries merge with the current bank and matching kana keep the newest version.</p>\n              <div class="btn-row wordbank-tools__actions">\n                <button class="ma-button ma-button--ghost" id="exportBtn" type="button"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-download"></use></svg><span>Export JSON</span></button>\n                <label class="ma-button ma-button--ghost" for="importFile"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-upload"></use></svg><span>Import JSON</span></label>\n                <button class="ma-button ma-button--danger" id="clearAllBtn" type="button">Clear all words</button>\n              </div>\n              <input id="importFile" class="ma-file-input" type="file" accept="application/json" hidden />\n            </div>\n          </details>'''
+          h = h.replace(entries, tools, 1)
+          html.write_text(h)
+
+          # Shared dialog gets an explicit close method so feature content can complete its own flow cleanly.
+          replace('assets/app/mode-atlas-dialog.js',
+          '''    feature(input){ return enqueue(input, 'feature'); },\n    isOpen(){ return !!active; }''',
+          '''    feature(input){ return enqueue(input, 'feature'); },\n    close(value = true){ if (active) settle(value); },\n    isOpen(){ return !!active; }''')
+
+          # Word Bank controller: Add word opens shared dialog; empty state uses the same action; successful add closes.
+          wbjs = Path('assets/pages/mode-atlas-wordbank-page.js')
+          j = wbjs.read_text()
+          j = j.replace('''      showStatus(`Added ${kana} to your word bank.`, 'ok');\n      renderEntries(entry.id);\n      elements.kanaInput.focus();''',
+                        '''      showStatus(`Added ${kana} to your word bank.`, 'ok');\n      renderEntries(entry.id);\n      window.ModeAtlasDialog?.close?.(true);''')
+          j = j.replace('''      if (!items.length) {\n        elements.entries.replaceChildren(createEl("div", "empty ma-card ma-empty-state", "No matching words yet. Add a word from the quick-capture panel to start your collection."));\n        return;\n      }''',
+                        '''      if (!items.length) {\n        const empty = createEl("div", "empty ma-card ma-empty-state");\n        empty.append(createEl("div", "", "No matching words yet."));\n        const addFirst = createEl("button", "ma-button ma-button--primary", "Add a word");\n        addFirst.type = "button";\n        addFirst.addEventListener("click", openAddWordDialog);\n        empty.append(addFirst);\n        elements.entries.replaceChildren(empty);\n        return;\n      }''')
+          old_jump = '''    elements.addJumpBtn?.addEventListener('click', () => {\n      elements.addPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });\n      window.setTimeout(() => elements.kanaInput?.focus(), 220);\n    });'''
+          new_jump = '''    function openAddWordDialog(){\n      clearStatus();\n      window.ModeAtlasDialog?.feature?.({\n        kicker: 'Word Bank',\n        title: 'Add word',\n        message: 'Enter kana first. Mode Atlas saves the word immediately and generates its romaji.',\n        contentNode: elements.addPanel,\n        dismissOnBackdrop: true\n      });\n      window.setTimeout(() => elements.kanaInput?.focus(), 80);\n    }\n\n    elements.addJumpBtn?.addEventListener('click', openAddWordDialog);'''
+          if old_jump not in j:
+              raise SystemExit('Word Bank add jump handler not found')
+          j = j.replace(old_jump, new_jump, 1)
+          j = j.replace('''    elements.kanaInput.focus();\n''', '')
+          wbjs.write_text(j)
+
+          # Trainer pause state: compact cue, no giant bottom bar, correct play/pause icon swap.
+          study = Path('assets/css/mode-atlas-study-shared.css')
+          s = study.read_text()
+          s = s.replace('''.ma-session-paused .ma-trainer-card{outline:2px solid color-mix(in srgb,var(--ma-warning) 48%,transparent);}''',
+                        '''.ma-session-paused .ma-trainer-card{border-color:color-mix(in srgb,var(--ma-warning) 48%,var(--ma-border));}''')
+          s = re.sub(r'''\.ma-pause-overlay\{\n  position:absolute;\n  inset:auto 18px 18px;\n  padding:14px;\n  border-radius:18px;\n  text-align:center;\n  background:color-mix\(in srgb,var\(--ma-surface-strong\) 88%,transparent\);\n  border:1px solid color-mix\(in srgb,var\(--ma-warning\) 38%,var\(--ma-border\)\);\n  color:color-mix\(in srgb,var\(--ma-warning\) 72%,var\(--ma-text\)\);\n  font-weight:900;\n  display:none;\n  z-index:3;\n\}''',
+          '''.ma-pause-overlay{\n  position:absolute;\n  top:16px;\n  right:16px;\n  width:max-content;\n  padding:7px 11px;\n  border-radius:var(--ma-radius-pill);\n  text-align:center;\n  background:color-mix(in srgb,var(--ma-warning) 14%,var(--ma-surface-strong));\n  border:1px solid color-mix(in srgb,var(--ma-warning) 36%,var(--ma-border));\n  color:color-mix(in srgb,var(--ma-warning) 76%,var(--ma-text));\n  font-size:.78rem;\n  font-weight:850;\n  display:none;\n  z-index:3;\n}''', s)
+          s = s.replace('''@media (max-width:760px){\n  .session-actions .ma-button{min-width:130px;padding-inline:14px;}''',
+                        '''@media (max-width:760px){\n  .ma-pause-overlay{display:none!important;}\n  .session-actions .ma-button{min-width:130px;padding-inline:14px;}''')
+          study.write_text(s)
+
+          controls = Path('assets/trainer/mode-atlas-session-controls.js')
+          c = controls.read_text()
+          c = c.replace('''  function togglePause(){\n    try {''',
+          '''  function setPauseButtonState(isPaused){\n    const btn = document.getElementById('pauseSessionBtn');\n    if (!btn) return;\n    const label = btn.querySelector('[data-ma-pause-label]');\n    if (label) label.textContent = isPaused ? 'Resume' : 'Pause';\n    const use = btn.querySelector('use');\n    if (use) {\n      const current = use.getAttribute('href') || '/assets/mode-atlas-icons.svg#icon-pause';\n      const base = current.split('#')[0];\n      use.setAttribute('href', `${base}#icon-${isPaused ? 'play' : 'pause'}`);\n    }\n  }\n  function togglePause(){\n    try {''')
+          c = c.replace('''      const btn = document.getElementById('pauseSessionBtn');\n      if (btn) { const label = btn.querySelector('[data-ma-pause-label]'); if (label) label.textContent = paused ? 'Resume' : 'Pause'; else btn.textContent = paused ? 'Resume' : 'Pause'; }''',
+                        '''      setPauseButtonState(paused);''')
+          c = c.replace('''    const btn = document.getElementById('pauseSessionBtn');\n    if (btn) {\n      const label = btn.querySelector('[data-ma-pause-label]');\n      if (label) label.textContent = 'Pause';\n      else btn.textContent = 'Pause';\n    }''',
+                        '''    setPauseButtonState(false);''')
+          controls.write_text(c)
+
+          # Version metadata.
+          version = Path('assets/app/mode-atlas-version.js')
+          vt = version.read_text().replace("var VERSION = '2.31.1';", "var VERSION = '2.31.2';", 1).replace("var CACHE_REVISION = 'assets-2.31.1';", "var CACHE_REVISION = 'assets-2.31.2';", 1)
+          version.write_text(vt)
+          pkg = Path('package.json')
+          pkg.write_text(pkg.read_text().replace('"version": "2.31.1"', '"version": "2.31.2"', 1))
+          readme = Path('README.md')
+          readme.write_text(readme.read_text().replace('Version: 2.31.1', 'Version: 2.31.2', 1))
+          changelog = Path('CHANGELOG.md')
+          ch = changelog.read_text()
+          heading = '## 2.31.2 - 2026-08-15'
+          if heading not in ch:
+              entry = '''## 2.31.2 - 2026-08-15\n- Reworked Word Bank into a true library-first layout: the permanent Quick Capture rail is removed and Add word now opens the existing capture flow in the shared Mode Atlas dialog.\n- Added an Add a word action to the empty library state and closes the capture dialog after a successful add while keeping storage, romaji generation, duplicate detection, and cloud sync unchanged.\n- Fixed shared icon buttons so Safari no longer renders Favourite/Delete as native white controls; corrected Word Bank disclosure chevrons, focus styling, and Collection Tools spacing/wrapping.\n- Moved forced tablet/phone Settings row stacking into the shared component owner and removed the drawer-specific duplicate workaround.\n- Simplified the paused trainer state to a restrained cue, removed the oversized bottom pause surface, and switches the Pause/Resume SVG between pause and play correctly.\n\n'''
+              changelog.write_text(entry + ch)
+
+          # Regression guard for this refinement.
+          tests = Path('tests/frontend.test.js')
+          tt = tests.read_text()
+          title = "2.31.2 refinement keeps Word Bank library-first and shared responsive controls owned correctly"
+          if title not in tt:
+              tt += '''\n\ntest('2.31.2 refinement keeps Word Bank library-first and shared responsive controls owned correctly', () => {\n  const components = read('assets/css/mode-atlas-components.css');\n  const profileCss = read('assets/css/mode-atlas-profile-settings.css');\n  const wordbankHtml = read('wordbank/index.html');\n  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');\n  const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');\n  const sessionControls = read('assets/trainer/mode-atlas-session-controls.js');\n  const studyCss = read('assets/css/mode-atlas-study-shared.css');\n  assert.match(components, /\.ma-icon-button\{[\\s\\S]*appearance:none/);\n  assert.match(components, /data-effective-display-mode="tablet"[^\\n]*\.ma-setting-row/);\n  assert.doesNotMatch(profileCss, /\.ma-setting-row\{grid-template-columns:1fr/);\n  assert.match(wordbankHtml, /class="wordbank-add-host"/);\n  assert.doesNotMatch(wordbankHtml, /class="panel add-panel/);\n  assert.match(wordbankJs, /ModeAtlasDialog\?\.feature/);\n  assert.match(wordbankJs, /ModeAtlasDialog\?\.close/);\n  assert.match(wordbankCss, /wordbank-tools__chevron\{transform:rotate\(90deg\)/);\n  assert.match(sessionControls, /setPauseButtonState/);\n  assert.match(sessionControls, /icon-\$\{isPaused \? 'play' : 'pause'\}/);\n  assert.doesNotMatch(studyCss, /inset:auto 18px 18px/);\n});\n'''
+              tests.write_text(tt)
+          PY
+          python3 build_revision_assets.py
+          rm -f .github/workflows/apply-2312-refinement.yml
+      - name: Validate release
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 audit_project.py
+          node --test tests/backend.test.js tests/frontend.test.js
+          test ! -e .github/workflows/apply-2312-refinement.yml
+          test ! -d __pycache__
+          grep -q "VERSION = '2.31.2'" assets/app/mode-atlas-version.js
+          grep -q 'assets-2.31.2' wordbank/index.html
+      - name: Commit validated refinement
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Mode Atlas 2.31.2 UI refinement"
+          git push origin HEAD
