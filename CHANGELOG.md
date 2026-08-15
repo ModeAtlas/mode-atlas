@@ -1,3 +1,9 @@
+## 2.33.0 - 2026-08-16
+- Restructured Atlas into a clean ecosystem homepage with distinct visitor and returning-user hero states and no study-stat dashboard on the homepage.
+- Changed first-use onboarding from an automatic homepage interruption into a destination-aware branch-entry gate that resumes the user’s chosen branch after setup.
+- Reframed Kana as the Kana Trainer sub-homepage with a calmer action-first introduction, dedicated Reading/Writing/Results paths, and progress reporting moved below the introductory area.
+- Preserved trainer algorithms, result storage, cloud/save ownership, Service Worker retirement, and update/version behavior while rebuilding revisioned assets and regression coverage.
+
 ## 2.32.0 - 2026-08-15
 - Consolidated canonical CSS source without changing page design or application behaviour, removing only identical same-selector declarations while preserving differing cascade rules.
 - Made the shared setting-row component the responsive geometry owner; Settings now supplies layout variables instead of overriding component geometry with a higher-specificity grid rule.

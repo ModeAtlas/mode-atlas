@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <!-- MODE_ATLAS_HEAD_ASSETS_START -->
-<script src="./assets/app/mode-atlas-version.assets-2.32.0.js"></script>
-<script src="./assets/app/mode-atlas-legacy-sw-retirement.assets-2.32.0.js"></script>
-<script src="./assets/app/mode-atlas-version-check.assets-2.32.0.js"></script>
-<script src="./assets/app/mode-atlas-head-bootstrap.assets-2.32.0.js"></script>
+<script src="./assets/app/mode-atlas-version.assets-2.33.0.js"></script>
+<script src="./assets/app/mode-atlas-legacy-sw-retirement.assets-2.33.0.js"></script>
+<script src="./assets/app/mode-atlas-version-check.assets-2.33.0.js"></script>
+<script src="./assets/app/mode-atlas-head-bootstrap.assets-2.33.0.js"></script>
 <!-- MODE_ATLAS_HEAD_ASSETS_END -->
 
   <meta charset="UTF-8" />
@@ -22,29 +22,29 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Mode Atlas" />
 <meta name="application-name" content="Mode Atlas" />
-<meta name="description" content="Mode Atlas is a Japanese study app for learning kana, practising hiragana and katakana, tracking progress, and building a personal vocabulary bank." />
+<meta name="description" content="Mode Atlas brings focused Japanese learning tools together for kana practice, vocabulary building, and more ways to learn over time." />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Mode Atlas" />
 <meta property="og:title" content="Mode Atlas" />
-<meta property="og:description" content="Mode Atlas is a Japanese study app for learning kana, practising hiragana and katakana, tracking progress, and building a personal vocabulary bank." />
+<meta property="og:description" content="Mode Atlas brings focused Japanese learning tools together for kana practice, vocabulary building, and more ways to learn over time." />
 <meta property="og:url" content="https://mode-atlas.app/" />
   <meta property="og:image" content="https://mode-atlas.app/assets/social-preview.svg" />
 <meta name="twitter:card" content="summary" />
 <!-- MODE_ATLAS_STYLE_ASSETS_START -->
-<link rel="stylesheet" href="./assets/css/mode-atlas-page-shared.assets-2.32.0.css" />
-<link rel="stylesheet" href="./assets/css/mode-atlas-dev-console.assets-2.32.0.css" />
-<link rel="stylesheet" href="./assets/css/mode-atlas-app-modals.assets-2.32.0.css" />
-<link rel="stylesheet" href="./assets/css/mode-atlas-profile-settings.assets-2.32.0.css" />
-<link rel="stylesheet" href="./assets/css/mode-atlas-achievements.assets-2.32.0.css" />
-<link rel="stylesheet" href="./assets/css/mode-atlas-theme.assets-2.32.0.css" />
-<link rel="stylesheet" href="./assets/css/mode-atlas-components.assets-2.32.0.css" />
-<link rel="stylesheet" href="./assets/css/mode-atlas-navigation.assets-2.32.0.css" />
-<link rel="stylesheet" href="./assets/css/mode-atlas-responsive.assets-2.32.0.css" />
-<link rel="stylesheet" href="./assets/css/mode-atlas-home-page.assets-2.32.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-page-shared.assets-2.33.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-dev-console.assets-2.33.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-app-modals.assets-2.33.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-profile-settings.assets-2.33.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-achievements.assets-2.33.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-theme.assets-2.33.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-components.assets-2.33.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-navigation.assets-2.33.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-responsive.assets-2.33.0.css" />
+<link rel="stylesheet" href="./assets/css/mode-atlas-home-page.assets-2.33.0.css" />
 <!-- MODE_ATLAS_STYLE_ASSETS_END -->
 </head>
 <body class="ma-atlas-page"><!-- MODE_ATLAS_EARLY_ASSETS_START -->
-<script src="./assets/app/mode-atlas-early-loader.assets-2.32.0.js"></script>
+<script src="./assets/app/mode-atlas-early-loader.assets-2.33.0.js"></script>
 <!-- MODE_ATLAS_EARLY_ASSETS_END --><!-- MODE_ATLAS_LOADER_START -->
 <div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite">
   <div class="ma-loading-card">
@@ -91,121 +91,72 @@
       <div class="atlas-card ma-card">
         <div class="hero-grid">
           <div class="atlas-hero-copy">
-            <div class="eyebrow ma-kicker">Your study home</div>
-            <h1>Continue where you left off.</h1>
-            <p class="hero-line">Return to the right study tool quickly, then use the Atlas to explore another branch when you want a change of pace.</p>
-
-            <div class="home-continue ma-inset" id="homeContinueCard" aria-live="polite">
-              <div class="home-continue__copy">
-                <span class="ma-kicker">Continue studying</span>
-                <strong id="homeContinueTitle">Kana Reading</strong>
-                <span id="homeContinueMeta">Recommended starting point</span>
+            <div data-ma-home-visitor>
+              <div class="eyebrow ma-kicker">Japanese learning, mapped clearly</div>
+              <h1>Build confidence one skill at a time.</h1>
+              <p class="hero-line">Practise kana, grow your vocabulary, and keep moving forward with focused tools for each part of your Japanese learning.</p>
+              <div class="atlas-hero-actions ma-action-row">
+                <a class="ma-button ma-button--primary atlas-primary-action" href="/kana/" data-ma-branch-entry><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-arrow"></use></svg><span>Explore Kana Trainer</span></a>
+                <a class="ma-button ma-button--ghost" href="#branches">Explore Mode Atlas</a>
               </div>
-              <a class="ma-button ma-button--primary home-continue__action" id="homeContinueAction" href="/reading/">
-                <svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg>
-                <span>Continue</span>
-              </a>
             </div>
-
-            <div class="home-study-status" aria-label="Study status">
-              <div class="home-status-item"><span>Trainer streak</span><strong id="homeVisitStreak">—</strong></div>
-              <div class="home-status-item"><span>Reading daily</span><strong id="homeReadingDaily">Ready</strong></div>
-              <div class="home-status-item"><span>Writing daily</span><strong id="homeWritingDaily">Ready</strong></div>
+            <div data-ma-home-user hidden>
+              <div class="eyebrow ma-kicker">Welcome back</div>
+              <h1>Ready for your next session?</h1>
+              <p class="hero-line">Pick up where you left off, or choose another way to study.</p>
+              <div class="home-continue ma-inset" id="homeContinueCard" aria-live="polite">
+                <div class="home-continue__copy"><span class="ma-kicker">Continue studying</span><strong id="homeContinueTitle">Kana Reading</strong><span id="homeContinueMeta">Ready when you are</span></div>
+                <a class="ma-button ma-button--primary home-continue__action" id="homeContinueAction" href="/reading/" data-ma-branch-entry><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg><span>Continue</span></a>
+              </div>
             </div>
           </div>
-
-          <div class="constellation" aria-hidden="true">
-            <div class="node one">か<span>Kana</span></div>
-            <div class="node two">語<span>Words</span></div>
-            <div class="node three">学<span>Atlas</span></div>
-            <div class="node four">音<span>Future</span></div>
-            <div class="node five">文<span>Future</span></div>
+          <div class="constellation" aria-label="Mode Atlas learning tools">
+            <div class="node one" aria-hidden="true">か<span>Kana</span></div><div class="node two" aria-hidden="true">語<span>Words</span></div><div class="node three" aria-hidden="true">学<span>Atlas</span></div><div class="node four" aria-hidden="true">読<span>Reading</span></div><div class="node five" aria-hidden="true">文<span>More ahead</span></div>
           </div>
         </div>
       </div>
     </section>
-
     <section class="branches ma-page-section" id="branches">
-      <div class="section-head">
-        <div>
-          <div class="section-kicker">Branches</div>
-          <h2>Pick a path.</h2>
-        </div>
-        <p class="section-note">Start with the branch that fits today’s study.</p>
-      </div>
-
+      <div class="section-head"><div><div class="section-kicker">Learn your way</div><h2>Choose what you want to build next.</h2></div></div>
       <div class="branch-grid">
-        <a class="branch kana" href="/kana/">
-          <div class="branch-top">
-            <div class="branch-meta">
-              <div class="branch-label">Foundation</div>
-              <div class="branch-chip">Live</div>
-            </div>
-            <div class="branch-title">Kana Trainer</div>
-            <div class="branch-copy">Sharpen hiragana and katakana until they feel instant.</div>
-          </div>
-          <div class="branch-bottom">
-            <span>Enter branch</span>
-            <span class="branch-arrow" aria-hidden="true"><svg class="ma-icon"><use href="/assets/mode-atlas-icons.svg#icon-arrow"></use></svg></span>
-          </div>
-        </a>
-
-        <a class="branch words" href="/wordbank/">
-          <div class="branch-top">
-            <div class="branch-meta">
-              <div class="branch-label">Collection</div>
-              <div class="branch-chip">Live</div>
-            </div>
-            <div class="branch-title">Word Bank</div>
-            <div class="branch-copy">Collect the words that stick, then bring them back when you need them.</div>
-          </div>
-          <div class="branch-bottom">
-            <span>Enter branch</span>
-            <span class="branch-arrow" aria-hidden="true"><svg class="ma-icon"><use href="/assets/mode-atlas-icons.svg#icon-arrow"></use></svg></span>
-          </div>
-        </a>
-      </div>
-
-      <div class="future-row" aria-label="Future study branches">
-        <div class="future-tile"><span>Coming soon</span><strong>Listening</strong></div>
-        <div class="future-tile"><span>Coming soon</span><strong>Grammar</strong></div>
-        <div class="future-tile"><span>Coming soon</span><strong>Reading Comprehension</strong></div>
+        <a class="branch kana" href="/kana/" data-ma-branch-entry><div class="branch-top"><div class="branch-meta"><div class="branch-label">Kana Trainer</div><div class="branch-chip">Available</div></div><div class="branch-title">Make kana feel automatic.</div><div class="branch-copy">Build fast recognition and confident recall across hiragana, katakana, dakuten, yōon, and more.</div></div><div class="branch-bottom"><span>Open Kana Trainer</span><span class="branch-arrow" aria-hidden="true"><svg class="ma-icon"><use href="/assets/mode-atlas-icons.svg#icon-arrow"></use></svg></span></div></a>
+        <a class="branch words" href="/wordbank/" data-ma-branch-entry><div class="branch-top"><div class="branch-meta"><div class="branch-label">Word Bank</div><div class="branch-chip">Available</div></div><div class="branch-title">Keep the words worth remembering.</div><div class="branch-copy">Save Japanese vocabulary in your own collection so the words you meet have somewhere useful to live.</div></div><div class="branch-bottom"><span>Open Word Bank</span><span class="branch-arrow" aria-hidden="true"><svg class="ma-icon"><use href="/assets/mode-atlas-icons.svg#icon-arrow"></use></svg></span></div></a>
       </div>
     </section>
-
-    <section class="about-strip ma-page-section" aria-label="About Mode Atlas"><div class="about-card"><div class="about-copy"><div class="section-kicker">Mode Atlas</div><h2>A calm place to build fluency.</h2><p>Mode Atlas keeps each part of study focused: recognise kana, recall kana, collect words, then return to the right tool without digging through clutter.</p></div><div class="about-points"><div class="about-point"><strong>Focused branches</strong><span>Each branch has one job, so practice feels deliberate instead of messy.</span></div><div class="about-point"><strong>Personal progress</strong><span>Your data follows the way you study, with profile controls kept out of the way.</span></div><div class="about-point"><strong>Ready to grow</strong><span>Kana and vocabulary are the base. More study paths can join later without changing the core feel.</span></div></div></div></section>
-
-<footer class="footer">
-      <div><strong>Mode Atlas</strong> · Study ecosystem · v<span data-ma-app-version></span></div>
-      <div><a href="/">mode-atlas.app</a> · <a href="mailto:support@mode-atlas.com">support@mode-atlas.com</a></div>
-    </footer>
+    <section class="atlas-benefits ma-page-section" aria-label="What Mode Atlas helps you do">
+      <div class="atlas-benefit"><span class="section-kicker">Practise</span><strong>Turn recognition into instinct.</strong><p>Short, focused sessions help you spend more time recalling Japanese and less time searching for what to study.</p></div>
+      <div class="atlas-benefit"><span class="section-kicker">Remember</span><strong>Keep useful Japanese close.</strong><p>Build a vocabulary collection around the words you actually want to remember.</p></div>
+      <div class="atlas-benefit"><span class="section-kicker">Grow</span><strong>More ways to learn are on the way.</strong><p>Kana and vocabulary are the beginning, with new Japanese learning tools planned for Mode Atlas.</p></div>
+    </section>
+    <section class="future-section ma-page-section" aria-labelledby="futureTitle"><div class="section-head"><div><div class="section-kicker">Coming later</div><h2 id="futureTitle">More Japanese, one step at a time.</h2></div></div><div class="future-row" aria-label="Future learning tools"><div class="future-tile"><span>Coming soon</span><strong>Listening</strong></div><div class="future-tile"><span>Coming soon</span><strong>Grammar</strong></div><div class="future-tile"><span>Coming soon</span><strong>Reading Comprehension</strong></div></div></section>
+    <footer class="footer"><div><strong>Mode Atlas</strong> · Japanese learning · v<span data-ma-app-version></span></div><div><a href="/">mode-atlas.app</a> · <a href="mailto:support@mode-atlas.com">support@mode-atlas.com</a></div></footer>
   </main>
 <!-- MODE_ATLAS_BODY_ASSETS_START -->
-<script src="./assets/app/mode-atlas-toast.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-dialog.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-feedback.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-theme.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-display-mode.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-storage.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-save-repair.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-page-state.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-dev-console.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-pwa.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-about.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-visit-flows.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-import-export.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-date.assets-2.32.0.js" defer></script>
-<script src="./assets/data/mode-atlas-kana-data.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-kana-metrics.assets-2.32.0.js" defer></script>
-<script src="./assets/achievements/mode-atlas-achievements-ui.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-presets.assets-2.32.0.js" defer></script>
-<script src="./firebase-config.assets-2.32.0.js" defer></script>
-<script src="./cloud-sync.assets-2.32.0.js" defer></script>
-<script src="./assets/ui/mode-atlas-profile-menu.assets-2.32.0.js" defer></script>
-<script src="./assets/ui/mode-atlas-settings-menu.assets-2.32.0.js" defer></script>
-<script src="./assets/ui/mode-atlas-profile-drawer-bindings.assets-2.32.0.js" defer></script>
-<script src="./assets/pages/mode-atlas-home-page.assets-2.32.0.js" defer></script>
-<script src="./assets/app/mode-atlas-sounds.assets-2.32.0.js" defer></script>
+<script src="./assets/app/mode-atlas-toast.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-dialog.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-feedback.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-theme.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-display-mode.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-storage.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-save-repair.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-page-state.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-dev-console.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-pwa.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-about.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-visit-flows.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-import-export.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-date.assets-2.33.0.js" defer></script>
+<script src="./assets/data/mode-atlas-kana-data.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-kana-metrics.assets-2.33.0.js" defer></script>
+<script src="./assets/achievements/mode-atlas-achievements-ui.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-presets.assets-2.33.0.js" defer></script>
+<script src="./firebase-config.assets-2.33.0.js" defer></script>
+<script src="./cloud-sync.assets-2.33.0.js" defer></script>
+<script src="./assets/ui/mode-atlas-profile-menu.assets-2.33.0.js" defer></script>
+<script src="./assets/ui/mode-atlas-settings-menu.assets-2.33.0.js" defer></script>
+<script src="./assets/ui/mode-atlas-profile-drawer-bindings.assets-2.33.0.js" defer></script>
+<script src="./assets/pages/mode-atlas-home-page.assets-2.33.0.js" defer></script>
+<script src="./assets/app/mode-atlas-sounds.assets-2.33.0.js" defer></script>
 <!-- MODE_ATLAS_BODY_ASSETS_END -->
 </body>
 </html>

@@ -1,7 +1,7 @@
 /* Mode Atlas visit flows: onboarding, daily return, and last-study tracking. */
 (function(){
   if(window.__modeAtlasVisitFlowsLoaded)return; window.__modeAtlasVisitFlowsLoaded=true;
-  const K={first:'modeAtlasStarterSeen',return:'modeAtlasDailyReturnSeenDate',lastVisit:'modeAtlasLastVisitStudyDate',streak:'modeAtlasVisitStreak',lastStudied:'modeAtlasLastStudiedAt',lastMode:'modeAtlasLastMode',forceFirst:'modeAtlasForceFirstVisit',forceReturn:'modeAtlasForceDailyReturn'};
+  const K={first:'modeAtlasStarterSeen',complete:'modeAtlasOnboardingComplete',pending:'modeAtlasPendingDestination',return:'modeAtlasDailyReturnSeenDate',lastVisit:'modeAtlasLastVisitStudyDate',streak:'modeAtlasVisitStreak',lastStudied:'modeAtlasLastStudiedAt',lastMode:'modeAtlasLastMode',forceFirst:'modeAtlasForceFirstVisit',forceReturn:'modeAtlasForceDailyReturn'};
   function storeGet(key, fallback='') {
     const store = window.ModeAtlasStorage;
     return store?.get?.(key, fallback) ?? localStorage.getItem(key) ?? fallback;
@@ -29,6 +29,10 @@
   const hasObj=k=>{const v=j(k,null);return v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length>0};
   const hasArr=k=>{const v=j(k,null);return Array.isArray(v)&&v.length>0};
   const studyDate=(d=new Date())=>{const x=new Date(d);if(x.getHours()<4)x.setDate(x.getDate()-1);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
+  const BRANCH_PATHS=new Set(['/kana/','/reading/','/writing/','/results/','/wordbank/']);
+  const onboardingComplete=()=>storeGet(K.complete)==='true'||storeGet(K.first)==='true';
+  function branchDestination(raw){try{const u=new URL(raw||location.href,location.origin);return u.origin===location.origin&&BRANCH_PATHS.has(u.pathname)?u.pathname+u.search+u.hash:''}catch{return''}}
+  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/writing/'))return'Kana Writing';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Reading';return'Kana Trainer'}
   function vEl(tag, className='', text=''){const el=document.createElement(tag);if(className)el.className=className;if(text!=='')el.textContent=String(text);return el}
   function vBtn(className='', text=''){const btn=vEl('button',className,text);btn.type='button';return btn}
   function vLink(className='', text='', href=''){const a=vEl('a',className,text);a.href=href;return a}
@@ -78,8 +82,10 @@
     document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()})
   }
   function closeModal(force){const modal=document.getElementById('maVisitModal'); if(!modal)return; if(modal.dataset.locked==='true' && force!==true)return; modal.classList.remove('open'); modal.dataset.locked='false'; try{document.dispatchEvent(new CustomEvent('ma:visit-flow-closed'))}catch{}}
-  function first(){
+  function first(destination){
     ensure();
+    const target=branchDestination(destination)||branchDestination(storeGet(K.pending))||'/kana/';
+    storeSet(K.pending,target);
     const c=document.getElementById('maVisitContent');
     const presets=[
       ['starter','Starter','あ row + hint mode. Best if kana is brand new.'],
@@ -92,7 +98,7 @@
     c.append(
       vEl('div','ma-visit-kicker','Mode Atlas setup'),
       vEl('h2','ma-visit-title','Welcome to Mode Atlas'),
-      vEl('p','ma-visit-copy','Choose a starting preset for Mode Atlas. This sets your first study session layout for all our branches and can be changed or customised later. We will also send you to Kana Trainer - Reading mode to get you started.')
+      vEl('p','ma-visit-copy',`Choose your Kana Trainer starting level, then continue to ${destinationLabel(target)}. You can change your practice setup whenever you want.`)
     );
 
     const panel=vEl('div','ma-card ma-card--soft ma-visit-panel');
@@ -171,8 +177,11 @@
       storeSet(K.return, studyDate());
       storeSet(K.lastVisit, studyDate());
       sessionStorage.setItem('modeAtlasShowWhatsNewAfterOnboarding','1');
+      const destination=branchDestination(storeGet(K.pending))||'/kana/';
+      storeRemove(K.pending);
       closeModal(true);
-      navigateApp('reading/');
+      try{document.dispatchEvent(new CustomEvent('ma:onboarding-complete'))}catch{}
+      navigateApp(destination);
     });
     const modal=document.getElementById('maVisitModal');
     modal.dataset.locked='true';
@@ -222,10 +231,9 @@
   }
   let visitDecisionMade=false;
   async function maybe(){
-    if(page()!=='index.html'||visitDecisionMade)return;
+    if(visitDecisionMade)return;
     const q=new URLSearchParams(location.search),ff=sessionStorage.getItem(K.forceFirst)==='1'||q.has('devFirstVisit')||q.has('setup'),fr=sessionStorage.getItem(K.forceReturn)==='1'||q.has('devReturn');
     sessionStorage.removeItem(K.forceFirst);sessionStorage.removeItem(K.forceReturn);storeRemove(K.forceFirst);storeRemove(K.forceReturn);
-    const hadLocalData=hasData();
     let initialCloudReady=true;
     try{
       if(window.KanaCloudSync?.waitForInitialHydration)initialCloudReady=await window.KanaCloudSync.waitForInitialHydration();
@@ -233,20 +241,16 @@
       else if(window.KanaCloudSync?.ready)await window.KanaCloudSync.ready;
     }catch{initialCloudReady=false}
     if(visitDecisionMade)return;
-    if(ff){visitDecisionMade=true;return first();}
+    if(ff){visitDecisionMade=true;return first(branchDestination(location.href)||'/kana/');}
     if(fr){visitDecisionMade=true;return ret();}
-    if(!initialCloudReady&&window.KanaCloudSync?.getUser?.()&&!hadLocalData)return;
-    const nd=!hasData();
-    if(nd&&storeGet(K.first)!=='true'){visitDecisionMade=true;return first();}
-    if(!nd){
-      const t=studyDate();
-      if(storeGet(K.return)!==t){visitDecisionMade=true;return ret();}
-      streak();
-    }
+    if(!initialCloudReady&&window.KanaCloudSync?.getUser?.())return;
+    if(onboardingComplete()){if(hasData())streak();return;}
+    const current=branchDestination(location.href);
+    if(current){visitDecisionMade=true;return first(current);}
   }
-  function triggerFirst(){storeRemove(K.forceFirst);sessionStorage.removeItem(K.forceFirst);if(page()==='index.html')first();else{sessionStorage.setItem(K.forceFirst,'1');navigateApp('/?devFirstVisit=1')}}
+  function triggerFirst(){storeRemove(K.forceFirst);sessionStorage.removeItem(K.forceFirst);first(branchDestination(location.href)||'/kana/')}
   function triggerReturn(){storeRemove(K.forceReturn);sessionStorage.removeItem(K.forceReturn);if(page()==='index.html')ret();else{sessionStorage.setItem(K.forceReturn,'1');navigateApp('/?devReturn=1')}}
-  function reset(){[K.first,K.return,K.forceFirst,K.forceReturn,K.lastVisit,K.streak].forEach(k=>storeRemove(k));console.info('Mode Atlas visit flags reset')}
+  function reset(){[K.first,K.complete,K.pending,K.return,K.forceFirst,K.forceReturn,K.lastVisit,K.streak].forEach(k=>storeRemove(k));console.info('Mode Atlas visit flags reset')}
   window.modeAtlasTriggerFirstVisit=triggerFirst;window.modeAtlasTriggerDailyReturn=triggerReturn;window.modeAtlasResetVisitFlags=reset;
-  function init(){track();maybe();window.addEventListener('kanaCloudSyncStatusChanged',maybe);document.addEventListener('ma:ui-refresh',maybe)} if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  function init(){track();document.addEventListener('click',event=>{if(onboardingComplete()||event.defaultPrevented||event.button>0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;const link=event.target.closest?.('a[href]');if(!link)return;const target=branchDestination(link.href);if(!target)return;event.preventDefault();visitDecisionMade=true;first(target)});maybe();window.addEventListener('kanaCloudSyncStatusChanged',maybe);document.addEventListener('ma:ui-refresh',maybe)} if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

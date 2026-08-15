@@ -1050,3 +1050,25 @@ test('2.32 CSS consolidation keeps Settings and Profile ownership canonical', ()
   assert.match(modifiers, /bottom-shell\.ma-modifiers-only/);
   assert.ok(!trainer.includes('max-height:min(72vh,720px)'), 'modifier drawer max-height must remain owned by modifier-menu.css');
 });
+
+
+
+test('2.33 experience restructure keeps Atlas clean and onboarding destination-aware', () => {
+  const home = read('index.html');
+  const homeJs = read('assets/pages/mode-atlas-home-page.js');
+  const visit = read('assets/app/mode-atlas-visit-flows.js');
+  const kana = read('kana/index.html');
+  assert.match(home, /data-ma-home-visitor/);
+  assert.match(home, /data-ma-home-user/);
+  assert.match(home, /Explore Kana Trainer/);
+  assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Study status/);
+  assert.match(homeJs, /dataset\.maHomeState=isUser\?'returning':'visitor'/);
+  assert.doesNotMatch(homeJs, /dailyDone\(|homeVisitStreak|homeReadingDaily|homeWritingDaily/);
+  assert.match(visit, /BRANCH_PATHS=new Set/);
+  assert.match(visit, /waitForInitialHydration/);
+  assert.match(visit, /storeSet\(K\.pending,target\)/);
+  assert.match(visit, /navigateApp\(destination\)/);
+  assert.doesNotMatch(visit, /if\(nd&&storeGet\(K\.first\)!=='true'\)/);
+  assert.ok(kana.indexOf('kana-pathways') < kana.indexOf('kana-progress-intro'));
+  assert.ok(kana.indexOf('kana-progress-intro') < kana.indexOf('id="kanaTodayCard"'));
+});
