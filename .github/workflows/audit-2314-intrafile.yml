@@ -1,0 +1,53 @@
+name: Audit Mode Atlas 2.31.4 intra-file duplication
+on:
+  push:
+    branches:
+      - agent/audit-2.31.4-pausepoint
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan repeated declarations inside canonical files
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,collections,hashlib
+          print('=== INTRA-FILE DUPLICATION ===')
+          for p in sorted(Path('assets/css').glob('*.css')):
+              if '.assets-' in p.name: continue
+              text=re.sub(r'/\*.*?\*/','',p.read_text(errors='ignore'),flags=re.S)
+              # Simple selector parser; ignore at-rules and keyframe stages.
+              sels=[]
+              for m in re.finditer(r'([^{}]+)\{',text):
+                  raw=m.group(1).strip()
+                  if not raw or raw.startswith('@') or raw in {'from','to'} or re.match(r'^\d+%$',raw): continue
+                  for s in raw.split(','):
+                      s=re.sub(r'\s+',' ',s.strip())
+                      if s and not s.startswith('@'): sels.append(s)
+              counts=collections.Counter(sels)
+              dups=[(s,n) for s,n in counts.items() if n>1]
+              if dups:
+                  print('\nCSSFILE',p,'duplicate selectors',len(dups))
+                  for s,n in sorted(dups,key=lambda x:(-x[1],x[0]))[:60]: print(' ',n,s)
+          for p in sorted(Path('.').rglob('*.js')):
+              if '.assets-' in p.name or 'node_modules' in str(p): continue
+              t=p.read_text(errors='ignore')
+              names=re.findall(r'(?m)^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(',t)
+              c=collections.Counter(names)
+              d=[(n,k) for n,k in c.items() if k>1]
+              if d:
+                  print('\nJSFILE',p,'duplicate function declarations',d)
+          print('=== END INTRA-FILE DUPLICATION ===')
+          PY
+      - name: Remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/audit-2314-intrafile.yml
+          git commit -m "Remove temporary intra-file audit workflow"
+          git push origin HEAD
