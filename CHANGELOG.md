@@ -1,3 +1,10 @@
+## 2.31.2 - 2026-08-15
+- Reworked Word Bank into a true library-first layout: the permanent Quick Capture rail is removed and Add word now opens the existing capture flow in the shared Mode Atlas dialog.
+- Added an Add a word action to the empty library state and closes the capture dialog after a successful add while keeping storage, romaji generation, duplicate detection, and cloud sync unchanged.
+- Fixed shared icon buttons so Safari no longer renders Favourite/Delete as native white controls; corrected Word Bank disclosure chevrons, focus styling, and Collection Tools spacing/wrapping.
+- Moved forced tablet/phone Settings row stacking into the shared component owner and removed the drawer-specific duplicate workaround.
+- Simplified the paused trainer state to a restrained cue, removed the oversized bottom pause surface, and switches the Pause/Resume SVG between pause and play correctly.
+
 ## 2.31.1 - 2026-08-15
 - Fixed Settings drawer responsive ownership so coarse/tablet layouts stack setting copy above controls instead of collapsing descriptions into a narrow column; Display remains four-up on tablet and becomes two-by-two on narrow phones.
 - Restored the trainer session-state contract so Start practice actually disappears while a session is active, removing the duplicated Start + Pause/End control stack and the extra vertical gap it created.

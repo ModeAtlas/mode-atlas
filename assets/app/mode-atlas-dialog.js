@@ -209,6 +209,7 @@
     confirm(input){ return enqueue(input, 'confirm'); },
     open(input){ return enqueue(input, input?.kind || 'alert'); },
     feature(input){ return enqueue(input, 'feature'); },
+    close(value = true){ if (active) settle(value); },
     isOpen(){ return !!active; }
   });
 })(window);

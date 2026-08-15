@@ -69,13 +69,24 @@
       if (!hasKeyboardMode || settings.keyboardMode) inputEl.focus();
     } catch {}
   }
+  function setPauseButtonState(isPaused){
+    const btn = document.getElementById('pauseSessionBtn');
+    if (!btn) return;
+    const label = btn.querySelector('[data-ma-pause-label]');
+    if (label) label.textContent = isPaused ? 'Resume' : 'Pause';
+    const use = btn.querySelector('use');
+    if (use) {
+      const current = use.getAttribute('href') || '/assets/mode-atlas-icons.svg#icon-pause';
+      const base = current.split('#')[0];
+      use.setAttribute('href', `${base}#icon-${isPaused ? 'play' : 'pause'}`);
+    }
+  }
   function togglePause(){
     try {
       if (!sessionStarted) return;
       paused = !paused;
       document.body.classList.toggle('ma-session-paused', paused);
-      const btn = document.getElementById('pauseSessionBtn');
-      if (btn) { const label = btn.querySelector('[data-ma-pause-label]'); if (label) label.textContent = paused ? 'Resume' : 'Pause'; else btn.textContent = paused ? 'Resume' : 'Pause'; }
+      setPauseButtonState(paused);
       if (paused) { pauseTimers(); locked = true; setInputDisabled(true); }
       else { locked = false; setInputDisabled(false); resumeTimers(); focusInputIfNeeded(); }
     } catch (e) { console.warn('Pause toggle failed', e); }
@@ -110,12 +121,7 @@
     paused = false;
     pauseRemaining = 0;
     document.body.classList.remove('ma-session-paused');
-    const btn = document.getElementById('pauseSessionBtn');
-    if (btn) {
-      const label = btn.querySelector('[data-ma-pause-label]');
-      if (label) label.textContent = 'Pause';
-      else btn.textContent = 'Pause';
-    }
+    setPauseButtonState(false);
   }
 
   document.addEventListener('click', (event) => {

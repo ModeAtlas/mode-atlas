@@ -979,3 +979,25 @@ test('full-project audit cleanup keeps one owner for dev visit tools, drawers, s
   assert.doesNotMatch(audit, /sys\.exit\(main\(\)\)[\s\S]*?legacy_home_profile/);
 });
 
+
+
+test('2.31.2 refinement keeps Word Bank library-first and shared responsive controls owned correctly', () => {
+  const components = read('assets/css/mode-atlas-components.css');
+  const profileCss = read('assets/css/mode-atlas-profile-settings.css');
+  const wordbankHtml = read('wordbank/index.html');
+  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
+  const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
+  const sessionControls = read('assets/trainer/mode-atlas-session-controls.js');
+  const studyCss = read('assets/css/mode-atlas-study-shared.css');
+  assert.match(components, /\.ma-icon-button\{[\s\S]*appearance:none/);
+  assert.match(components, /data-effective-display-mode="tablet"[^\n]*\.ma-setting-row/);
+  assert.doesNotMatch(profileCss, /\.ma-setting-row\{grid-template-columns:1fr/);
+  assert.match(wordbankHtml, /class="wordbank-add-host"/);
+  assert.doesNotMatch(wordbankHtml, /class="panel add-panel/);
+  assert.match(wordbankJs, /ModeAtlasDialog\?\.feature/);
+  assert.match(wordbankJs, /ModeAtlasDialog\?\.close/);
+  assert.match(wordbankCss, /wordbank-tools__chevron\{transform:rotate\(90deg\)/);
+  assert.match(sessionControls, /setPauseButtonState/);
+  assert.match(sessionControls, /icon-\$\{isPaused \? 'play' : 'pause'\}/);
+  assert.doesNotMatch(studyCss, /inset:auto 18px 18px/);
+});

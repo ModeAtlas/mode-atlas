@@ -231,7 +231,7 @@ function refreshProfileShell() {
       clearStatus();
       showStatus(`Added ${kana} to your word bank.`, 'ok');
       renderEntries(entry.id);
-      elements.kanaInput.focus();
+      window.ModeAtlasDialog?.close?.(true);
     }
 
     function updateEntry(id, patch) {
@@ -578,7 +578,13 @@ function refreshProfileShell() {
       const items = getFilteredEntries();
 
       if (!items.length) {
-        elements.entries.replaceChildren(createEl("div", "empty ma-card ma-empty-state", "No matching words yet. Add a word from the quick-capture panel to start your collection."));
+        const empty = createEl("div", "empty ma-card ma-empty-state");
+        empty.append(createEl("div", "", "No matching words yet."));
+        const addFirst = createEl("button", "ma-button ma-button--primary", "Add a word");
+        addFirst.type = "button";
+        addFirst.addEventListener("click", openAddWordDialog);
+        empty.append(addFirst);
+        elements.entries.replaceChildren(empty);
         return;
       }
 
@@ -593,10 +599,19 @@ function refreshProfileShell() {
       }
     }
 
-    elements.addJumpBtn?.addEventListener('click', () => {
-      elements.addPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      window.setTimeout(() => elements.kanaInput?.focus(), 220);
-    });
+    function openAddWordDialog(){
+      clearStatus();
+      window.ModeAtlasDialog?.feature?.({
+        kicker: 'Word Bank',
+        title: 'Add word',
+        message: 'Enter kana first. Mode Atlas saves the word immediately and generates its romaji.',
+        contentNode: elements.addPanel,
+        dismissOnBackdrop: true
+      });
+      window.setTimeout(() => elements.kanaInput?.focus(), 80);
+    }
+
+    elements.addJumpBtn?.addEventListener('click', openAddWordDialog);
 
     elements.addWordBtn.addEventListener('click', addWord);
     elements.kanaInput.addEventListener('keydown', (event) => {
@@ -609,8 +624,7 @@ function refreshProfileShell() {
     elements.clearInputBtn.addEventListener('click', () => {
       elements.kanaInput.value = '';
       clearStatus();
-      elements.kanaInput.focus();
-    });
+      });
 
     [elements.searchInput, elements.sortSelect, elements.filterSelect].forEach(el => {
       el.addEventListener('input', () => renderEntries());
@@ -692,5 +706,4 @@ function refreshProfileShell() {
     window.addEventListener('storage', (event) => {
       if (!event.key || event.key === STORAGE_KEY) refreshWordBankFromStorage();
     });
-    elements.kanaInput.focus();
   
