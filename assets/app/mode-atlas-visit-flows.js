@@ -32,7 +32,9 @@
   const BRANCH_PATHS=new Set(['/kana/','/reading/','/writing/','/results/','/wordbank/']);
   const KANA_SETUP_PATHS=new Set(['/kana/','/reading/','/writing/']);
   const onboardingComplete=()=>storeGet(K.complete)==='true'||storeGet(K.first)==='true';
-  const kanaSetupComplete=()=>storeGet(K.kanaSetup)==='true'||storeGet(K.first)==='true';
+  const legacyKanaSetupAtLoad=storeGet(K.first)==='true'&&(hasObj('settings')||hasObj('reverseSettings')||Boolean(storeGet('modeAtlasOnboardingPreset'))||Boolean(storeGet('modeAtlasActivePreset'))||Boolean(storeGet('modeAtlasDefaultPreset')));
+  if(legacyKanaSetupAtLoad&&storeGet(K.kanaSetup)!=='true')storeSet(K.kanaSetup,'true');
+  const kanaSetupComplete=()=>storeGet(K.kanaSetup)==='true';
   function branchDestination(raw){try{const u=new URL(raw||location.href,location.origin);return u.origin===location.origin&&BRANCH_PATHS.has(u.pathname)?u.pathname+u.search+u.hash:''}catch{return''}}
   function destinationPath(raw){try{return new URL(branchDestination(raw)||raw||location.href,location.origin).pathname}catch{return''}}
   function requiresKanaSetup(raw){return KANA_SETUP_PATHS.has(destinationPath(raw))}
@@ -282,11 +284,14 @@
   async function gateLink(event){
     if(event.defaultPrevented||event.button>0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
     const link=event.target.closest?.('a[href]');if(!link)return;
-    const target=branchDestination(link.href);if(!target||!needsSetup(target))return;
+    const target=branchDestination(link.href);
+    // Branch-specific setup belongs to the destination page so its own module
+    // dependencies are present. Link interception only owns general Mode Atlas setup.
+    if(!target||onboardingComplete()||requiresKanaSetup(target))return;
     event.preventDefault();
     const cloudReady=await waitForInitialCloudState();
     if(!cloudReady&&window.KanaCloudSync?.getUser?.()){navigateApp(target);return;}
-    if(!needsSetup(target)){navigateApp(target);return;}
+    if(onboardingComplete()){navigateApp(target);return;}
     visitDecisionMade=true;
     first(target);
   }

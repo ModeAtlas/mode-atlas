@@ -121,6 +121,7 @@
     'modeAtlasLegalVersion',
     'modeAtlasOnboardingComplete',
     'modeAtlasOnboardingPreset',
+    'modeAtlasKanaSetupComplete',
     'modeAtlasPresetAchievementProgress',
     'modeAtlasPresetAchievementUpdatedAt',
     'modeAtlasSaveSchemaMigrated',
@@ -142,6 +143,7 @@
     'modeAtlasLastUserId',
     'modeAtlasLegacyServiceWorkerRetirement',
     'modeAtlasLocalImportGuardUntil',
+    'modeAtlasPendingDestination',
     'modeAtlasSectionTimestamps',
     'modeAtlasSafeMode',
     'modeAtlasSmokeSeeded'

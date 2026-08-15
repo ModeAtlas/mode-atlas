@@ -1091,3 +1091,18 @@ test('2.33.1 onboarding separates Mode Atlas consent from Kana branch setup', ()
   assert.match(pwa, /ma:visit-flow-closed/);
   assert.match(modalCss, /\.ma-status\.ma-visit-error\{display:none/);
 });
+
+test('2.33.2 Kana setup is destination-owned and persisted as app state', () => {
+  const visit = read('assets/app/mode-atlas-visit-flows.js');
+  const storage = read('assets/app/mode-atlas-storage.js');
+  const wordbank = read('wordbank/index.html');
+  const kana = read('kana/index.html');
+  assert.match(visit, /legacyKanaSetupAtLoad=storeGet\(K\.first\)==='true'&&/);
+  assert.match(visit, /const kanaSetupComplete=\(\)=>storeGet\(K\.kanaSetup\)==='true'/);
+  assert.match(visit, /if\(!target\|\|onboardingComplete\(\)\|\|requiresKanaSetup\(target\)\)return/);
+  assert.match(visit, /if\(needsSetup\(current\)\)\{visitDecisionMade=true;return first\(current\);\}/);
+  assert.match(storage, /'modeAtlasKanaSetupComplete'/);
+  assert.match(storage, /'modeAtlasPendingDestination'/);
+  assert.doesNotMatch(wordbank, /mode-atlas-presets\.assets-/);
+  assert.match(kana, /mode-atlas-presets\.assets-2\.33\.2\.js/);
+});

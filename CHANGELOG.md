@@ -1,3 +1,9 @@
+## 2.33.2 - 2026-08-16
+- Moved Kana starting-level setup to the Kana/Reading/Writing destination page so Word Bank never has to host or load Kana preset logic.
+- Fixed Word Bank → Kana first-use flow: after general Mode Atlas consent, navigation reaches Kana and Kana setup opens there before practice begins.
+- Added the Kana-setup flag to the canonical Mode Atlas save/storage ownership registry and made pending onboarding destinations app-owned local state.
+- Tightened legacy onboarding migration so old `modeAtlasStarterSeen` only migrates to Kana setup when real existing Kana configuration is present, instead of permanently bypassing the new branch-specific setup.
+
 ## 2.33.1 - 2026-08-16
 - Split first-use setup into general Mode Atlas consent and Kana-specific starting-level setup so Word Bank no longer asks for irrelevant Kana presets.
 - Preserved the chosen destination through setup and defers Kana starting-level selection until the learner actually enters Kana, Reading, or Writing.
