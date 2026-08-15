@@ -832,7 +832,8 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   assert.match(wordbankHtml, /stats ma-stat-grid/);
   assert.match(wordbankHtml, /hero ma-card ma-page-hero ma-page-intro/);
   assert.match(wordbankHtml, /ma-toolbar-shared ma-toolbar-shared--sticky/);
-  assert.match(wordbankHtml, /<details class="wordbank-tools">/);
+  assert.match(wordbankHtml, /id="wordBankActionsBtn"/);
+  assert.doesNotMatch(wordbankHtml, /<details class="wordbank-tools">/);
   assert.match(wordbankJs, /empty ma-card ma-empty-state/);
   const wordbankStatBlock = wordbankCss.match(/\.stats?\s*\{([\s\S]*?)\n\}/)?.[1] || '';
   assert.doesNotMatch(wordbankStatBlock, /(^|\n)\s*border\s*:/,
@@ -890,7 +891,8 @@ test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and c
   const addIndex = wordbank.indexOf('id="wordBankAddPanel"');
   assert.ok(libraryIndex >= 0 && addIndex > libraryIndex, 'Word Bank collection must precede quick capture in document order');
   assert.match(wordbank, /id="wordBankAddJumpBtn"/);
-  assert.match(wordbank, /<details class="wordbank-tools">/);
+  assert.match(wordbank, /id="wordBankActionsBtn"/);
+  assert.doesNotMatch(wordbank, /<details class="wordbank-tools">/);
   assert.match(wordbankJs, /createIcon\(entry\.favorite \? "star-filled" : "star"\)/);
 });
 
