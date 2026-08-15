@@ -764,10 +764,18 @@ def main() -> int:
     if 'function renderGuidance(' not in results_page_js or 'function renderTrend(' not in results_page_js:
         fail(errors, 'Results page no longer renders actionable guidance/trend data')
     wordbank_markup = text(ROOT / 'wordbank/index.html')
-    library_pos = wordbank_markup.find('class="panel library-panel ma-card"')
-    add_pos = wordbank_markup.find('id="wordBankAddPanel"')
-    if library_pos < 0 or add_pos <= library_pos or 'id="wordBankAddJumpBtn"' not in wordbank_markup or '<details class="wordbank-tools">' not in wordbank_markup:
-        fail(errors, 'Word Bank library-first hierarchy or secondary tools disclosure drifted')
+    library_pos = wordbank_markup.find('class=\"panel library-panel ma-card\"')
+    add_pos = wordbank_markup.find('id=\"wordBankAddPanel\"')
+    if (
+        library_pos < 0 or add_pos <= library_pos
+        or 'id=\"wordBankAddJumpBtn\"' not in wordbank_markup
+        or 'id=\"wordBankActionsBtn\"' not in wordbank_markup
+        or 'id=\"wordBankActionsPanel\"' not in wordbank_markup
+        or '<details class=\"wordbank-tools\">' in wordbank_markup
+        or 'id=\"exportBtn\"' in wordbank_markup
+        or 'id=\"importFile\"' in wordbank_markup
+    ):
+        fail(errors, 'Word Bank library-first hierarchy or collection settings ownership drifted')
 
     framed_pages = {
         ROOT / 'index.html': 'ma-atlas-page',
