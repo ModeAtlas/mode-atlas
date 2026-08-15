@@ -1020,3 +1020,18 @@ test('2.31.3 simplification keeps Settings concise and one backup owner for Word
   assert.match(wordbankJs, /openCollectionActionsDialog/);
   assert.doesNotMatch(wordbankCss, /wordbank-tools/);
 });
+
+
+test('2.31.4 profile and settings polish keeps auth and drawer layout state-owned', () => {
+  const profile = read('assets/ui/mode-atlas-profile-menu.js');
+  const bindings = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const cloud = read('cloud-sync.js');
+  const css = read('assets/css/mode-atlas-profile-settings.css');
+  assert.match(profile, /id="profileAuthBtn"/);
+  assert.doesNotMatch(profile, /profileSignInBtn|profileSignOutBtn/);
+  assert.match(bindings, /authBtn: document\.getElementById\('profileAuthBtn'\)/);
+  assert.match(cloud, /boundAuthButtons/);
+  assert.match(cloud, /currentUser\) void signOutUser\(\)/);
+  assert.match(css, /grid-template-columns:minmax\(96px,120px\) minmax\(0,1fr\)/);
+  assert.match(css, /\.ma-settings-status:empty\{display:none;\}/);
+});

@@ -1,3 +1,9 @@
+## 2.31.4 - 2026-08-15
+- Fixed Settings preference-row overlap by giving labels a protected column and allowing segmented controls to size to the drawer.
+- Removed empty Save Data status spacing so the backup controls no longer leave a large unused gap.
+- Replaced separate profile Sign in / Sign out buttons with one state-aware Google account action that signs in when logged out and signs out when logged in.
+- Extended the shared cloud UI binding with a single auth-button contract while preserving existing two-button bindings elsewhere.
+
 ## 2.31.3 - 2026-08-15
 - Simplified basic Settings rows by removing unnecessary explanatory copy from Display, Sound, and Appearance.
 - Fixed Atlas top framing by removing the oversized hero section top padding that created a large empty band below navigation.

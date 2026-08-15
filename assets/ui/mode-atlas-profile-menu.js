@@ -26,8 +26,9 @@
               </div>
             </div>
             <div class="ma-auth-actions">
-              <button class="ma-button ma-button--primary" id="profileSignInBtn" data-profile-sign-in type="button">Sign in with Google</button>
-              <button class="ma-button" id="profileSignOutBtn" data-profile-sign-out type="button" hidden>Sign out</button>
+              <button class="ma-button ma-button--primary ma-button--wide" id="profileAuthBtn" data-profile-auth type="button">
+                <span data-profile-auth-label>Sign in with Google</span>
+              </button>
             </div>
           </section>
 

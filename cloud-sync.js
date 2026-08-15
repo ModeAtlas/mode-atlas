@@ -740,6 +740,7 @@ let lastStatus = '';
 const uiBindings = new Set();
 const boundSignInButtons = new WeakSet();
 const boundSignOutButtons = new WeakSet();
+const boundAuthButtons = new WeakSet();
 const LAST_CLOUD_SYNC_KEY = 'modeAtlasLastCloudSyncAt';
 const CLOUD_STATE_KEY = 'modeAtlasCloudAccessState';
 const CLOUD_ERROR_KEY = 'modeAtlasLastCloudErrorAt';
@@ -837,6 +838,14 @@ function updateUiBinding(binding) {
   }
   if (binding.signInBtn) setCloudElementVisible(binding.signInBtn, !user);
   if (binding.signOutBtn) setCloudElementVisible(binding.signOutBtn, !!user);
+  if (binding.authBtn) {
+    const label = binding.authBtn.querySelector('[data-profile-auth-label]');
+    const text = user ? 'Sign out' : 'Sign in with Google';
+    if (label) label.textContent = text;
+    else binding.authBtn.textContent = text;
+    binding.authBtn.classList.toggle('ma-button--primary', !user);
+    binding.authBtn.setAttribute('aria-label', text);
+  }
   if (binding.signedInEls) binding.signedInEls.forEach((el) => setCloudElementVisible(el, !!user));
   if (binding.signedOutEls) binding.signedOutEls.forEach((el) => setCloudElementVisible(el, !user));
 }
@@ -845,6 +854,7 @@ function updateUiBinding(binding) {
 function findUiBinding(options = {}) {
   const signInBtn = options.signInBtn || null;
   const signOutBtn = options.signOutBtn || null;
+  const authBtn = options.authBtn || null;
   const statusEl = options.statusEl || null;
   const nameEl = options.nameEl || null;
   const emailEl = options.emailEl || null;
@@ -852,6 +862,7 @@ function findUiBinding(options = {}) {
   for (const binding of uiBindings) {
     if (binding.signInBtn === signInBtn
       && binding.signOutBtn === signOutBtn
+      && binding.authBtn === authBtn
       && binding.statusEl === statusEl
       && binding.nameEl === nameEl
       && binding.emailEl === emailEl
@@ -874,6 +885,7 @@ function bindUi(options = {}) {
   const binding = {
     signInBtn: options.signInBtn || null,
     signOutBtn: options.signOutBtn || null,
+    authBtn: options.authBtn || null,
     statusEl: options.statusEl || null,
     nameEl: options.nameEl || null,
     emailEl: options.emailEl || null,
@@ -890,6 +902,13 @@ function bindUi(options = {}) {
   if (binding.signOutBtn && !boundSignOutButtons.has(binding.signOutBtn)) {
     boundSignOutButtons.add(binding.signOutBtn);
     binding.signOutBtn.addEventListener('click', signOutUser);
+  }
+  if (binding.authBtn && !boundAuthButtons.has(binding.authBtn)) {
+    boundAuthButtons.add(binding.authBtn);
+    binding.authBtn.addEventListener('click', () => {
+      if (currentUser) void signOutUser();
+      else void signInWithGoogle();
+    });
   }
   uiBindings.add(binding);
   updateUiBinding(binding);

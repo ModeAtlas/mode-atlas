@@ -296,8 +296,7 @@
     if (!sync?.bindUi) return false;
     try {
       profileCloudBinding = sync.bindUi({
-        signInBtn: document.getElementById('profileSignInBtn'),
-        signOutBtn: document.getElementById('profileSignOutBtn'),
+        authBtn: document.getElementById('profileAuthBtn'),
         statusEl: null,
         nameEl: document.getElementById('profileName'),
         emailEl: document.getElementById('profileEmail'),
