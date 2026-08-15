@@ -1,0 +1,161 @@
+name: Apply Mode Atlas 2.31.3 simplification
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.31.3-ui-simplification
+permissions:
+  contents: write
+jobs:
+  apply-simplification:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply source-level UI simplification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace(path, old, new, count=1):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'Expected block not found in {path}: {old[:100]!r}')
+              p.write_text(text.replace(old, new, count))
+
+          # Settings: basic preferences do not need explanatory prose.
+          settings = Path('assets/ui/mode-atlas-settings-menu.js')
+          st = settings.read_text()
+          for desc in (
+              '<div class="ma-setting-row__description">Let Mode Atlas adapt automatically, or force a layout for this device.</div>\n',
+              '<div class="ma-setting-row__description">Choose feedback volume for trainer answers and interface sounds.</div>\n',
+              '<div class="ma-setting-row__description">Use the dark or light Atlas palette, or follow your system.</div>\n',
+          ):
+              if desc not in st:
+                  raise SystemExit(f'Settings description missing: {desc}')
+              st = st.replace(desc, '', 1)
+          settings.write_text(st)
+
+          # Atlas: remove the oversized empty band between nav and hero card.
+          replace('assets/css/mode-atlas-home-page.css',
+              'padding-block:clamp(34px,4.5vw,58px) clamp(30px,4vw,48px);',
+              'padding-block:var(--ma-space-3) clamp(24px,3vw,36px);')
+
+          # Word Bank HTML: top actions are Add word + collection settings; remove duplicate backup UI.
+          html = Path('wordbank/index.html')
+          h = html.read_text()
+          replace_block = '''      <div class="ma-page-intro__aside">\n        <button class="ma-button ma-button--primary" id="wordBankAddJumpBtn" type="button">\n          <svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-edit"></use></svg>\n          <span>Add word</span>\n        </button>\n      </div>'''
+          replacement = '''      <div class="ma-page-intro__aside wordbank-hero-actions">\n        <button class="ma-button ma-button--primary" id="wordBankAddJumpBtn" type="button">\n          <svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-edit"></use></svg>\n          <span>Add word</span>\n        </button>\n        <button class="ma-icon-button" id="wordBankActionsBtn" type="button" aria-label="Word Bank settings" title="Word Bank settings">\n          <svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-settings"></use></svg>\n        </button>\n      </div>'''
+          if replace_block not in h:
+              raise SystemExit('Word Bank hero action block missing')
+          h = h.replace(replace_block, replacement, 1)
+
+          tools_re = re.compile(r'''\n          <details class="wordbank-tools">.*?\n          </details>''', re.S)
+          if not tools_re.search(h):
+              raise SystemExit('Word Bank collection tools block missing')
+          h = tools_re.sub('', h, count=1)
+
+          add_host_end = '''      <div class="wordbank-add-host" aria-hidden="true">\n        <div class="wordbank-add-dialog-content" id="wordBankAddPanel">\n          <div id="wordBankAddGroup" class="wordbank-add-group" role="group" aria-label="Add a word">\n            <label class="ma-field__label" for="kanaInput">Kana Word</label>\n            <input class="ma-input" id="kanaInput" type="text" name="kana_word" placeholder="e.g. ねこ / コーヒー" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" inputmode="text" />\n            <div class="ma-field__hint">Hiragana, katakana, small kana, っ / ッ, and ー are supported. Duplicate kana words are blocked.</div>\n            <div class="btn-row ma-action-row">\n              <button class="ma-button ma-button--primary" id="addWordBtn" type="button" disabled aria-disabled="true">Add Word</button>\n              <button class="ma-button ma-button--ghost" id="clearInputBtn" type="button">Clear</button>\n            </div>\n            <div class="ma-status" id="statusMsg" role="status" aria-live="polite"></div>\n          </div>\n        </div>\n      </div>'''
+          if add_host_end not in h:
+              raise SystemExit('Word Bank add host missing')
+          actions_host = add_host_end + '''\n      <div class="wordbank-actions-host" aria-hidden="true">\n        <div class="wordbank-actions-dialog-content" id="wordBankActionsPanel">\n          <button class="ma-button ma-button--danger ma-button--wide" id="clearAllBtn" type="button">\n            <svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-delete"></use></svg>\n            <span>Clear all words</span>\n          </button>\n        </div>\n      </div>'''
+          h = h.replace(add_host_end, actions_host, 1)
+          html.write_text(h)
+
+          # Word Bank CSS: hero action grouping + hidden settings content; delete Collection Tools styling.
+          css = Path('assets/css/mode-atlas-wordbank-page.css')
+          w = css.read_text()
+          w = w.replace('.ma-wordbank-page .ma-page-intro__aside{align-self:center;}',
+              '.ma-wordbank-page .ma-page-intro__aside{align-self:center;}\n.wordbank-hero-actions{display:flex;align-items:center;justify-content:flex-end;gap:var(--ma-space-2);}\n.wordbank-actions-host{display:none;}\n.wordbank-actions-dialog-content{display:grid;gap:var(--ma-space-3);}')
+          tools_css = re.compile(r'''\n/\* Infrequent data-management actions live behind a disclosure\. \*/\n\.wordbank-tools\{.*?\.wordbank-tools__actions \.ma-button--danger\{grid-column:1 / -1;\}\n''', re.S)
+          if not tools_css.search(w):
+              raise SystemExit('Word Bank tools CSS block missing')
+          w = tools_css.sub('\n', w, count=1)
+          w = w.replace('  .ma-wordbank-page .ma-page-intro__aside .ma-button{width:100%;}',
+              '  .wordbank-hero-actions{width:100%;}\n  .wordbank-hero-actions #wordBankAddJumpBtn{flex:1;width:auto;}')
+          w = w.replace('  .wordbank-tools__actions{grid-template-columns:1fr;}\n  .wordbank-tools__actions .ma-button--danger{grid-column:auto;}\n', '')
+          w = w.replace('  .card-summary,.summary-toggle,.wordbank-tools__chevron{transition:none;}',
+              '  .card-summary,.summary-toggle{transition:none;}')
+          css.write_text(w)
+
+          # Word Bank runtime: remove separate export/import ownership and add collection settings dialog.
+          js = Path('assets/pages/mode-atlas-wordbank-page.js')
+          j = js.read_text()
+          j = j.replace("      exportBtn: document.getElementById('exportBtn'),\n      importFile: document.getElementById('importFile'),\n", '')
+          j = j.replace("      addJumpBtn: document.getElementById('wordBankAddJumpBtn'),\n      addPanel: document.getElementById('wordBankAddPanel')",
+              "      addJumpBtn: document.getElementById('wordBankAddJumpBtn'),\n      addPanel: document.getElementById('wordBankAddPanel'),\n      actionsBtn: document.getElementById('wordBankActionsBtn'),\n      actionsPanel: document.getElementById('wordBankActionsPanel')")
+
+          export_import = re.compile(r'''\n    function exportBank\(\) \{.*?\n    function getFilteredEntries\(\) \{''', re.S)
+          match = export_import.search(j)
+          if not match:
+              raise SystemExit('Word Bank export/import functions not found')
+          j = export_import.sub('\n    function getFilteredEntries() {', j, count=1)
+
+          old_clear = '''    async function clearAllWords() {\n      if (!wordBank.length) {\n        showStatus('Your word bank is already empty.', 'warn');\n        return;\n      }\n      const confirmed = await window.ModeAtlasFeedback?.confirm?.({\n        kicker: 'Word Bank',\n        title: 'Clear the entire Word Bank?',\n        message: 'Every saved word will be removed. This action cannot be undone.',\n        confirmLabel: 'Clear all words',\n        cancelLabel: 'Keep words',\n        tone: 'danger'\n      });\n      if (!confirmed) return;\n      if (!saveWordBank([])) {\n        showStatus('Could not clear the Word Bank. Please try again.', 'error');\n        return;\n      }\n      renderEntries();\n      showStatus('All words cleared.', 'ok');\n    }'''
+          new_clear = '''    async function clearAllWords() {\n      if (!wordBank.length) {\n        window.ModeAtlasFeedback?.toast?.('Your word bank is already empty.', 'warning');\n        window.ModeAtlasDialog?.close?.(true);\n        return;\n      }\n      const confirmed = await window.ModeAtlasFeedback?.confirm?.({\n        kicker: 'Word Bank',\n        title: 'Clear the entire Word Bank?',\n        message: 'Every saved word will be removed. This action cannot be undone.',\n        confirmLabel: 'Clear all words',\n        cancelLabel: 'Keep words',\n        tone: 'danger'\n      });\n      if (!confirmed) return;\n      if (!saveWordBank([])) {\n        window.ModeAtlasFeedback?.toast?.('Could not clear the Word Bank. Please try again.', 'error', 4200);\n        return;\n      }\n      renderEntries();\n      window.ModeAtlasDialog?.close?.(true);\n      window.ModeAtlasFeedback?.toast?.('All words cleared.', 'success');\n    }'''
+          if old_clear not in j:
+              raise SystemExit('Word Bank clear function missing')
+          j = j.replace(old_clear, new_clear, 1)
+
+          add_handler = "    elements.addJumpBtn?.addEventListener('click', openAddWordDialog);"
+          if add_handler not in j:
+              raise SystemExit('Word Bank add handler missing')
+          collection_handler = '''    function openCollectionActionsDialog(){\n      window.ModeAtlasDialog?.feature?.({\n        kicker: 'Word Bank',\n        title: 'Word Bank settings',\n        contentNode: elements.actionsPanel,\n        dismissOnBackdrop: true\n      });\n    }\n\n    elements.addJumpBtn?.addEventListener('click', openAddWordDialog);\n    elements.actionsBtn?.addEventListener('click', openCollectionActionsDialog);'''
+          j = j.replace(add_handler, collection_handler, 1)
+          j = j.replace("\n    elements.exportBtn.addEventListener('click', exportBank);\n    elements.importFile.addEventListener('change', event => importBank(event.target.files?.[0]));", '')
+          js.write_text(j)
+
+          # Version metadata.
+          version = Path('assets/app/mode-atlas-version.js')
+          vt = version.read_text().replace("var VERSION = '2.31.2';", "var VERSION = '2.31.3';", 1).replace("var CACHE_REVISION = 'assets-2.31.2';", "var CACHE_REVISION = 'assets-2.31.3';", 1)
+          version.write_text(vt)
+          pkg = Path('package.json')
+          pkg.write_text(pkg.read_text().replace('"version": "2.31.2"', '"version": "2.31.3"', 1))
+          readme = Path('README.md')
+          readme.write_text(readme.read_text().replace('Version: 2.31.2', 'Version: 2.31.3', 1))
+          changelog = Path('CHANGELOG.md')
+          ch = changelog.read_text()
+          heading = '## 2.31.3 - 2026-08-15'
+          if heading not in ch:
+              entry = '''## 2.31.3 - 2026-08-15\n- Simplified basic Settings rows by removing unnecessary explanatory copy from Display, Sound, and Appearance.\n- Fixed Atlas top framing by removing the oversized hero section top padding that created a large empty band below navigation.\n- Removed Word Bank's duplicate page-specific JSON Export/Import system; the global Mode Atlas Save Data tools remain the sole backup/restore owner and continue to include Word Bank data.\n- Replaced the bottom Collection Tools disclosure with a compact Word Bank settings action beside Add word; only the Word-Bank-specific Clear all words action remains there.\n- Removed the retired Word Bank export/import handlers and related CSS/markup rather than hiding dead code.\n\n'''
+              changelog.write_text(entry + ch)
+
+          # Update superseded 2.31.2 guard and add a 2.31.3 simplification contract.
+          tests = Path('tests/frontend.test.js')
+          tt = tests.read_text()
+          tt = tt.replace("  assert.match(wordbankCss, /wordbank-tools__chevron\\{transform:rotate\\(90deg\\)/);",
+              "  assert.doesNotMatch(wordbankHtml, /class=\"panel add-panel/);")
+          title = '2.31.3 simplification keeps Settings concise and one backup owner for Word Bank'
+          if title not in tt:
+              tt += '''\n\ntest('2.31.3 simplification keeps Settings concise and one backup owner for Word Bank', () => {\n  const settings = read('assets/ui/mode-atlas-settings-menu.js');\n  const homeCss = read('assets/css/mode-atlas-home-page.css');\n  const wordbankHtml = read('wordbank/index.html');\n  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');\n  const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');\n  assert.doesNotMatch(settings, /Let Mode Atlas adapt automatically|Choose feedback volume|Use the dark or light Atlas palette/);\n  assert.match(homeCss, /padding-block:var\(--ma-space-3\) clamp\(24px,3vw,36px\)/);\n  assert.match(wordbankHtml, /id="wordBankActionsBtn"/);\n  assert.match(wordbankHtml, /id="wordBankActionsPanel"/);\n  assert.doesNotMatch(wordbankHtml, /id="exportBtn"|id="importFile"|Collection tools/);\n  assert.doesNotMatch(wordbankJs, /function exportBank|function importBank|elements\.exportBtn|elements\.importFile/);\n  assert.match(wordbankJs, /openCollectionActionsDialog/);\n  assert.doesNotMatch(wordbankCss, /wordbank-tools/);\n});\n'''
+          tests.write_text(tt)
+          PY
+          python3 build_revision_assets.py
+          rm -f .github/workflows/apply-2313-simplification.yml
+      - name: Validate release
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 audit_project.py
+          node --test tests/backend.test.js tests/frontend.test.js
+          test ! -e .github/workflows/apply-2313-simplification.yml
+          test ! -d __pycache__
+          grep -q "VERSION = '2.31.3'" assets/app/mode-atlas-version.js
+          grep -q 'assets-2.31.3' wordbank/index.html
+          ! grep -q 'id="exportBtn"' wordbank/index.html
+          ! grep -q 'function exportBank' assets/pages/mode-atlas-wordbank-page.js
+      - name: Commit validated simplification
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Mode Atlas 2.31.3 UI simplification"
+          git push origin HEAD
