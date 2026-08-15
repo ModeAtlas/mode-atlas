@@ -1,6 +1,6 @@
 {
   "name": "mode-atlas",
-  "version": "2.31.2",
+  "version": "2.31.3",
   "private": true,
   "description": "Mode Atlas static web app smoke tests",
   "scripts": {

@@ -998,8 +998,25 @@ test('2.31.2 refinement keeps Word Bank library-first and shared responsive cont
   assert.doesNotMatch(wordbankHtml, /class="panel add-panel/);
   assert.match(wordbankJs, /ModeAtlasDialog\?\.feature/);
   assert.match(wordbankJs, /ModeAtlasDialog\?\.close/);
-  assert.match(wordbankCss, /wordbank-tools__chevron\{transform:rotate\(90deg\)/);
+  assert.doesNotMatch(wordbankHtml, /class="panel add-panel/);
   assert.match(sessionControls, /setPauseButtonState/);
   assert.match(sessionControls, /icon-\$\{isPaused \? 'play' : 'pause'\}/);
   assert.doesNotMatch(studyCss, /inset:auto 18px 18px/);
+});
+
+
+test('2.31.3 simplification keeps Settings concise and one backup owner for Word Bank', () => {
+  const settings = read('assets/ui/mode-atlas-settings-menu.js');
+  const homeCss = read('assets/css/mode-atlas-home-page.css');
+  const wordbankHtml = read('wordbank/index.html');
+  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
+  const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
+  assert.doesNotMatch(settings, /Let Mode Atlas adapt automatically|Choose feedback volume|Use the dark or light Atlas palette/);
+  assert.match(homeCss, /padding-block:var\(--ma-space-3\) clamp\(24px,3vw,36px\)/);
+  assert.match(wordbankHtml, /id="wordBankActionsBtn"/);
+  assert.match(wordbankHtml, /id="wordBankActionsPanel"/);
+  assert.doesNotMatch(wordbankHtml, /id="exportBtn"|id="importFile"|Collection tools/);
+  assert.doesNotMatch(wordbankJs, /function exportBank|function importBank|elements\.exportBtn|elements\.importFile/);
+  assert.match(wordbankJs, /openCollectionActionsDialog/);
+  assert.doesNotMatch(wordbankCss, /wordbank-tools/);
 });

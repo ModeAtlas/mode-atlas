@@ -26,8 +26,7 @@
               <div class="ma-setting-row ma-display-panel">
                 <div class="ma-setting-row__copy">
                   <div class="ma-setting-row__label">Display</div>
-                  <div class="ma-setting-row__description">Let Mode Atlas adapt automatically, or force a layout for this device.</div>
-                </div>
+                                  </div>
                 <div class="ma-setting-row__control ma-segmented ma-settings-segmented ma-settings-segmented--display" style="--ma-segment-count:4">
                   <button class="ma-button ma-display-option" data-display="auto" type="button">Auto</button>
                   <button class="ma-button ma-display-option" data-display="desktop" type="button">Desktop</button>
@@ -39,8 +38,7 @@
               <div class="ma-setting-row ma-sound-panel">
                 <div class="ma-setting-row__copy">
                   <div class="ma-setting-row__label">Sound</div>
-                  <div class="ma-setting-row__description">Choose feedback volume for trainer answers and interface sounds.</div>
-                </div>
+                                  </div>
                 <div class="ma-setting-row__control ma-segmented ma-settings-segmented" style="--ma-segment-count:3">
                   <button type="button" class="ma-button ma-sound-toggle" data-ma-sound-choice="soft">On</button>
                   <button type="button" class="ma-button ma-sound-toggle" data-ma-sound-choice="loud">Loud</button>
@@ -51,8 +49,7 @@
               <div class="ma-setting-row ma-theme-panel">
                 <div class="ma-setting-row__copy">
                   <div class="ma-setting-row__label">Appearance</div>
-                  <div class="ma-setting-row__description">Use the dark or light Atlas palette, or follow your system.</div>
-                </div>
+                                  </div>
                 <div class="ma-setting-row__control ma-segmented ma-settings-segmented" style="--ma-segment-count:3">
                   <button class="ma-button ma-theme-choice-btn" type="button" data-ma-theme-choice="dark">Dark</button>
                   <button class="ma-button ma-theme-choice-btn" type="button" data-ma-theme-choice="light">Light</button>

@@ -15,15 +15,15 @@ function refreshProfileShell() {
       searchInput: document.getElementById('searchInput'),
       sortSelect: document.getElementById('sortSelect'),
       filterSelect: document.getElementById('filterSelect'),
-      exportBtn: document.getElementById('exportBtn'),
-      importFile: document.getElementById('importFile'),
       clearAllBtn: document.getElementById('clearAllBtn'),
       statTotal: document.getElementById('statTotal'),
       statEnglish: document.getElementById('statEnglish'),
       statFavorites: document.getElementById('statFavorites'),
       statMissing: document.getElementById('statMissing'),
       addJumpBtn: document.getElementById('wordBankAddJumpBtn'),
-      addPanel: document.getElementById('wordBankAddPanel')
+      addPanel: document.getElementById('wordBankAddPanel'),
+      actionsBtn: document.getElementById('wordBankActionsBtn'),
+      actionsPanel: document.getElementById('wordBankActionsPanel')
     };
 
     const baseMap = {
@@ -274,7 +274,8 @@ function refreshProfileShell() {
 
     async function clearAllWords() {
       if (!wordBank.length) {
-        showStatus('Your word bank is already empty.', 'warn');
+        window.ModeAtlasFeedback?.toast?.('Your word bank is already empty.', 'warning');
+        window.ModeAtlasDialog?.close?.(true);
         return;
       }
       const confirmed = await window.ModeAtlasFeedback?.confirm?.({
@@ -287,71 +288,12 @@ function refreshProfileShell() {
       });
       if (!confirmed) return;
       if (!saveWordBank([])) {
-        showStatus('Could not clear the Word Bank. Please try again.', 'error');
+        window.ModeAtlasFeedback?.toast?.('Could not clear the Word Bank. Please try again.', 'error', 4200);
         return;
       }
       renderEntries();
-      showStatus('All words cleared.', 'ok');
-    }
-
-    function exportBank() {
-      const blob = new Blob([JSON.stringify(wordBank, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'kana-word-bank.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      showStatus('Word bank exported.', 'ok');
-    }
-
-    function importBank(file) {
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const imported = JSON.parse(reader.result);
-          if (!Array.isArray(imported)) throw new Error('Invalid format');
-
-          const merged = [...wordBank];
-          for (const raw of imported) {
-            if (!raw || typeof raw !== 'object') continue;
-            const kana = normalizeKana(raw.kana || '');
-            if (!kana) continue;
-
-            const incoming = {
-              id: raw.id || `wb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-              kana,
-              romaji: getRomajiForKana(kana),
-              english: String(raw.english || ''),
-              notes: String(raw.notes || ''),
-              favorite: Boolean(raw.favorite),
-              createdAt: raw.createdAt || getTimestamp(),
-              updatedAt: raw.updatedAt || raw.createdAt || getTimestamp()
-            };
-
-            const existingIndex = merged.findIndex(entry => entry.kana === incoming.kana);
-            if (existingIndex === -1) {
-              merged.push(incoming);
-            } else {
-              const existingDate = new Date(merged[existingIndex].updatedAt || 0).getTime();
-              const incomingDate = new Date(incoming.updatedAt || 0).getTime();
-              if (incomingDate >= existingDate) merged[existingIndex] = incoming;
-            }
-          }
-
-          if (!saveWordBank(merged)) throw new Error('Could not save imported Word Bank');
-          renderEntries();
-          showStatus('Import complete.', 'ok');
-        } catch {
-          showStatus('Import failed. Please use a valid word bank JSON file.', 'err');
-        } finally {
-          elements.importFile.value = '';
-        }
-      };
-      reader.readAsText(file);
+      window.ModeAtlasDialog?.close?.(true);
+      window.ModeAtlasFeedback?.toast?.('All words cleared.', 'success');
     }
 
     function getFilteredEntries() {
@@ -611,7 +553,17 @@ function refreshProfileShell() {
       window.setTimeout(() => elements.kanaInput?.focus(), 80);
     }
 
+    function openCollectionActionsDialog(){
+      window.ModeAtlasDialog?.feature?.({
+        kicker: 'Word Bank',
+        title: 'Word Bank settings',
+        contentNode: elements.actionsPanel,
+        dismissOnBackdrop: true
+      });
+    }
+
     elements.addJumpBtn?.addEventListener('click', openAddWordDialog);
+    elements.actionsBtn?.addEventListener('click', openCollectionActionsDialog);
 
     elements.addWordBtn.addEventListener('click', addWord);
     elements.kanaInput.addEventListener('keydown', (event) => {
@@ -684,8 +636,6 @@ function refreshProfileShell() {
     });
 
 
-    elements.exportBtn.addEventListener('click', exportBank);
-    elements.importFile.addEventListener('change', event => importBank(event.target.files?.[0]));
     elements.clearAllBtn.addEventListener('click', clearAllWords);
 
     renderEntries();

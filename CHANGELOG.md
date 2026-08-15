@@ -1,3 +1,10 @@
+## 2.31.3 - 2026-08-15
+- Simplified basic Settings rows by removing unnecessary explanatory copy from Display, Sound, and Appearance.
+- Fixed Atlas top framing by removing the oversized hero section top padding that created a large empty band below navigation.
+- Removed Word Bank's duplicate page-specific JSON Export/Import system; the global Mode Atlas Save Data tools remain the sole backup/restore owner and continue to include Word Bank data.
+- Replaced the bottom Collection Tools disclosure with a compact Word Bank settings action beside Add word; only the Word-Bank-specific Clear all words action remains there.
+- Removed the retired Word Bank export/import handlers and related CSS/markup rather than hiding dead code.
+
 ## 2.31.2 - 2026-08-15
 - Reworked Word Bank into a true library-first layout: the permanent Quick Capture rail is removed and Add word now opens the existing capture flow in the shared Mode Atlas dialog.
 - Added an Add a word action to the empty library state and closes the capture dialog after a successful add while keeping storage, romaji generation, duplicate detection, and cloud sync unchanged.

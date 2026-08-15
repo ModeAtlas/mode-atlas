@@ -34,6 +34,9 @@ body.ma-wordbank-page{
 }
 .ma-wordbank-page .subtitle{max-width:650px;}
 .ma-wordbank-page .ma-page-intro__aside{align-self:center;}
+.wordbank-hero-actions{display:flex;align-items:center;justify-content:flex-end;gap:var(--ma-space-2);}
+.wordbank-actions-host{display:none;}
+.wordbank-actions-dialog-content{display:grid;gap:var(--ma-space-3);}
 
 .stats{
   --ma-stat-columns:4;
@@ -202,37 +205,12 @@ details[open] .summary-toggle{color:var(--ma-text);}
 .inline-actions{--ma-action-gap:var(--ma-space-2);}
 .wordbank-delete-btn{color:var(--ma-danger);border-color:color-mix(in srgb,var(--ma-danger) 34%,var(--ma-border));}
 
-/* Infrequent data-management actions live behind a disclosure. */
-.wordbank-tools{
-  margin-top:var(--ma-space-5);
-  padding-top:var(--ma-space-4);
-  border-top:1px solid var(--ma-border);
-}
-.wordbank-tools > summary{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:var(--ma-space-3);
-  padding:9px 0;
-  color:var(--ma-text-soft);
-  font-size:.84rem;
-  font-weight:800;
-  cursor:pointer;
-  list-style:none;
-}
-.wordbank-tools > summary::-webkit-details-marker{display:none;}
-.wordbank-tools > summary span{display:inline-flex;align-items:center;gap:var(--ma-space-2);}
-.wordbank-tools__chevron{transform:rotate(90deg);transition:transform var(--ma-motion-fast) ease;}
-.wordbank-tools[open] .wordbank-tools__chevron{transform:rotate(-90deg);}
-.wordbank-tools__body{display:grid;gap:var(--ma-space-3);padding-top:var(--ma-space-2);}
-.wordbank-tools__actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--ma-space-3);}
-.wordbank-tools__actions .ma-button{min-width:0;white-space:nowrap;}
-.wordbank-tools__actions .ma-button--danger{grid-column:1 / -1;}
 
 @media(max-width:820px){
   .ma-wordbank-page .ma-page-intro{grid-template-columns:1fr;}
   .ma-wordbank-page .ma-page-intro__aside{width:100%;}
-  .ma-wordbank-page .ma-page-intro__aside .ma-button{width:100%;}
+  .wordbank-hero-actions{width:100%;}
+  .wordbank-hero-actions #wordBankAddJumpBtn{flex:1;width:auto;}
   .stats{--ma-stat-columns:2;}
   .toolbar{grid-template-columns:1fr;position:static;}
   .card-summary{grid-template-columns:minmax(0,1fr) auto;align-items:start;}
@@ -250,8 +228,6 @@ details[open] .summary-toggle{color:var(--ma-text);}
   .card-top,.card-actions{align-items:stretch;flex-direction:column;}
   .inline-actions{width:100%;}
   .inline-actions .ma-button{flex:1;}
-  .wordbank-tools__actions{grid-template-columns:1fr;}
-  .wordbank-tools__actions .ma-button--danger{grid-column:auto;}
 }
 
 body[data-effective-display-mode="tablet"] .toolbar{grid-template-columns:1fr;position:static;}
@@ -269,5 +245,5 @@ body[data-effective-display-mode="phone"] .card-summary{grid-template-columns:mi
 body[data-effective-display-mode="phone"] .summary-col{display:none;}
 
 @media(prefers-reduced-motion:reduce){
-  .card-summary,.summary-toggle,.wordbank-tools__chevron{transition:none;}
+  .card-summary,.summary-toggle{transition:none;}
 }
