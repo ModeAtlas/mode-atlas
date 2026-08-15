@@ -48,10 +48,10 @@ body.ma-atlas-page::after{
 
 /* Hero */
 .ma-atlas-page .hero{
-  min-height:min(760px,calc(100svh - 74px));
+  min-height:0;
   display:grid;
   align-items:center;
-  padding-block:clamp(48px,7vw,84px) clamp(34px,5vw,58px);
+  padding-block:clamp(34px,4.5vw,58px) clamp(30px,4vw,48px);
 }
 
 .atlas-card{
@@ -64,7 +64,7 @@ body.ma-atlas-page::after{
   position:relative;
   overflow:hidden;
   width:100%;
-  padding:clamp(24px,4.8vw,58px);
+  padding:clamp(24px,4.2vw,48px);
 }
 
 .atlas-card::after{
@@ -80,8 +80,8 @@ body.ma-atlas-page::after{
   position:relative;
   z-index:1;
   display:grid;
-  grid-template-columns:minmax(0,1.12fr) minmax(280px,.66fr);
-  gap:clamp(26px,5vw,66px);
+  grid-template-columns:minmax(0,1fr) minmax(300px,.72fr);
+  gap:clamp(26px,4vw,52px);
   align-items:center;
 }
 
@@ -109,7 +109,7 @@ body.ma-atlas-page::after{
   margin:0;
   color:var(--ma-text-strong);
   font-family:var(--ma-font-display);
-  font-size:clamp(3rem,7.8vw,7.2rem);
+  font-size:clamp(3rem,6.2vw,5.8rem);
   font-weight:850;
   line-height:.91;
   letter-spacing:-.065em;

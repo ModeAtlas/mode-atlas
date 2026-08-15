@@ -1,3 +1,10 @@
+## 2.31.1 - 2026-08-15
+- Fixed Settings drawer responsive ownership so coarse/tablet layouts stack setting copy above controls instead of collapsing descriptions into a narrow column; Display remains four-up on tablet and becomes two-by-two on narrow phones.
+- Restored the trainer session-state contract so Start practice actually disappears while a session is active, removing the duplicated Start + Pause/End control stack and the extra vertical gap it created.
+- Preserved the Pause button SVG/label structure when session state resets, preventing the pause icon from disappearing after start/end/retry transitions.
+- Rebalanced the Atlas returning-user hero by reducing unnecessary viewport-height spacing, headline scale, card padding, and left/right imbalance while retaining the constellation identity and Continue Studying hierarchy.
+- Rechecked the new Word Bank, Focus mode, Profile, Kana, and Results responsive patterns; no competing layout owner was found in those areas, so they remain behaviorally unchanged.
+
 ## 2.31.0 - 2026-08-14
 - Introduced the first full visual-standardisation release: shared icons, page-introduction/setting/status/progress/trend/skeleton primitives, semantic UI tokens, and consistent utility controls now form one reusable visual vocabulary.
 - Reworked Profile and Settings around their real jobs: Profile now owns account/sync/achievement information only, while Settings uses conventional preference rows with secondary Data & app actions instead of duplicating navigation or presenting every control at equal visual weight.

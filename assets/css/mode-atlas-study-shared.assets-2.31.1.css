@@ -200,6 +200,8 @@ input[type="text"]:disabled,
         flex-wrap: wrap;
     }
 
+.start-wrap[hidden] { display: none; }
+
 .session-actions {
         margin-top: 14px;
         display: none;

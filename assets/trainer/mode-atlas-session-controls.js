@@ -111,7 +111,11 @@
     pauseRemaining = 0;
     document.body.classList.remove('ma-session-paused');
     const btn = document.getElementById('pauseSessionBtn');
-    if (btn) btn.textContent = 'Pause';
+    if (btn) {
+      const label = btn.querySelector('[data-ma-pause-label]');
+      if (label) label.textContent = 'Pause';
+      else btn.textContent = 'Pause';
+    }
   }
 
   document.addEventListener('click', (event) => {
