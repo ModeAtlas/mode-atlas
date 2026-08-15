@@ -1,0 +1,36 @@
+name: Fix Mode Atlas 2.31.3 audit contract
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.31.3-ui-simplification
+permissions:
+  contents: write
+jobs:
+  fix-audit:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update superseded Word Bank audit contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('audit_project.py')
+          t = p.read_text()
+          old = '''    wordbank_markup = text(ROOT / 'wordbank/index.html')\n    library_pos = wordbank_markup.find('class=\\"panel library-panel ma-card\\"')\n    add_pos = wordbank_markup.find('id=\\"wordBankAddPanel\\"')\n    if library_pos < 0 or add_pos <= library_pos or 'id=\\"wordBankAddJumpBtn\\"' not in wordbank_markup or '<details class=\\"wordbank-tools\\">' not in wordbank_markup:\n        fail(errors, 'Word Bank library-first hierarchy or secondary tools disclosure drifted')'''
+          new = '''    wordbank_markup = text(ROOT / 'wordbank/index.html')\n    library_pos = wordbank_markup.find('class=\\"panel library-panel ma-card\\"')\n    add_pos = wordbank_markup.find('id=\\"wordBankAddPanel\\"')\n    if (\n        library_pos < 0 or add_pos <= library_pos\n        or 'id=\\"wordBankAddJumpBtn\\"' not in wordbank_markup\n        or 'id=\\"wordBankActionsBtn\\"' not in wordbank_markup\n        or 'id=\\"wordBankActionsPanel\\"' not in wordbank_markup\n        or '<details class=\\"wordbank-tools\\">' in wordbank_markup\n        or 'id=\\"exportBtn\\"' in wordbank_markup\n        or 'id=\\"importFile\\"' in wordbank_markup\n    ):\n        fail(errors, 'Word Bank library-first hierarchy or collection settings ownership drifted')'''
+          if old not in t:
+              raise SystemExit('Expected Word Bank audit contract not found')
+          p.write_text(t.replace(old, new, 1))
+          PY
+          rm -f .github/workflows/fix-2313-audit-contract.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audit_project.py .github/workflows/fix-2313-audit-contract.yml
+          git commit -m "Update Word Bank audit contract for 2.31.3"
+          git push origin HEAD
