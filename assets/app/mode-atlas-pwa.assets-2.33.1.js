@@ -35,8 +35,9 @@
     return false;
   }
 
+  function visitFlowOpen(){ return !!$('#maVisitModal.open'); }
   function showInstallPrompt(){
-    if ($('#maInstallPrompt') || !deferredPrompt || hasSeenPrompt() || isStandalone()) return;
+    if ($('#maInstallPrompt') || !deferredPrompt || hasSeenPrompt() || isStandalone() || visitFlowOpen()) return;
     const prompt = document.createElement('div');
     prompt.id = 'maInstallPrompt';
     prompt.className = 'ma-install-prompt';
@@ -83,6 +84,11 @@
     deferredPrompt = event;
     window.ModeAtlasInstall.deferredPrompt = event;
     if (!hasSeenPrompt() && !isStandalone()) showInstallPrompt();
+  });
+  document.addEventListener('ma:visit-flow-opened', () => { $('#maInstallPrompt')?.remove(); });
+  document.addEventListener('ma:visit-flow-closed', event => {
+    if (event.detail?.resumeInstall === false) return;
+    if (deferredPrompt && !hasSeenPrompt() && !isStandalone()) showInstallPrompt();
   });
   window.addEventListener('appinstalled', () => {
     markPromptSeen();

@@ -1,7 +1,7 @@
 /* Mode Atlas visit flows: onboarding, daily return, and last-study tracking. */
 (function(){
   if(window.__modeAtlasVisitFlowsLoaded)return; window.__modeAtlasVisitFlowsLoaded=true;
-  const K={first:'modeAtlasStarterSeen',complete:'modeAtlasOnboardingComplete',pending:'modeAtlasPendingDestination',return:'modeAtlasDailyReturnSeenDate',lastVisit:'modeAtlasLastVisitStudyDate',streak:'modeAtlasVisitStreak',lastStudied:'modeAtlasLastStudiedAt',lastMode:'modeAtlasLastMode',forceFirst:'modeAtlasForceFirstVisit',forceReturn:'modeAtlasForceDailyReturn'};
+  const K={first:'modeAtlasStarterSeen',complete:'modeAtlasOnboardingComplete',kanaSetup:'modeAtlasKanaSetupComplete',pending:'modeAtlasPendingDestination',return:'modeAtlasDailyReturnSeenDate',lastVisit:'modeAtlasLastVisitStudyDate',streak:'modeAtlasVisitStreak',lastStudied:'modeAtlasLastStudiedAt',lastMode:'modeAtlasLastMode',forceFirst:'modeAtlasForceFirstVisit',forceReturn:'modeAtlasForceDailyReturn'};
   function storeGet(key, fallback='') {
     const store = window.ModeAtlasStorage;
     return store?.get?.(key, fallback) ?? localStorage.getItem(key) ?? fallback;
@@ -30,9 +30,14 @@
   const hasArr=k=>{const v=j(k,null);return Array.isArray(v)&&v.length>0};
   const studyDate=(d=new Date())=>{const x=new Date(d);if(x.getHours()<4)x.setDate(x.getDate()-1);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
   const BRANCH_PATHS=new Set(['/kana/','/reading/','/writing/','/results/','/wordbank/']);
+  const KANA_SETUP_PATHS=new Set(['/kana/','/reading/','/writing/']);
   const onboardingComplete=()=>storeGet(K.complete)==='true'||storeGet(K.first)==='true';
+  const kanaSetupComplete=()=>storeGet(K.kanaSetup)==='true'||storeGet(K.first)==='true';
   function branchDestination(raw){try{const u=new URL(raw||location.href,location.origin);return u.origin===location.origin&&BRANCH_PATHS.has(u.pathname)?u.pathname+u.search+u.hash:''}catch{return''}}
+  function destinationPath(raw){try{return new URL(branchDestination(raw)||raw||location.href,location.origin).pathname}catch{return''}}
+  function requiresKanaSetup(raw){return KANA_SETUP_PATHS.has(destinationPath(raw))}
   function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/writing/'))return'Kana Writing';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Reading';return'Kana Trainer'}
+  function needsSetup(raw){return !onboardingComplete()||(requiresKanaSetup(raw)&&!kanaSetupComplete())}
   function vEl(tag, className='', text=''){const el=document.createElement(tag);if(className)el.className=className;if(text!=='')el.textContent=String(text);return el}
   function vBtn(className='', text=''){const btn=vEl('button',className,text);btn.type='button';return btn}
   function vLink(className='', text='', href=''){const a=vEl('a',className,text);a.href=href;return a}
@@ -81,11 +86,27 @@
     m.addEventListener('click',e=>{if(e.target===m)closeModal()});
     document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()})
   }
-  function closeModal(force){const modal=document.getElementById('maVisitModal'); if(!modal)return; if(modal.dataset.locked==='true' && force!==true)return; modal.classList.remove('open'); modal.dataset.locked='false'; try{document.dispatchEvent(new CustomEvent('ma:visit-flow-closed'))}catch{}}
-  function first(destination){
+  function openModal(locked=false){const modal=document.getElementById('maVisitModal');if(!modal)return;modal.dataset.locked=locked?'true':'false';modal.classList.add('open');try{document.dispatchEvent(new CustomEvent('ma:visit-flow-opened'))}catch{}}
+  function closeModal(force,resumeInstall=true){const modal=document.getElementById('maVisitModal'); if(!modal)return; if(modal.dataset.locked==='true' && force!==true)return; modal.classList.remove('open'); modal.dataset.locked='false'; try{document.dispatchEvent(new CustomEvent('ma:visit-flow-closed',{detail:{resumeInstall}}))}catch{}}
+  function markLegalComplete(){
+    storeSet(K.complete,'true');
+    storeSet('modeAtlasLegalAccepted','true');
+    storeSet('modeAtlasLegalAcceptedAt',String(Date.now()));
+    storeSet('modeAtlasLegalVersion','2026-05');
+  }
+  function markKanaSetupComplete(){
+    storeSet(K.kanaSetup,'true');
+    storeSet(K.first,'true');
+  }
+  function first(destination,options={}){
     ensure();
     const target=branchDestination(destination)||branchDestination(storeGet(K.pending))||'/kana/';
     storeSet(K.pending,target);
+    const force=options.force===true;
+    const requireLegal=force||!onboardingComplete();
+    const requireKana=requiresKanaSetup(target)&&(force||!kanaSetupComplete());
+    if(!requireLegal&&!requireKana){storeRemove(K.pending);navigateApp(target);return;}
+
     const c=document.getElementById('maVisitContent');
     const presets=[
       ['starter','Starter','あ row + hint mode. Best if kana is brand new.'],
@@ -93,99 +114,100 @@
       ['advanced','Advanced','Hiragana, katakana, and dakuten.'],
       ['pro','Pro','Everything enabled, including yōon and extended katakana.']
     ];
-
     c.replaceChildren();
+
+    let copy='Review the Privacy Policy and Terms of Use, then continue to '+destinationLabel(target)+'.';
+    if(requireKana&&requireLegal) copy='Choose your Kana Trainer starting level, agree to the terms, then continue to '+destinationLabel(target)+'.';
+    else if(requireKana) copy='Choose the Kana Trainer starting level that feels right for you. You can change it whenever you want.';
     c.append(
-      vEl('div','ma-visit-kicker','Mode Atlas setup'),
-      vEl('h2','ma-visit-title','Welcome to Mode Atlas'),
-      vEl('p','ma-visit-copy',`Choose your Kana Trainer starting level, then continue to ${destinationLabel(target)}. You can change your practice setup whenever you want.`)
+      vEl('div','ma-visit-kicker',requireKana?'Kana Trainer setup':'Mode Atlas setup'),
+      vEl('h2','ma-visit-title',requireKana&&!requireLegal?'Set up Kana Trainer':'Welcome to Mode Atlas'),
+      vEl('p','ma-visit-copy',copy)
     );
 
-    const panel=vEl('div','ma-card ma-card--soft ma-visit-panel');
-    panel.append(vEl('div','ma-visit-label','Study presets'));
-    const presetGrid=vEl('div','ma-visit-presets');
-    presets.forEach(preset=>{
-      const btn=vBtn('ma-visit-preset');
-      btn.dataset.maOnboardingPreset=preset[0];
-      btn.setAttribute('aria-pressed','false');
-      btn.append(vEl('span','',preset[1]), vEl('small','',preset[2]));
-      presetGrid.append(btn);
-    });
-    panel.append(presetGrid);
-
-    const legal=vEl('div','ma-visit-legal');
-    const links=vEl('div','ma-visit-legal-links');
-    const privacy=vLink('', 'Privacy Policy', legalUrl('privacy'));
-    privacy.target='_blank'; privacy.rel='noopener';
-    const terms=vLink('', 'Terms of Use', legalUrl('terms'));
-    terms.target='_blank'; terms.rel='noopener';
-    links.append(privacy, terms, vEl('span','ma-visit-link-note','These open in a new tab so setup stays open.'));
-
-    const label=vEl('label','ma-check ma-visit-check');
-    const agreeInput=document.createElement('input');
-    agreeInput.type='checkbox';
-    agreeInput.dataset.legalAgree='';
-    label.append(agreeInput, vEl('span','','I agree to the Privacy Policy and Terms of Use.'));
-    legal.append(links,label);
-
-    const err=vEl('div','ma-status ma-status--error ma-visit-error','Please choose a preset and agree before beginning.');
-    err.dataset.setupError='';
-
-    const actions=vEl('div','ma-visit-actions');
-    const begin=vBtn('ma-button ma-button--primary ma-visit-btn','Begin!');
-    begin.dataset.begin='';
-    begin.disabled=true;
-    begin.setAttribute('aria-disabled','true');
-    actions.append(begin);
-
-    c.append(panel, legal, err, actions);
-
     let selected='';
-    const agree=c.querySelector('[data-legal-agree]');
-    function setSelected(btn){
-      selected=btn?.getAttribute('data-ma-onboarding-preset')||'';
-      c.querySelectorAll('[data-ma-onboarding-preset]').forEach(b=>{
-        const on=b===btn;
-        b.classList.toggle('selected',on);
-        b.setAttribute('aria-pressed',on?'true':'false');
+    if(requireKana){
+      const panel=vEl('div','ma-card ma-card--soft ma-visit-panel');
+      panel.append(vEl('div','ma-visit-label','Starting level'));
+      const presetGrid=vEl('div','ma-visit-presets');
+      presets.forEach(preset=>{
+        const btn=vBtn('ma-visit-preset');
+        btn.dataset.maOnboardingPreset=preset[0];
+        btn.setAttribute('aria-pressed','false');
+        btn.append(vEl('span','',preset[1]),vEl('small','',preset[2]));
+        presetGrid.append(btn);
       });
-      refresh();
+      panel.append(presetGrid);
+      c.append(panel);
     }
+
+    let agree=null;
+    if(requireLegal){
+      const legal=vEl('div','ma-visit-legal');
+      const links=vEl('div','ma-visit-legal-links');
+      const privacy=vLink('', 'Privacy Policy', legalUrl('privacy'));
+      privacy.target='_blank';privacy.rel='noopener';
+      const terms=vLink('', 'Terms of Use', legalUrl('terms'));
+      terms.target='_blank';terms.rel='noopener';
+      links.append(privacy,terms);
+      const label=vEl('label','ma-check ma-visit-check');
+      agree=document.createElement('input');
+      agree.type='checkbox';
+      agree.dataset.legalAgree='';
+      label.append(agree,vEl('span','','I agree to the Privacy Policy and Terms of Use.'));
+      legal.append(links,label);
+      c.append(legal);
+    }
+
+    const err=vEl('div','ma-status ma-status--error ma-visit-error','Could not save your starting level. Please try again.');
+    err.dataset.setupError='';
+    const actions=vEl('div','ma-visit-actions');
+    const begin=vBtn('ma-button ma-button--primary ma-visit-btn',`Continue to ${destinationLabel(target)}`);
+    begin.dataset.begin='';
+    actions.append(begin);
+    c.append(err,actions);
+
     function refresh(){
-      const ready=Boolean(selected && agree && agree.checked);
+      const ready=(!requireKana||Boolean(selected))&&(!requireLegal||Boolean(agree?.checked));
       begin.disabled=!ready;
       begin.setAttribute('aria-disabled',ready?'false':'true');
       begin.classList.toggle('ready',ready);
       c.classList.toggle('ma-visit-ready',ready);
-      if(ready) err.classList.remove('show');
+      if(ready)err.classList.remove('show');
     }
-    c.addEventListener('click', event=>{
-      const preset=event.target.closest('[data-ma-onboarding-preset]');
-      if(preset && c.contains(preset)){ event.preventDefault(); setSelected(preset); }
-    });
-    agree.addEventListener('change', refresh);
-    agree.addEventListener('input', refresh);
-    begin.addEventListener('click', ()=>{
-      if(begin.disabled){err.classList.add('show');return;}
-      const applied = window.ModeAtlasPresets?.apply?.(selected, { target: 'both', source: 'onboarding' });
-      if(!applied){err.classList.add('show');return;}
-      storeSet(K.first,'true');
-      storeSet('modeAtlasOnboardingComplete','true');
-      storeSet('modeAtlasLegalAccepted','true');
-      storeSet('modeAtlasLegalAcceptedAt',String(Date.now()));
-      storeSet('modeAtlasLegalVersion','2026-05');
-      storeSet(K.return, studyDate());
-      storeSet(K.lastVisit, studyDate());
-      sessionStorage.setItem('modeAtlasShowWhatsNewAfterOnboarding','1');
-      const destination=branchDestination(storeGet(K.pending))||'/kana/';
+    if(requireKana){
+      c.addEventListener('click',event=>{
+        const preset=event.target.closest('[data-ma-onboarding-preset]');
+        if(!preset||!c.contains(preset))return;
+        event.preventDefault();
+        selected=preset.getAttribute('data-ma-onboarding-preset')||'';
+        c.querySelectorAll('[data-ma-onboarding-preset]').forEach(btn=>{
+          const on=btn===preset;
+          btn.classList.toggle('selected',on);
+          btn.setAttribute('aria-pressed',on?'true':'false');
+        });
+        refresh();
+      });
+    }
+    if(agree){agree.addEventListener('change',refresh);agree.addEventListener('input',refresh);}
+    begin.addEventListener('click',()=>{
+      if(begin.disabled)return;
+      if(requireKana){
+        const applied=window.ModeAtlasPresets?.apply?.(selected,{target:'both',source:'onboarding'});
+        if(!applied){err.classList.add('show');return;}
+        markKanaSetupComplete();
+      }
+      if(requireLegal)markLegalComplete();
+      storeSet(K.return,studyDate());
+      if(requireLegal)sessionStorage.setItem('modeAtlasShowWhatsNewAfterOnboarding','1');
+      const next=branchDestination(storeGet(K.pending))||target;
       storeRemove(K.pending);
-      closeModal(true);
-      try{document.dispatchEvent(new CustomEvent('ma:onboarding-complete'))}catch{}
-      navigateApp(destination);
+      closeModal(true,false);
+      if(requireLegal){try{document.dispatchEvent(new CustomEvent('ma:onboarding-complete'))}catch{}}
+      if(requireKana){try{document.dispatchEvent(new CustomEvent('ma:kana-setup-complete'))}catch{}}
+      navigateApp(next);
     });
-    const modal=document.getElementById('maVisitModal');
-    modal.dataset.locked='true';
-    modal.classList.add('open');
+    openModal(true);
     refresh();
   }
   function ret(){
@@ -227,30 +249,46 @@
 
     c.append(copy,reviewPanel,resumePanel,actions);
     close.addEventListener('click',()=>closeModal());
-    document.getElementById('maVisitModal').classList.add('open');
+    openModal(false);
   }
   let visitDecisionMade=false;
-  async function maybe(){
-    if(visitDecisionMade)return;
-    const q=new URLSearchParams(location.search),ff=sessionStorage.getItem(K.forceFirst)==='1'||q.has('devFirstVisit')||q.has('setup'),fr=sessionStorage.getItem(K.forceReturn)==='1'||q.has('devReturn');
-    sessionStorage.removeItem(K.forceFirst);sessionStorage.removeItem(K.forceReturn);storeRemove(K.forceFirst);storeRemove(K.forceReturn);
+  async function waitForInitialCloudState(){
     let initialCloudReady=true;
     try{
       if(window.KanaCloudSync?.waitForInitialHydration)initialCloudReady=await window.KanaCloudSync.waitForInitialHydration();
       else if(window.KanaCloudSync?.beforePageLoad)await window.KanaCloudSync.beforePageLoad();
       else if(window.KanaCloudSync?.ready)await window.KanaCloudSync.ready;
     }catch{initialCloudReady=false}
+    return initialCloudReady;
+  }
+  async function maybe(){
     if(visitDecisionMade)return;
-    if(ff){visitDecisionMade=true;return first(branchDestination(location.href)||'/kana/');}
+    const q=new URLSearchParams(location.search),ff=sessionStorage.getItem(K.forceFirst)==='1'||q.has('devFirstVisit')||q.has('setup'),fr=sessionStorage.getItem(K.forceReturn)==='1'||q.has('devReturn');
+    sessionStorage.removeItem(K.forceFirst);sessionStorage.removeItem(K.forceReturn);storeRemove(K.forceFirst);storeRemove(K.forceReturn);
+    const initialCloudReady=await waitForInitialCloudState();
+    if(visitDecisionMade)return;
+    if(ff){visitDecisionMade=true;return first(branchDestination(location.href)||'/kana/',{force:true});}
     if(fr){visitDecisionMade=true;return ret();}
     if(!initialCloudReady&&window.KanaCloudSync?.getUser?.())return;
-    if(onboardingComplete()){if(hasData())streak();return;}
     const current=branchDestination(location.href);
-    if(current){visitDecisionMade=true;return first(current);}
+    if(!current){if(onboardingComplete()&&hasData())streak();return;}
+    if(needsSetup(current)){visitDecisionMade=true;return first(current);}
+    if(hasData())streak();
   }
-  function triggerFirst(){storeRemove(K.forceFirst);sessionStorage.removeItem(K.forceFirst);first(branchDestination(location.href)||'/kana/')}
+  function triggerFirst(){storeRemove(K.forceFirst);sessionStorage.removeItem(K.forceFirst);first(branchDestination(location.href)||'/kana/',{force:true})}
   function triggerReturn(){storeRemove(K.forceReturn);sessionStorage.removeItem(K.forceReturn);if(page()==='index.html')ret();else{sessionStorage.setItem(K.forceReturn,'1');navigateApp('/?devReturn=1')}}
-  function reset(){[K.first,K.complete,K.pending,K.return,K.forceFirst,K.forceReturn,K.lastVisit,K.streak].forEach(k=>storeRemove(k));console.info('Mode Atlas visit flags reset')}
+  function reset(){[K.first,K.complete,K.kanaSetup,K.pending,K.return,K.forceFirst,K.forceReturn,K.lastVisit,K.streak].forEach(k=>storeRemove(k));console.info('Mode Atlas visit flags reset')}
   window.modeAtlasTriggerFirstVisit=triggerFirst;window.modeAtlasTriggerDailyReturn=triggerReturn;window.modeAtlasResetVisitFlags=reset;
-  function init(){track();document.addEventListener('click',event=>{if(onboardingComplete()||event.defaultPrevented||event.button>0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;const link=event.target.closest?.('a[href]');if(!link)return;const target=branchDestination(link.href);if(!target)return;event.preventDefault();visitDecisionMade=true;first(target)});maybe();window.addEventListener('kanaCloudSyncStatusChanged',maybe);document.addEventListener('ma:ui-refresh',maybe)} if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  async function gateLink(event){
+    if(event.defaultPrevented||event.button>0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    const link=event.target.closest?.('a[href]');if(!link)return;
+    const target=branchDestination(link.href);if(!target||!needsSetup(target))return;
+    event.preventDefault();
+    const cloudReady=await waitForInitialCloudState();
+    if(!cloudReady&&window.KanaCloudSync?.getUser?.()){navigateApp(target);return;}
+    if(!needsSetup(target)){navigateApp(target);return;}
+    visitDecisionMade=true;
+    first(target);
+  }
+  function init(){track();document.addEventListener('click',gateLink);maybe();window.addEventListener('kanaCloudSyncStatusChanged',maybe);document.addEventListener('ma:ui-refresh',maybe)} if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

@@ -1067,8 +1067,27 @@ test('2.33 experience restructure keeps Atlas clean and onboarding destination-a
   assert.match(visit, /BRANCH_PATHS=new Set/);
   assert.match(visit, /waitForInitialHydration/);
   assert.match(visit, /storeSet\(K\.pending,target\)/);
-  assert.match(visit, /navigateApp\(destination\)/);
+  assert.match(visit, /const next=branchDestination\(storeGet\(K\.pending\)\)\|\|target/);
+  assert.match(visit, /storeRemove\(K\.pending\)/);
+  assert.match(visit, /navigateApp\(next\)/);
   assert.doesNotMatch(visit, /if\(nd&&storeGet\(K\.first\)!=='true'\)/);
   assert.ok(kana.indexOf('kana-pathways') < kana.indexOf('kana-progress-intro'));
   assert.ok(kana.indexOf('kana-progress-intro') < kana.indexOf('id="kanaTodayCard"'));
+});
+
+test('2.33.1 onboarding separates Mode Atlas consent from Kana branch setup', () => {
+  const visit = read('assets/app/mode-atlas-visit-flows.js');
+  const pwa = read('assets/app/mode-atlas-pwa.js');
+  const modalCss = read('assets/css/mode-atlas-app-modals.css');
+  const wordbank = read('wordbank/index.html');
+  assert.match(visit, /kanaSetup:'modeAtlasKanaSetupComplete'/);
+  assert.match(visit, /KANA_SETUP_PATHS=new Set\(\['\/kana\/','\/reading\/','\/writing\/'\]\)/);
+  assert.match(visit, /const requireLegal=force\|\|!onboardingComplete\(\)/);
+  assert.match(visit, /const requireKana=requiresKanaSetup\(target\)&&\(force\|\|!kanaSetupComplete\(\)\)/);
+  assert.match(visit, /if\(requireKana\)\{[\s\S]*ModeAtlasPresets\?\.apply/);
+  assert.match(visit, /if\(requireLegal\)markLegalComplete\(\)/);
+  assert.doesNotMatch(wordbank, /mode-atlas-presets\.assets-/);
+  assert.match(pwa, /ma:visit-flow-opened/);
+  assert.match(pwa, /ma:visit-flow-closed/);
+  assert.match(modalCss, /\.ma-status\.ma-visit-error\{display:none/);
 });

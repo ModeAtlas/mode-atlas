@@ -1,3 +1,9 @@
+## 2.33.1 - 2026-08-16
+- Split first-use setup into general Mode Atlas consent and Kana-specific starting-level setup so Word Bank no longer asks for irrelevant Kana presets.
+- Preserved the chosen destination through setup and defers Kana starting-level selection until the learner actually enters Kana, Reading, or Writing.
+- Fixed Word Bank first-use completion by removing its dependency on the Kana preset module rather than loading unrelated trainer code into Word Bank.
+- Prevented the install prompt from overlapping visit/setup dialogs and corrected setup-error visibility so validation feedback only appears when a real save failure occurs.
+
 ## 2.33.0 - 2026-08-16
 - Restructured Atlas into a clean ecosystem homepage with distinct visitor and returning-user hero states and no study-stat dashboard on the homepage.
 - Changed first-use onboarding from an automatic homepage interruption into a destination-aware branch-entry gate that resumes the user’s chosen branch after setup.
