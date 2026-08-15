@@ -509,7 +509,7 @@ html[data-ma-theme="light"] .ma-button:hover:not(:disabled):not([aria-disabled="
 }
 .ma-setting-row{
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(180px,auto);
+  grid-template-columns:var(--ma-setting-row-columns,minmax(0,1fr) minmax(180px,auto));
   gap:var(--ma-space-4);
   align-items:center;
   padding:var(--ma-space-4);
@@ -519,7 +519,7 @@ html[data-ma-theme="light"] .ma-button:hover:not(:disabled):not([aria-disabled="
 .ma-setting-row__copy{min-width:0;}
 .ma-setting-row__label{color:var(--ma-text-strong);font-weight:var(--ma-weight-bold);line-height:1.25;}
 .ma-setting-row__description{margin-top:4px;color:var(--ma-muted);font-size:var(--ma-text-sm);line-height:1.45;}
-.ma-setting-row__control{justify-self:end;min-width:0;}
+.ma-setting-row__control{justify-self:var(--ma-setting-control-justify,end);width:var(--ma-setting-control-width,auto);min-width:0;}
 .ma-setting-row--stack{grid-template-columns:1fr;align-items:start;}
 .ma-setting-row--stack .ma-setting-row__control{justify-self:stretch;width:100%;}
 .ma-setting-row--danger .ma-setting-row__label{color:var(--ma-danger);}

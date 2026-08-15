@@ -43,8 +43,12 @@
 .ma-settings-section-title{margin-top:3px;color:var(--ma-text-strong);font-weight:900;font-size:1.05rem;}
 .ma-settings-segmented{min-width:0;width:100%;}
 .ma-settings-segmented--display{min-width:0;width:100%;}
-.ma-shared-settings-drawer .ma-settings-section .ma-setting-row{grid-template-columns:minmax(96px,120px) minmax(0,1fr);gap:var(--ma-space-3);}
-.ma-shared-settings-drawer .ma-settings-section .ma-setting-row__control{justify-self:stretch;width:100%;}
+.ma-shared-settings-drawer .ma-settings-section{
+  --ma-setting-row-columns:minmax(96px,120px) minmax(0,1fr);
+  --ma-setting-control-justify:stretch;
+  --ma-setting-control-width:100%;
+}
+.ma-shared-settings-drawer .ma-settings-section .ma-setting-row{gap:var(--ma-space-3);}
 .ma-settings-inline-actions{margin-top:2px;}
 .ma-save-section{gap:var(--ma-space-3);}
 .ma-settings-status{margin-top:8px;min-height:0;}
@@ -67,13 +71,9 @@
 .ma-settings-data-list{margin-top:2px;}
 
 /* Authentication visibility is state-owned by the shared profile binding. */
-html[data-ma-signed-in="true"] [data-profile-sign-in],
 html[data-ma-signed-in="true"] [data-ma-sign-in],
-html[data-ma-signed-in="false"] [data-profile-sign-out],
 html[data-ma-signed-in="false"] [data-ma-sign-out]{display:none;visibility:hidden;pointer-events:none;}
-html[data-ma-signed-in="true"] [data-profile-sign-out],
 html[data-ma-signed-in="true"] [data-ma-sign-out],
-html[data-ma-signed-in="false"] [data-profile-sign-in],
 html[data-ma-signed-in="false"] [data-ma-sign-in]{visibility:visible;pointer-events:auto;}
 
 @media(max-width:1180px){

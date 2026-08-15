@@ -1032,6 +1032,21 @@ test('2.31.4 profile and settings polish keeps auth and drawer layout state-owne
   assert.match(bindings, /authBtn: document\.getElementById\('profileAuthBtn'\)/);
   assert.match(cloud, /boundAuthButtons/);
   assert.match(cloud, /currentUser\) void signOutUser\(\)/);
-  assert.match(css, /grid-template-columns:minmax\(96px,120px\) minmax\(0,1fr\)/);
+  assert.match(css, /--ma-setting-row-columns:minmax\(96px,120px\) minmax\(0,1fr\)/);
   assert.match(css, /\.ma-settings-status:empty\{display:none;\}/);
+});
+
+
+test('2.32 CSS consolidation keeps Settings and Profile ownership canonical', () => {
+  const components = read('assets/css/mode-atlas-components.css');
+  const profile = read('assets/css/mode-atlas-profile-settings.css');
+  const trainer = read('assets/css/mode-atlas-study-shared.css');
+  const modifiers = read('assets/css/mode-atlas-modifier-menu.css');
+  assert.match(components, /grid-template-columns:var\(--ma-setting-row-columns,/);
+  assert.match(components, /justify-self:var\(--ma-setting-control-justify,end\)/);
+  assert.match(profile, /--ma-setting-row-columns:minmax\(96px,120px\) minmax\(0,1fr\)/);
+  assert.doesNotMatch(profile, /data-profile-sign-in|data-profile-sign-out/);
+  assert.doesNotMatch(profile, /\.ma-shared-settings-drawer \.ma-settings-section \.ma-setting-row\{grid-template-columns:/);
+  assert.match(modifiers, /bottom-shell\.ma-modifiers-only/);
+  assert.ok(!trainer.includes('max-height:min(72vh,720px)'), 'modifier drawer max-height must remain owned by modifier-menu.css');
 });

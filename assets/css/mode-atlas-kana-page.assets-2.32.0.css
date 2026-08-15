@@ -352,7 +352,7 @@ body::before {
 
 .kana-mastery-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0,1fr));
+    
     gap: 12px;
 }
 
@@ -411,7 +411,7 @@ body::before {
     margin-top: 14px;
     display: grid;
     width: 100%;
-    grid-template-columns: minmax(0, 1.45fr) minmax(0, .72fr) minmax(0, 1.45fr);
+    
     gap: 12px;
     align-items: stretch;
 }

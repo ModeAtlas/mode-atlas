@@ -9,10 +9,10 @@
     }
 
 .scoreline {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        flex-wrap: wrap;
+        
+        
+        
+        
         margin-bottom: 18px;
         font-size: 15px;
     }
@@ -205,9 +205,9 @@ input[type="text"]:disabled,
 .session-actions {
         margin-top: 14px;
         display: none;
-        justify-content: center;
-        gap: 10px;
-        flex-wrap: wrap;
+        
+        
+        
     }
 
 .session-actions.is-active:not([hidden]) {
@@ -531,9 +531,9 @@ body[data-display-mode="mobile"] .main {
 
 .bottom-shell.ma-modifiers-only .tab-button{border-right:0;min-height:54px;font-size:18px;letter-spacing:-.01em;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))}
 
-.bottom-shell.ma-modifiers-only .drawer-content{background:radial-gradient(circle at top left,rgba(255,255,255,.055),transparent 36%),linear-gradient(180deg,rgba(16,20,28,.98),rgba(9,10,14,.98));border-top:1px solid rgba(255,255,255,.07);min-height:auto;max-height:min(58vh,560px);padding:18px}
+.bottom-shell.ma-modifiers-only .drawer-content{background:radial-gradient(circle at top left,rgba(255,255,255,.055),transparent 36%),linear-gradient(180deg,rgba(16,20,28,.98),rgba(9,10,14,.98));border-top:1px solid rgba(255,255,255,.07);min-height:auto;max-height:min(58vh,560px);padding:18px;}
 
-.bottom-shell.ma-modifiers-only .options-stack{gap:16px;width:min(1080px,100%)}
+.bottom-shell.ma-modifiers-only .options-stack{gap:16px;width:min(1080px,100%);}
 
 .bottom-shell.ma-modifiers-only .options-stack>div{padding:14px;border-radius:20px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.075)}
 
@@ -600,17 +600,17 @@ body[data-display-mode="mobile"] .main {
 .scoreline {
   display: grid;
   grid-template-columns: repeat(4, max-content);
-  justify-content: center;
-  align-items: center;
+  
+  
   gap: 12px;
   min-height: 44px;
 }
 
 .score-pill {
   min-width: 118px;
-  box-sizing: border-box;
-  white-space: nowrap;
-  text-align: center;
+  
+  
+  
 }
 
 .score-pill:nth-child(2) { min-width: 174px; }
@@ -732,7 +732,7 @@ body[data-effective-display-mode="phone"] .main h1 {
 
 body[data-effective-display-mode="phone"] .scoreline {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  
 }
 
 body[data-effective-display-mode="phone"] .score-pill,

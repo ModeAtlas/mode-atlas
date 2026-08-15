@@ -1,3 +1,10 @@
+## 2.32.0 - 2026-08-15
+- Consolidated canonical CSS source without changing page design or application behaviour, removing only identical same-selector declarations while preserving differing cascade rules.
+- Made the shared setting-row component the responsive geometry owner; Settings now supplies layout variables instead of overriding component geometry with a higher-specificity grid rule.
+- Removed retired Profile sign-in/sign-out visibility selectors left behind by the single state-aware Google account action.
+- Reduced duplicate CSS ownership in trainer, Achievements, Kana, Results, and shared theme sources where declarations were provably identical.
+- Rebuilt revisioned assets and revalidated the project audit and full regression suite.
+
 ## 2.31.4 - 2026-08-15
 - Fixed Settings preference-row overlap by giving labels a protected column and allowing segmented controls to size to the drawer.
 - Removed empty Save Data status spacing so the backup controls no longer leave a large unused gap.
