@@ -1,0 +1,25 @@
+name: Validate Mode Atlas 2.32.0 final tree
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.32.0-css-source-consolidation
+
+jobs:
+  validate:
+    if: ${{ github.event.head_commit.message == 'Run final 2.32 validation' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Project audit and regressions
+        run: |
+          python3 audit_project.py
+          node --test tests/backend.test.js tests/frontend.test.js
+      - name: Release hygiene
+        run: |
+          test -z "$(git ls-files | grep -E '(^|/)__pycache__/|\.pyc$' || true)"
+          test ! -e .github/consolidate_2320.py
+          test ! -e .github/trigger-2320.txt
+          test ! -e .github/workflows/apply-2320-css-consolidation.yml
+          grep -q "var VERSION = '2.32.0';" assets/app/mode-atlas-version.js
+          grep -q "var CACHE_REVISION = 'assets-2.32.0';" assets/app/mode-atlas-version.js
