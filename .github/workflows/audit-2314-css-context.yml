@@ -1,0 +1,68 @@
+name: Audit Mode Atlas 2.31.4 CSS contexts
+on:
+  push:
+    branches:
+      - agent/audit-2.31.4-pausepoint
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan same-context duplicate selectors
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,collections
+          def rules(text):
+              text=re.sub(r'/\*.*?\*/','',text,flags=re.S)
+              out=[]; stack=[]; buf=''; i=0
+              while i<len(text):
+                  ch=text[i]
+                  if ch=='{':
+                      pre=buf.strip(); buf=''
+                      if pre.startswith('@'):
+                          stack.append(('at',re.sub(r'\s+',' ',pre)))
+                      else:
+                          ctx=tuple(x[1] for x in stack if x[0]=='at')
+                          for sel in pre.split(','):
+                              sel=re.sub(r'\s+',' ',sel.strip())
+                              if sel: out.append((ctx,sel))
+                          stack.append(('rule',pre))
+                      i+=1; continue
+                  if ch=='}':
+                      buf=''
+                      if stack: stack.pop()
+                      i+=1; continue
+                  # Declaration text inside a normal rule is irrelevant until its closing brace.
+                  if stack and stack[-1][0]=='rule':
+                      i+=1; continue
+                  buf+=ch; i+=1
+              return out
+          print('=== SAME-CONTEXT CSS DUPLICATION ===')
+          totals=[]
+          for p in sorted(Path('assets/css').glob('*.css')):
+              if '.assets-' in p.name: continue
+              c=collections.Counter(rules(p.read_text(errors='ignore')))
+              dup=[(ctx,s,n) for (ctx,s),n in c.items() if n>1]
+              base=[(s,n) for ctx,s,n in dup if not ctx]
+              same_media=[(ctx,s,n) for ctx,s,n in dup if ctx]
+              if base or same_media:
+                  totals.append((str(p),len(base),len(same_media)))
+                  print('\nFILE',p,'base duplicates',len(base),'same-at-rule duplicates',len(same_media))
+                  for s,n in sorted(base,key=lambda x:(-x[1],x[0]))[:50]: print(' BASE',n,s)
+                  for ctx,s,n in sorted(same_media,key=lambda x:(-x[2],x[1]))[:25]: print(' CTX',n,' | '.join(ctx),'::',s)
+          print('\nSUMMARY')
+          for row in totals: print(row)
+          print('=== END SAME-CONTEXT CSS DUPLICATION ===')
+          PY
+      - name: Remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/audit-2314-css-context.yml
+          git commit -m "Remove temporary CSS context audit workflow"
+          git push origin HEAD
