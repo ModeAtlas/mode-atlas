@@ -1,0 +1,65 @@
+name: Apply Mode Atlas 2.42.0 Contextual Install
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.42.0-contextual-install-progression-feedback
+permissions:
+  contents: write
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate transformer
+        run: python3 -m py_compile .github/apply_2420.py
+      - name: Apply source changes
+        run: python3 .github/apply_2420.py
+      - name: Validate changed JavaScript syntax
+        run: |
+          node --check assets/app/mode-atlas-progress.js
+          node --check assets/app/mode-atlas-progress-ui.js
+          node --check assets/app/mode-atlas-pwa.js
+          node --check assets/app/mode-atlas-dev-console.js
+          node --check assets/trainer/mode-atlas-trainer-shared.js
+          node --check assets/pages/mode-atlas-default-page.js
+          node --check assets/pages/mode-atlas-reverse-page.js
+      - name: Rebuild revisioned assets
+        run: python3 build_revision_assets.py
+      - name: Audit and tests
+        run: |
+          python3 audit_project.py
+          node --test tests/backend.test.js tests/frontend.test.js
+      - name: Release guards
+        run: |
+          grep -q "var VERSION = '2.42.0';" assets/app/mode-atlas-version.js
+          grep -q "var CACHE_REVISION = 'assets-2.42.0';" assets/app/mode-atlas-version.js
+          grep -q "mode-atlas-progress-ui.assets-2.42.0.js" reading/index.html
+          grep -q "mode-atlas-progress-ui.assets-2.42.0.js" index.html
+          grep -q "AUTO_INSTALL_CORRECT_THRESHOLD = 100" assets/app/mode-atlas-pwa.js
+          grep -q "XP gained" assets/trainer/mode-atlas-trainer-shared.js
+          grep -q "Level up" assets/app/mode-atlas-progress-ui.js
+          grep -q "Progress / XP" assets/app/mode-atlas-dev-console.js
+          grep -q "debugAdjustXP" assets/app/mode-atlas-progress.js
+          python3 - <<'PY'
+          from pathlib import Path
+          text=Path('assets/app/mode-atlas-storage.js').read_text()
+          backup=text.split('const APP_BACKUP_EXACT',1)[1].split('const APP_LOCAL_EXACT',1)[0]
+          local=text.split('const APP_LOCAL_EXACT',1)[1].split('const APP_LOCAL_SET',1)[0]
+          assert 'modeAtlasInstallPromptSeen' not in backup
+          assert 'modeAtlasInstallPromptDismissedAt' not in backup
+          assert 'modeAtlasInstallPromptSeen' in local
+          assert 'modeAtlasInstallPromptDismissedAt' in local
+          PY
+          test -z "$(git ls-files | grep -E '(^|/)__pycache__/|\.pyc$' || true)"
+      - name: Commit validated release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/apply_2420.py .github/workflows/apply-2420-contextual-install.yml
+          rm -rf __pycache__ .github/__pycache__
+          git add -A
+          git commit -m "Release Mode Atlas 2.42.0 contextual install and progression feedback"
+          git push origin HEAD
