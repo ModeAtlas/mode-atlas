@@ -30,7 +30,7 @@
                 <div class="ma-setting-row__control ma-segmented ma-settings-segmented ma-settings-segmented--display" style="--ma-segment-count:4">
                   <button class="ma-button ma-display-option" data-display="auto" type="button">Auto</button>
                   <button class="ma-button ma-display-option" data-display="desktop" type="button">Desktop</button>
-                  <button class="ma-button ma-display-option" data-display="tablet" type="button">iPad</button>
+                  <button class="ma-button ma-display-option" data-display="tablet" type="button">Tablet</button>
                   <button class="ma-button ma-display-option" data-display="phone" type="button">Phone</button>
                 </div>
               </div>
@@ -61,7 +61,7 @@
 
           <details class="ma-settings-disclosure" open>
             <summary>
-              <span><span class="ma-menu-kicker">Secondary tools</span><strong>Data & app</strong></span>
+              <span><span class="ma-menu-kicker">Secondary tools</span><strong>Data and app</strong></span>
               ${icon(href,'chevron')}
             </summary>
             <div class="ma-setting-list ma-settings-data-list">

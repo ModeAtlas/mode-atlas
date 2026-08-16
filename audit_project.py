@@ -642,7 +642,8 @@ def main() -> int:
         fail(errors, 'Atlas page controller takes over shared Profile/Settings/cloud ownership')
     if 'Branches' in profile_menu or 'data-ma-nav-item' in profile_menu:
         fail(errors, 'Profile drawer duplicates shared navigation')
-    if 'ma-setting-row' not in settings_menu or 'Data & app' not in settings_menu:
+    settings_hierarchy_markers = ('ma-setting-row', 'ma-settings-disclosure', 'ma-settings-data-list', 'ma-save-section', 'ma-tools-panel')
+    if any(marker not in settings_menu for marker in settings_hierarchy_markers):
         fail(errors, 'Settings drawer is missing the standard preference/data hierarchy')
 
     wordbank_html = text(ROOT / 'wordbank/index.html')

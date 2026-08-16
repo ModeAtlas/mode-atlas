@@ -64,9 +64,9 @@ class NavConfig:
 NAV_CONFIGS: dict[str, NavConfig] = {
     'index.html': NavConfig('atlas', 'あア', 'Mode Atlas', 'Learn Japanese'),
     'kana/index.html': NavConfig('kana', 'かな', 'Mode Atlas', 'Kana Trainer', accent='kana'),
-    'reading/index.html': NavConfig('reading', '読', 'Kana Trainer', 'Reading Practice', accent='reading', hideable=True),
-    'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Writing Practice', accent='writing', hideable=True),
-    'results/index.html': NavConfig('results', '測', 'Kana Trainer', 'Results', brand_href='/kana/', accent='results'),
+    'reading/index.html': NavConfig('reading', '読', 'Kana Trainer', 'Reading Practice', brand_href='/kana/', accent='reading', hideable=True),
+    'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Writing Practice', brand_href='/kana/', accent='writing', hideable=True),
+    'results/index.html': NavConfig('results', '測', 'Kana Trainer', 'Test Results', brand_href='/kana/', accent='results'),
     'wordbank/index.html': NavConfig('wordbank', '語', 'Mode Atlas', 'Word Bank', accent='words'),
     'privacy/index.html': NavConfig('privacy', 'あア', 'Mode Atlas', 'Privacy Policy', account_actions=False),
     'terms/index.html': NavConfig('terms', 'あア', 'Mode Atlas', 'Terms of Use', account_actions=False),
@@ -82,7 +82,7 @@ KANA_LINKS = (
     ('kana', 'Overview', '/kana/'),
     ('reading', 'Reading', '/reading/'),
     ('writing', 'Writing', '/writing/'),
-    ('results', 'Results', '/results/'),
+    ('results', 'Test Results', '/results/'),
 )
 KANA_KEYS = frozenset(key for key, _label, _href in KANA_LINKS)
 
@@ -167,7 +167,7 @@ def render_navigation(config: NavConfig) -> str:
 
     return f"""{NAV_START}
 <nav class="ma-nav ma-nav--{_attr(config.accent)}"{nav_id} data-ma-navigation="shared" data-ma-page="{_attr(config.key)}" aria-label="Mode Atlas navigation">
-  <a class="ma-nav__brand" href="{_attr(config.brand_href)}" aria-label="Mode Atlas home">
+  <a class="ma-nav__brand" href="{_attr(config.brand_href)}" aria-label="{_attr('Kana Trainer home' if config.brand_href == '/kana/' else 'Mode Atlas home')}">
     <span class="ma-nav__mark" aria-hidden="true">{html.escape(config.mark)}</span>
     <span class="ma-nav__brand-copy">
       <span class="ma-nav__kicker">{html.escape(config.kicker)}</span>
@@ -527,11 +527,11 @@ def _trainer_scoreline() -> str:
                 <div class="score-pill ma-pill ma-trainer-score" id="trialTimerPill" hidden>Time <strong id="trialTimer">0</strong></div>
                 <div class="score-pill ma-pill ma-trainer-score" id="dailyProgressPill" hidden>Question <strong><span id="dailyProgress">0</span>/20</strong></div>
                 <div class="score-pill ma-pill ma-trainer-score" id="dailyCorrectPill" hidden>Correct <strong id="dailyCorrect">0</strong></div>
-                <div class="score-pill ma-pill ma-trainer-score" id="dailyWrongPill" hidden>Wrong <strong id="dailyWrong">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="dailyWrongPill" hidden>Incorrect <strong id="dailyWrong">0</strong></div>
                 <div class="score-pill ma-pill ma-trainer-score" id="dailyOfficialPill" hidden>Official <strong id="dailyOfficial">—</strong></div>
                 <div class="score-pill ma-pill ma-trainer-score" id="testQuestionPill" hidden>Question <strong><span id="testQuestion">0</span>/<span id="testTotal">0</span></strong></div>
                 <div class="score-pill ma-pill ma-trainer-score" id="testCorrectPill" hidden>Correct <strong id="testCorrect">0</strong></div>
-                <div class="score-pill ma-pill ma-trainer-score" id="testWrongPill" hidden>Wrong <strong id="testWrong">0</strong></div>
+                <div class="score-pill ma-pill ma-trainer-score" id="testWrongPill" hidden>Incorrect <strong id="testWrong">0</strong></div>
             </div>
             <div class="ma-session-progress" id="sessionProgressBar" hidden aria-live="polite">
                 <div class="ma-session-progress__meta"><span id="sessionProgressLabel">Session progress</span><strong id="sessionProgressValue">0 / 0</strong></div>
@@ -549,7 +549,7 @@ def _trainer_prompt(config: TrainerConfig) -> str:
         </div>
 
         <div class="input-wrap ma-trainer-answer-wrap">
-            <input class="ma-input ma-trainer-input" id="input" type="text" placeholder="Type romaji..." aria-label="Type the romaji answer" autocomplete="off" spellcheck="false" disabled />
+            <input class="ma-input ma-trainer-input" id="input" type="text" placeholder="Type romaji…" aria-label="Type the romaji answer" autocomplete="off" spellcheck="false" disabled />
         </div>'''
     return '''        <div class="prompt-wrap ma-trainer-prompt-wrap">
             <div id="prompt" class="prompt">—</div>
@@ -569,15 +569,15 @@ def _trainer_score_panels(config: TrainerConfig) -> str:
     return f'''    <div class="side-panel ma-card ma-card--flat ma-trainer-side-panel left-panel">
         <div class="panel-header" id="scoresHeader"><span>Records</span><span id="scoresChevron">▼</span></div>
         <div class="panel-content" id="scoresContent">
-            <a class="ma-button ma-button--small ma-button--wide ma-trainer-results-link" href="/results/"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-chart"></use></svg><span>View full Results</span></a>
+            <a class="ma-button ma-button--small ma-button--wide ma-trainer-results-link" href="/results/"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-chart"></use></svg><span>View Test Results</span></a>
             <div class="score-block ma-card ma-card--flat ma-trainer-score-card">
-                <h3>Endless Best</h3>
+                <h3>Endless best</h3>
                 <div class="score-row"><span>Total</span><span id="bestEndlessTotal">0</span></div>
                 <div class="score-row"><span>Correct</span><span id="bestEndlessCorrect">0</span></div>
-                <div class="score-row"><span>Wrong</span><span id="bestEndlessWrong">0</span></div>
+                <div class="score-row"><span>Incorrect</span><span id="bestEndlessWrong">0</span></div>
             </div>
             <div class="score-block ma-card ma-card--flat ma-trainer-score-card">
-                <h3>Combo Kana Best</h3>
+                <h3>Combo Kana best</h3>
                 <div class="score-row"><span>Same Row</span><span id="comboSameRowBest">0</span></div>
                 <div class="score-row"><span>Random</span><span id="comboRandomBest">0</span></div>
             </div>
@@ -585,11 +585,11 @@ def _trainer_score_panels(config: TrainerConfig) -> str:
                 <h3>{html.escape(config.daily_title)}</h3>
                 <div class="score-row"><span>Today</span><span id="dailyTodayScore">—</span></div>
                 <div class="score-row"><span>Attempts</span><span id="dailyTodayAttempts">0</span></div>
-                <div class="score-subtitle">Previous Days</div>
+                <div class="score-subtitle">Previous days</div>
                 <div id="dailyHistoryList"></div>
             </div>
-            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>Speed Run Top 3</h3><div id="speedRunTop3"></div></div>
-            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>Time Trial Top 3</h3><div id="timeTrialTop3"></div></div>
+            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>Speed Run top 3</h3><div id="speedRunTop3"></div></div>
+            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>Time Trial top 3</h3><div id="timeTrialTop3"></div></div>
         </div>
     </div>
 
@@ -656,8 +656,8 @@ def render_trainer_shell(config: TrainerConfig) -> str:
         </div>
 
         <div class="trial-config" id="comboConfig" hidden>
-            <div class="trial-box"><label>Kana Combos</label><div class="bottom-actions">
-                <button class="btn ma-button ma-trainer-button" id="comboSameRowBtn" type="button">Same Row</button>
+            <div class="trial-box"><label>Kana combos</label><div class="bottom-actions">
+                <button class="btn ma-button ma-trainer-button" id="comboSameRowBtn" type="button">Same row</button>
                 <button class="btn ma-button ma-trainer-button" id="comboRandomBtn" type="button">Random</button>
             </div></div>
         </div>
@@ -668,7 +668,7 @@ def render_trainer_shell(config: TrainerConfig) -> str:
             <button class="btn btn-secondary ma-button ma-trainer-button" id="pauseSessionBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-pause"></use></svg><span data-ma-pause-label>Pause</span></button>
             <button class="btn btn-secondary ma-button ma-trainer-button" id="endSessionBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-stop"></use></svg><span>End session</span></button>
         </div>
-        <div id="gameOver" class="game-over" hidden><div class="game-over-title">Wrong</div><div id="gameOverAnswer" class="game-over-answer"></div><button class="btn ma-button ma-trainer-button" id="retryBtn" type="button" hidden>Try Again</button></div>
+        <div id="gameOver" class="game-over" hidden><div class="game-over-title">Incorrect</div><div id="gameOverAnswer" class="game-over-answer"></div><button class="btn ma-button ma-trainer-button" id="retryBtn" type="button" hidden>Try again</button></div>
         </div>
     </div>
 

@@ -212,13 +212,13 @@ function refreshProfileShell() {
     function addWord() {
       const kana = normalizeKana(elements.kanaInput.value);
       if (!kana) {
-        showStatus('Enter a kana word first.', 'warn');
+        showStatus('Enter a kana word first.', 'warning');
         return;
       }
 
       const existing = wordBank.find(entry => entry.kana === kana);
       if (existing) {
-        showStatus(`"${kana}" is already in your word bank.`, 'warn');
+        showStatus(`"${kana}" is already in your Word Bank.`, 'warning');
         renderEntries(existing.id);
         return;
       }
@@ -232,7 +232,7 @@ function refreshProfileShell() {
       expandedEntries.add(entry.id);
       elements.kanaInput.value = '';
       clearStatus();
-      showStatus(`Added ${kana} to your word bank.`, 'ok');
+      showStatus(`Added ${kana} to your Word Bank.`, 'success');
       renderEntries(entry.id);
       window.ModeAtlasDialog?.close?.(true);
     }
@@ -272,12 +272,12 @@ function refreshProfileShell() {
         return;
       }
       renderEntries();
-      showStatus(`Deleted ${entry.kana}.`, 'ok');
+      showStatus(`Deleted ${entry.kana}.`, 'success');
     }
 
     async function clearAllWords() {
       if (!wordBank.length) {
-        window.ModeAtlasFeedback?.toast?.('Your word bank is already empty.', 'warning');
+        window.ModeAtlasFeedback?.toast?.('Your Word Bank is already empty.', 'warning');
         window.ModeAtlasDialog?.close?.(true);
         return;
       }
@@ -523,7 +523,7 @@ function refreshProfileShell() {
       actions.append(createEl("div", "small-muted", `Added ${formatDate(entry.createdAt)} · Updated ${formatDate(entry.updatedAt)}`));
 
       const inline = createEl("div", "inline-actions ma-action-row");
-      const save = createEl("button", "ma-button ma-button--primary", "Save Changes");
+      const save = createEl("button", "ma-button ma-button--primary", "Save changes");
       save.type = "button";
       save.dataset.action = "save";
       save.dataset.id = entryId;
@@ -561,7 +561,7 @@ function refreshProfileShell() {
           : 'Add a Japanese word now. Romaji is generated automatically, and you can add its meaning or notes whenever you are ready.');
         const actions = createEl('div','wordbank-empty-actions ma-action-row');
         if (wordBank.length && (queryActive || filterActive)) {
-          const clearView = createEl('button','ma-button ma-button--ghost','Clear search & filters');
+          const clearView = createEl('button','ma-button ma-button--ghost','Clear search and filters');
           clearView.type = 'button';
           clearView.addEventListener('click', () => {
             elements.searchInput.value = '';
@@ -665,13 +665,13 @@ function refreshProfileShell() {
         const notesField = document.querySelector(`[data-field="notes"][data-id="${id}"]`);
         const nextKana = normalizeKana(kanaField?.value || '');
         if (!nextKana) {
-          showStatus('Kana cannot be empty.', 'err');
+          showStatus('Kana cannot be empty.', 'error');
           return;
         }
 
         const duplicate = wordBank.find(entry => entry.id !== id && entry.kana === nextKana);
         if (duplicate) {
-          showStatus(`Cannot save. "${nextKana}" already exists in your word bank.`, 'err');
+          showStatus(`Cannot save. "${nextKana}" already exists in your Word Bank.`, 'error');
           renderEntries(duplicate.id);
           return;
         }
@@ -681,7 +681,7 @@ function refreshProfileShell() {
           english: (englishField?.value || '').trim(),
           notes: (notesField?.value || '').trim()
         });
-        if (saved) showStatus(`Saved ${nextKana}.`, 'ok');
+        if (saved) showStatus(`Saved ${nextKana}.`, 'success');
       }
     });
 

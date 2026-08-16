@@ -246,9 +246,9 @@
       notify('Import cancelled.', 'info', 2200);
       return false;
     }
-    setStatus('Importing backup...', 'info');
+    setStatus('Importing backup…', 'info');
     const result = await applyImportPayload(parsed);
-    setStatus('Save imported. Reloading...', 'success');
+    setStatus('Save imported. Reloading…', 'success');
     if (typeof options.afterImport === 'function') options.afterImport(result);
     else setTimeout(() => location.reload(), 350);
     return true;
@@ -259,7 +259,7 @@
     try {
       const text = await file.text();
       const parsed = JSON.parse(text || '{}');
-      setStatus('Review import before continuing...', 'info');
+      setStatus('Review import before continuing…', 'info');
       await previewAndImport(parsed);
     } catch (error) {
       console.warn('Save import failed.', error);
@@ -279,7 +279,7 @@
     });
     if (!confirmed) return;
     try {
-      setStatus('Resetting save data...', 'warning');
+      setStatus('Resetting save data…', 'warning');
       if (window.KanaCloudSync?.ready) await window.KanaCloudSync.ready;
       if (window.KanaCloudSync?.resetAllData) await window.KanaCloudSync.resetAllData();
       else {

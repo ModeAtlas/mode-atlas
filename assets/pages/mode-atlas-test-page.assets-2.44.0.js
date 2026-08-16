@@ -356,7 +356,7 @@ function toTitleCase(value) {
 function getResultTypeLabel(result) {
     if (!result) return "—";
     if (result.type === "average") {
-        return result.mode === "reading" ? "Read Avg" : "Write Avg";
+        return result.mode === "reading" ? "Reading average" : "Writing average";
     }
 
     if (result.inputMode === "buttons") {
@@ -369,7 +369,7 @@ function getResultTypeLabel(result) {
         return layout ? `Keyboard - ${toTitleCase(layout)}` : "Keyboard";
     }
 
-    return result.mode === "reading" ? "Read" : "Write";
+    return result.mode === "reading" ? "Reading" : "Writing";
 }
 
 function getSelectedResult() {
@@ -442,7 +442,7 @@ function renderGuidance(result) {
         RESULTS_GUIDANCE_TITLE.textContent = "Complete your first formal assessment";
         RESULTS_GUIDANCE_TEXT.textContent = "Finish Reading or Writing Test Mode to unlock row, kana, speed, and accuracy recommendations here.";
         RESULTS_PRACTICE_ACTION.href = "/reading/";
-        RESULTS_PRACTICE_ACTION.querySelector("span").textContent = "Open Reading trainer";
+        RESULTS_PRACTICE_ACTION.querySelector("span").textContent = "Open Reading";
         return;
     }
 
@@ -544,7 +544,7 @@ function createResultTile(item) {
     const tagRow = createResultEl("div", "tag-row");
     tagRow.append(createResultEl("span", `tag ${item.type === "average" ? "gold" : item.mode} ma-pill ma-pill--small`, item.type === "average" ? "Test Average" : "Formal Test"));
     getModifierTags(item).forEach(tag => tagRow.append(createResultEl("span", "tag gold ma-pill ma-pill--small", tag)));
-    tagRow.append(createResultEl("span", "tag ma-pill ma-pill--small", `${item.correct} right / ${item.wrong} wrong`));
+    tagRow.append(createResultEl("span", "tag ma-pill ma-pill--small", `${item.correct} correct / ${item.wrong} incorrect`));
 
     button.append(top, tagRow);
     button.addEventListener("click", () => {
@@ -563,9 +563,9 @@ function renderResultsList() {
             createResultEl("p", "results-empty-assessment__copy", "Complete Test Mode in Reading or Writing to receive a comprehensive assessment of kana accuracy, speed, rows, modifiers, and focus areas.")
         );
         const actions = createResultEl("div", "results-empty-assessment__actions ma-action-row");
-        const reading = createResultEl("a", "ma-button ma-button--primary", "Open Reading trainer");
+        const reading = createResultEl("a", "ma-button ma-button--primary", "Open Reading");
         reading.href = "/reading/";
-        const writing = createResultEl("a", "ma-button ma-button--ghost", "Open Writing trainer");
+        const writing = createResultEl("a", "ma-button ma-button--ghost", "Open Writing");
         writing.href = "/writing/";
         actions.append(reading, writing);
         empty.append(actions);
@@ -613,7 +613,7 @@ function renderDetailHeader(result) {
     renderMetricCards(DETAIL_METRICS, [
         ["Accuracy", `${result.overallScore}%`],
         ["Correct", `${result.correct}`],
-        ["Wrong", `${result.wrong}`],
+        ["Incorrect", `${result.wrong}`],
         ["Avg response", `${formatDuration(result.avgMs)}`]
     ]);
     const hideBtn = document.getElementById("hideUnusedBtn");
@@ -636,12 +636,12 @@ function openKanaModal(result, kana) {
     const stats = createResultEl("div", "result-kana-stats");
     if (result.type === "average") {
         stats.append(
-            createModalStat("Correct", record.correct || 0), createModalStat("Wrong", record.wrong || 0),
-            createModalStat("Accuracy", `${accuracy}%`), createModalStat("Avg Time", formatDuration(record.avgMs))
+            createModalStat("Correct", record.correct || 0), createModalStat("Incorrect", record.wrong || 0),
+            createModalStat("Accuracy", `${accuracy}%`), createModalStat("Avg response", formatDuration(record.avgMs))
         );
     } else {
         stats.append(
-            createModalStat("Result", wasCorrect ? "Correct" : "Wrong", wasCorrect ? "result-answer-correct" : "result-answer-wrong"),
+            createModalStat("Result", wasCorrect ? "Correct" : "Incorrect", wasCorrect ? "result-answer-correct" : "result-answer-wrong"),
             createModalStat("Time", formatDuration(record.avgMs))
         );
     }
@@ -808,7 +808,7 @@ function updateRowTooltip(result, script, key) {
         sub.textContent = "Modifier off for this result";
     } else {
         sub.append(
-            document.createTextNode(`Right: ${row.correct} · Wrong: ${row.wrong}`),
+            document.createTextNode(`Correct: ${row.correct} · Incorrect: ${row.wrong}`),
             document.createElement("br"),
             document.createTextNode(`Avg time: ${formatDuration(row.avgMs)}`)
         );

@@ -873,7 +873,7 @@ test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and c
 
   assert.doesNotMatch(profile, /Branches|data-ma-nav-item|\/reading\/|\/writing\//, 'Profile must not duplicate navigation');
   assert.match(settings, /Preferences/);
-  assert.match(settings, /Data & app/);
+  assert.match(settings, /Data and app/);
   assert.match(settings, /ma-setting-row/);
 
   assert.match(atlas, /id="homeContinueCard"/);
@@ -1120,7 +1120,7 @@ test('2.34 product navigation separates Mode Atlas destinations from Kana sectio
 
   assert.match(frontend, /PRIMARY_LINKS = \([\s\S]*?'Atlas'[\s\S]*?'Kana Trainer'[\s\S]*?'Word Bank'[\s\S]*?\)/);
   assert.doesNotMatch(frontend.match(/PRIMARY_LINKS = \([\s\S]*?\)\n/)[0], /'Reading'|'Writing'|'Results'/);
-  assert.match(frontend, /KANA_LINKS = \([\s\S]*?'Overview'[\s\S]*?'Reading'[\s\S]*?'Writing'[\s\S]*?'Results'/);
+  assert.match(frontend, /KANA_LINKS = \([\s\S]*?'Overview'[\s\S]*?'Reading'[\s\S]*?'Writing'[\s\S]*?'Test Results'/);
   assert.match(navCss, /\.ma-nav__flyout\{/);
   assert.match(navCss, /\.ma-nav__section-link\.is-active\{/);
   assert.doesNotMatch(navCss, /\.ma-nav__subnav\{/);
@@ -1255,7 +1255,7 @@ test('2.37 Word Bank is collection-first, state-aware, and keeps editing progres
   assert.match(js, /ma-wordbank-populated/);
   assert.match(js, /No words match this view\./);
   assert.match(js, /Start your Word Bank\./);
-  assert.match(js, /Clear search & filters/);
+  assert.match(js, /Clear search and filters/);
   assert.match(js, /createEl\("details", "wordbank-entry"\)/);
   assert.doesNotMatch(js, /createEl\("details", "card ma-card ma-card--soft"\)/);
   assert.match(css, /\.wordbank-entry\{/);
@@ -1524,4 +1524,55 @@ test('2.43.1 achievement tiles breathe and detail navigation has distinct destin
   assert.match(achievements, /Close achievements/);
   assert.match(dialog, /close\.classList\.toggle\('ma-dialog__close--icon', opts\.closeIcon\)/);
   assert.match(components, /\.ma-dialog__close--icon/);
+});
+
+test('2.44 app-wide UX vocabulary keeps product destinations and actions semantically consistent', () => {
+  const frontend = read('frontend_components.py');
+  const home = read('index.html');
+  const kana = read('kana/index.html');
+  const kanaJs = read('assets/pages/mode-atlas-kana-page.js');
+  const results = read('results/index.html');
+  const resultsUi = read('assets/results/mode-atlas-results-ui.js');
+  const resultsPage = read('assets/pages/mode-atlas-test-page.js');
+  const wordbank = read('wordbank/index.html');
+  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
+  const settings = read('assets/ui/mode-atlas-settings-menu.js');
+
+  assert.match(frontend, /'results\/index\.html': NavConfig\('results', '測', 'Kana Trainer', 'Test Results'/);
+  assert.match(frontend, /\('results', 'Test Results', '\/results\/'\)/);
+  assert.match(frontend, /'reading\/index\.html': NavConfig\([^\n]*brand_href='\/kana\/'/);
+  assert.match(frontend, /'writing\/index\.html': NavConfig\([^\n]*brand_href='\/kana\/'/);
+  assert.match(frontend, /Kana Trainer home/);
+  assert.match(frontend, />Start practice<\/span>/);
+  assert.match(frontend, />End session<\/span>/);
+  assert.match(frontend, />Try again<\/button>/);
+  assert.match(frontend, />View Test Results<\/span>/);
+  assert.doesNotMatch(frontend, /View full Results|Try Again|>Wrong</);
+
+  for (const html of [home, kana]) assert.match(html, /Test Results/);
+  assert.match(kana, />Open Reading /);
+  assert.match(kana, />Open Writing /);
+  assert.match(kanaJs, /label: 'Review weak kana'/);
+  assert.match(kanaJs, /label: 'Open Test Results'/);
+  assert.doesNotMatch(kanaJs, /label: 'Start Reading'|label: 'Go to Writing'|label: 'Open Results'/);
+
+  assert.match(results, />Incorrect<\/div>/);
+  assert.match(results, /No assessment selected/);
+  assert.match(results, /Back to Kana Trainer/);
+  assert.doesNotMatch(results, /No result selected|Open Kana hub/);
+  assert.match(resultsUi, /Test Average/);
+  assert.doesNotMatch(resultsUi, /Overall Average/);
+  assert.match(resultsPage, /Reading average/);
+  assert.match(resultsPage, /correct \/ \$\{item\.wrong\} incorrect/);
+  assert.match(resultsPage, /Correct: \$\{row\.correct\} · Incorrect: \$\{row\.wrong\}/);
+
+  assert.match(wordbank, />Kana word<\/label>/);
+  assert.match(wordbank, />Add word<\/button>/);
+  assert.match(wordbankJs, /"Save changes"/);
+  assert.match(wordbankJs, /Clear search and filters/);
+  assert.doesNotMatch(wordbankJs, /'warn'|'ok'|Save Changes|Clear search & filters/);
+
+  assert.match(settings, /data-display="tablet" type="button">Tablet<\/button>/);
+  assert.match(settings, />Data and app<\/strong>/);
+  assert.doesNotMatch(settings, />iPad<\/button>|>Data & app<\/strong>/);
 });

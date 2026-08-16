@@ -1,3 +1,10 @@
+## 2.44.0 - 2026-08-16
+- Standardized app-wide action language so Start begins an actual practice session, destination links use Open/View/Back, and shared trainer controls use consistent sentence case.
+- Renamed the Kana assessment destination to Test Results across navigation, Atlas, Kana, trainer links, and formal-assessment UI while preserving all Test Mode data and analysis behavior.
+- Made Reading and Writing subpage branding return to Kana Trainer consistently and corrected shared brand accessibility labels to match their real destination.
+- Standardized assessment correctness language to Correct/Incorrect across trainer HUDs, records, Test Results metrics, tooltips, heatmap legend, and kana detail dialogs.
+- Normalized smaller UI vocabulary including Tablet display mode, Word Bank action casing and feedback tones, Data and app wording, and shared ellipsis treatment without changing stored preferences or schemas.
+
 ## 2.43.1 - 2026-08-16
 - Rebalanced achievement tile composition so status, icon, title, requirement, and progress use the available card height without crowding the progress bar.
 - Increased visual separation between bronze and gold rank accents while retaining the restrained five-rank palette.

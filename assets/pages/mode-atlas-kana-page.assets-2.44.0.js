@@ -316,7 +316,7 @@
                 title: `Review ${weak.map(item => item.ch).join(' · ')}`,
                 text: 'These kana are currently holding back accuracy, speed, or reliable reps.',
                 href: '../reading/?focusWeak=1',
-                label: 'Start smart review',
+                label: 'Review weak kana',
                 kind: 'review'
             };
         }
@@ -325,16 +325,16 @@
                 title: 'Start with fresh kana',
                 text: 'You still have new kana waiting. Build a little history, then the hub will suggest smarter reviews.',
                 href: '../reading/',
-                label: 'Start Reading',
+                label: 'Open Reading',
                 kind: 'new'
             };
         }
         const readingAcc = summaries.reading.totals.accuracy || 0;
         const writingAcc = summaries.writing.totals.accuracy || 0;
         if (readingAcc - writingAcc > 12) {
-            return { title: 'Balance recall practice', text: 'Writing is behind Reading. A short Writing session will strengthen active recall.', href: '../writing/', label: 'Go to Writing', kind: 'writing' };
+            return { title: 'Balance recall practice', text: 'Writing is behind Reading. A short Writing session will strengthen active recall.', href: '../writing/', label: 'Open Writing', kind: 'writing' };
         }
-        return { title: 'Take a formal test', text: 'You have enough history for a useful check-in. Test mode will show weak rows and timing clearly.', href: '../results/', label: 'Open Results', kind: 'test' };
+        return { title: 'Take a formal test', text: 'You have enough history for a useful check-in. Test Mode will show weak rows and timing clearly.', href: '../results/', label: 'Open Test Results', kind: 'test' };
     }
 
     function hasKanaHistory(summaries) {
@@ -371,7 +371,7 @@
         if (heroTitle) heroTitle.textContent = returning ? 'Your kana' : 'Make kana feel automatic.';
         if (heroLead) heroLead.textContent = returning
             ? returningHeroLead(summaries, mastery, action)
-            : 'Build fast recognition in Reading, active recall in Writing, and use Results to keep each practice session focused.';
+            : 'Build fast recognition in Reading, active recall in Writing, and use Test Results to keep each practice session focused.';
         if (progressTitle) progressTitle.textContent = returning ? 'Progress overview' : 'Know where you stand. Know what to practise next.';
         if (progressLead) progressLead.textContent = returning
             ? 'Coverage, mastery, recommendations, accuracy and records from your saved practice.'
@@ -467,7 +467,7 @@
         daily.append(dailyTitle, kanaEl('p','',`${todayCount}/2 daily challenges complete today.`), dailyBtn);
 
         const focus = kanaEl('div','kana-next-card kana-next-card--secondary compact');
-        const review = kanaLink('kana-inline-btn ma-button','Focus these rows','../reading/?focusWeak=1');
+        const review = kanaLink('kana-inline-btn ma-button','Review weak kana','../reading/?focusWeak=1');
         review.dataset.maWeakReview = '';
         focus.append(
             kanaEl('span','ma-kicker','Focus set'),
@@ -558,10 +558,10 @@
         const copy = document.createElement('div');
         copy.append(
             kanaEl('span','kana-section-kicker ma-kicker','Performance highlights'),
-            kanaEl('h2','','Records & progress'),
+            kanaEl('h2','','Records and progress'),
             kanaEl('p','','Your best scores, accuracy, and practice volume in one place.')
         );
-        head.append(copy, kanaLink('kana-ghost-action ma-button','View test results','../results/'));
+        head.append(copy, kanaLink('kana-ghost-action ma-button','View Test Results','../results/'));
 
         const layout = kanaEl('div','kana-record-layout');
 
