@@ -327,6 +327,26 @@
     });
   }
 
+  function updateProgressStatus(){
+    const summary = window.ModeAtlasProgress?.getSummary?.();
+    if (!summary) return;
+    const level = document.getElementById('profileAtlasLevel');
+    const xp = document.getElementById('profileAtlasXp');
+    const next = document.getElementById('profileAtlasXpNext');
+    const progress = document.getElementById('profileAtlasProgress');
+    const bar = document.getElementById('profileAtlasXpBar');
+    const reading = document.getElementById('profileReadingCorrect');
+    const writing = document.getElementById('profileWritingCorrect');
+    const percent = Math.max(0, Math.min(100, Math.round(Number(summary.progress || 0) * 100)));
+    if (level) level.textContent = String(summary.level || 1);
+    if (xp) xp.textContent = `${summary.xp || 0} XP`;
+    if (next) next.textContent = `${summary.levelXp || 0} / ${summary.levelRequirement || 100} XP`;
+    if (progress) progress.setAttribute('aria-valuenow', String(percent));
+    if (bar) bar.style.width = `${percent}%`;
+    if (reading) reading.textContent = String(summary.readingCorrect || 0);
+    if (writing) writing.textContent = String(summary.writingCorrect || 0);
+  }
+
   function updateSyncStatus(){
     const status = window.KanaCloudSync?.getSyncStatus?.() || { state:'local', tone:'neutral', text:'Progress saves on this device · sign in to sync', lastSync: Number(storageGet('modeAtlasLastCloudSyncAt', '0') || 0), user: null };
     const tone = status.tone || status.state || 'neutral';
@@ -345,6 +365,7 @@
       chip.textContent = status.user ? (normalizedTone === 'success' ? 'Synced' : status.state || 'Cloud') : 'Local only';
     }
     updateProfileDot();
+    updateProgressStatus();
     const ach = document.getElementById('profileAchievementCount');
     if (ach) ach.textContent = String(countUnlockedAchievements());
   }
@@ -381,6 +402,11 @@
   window.addEventListener('kanaCloudSyncStatusChanged', () => {
     if (!profileCloudBinding) bindCloudUi();
     updateSyncStatus();
+  });
+  window.addEventListener('modeAtlasProgressChanged', updateProgressStatus);
+  window.addEventListener('modeAtlasCloudDataChanged', (event) => {
+    const sections = Array.isArray(event.detail?.sections) ? event.detail.sections : [];
+    if (!sections.length || sections.includes('progress')) updateProgressStatus();
   });
   window.addEventListener('online', updateSyncStatus);
   window.addEventListener('offline', updateSyncStatus);

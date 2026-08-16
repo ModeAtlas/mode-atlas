@@ -226,6 +226,7 @@ function endDailyChallenge() {
     hiraganaEl.textContent = "—";
 
     if (!existing) {
+        window.ModeAtlasProgress?.awardOnce?.('kana.reading.dailyComplete', dateKey);
         dailyChallengeHistory[dateKey] = {
             sequence: [...dailySequence],
             officialScore: dailyCorrect,
@@ -668,6 +669,7 @@ function handleCorrect() {
     sessionStats.answered += 1;
     sessionStats.correct += 1;
     window.ModeAtlasTrainerControls?.recordPresetCorrect?.(1);
+    window.ModeAtlasProgress?.award?.('kana.reading.correct', Math.max(1, currentChar.length));
     sessionStats.timings.push(timeTaken);
     sessionStats.bestStreak = Math.max(sessionStats.bestStreak, streak);
     updateSessionChar(currentChar, true, timeTaken);

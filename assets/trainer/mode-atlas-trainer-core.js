@@ -144,6 +144,7 @@
     list.unshift(result);
     if (typeof cfg.persistResults === "function") cfg.persistResults(list);
     else persistTestResults(mode, list);
+    window.ModeAtlasProgress?.awardOnce?.(`kana.${mode}.testComplete`, result.id);
     return result;
   }
 

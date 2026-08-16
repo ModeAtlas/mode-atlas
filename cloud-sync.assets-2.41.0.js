@@ -109,6 +109,13 @@ const SECTION_DEFS = {
     json: {
       items: keyOr('wordBank', 'kanaWordBank')
     }
+  },
+  progress: {
+    updatedAtKey: keyOr('progressUpdatedAt', 'modeAtlasProgressUpdatedAt'),
+    scalar: {},
+    json: {
+      state: keyOr('progress', 'modeAtlasProgress')
+    }
   }
 };
 
@@ -129,14 +136,16 @@ const SECTION_TIMESTAMP_KEYS = {
   writing: 'settingsUpdatedAt',
   readingTests: 'resultsUpdatedAt',
   writingTests: 'resultsUpdatedAt',
-  wordBank: 'profileUpdatedAt'
+  wordBank: 'profileUpdatedAt',
+  progress: keyOr('progressUpdatedAt', 'modeAtlasProgressUpdatedAt')
 };
 const SECTION_EXTRA_TIMESTAMP_KEYS = {
   reading: ['srsUpdatedAt', 'dailyUpdatedAt'],
   writing: ['srsUpdatedAt', 'dailyUpdatedAt'],
   readingTests: [],
   writingTests: [],
-  wordBank: []
+  wordBank: [],
+  progress: []
 };
 
 function storeGet(key, fallback = '') {
@@ -570,7 +579,8 @@ function buildEmptySnapshot() {
     writing: { highScore: '0', settings: {}, stats: {}, times: {}, srs: {}, scoreHistory: {}, dailyChallengeHistory: {} },
     readingTests: { primary: [], backup: [], altPrimary: [], altBackup: [] },
     writingTests: { primary: [], backup: [] },
-    wordBank: { items: [] }
+    wordBank: { items: [] },
+    progress: { state: { version: 1, legacySeeded: true, sources: {}, events: {}, updatedAt: now } }
   };
   const sections = {};
   Object.keys(SECTION_DEFS).forEach((name) => { sections[name] = { updatedAt: now, data: empty[name] || {} }; });
@@ -634,6 +644,7 @@ function clearLocalImportGuard() {
 function sectionHasMeaningfulData(sectionName, data = {}) {
   if (!data || typeof data !== 'object') return false;
   if (sectionName === 'wordBank') return arrayHasItems(data.items);
+  if (sectionName === 'progress') return deepHasProgress(data.state?.sources) || deepHasProgress(data.state?.events);
   if (sectionName === 'readingTests' || sectionName === 'writingTests') {
     return arrayHasItems(data.primary) || arrayHasItems(data.backup) || arrayHasItems(data.altPrimary) || arrayHasItems(data.altBackup);
   }
@@ -675,6 +686,21 @@ function mergeCloudIntoLocal(snapshot, options = {}) {
     const remoteHasData = sectionHasMeaningfulData(name, remoteData);
     const localHasData = sectionHasMeaningfulData(name, localData);
     const baselineUpdatedAt = localBaseline ? normalizeTimestamp(localBaseline[name]) : 0;
+
+    if (name === 'progress') {
+      const mergeProgress = window.ModeAtlasProgress?.mergeStates;
+      const localState = localData.state || {};
+      const remoteState = remoteData.state || {};
+      const mergedState = typeof mergeProgress === 'function' ? mergeProgress(localState, remoteState) : remoteState;
+      const localSig = JSON.stringify(localState);
+      const remoteSig = JSON.stringify(remoteState);
+      const mergedSig = JSON.stringify(mergedState);
+      if (mergedSig !== localSig) {
+        applyRemote(name, { state: mergedState }, Math.max(localUpdatedAt, remoteUpdatedAt, Date.now()));
+      }
+      if (mergedSig !== remoteSig) localPreferred = true;
+      return;
+    }
 
     if (localBaseline && localUpdatedAt > baselineUpdatedAt) {
       // This local mutation happened after the hydration read began. Promote its
@@ -750,7 +776,8 @@ const SECTION_LABELS = {
   writing: 'Writing Practice',
   readingTests: 'Reading Test Results',
   writingTests: 'Writing Test Results',
-  wordBank: 'Word Bank'
+  wordBank: 'Word Bank',
+  progress: 'Atlas Level'
 };
 
 function setCloudState(ok, message = '') {

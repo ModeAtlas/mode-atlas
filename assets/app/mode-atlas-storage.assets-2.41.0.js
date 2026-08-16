@@ -17,7 +17,8 @@
     testResultsUpdatedAt: 'testModeResultsUpdatedAt', writingTestResultsUpdatedAt: 'writingTestModeResultsUpdatedAt',
     displayMode: 'modeAtlasDisplayMode', soundMode: 'modeAtlasSound',
     activePreset: 'modeAtlasActivePreset', startReadingPreset: 'modeAtlasStartReadingPreset',
-    wordBank: 'kanaWordBank'
+    wordBank: 'kanaWordBank',
+    progress: 'modeAtlasProgress', progressUpdatedAt: 'modeAtlasProgressUpdatedAt'
   });
 
   const GROUPS = Object.freeze({
@@ -144,6 +145,7 @@
     'modeAtlasLegacyServiceWorkerRetirement',
     'modeAtlasLocalImportGuardUntil',
     'modeAtlasPendingDestination',
+    'modeAtlasProgressDeviceId',
     'modeAtlasSectionTimestamps',
     'modeAtlasSafeMode',
     'modeAtlasSmokeSeeded'

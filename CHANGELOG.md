@@ -200,6 +200,14 @@
 
 # Changelog
 
+## 2.41.0 — Atlas Level & Account Progression
+
+- Added one shared `ModeAtlasProgress` owner for account-wide semantic learning progress and Atlas Level XP.
+- Correct Reading/Writing kana award progression centrally; official Daily Challenge completions and formal Test Mode completions award one-time bonuses.
+- Existing trainer history seeds a one-time baseline so established learners do not restart at zero.
+- Progress uses per-device monotonic counters plus mergeable one-time events so cloud sync can combine activity without last-write-losing XP.
+- Profile now presents Atlas Level, XP progress, Reading/Writing correct-kana activity, achievements, and sync without adding progression clutter to Atlas or Kana.
+
 ## 2.22.1
 - Fixed a cloud-sync race where a Firestore read started before a local edit could later overwrite that newer Word Bank/progress change using a stale captured section timestamp.
 - Cloud sync now re-reads each live local section after the Firestore read returns and before deciding whether remote data is newer.

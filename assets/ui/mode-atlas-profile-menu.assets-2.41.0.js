@@ -48,16 +48,29 @@
             <div class="ma-sync-meta" id="profileSyncMeta">Last cloud sync: Never synced</div>
           </section>
 
-          <section class="ma-card ma-card--soft ma-profile-card ma-achievement-card-summary" aria-label="Achievements">
+          <section class="ma-card ma-card--soft ma-profile-card ma-progression-card" aria-label="Atlas Level and learning activity">
             <div class="ma-profile-card-head">
               <div>
-                <div class="ma-menu-kicker">Progress</div>
-                <div class="ma-profile-card-title">Achievements</div>
+                <div class="ma-menu-kicker">Account progression</div>
+                <div class="ma-profile-card-title">Atlas Level <span id="profileAtlasLevel">1</span></div>
               </div>
               ${icon(href,'achievement','ma-icon--lg')}
             </div>
-            <div class="ma-achievement-summary"><strong id="profileAchievementCount">0</strong><span>unlocked milestones</span></div>
-            <button class="ma-button ma-button--primary ma-button--wide" type="button" data-ma-achievements-open>${icon(href,'achievement')}<span>Open achievements</span></button>
+            <div class="ma-level-xp-line">
+              <strong id="profileAtlasXp">0 XP</strong>
+              <span id="profileAtlasXpNext">0 / 100 XP</span>
+            </div>
+            <div class="ma-level-progress" role="progressbar" aria-label="Atlas Level progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="profileAtlasProgress">
+              <span id="profileAtlasXpBar"></span>
+            </div>
+            <div class="ma-level-activity" aria-label="Learning activity">
+              <div><span>Reading</span><strong id="profileReadingCorrect">0</strong><small>correct kana</small></div>
+              <div><span>Writing</span><strong id="profileWritingCorrect">0</strong><small>correct kana</small></div>
+            </div>
+            <div class="ma-progression-footer">
+              <div class="ma-achievement-summary"><strong id="profileAchievementCount">0</strong><span>achievements</span></div>
+              <button class="ma-button ma-button--ghost ma-button--small" type="button" data-ma-achievements-open>${icon(href,'achievement')}<span>Achievements</span></button>
+            </div>
           </section>
         </aside>`;
     }

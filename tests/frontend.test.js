@@ -1357,3 +1357,59 @@ test('2.40 Results is a formal Test Mode report and preserves comprehensive asse
   assert.doesNotMatch(page, /readModeJSON\([^\n]*(?:scoreHistory|dailyHistory|charStats)/);
   assert.doesNotMatch(page, /speedRunTop3|endlessBest|dailyChallengeHistory/);
 });
+
+
+test('2.41 Atlas Level uses one mergeable semantic progression owner and Profile is its consumer', () => {
+  const frontend = read('frontend_components.py');
+  const storage = read('assets/app/mode-atlas-storage.js');
+  const progress = read('assets/app/mode-atlas-progress.js');
+  const cloud = read('cloud-sync.js');
+  const profile = read('assets/ui/mode-atlas-profile-menu.js');
+  const bindings = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const reading = read('assets/pages/mode-atlas-default-page.js');
+  const writing = read('assets/pages/mode-atlas-reverse-page.js');
+  const trainerCore = read('assets/trainer/mode-atlas-trainer-core.js');
+  const home = read('index.html');
+
+  assert.match(frontend, /assets\/app\/mode-atlas-progress\.js/);
+  assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress.js'") < frontend.indexOf("'cloud-sync.js'"),
+    'progression must load before cloud/profile consumers');
+  assert.match(storage, /progress: 'modeAtlasProgress'/);
+  assert.match(storage, /progressUpdatedAt: 'modeAtlasProgressUpdatedAt'/);
+  assert.match(storage, /'modeAtlasProgressDeviceId'/);
+  const backupBlock = storage.split('const APP_BACKUP_EXACT', 2)[1]?.split('const APP_LOCAL_EXACT', 1)[0] || '';
+  assert.doesNotMatch(backupBlock, /modeAtlasProgressDeviceId/,
+    'device identity is local-only and must not be exported as account progress');
+
+  assert.match(progress, /const COUNTER_XP/);
+  assert.match(progress, /'kana\.reading\.correct': 1/);
+  assert.match(progress, /'kana\.writing\.correct': 1/);
+  assert.match(progress, /'kana\.reading\.dailyComplete': 5/);
+  assert.match(progress, /'kana\.writing\.testComplete': 10/);
+  assert.match(progress, /function mergeStates/);
+  assert.match(progress, /Math\.max\(finiteCount\(a\.sources/,
+    'per-device counters must merge monotonically rather than last-write-wins');
+  assert.match(progress, /function awardOnce/);
+  assert.match(progress, /legacy-baseline/);
+  assert.match(progress, /function getLifetimeCorrect/);
+
+  assert.match(cloud, /progress: \{\s*updatedAtKey:/);
+  assert.match(cloud, /name === 'progress'/);
+  assert.match(cloud, /ModeAtlasProgress\?\.mergeStates/);
+  assert.match(cloud, /progress: 'Atlas Level'/);
+
+  assert.match(reading, /ModeAtlasProgress\?\.award\?\.\('kana\.reading\.correct'/);
+  assert.match(writing, /ModeAtlasProgress\?\.award\?\.\('kana\.writing\.correct'/);
+  assert.match(reading, /awardOnce\?\.\('kana\.reading\.dailyComplete', dateKey\)/);
+  assert.match(writing, /awardOnce\?\.\('kana\.writing\.dailyComplete', dateKey\)/);
+  assert.match(trainerCore, /awardOnce\?\.\(`kana\.\$\{mode\}\.testComplete`, result\.id\)/);
+
+  assert.match(profile, /Atlas Level <span id="profileAtlasLevel">1<\/span>/);
+  assert.match(profile, /id="profileAtlasProgress"/);
+  assert.match(profile, /id="profileReadingCorrect"/);
+  assert.match(profile, /id="profileWritingCorrect"/);
+  assert.match(bindings, /ModeAtlasProgress\?\.getSummary/);
+  assert.match(bindings, /modeAtlasProgressChanged/);
+  assert.doesNotMatch(home, /profileAtlasLevel|Atlas Level \d|XP to Level/,
+    'Atlas homepage must remain free of account XP UI');
+});
