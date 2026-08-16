@@ -1,0 +1,22 @@
+name: QA Mode Atlas 2.45 Responsive Accessibility
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.45.0-responsive-accessibility-qa
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Responsive and accessibility source inventory
+        run: python3 .github/qa_245.py
+      - name: Existing project audit
+        run: python3 audit_project.py
+      - name: Existing regression tests
+        run: node --test tests/backend.test.js tests/frontend.test.js
