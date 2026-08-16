@@ -16,6 +16,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Responsive and accessibility source inventory
         run: python3 .github/qa_245.py
+      - name: Inspect trainer interaction ownership
+        run: |
+          grep -n -E "function applyPanelStates|applyBasePanelStates|scoresHeaderEl\.addEventListener|statsHeaderEl\.addEventListener|modifiersTabEl\.addEventListener" assets/pages/mode-atlas-default-page.js assets/pages/mode-atlas-reverse-page.js assets/trainer/mode-atlas-trainer-controller.js || true
+          grep -n -A45 -B8 "function renderHeatmap" assets/trainer/mode-atlas-trainer-shared.js || true
       - name: Existing project audit
         run: python3 audit_project.py
       - name: Existing regression tests
