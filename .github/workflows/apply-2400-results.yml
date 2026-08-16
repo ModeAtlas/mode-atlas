@@ -28,6 +28,19 @@ jobs:
         run: python3 -m py_compile .github/apply_2400.py
       - name: Apply source changes
         run: python3 .github/apply_2400.py
+      - name: Make trainer order regression revision-aware
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tests/frontend.test.js')
+          text = path.read_text()
+          old = '''    const sharedIndex = html.indexOf('mode-atlas-trainer-controller.assets-2.39.0.js');
+              const pageIndex = Math.max(html.indexOf('mode-atlas-default-page.assets-2.39.0.js'), html.indexOf('mode-atlas-reverse-page.assets-2.39.0.js'));'''.replace('              ', '    ')
+          new = '''    const sharedIndex = html.indexOf(`mode-atlas-trainer-controller.${REVISION}.js`);
+    const pageIndex = Math.max(html.indexOf(`mode-atlas-default-page.${REVISION}.js`), html.indexOf(`mode-atlas-reverse-page.${REVISION}.js`));'''
+          assert text.count(old) == 1, 'stale 2.39 controller order assertion not found exactly once'
+          path.write_text(text.replace(old, new, 1))
+          PY
       - name: Rebuild revisioned assets
         run: python3 build_revision_assets.py
       - name: Audit and tests
@@ -43,6 +56,7 @@ jobs:
           grep -q 'id="rowPerformanceMount"' results/index.html
           grep -q 'row-doughnut-card' assets/results/mode-atlas-results-ui.js
           grep -q 'function isFormalTestResultRecord' assets/results/mode-atlas-results-engine.js
+          grep -q 'mode-atlas-trainer-controller.${REVISION}.js' tests/frontend.test.js
           ! grep -E 'scoreHistory|dailyHistory|speedRunTop3|endlessBest' assets/pages/mode-atlas-test-page.js
           test -z "$(git ls-files | grep -E '(^|/)__pycache__/|\.pyc$' || true)"
       - name: Commit validated release
