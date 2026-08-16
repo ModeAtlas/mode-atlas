@@ -28,10 +28,7 @@ lock_path.write_text(json.dumps(lock, indent=2) + '\n', encoding='utf-8')
 build_path = ROOT / 'build_revision_assets.py'
 build = build_path.read_text(encoding='utf-8')
 if 'def iter_project_html()' not in build:
-    build = build.replace(
-        "for html_path in ROOT.rglob('*.html'):",
-        'for html_path in iter_project_html():',
-    )
+    build = build.replace("for html_path in ROOT.rglob('*.html'):", 'for html_path in iter_project_html():')
     build = build.replace(
         'referenced = set()\n',
         "BUILD_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}\n\ndef iter_project_html():\n    for html_path in ROOT.rglob('*.html'):\n        relative = html_path.relative_to(ROOT)\n        if any(part in BUILD_IGNORED_DIRS for part in relative.parts[:-1]):\n            continue\n        yield html_path\n\nreferenced = set()\n",
@@ -57,6 +54,14 @@ for shortcut in manifest.get('shortcuts', []):
         shortcut['short_name'] = 'Test Results'
 manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
 
+kana_path = ROOT / 'kana/index.html'
+kana = kana_path.read_text(encoding='utf-8')
+kana = kana.replace(
+    '<main id="mainContent" class="kana-hub ma-page-section" id="kanaHub">',
+    '<main id="mainContent" class="kana-hub ma-page-section">',
+)
+kana_path.write_text(kana, encoding='utf-8')
+
 smoke_path = ROOT / 'tests/smoke.spec.js'
 smoke = smoke_path.read_text(encoding='utf-8')
 seed_anchor = "      localStorage.setItem('modeAtlasSmokeSeeded', '1');\n"
@@ -67,11 +72,18 @@ seed_block = """      localStorage.setItem('modeAtlasSmokeSeeded', '1');
       localStorage.setItem('modeAtlasLegalAccepted', 'true');
       localStorage.setItem('modeAtlasLegalAcceptedAt', String(Date.now()));
       localStorage.setItem('modeAtlasLegalVersion', '2026-05');
+      localStorage.setItem('maWhatsNewSeen', 'smoke');
 """
 if "localStorage.setItem('modeAtlasOnboardingComplete', 'true');" not in smoke:
     if seed_anchor not in smoke:
         raise SystemExit('Smoke-test local state seed is in an unexpected state.')
     smoke = smoke.replace(seed_anchor, seed_block, 1)
+elif "localStorage.setItem('maWhatsNewSeen', 'smoke');" not in smoke:
+    smoke = smoke.replace(
+        "      localStorage.setItem('modeAtlasLegalVersion', '2026-05');\n",
+        "      localStorage.setItem('modeAtlasLegalVersion', '2026-05');\n      localStorage.setItem('maWhatsNewSeen', 'smoke');\n",
+        1,
+    )
 
 old = """      await page.evaluate(() => window.ModeAtlasSettings?.open?.());
       const updateButton = page.locator('#maCheckUpdatesBtn');
@@ -93,9 +105,11 @@ if old in smoke:
     smoke = smoke.replace(old, new, 1)
 elif new not in smoke:
     raise SystemExit('Settings smoke-test opener is in an unexpected state.')
+smoke = smoke.replace("page.locator('[data-settings-open]').first()", "page.locator('[data-settings-open]:visible').first()")
+smoke = smoke.replace("page.locator('#kanaHub')", "page.locator('#mainContent.kana-hub')")
 smoke = smoke.replace(
-    "page.locator('[data-settings-open]').first()",
-    "page.locator('[data-settings-open]:visible').first()",
+    "      await expect(page.locator('.ma-trainer-card .ma-pause-overlay')).toBeVisible();\n",
+    "      await expect(page.locator('#pauseSessionBtn [data-ma-pause-label]')).toHaveText('Resume');\n      await expect(page.locator('#input')).toBeDisabled();\n",
 )
 smoke_path.write_text(smoke, encoding='utf-8')
 
@@ -126,6 +140,12 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
   assert.equal(resultsShortcut.name, 'Test Results');
   assert.equal(resultsShortcut.short_name, 'Test Results');
 
+  const kana = read('kana/index.html');
+  assert.doesNotMatch(kana, /<main[^>]*\bid=["']mainContent["'][^>]*\bid=/,
+    'Kana Hub main landmark must not contain duplicate id attributes');
+  assert.match(kana, /<main id=["']mainContent["'] class=["']kana-hub ma-page-section["']>/,
+    'Kana Hub must keep the shared mainContent landmark');
+
   const smoke = read('tests/smoke.spec.js');
   assert.doesNotMatch(smoke, /window\.ModeAtlasSettings\?\.open/,
     'browser smoke must open Settings through the real user control');
@@ -135,6 +155,10 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
     'browser smoke must wait for shared Settings binding readiness');
   assert.match(smoke, /modeAtlasOnboardingComplete[\s\S]*modeAtlasKanaSetupComplete/,
     'core browser smoke must seed a completed stable-user setup rather than be blocked by onboarding');
+  assert.match(smoke, /maWhatsNewSeen["'], 'smoke'/,
+    'core browser smoke must suppress release notes so unrelated interaction tests stay isolated');
+  assert.doesNotMatch(smoke, /ma-trainer-card \.ma-pause-overlay/,
+    'trainer smoke must validate canonical paused state rather than a presentation-only overlay');
 
   const gate = read('.github/workflows/release-check.yml');
   assert.match(gate, /npm ci --ignore-scripts --registry=https:\/\/registry\.npmjs\.org\//,
@@ -153,7 +177,8 @@ if not changelog.startswith('## 2.47.0'):
     entry = """## 2.47.0 - 2026-08-16
 - Repaired package-lock package URLs so clean machines install Playwright dependencies from the public npm registry instead of an environment-specific internal registry.
 - Restricted revision-build and release-audit HTML discovery to Mode Atlas source, preventing installed dependencies and browser-test output from being interpreted as application pages on clean CI machines.
-- Made Settings browser smoke coverage wait for the shared drawer binding and use the real visible Settings control, while core smoke state now explicitly represents a completed learner setup so onboarding cannot intercept unrelated interaction tests.
+- Hardened browser smoke state around completed onboarding, release notes, shared Settings readiness, and canonical trainer pause state so CI validates user flows without unrelated modal or presentation dependencies.
+- Corrected the Kana Hub main landmark so it no longer emits duplicate id attributes while retaining the shared mainContent accessibility target.
 - Added a permanent release gate covering the project audit, Node regressions, generated-asset cleanliness, and desktop/mobile Playwright smoke tests.
 - Renamed the PWA assessment shortcut to Test Results so installed-app terminology matches the formal Test Mode reporting experience.
 - Kept trainer behaviour, scoring/SRS, storage schemas, cloud sync, progression, onboarding, PWA install ownership, and update-check application logic unchanged.
