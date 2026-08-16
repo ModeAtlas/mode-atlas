@@ -37,7 +37,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/apply_2340.py .github/fix_2340_transformer.py .github/migrate_2340_tests.py .github/workflows/apply-2340-navigation.yml .github/trigger-2340.txt
+          git rm -f .github/apply_2340.py .github/fix_2340_transformer.py .github/migrate_2340_tests.py .github/workflows/apply-2340-navigation.yml .github/trigger-2340.txt
           rm -rf __pycache__
           git add -A
           git commit -m "Release Mode Atlas 2.34.0 navigation product hierarchy"
