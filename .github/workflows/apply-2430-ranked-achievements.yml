@@ -1,0 +1,80 @@
+name: Apply Mode Atlas 2.43.0 Ranked Achievements
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.43.0-ranked-achievements
+    paths:
+      - .github/workflows/apply-2430-ranked-achievements.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate transformer
+        run: python3 -m py_compile .github/apply_2430.py
+
+      - name: Apply source changes
+        run: python3 .github/apply_2430.py
+
+      - name: Finalize rank visual inheritance
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/achievements/mode-atlas-achievements-ui.js')
+          s=p.read_text()
+          old="if(rankAccentValue) hero.dataset.maAchRankAccent=rankAccentValue;"
+          new="hero.dataset.maAchRankAccent=rankAccentValue||accent;"
+          assert s.count(old)==1
+          s=s.replace(old,new,1)
+          old2="const progress=achEl('div','ma-ach-info-progress');"
+          new2="const progress=achEl('div','ma-ach-info-progress'); progress.dataset.maAchRankAccent=rankAccent(viewIndex);"
+          assert s.count(old2)==1
+          s=s.replace(old2,new2,1)
+          p.write_text(s)
+          PY
+
+      - name: Validate changed JavaScript syntax
+        run: |
+          node --check assets/achievements/mode-atlas-achievements-ui.js
+          node --check tests/frontend.test.js
+
+      - name: Rebuild revisioned assets
+        run: python3 build_revision_assets.py
+
+      - name: Audit and tests
+        run: |
+          python3 audit_project.py
+          node --test tests/backend.test.js tests/frontend.test.js
+
+      - name: Release guards
+        run: |
+          grep -q "var VERSION = '2.43.0';" assets/app/mode-atlas-version.js
+          grep -q "var CACHE_REVISION = 'assets-2.43.0';" assets/app/mode-atlas-version.js
+          grep -q "const ACHIEVEMENT_TRACKS" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "id:'atlas-level'" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "target:100,key:'atlasLevel'" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "← Previous rank" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "Reading Comprehension achievements" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "modeAtlasProgressChanged" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q -- "--ma-ach-rank" assets/css/mode-atlas-achievements.css
+          ! grep -q "const DEFINITIONS =" assets/achievements/mode-atlas-achievements-ui.js
+          git diff --check
+          test -z "$(git ls-files | grep -E '(^|/)__pycache__/|\.pyc$' || true)"
+
+      - name: Commit validated release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/apply_2430.py .github/workflows/apply-2430-ranked-achievements.yml
+          rm -rf __pycache__ .github/__pycache__
+          git add -A
+          git commit -m "Release Mode Atlas 2.43.0 ranked achievements"
+          git push origin HEAD
