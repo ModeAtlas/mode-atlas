@@ -1,0 +1,67 @@
+name: Apply Mode Atlas 2.46 Performance Production Readiness
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.46.0-performance-production-readiness
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate transformer
+        run: python3 -m py_compile .github/apply_2460.py
+      - name: Apply source changes
+        run: python3 .github/apply_2460.py
+      - name: Validate changed JavaScript
+        run: |
+          node --check cloud-sync.js
+          node --check assets/app/mode-atlas-dev-console-loader.js
+          node --check assets/app/mode-atlas-dev-console.js
+          node --check tests/backend.test.js
+          node --check tests/frontend.test.js
+      - name: Build revisioned release assets
+        run: python3 build_revision_assets.py
+      - name: Audit and regression tests
+        run: |
+          python3 audit_project.py
+          node --test tests/backend.test.js tests/frontend.test.js
+      - name: Production dependency guards
+        run: |
+          grep -q "var VERSION = '2.46.0';" assets/app/mode-atlas-version.js
+          grep -q "var CACHE_REVISION = 'assets-2.46.0';" assets/app/mode-atlas-version.js
+          grep -q 'mode-atlas-dev-console-loader.assets-2.46.0.js' index.html
+          ! grep -q 'mode-atlas-dev-console.assets-2.46.0.js' index.html
+          ! grep -q 'mode-atlas-dev-console.assets-2.46.0.css' index.html
+          test -f assets/app/mode-atlas-dev-console.assets-2.46.0.js
+          test -f assets/css/mode-atlas-dev-console.assets-2.46.0.css
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          src = Path('cloud-sync.js').read_text()
+          core = re.search(r'async function loadFirebaseModules\(\) \{(?P<body>.*?)\n\}', src, re.S)
+          firestore = re.search(r'async function loadFirestoreModule\(\) \{(?P<body>.*?)\n\}', src, re.S)
+          assert core and 'firebase-firestore.js' not in core.group('body')
+          assert firestore and 'firebase-firestore.js' in firestore.group('body')
+          assert 'db = getFirestore(app);' not in re.search(r'async function setupFirebase\(\) \{(?P<body>.*?)\n\}\n\nfunction getDocRef', src, re.S).group('body')
+          PY
+          test ! -e .DS_Store
+          git diff --check
+      - name: Commit validated release
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/apply_2460.py .github/workflows/apply-2460-performance-production.yml
+          rm -rf __pycache__ .github/__pycache__
+          git add -A
+          test -z "$(git ls-files | grep -E '(^|/)__pycache__/|\.pyc$|(^|/)\.DS_Store$' || true)"
+          git commit -m "Release Mode Atlas 2.46.0 performance production readiness"
+          git push origin HEAD
