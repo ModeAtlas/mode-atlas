@@ -50,7 +50,7 @@ jobs:
           old="assert.match(achievements, /data\\.maAchRankNav/);"
           new="assert.match(achievements, /dataset\\.maAchRankNav/);"
           assert s.count(old)==1
-          p.write_text(s.replace(old,new,1))
+          p.write_text(s.replace(old,new,1).rstrip() + '\n')
           PY
 
       - name: Validate changed JavaScript syntax
