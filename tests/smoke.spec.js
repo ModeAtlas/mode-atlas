@@ -43,25 +43,24 @@ async function seedStableLocalState(page) {
       localStorage.setItem('modeAtlasLegalVersion', '2026-05');
       localStorage.setItem('maWhatsNewSeen', 'smoke');
       localStorage.setItem('settings', JSON.stringify(readingSettings));
-    localStorage.setItem('reverseSettings', JSON.stringify(writingSettings));
-    localStorage.setItem('charStats', JSON.stringify({}));
-    localStorage.setItem('reverseCharStats', JSON.stringify({}));
-    localStorage.setItem('charTimes', JSON.stringify({}));
-    localStorage.setItem('reverseCharTimes', JSON.stringify({}));
-    localStorage.setItem('charSrs', JSON.stringify({}));
-    localStorage.setItem('reverseCharSrs', JSON.stringify({}));
-    localStorage.setItem('scoreHistory', JSON.stringify({ endlessBest: { total: 0, correct: 0, wrong: 0 }, speedRunTop3: [], comboKanaBest: { same_row: 0, random: 0 }, timeTrialTop3: [] }));
-    localStorage.setItem('reverseScoreHistory', JSON.stringify({ endlessBest: { total: 0, correct: 0, wrong: 0 }, speedRunTop3: [], comboKanaBest: { same_row: 0, random: 0 }, timeTrialTop3: [] }));
-    localStorage.setItem('dailyChallengeHistory', JSON.stringify({}));
-    localStorage.setItem('reverseDailyChallengeHistory', JSON.stringify({}));
-    localStorage.setItem('highScore', '0');
-    localStorage.setItem('reverseHighScore', '0');
+      localStorage.setItem('reverseSettings', JSON.stringify(writingSettings));
+      localStorage.setItem('charStats', JSON.stringify({}));
+      localStorage.setItem('reverseCharStats', JSON.stringify({}));
+      localStorage.setItem('charTimes', JSON.stringify({}));
+      localStorage.setItem('reverseCharTimes', JSON.stringify({}));
+      localStorage.setItem('charSrs', JSON.stringify({}));
+      localStorage.setItem('reverseCharSrs', JSON.stringify({}));
+      localStorage.setItem('scoreHistory', JSON.stringify({ endlessBest: { total: 0, correct: 0, wrong: 0 }, speedRunTop3: [], comboKanaBest: { same_row: 0, random: 0 }, timeTrialTop3: [] }));
+      localStorage.setItem('reverseScoreHistory', JSON.stringify({ endlessBest: { total: 0, correct: 0, wrong: 0 }, speedRunTop3: [], comboKanaBest: { same_row: 0, random: 0 }, timeTrialTop3: [] }));
+      localStorage.setItem('dailyChallengeHistory', JSON.stringify({}));
+      localStorage.setItem('reverseDailyChallengeHistory', JSON.stringify({}));
+      localStorage.setItem('highScore', '0');
+      localStorage.setItem('reverseHighScore', '0');
     } catch (error) {
       // Initial about:blank documents may not allow localStorage. The app-origin page will.
     }
   }, { readingSettings: READING_SETTINGS, writingSettings: WRITING_SETTINGS });
 }
-
 
 async function gotoApp(page, path) {
   await page.route(/https:\/\/(www\.)?gstatic\.com\/.*/, route => route.abort());
@@ -109,7 +108,6 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('#testHeatmap')).toBeVisible();
     });
   });
-
 
   test('Atlas to Kana uses the real navigation button and keeps a clean URL', async ({ page }) => {
     await expectNoSevereConsoleErrors(page, async () => {
@@ -164,6 +162,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await otherTab.close();
     });
   });
+
   test('reading trainer starts, session controls work, and session can end', async ({ page }) => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/reading/');
@@ -214,8 +213,6 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('.ma-dialog-layer.is-open .ma-session-dialog-content')).toBeVisible();
     });
   });
-
-
 
   test('Word Bank Add stays on the page and persists a new kana entry', async ({ page }) => {
     await expectNoSevereConsoleErrors(page, async () => {
@@ -327,20 +324,32 @@ test.describe('Mode Atlas core smoke tests', () => {
     await gotoApp(page, '/kana/');
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'tablet');
 
+    const readDrawerMetrics = (selector) => page.locator(selector).evaluate((drawer) => {
+      const rect = drawer.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        horizontalOverflow: drawer.scrollWidth - drawer.clientWidth
+      };
+    });
+
     const assertDrawerFits = async (selector) => {
-      const metrics = await page.locator(selector).evaluate((drawer) => {
-        const rect = drawer.getBoundingClientRect();
-        return {
-          left: rect.left,
-          top: rect.top,
-          right: rect.right,
-          bottom: rect.bottom,
-          width: rect.width,
-          viewportWidth: window.innerWidth,
-          viewportHeight: window.innerHeight,
-          horizontalOverflow: drawer.scrollWidth - drawer.clientWidth
-        };
-      });
+      const drawer = page.locator(selector);
+      await expect(drawer).toHaveClass(/\bopen\b/);
+      // Visibility becomes true as soon as the off-canvas drawer starts its
+      // transition. Wait for the shared drawer animation to finish inside the
+      // viewport before validating its final geometry.
+      await expect.poll(async () => {
+        const metrics = await readDrawerMetrics(selector);
+        return metrics.right <= metrics.viewportWidth + 1;
+      }, { timeout: 1500 }).toBe(true);
+
+      const metrics = await readDrawerMetrics(selector);
       expect(metrics.left).toBeGreaterThanOrEqual(0);
       expect(metrics.top).toBeGreaterThanOrEqual(0);
       expect(metrics.right).toBeLessThanOrEqual(metrics.viewportWidth + 1);
@@ -361,5 +370,4 @@ test.describe('Mode Atlas core smoke tests', () => {
     await assertDrawerFits('#profileDrawer');
     await page.locator('#profileCloseBtn').click();
   });
-
 });
