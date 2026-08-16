@@ -1,3 +1,10 @@
+## 2.36.0 - 2026-08-16
+- Refined Kana Trainer into a clearer sub-homepage: a calm, action-first introduction now leads into practice destinations before any progress data appears.
+- Replaced the three large pathway cards with a lighter Reading / Writing / Results navigation band so the top of Kana has more breathing room while keeping each destination distinct.
+- Reorganized progress into a dedicated numerical layer for coverage, recommendation, Daily Challenge state, weak kana, mastery, presets, accuracy, records, and total practice volume.
+- Removed nested page-specific card ownership from Kana progress rendering and replaced it with shared matrices, separators, and a smaller number of purposeful surfaces rather than hiding the old card wall with overrides.
+- Preserved Kana metrics, mastery thresholds, recommendation rules, Daily Challenge behaviour, preset calculations, Results links, save schemas, storage, and cloud-sync behaviour.
+
 ## 2.35.0 - 2026-08-16
 - Refined Atlas into a cleaner product homepage with an open editorial hero, product previews, and less card-heavy section framing.
 - Replaced the abstract constellation with representative Reading, Writing, and Word Bank previews that show what the learning tools feel like without adding learner statistics to Atlas.

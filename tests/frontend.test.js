@@ -807,12 +807,16 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   assert.match(components, /min-height:var\(--ma-button-min-height,var\(--ma-control-height\)\)/);
   assert.match(components, /border-radius:var\(--ma-button-radius,var\(--ma-radius-control\)\)/);
 
-  assert.match(kanaHtml, /kana-hub-hero glass ma-card/);
+  assert.match(kanaHtml, /kana-hub-hero ma-page-hero/);
+  assert.doesNotMatch(kanaHtml, /kana-hub-hero[^\n]*ma-card/,
+    'Kana hero should remain an open orientation section rather than a shared card surface');
   assert.match(kanaHtml, /kana-hero-actions ma-action-row/);
   assert.match(kanaHtml, /kana-head-actions ma-action-row/);
-  assert.match(kanaJs, /kana-next-card primary ma-card ma-card--flat ma-card--interactive/);
-  assert.match(kanaJs, /kana-stage-card ma-card ma-card--flat ma-card--interactive/);
-  assert.match(kanaJs, /kana-record-card ma-card ma-card--flat/);
+  assert.match(kanaJs, /kana-next-card kana-next-card--recommended primary/);
+  assert.match(kanaJs, /kana-stage-card/);
+  assert.match(kanaJs, /kana-record-card/);
+  assert.doesNotMatch(kanaJs, /kana-next-card[^'"]*ma-card|kana-stage-card[^'"]*ma-card|kana-record-card[^'"]*ma-card/,
+    'Kana progress presentation should not recreate the retired nested card wall');
   const kanaActionBlock = kanaCss.match(/\.kana-primary-action,[\s\S]*?\.kana-inline-btn \{([\s\S]*?)\n\}/)?.[1] || '';
   assert.doesNotMatch(kanaActionBlock, /appearance:\s*none/,
     'Kana action family should let ma-button own native button reset mechanics');
@@ -1178,4 +1182,33 @@ test('2.35 Atlas homepage stays editorial, product-led, and free of learner stat
   assert.match(css, /\.atlas-preview--reading\{/);
   assert.match(css, /\.atlas-product\{/);
   assert.doesNotMatch(css, /\.constellation\{|\.branch-grid\{|\.branch\.kana/);
+});
+
+
+test('2.36 Kana hub keeps orientation calm and moves detailed progress below practice navigation', () => {
+  const kana = read('kana/index.html');
+  const kanaJs = read('assets/pages/mode-atlas-kana-page.js');
+  const kanaCss = read('assets/css/mode-atlas-kana-page.css');
+  const heroEnd = kana.indexOf('</section>', kana.indexOf('class="kana-hub-hero'));
+  const hero = kana.slice(kana.indexOf('class="kana-hub-hero'), heroEnd);
+
+  assert.match(kana, /class="kana-hub-hero ma-page-hero"/);
+  assert.doesNotMatch(kana, /kana-hub-hero[^\n]*ma-card/);
+  assert.match(kana, /class="kana-pathway-list"/);
+  assert.equal(count(kana, /class="kana-pathway kana-pathway--/g), 3);
+  assert.ok(kana.indexOf('kana-pathways') < kana.indexOf('kana-progress-intro'));
+  assert.match(kana, /class="kana-today-card kana-progress-overview"/);
+  assert.doesNotMatch(kana, /kana-(?:next|mastery|preset|records)-panel[^\n]*ma-card/);
+  assert.doesNotMatch(hero, /accuracy|mastered|streak|daily challenge|total answers/i);
+
+  assert.match(kanaJs, /const summary = kanaEl\('div','kana-progress-summary'\)/);
+  assert.match(kanaJs, /recommendedAction\(summaries, mastery\)/);
+  assert.match(kanaJs, /kana-next-card kana-next-card--recommended primary/);
+  assert.doesNotMatch(kanaJs, /kana-stage-card ma-card|kana-preset-card ma-card|kana-accuracy-card ma-card/);
+
+  assert.match(kanaCss, /\.kana-hub-hero\{[\s\S]*?border-bottom:1px solid var\(--ma-border\)/);
+  assert.match(kanaCss, /\.kana-pathway-list\{[\s\S]*?border-block:1px solid var\(--ma-border\)/);
+  assert.match(kanaCss, /\.kana-progress-overview\{[\s\S]*?grid-template-columns:/);
+  assert.match(kanaCss, /\.kana-mastery-grid\{[\s\S]*?border:1px solid var\(--ma-border\)/);
+  assert.match(kanaCss, /\.kana-preset-grid\{[\s\S]*?border:1px solid var\(--ma-border\)/);
 });

@@ -372,13 +372,13 @@
             mini.append(item);
         });
 
-        card.replaceChildren(
-            kanaEl('span','kana-card-kicker ma-kicker','Progress map'),
-            kanaEl('h2','',`${mastery.seen}/${mastery.total} kana seen`),
-            kanaEl('p','','A quick visual check-in before you jump back into practice.'),
-            map,
-            mini
+        const summary = kanaEl('div','kana-progress-summary');
+        summary.append(
+            kanaEl('span','kana-card-kicker ma-kicker','Coverage'),
+            kanaEl('h3','',`${mastery.seen}/${mastery.total} kana seen`),
+            kanaEl('p','','See how much of the kana set you have reached and how much is becoming reliable.')
         );
+        card.replaceChildren(summary, map, mini);
     }
 
     function renderNextPanel(summaries, mastery, action) {
@@ -395,15 +395,15 @@
         copy.append(
             kanaEl('span','kana-section-kicker ma-kicker','Start here'),
             kanaEl('h2','','Your next best step'),
-            kanaEl('p','','A simple place to start, with daily review and weak-kana focus close by.')
+            kanaEl('p','','Your recommendation, daily challenges, and weakest kana together for a quick decision.')
         );
-        const guide = kanaButton('kana-ghost-action ma-button','How to use this hub');
+        const guide = kanaButton('kana-ghost-action ma-button','What should I practise?');
         guide.dataset.maKanaGuide = '';
         head.append(copy, guide);
 
         const grid = kanaEl('div','kana-next-grid');
 
-        const recommended = kanaLink(`kana-next-card primary ma-card ma-card--flat ma-card--interactive ${action.kind}`, '', action.href);
+        const recommended = kanaLink(`kana-next-card kana-next-card--recommended primary ${action.kind}`, '', action.href);
         recommended.append(
             kanaEl('span','ma-kicker','Recommended'),
             kanaEl('strong','',action.title),
@@ -411,7 +411,7 @@
             kanaEl('em','',`${action.label} →`)
         );
 
-        const daily = kanaEl('div','kana-next-card compact ma-card ma-card--flat');
+        const daily = kanaEl('div','kana-next-card kana-next-card--secondary compact');
         daily.append(kanaEl('span','ma-kicker','Daily check-in'));
         const dailyTitle = kanaEl('strong','');
         dailyTitle.append(
@@ -423,7 +423,7 @@
         dailyBtn.dataset.maDailyHistory = '';
         daily.append(dailyTitle, kanaEl('p','',`${todayCount}/2 daily challenges complete today.`), dailyBtn);
 
-        const focus = kanaEl('div','kana-next-card compact ma-card ma-card--flat');
+        const focus = kanaEl('div','kana-next-card kana-next-card--secondary compact');
         const review = kanaLink('kana-inline-btn ma-button','Focus these rows','../reading/?focusWeak=1');
         review.dataset.maWeakReview = '';
         focus.append(
@@ -442,7 +442,7 @@
         if (!grid) return;
         const stages = ['New', 'Learning', 'Reviewing', 'Mastered'];
         grid.replaceChildren(...stages.map(stage => {
-            const button = kanaButton(`kana-stage-card ma-card ma-card--flat ma-card--interactive ${stage.toLowerCase()}`);
+            const button = kanaButton(`kana-stage-card ${stage.toLowerCase()}`);
             button.dataset.maMasteryOpen = '';
             button.append(
                 kanaEl('span','ma-kicker',stage),
@@ -457,15 +457,15 @@
         const slow = compactKanaList(mastery.slowest, 4, item => `${item.ch} ${formatMs(item.avg)}`);
         const focus = $('#kanaMasteryFocus');
         if (focus) {
-            const focusNow = kanaEl('div','kana-focus-card ma-card ma-card--flat');
+            const focusNow = kanaEl('div','kana-focus-card');
             focusNow.append(
                 kanaEl('span','ma-kicker','Focus now'),
                 kanaEl('strong','',mastery.weak.length ? `Review ${weak}` : 'Build first attempts'),
                 kanaEl('p','',mastery.weak.length ? 'Prioritised by low reps, lower accuracy, or slower recognition.' : 'Complete a few sessions so the hub can find useful focus kana.')
             );
-            const avg = kanaEl('div','kana-focus-card ma-card ma-card--flat');
+            const avg = kanaEl('div','kana-focus-card');
             avg.append(kanaEl('span','ma-kicker','Average recognition'), kanaEl('strong','',mastery.average ? formatMs(mastery.average) : '—'), kanaEl('p','','Across kana with saved timing history.'));
-            const slowest = kanaEl('div','kana-focus-card ma-card ma-card--flat');
+            const slowest = kanaEl('div','kana-focus-card');
             slowest.append(kanaEl('span','ma-kicker','Slowest kana'), kanaEl('strong','',slow), kanaEl('p','','Slowest saved recognition times. Practise these carefully before pushing speed.'));
             focus.replaceChildren(focusNow, avg, slowest);
         }
@@ -494,7 +494,7 @@
 
         const grid = kanaEl('div','kana-preset-grid');
         items.forEach(item => {
-            const card = kanaEl('article', `kana-preset-card ma-card ma-card--flat ${item.done ? 'done' : ''}`.trim());
+            const card = kanaEl('article', `kana-preset-card ${item.done ? 'done' : ''}`.trim());
             const top = document.createElement('div');
             top.append(kanaEl('strong','',item.name), kanaEl('span','',`${item.value}/100`));
             card.append(top, kanaEl('p','',item.desc), progressBar(item.value), kanaEl('em','',item.done ? 'Complete' : 'In progress'));
@@ -530,12 +530,12 @@
 
         const recordGrid = kanaEl('div','kana-record-grid');
         records.forEach(([label, value, sub]) => {
-            const card = kanaEl('article','kana-record-card ma-card ma-card--flat');
+            const card = kanaEl('article','kana-record-card');
             card.append(kanaEl('span','ma-kicker',label), kanaEl('strong','',value), kanaEl('em','',sub));
             recordGrid.append(card);
         });
 
-        const totalCard = kanaEl('article','kana-record-card total ma-card ma-card--flat');
+        const totalCard = kanaEl('article','kana-record-card total');
         totalCard.append(
             kanaEl('span','ma-kicker','Total answers'),
             kanaEl('strong','',totalAnswers),
@@ -551,7 +551,7 @@
     }
 
     function accuracyCardNode(label, accuracy, highScore, attempts, mode) {
-        const card = kanaEl('article', `kana-accuracy-card ma-card ma-card--flat ${mode}`);
+        const card = kanaEl('article', `kana-accuracy-card ${mode}`);
         const ring = kanaEl('div','kana-ring');
         ring.dataset.ringPct = String(accuracy || 0);
         if (mode === 'writing') ring.dataset.ringColor = '#66a8ff';
@@ -599,11 +599,11 @@
 
     function renderGuideModal(heading, body) {
         heading.kicker = 'Quick guide';
-        heading.title = 'How to use the Kana hub';
+        heading.title = 'Choosing your next practice';
         body.replaceChildren(kanaModalGrid([
-            ['1. Start with the recommendation', 'The hub chooses review, writing, new kana, or testing based on your saved progress.'],
-            ['2. Check mastery stages', 'New, Learning, Reviewing, and Mastered show where your kana currently sit.'],
-            ['3. Use details only when needed', 'Daily history and the full Mastery Map are in popups so the main page stays clear.']
+            ['Follow the recommendation', 'Start with the practice that best matches your saved accuracy, speed, and repetition history.'],
+            ['Keep daily challenges moving', 'Reading and Writing daily challenges give you a simple way to keep both recognition and recall active.'],
+            ['Use mastery to target weak spots', 'Mastery stages and the Mastery Map show which kana need more repetitions, accuracy, or speed.']
         ]));
     }
 
