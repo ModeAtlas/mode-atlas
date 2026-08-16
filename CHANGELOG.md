@@ -1,3 +1,9 @@
+## 2.34.1 - 2026-08-16
+- Replaced the in-flow Kana Trainer secondary navigation row with a compact floating flyout so the shared header stays single-height on desktop.
+- Kana Trainer now opens its Overview, Reading, Writing, and Results destinations on hover/focus with pointer devices and on tap/click for touch devices.
+- Added one shared navigation interaction owner with outside-click and Escape dismissal plus synchronized `aria-expanded` state.
+- Preserved the 2.34.0 product hierarchy and current-page semantics without changing trainer, results, storage, sync, or scoring behaviour.
+
 ## 2.34.0 - 2026-08-16
 - Reworked shared navigation around product hierarchy: Atlas, Kana Trainer, and Word Bank are now the primary Mode Atlas destinations.
 - Added one shared Kana-local navigation layer for Overview, Reading, Writing, and Results across the entire Kana branch.

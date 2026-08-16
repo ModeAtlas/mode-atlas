@@ -103,17 +103,8 @@ def render_navigation(config: NavConfig) -> str:
     kana_section = not legal_page and config.key in KANA_KEYS
     product_active = 'kana' if kana_section else config.key
 
-    link_markup = []
-    for key, label, href in links:
-        active = key == product_active
-        classes = 'ma-nav__link' + (' is-active' if active else '')
-        current = ' aria-current="page"' if (not kana_section and key == config.key) else ''
-        link_markup.append(
-            f'<a class="{classes}" data-ma-nav-scope="product" data-ma-nav-item="{_attr(key)}" href="{_attr(href)}"{current}>{html.escape(label)}</a>'
-        )
-
-    subnav_markup = ''
-    if kana_section:
+    kana_flyout = ''
+    if not legal_page:
         local_links = []
         for key, label, href in KANA_LINKS:
             active = key == config.key
@@ -122,7 +113,34 @@ def render_navigation(config: NavConfig) -> str:
             local_links.append(
                 f'<a class="{classes}" data-ma-nav-scope="kana" data-ma-kana-nav-item="{_attr(key)}" href="{_attr(href)}"{current}>{html.escape(label)}</a>'
             )
-        subnav_markup = f'<div class="ma-nav__subnav" data-ma-kana-nav aria-label="Kana Trainer sections">{" ".join(local_links)}</div>'
+        kana_flyout = (
+            '<div class="ma-nav__flyout" id="maKanaMenu" data-ma-kana-nav '
+            'aria-label="Kana Trainer sections">'
+            + ' '.join(local_links)
+            + '</div>'
+        )
+
+    link_markup = []
+    for key, label, href in links:
+        active = key == product_active
+        if key == 'kana' and not legal_page:
+            classes = 'ma-nav__link ma-nav__menu-trigger' + (' is-active' if active else '')
+            link_markup.append(
+                '<div class="ma-nav__menu" data-ma-kana-menu>'
+                f'<button class="{classes}" type="button" data-ma-nav-scope="product" '
+                'data-ma-nav-item="kana" data-ma-kana-menu-trigger aria-haspopup="true" '
+                'aria-expanded="false" aria-controls="maKanaMenu">'
+                f'<span>{html.escape(label)}</span><span class="ma-nav__menu-chevron" aria-hidden="true"></span>'
+                '</button>'
+                f'{kana_flyout}'
+                '</div>'
+            )
+            continue
+        classes = 'ma-nav__link' + (' is-active' if active else '')
+        current = ' aria-current="page"' if key == config.key else ''
+        link_markup.append(
+            f'<a class="{classes}" data-ma-nav-scope="product" data-ma-nav-item="{_attr(key)}" href="{_attr(href)}"{current}>{html.escape(label)}</a>'
+        )
 
     action_markup = ''
     if config.account_actions:
@@ -147,9 +165,8 @@ def render_navigation(config: NavConfig) -> str:
     if config.hideable:
         handle = '\n<button class="ma-nav-handle" id="studyNavShowBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span>Exit focus mode</span></button>'
 
-    subnav_class = ' ma-nav--has-subnav' if kana_section else ''
     return f"""{NAV_START}
-<nav class="ma-nav ma-nav--{_attr(config.accent)}{subnav_class}"{nav_id} data-ma-navigation="shared" data-ma-page="{_attr(config.key)}" aria-label="Mode Atlas navigation">
+<nav class="ma-nav ma-nav--{_attr(config.accent)}"{nav_id} data-ma-navigation="shared" data-ma-page="{_attr(config.key)}" aria-label="Mode Atlas navigation">
   <a class="ma-nav__brand" href="{_attr(config.brand_href)}" aria-label="Mode Atlas home">
     <span class="ma-nav__mark" aria-hidden="true">{html.escape(config.mark)}</span>
     <span class="ma-nav__brand-copy">
@@ -161,7 +178,6 @@ def render_navigation(config: NavConfig) -> str:
     <div class="ma-nav__primary">
       <div class="ma-nav__links">{' '.join(link_markup)}</div>{action_markup}
     </div>
-    {subnav_markup}
   </div>
 </nav>{handle}
 {NAV_END}"""
@@ -229,6 +245,7 @@ LEGAL_STYLES = (
 )
 
 INTERACTIVE_SCRIPTS_BEFORE_STORAGE = (
+    'assets/ui/mode-atlas-navigation-menu.js',
     'assets/app/mode-atlas-toast.js',
     'assets/app/mode-atlas-dialog.js',
     'assets/app/mode-atlas-feedback.js',

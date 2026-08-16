@@ -1116,21 +1116,37 @@ test('2.34 product navigation separates Mode Atlas destinations from Kana sectio
   assert.match(frontend, /PRIMARY_LINKS = \([\s\S]*?'Atlas'[\s\S]*?'Kana Trainer'[\s\S]*?'Word Bank'[\s\S]*?\)/);
   assert.doesNotMatch(frontend.match(/PRIMARY_LINKS = \([\s\S]*?\)\n/)[0], /'Reading'|'Writing'|'Results'/);
   assert.match(frontend, /KANA_LINKS = \([\s\S]*?'Overview'[\s\S]*?'Reading'[\s\S]*?'Writing'[\s\S]*?'Results'/);
-  assert.match(navCss, /\.ma-nav__subnav\{/);
+  assert.match(navCss, /\.ma-nav__flyout\{/);
   assert.match(navCss, /\.ma-nav__section-link\.is-active\{/);
+  assert.doesNotMatch(navCss, /\.ma-nav__subnav\{/);
 
-  for (const rel of productPages) {
+  for (const rel of [...productPages, ...kanaPages]) {
     const html = read(rel);
     assert.equal(count(html, /data-ma-nav-scope="product"/g), 3, `${rel} product navigation count`);
-    assert.equal(count(html, /data-ma-kana-nav(?:\s|>)/g), 0, `${rel} should not show Kana-local nav`);
+    assert.equal(count(html, /data-ma-nav-scope="kana"/g), 4, `${rel} Kana destination count`);
+    assert.equal(count(html, /data-ma-kana-nav(?:\s|>)/g), 1, `${rel} one Kana flyout owner`);
+    assert.equal(count(html, /data-ma-kana-menu-trigger/g), 1, `${rel} one Kana flyout trigger`);
     assert.equal(count(html, /aria-current="page"/g), 1, `${rel} one current page`);
   }
   for (const rel of kanaPages) {
     const html = read(rel);
-    assert.equal(count(html, /data-ma-nav-scope="product"/g), 3, `${rel} product navigation count`);
-    assert.equal(count(html, /data-ma-nav-scope="kana"/g), 4, `${rel} Kana-local navigation count`);
-    assert.equal(count(html, /data-ma-kana-nav(?:\s|>)/g), 1, `${rel} one Kana-local nav owner`);
-    assert.equal(count(html, /aria-current="page"/g), 1, `${rel} local page alone owns aria-current`);
-    assert.match(html, /data-ma-nav-item="kana"[^>]*class="[^"]*is-active|class="[^"]*is-active[^"]*"[^>]*data-ma-nav-item="kana"/, `${rel} Kana Trainer product active`);
+    assert.match(html, /class="[^"]*ma-nav__menu-trigger[^"]*is-active[^"]*"[^>]*data-ma-nav-item="kana"/, `${rel} Kana Trainer product active`);
+  }
+});
+
+test('2.34.1 Kana navigation flyout stays out of header flow and supports pointer, touch, and keyboard dismissal', () => {
+  const navCss = read('assets/css/mode-atlas-navigation.css');
+  const navRuntime = read('assets/ui/mode-atlas-navigation-menu.js');
+  assert.match(navCss, /\.ma-nav__flyout\{[\s\S]*?position:absolute;/);
+  assert.match(navCss, /\.ma-nav__menu:hover \.ma-nav__flyout/);
+  assert.doesNotMatch(navCss, /ma-nav--has-subnav/);
+  assert.match(navRuntime, /data-ma-kana-menu-trigger/);
+  assert.match(navRuntime, /aria-expanded/);
+  assert.match(navRuntime, /\(hover:hover\) and \(pointer:fine\)/);
+  assert.match(navRuntime, /pointerdown/);
+  assert.match(navRuntime, /event\.key !== 'Escape'/);
+  for (const rel of APP_PAGES) {
+    const html = read(rel);
+    assert.match(html, new RegExp(`mode-atlas-navigation-menu\\.${REVISION.replaceAll('.', '\\.')}\\.js`), `${rel} shared Kana menu runtime`);
   }
 });
