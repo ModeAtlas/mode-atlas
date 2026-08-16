@@ -6,6 +6,7 @@ on:
     paths:
       - .github/apply_2440.py
       - .github/fix_2440_audit.py
+      - .github/fix_2440_consistency.py
       - .github/workflows/apply-2440-ux-consistency.yml
 jobs:
   validate:
@@ -20,10 +21,12 @@ jobs:
         run: |
           python3 -m py_compile .github/apply_2440.py
           python3 -m py_compile .github/fix_2440_audit.py
+          python3 -m py_compile .github/fix_2440_consistency.py
       - name: Apply source changes
         run: |
           python3 .github/apply_2440.py
           python3 .github/fix_2440_audit.py
+          python3 .github/fix_2440_consistency.py
       - name: Validate changed JavaScript syntax
         run: |
           node --check assets/pages/mode-atlas-kana-page.js
@@ -47,19 +50,20 @@ jobs:
           grep -q "View Test Results" frontend_components.py
           grep -q "No assessment selected" results/index.html
           grep -q "Back to Kana Trainer" results/index.html
-          grep -q "Reading Test Average" assets/results/mode-atlas-results-ui.js
+          grep -q "Test Average" assets/results/mode-atlas-results-ui.js
           grep -q "data-display=\"tablet\" type=\"button\">Tablet" assets/ui/mode-atlas-settings-menu.js
           grep -q "settings_hierarchy_markers" audit_project.py
           ! grep -q "View full Results" frontend_components.py
           ! grep -q ">Try Again<" frontend_components.py
           ! grep -q ">iPad</button>" assets/ui/mode-atlas-settings-menu.js
+          ! grep -Eq "showStatus\([^\n]*, '(warn|ok|err)'\)" assets/pages/mode-atlas-wordbank-page.js
           git diff --check
           test -z "$(git ls-files | grep -E '(^|/)__pycache__/|\.pyc$' || true)"
       - name: Commit validated release
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -f .github/apply_2440.py .github/fix_2440_audit.py .github/workflows/apply-2440-ux-consistency.yml .github/workflows/audit-2440-ux.yml
+          git rm -f .github/apply_2440.py .github/fix_2440_audit.py .github/fix_2440_consistency.py .github/workflows/apply-2440-ux-consistency.yml .github/workflows/audit-2440-ux.yml
           rm -rf __pycache__ .github/__pycache__
           git add -A
           git commit -m "Release Mode Atlas 2.44.0 app-wide UX consistency"
