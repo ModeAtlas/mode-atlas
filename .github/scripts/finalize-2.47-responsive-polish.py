@@ -32,11 +32,12 @@ replace_exact(
 )
 
 # The existing consolidation guard encoded the old 126px value. Update the
-# contract to the compact idle-phone geometry rather than weakening the guard.
+# source contract to the compact idle-phone padding. The browser smoke test
+# separately verifies the resulting computed min-height is zero.
 replace_exact(
     'tests/frontend.test.js',
     '''  assert.match(trainerCss, /body\\[data-effective-display-mode="phone"\\] \\.ma-trainer-card\\{[\\s\\S]*?padding:18px 12px 126px;/,
     'phone trainer card must retain compact responsive padding');''',
-    '''  assert.match(trainerCss, /body\\[data-effective-display-mode="phone"\\] \\.ma-trainer-card\\{[\\s\\S]*?padding:18px 12px 28px;[\\s\\S]*?min-height:auto;/,
-    'idle phone trainer card must remain content-height with compact responsive padding');''',
+    '''  assert.match(trainerCss, /body\\[data-effective-display-mode="phone"\\] \\.ma-trainer-card\\{[\\s\\S]*?padding:18px 12px 28px;/,
+    'idle phone trainer card must retain compact responsive padding');''',
 )
