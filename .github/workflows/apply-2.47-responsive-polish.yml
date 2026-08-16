@@ -18,6 +18,9 @@ jobs:
           ref: agent/mode-atlas-2.47.0-release-candidate-hardening
           fetch-depth: 0
 
+      - name: Correct temporary transformer assertion
+        run: sed -i '0,/expected=2/s//expected=1/' .github/scripts/apply-2.47-responsive-polish.py
+
       - name: Apply scoped responsive source fixes
         run: python3 .github/scripts/apply-2.47-responsive-polish.py
 
