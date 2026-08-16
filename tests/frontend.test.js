@@ -940,7 +940,7 @@ test('UI foundation keeps global geometry, responsive layout, themes, and page f
     assert.match(html, /class="[^"]*\bma-page-frame\b/, `${rel} standard page frame`);
   }
 
-  assert.match(homeCss, /font-family:\s*var\(--ma-font-ui\)/);
+  assert.match(theme, /--ma-font-ui:/);
   assert.match(resultsCss, /font-family:\s*var\(--ma-font-ui\)/);
   assert.doesNotMatch(homeCss + resultsCss, /font-family:\s*(?:Arial|Helvetica)/i,
     'page styles must not override the shared UI font stack');
@@ -1007,12 +1007,10 @@ test('2.31.2 refinement keeps Word Bank library-first and shared responsive cont
 
 test('2.31.3 simplification keeps Settings concise and one backup owner for Word Bank', () => {
   const settings = read('assets/ui/mode-atlas-settings-menu.js');
-  const homeCss = read('assets/css/mode-atlas-home-page.css');
   const wordbankHtml = read('wordbank/index.html');
   const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
   const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
   assert.doesNotMatch(settings, /Let Mode Atlas adapt automatically|Choose feedback volume|Use the dark or light Atlas palette/);
-  assert.match(homeCss, /padding-block:var\(--ma-space-3\) clamp\(24px,3vw,36px\)/);
   assert.match(wordbankHtml, /id="wordBankActionsBtn"/);
   assert.match(wordbankHtml, /id="wordBankActionsPanel"/);
   assert.doesNotMatch(wordbankHtml, /id="exportBtn"|id="importFile"|Collection tools/);
@@ -1060,7 +1058,7 @@ test('2.33 experience restructure keeps Atlas clean and onboarding destination-a
   const kana = read('kana/index.html');
   assert.match(home, /data-ma-home-visitor/);
   assert.match(home, /data-ma-home-user/);
-  assert.match(home, /Explore Kana Trainer/);
+  assert.match(home, /Start with Kana Trainer/);
   assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Study status/);
   assert.match(homeJs, /dataset\.maHomeState=isUser\?'returning':'visitor'/);
   assert.doesNotMatch(homeJs, /dailyDone\(|homeVisitStreak|homeReadingDaily|homeWritingDaily/);
@@ -1162,4 +1160,22 @@ test('2.34.2 Kana flyout keeps fast desktop navigation and deliberate touch acce
   assert.match(navJs, /if \(!isOpen\(\)\) \{\s*event\.preventDefault\(\);\s*setOpen\(true\);/);
   assert.doesNotMatch(navJs, /setOpen\(!isOpen\(\)\)/);
   assert.match(navCss, /\.ma-nav__section-link\{[\s\S]*?justify-content:center;[\s\S]*?text-align:center;/);
+});
+
+test('2.35 Atlas homepage stays editorial, product-led, and free of learner stats', () => {
+  const home = read('index.html');
+  const css = read('assets/css/mode-atlas-home-page.css');
+  assert.match(home, /Build Japanese skills that stick\./);
+  assert.match(home, /class="atlas-showcase"/);
+  assert.match(home, /class="atlas-product atlas-product--kana"/);
+  assert.match(home, /class="atlas-product atlas-product--words"/);
+  assert.match(home, /id="homeContinueCard"/);
+  assert.match(home, /data-ma-home-visitor/);
+  assert.match(home, /data-ma-home-user/);
+  assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Accuracy|Mastered|Daily Challenge|Study status/);
+  assert.doesNotMatch(home, /class="constellation"|class="branch-grid"|class="branch kana"|class="branch words"/);
+  assert.match(css, /\.atlas-hero__stage\{/);
+  assert.match(css, /\.atlas-preview--reading\{/);
+  assert.match(css, /\.atlas-product\{/);
+  assert.doesNotMatch(css, /\.constellation\{|\.branch-grid\{|\.branch\.kana/);
 });

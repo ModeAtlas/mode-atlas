@@ -1,3 +1,10 @@
+## 2.35.0 - 2026-08-16
+- Refined Atlas into a cleaner product homepage with an open editorial hero, product previews, and less card-heavy section framing.
+- Replaced the abstract constellation with representative Reading, Writing, and Word Bank previews that show what the learning tools feel like without adding learner statistics to Atlas.
+- Reworked Kana Trainer and Word Bank into alternating product feature sections with clearer learner-focused value, direct actions, and lighter visual hierarchy.
+- Kept the returning-user homepage intentionally restrained: only the hero changes to a single Continue studying action while the rest of Atlas remains the same clean product homepage.
+- Simplified Atlas-only CSS by removing the retired constellation/branch-card composition instead of layering new overrides on top of it.
+
 ## 2.34.2 - 2026-08-16
 - Restored Kana Trainer as a direct navigation destination while retaining the compact Kana section flyout.
 - Desktop/fine-pointer users can hover to inspect Kana sections and click Kana Trainer to go straight to the Kana overview.
