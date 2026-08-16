@@ -138,6 +138,7 @@ if wordbank_old in smoke:
     smoke = smoke.replace(wordbank_old, wordbank_new, 1)
 elif wordbank_new not in smoke:
     raise SystemExit('Word Bank smoke-test flow is in an unexpected state.')
+smoke = smoke.replace("details.card[data-id]", "details.wordbank-entry[data-id]")
 smoke = smoke.replace(
     "      await expect(profileDrawer).toBeHidden();\n      await expect(profileTrigger).toBeFocused();",
     "      await expect(profileDrawer).toHaveAttribute('aria-hidden', 'true');\n      await expect(profileDrawer).not.toHaveClass(/\\bopen\\b/);\n      await expect(page.locator('body')).not.toHaveClass(/profile-open/);\n      await expect(profileTrigger).toBeFocused();",
@@ -204,6 +205,10 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
     'Atlas navigation smoke must use the current visible Kana product action');
   assert.match(smoke, /wordBankAddJumpBtn[\s\S]*kanaInput/,
     'Word Bank smoke must open the Add Word dialog before interacting with its form');
+  assert.doesNotMatch(smoke, /details\.card\[data-id\]/,
+    'Word Bank smoke must use the current wordbank-entry row markup');
+  assert.match(smoke, /details\.wordbank-entry\[data-id\]/,
+    'Word Bank smoke must verify the persisted entry through the current row markup');
 
   const gate = read('.github/workflows/release-check.yml');
   assert.match(gate, /npm ci --ignore-scripts --registry=https:\/\/registry\.npmjs\.org\//,
