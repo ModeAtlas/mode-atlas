@@ -1,0 +1,163 @@
+name: Apply final 2.47 UI polish
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.47.0-release-candidate-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/mode-atlas-2.47.0-release-candidate-hardening
+          fetch-depth: 0
+
+      - name: Apply scoped source changes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, found {count}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # Completed single-rank achievements should read as max-rank rewards.
+          replace_once(
+              'assets/achievements/mode-atlas-achievements-ui.js',
+              "  function rankAccent(index){ return RANK_ACCENTS[Math.min(RANK_ACCENTS.length-1,Math.max(0,index))]; }\n  function rankProgress(track,index,s){",
+              "  function rankAccent(index){ return RANK_ACCENTS[Math.min(RANK_ACCENTS.length-1,Math.max(0,index))]; }\n  function trackRankAccent(track,index,done=false){\n    return track?.ranks?.length===1 && done ? RANK_ACCENTS[RANK_ACCENTS.length-1] : rankAccent(index);\n  }\n  function rankProgress(track,index,s){"
+          )
+          replace_once(
+              'assets/achievements/mode-atlas-achievements-ui.js',
+              "    tile.dataset.maAchRankAccent=rankAccent(state.displayIndex);",
+              "    tile.dataset.maAchRankAccent=trackRankAccent(track,state.displayIndex,state.complete);"
+          )
+          replace_once(
+              'assets/achievements/mode-atlas-achievements-ui.js',
+              "    const rank=track.ranks[viewIndex];\n    const value=valueFor(snapshot,rank.key), done=value>=rank.target, pct=rankProgress(track,viewIndex,snapshot);\n    const body=achEl('div','ma-ach-info-body');\n    body.dataset.maAchId=id;\n    const progress=achEl('div','ma-ach-info-progress'); progress.dataset.maAchRankAccent=rankAccent(viewIndex);",
+              "    const rank=track.ranks[viewIndex];\n    const value=valueFor(snapshot,rank.key), done=value>=rank.target, pct=rankProgress(track,viewIndex,snapshot);\n    const rankAccentValue=trackRankAccent(track,viewIndex,done);\n    const body=achEl('div','ma-ach-info-body');\n    body.dataset.maAchId=id;\n    const progress=achEl('div','ma-ach-info-progress'); progress.dataset.maAchRankAccent=rankAccentValue;"
+          )
+          replace_once(
+              'assets/achievements/mode-atlas-achievements-ui.js',
+              "    body.append(createInfoTopbar({branch:categoryKey,done:state.complete,accent:meta.accent,rankAccentValue:rankAccent(viewIndex),symbol:track.icon||meta.icon,kicker:meta.title,title:track.name,tier:ranked?`Rank ${rank.tier}`:'',backLabel:'← Back to achievements'}),achEl('p','ma-ach-info-copy',rank.detail),progress);",
+              "    body.append(createInfoTopbar({branch:categoryKey,done:state.complete,accent:meta.accent,rankAccentValue,symbol:track.icon||meta.icon,kicker:meta.title,title:track.name,tier:ranked?`Rank ${rank.tier}`:'',backLabel:'← Back to achievements'}),achEl('p','ma-ach-info-copy',rank.detail),progress);"
+          )
+
+          # The shared progression consumer owns the live Atlas Level in the profile action.
+          replace_once(
+              'assets/ui/mode-atlas-profile-drawer-bindings.js',
+              "  function countUnlockedAchievements(){\n    const set = readJson('modeAtlasSeenAchievementUnlocks', []);\n    return Array.isArray(set) ? set.length : 0;\n  }\n",
+              "  function countUnlockedAchievements(){\n    const set = readJson('modeAtlasSeenAchievementUnlocks', []);\n    return Array.isArray(set) ? set.length : 0;\n  }\n\n  function atlasLevelRank(level){\n    if (level >= 76) return 'teal';\n    if (level >= 51) return 'violet';\n    if (level >= 26) return 'gold';\n    if (level >= 11) return 'silver';\n    return 'bronze';\n  }\n"
+          )
+          replace_once(
+              'assets/ui/mode-atlas-profile-drawer-bindings.js',
+              "  function updateProgressStatus(){\n    const summary = window.ModeAtlasProgress?.getSummary?.();\n    if (!summary) return;\n    const level = document.getElementById('profileAtlasLevel');",
+              "  function updateProgressStatus(){\n    const summary = window.ModeAtlasProgress?.getSummary?.();\n    if (!summary) return;\n    const atlasLevel = Math.max(1, Math.min(100, Math.floor(Number(summary.level) || 1)));\n    const atlasRank = atlasLevelRank(atlasLevel);\n    const level = document.getElementById('profileAtlasLevel');"
+          )
+          replace_once(
+              'assets/ui/mode-atlas-profile-drawer-bindings.js',
+              "    if (level) level.textContent = String(summary.level || 1);\n    if (xp) xp.textContent = `${summary.xp || 0} XP`;",
+              "    if (level) level.textContent = String(atlasLevel);\n    if (xp) xp.textContent = `${summary.xp || 0} XP`;"
+          )
+          replace_once(
+              'assets/ui/mode-atlas-profile-drawer-bindings.js',
+              "    if (reading) reading.textContent = String(summary.readingCorrect || 0);\n    if (writing) writing.textContent = String(summary.writingCorrect || 0);\n  }",
+              "    if (reading) reading.textContent = String(summary.readingCorrect || 0);\n    if (writing) writing.textContent = String(summary.writingCorrect || 0);\n    document.querySelectorAll('.ma-nav__profile').forEach((button) => {\n      button.dataset.maAtlasRank = atlasRank;\n      button.setAttribute('aria-label', `Open profile, Atlas Level ${atlasLevel}`);\n      const label = button.querySelector('.ma-nav__action-label');\n      if (label) label.textContent = `Lv ${atlasLevel}`;\n    });\n  }"
+          )
+
+          # Keep Settings compact and give the live profile level a responsive rank badge.
+          replace_once(
+              'assets/css/mode-atlas-navigation.css',
+              ".ma-nav__action{border-color:var(--ma-border);background:var(--ma-control);color:var(--ma-control-text);}\n.ma-nav__action--quiet{background:transparent;color:var(--ma-muted);}\n.ma-nav__avatar{",
+              ".ma-nav__action{border-color:var(--ma-border);background:var(--ma-control);color:var(--ma-control-text);}\n.ma-nav__action--quiet{background:transparent;color:var(--ma-muted);}\n.ma-nav__settings{\n  width:44px;\n  min-width:44px;\n  padding:0;\n}\n.ma-nav__settings .ma-nav__action-label{display:none;}\n.ma-nav__profile{\n  --ma-atlas-rank:color-mix(in srgb,var(--ma-results) 70%,var(--ma-card-3));\n  min-width:0;\n  padding:0 9px 0 6px;\n  gap:7px;\n}\n.ma-nav__profile[data-ma-atlas-rank=\"silver\"]{--ma-atlas-rank:color-mix(in srgb,var(--ma-muted) 75%,var(--ma-card));}\n.ma-nav__profile[data-ma-atlas-rank=\"gold\"]{--ma-atlas-rank:var(--ma-warning);}\n.ma-nav__profile[data-ma-atlas-rank=\"violet\"]{--ma-atlas-rank:var(--ma-kana);}\n.ma-nav__profile[data-ma-atlas-rank=\"teal\"]{--ma-atlas-rank:color-mix(in srgb,var(--ma-writing) 45%,var(--ma-reading));}\n.ma-nav__profile .ma-nav__action-label{\n  min-width:40px;\n  padding:5px 7px;\n  display:inline-flex;\n  align-items:center;\n  justify-content:center;\n  border:1px solid color-mix(in srgb,var(--ma-atlas-rank) 58%,var(--ma-border));\n  border-radius:var(--ma-radius-pill);\n  background:color-mix(in srgb,var(--ma-atlas-rank) 14%,transparent);\n  color:var(--ma-text-strong);\n  font-size:.72rem;\n  font-weight:900;\n  font-variant-numeric:tabular-nums;\n  letter-spacing:.01em;\n}\n.ma-nav__avatar{"
+          )
+          replace_once(
+              'assets/css/mode-atlas-navigation.css',
+              "  .ma-nav__action-label{display:none;}\n  .ma-nav__profile,.ma-nav__settings{width:44px;padding:0;}\n}",
+              "  .ma-nav__action-label{display:none;}\n  .ma-nav__profile{width:auto;min-width:0;padding:0 8px 0 6px;}\n  .ma-nav__profile .ma-nav__action-label{display:inline-flex;}\n  .ma-nav__settings{width:44px;min-width:44px;padding:0;}\n}"
+          )
+          replace_once(
+              'assets/css/mode-atlas-navigation.css',
+              "  .ma-nav__actions{gap:6px;}\n  .ma-nav__profile,.ma-nav__settings{width:42px;min-width:42px;min-height:42px;padding:0;}\n  .ma-nav__avatar{width:30px;height:30px;min-width:30px;}",
+              "  .ma-nav__actions{gap:6px;}\n  .ma-nav__profile{width:auto;min-width:0;min-height:42px;padding:0 7px 0 5px;}\n  .ma-nav__profile .ma-nav__action-label{display:inline-flex;}\n  .ma-nav__settings{width:42px;min-width:42px;min-height:42px;padding:0;}\n  .ma-nav__avatar{width:30px;height:30px;min-width:30px;}"
+          )
+          replace_once(
+              'assets/css/mode-atlas-navigation.css',
+              "@media(pointer:coarse){\n  .ma-nav__link,.ma-nav__section-link,.ma-nav__action{min-height:44px;}\n  .ma-nav__profile,.ma-nav__settings{width:44px;min-width:44px;min-height:44px;}\n}",
+              "@media(pointer:coarse){\n  .ma-nav__link,.ma-nav__section-link,.ma-nav__action{min-height:44px;}\n  .ma-nav__profile{width:auto;min-width:0;min-height:44px;}\n  .ma-nav__settings{width:44px;min-width:44px;min-height:44px;}\n}"
+          )
+
+          # Permanent regression coverage for both release-polish requirements.
+          tests = Path('tests/frontend.test.js')
+          source = tests.read_text(encoding='utf-8')
+          marker = "test('2.47.1 single-rank achievements and Atlas Level navigation keep premium rank styling'"
+          if marker not in source:
+              source += r'''
+
+test('2.47.1 single-rank achievements and Atlas Level navigation keep premium rank styling', () => {
+  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
+  const bindings = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const navigation = read('assets/css/mode-atlas-navigation.css');
+
+  assert.match(achievements, /function trackRankAccent\(track,index,done=false\)/);
+  assert.match(achievements, /track\?\.ranks\?\.length===1 && done \? RANK_ACCENTS\[RANK_ACCENTS\.length-1\]/,
+    'completed one-rank achievements must use the maximum teal rank accent');
+  assert.match(achievements, /trackRankAccent\(track,state\.displayIndex,state\.complete\)/);
+  assert.match(achievements, /const rankAccentValue=trackRankAccent\(track,viewIndex,done\)/);
+
+  assert.match(bindings, /if \(level >= 76\) return 'teal'/);
+  assert.match(bindings, /if \(level >= 51\) return 'violet'/);
+  assert.match(bindings, /if \(level >= 26\) return 'gold'/);
+  assert.match(bindings, /if \(level >= 11\) return 'silver'/);
+  assert.match(bindings, /return 'bronze'/);
+  assert.match(bindings, /label\.textContent = `Lv \$\{atlasLevel\}`/);
+  assert.match(bindings, /button\.dataset\.maAtlasRank = atlasRank/);
+
+  assert.match(navigation, /\.ma-nav__settings \.ma-nav__action-label\{display:none;\}/,
+    'Settings should remain an icon-only navigation control');
+  assert.match(navigation, /\.ma-nav__profile \[?[^\n]*ma-nav__action-label|\.ma-nav__profile \.ma-nav__action-label/,
+    'Profile should retain a visible compact level label');
+  assert.match(navigation, /data-ma-atlas-rank=\"teal\"/);
+});
+'''
+              tests.write_text(source, encoding='utf-8')
+          PY
+
+      - name: Rebuild active revision assets
+        run: python3 build_revision_assets.py
+
+      - name: Validate release source
+        run: |
+          python3 audit_project.py
+          node --test tests/backend.test.js tests/frontend.test.js
+          git diff --check
+
+      - name: Commit scoped changes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "Mode Atlas Release Bot"
+          git config user.email "48079170+ModeAtlas@users.noreply.github.com"
+          git add assets/achievements/mode-atlas-achievements-ui.js \
+                  assets/achievements/mode-atlas-achievements-ui.assets-2.47.0.js \
+                  assets/ui/mode-atlas-profile-drawer-bindings.js \
+                  assets/ui/mode-atlas-profile-drawer-bindings.assets-2.47.0.js \
+                  assets/css/mode-atlas-navigation.css \
+                  assets/css/mode-atlas-navigation.assets-2.47.0.css \
+                  tests/frontend.test.js
+          git commit -m "Polish achievements and Atlas level navigation"
+          git push origin HEAD:agent/mode-atlas-2.47.0-release-candidate-hardening
