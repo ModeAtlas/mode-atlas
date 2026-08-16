@@ -1,0 +1,64 @@
+name: Apply Mode Atlas 2.43.1 Achievement UI Refinement
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.43.1-achievement-ui-refinement
+    paths:
+      - .github/workflows/apply-2431-achievement-ui-refinement.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate transformer
+        run: python3 -m py_compile .github/apply_2431.py
+
+      - name: Apply source changes
+        run: python3 .github/apply_2431.py
+
+      - name: Validate changed JavaScript syntax
+        run: |
+          node --check assets/achievements/mode-atlas-achievements-ui.js
+          node --check assets/app/mode-atlas-dialog.js
+          node --check tests/frontend.test.js
+
+      - name: Rebuild revisioned assets
+        run: python3 build_revision_assets.py
+
+      - name: Audit and tests
+        run: |
+          python3 audit_project.py
+          node --test tests/backend.test.js tests/frontend.test.js
+
+      - name: Release guards
+        run: |
+          grep -q "var VERSION = '2.43.1';" assets/app/mode-atlas-version.js
+          grep -q "var CACHE_REVISION = 'assets-2.43.1';" assets/app/mode-atlas-version.js
+          grep -q "184,92,62" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "248,196,70" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "ma-ach-copy" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "Back to achievements" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "closeLabel:'×'" assets/achievements/mode-atlas-achievements-ui.js
+          grep -q "ma-dialog__close--icon" assets/app/mode-atlas-dialog.js
+          grep -q "ma-dialog__close--icon" assets/css/mode-atlas-components.css
+          ! grep -q "ma-ach-info-back','Back'" assets/achievements/mode-atlas-achievements-ui.js
+          git diff --check
+          test -z "$(git ls-files | grep -E '(^|/)__pycache__/|\.pyc$' || true)"
+
+      - name: Commit validated release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -f .github/apply_2431.py .github/workflows/apply-2431-achievement-ui-refinement.yml
+          rm -rf __pycache__ .github/__pycache__
+          git add -A
+          git commit -m "Release Mode Atlas 2.43.1 achievement UI refinement"
+          git push origin HEAD
