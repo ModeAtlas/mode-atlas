@@ -3,14 +3,13 @@ name: Apply Mode Atlas 2.47.0
 on:
   push:
     branches:
-      - 'agent/mode-atlas-2.47.0-release-candidate-hardening'
+      - agent/mode-atlas-2.47.0-release-candidate-hardening
 
 permissions:
   contents: write
 
 jobs:
   apply:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -78,9 +77,11 @@ jobs:
       const updateStatus = page.locator('#maUpdateStatus');
       await expect(updateButton).toBeVisible();
 """
-          if old not in smoke:
-              raise SystemExit('Could not find the stale Settings smoke-test opener.')
-          smoke_path.write_text(smoke.replace(old, new, 1), encoding='utf-8')
+          if old in smoke:
+              smoke = smoke.replace(old, new, 1)
+          elif new not in smoke:
+              raise SystemExit('Settings smoke-test opener is in an unexpected state.')
+          smoke_path.write_text(smoke, encoding='utf-8')
 
           frontend_path = root / 'tests/frontend.test.js'
           frontend = frontend_path.read_text(encoding='utf-8')
