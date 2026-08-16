@@ -1651,3 +1651,68 @@ test('2.46 production boot keeps developer diagnostics lazy and revision-build o
     assert.doesNotMatch(html, new RegExp(`mode-atlas-dev-console\\.${revision}\\.css`));
   }
 });
+
+
+test('2.47 release candidate hardening keeps release tooling reproducible', () => {
+  const lock = read('package-lock.json');
+  assert.doesNotMatch(lock, /internal\.api\.openai|applied-caas|artifactory\/api\/npm/i,
+    'package-lock must remain installable from public infrastructure');
+
+  const build = read('build_revision_assets.py');
+  assert.match(build, /BUILD_IGNORED_DIRS\s*=\s*\{[^}]*'node_modules'/,
+    'revision builder must not treat installed dependencies as application source');
+  assert.match(build, /def iter_project_html\(\):/,
+    'revision builder must own project HTML discovery explicitly');
+
+  const audit = read('audit_project.py');
+  assert.match(audit, /AUDIT_IGNORED_DIRS\s*=\s*\{[^}]*'node_modules'/,
+    'release audit must not treat installed dependencies as application source');
+
+  const manifest = JSON.parse(read('site.webmanifest'));
+  const resultsShortcut = (manifest.shortcuts || []).find((shortcut) => shortcut.url === '/results/');
+  assert.ok(resultsShortcut, 'PWA manifest must keep the Test Results shortcut');
+  assert.equal(resultsShortcut.name, 'Test Results');
+  assert.equal(resultsShortcut.short_name, 'Test Results');
+
+  const kana = read('kana/index.html');
+  assert.doesNotMatch(kana, /<main[^>]*\bid=["']mainContent["'][^>]*\bid=/,
+    'Kana Hub main landmark must not contain duplicate id attributes');
+  assert.match(kana, /<main id=["']mainContent["'] class=["']kana-hub ma-page-section["']>/,
+    'Kana Hub must keep the shared mainContent landmark');
+
+  const wordBankPage = read('assets/pages/mode-atlas-wordbank-page.js');
+  assert.match(wordBankPage, /^\(function ModeAtlasWordBankPage\(\)\{/,
+    'Word Bank page declarations must stay in page-local scope and not collide with shared kana data');
+  assert.match(wordBankPage, /\}\)\(\);\s*$/,
+    'Word Bank page module scope must close cleanly');
+
+  const smoke = read('tests/smoke.spec.js');
+  assert.doesNotMatch(smoke, /window\.ModeAtlasSettings\?\.open/,
+    'browser smoke must open Settings through the real user control');
+  assert.match(smoke, /\[data-settings-open\]:visible/,
+    'browser smoke must select the visible shared Settings trigger');
+  assert.match(smoke, /toHaveAttribute\('data-settings-bound', 'shared'/,
+    'browser smoke must wait for shared Settings binding readiness');
+  assert.match(smoke, /modeAtlasOnboardingComplete[\s\S]*modeAtlasKanaSetupComplete/,
+    'core browser smoke must seed a completed stable-user setup rather than be blocked by onboarding');
+  assert.match(smoke, /maWhatsNewSeen["'], 'smoke'/,
+    'core browser smoke must suppress release notes so unrelated interaction tests stay isolated');
+  assert.doesNotMatch(smoke, /ma-trainer-card \.ma-pause-overlay/,
+    'trainer smoke must validate canonical paused state rather than a presentation-only overlay');
+  assert.match(smoke, /atlas-product__action\[href=\\?"\/kana\/\\?"\]/,
+    'Atlas navigation smoke must use the current visible Kana product action');
+  assert.match(smoke, /wordBankAddJumpBtn[\s\S]*kanaInput/,
+    'Word Bank smoke must open the Add Word dialog before interacting with its form');
+  assert.doesNotMatch(smoke, /details\.card\[data-id\]/,
+    'Word Bank smoke must use the current wordbank-entry row markup');
+  assert.match(smoke, /details\.wordbank-entry\[data-id\]/,
+    'Word Bank smoke must verify the persisted entry through the current row markup');
+
+  const gate = read('.github/workflows/release-check.yml');
+  assert.match(gate, /npm ci --ignore-scripts --registry=https:\/\/registry\.npmjs\.org\//,
+    'release gate must install from the public npm registry');
+  assert.match(gate, /npm run release:check/, 'release gate must run static and Node release checks');
+  assert.match(gate, /desktop-chromium/, 'release gate must exercise the desktop browser project');
+  assert.match(gate, /mobile-chromium/, 'release gate must exercise the mobile browser project');
+  assert.match(gate, /git diff --exit-code/, 'release gate must reject uncommitted generated assets');
+});

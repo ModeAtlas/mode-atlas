@@ -159,7 +159,11 @@ def main() -> int:
     transport = {"build", "v", "reload", "swretired"}
 
     referenced_generated: set[Path] = set()
-    html_files = sorted(ROOT.rglob("*.html"))
+    AUDIT_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}
+    html_files = sorted(
+        path for path in ROOT.rglob("*.html")
+        if not any(part in AUDIT_IGNORED_DIRS for part in path.relative_to(ROOT).parts[:-1])
+    )
     for html_path in html_files:
         if "harness" in html_path.name.lower():
             fail(errors, f"development harness must not ship as a public HTML page: {html_path.relative_to(ROOT)}")

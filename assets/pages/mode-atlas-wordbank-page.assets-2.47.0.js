@@ -1,3 +1,5 @@
+(function ModeAtlasWordBankPage(){
+  'use strict';
 // Word Bank is local-first. cloud-sync.js owns Firebase/auth/hydration globally.
 
 function refreshProfileShell() {
@@ -706,4 +708,4 @@ function refreshProfileShell() {
     window.addEventListener('storage', (event) => {
       if (!event.key || event.key === STORAGE_KEY) refreshWordBankFromStorage();
     });
-  
+})();

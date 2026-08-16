@@ -1,3 +1,13 @@
+## 2.47.0 - 2026-08-16
+- Repaired package-lock package URLs so clean machines install Playwright dependencies from the public npm registry instead of an environment-specific internal registry.
+- Restricted revision-build and release-audit HTML discovery to Mode Atlas source, preventing installed dependencies and browser-test output from being interpreted as application pages on clean CI machines.
+- Isolated the Word Bank page controller in page-local module scope so its romaji helper maps cannot collide with the shared Kana Data module or block downstream Kana Metrics and Achievements startup.
+- Hardened browser smoke state around completed onboarding, release notes, shared Settings readiness, current Atlas/Word Bank controls, and canonical trainer/drawer state so CI validates the real current user flows.
+- Corrected the Kana Hub main landmark so it no longer emits duplicate id attributes while retaining the shared mainContent accessibility target.
+- Added a permanent release gate covering the project audit, Node regressions, generated-asset cleanliness, and desktop/mobile Playwright smoke tests.
+- Renamed the PWA assessment shortcut to Test Results so installed-app terminology matches the formal Test Mode reporting experience.
+- Kept trainer behaviour, scoring/SRS, storage schemas, cloud sync, progression, onboarding, PWA install ownership, and update-check application logic unchanged.
+
 ## 2.46.0 - 2026-08-16
 - Split Firebase startup so App/Auth still restore returning accounts immediately while Firestore loads only when an authenticated cloud operation actually needs it; signed-out visitors no longer download Firestore on every page.
 - Replaced the always-loaded developer console JavaScript/CSS with a small eligibility loader that loads the full diagnostics only on localhost or for the developer account.

@@ -91,8 +91,17 @@ def fingerprint_url(url):
     ext = '.js' if base.lower().endswith('.js') else '.css'
     return base[:-len(ext)] + '.' + REVISION + ext
 
+BUILD_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}
+
+def iter_project_html():
+    for html_path in ROOT.rglob('*.html'):
+        relative = html_path.relative_to(ROOT)
+        if any(part in BUILD_IGNORED_DIRS for part in relative.parts[:-1]):
+            continue
+        yield html_path
+
 referenced = set()
-for html_path in ROOT.rglob('*.html'):
+for html_path in iter_project_html():
     text = html_path.read_text(encoding='utf-8')
 
     def replace(match):
@@ -146,7 +155,7 @@ def clean_page_href(html_path, url):
     query = [(key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True) if key not in TRANSPORT_PARAMS]
     return urlunsplit(('', '', path, urlencode(query), parts.fragment))
 
-for html_path in ROOT.rglob('*.html'):
+for html_path in iter_project_html():
     text = html_path.read_text(encoding='utf-8')
     def replace_href(match):
         cleaned = clean_page_href(html_path, match.group('url'))
