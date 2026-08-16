@@ -39,6 +39,16 @@ if 'def iter_project_html()' not in build:
     )
 build_path.write_text(build, encoding='utf-8')
 
+audit_path = ROOT / 'audit_project.py'
+audit = audit_path.read_text(encoding='utf-8')
+if 'AUDIT_IGNORED_DIRS' not in audit:
+    audit = audit.replace(
+        '    referenced_generated: set[Path] = set()\n    html_files = sorted(ROOT.rglob("*.html"))',
+        "    referenced_generated: set[Path] = set()\n    AUDIT_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}\n    html_files = sorted(\n        path for path in ROOT.rglob(\"*.html\")\n        if not any(part in AUDIT_IGNORED_DIRS for part in path.relative_to(ROOT).parts[:-1])\n    )",
+        1,
+    )
+audit_path.write_text(audit, encoding='utf-8')
+
 manifest_path = ROOT / 'site.webmanifest'
 manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
 for shortcut in manifest.get('shortcuts', []):
@@ -88,6 +98,10 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
   assert.match(build, /def iter_project_html\(\):/,
     'revision builder must own project HTML discovery explicitly');
 
+  const audit = read('audit_project.py');
+  assert.match(audit, /AUDIT_IGNORED_DIRS\s*=\s*\{[^}]*'node_modules'/,
+    'release audit must not treat installed dependencies as application source');
+
   const manifest = JSON.parse(read('site.webmanifest'));
   const resultsShortcut = (manifest.shortcuts || []).find((shortcut) => shortcut.url === '/results/');
   assert.ok(resultsShortcut, 'PWA manifest must keep the Test Results shortcut');
@@ -116,7 +130,7 @@ changelog = changelog_path.read_text(encoding='utf-8')
 if not changelog.startswith('## 2.47.0'):
     entry = """## 2.47.0 - 2026-08-16
 - Repaired package-lock package URLs so clean machines install Playwright dependencies from the public npm registry instead of an environment-specific internal registry.
-- Restricted revision-build HTML discovery to Mode Atlas source, preventing installed dependencies and browser-test output from being interpreted as application pages on clean CI machines.
+- Restricted revision-build and release-audit HTML discovery to Mode Atlas source, preventing installed dependencies and browser-test output from being interpreted as application pages on clean CI machines.
 - Made the Settings update-check browser smoke test wait for the shared drawer binding and open Settings through the real visible control rather than an optional internal API.
 - Added a permanent release gate covering the project audit, Node regressions, generated-asset cleanliness, and desktop/mobile Playwright smoke tests.
 - Renamed the PWA assessment shortcut to Test Results so installed-app terminology matches the formal Test Mode reporting experience.
