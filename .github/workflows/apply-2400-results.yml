@@ -25,22 +25,11 @@ jobs:
           path.write_text(text.replace(old, new, 1))
           PY
       - name: Validate transformer syntax
-        run: python3 -m py_compile .github/apply_2400.py
+        run: python3 -m py_compile .github/apply_2400.py .github/fix_2400_test.py
       - name: Apply source changes
         run: python3 .github/apply_2400.py
-      - name: Make trainer order regression revision-aware
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('tests/frontend.test.js')
-          text = path.read_text()
-          old = '''    const sharedIndex = html.indexOf('mode-atlas-trainer-controller.assets-2.39.0.js');
-              const pageIndex = Math.max(html.indexOf('mode-atlas-default-page.assets-2.39.0.js'), html.indexOf('mode-atlas-reverse-page.assets-2.39.0.js'));'''.replace('              ', '    ')
-          new = '''    const sharedIndex = html.indexOf(`mode-atlas-trainer-controller.${REVISION}.js`);
-    const pageIndex = Math.max(html.indexOf(`mode-atlas-default-page.${REVISION}.js`), html.indexOf(`mode-atlas-reverse-page.${REVISION}.js`));'''
-          assert text.count(old) == 1, 'stale 2.39 controller order assertion not found exactly once'
-          path.write_text(text.replace(old, new, 1))
-          PY
+      - name: Migrate stale trainer-order regression
+        run: python3 .github/fix_2400_test.py
       - name: Rebuild revisioned assets
         run: python3 build_revision_assets.py
       - name: Audit and tests
@@ -63,7 +52,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -f .github/apply_2400.py .github/workflows/apply-2400-results.yml
+          git rm -f .github/apply_2400.py .github/fix_2400_test.py .github/workflows/apply-2400-results.yml
           rm -rf __pycache__ .github/__pycache__
           git add -A
           git commit -m "Release Mode Atlas 2.40.0 formal Test Results"
