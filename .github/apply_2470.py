@@ -62,6 +62,12 @@ kana = kana.replace(
 )
 kana_path.write_text(kana, encoding='utf-8')
 
+wordbank_page_path = ROOT / 'assets/pages/mode-atlas-wordbank-page.js'
+wordbank_page = wordbank_page_path.read_text(encoding='utf-8')
+if not wordbank_page.lstrip().startswith('(function ModeAtlasWordBankPage(){'):
+    wordbank_page = "(function ModeAtlasWordBankPage(){\n  'use strict';\n" + wordbank_page.rstrip() + "\n})();\n"
+wordbank_page_path.write_text(wordbank_page, encoding='utf-8')
+
 smoke_path = ROOT / 'tests/smoke.spec.js'
 smoke = smoke_path.read_text(encoding='utf-8')
 seed_anchor = "      localStorage.setItem('modeAtlasSmokeSeeded', '1');\n"
@@ -105,11 +111,40 @@ if old in smoke:
     smoke = smoke.replace(old, new, 1)
 elif new not in smoke:
     raise SystemExit('Settings smoke-test opener is in an unexpected state.')
+
 smoke = smoke.replace("page.locator('[data-settings-open]').first()", "page.locator('[data-settings-open]:visible').first()")
 smoke = smoke.replace("page.locator('#kanaHub')", "page.locator('#mainContent.kana-hub')")
 smoke = smoke.replace(
+    "        page.waitForURL(/\\/kana\\/$/, { timeout: 5000 }),\n        page.locator('a.branch.kana').click(),",
+    "        page.waitForURL(/\\/kana\\/$/, { timeout: 7500, waitUntil: 'commit' }),\n        page.locator('a.atlas-product__action[href=\"/kana/\"]').click({ noWaitAfter: true }),",
+)
+smoke = smoke.replace(
     "      await expect(page.locator('.ma-trainer-card .ma-pause-overlay')).toBeVisible();\n",
     "      await expect(page.locator('#pauseSessionBtn [data-ma-pause-label]')).toHaveText('Resume');\n      await expect(page.locator('#input')).toBeDisabled();\n",
+)
+wordbank_old = """      const input = page.locator('#kanaInput');
+      const add = page.locator('#addWordBtn');
+      await expect(add).toBeEnabled();
+      await input.fill('ねこ');
+"""
+wordbank_new = """      await page.locator('#wordBankAddJumpBtn').click();
+      const input = page.locator('#kanaInput');
+      const add = page.locator('#addWordBtn');
+      await expect(input).toBeVisible();
+      await expect(add).toBeEnabled();
+      await input.fill('ねこ');
+"""
+if wordbank_old in smoke:
+    smoke = smoke.replace(wordbank_old, wordbank_new, 1)
+elif wordbank_new not in smoke:
+    raise SystemExit('Word Bank smoke-test flow is in an unexpected state.')
+smoke = smoke.replace(
+    "      await expect(profileDrawer).toBeHidden();\n      await expect(profileTrigger).toBeFocused();",
+    "      await expect(profileDrawer).toHaveAttribute('aria-hidden', 'true');\n      await expect(profileDrawer).not.toHaveClass(/\\bopen\\b/);\n      await expect(page.locator('body')).not.toHaveClass(/profile-open/);\n      await expect(profileTrigger).toBeFocused();",
+)
+smoke = smoke.replace(
+    "      await expect(settingsDrawer).toBeHidden();\n      await expect(settingsButton).toBeFocused();",
+    "      await expect(settingsDrawer).toHaveAttribute('aria-hidden', 'true');\n      await expect(settingsDrawer).not.toHaveClass(/\\bopen\\b/);\n      await expect(page.locator('body')).not.toHaveClass(/settings-open/);\n      await expect(settingsButton).toBeFocused();",
 )
 smoke_path.write_text(smoke, encoding='utf-8')
 
@@ -146,6 +181,12 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
   assert.match(kana, /<main id=["']mainContent["'] class=["']kana-hub ma-page-section["']>/,
     'Kana Hub must keep the shared mainContent landmark');
 
+  const wordBankPage = read('assets/pages/mode-atlas-wordbank-page.js');
+  assert.match(wordBankPage, /^\(function ModeAtlasWordBankPage\(\)\{/,
+    'Word Bank page declarations must stay in page-local scope and not collide with shared kana data');
+  assert.match(wordBankPage, /\}\)\(\);\s*$/,
+    'Word Bank page module scope must close cleanly');
+
   const smoke = read('tests/smoke.spec.js');
   assert.doesNotMatch(smoke, /window\.ModeAtlasSettings\?\.open/,
     'browser smoke must open Settings through the real user control');
@@ -159,6 +200,10 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
     'core browser smoke must suppress release notes so unrelated interaction tests stay isolated');
   assert.doesNotMatch(smoke, /ma-trainer-card \.ma-pause-overlay/,
     'trainer smoke must validate canonical paused state rather than a presentation-only overlay');
+  assert.match(smoke, /atlas-product__action\[href=\\?"\/kana\/\\?"\]/,
+    'Atlas navigation smoke must use the current visible Kana product action');
+  assert.match(smoke, /wordBankAddJumpBtn[\s\S]*kanaInput/,
+    'Word Bank smoke must open the Add Word dialog before interacting with its form');
 
   const gate = read('.github/workflows/release-check.yml');
   assert.match(gate, /npm ci --ignore-scripts --registry=https:\/\/registry\.npmjs\.org\//,
@@ -177,7 +222,8 @@ if not changelog.startswith('## 2.47.0'):
     entry = """## 2.47.0 - 2026-08-16
 - Repaired package-lock package URLs so clean machines install Playwright dependencies from the public npm registry instead of an environment-specific internal registry.
 - Restricted revision-build and release-audit HTML discovery to Mode Atlas source, preventing installed dependencies and browser-test output from being interpreted as application pages on clean CI machines.
-- Hardened browser smoke state around completed onboarding, release notes, shared Settings readiness, and canonical trainer pause state so CI validates user flows without unrelated modal or presentation dependencies.
+- Isolated the Word Bank page controller in page-local module scope so its romaji helper maps cannot collide with the shared Kana Data module or block downstream Kana Metrics and Achievements startup.
+- Hardened browser smoke state around completed onboarding, release notes, shared Settings readiness, current Atlas/Word Bank controls, and canonical trainer/drawer state so CI validates the real current user flows.
 - Corrected the Kana Hub main landmark so it no longer emits duplicate id attributes while retaining the shared mainContent accessibility target.
 - Added a permanent release gate covering the project audit, Node regressions, generated-asset cleanliness, and desktop/mobile Playwright smoke tests.
 - Renamed the PWA assessment shortcut to Test Results so installed-app terminology matches the formal Test Mode reporting experience.
