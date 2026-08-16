@@ -88,8 +88,8 @@ test('2.34.2 Kana flyout keeps fast desktop navigation and deliberate touch acce
   const frontend = read('frontend_components.py');
   const navJs = read('assets/ui/mode-atlas-navigation-menu.js');
   const navCss = read('assets/css/mode-atlas-navigation.css');
-  assert.match(frontend, /<a class=\\"\{classes\}\\" href=\\"\/kana\/\\" data-ma-nav-scope=\\"product\\"/);
-  assert.doesNotMatch(frontend, /<button class=\\"\{classes\}\\" type=\\"button\\" data-ma-nav-scope=\\"product\\"/);
+  assert.match(frontend, /f'<a class="\{classes\}" href="\/kana\/" data-ma-nav-scope="product"/);
+  assert.doesNotMatch(frontend, /f'<button class="\{classes\}" type="button" data-ma-nav-scope="product"/);
   assert.match(navJs, /var finePointer = !!\(hoverQuery && hoverQuery\.matches\)/);
   assert.match(navJs, /if \(finePointer\) return/);
   assert.match(navJs, /if \(!isOpen\(\)\) \{\s*event\.preventDefault\(\);\s*setOpen\(true\);/);
