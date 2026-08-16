@@ -6,4 +6,5 @@ s=s.replace("      </div>'''\n\n    nav_id", "      </div>\"\"\"\n\n    nav_id",
 s=s.replace("    return f'''{NAV_START}\n", "    return f\"\"\"{NAV_START}\n", 1)
 s=s.replace("{NAV_END}'''\n'''\nfront,count", "{NAV_END}\"\"\"\n'''\nfront,count", 1)
 s=s.replace('front,count=re.subn(r"def render_navigation\\(config: NavConfig\\) -> str:[\\s\\S]*?(?=\\nHEAD_ASSETS_START =)",new_render,front,count=1)', 'front,count=re.subn(r"def render_navigation\\(config: NavConfig\\) -> str:[\\s\\S]*?(?=\\nHEAD_ASSETS_START =)",lambda _match:new_render,front,count=1)', 1)
+s=s.replace('ma-nav__subnav-link','ma-nav__section-link')
 p.write_text(s,encoding='utf-8')
