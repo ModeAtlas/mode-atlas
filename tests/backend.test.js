@@ -717,3 +717,28 @@ test('release metadata is centralized and formal test dates use local calendar t
   const result = window.ModeAtlasTrainerCore.buildTestResult({ mode: 'reading', total: 1, correct: 1 });
   assert.equal(result.date, '2099-12-31');
 });
+
+
+test('2.46 Firebase startup restores Auth eagerly but defers Firestore until cloud data is needed', () => {
+  const coreStart = CLOUD_SYNC_SOURCE.indexOf('async function loadFirebaseModules() {');
+  const coreEnd = CLOUD_SYNC_SOURCE.indexOf('\n}\n\nconst CONFIG', coreStart) + 2;
+  assert.ok(coreStart >= 0 && coreEnd > coreStart, 'core Firebase loader should remain a distinct patchable owner');
+  const coreLoader = CLOUD_SYNC_SOURCE.slice(coreStart, coreEnd);
+  assert.match(coreLoader, /firebase-app\.js/);
+  assert.match(coreLoader, /firebase-auth\.js/);
+  assert.doesNotMatch(coreLoader, /firebase-firestore\.js/, 'signed-out startup must not fetch Firestore');
+
+  const firestoreStart = CLOUD_SYNC_SOURCE.indexOf('async function loadFirestoreModule() {');
+  const firestoreEnd = CLOUD_SYNC_SOURCE.indexOf('\n}\n\nasync function ensureFirestore()', firestoreStart) + 2;
+  assert.ok(firestoreStart >= 0 && firestoreEnd > firestoreStart, 'Firestore should have one lazy module loader');
+  const firestoreLoader = CLOUD_SYNC_SOURCE.slice(firestoreStart, firestoreEnd);
+  assert.match(firestoreLoader, /firebase-firestore\.js/);
+  assert.match(CLOUD_SYNC_SOURCE, /async function ensureFirestore\(\)/);
+  assert.equal((CLOUD_SYNC_SOURCE.match(/if \(!await ensureFirestore\(\)\) return false;/g) || []).length, 2);
+
+  const setupStart = CLOUD_SYNC_SOURCE.indexOf('async function setupFirebase() {');
+  const setupEnd = CLOUD_SYNC_SOURCE.indexOf('\n}\n\nfunction getDocRef', setupStart) + 2;
+  const setup = CLOUD_SYNC_SOURCE.slice(setupStart, setupEnd);
+  assert.doesNotMatch(setup, /db\s*=\s*getFirestore\(app\)/, 'Auth restoration must not instantiate Firestore for guests');
+  assert.match(setup, /if \(user\) \{\s*initialHydrationPromise = hydrateFromCloud\(false\)\.catch/s);
+});

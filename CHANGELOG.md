@@ -1,3 +1,188 @@
+## 2.47.0 - 2026-08-16
+- Repaired package-lock package URLs so clean machines install Playwright dependencies from the public npm registry instead of an environment-specific internal registry.
+- Restricted revision-build and release-audit HTML discovery to Mode Atlas source, preventing installed dependencies and browser-test output from being interpreted as application pages on clean CI machines.
+- Isolated the Word Bank page controller in page-local module scope so its romaji helper maps cannot collide with the shared Kana Data module or block downstream Kana Metrics and Achievements startup.
+- Hardened browser smoke state around completed onboarding, release notes, shared Settings readiness, current Atlas/Word Bank controls, and canonical trainer/drawer state so CI validates the real current user flows.
+- Corrected the Kana Hub main landmark so it no longer emits duplicate id attributes while retaining the shared mainContent accessibility target.
+- Added a permanent release gate covering the project audit, Node regressions, generated-asset cleanliness, and desktop/mobile Playwright smoke tests.
+- Renamed the PWA assessment shortcut to Test Results so installed-app terminology matches the formal Test Mode reporting experience.
+- Kept trainer behaviour, scoring/SRS, storage schemas, cloud sync, progression, onboarding, PWA install ownership, and update-check application logic unchanged.
+
+## 2.46.0 - 2026-08-16
+- Split Firebase startup so App/Auth still restore returning accounts immediately while Firestore loads only when an authenticated cloud operation actually needs it; signed-out visitors no longer download Firestore on every page.
+- Replaced the always-loaded developer console JavaScript/CSS with a small eligibility loader that loads the full diagnostics only on localhost or for the developer account.
+- Kept lazy developer assets revisioned and build-owned so production diagnostics remain cache-safe without adding unmanaged runtime files.
+- Removed stray macOS metadata from the repository and added regression/audit guards for the new production dependency boundaries.
+- Preserved auth restoration, cloud hydration/merge ownership, save schemas, PWA/update behaviour, trainer scoring/SRS, Test Results, Atlas Level, and achievement calculations.
+
+## 2.45.0 - 2026-08-16
+- Added a shared keyboard bypass link and stable main-content landmarks across the real application pages.
+- Converted trainer Records, Mastery, Practice Setup, and mastery heatmap interactions to native keyboard-operable controls with shared ARIA state ownership.
+- Improved shared dialog focus semantics and modal drawer scroll locking while retaining existing Escape/focus-return behaviour.
+- Raised compact interactive touch targets on coarse-pointer devices without inflating passive pills, badges, or desktop-only presentation.
+- Kept reduced-motion, focus-visible, trainer/scoring/progression/storage/cloud/PWA behaviour under their existing owners and added focused accessibility regression coverage.
+
+## 2.44.0 - 2026-08-16
+- Standardized app-wide action language so Start begins an actual practice session, destination links use Open/View/Back, and shared trainer controls use consistent sentence case.
+- Renamed the Kana assessment destination to Test Results across navigation, Atlas, Kana, trainer links, and formal-assessment UI while preserving all Test Mode data and analysis behavior.
+- Made Reading and Writing subpage branding return to Kana Trainer consistently and corrected shared brand accessibility labels to match their real destination.
+- Standardized assessment correctness language to Correct/Incorrect across trainer HUDs, records, Test Results metrics, tooltips, heatmap legend, and kana detail dialogs.
+- Normalized smaller UI vocabulary including Tablet display mode, Word Bank action casing and feedback tones, Data and app wording, and shared ellipsis treatment without changing stored preferences or schemas.
+
+## 2.43.1 - 2026-08-16
+- Rebalanced achievement tile composition so status, icon, title, requirement, and progress use the available card height without crowding the progress bar.
+- Increased visual separation between bronze and gold rank accents while retaining the restrained five-rank palette.
+- Replaced the ambiguous achievement detail Close / Back pairing with an icon-style dialog close control and an explicit Back to achievements action.
+- Kept achievement categories, thresholds, rank progression, legacy unlock IDs, Atlas Level integration, and unlock history unchanged.
+
+## 2.43.0 - 2026-08-16
+- Reorganized Achievements into Mode Atlas, Kana Trainer, and Word Bank categories with placeholder sections for Listening, Grammar, and Reading Comprehension.
+- Consolidated sequential milestones into ranked achievement tracks so one tile advances through its next rank instead of filling the menu with separate tier tiles.
+- Added rank-aware visual progression and achievement detail navigation for reviewing earlier completed ranks or inspecting later requirements.
+- Added the Atlas Level achievement track at Levels 5, 10, 20, 50, and 100, consuming the shared ModeAtlasProgress level rather than calculating progression locally.
+- Preserved legacy per-rank unlock IDs so existing achievement history remains stable while the visible menu becomes substantially less cluttered.
+
+## 2.42.0 - 2026-08-16
+- Made the automatic install suggestion progression-aware: it becomes eligible after 100 lifetime correct Kana Reading/Writing answers and only appears at a natural break rather than interrupting the milestone answer.
+- Kept install prompting under the single shared PWA owner, including manual browser/iPad instructions when `beforeinstallprompt` is unavailable, and made automatic prompt acknowledgement device-local rather than exported account state.
+- Added XP gained to standard session summaries, formal Test Mode completion summaries, and Daily Challenge completion feedback.
+- Added a queued Atlas Level-up dialog that waits for session/Test summaries to finish before appearing, then lets the install suggestion run afterwards when eligible.
+- Added developer Progress / XP diagnostics with controlled Add XP and Remove XP actions through `ModeAtlasProgress`, including merge-safe signed debug adjustments and level-up testing without raw storage writes.
+
+## 2.41.0 - 2026-08-16
+- Added account-wide Atlas Level progression to Profile with XP, level progress, Reading correct, Writing correct, and lifetime correct totals.
+- Added one shared `ModeAtlasProgress` owner with semantic Kana correct/Daily/Test events, one-time legacy seeding from existing trainer statistics, and centrally derived XP/levels.
+- Added merge-safe per-device monotonic answer counters plus unique one-time completion events so cross-device sync cannot lose or double-award progression.
+- Kept Atlas Level separate from Kana mastery and Test performance, and exposed lifetime correct as a stable engagement signal for future install eligibility.
+
+## 2.40.0 - 2026-08-16
+- Reframed Results as the formal assessment report for Reading and Writing Test Mode only.
+- Preserved the full kana heatmap, row doughnut graphs, modifier-row analysis, fastest/slowest markers, pinned test averages, master/detail history, trends, and Recommended Review.
+- Split improvement trends by assessment skill: Reading compares only with Reading tests and Writing only with Writing tests.
+- Added a formal-test consumption guard so non-Test-Mode records cannot be interpreted as assessment results even if they appear in a results storage key.
+- Improved empty states and assessment terminology without changing Test Mode scoring, stored result schemas, or trainer behavior.
+
+## 2.39.0 - 2026-08-16
+- Added one shared Reading/Writing trainer controller for common page lifecycle and persistence behavior while retaining thin mode-specific answer adapters.
+- Consolidated trainer save/load refresh, cloud/bfcache/UI refresh coalescing, Daily/Test header and HUD state, shared panel state, score-history formulas, test-result persistence adapters, SRS-correct scheduling, session-summary plumbing, and debug element primitives.
+- Removed duplicate controller-owned score formulas and refresh listeners from the Reading/Writing page files; both modes now consume the same implementation with explicit mode configuration.
+- Kept Writing-only choice generation, repeat limiting, keyboard modes, accepted-answer handling, and prompt rendering local; Reading romaji input and its answer progression remain local as well.
+- Preserved all existing trainer IDs, scoring/SRS weights, Daily/Test sequences and seeds, result schemas, save keys, cloud behavior, Practice Setup, and the 2.38 active-session UI.
+
+## 2.38.0 - 2026-08-16
+- Reworked active Reading and Writing sessions into a focused shared practice stage: compact mode context, session HUD, large prompt, answer area, and quieter session controls now form one clear hierarchy.
+- Made the existing shared `trainer-session-active` state the sole presentation owner for active practice, removing duplicate CSS session detection based on `:has(#startWrap[hidden])`.
+- Kept Records and Mastery reachable but visually secondary on desktop during practice, while tablet and phone sessions remove those side panels from the active question flow.
+- Hid Practice Setup while a session is active and restored it automatically when the shared session state ends, without changing trainer settings or session lifecycle logic.
+- Preserved all trainer IDs, Reading/Writing input modes, presets, modifiers, Daily Challenge, Test Mode, scoring, SRS, pause/skip/end behavior, result storage, save schema, and cloud sync.
+
+## 2.37.0 - 2026-08-16
+- Reworked Word Bank from nested hero/library/entry cards into an open, collection-first vocabulary surface with scan-friendly rows.
+- Added collection-aware page copy: empty libraries explain how to begin, while established libraries lead with saved-word, favourite, and missing-meaning context instead of repeating product onboarding copy.
+- Kept kana, meaning, and romaji as the primary scan targets while moving type, update date, notes state, favourite controls, and editing into quieter supporting positions.
+- Added distinct empty-library and zero-filter-result states, including a one-click clear-search-and-filters action when the collection exists but the current view is empty.
+- Preserved Word Bank schema, romaji generation, persistence order, duplicate handling, cloud sync, import/export ownership, and destructive-confirmation behavior.
+
+## 2.36.1 - 2026-08-16
+- Kept the full Kana orientation hero for zero-history learners, while regular learners now receive a compact state-aware header instead of repeated introductory marketing copy.
+- Returning Kana headers now summarise saved coverage, mastered kana, streak state, and current weak-kana focus so the buffer is personal and useful without competing with the statistics below.
+- Collapsed Reading / Writing / Results into a slim shortcut band for returning learners and tightened the progress intro so saved statistics arrive much sooner on repeat visits.
+- Preserved the complete first-use Kana experience and all existing recommendation, mastery, Daily Challenge, preset, Results, storage, sync, and trainer behaviour.
+
+## 2.36.0 - 2026-08-16
+- Refined Kana Trainer into a clearer sub-homepage: a calm, action-first introduction now leads into practice destinations before any progress data appears.
+- Replaced the three large pathway cards with a lighter Reading / Writing / Results navigation band so the top of Kana has more breathing room while keeping each destination distinct.
+- Reorganized progress into a dedicated numerical layer for coverage, recommendation, Daily Challenge state, weak kana, mastery, presets, accuracy, records, and total practice volume.
+- Removed nested page-specific card ownership from Kana progress rendering and replaced it with shared matrices, separators, and a smaller number of purposeful surfaces rather than hiding the old card wall with overrides.
+- Preserved Kana metrics, mastery thresholds, recommendation rules, Daily Challenge behaviour, preset calculations, Results links, save schemas, storage, and cloud-sync behaviour.
+
+## 2.35.0 - 2026-08-16
+- Refined Atlas into a cleaner product homepage with an open editorial hero, product previews, and less card-heavy section framing.
+- Replaced the abstract constellation with representative Reading, Writing, and Word Bank previews that show what the learning tools feel like without adding learner statistics to Atlas.
+- Reworked Kana Trainer and Word Bank into alternating product feature sections with clearer learner-focused value, direct actions, and lighter visual hierarchy.
+- Kept the returning-user homepage intentionally restrained: only the hero changes to a single Continue studying action while the rest of Atlas remains the same clean product homepage.
+- Simplified Atlas-only CSS by removing the retired constellation/branch-card composition instead of layering new overrides on top of it.
+
+## 2.34.2 - 2026-08-16
+- Restored Kana Trainer as a direct navigation destination while retaining the compact Kana section flyout.
+- Desktop/fine-pointer users can hover to inspect Kana sections and click Kana Trainer to go straight to the Kana overview.
+- Touch users open the flyout on the first tap and navigate to Kana on a second tap of the Kana Trainer control, avoiding a fragile timed double-tap gesture.
+- Centered Overview, Reading, Writing, and Results labels within the flyout controls.
+
+## 2.34.1 - 2026-08-16
+- Replaced the in-flow Kana Trainer secondary navigation row with a compact floating flyout so the shared header stays single-height on desktop.
+- Kana Trainer now opens its Overview, Reading, Writing, and Results destinations on hover/focus with pointer devices and on tap/click for touch devices.
+- Added one shared navigation interaction owner with outside-click and Escape dismissal plus synchronized `aria-expanded` state.
+- Preserved the 2.34.0 product hierarchy and current-page semantics without changing trainer, results, storage, sync, or scoring behaviour.
+
+## 2.34.0 - 2026-08-16
+- Reworked shared navigation around product hierarchy: Atlas, Kana Trainer, and Word Bank are now the primary Mode Atlas destinations.
+- Added one shared Kana-local navigation layer for Overview, Reading, Writing, and Results across the entire Kana branch.
+- Keeps Kana Trainer visually active in the product navigation while the actual local page owns `aria-current="page"`, preserving clear hierarchy without duplicate current-page semantics.
+- Simplified Atlas navigation copy and kept all navigation generated by the existing build-time shared component owner.
+
+## 2.33.2 - 2026-08-16
+- Moved Kana starting-level setup to the Kana/Reading/Writing destination page so Word Bank never has to host or load Kana preset logic.
+- Fixed Word Bank → Kana first-use flow: after general Mode Atlas consent, navigation reaches Kana and Kana setup opens there before practice begins.
+- Added the Kana-setup flag to the canonical Mode Atlas save/storage ownership registry and made pending onboarding destinations app-owned local state.
+- Tightened legacy onboarding migration so old `modeAtlasStarterSeen` only migrates to Kana setup when real existing Kana configuration is present, instead of permanently bypassing the new branch-specific setup.
+
+## 2.33.1 - 2026-08-16
+- Split first-use setup into general Mode Atlas consent and Kana-specific starting-level setup so Word Bank no longer asks for irrelevant Kana presets.
+- Preserved the chosen destination through setup and defers Kana starting-level selection until the learner actually enters Kana, Reading, or Writing.
+- Fixed Word Bank first-use completion by removing its dependency on the Kana preset module rather than loading unrelated trainer code into Word Bank.
+- Prevented the install prompt from overlapping visit/setup dialogs and corrected setup-error visibility so validation feedback only appears when a real save failure occurs.
+
+## 2.33.0 - 2026-08-16
+- Restructured Atlas into a clean ecosystem homepage with distinct visitor and returning-user hero states and no study-stat dashboard on the homepage.
+- Changed first-use onboarding from an automatic homepage interruption into a destination-aware branch-entry gate that resumes the user’s chosen branch after setup.
+- Reframed Kana as the Kana Trainer sub-homepage with a calmer action-first introduction, dedicated Reading/Writing/Results paths, and progress reporting moved below the introductory area.
+- Preserved trainer algorithms, result storage, cloud/save ownership, Service Worker retirement, and update/version behavior while rebuilding revisioned assets and regression coverage.
+
+## 2.32.0 - 2026-08-15
+- Consolidated canonical CSS source without changing page design or application behaviour, removing only identical same-selector declarations while preserving differing cascade rules.
+- Made the shared setting-row component the responsive geometry owner; Settings now supplies layout variables instead of overriding component geometry with a higher-specificity grid rule.
+- Removed retired Profile sign-in/sign-out visibility selectors left behind by the single state-aware Google account action.
+- Reduced duplicate CSS ownership in trainer, Achievements, Kana, Results, and shared theme sources where declarations were provably identical.
+- Rebuilt revisioned assets and revalidated the project audit and full regression suite.
+
+## 2.31.4 - 2026-08-15
+- Fixed Settings preference-row overlap by giving labels a protected column and allowing segmented controls to size to the drawer.
+- Removed empty Save Data status spacing so the backup controls no longer leave a large unused gap.
+- Replaced separate profile Sign in / Sign out buttons with one state-aware Google account action that signs in when logged out and signs out when logged in.
+- Extended the shared cloud UI binding with a single auth-button contract while preserving existing two-button bindings elsewhere.
+
+## 2.31.3 - 2026-08-15
+- Simplified basic Settings rows by removing unnecessary explanatory copy from Display, Sound, and Appearance.
+- Fixed Atlas top framing by removing the oversized hero section top padding that created a large empty band below navigation.
+- Removed Word Bank's duplicate page-specific JSON Export/Import system; the global Mode Atlas Save Data tools remain the sole backup/restore owner and continue to include Word Bank data.
+- Replaced the bottom Collection Tools disclosure with a compact Word Bank settings action beside Add word; only the Word-Bank-specific Clear all words action remains there.
+- Removed the retired Word Bank export/import handlers and related CSS/markup rather than hiding dead code.
+
+## 2.31.2 - 2026-08-15
+- Reworked Word Bank into a true library-first layout: the permanent Quick Capture rail is removed and Add word now opens the existing capture flow in the shared Mode Atlas dialog.
+- Added an Add a word action to the empty library state and closes the capture dialog after a successful add while keeping storage, romaji generation, duplicate detection, and cloud sync unchanged.
+- Fixed shared icon buttons so Safari no longer renders Favourite/Delete as native white controls; corrected Word Bank disclosure chevrons, focus styling, and Collection Tools spacing/wrapping.
+- Moved forced tablet/phone Settings row stacking into the shared component owner and removed the drawer-specific duplicate workaround.
+- Simplified the paused trainer state to a restrained cue, removed the oversized bottom pause surface, and switches the Pause/Resume SVG between pause and play correctly.
+
+## 2.31.1 - 2026-08-15
+- Fixed Settings drawer responsive ownership so coarse/tablet layouts stack setting copy above controls instead of collapsing descriptions into a narrow column; Display remains four-up on tablet and becomes two-by-two on narrow phones.
+- Restored the trainer session-state contract so Start practice actually disappears while a session is active, removing the duplicated Start + Pause/End control stack and the extra vertical gap it created.
+- Preserved the Pause button SVG/label structure when session state resets, preventing the pause icon from disappearing after start/end/retry transitions.
+- Rebalanced the Atlas returning-user hero by reducing unnecessary viewport-height spacing, headline scale, card padding, and left/right imbalance while retaining the constellation identity and Continue Studying hierarchy.
+- Rechecked the new Word Bank, Focus mode, Profile, Kana, and Results responsive patterns; no competing layout owner was found in those areas, so they remain behaviorally unchanged.
+
+## 2.31.0 - 2026-08-14
+- Introduced the first full visual-standardisation release: shared icons, page-introduction/setting/status/progress/trend/skeleton primitives, semantic UI tokens, and consistent utility controls now form one reusable visual vocabulary.
+- Reworked Profile and Settings around their real jobs: Profile now owns account/sync/achievement information only, while Settings uses conventional preference rows with secondary Data & app actions instead of duplicating navigation or presenting every control at equal visual weight.
+- Refocused Reading and Writing around active practice with a compact session HUD, Daily/Test progress bar, quieter skip action, Practice setup terminology, and intentional Focus mode while preserving every existing trainer controller ID and behavioural contract.
+- Reframed Atlas as a returning-user study home with a Continue studying recommendation/status area, calmer branch discovery, retained constellation identity, and clearer future Reading Comprehension naming.
+- Improved the Kana hub hierarchy without duplicating its existing mastery logic: Continue practice and the recommended next step are visually dominant, secondary surfaces are quieter, and dynamic dashboard regions use lightweight skeleton states.
+- Added actionable Results guidance and a recent formal-test trend, plus a desktop master/detail layout so weak kana/rows lead directly back into focused Reading or Writing practice.
+- Reworked Word Bank around the saved collection rather than the add form: library/search/sort/filter now lead the page, quick capture sits in a secondary rail, backup/destructive tools are disclosed on demand, and saved-word rows emphasise kana, meaning, and romaji with compact icon actions.
+- Kept cloud sync, save formats, Service Worker/version checking, and core trainer scoring/SRS behaviour outside this visual release; UI changes consume the existing data owners instead of creating competing systems.
+
 ## 2.30.0 - 2026-08-14
 - Centralized public-page JS/CSS dependency ownership in one build-time manifest, preserving each page's existing load order while eliminating hand-maintained shared stacks from individual HTML files.
 - Made the early loading-screen markup a build-time shared component so every public page receives the same static loader without adding a runtime fragment request or changing loader timing.
@@ -71,6 +256,14 @@
 - Moved the Word Bank page controller earlier in the page's deferred script order so basic input ownership is not delayed by cloud/profile modules.
 
 # Changelog
+
+## 2.41.0 — Atlas Level & Account Progression
+
+- Added one shared `ModeAtlasProgress` owner for account-wide semantic learning progress and Atlas Level XP.
+- Correct Reading/Writing kana award progression centrally; official Daily Challenge completions and formal Test Mode completions award one-time bonuses.
+- Existing trainer history seeds a one-time baseline so established learners do not restart at zero.
+- Progress uses per-device monotonic counters plus mergeable one-time events so cloud sync can combine activity without last-write-losing XP.
+- Profile now presents Atlas Level, XP progress, Reading/Writing correct-kana activity, achievements, and sync without adding progression clutter to Atlas or Kana.
 
 ## 2.22.1
 - Fixed a cloud-sync race where a Firestore read started before a local edit could later overwrite that newer Word Bank/progress change using a stale captured section timestamp.

@@ -159,7 +159,11 @@ def main() -> int:
     transport = {"build", "v", "reload", "swretired"}
 
     referenced_generated: set[Path] = set()
-    html_files = sorted(ROOT.rglob("*.html"))
+    AUDIT_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}
+    html_files = sorted(
+        path for path in ROOT.rglob("*.html")
+        if not any(part in AUDIT_IGNORED_DIRS for part in path.relative_to(ROOT).parts[:-1])
+    )
     for html_path in html_files:
         if "harness" in html_path.name.lower():
             fail(errors, f"development harness must not ship as a public HTML page: {html_path.relative_to(ROOT)}")
@@ -243,6 +247,23 @@ def main() -> int:
                 fail(errors, f'page is missing shared frontend stylesheet {css_name}: {page_path.relative_to(ROOT)}')
         if re.search(r'class=["\'][^"\']*(?:topbar|branch-nav|study-nav|nav-link|branch-link|study-link|profile-trigger|profile-dot|ma-settings-trigger)', page_html):
             fail(errors, f'page still contains a legacy navigation class: {page_path.relative_to(ROOT)}')
+
+    # Production-only diagnostics are lazy: normal learners load only the small
+    # eligibility owner, while the revision builder still fingerprints the full
+    # console JS/CSS for localhost/developer use.
+    frontend_source = text(ROOT / 'frontend_components.py')
+    revision_builder = text(ROOT / 'build_revision_assets.py')
+    dev_loader = text(ROOT / 'assets/app/mode-atlas-dev-console-loader.js')
+    if "'assets/app/mode-atlas-dev-console-loader.js'" not in frontend_source:
+        fail(errors, 'production frontend manifest is missing the developer-console eligibility loader')
+    if "'assets/app/mode-atlas-dev-console.js'" in frontend_source or "'assets/css/mode-atlas-dev-console.css'" in frontend_source:
+        fail(errors, 'full developer-console assets are still loaded eagerly by the production manifest')
+    for lazy_asset in ('assets/app/mode-atlas-dev-console.js', 'assets/css/mode-atlas-dev-console.css'):
+        if lazy_asset not in revision_builder:
+            fail(errors, f'revision builder does not own lazy developer asset: {lazy_asset}')
+    for marker in ('document.currentScript', 'kanaCloudSyncStatusChanged', 'loadIfEligible', 'admin@mode-atlas.com'):
+        if marker not in dev_loader:
+            fail(errors, f'developer-console loader missing eligibility/revision marker: {marker}')
 
     # Public page dependency stacks and the early loader are build-time owned.
     asset_regions = (
@@ -451,6 +472,10 @@ def main() -> int:
     for marker in (
         "firebaseModulesLoaded = loaded === true;",
         "firebaseModulesPromise = null;",
+        "firestoreModuleLoaded = loaded === true;",
+        "firestoreModulePromise = null;",
+        "async function ensureFirestore()",
+        "if (!await ensureFirestore()) return false;",
         "firebaseSetupPromise = null;",
         "const joinedExistingSetup = !!firebaseSetupPromise;",
         "if (!ready && joinedExistingSetup",
@@ -458,6 +483,15 @@ def main() -> int:
     ):
         if marker not in cloud:
             fail(errors, f"Firebase setup is missing retry/recovery marker: {marker}")
+    core_loader = re.search(r"async function loadFirebaseModules\(\) \{(?P<body>.*?)\n\}", cloud, re.S)
+    firestore_loader = re.search(r"async function loadFirestoreModule\(\) \{(?P<body>.*?)\n\}", cloud, re.S)
+    if not core_loader or 'firebase-firestore.js' in core_loader.group('body'):
+        fail(errors, 'Firebase core startup still eagerly imports Firestore')
+    if not firestore_loader or 'firebase-firestore.js' not in firestore_loader.group('body'):
+        fail(errors, 'Firestore no longer has a dedicated lazy module owner')
+    setup_firebase = re.search(r"async function setupFirebase\(\) \{(?P<body>.*?)\n\}\n\nfunction getDocRef", cloud, re.S)
+    if setup_firebase and 'db = getFirestore(app)' in setup_firebase.group('body'):
+        fail(errors, 'Firebase auth startup still eagerly initializes Firestore')
     if "version: BACKUP_FORMAT_VERSION" not in cloud or "CLOUD_SNAPSHOT_VERSION" not in cloud:
         fail(errors, "cloud backup/snapshot envelopes do not use central release format metadata")
 
@@ -502,7 +536,6 @@ def main() -> int:
         fail(errors, "trainer controls do not limit pageshow reinstall to BFCache restoration")
 
     obsolete_owners = [
-        ROOT / "assets/pages/mode-atlas-home-page.js",
         ROOT / "assets/app/mode-atlas-confusable-mode.js",
         ROOT / "assets/ui/mode-atlas-verified-preset-confusable.js",
         ROOT / "assets/results/mode-atlas-results-insights.js",
@@ -636,6 +669,17 @@ def main() -> int:
     if 'ma-drawer ma-shared-profile-drawer' not in profile_menu or 'ma-drawer ma-shared-settings-drawer' not in settings_menu:
         fail(errors, 'Profile/Settings do not consume the shared drawer shell')
 
+    home_page = text(ROOT / 'assets/pages/mode-atlas-home-page.js')
+    if not home_page or 'homeContinueAction' not in home_page:
+        fail(errors, 'Atlas returning-user UI is missing its page controller')
+    if any(marker in home_page for marker in ('ModeAtlasProfile', 'KanaCloudSync', 'profileDrawer', 'settingsDrawer')):
+        fail(errors, 'Atlas page controller takes over shared Profile/Settings/cloud ownership')
+    if 'Branches' in profile_menu or 'data-ma-nav-item' in profile_menu:
+        fail(errors, 'Profile drawer duplicates shared navigation')
+    settings_hierarchy_markers = ('ma-setting-row', 'ma-settings-disclosure', 'ma-settings-data-list', 'ma-save-section', 'ma-tools-panel')
+    if any(marker not in settings_menu for marker in settings_hierarchy_markers):
+        fail(errors, 'Settings drawer is missing the standard preference/data hierarchy')
+
     wordbank_html = text(ROOT / 'wordbank/index.html')
     wordbank_css = text(ROOT / 'assets/css/mode-atlas-wordbank-page.css')
     if 'class="ma-input" id="kanaInput"' not in wordbank_html or 'class="ma-select" id="sortSelect"' not in wordbank_html:
@@ -726,6 +770,49 @@ def main() -> int:
                    '--ma-page-bg-atlas:', '--ma-page-bg-kana:', '--ma-page-bg-results:', '--ma-page-bg-words:'):
         if marker not in theme_css:
             fail(errors, f'theme stylesheet missing canonical UI foundation token: {marker}')
+
+    icon_sprite = text(ROOT / 'assets/mode-atlas-icons.svg')
+    for marker in ('icon-settings', 'icon-user', 'icon-focus', 'icon-search', 'icon-star', 'icon-edit', 'icon-delete', 'icon-chart'):
+        if f'id="{marker}"' not in icon_sprite:
+            fail(errors, f'shared icon sprite missing: {marker}')
+    for marker in ('.ma-page-intro{', '.ma-setting-row{', '.ma-status-chip{', '.ma-progress{', '.ma-skeleton-block,', '.ma-trend{'):
+        if marker not in components:
+            fail(errors, f'shared visual vocabulary missing: {marker}')
+
+    atlas_markup = text(ROOT / 'index.html')
+    if 'id="homeContinueCard"' not in atlas_markup or 'Reading Comprehension' not in atlas_markup:
+        fail(errors, 'Atlas returning-user hierarchy or future branch naming drifted')
+    kana_markup = text(ROOT / 'kana/index.html')
+    if 'id="kanaContinueAction"' not in kana_markup or 'ma-skeleton-block' not in kana_markup:
+        fail(errors, 'Kana hub recommendation/loading hierarchy drifted')
+    trainer_ui_markup = text(ROOT / 'reading/index.html') + text(ROOT / 'writing/index.html')
+    for marker in ('Practice setup ▼', 'id="sessionProgressBar"', 'Focus mode', 'Exit focus mode'):
+        if marker not in trainer_ui_markup:
+            fail(errors, f'trainer standardisation marker missing: {marker}')
+    for marker in ('>Hide nav<', '>Show navigation<', '>Modifiers ▼<'):
+        if marker in trainer_ui_markup:
+            fail(errors, f'legacy trainer UI wording returned: {marker}')
+    results_markup = text(ROOT / 'results/index.html')
+    results_page_js = text(ROOT / 'assets/pages/mode-atlas-test-page.js')
+    if 'id="resultsGuidanceCard"' not in results_markup or 'id="resultsTrend"' not in results_markup:
+        fail(errors, 'Results actionable guidance/trend UI is missing')
+    if 'function renderGuidance(' not in results_page_js or 'function renderTrend(' not in results_page_js:
+        fail(errors, 'Results page no longer renders actionable guidance/trend data')
+    wordbank_markup = text(ROOT / 'wordbank/index.html')
+    library_pos = wordbank_markup.find('class=\"wordbank-library ma-page-section\"')
+    add_pos = wordbank_markup.find('id=\"wordBankAddPanel\"')
+    if (
+        library_pos < 0 or add_pos <= library_pos
+        or 'id=\"wordBankAddJumpBtn\"' not in wordbank_markup
+        or 'id=\"wordBankActionsBtn\"' not in wordbank_markup
+        or 'id=\"wordBankActionsPanel\"' not in wordbank_markup
+        or 'id=\"wordBankResultsMeta\"' not in wordbank_markup
+        or '<details class=\"wordbank-tools\">' in wordbank_markup
+        or 'library-panel ma-card' in wordbank_markup
+        or 'id=\"exportBtn\"' in wordbank_markup
+        or 'id=\"importFile\"' in wordbank_markup
+    ):
+        fail(errors, 'Word Bank library-first hierarchy or collection settings ownership drifted')
 
     framed_pages = {
         ROOT / 'index.html': 'ma-atlas-page',

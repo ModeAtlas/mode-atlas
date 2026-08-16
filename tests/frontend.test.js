@@ -118,8 +118,10 @@ test('Profile and Settings drawers consume shared component primitives without m
   assert.match(profile, /ma-button/);
   assert.match(settings, /ma-button/);
   assert.match(settings, /ma-status\s+ma-settings-status/);
-  assert.equal(fs.existsSync(path.join(ROOT, 'assets/pages/mode-atlas-home-page.js')), false, 'Atlas must not keep a second profile/cloud binding owner');
-  assert.doesNotMatch(read('index.html'), /mode-atlas-home-page\.assets-[^\"']+\.js/);
+  const home = read('assets/pages/mode-atlas-home-page.js');
+  assert.equal(fs.existsSync(path.join(ROOT, 'assets/pages/mode-atlas-home-page.js')), true, 'Atlas returning-user UI should have one page controller');
+  assert.match(read('index.html'), /mode-atlas-home-page\.assets-[^\"']+\.js/);
+  assert.doesNotMatch(home, /ModeAtlasProfile|KanaCloudSync|profileDrawer|settingsDrawer/, 'Atlas page controller must not duplicate profile, settings, or cloud ownership');
 });
 
 class ElementMock {
@@ -215,8 +217,9 @@ test('shared shell regression guards keep nav spacing, sound controls, and train
   assert.match(resultsCss, /padding:\s*0 22px 22px;/, 'Results top frame padding must not stack above shared nav');
   assert.match(studyCss, /body\.ma-reading-page,[\s\S]*?body\.ma-writing-page\{[\s\S]*?padding:0 24px 24px;/,
     'Reading/Writing top frame padding must be owned by the shared trainer stylesheet');
-  assert.match(wordbankCss, /\.wrap\s*\{[\s\S]*?margin:\s*0 auto 56px;/, 'Word Bank wrapper must not add top spacing above shared nav');
-  assert.doesNotMatch(wordbankCss, /\.wrap\s*\{[^}]*margin-top\s*:/, 'Word Bank responsive wrappers must not reintroduce top spacing');
+  assert.match(read('wordbank/index.html'), /class="wrap ma-page-frame"/, 'Word Bank must use the shared page frame');
+  assert.match(wordbankCss, /\.ma-wordbank-page \.wrap\s*\{[\s\S]*?margin-bottom:\s*56px;/, 'Word Bank wrapper may own bottom rhythm only');
+  assert.doesNotMatch(wordbankCss, /\.ma-wordbank-page \.wrap\s*\{[^}]*margin-top\s*:/, 'Word Bank wrapper must not reintroduce top spacing');
 
   assert.match(navCss, /\.ma-nav-handle\s*\{[\s\S]*?top:auto;[\s\S]*?bottom:max\(18px,calc\(env\(safe-area-inset-bottom,0px\) \+ 8px\)\);[\s\S]*?z-index:10020;/,
     'Show navigation handle must stay bottom-accessible on phones and above the modifiers layer');
@@ -507,6 +510,7 @@ function runWordBankAddHarness({ saveSucceeds = true } = {}) {
   const document = {
     getElementById(id) { return elements[id] || null; },
     createElement(tag) { return new WordBankElementMock(tag); },
+    createElementNS(_namespace, tag) { return new WordBankElementMock(tag); },
     createDocumentFragment() { return new WordBankElementMock('fragment'); },
     querySelector() { return null; },
     querySelectorAll() { return []; },
@@ -576,7 +580,7 @@ test('shared drawer, card, and form primitives replace page-local surface owners
   const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
 
   for (const marker of ['.ma-card{', '.ma-field{', '.ma-input,.ma-select,.ma-textarea{', '.ma-check{']) {
-    assert.match(components, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `missing shared primitive ${marker}`);
+    assert.ok(components.includes(marker), `missing 2.31 shared primitive ${marker}`);
   }
   assert.match(profile, /class="ma-drawer ma-shared-profile-drawer"/);
   assert.match(settings, /class="ma-drawer ma-shared-settings-drawer"/);
@@ -586,12 +590,14 @@ test('shared drawer, card, and form primitives replace page-local surface owners
 
   assert.match(wordbankHtml, /class="ma-input" id="kanaInput"/);
   assert.match(wordbankHtml, /class="ma-select" id="sortSelect"/);
-  assert.match(wordbankHtml, /class="stat ma-stat ma-card ma-card--soft"/);
-  assert.match(wordbankHtml, /class="panel ma-card"/);
+  assert.match(wordbankHtml, /class="wordbank-overview"/);
+  assert.match(wordbankHtml, /class="wordbank-library ma-page-section"/);
+  assert.doesNotMatch(wordbankHtml, /library-panel ma-card|class="stat ma-stat ma-card/);
   assert.match(wordbankJs, /field-small ma-field/);
   assert.match(wordbankJs, /input\.className = "ma-input"/);
   assert.match(wordbankJs, /notes\.className = "ma-textarea"/);
-  assert.match(wordbankJs, /card ma-card ma-card--soft/);
+  assert.match(wordbankJs, /createEl\("details", "wordbank-entry"\)/);
+  assert.doesNotMatch(wordbankJs, /card ma-card ma-card--soft/);
   assert.doesNotMatch(wordbankCss, /input\[type="text"\]\s*,\s*textarea\s*,\s*select/);
   assert.doesNotMatch(wordbankCss, /\.field-small label\s*\{/);
 });
@@ -798,17 +804,21 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
 
   for (const marker of ['.ma-section-head{', '.ma-action-row{', '.ma-kicker{', '.ma-stat-grid{', '.ma-stat{', '.ma-empty-state{']) {
-    assert.match(components, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `missing shared page primitive ${marker}`);
+    assert.ok(components.includes(marker), `missing 2.31 shared primitive ${marker}`);
   }
   assert.match(components, /min-height:var\(--ma-button-min-height,var\(--ma-control-height\)\)/);
   assert.match(components, /border-radius:var\(--ma-button-radius,var\(--ma-radius-control\)\)/);
 
-  assert.match(kanaHtml, /kana-hub-hero glass ma-card/);
+  assert.match(kanaHtml, /kana-hub-hero ma-page-hero/);
+  assert.doesNotMatch(kanaHtml, /kana-hub-hero[^\n]*ma-card/,
+    'Kana hero should remain an open orientation section rather than a shared card surface');
   assert.match(kanaHtml, /kana-hero-actions ma-action-row/);
   assert.match(kanaHtml, /kana-head-actions ma-action-row/);
-  assert.match(kanaJs, /kana-next-card primary ma-card ma-card--flat ma-card--interactive/);
-  assert.match(kanaJs, /kana-stage-card ma-card ma-card--flat ma-card--interactive/);
-  assert.match(kanaJs, /kana-record-card ma-card ma-card--flat/);
+  assert.match(kanaJs, /kana-next-card kana-next-card--recommended primary/);
+  assert.match(kanaJs, /kana-stage-card/);
+  assert.match(kanaJs, /kana-record-card/);
+  assert.doesNotMatch(kanaJs, /kana-next-card[^'"]*ma-card|kana-stage-card[^'"]*ma-card|kana-record-card[^'"]*ma-card/,
+    'Kana progress presentation should not recreate the retired nested card wall');
   const kanaActionBlock = kanaCss.match(/\.kana-primary-action,[\s\S]*?\.kana-inline-btn \{([\s\S]*?)\n\}/)?.[1] || '';
   assert.doesNotMatch(kanaActionBlock, /appearance:\s*none/,
     'Kana action family should let ma-button own native button reset mechanics');
@@ -825,15 +835,72 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   assert.doesNotMatch(resultsCss, /\.summary-row\s*\{/,
     'dead Results summary-row surface owner should remain removed');
 
-  assert.match(wordbankHtml, /stats ma-stat-grid/);
-  assert.match(wordbankHtml, /pill ma-pill/);
-  assert.match(wordbankJs, /empty ma-card ma-empty-state/);
-  const wordbankStatBlock = wordbankCss.match(/\.stats?\s*\{([\s\S]*?)\n\}/)?.[1] || '';
-  assert.doesNotMatch(wordbankStatBlock, /(^|\n)\s*border\s*:/,
-    'Word Bank stats should not re-own shared stat card mechanics');
+  assert.match(wordbankHtml, /class="wordbank-overview"/);
+  assert.match(wordbankHtml, /class="wordbank-intro ma-page-hero"/);
+  assert.doesNotMatch(wordbankHtml, /wordbank-intro[^\n]*ma-card|class="stat ma-stat ma-card/,
+    'Word Bank overview should remain an open collection surface rather than nested cards');
+  assert.match(wordbankHtml, /ma-toolbar-shared ma-toolbar-shared--sticky/);
+  assert.match(wordbankHtml, /id="wordBankActionsBtn"/);
+  assert.doesNotMatch(wordbankHtml, /<details class="wordbank-tools">/);
+  assert.match(wordbankJs, /empty ma-empty-state/);
+  assert.match(wordbankJs, /createEl\("details", "wordbank-entry"\)/);
   const wordbankEmptyBlock = wordbankCss.match(/\.empty\s*\{([\s\S]*?)\n\}/)?.[1] || '';
   assert.doesNotMatch(wordbankEmptyBlock, /(^|\n)\s*border\s*:/,
     'Word Bank empty state should configure variables instead of re-owning its border');
+  assert.match(wordbankEmptyBlock, /--ma-empty-border:transparent/);
+});
+
+test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and collection contracts', () => {
+  const icons = read('assets/mode-atlas-icons.svg');
+  const components = read('assets/css/mode-atlas-components.css');
+  const profile = read('assets/ui/mode-atlas-profile-menu.js');
+  const settings = read('assets/ui/mode-atlas-settings-menu.js');
+  const atlas = read('index.html');
+  const kana = read('kana/index.html');
+  const reading = read('reading/index.html');
+  const writing = read('writing/index.html');
+  const results = read('results/index.html');
+  const resultsJs = read('assets/pages/mode-atlas-test-page.js');
+  const wordbank = read('wordbank/index.html');
+  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
+
+  for (const id of ['icon-settings','icon-user','icon-focus','icon-search','icon-star','icon-edit','icon-delete','icon-chart']) {
+    assert.match(icons, new RegExp(`id="${id}"`), `missing shared icon ${id}`);
+  }
+  for (const marker of ['.ma-page-intro{','.ma-setting-row{','.ma-status-chip{','.ma-progress{','.ma-skeleton-block,','.ma-trend{']) {
+    assert.ok(components.includes(marker), `missing 2.31 shared primitive ${marker}`);
+  }
+
+  assert.doesNotMatch(profile, /Branches|data-ma-nav-item|\/reading\/|\/writing\//, 'Profile must not duplicate navigation');
+  assert.match(settings, /Preferences/);
+  assert.match(settings, /Data and app/);
+  assert.match(settings, /ma-setting-row/);
+
+  assert.match(atlas, /id="homeContinueCard"/);
+  assert.match(atlas, /Reading Comprehension/);
+  assert.match(kana, /id="kanaContinueAction"/);
+  assert.match(kana, /ma-skeleton-block/);
+
+  for (const trainer of [reading, writing]) {
+    assert.match(trainer, /Practice setup ▼/);
+    assert.match(trainer, /id="sessionProgressBar"/);
+    assert.match(trainer, />Focus mode<|Focus mode<\/span>/);
+    assert.match(trainer, /Exit focus mode/);
+    assert.doesNotMatch(trainer, />Hide nav<|>Show navigation<|>Modifiers ▼</);
+  }
+
+  assert.match(results, /id="resultsGuidanceCard"/);
+  assert.match(results, /id="resultsTrend"/);
+  assert.match(resultsJs, /function renderGuidance\(/);
+  assert.match(resultsJs, /function renderTrend\(/);
+
+  const libraryIndex = wordbank.indexOf('class="wordbank-library ma-page-section"');
+  const addIndex = wordbank.indexOf('id="wordBankAddPanel"');
+  assert.ok(libraryIndex >= 0 && addIndex > libraryIndex, 'Word Bank collection must precede quick capture in document order');
+  assert.match(wordbank, /id="wordBankAddJumpBtn"/);
+  assert.match(wordbank, /id="wordBankActionsBtn"/);
+  assert.doesNotMatch(wordbank, /<details class="wordbank-tools">/);
+  assert.match(wordbankJs, /createIcon\(entry\.favorite \? "star-filled" : "star"\)/);
 });
 
 test('UI foundation keeps global geometry, responsive layout, themes, and page frames under shared ownership', () => {
@@ -880,7 +947,7 @@ test('UI foundation keeps global geometry, responsive layout, themes, and page f
     assert.match(html, /class="[^"]*\bma-page-frame\b/, `${rel} standard page frame`);
   }
 
-  assert.match(homeCss, /font-family:\s*var\(--ma-font-ui\)/);
+  assert.match(theme, /--ma-font-ui:/);
   assert.match(resultsCss, /font-family:\s*var\(--ma-font-ui\)/);
   assert.doesNotMatch(homeCss + resultsCss, /font-family:\s*(?:Arial|Helvetica)/i,
     'page styles must not override the shared UI font stack');
@@ -921,3 +988,731 @@ test('full-project audit cleanup keeps one owner for dev visit tools, drawers, s
   assert.doesNotMatch(audit, /sys\.exit\(main\(\)\)[\s\S]*?legacy_home_profile/);
 });
 
+
+
+test('2.31.2 refinement keeps Word Bank library-first and shared responsive controls owned correctly', () => {
+  const components = read('assets/css/mode-atlas-components.css');
+  const profileCss = read('assets/css/mode-atlas-profile-settings.css');
+  const wordbankHtml = read('wordbank/index.html');
+  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
+  const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
+  const sessionControls = read('assets/trainer/mode-atlas-session-controls.js');
+  const studyCss = read('assets/css/mode-atlas-study-shared.css');
+  assert.match(components, /\.ma-icon-button\{[\s\S]*appearance:none/);
+  assert.match(components, /data-effective-display-mode="tablet"[^\n]*\.ma-setting-row/);
+  assert.doesNotMatch(profileCss, /\.ma-setting-row\{grid-template-columns:1fr/);
+  assert.match(wordbankHtml, /class="wordbank-add-host"/);
+  assert.doesNotMatch(wordbankHtml, /class="panel add-panel/);
+  assert.match(wordbankJs, /ModeAtlasDialog\?\.feature/);
+  assert.match(wordbankJs, /ModeAtlasDialog\?\.close/);
+  assert.doesNotMatch(wordbankHtml, /class="panel add-panel/);
+  assert.match(sessionControls, /setPauseButtonState/);
+  assert.match(sessionControls, /icon-\$\{isPaused \? 'play' : 'pause'\}/);
+  assert.doesNotMatch(studyCss, /inset:auto 18px 18px/);
+});
+
+
+test('2.31.3 simplification keeps Settings concise and one backup owner for Word Bank', () => {
+  const settings = read('assets/ui/mode-atlas-settings-menu.js');
+  const wordbankHtml = read('wordbank/index.html');
+  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
+  const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
+  assert.doesNotMatch(settings, /Let Mode Atlas adapt automatically|Choose feedback volume|Use the dark or light Atlas palette/);
+  assert.match(wordbankHtml, /id="wordBankActionsBtn"/);
+  assert.match(wordbankHtml, /id="wordBankActionsPanel"/);
+  assert.doesNotMatch(wordbankHtml, /id="exportBtn"|id="importFile"|Collection tools/);
+  assert.doesNotMatch(wordbankJs, /function exportBank|function importBank|elements\.exportBtn|elements\.importFile/);
+  assert.match(wordbankJs, /openCollectionActionsDialog/);
+  assert.doesNotMatch(wordbankCss, /wordbank-tools/);
+});
+
+
+test('2.31.4 profile and settings polish keeps auth and drawer layout state-owned', () => {
+  const profile = read('assets/ui/mode-atlas-profile-menu.js');
+  const bindings = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const cloud = read('cloud-sync.js');
+  const css = read('assets/css/mode-atlas-profile-settings.css');
+  assert.match(profile, /id="profileAuthBtn"/);
+  assert.doesNotMatch(profile, /profileSignInBtn|profileSignOutBtn/);
+  assert.match(bindings, /authBtn: document\.getElementById\('profileAuthBtn'\)/);
+  assert.match(cloud, /boundAuthButtons/);
+  assert.match(cloud, /currentUser\) void signOutUser\(\)/);
+  assert.match(css, /--ma-setting-row-columns:minmax\(96px,120px\) minmax\(0,1fr\)/);
+  assert.match(css, /\.ma-settings-status:empty\{display:none;\}/);
+});
+
+
+test('2.32 CSS consolidation keeps Settings and Profile ownership canonical', () => {
+  const components = read('assets/css/mode-atlas-components.css');
+  const profile = read('assets/css/mode-atlas-profile-settings.css');
+  const trainer = read('assets/css/mode-atlas-study-shared.css');
+  const modifiers = read('assets/css/mode-atlas-modifier-menu.css');
+  assert.match(components, /grid-template-columns:var\(--ma-setting-row-columns,/);
+  assert.match(components, /justify-self:var\(--ma-setting-control-justify,end\)/);
+  assert.match(profile, /--ma-setting-row-columns:minmax\(96px,120px\) minmax\(0,1fr\)/);
+  assert.doesNotMatch(profile, /data-profile-sign-in|data-profile-sign-out/);
+  assert.doesNotMatch(profile, /\.ma-shared-settings-drawer \.ma-settings-section \.ma-setting-row\{grid-template-columns:/);
+  assert.match(modifiers, /bottom-shell\.ma-modifiers-only/);
+  assert.ok(!trainer.includes('max-height:min(72vh,720px)'), 'modifier drawer max-height must remain owned by modifier-menu.css');
+});
+
+
+
+test('2.33 experience restructure keeps Atlas clean and onboarding destination-aware', () => {
+  const home = read('index.html');
+  const homeJs = read('assets/pages/mode-atlas-home-page.js');
+  const visit = read('assets/app/mode-atlas-visit-flows.js');
+  const kana = read('kana/index.html');
+  assert.match(home, /data-ma-home-visitor/);
+  assert.match(home, /data-ma-home-user/);
+  assert.match(home, /Start with Kana Trainer/);
+  assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Study status/);
+  assert.match(homeJs, /dataset\.maHomeState=isUser\?'returning':'visitor'/);
+  assert.doesNotMatch(homeJs, /dailyDone\(|homeVisitStreak|homeReadingDaily|homeWritingDaily/);
+  assert.match(visit, /BRANCH_PATHS=new Set/);
+  assert.match(visit, /waitForInitialHydration/);
+  assert.match(visit, /storeSet\(K\.pending,target\)/);
+  assert.match(visit, /const next=branchDestination\(storeGet\(K\.pending\)\)\|\|target/);
+  assert.match(visit, /storeRemove\(K\.pending\)/);
+  assert.match(visit, /navigateApp\(next\)/);
+  assert.doesNotMatch(visit, /if\(nd&&storeGet\(K\.first\)!=='true'\)/);
+  assert.ok(kana.indexOf('kana-pathways') < kana.indexOf('kana-progress-intro'));
+  assert.ok(kana.indexOf('kana-progress-intro') < kana.indexOf('id="kanaTodayCard"'));
+});
+
+test('2.33.1 onboarding separates Mode Atlas consent from Kana branch setup', () => {
+  const visit = read('assets/app/mode-atlas-visit-flows.js');
+  const pwa = read('assets/app/mode-atlas-pwa.js');
+  const modalCss = read('assets/css/mode-atlas-app-modals.css');
+  const wordbank = read('wordbank/index.html');
+  assert.match(visit, /kanaSetup:'modeAtlasKanaSetupComplete'/);
+  assert.match(visit, /KANA_SETUP_PATHS=new Set\(\['\/kana\/','\/reading\/','\/writing\/'\]\)/);
+  assert.match(visit, /const requireLegal=force\|\|!onboardingComplete\(\)/);
+  assert.match(visit, /const requireKana=requiresKanaSetup\(target\)&&\(force\|\|!kanaSetupComplete\(\)\)/);
+  assert.match(visit, /if\(requireKana\)\{[\s\S]*ModeAtlasPresets\?\.apply/);
+  assert.match(visit, /if\(requireLegal\)markLegalComplete\(\)/);
+  assert.doesNotMatch(wordbank, /mode-atlas-presets\.assets-/);
+  assert.match(pwa, /ma:visit-flow-opened/);
+  assert.match(pwa, /ma:visit-flow-closed/);
+  assert.match(modalCss, /\.ma-status\.ma-visit-error\{display:none/);
+});
+
+test('2.33.2 Kana setup is destination-owned and persisted as app state', () => {
+  const visit = read('assets/app/mode-atlas-visit-flows.js');
+  const storage = read('assets/app/mode-atlas-storage.js');
+  const wordbank = read('wordbank/index.html');
+  const kana = read('kana/index.html');
+  assert.match(visit, /legacyKanaSetupAtLoad=storeGet\(K\.first\)==='true'&&/);
+  assert.match(visit, /const kanaSetupComplete=\(\)=>storeGet\(K\.kanaSetup\)==='true'/);
+  assert.match(visit, /if\(!target\|\|onboardingComplete\(\)\|\|requiresKanaSetup\(target\)\)return/);
+  assert.match(visit, /if\(needsSetup\(current\)\)\{visitDecisionMade=true;return first\(current\);\}/);
+  assert.match(storage, /'modeAtlasKanaSetupComplete'/);
+  assert.match(storage, /'modeAtlasPendingDestination'/);
+  assert.doesNotMatch(wordbank, /mode-atlas-presets\.assets-/);
+  assert.match(kana, new RegExp(`mode-atlas-presets\\.${REVISION.replaceAll('.', '\\.')}\\.js`));
+});
+
+test('2.34 product navigation separates Mode Atlas destinations from Kana sections', () => {
+  const frontend = read('frontend_components.py');
+  const navCss = read('assets/css/mode-atlas-navigation.css');
+  const productPages = ['index.html', 'wordbank/index.html'];
+  const kanaPages = ['kana/index.html', 'reading/index.html', 'writing/index.html', 'results/index.html'];
+
+  assert.match(frontend, /PRIMARY_LINKS = \([\s\S]*?'Atlas'[\s\S]*?'Kana Trainer'[\s\S]*?'Word Bank'[\s\S]*?\)/);
+  assert.doesNotMatch(frontend.match(/PRIMARY_LINKS = \([\s\S]*?\)\n/)[0], /'Reading'|'Writing'|'Results'/);
+  assert.match(frontend, /KANA_LINKS = \([\s\S]*?'Overview'[\s\S]*?'Reading'[\s\S]*?'Writing'[\s\S]*?'Test Results'/);
+  assert.match(navCss, /\.ma-nav__flyout\{/);
+  assert.match(navCss, /\.ma-nav__section-link\.is-active\{/);
+  assert.doesNotMatch(navCss, /\.ma-nav__subnav\{/);
+
+  for (const rel of [...productPages, ...kanaPages]) {
+    const html = read(rel);
+    assert.equal(count(html, /data-ma-nav-scope="product"/g), 3, `${rel} product navigation count`);
+    assert.equal(count(html, /data-ma-nav-scope="kana"/g), 4, `${rel} Kana destination count`);
+    assert.equal(count(html, /data-ma-kana-nav(?:\s|>)/g), 1, `${rel} one Kana flyout owner`);
+    assert.equal(count(html, /data-ma-kana-menu-trigger/g), 1, `${rel} one Kana flyout trigger`);
+    assert.equal(count(html, /aria-current="page"/g), 1, `${rel} one current page`);
+  }
+  for (const rel of kanaPages) {
+    const html = read(rel);
+    assert.match(html, /class="[^"]*ma-nav__menu-trigger[^"]*is-active[^"]*"[^>]*data-ma-nav-item="kana"/, `${rel} Kana Trainer product active`);
+  }
+});
+
+test('2.34.1 Kana navigation flyout stays out of header flow and supports pointer, touch, and keyboard dismissal', () => {
+  const navCss = read('assets/css/mode-atlas-navigation.css');
+  const navRuntime = read('assets/ui/mode-atlas-navigation-menu.js');
+  assert.match(navCss, /\.ma-nav__flyout\{[\s\S]*?position:absolute;/);
+  assert.match(navCss, /\.ma-nav__menu:hover \.ma-nav__flyout/);
+  assert.doesNotMatch(navCss, /ma-nav--has-subnav/);
+  assert.match(navRuntime, /data-ma-kana-menu-trigger/);
+  assert.match(navRuntime, /aria-expanded/);
+  assert.match(navRuntime, /\(hover:hover\) and \(pointer:fine\)/);
+  assert.match(navRuntime, /pointerdown/);
+  assert.match(navRuntime, /event\.key !== 'Escape'/);
+  for (const rel of APP_PAGES) {
+    const html = read(rel);
+    assert.match(html, new RegExp(`mode-atlas-navigation-menu\\.${REVISION.replaceAll('.', '\\.')}\\.js`), `${rel} shared Kana menu runtime`);
+  }
+});
+
+test('2.34.2 Kana flyout keeps fast desktop navigation and deliberate touch access', () => {
+  const frontend = read('frontend_components.py');
+  const navJs = read('assets/ui/mode-atlas-navigation-menu.js');
+  const navCss = read('assets/css/mode-atlas-navigation.css');
+  assert.match(frontend, /f'<a class="\{classes\}" href="\/kana\/" data-ma-nav-scope="product"/);
+  assert.doesNotMatch(frontend, /f'<button class="\{classes\}" type="button" data-ma-nav-scope="product"/);
+  assert.match(navJs, /var finePointer = !!\(hoverQuery && hoverQuery\.matches\)/);
+  assert.match(navJs, /if \(finePointer\) return/);
+  assert.match(navJs, /if \(!isOpen\(\)\) \{\s*event\.preventDefault\(\);\s*setOpen\(true\);/);
+  assert.doesNotMatch(navJs, /setOpen\(!isOpen\(\)\)/);
+  assert.match(navCss, /\.ma-nav__section-link\{[\s\S]*?justify-content:center;[\s\S]*?text-align:center;/);
+});
+
+test('2.35 Atlas homepage stays editorial, product-led, and free of learner stats', () => {
+  const home = read('index.html');
+  const css = read('assets/css/mode-atlas-home-page.css');
+  assert.match(home, /Build Japanese skills that stick\./);
+  assert.match(home, /class="atlas-showcase"/);
+  assert.match(home, /class="atlas-product atlas-product--kana"/);
+  assert.match(home, /class="atlas-product atlas-product--words"/);
+  assert.match(home, /id="homeContinueCard"/);
+  assert.match(home, /data-ma-home-visitor/);
+  assert.match(home, /data-ma-home-user/);
+  assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Accuracy|Mastered|Daily Challenge|Study status/);
+  assert.doesNotMatch(home, /class="constellation"|class="branch-grid"|class="branch kana"|class="branch words"/);
+  assert.match(css, /\.atlas-hero__stage\{/);
+  assert.match(css, /\.atlas-preview--reading\{/);
+  assert.match(css, /\.atlas-product\{/);
+  assert.doesNotMatch(css, /\.constellation\{|\.branch-grid\{|\.branch\.kana/);
+});
+
+
+test('2.36 Kana hub keeps orientation calm and moves detailed progress below practice navigation', () => {
+  const kana = read('kana/index.html');
+  const kanaJs = read('assets/pages/mode-atlas-kana-page.js');
+  const kanaCss = read('assets/css/mode-atlas-kana-page.css');
+  const heroEnd = kana.indexOf('</section>', kana.indexOf('class="kana-hub-hero'));
+  const hero = kana.slice(kana.indexOf('class="kana-hub-hero'), heroEnd);
+
+  assert.match(kana, /class="kana-hub-hero ma-page-hero"/);
+  assert.doesNotMatch(kana, /kana-hub-hero[^\n]*ma-card/);
+  assert.match(kana, /class="kana-pathway-list"/);
+  assert.equal(count(kana, /class="kana-pathway kana-pathway--/g), 3);
+  assert.ok(kana.indexOf('kana-pathways') < kana.indexOf('kana-progress-intro'));
+  assert.match(kana, /class="kana-today-card kana-progress-overview"/);
+  assert.doesNotMatch(kana, /kana-(?:next|mastery|preset|records)-panel[^\n]*ma-card/);
+  assert.doesNotMatch(hero, /accuracy|mastered|streak|daily challenge|total answers/i);
+
+  assert.match(kanaJs, /const summary = kanaEl\('div','kana-progress-summary'\)/);
+  assert.match(kanaJs, /recommendedAction\(summaries, mastery\)/);
+  assert.match(kanaJs, /kana-next-card kana-next-card--recommended primary/);
+  assert.doesNotMatch(kanaJs, /kana-stage-card ma-card|kana-preset-card ma-card|kana-accuracy-card ma-card/);
+
+  assert.match(kanaCss, /\.kana-hub-hero\{[\s\S]*?border-bottom:1px solid var\(--ma-border\)/);
+  assert.match(kanaCss, /\.kana-pathway-list\{[\s\S]*?border-block:1px solid var\(--ma-border\)/);
+  assert.match(kanaCss, /\.kana-progress-overview\{[\s\S]*?grid-template-columns:/);
+  assert.match(kanaCss, /\.kana-mastery-grid\{[\s\S]*?border:1px solid var\(--ma-border\)/);
+  assert.match(kanaCss, /\.kana-preset-grid\{[\s\S]*?border:1px solid var\(--ma-border\)/);
+});
+
+test('2.36.1 Kana keeps first-use orientation but compacts established learner hierarchy', () => {
+  const kanaHtml = read('kana/index.html');
+  const kanaJs = read('assets/pages/mode-atlas-kana-page.js');
+  const kanaCss = read('assets/css/mode-atlas-kana-page.css');
+
+  assert.match(kanaHtml, /id="kanaHeroTitle">Make kana feel automatic\.<\/h1>/,
+    'zero-history learners should retain the full Kana introduction');
+  assert.match(kanaJs, /function hasKanaHistory\(summaries\)/);
+  assert.match(kanaJs, /attempts > 0 \|\| dailyHistory > 0 \|\| formalTestCount\(\) > 0/,
+    'returning state should derive from real saved Kana history rather than a second preference flag');
+  assert.match(kanaJs, /classList\.toggle\('ma-kana-returning', returning\)/);
+  assert.match(kanaJs, /heroTitle\.textContent = returning \? 'Your kana' : 'Make kana feel automatic\.'/);
+  assert.match(kanaJs, /Current focus: \$\{compactKanaList\(mastery\.weak, 4\)\}/,
+    'returning header should surface a learner-specific focus when weak kana exist');
+  assert.match(kanaJs, /progressTitle\.textContent = returning \? 'Progress overview'/);
+
+  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-hub-hero\{[\s\S]*?padding:30px 0 26px;/,
+    'returning Kana hero should be materially shorter than the first-use hero');
+  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-hero-visual\{display:none;\}/);
+  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-pathways-head\{display:none;\}/,
+    'repeat visitors should not repeatedly receive the practice-area explainer');
+  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-pathway>p\{display:none;\}/,
+    'returning practice shortcuts should be compact rather than explanatory cards');
+});
+
+test('2.37 Word Bank is collection-first, state-aware, and keeps editing progressive', () => {
+  const html = read('wordbank/index.html');
+  const js = read('assets/pages/mode-atlas-wordbank-page.js');
+  const css = read('assets/css/mode-atlas-wordbank-page.css');
+
+  assert.match(html, /class="wordbank-intro ma-page-hero"/);
+  assert.doesNotMatch(html, /class="hero ma-card ma-page-hero/);
+  assert.match(html, /class="wordbank-overview"/);
+  assert.match(html, /class="wordbank-library ma-page-section"/);
+  assert.doesNotMatch(html, /library-panel ma-card/);
+  assert.match(js, /function updateExperienceState/);
+  assert.match(js, /ma-wordbank-populated/);
+  assert.match(js, /No words match this view\./);
+  assert.match(js, /Start your Word Bank\./);
+  assert.match(js, /Clear search and filters/);
+  assert.match(js, /createEl\("details", "wordbank-entry"\)/);
+  assert.doesNotMatch(js, /createEl\("details", "card ma-card ma-card--soft"\)/);
+  assert.match(css, /\.wordbank-entry\{/);
+  assert.match(css, /\.ma-wordbank-page\.ma-wordbank-populated \.wordbank-intro/);
+});
+
+test('2.38 trainer sessions use one active-state owner and a focused shared stage', () => {
+  const frontend = read('frontend_components.py');
+  const shared = read('assets/trainer/mode-atlas-trainer-shared.js');
+  const css = read('assets/css/mode-atlas-study-shared.css');
+  const reading = read('reading/index.html');
+  const writing = read('writing/index.html');
+
+  for (const marker of ['ma-trainer-header', 'ma-trainer-stage', 'ma-trainer-session-controls']) {
+    assert.match(frontend, new RegExp(marker), `shared trainer shell missing ${marker}`);
+    assert.match(reading, new RegExp(marker), `Reading generated shell missing ${marker}`);
+    assert.match(writing, new RegExp(marker), `Writing generated shell missing ${marker}`);
+  }
+  assert.match(shared, /document\.body\.classList\.toggle\("trainer-session-active", !!visible\)/,
+    'shared UI visibility helper must own trainer active state');
+  assert.doesNotMatch(css, /:has\(#startWrap\[hidden\]\)/,
+    'trainer CSS must not infer session state from the Start wrapper');
+  assert.match(css, /body\.trainer-session-active \.ma-trainer-card/);
+  assert.match(css, /body\.trainer-session-active \.bottom-shell\.ma-modifiers-only/);
+  assert.match(css, /body\.trainer-session-active \.ma-trainer-side-panel/);
+  assert.match(css, /data-effective-display-mode="tablet"\]\.trainer-session-active \.ma-trainer-side-panel/);
+  assert.match(css, /body\.trainer-session-active\.ma-reading-page \.hiragana/);
+  assert.match(css, /body\.trainer-session-active\.ma-writing-page \.prompt/);
+});
+
+test('2.39 Reading and Writing share controller lifecycle while answer adapters stay mode-specific', () => {
+  const frontend = read('frontend_components.py');
+  const controller = read('assets/trainer/mode-atlas-trainer-controller.js');
+  const reading = read('assets/pages/mode-atlas-default-page.js');
+  const writing = read('assets/pages/mode-atlas-reverse-page.js');
+  const readingHtml = read('reading/index.html');
+  const writingHtml = read('writing/index.html');
+
+  assert.equal(count(frontend, /'assets\/trainer\/mode-atlas-trainer-controller\.js'/g), 2,
+    'shared trainer controller must be in both trainer manifests');
+  for (const html of [readingHtml, writingHtml]) {
+    const sharedIndex = html.indexOf(`mode-atlas-trainer-controller.${REVISION}.js`);
+    const pageIndex = Math.max(html.indexOf(`mode-atlas-default-page.${REVISION}.js`), html.indexOf(`mode-atlas-reverse-page.${REVISION}.js`));
+    assert.ok(sharedIndex >= 0 && pageIndex > sharedIndex, 'controller must load before the mode adapter');
+  }
+
+  for (const source of [reading, writing]) {
+    assert.match(source, /ModeAtlasTrainerController\.create\(/);
+    assert.doesNotMatch(source, /function debugEl\(|function debugLine\(|function debugValueLine\(|function debugRow\(|function debugCard\(/,
+      'debug element primitives must not remain duplicated in page adapters');
+    assert.doesNotMatch(source, /modeAtlasCloudDataChanged|trainerRefreshQueued/,
+      'page adapters must not own refresh scheduling/listeners');
+    assert.doesNotMatch(source, /accuracy \* 250|speedRunTop3\.sort|timeTrialTop3\.sort/,
+      'score ranking formulas must be controller-owned');
+  }
+
+  for (const marker of [
+    'modeAtlasCloudDataChanged', 'refreshCommonUi', 'updateBestScores', 'updateSrsCorrect',
+    'normalizeStoredTestModeResults', 'persistStoredTestModeResults', 'debugEl'
+  ]) assert.match(controller, new RegExp(marker), `shared controller missing ${marker}`);
+
+  assert.match(reading, /dailySeedPrefix: "daily"/);
+  assert.match(writing, /dailySeedPrefix: "reverse-daily"/);
+  assert.match(reading, /showOfficialWhenRecorded: false/);
+  assert.match(writing, /showOfficialWhenRecorded: true/);
+  assert.match(reading, /clearLastWrongOnCorrect: false/);
+  assert.match(writing, /clearLastWrongOnCorrect: true/);
+
+  assert.match(reading, /validRomajiSet/);
+  assert.match(reading, /expected\.startsWith\(compactValue\)/);
+  for (const writingOnly of ['buildChoiceOptionStrings', 'getRepeatSafePool', 'isRomajiKeyboardMode', 'getAcceptedAnswersForCurrentChar']) {
+    assert.match(writing, new RegExp(writingOnly), `Writing adapter must retain ${writingOnly}`);
+    assert.doesNotMatch(reading, new RegExp(writingOnly), `Reading adapter must not absorb ${writingOnly}`);
+  }
+});
+
+test('2.40 Results is a formal Test Mode report and preserves comprehensive assessment visuals', () => {
+  const html = read('results/index.html');
+  const page = read('assets/pages/mode-atlas-test-page.js');
+  const engine = read('assets/results/mode-atlas-results-engine.js');
+  const ui = read('assets/results/mode-atlas-results-ui.js');
+  const storage = read('assets/results/mode-atlas-results-storage.js');
+
+  assert.match(html, /Formal assessment/);
+  assert.match(html, /Test Mode only · practice sessions are not included/);
+  assert.match(html, /Assessment history/);
+  assert.match(html, /Kana-level analysis/);
+  assert.match(html, /Before your next test/);
+  assert.match(html, /id="testHeatmap"/);
+  assert.match(html, /id="rowPerformanceMount"/);
+  assert.match(ui, /row-doughnut-card/);
+  assert.match(ui, /document\.createElement\("canvas"\)/);
+  assert.match(page, /drawRowCharts\(result, activeRowGraphView\)/);
+  assert.match(page, /item\.mode === mode/);
+  assert.match(page, /Reading tests compare with Reading tests|most recent.*Test Mode assessments/);
+  assert.match(engine, /function isFormalTestResultRecord/);
+  assert.match(engine, /if \(!isFormalTestResultRecord\(item\)\) return/);
+  assert.match(storage, /testModeResults/);
+  assert.doesNotMatch(page, /readModeJSON\([^\n]*(?:scoreHistory|dailyHistory|charStats)/);
+  assert.doesNotMatch(page, /speedRunTop3|endlessBest|dailyChallengeHistory/);
+});
+
+
+test('2.41 Atlas Level uses one mergeable semantic progression owner and Profile is its consumer', () => {
+  const frontend = read('frontend_components.py');
+  const storage = read('assets/app/mode-atlas-storage.js');
+  const progress = read('assets/app/mode-atlas-progress.js');
+  const cloud = read('cloud-sync.js');
+  const profile = read('assets/ui/mode-atlas-profile-menu.js');
+  const bindings = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const reading = read('assets/pages/mode-atlas-default-page.js');
+  const writing = read('assets/pages/mode-atlas-reverse-page.js');
+  const trainerCore = read('assets/trainer/mode-atlas-trainer-core.js');
+  const home = read('index.html');
+
+  assert.match(frontend, /assets\/app\/mode-atlas-progress\.js/);
+  assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress.js'") < frontend.indexOf("'cloud-sync.js'"),
+    'progression must load before cloud/profile consumers');
+  assert.match(storage, /progress: 'modeAtlasProgress'/);
+  assert.match(storage, /progressUpdatedAt: 'modeAtlasProgressUpdatedAt'/);
+  assert.match(storage, /'modeAtlasProgressDeviceId'/);
+  const backupBlock = storage.split('const APP_BACKUP_EXACT', 2)[1]?.split('const APP_LOCAL_EXACT', 1)[0] || '';
+  assert.doesNotMatch(backupBlock, /modeAtlasProgressDeviceId/,
+    'device identity is local-only and must not be exported as account progress');
+
+  assert.match(progress, /const COUNTER_XP/);
+  assert.match(progress, /'kana\.reading\.correct': 1/);
+  assert.match(progress, /'kana\.writing\.correct': 1/);
+  assert.match(progress, /'kana\.reading\.dailyComplete': 5/);
+  assert.match(progress, /'kana\.writing\.testComplete': 10/);
+  assert.match(progress, /function mergeStates/);
+  assert.match(progress, /Math\.max\(finiteCount\(a\.sources/,
+    'per-device counters must merge monotonically rather than last-write-wins');
+  assert.match(progress, /function awardOnce/);
+  assert.match(progress, /legacy-baseline/);
+  assert.match(progress, /function getLifetimeCorrect/);
+
+  assert.match(cloud, /progress: \{\s*updatedAtKey:/);
+  assert.match(cloud, /name === 'progress'/);
+  assert.match(cloud, /ModeAtlasProgress\?\.mergeStates/);
+  assert.match(cloud, /progress: 'Atlas Level'/);
+
+  assert.match(reading, /ModeAtlasProgress\?\.award\?\.\('kana\.reading\.correct'/);
+  assert.match(writing, /ModeAtlasProgress\?\.award\?\.\('kana\.writing\.correct'/);
+  assert.match(reading, /awardOnce\?\.\('kana\.reading\.dailyComplete', dateKey\)/);
+  assert.match(writing, /awardOnce\?\.\('kana\.writing\.dailyComplete', dateKey\)/);
+  assert.match(trainerCore, /awardOnce\?\.\(`kana\.\$\{mode\}\.testComplete`, result\.id\)/);
+
+  assert.match(profile, /Atlas Level <span id="profileAtlasLevel">1<\/span>/);
+  assert.match(profile, /id="profileAtlasProgress"/);
+  assert.match(profile, /id="profileReadingCorrect"/);
+  assert.match(profile, /id="profileWritingCorrect"/);
+  assert.match(bindings, /ModeAtlasProgress\?\.getSummary/);
+  assert.match(bindings, /modeAtlasProgressChanged/);
+  assert.doesNotMatch(home, /profileAtlasLevel|Atlas Level \d|XP to Level/,
+    'Atlas homepage must remain free of account XP UI');
+});
+
+
+
+test('2.42 contextual install and progression feedback stay under shared owners', () => {
+  const frontend = read('frontend_components.py');
+  const storage = read('assets/app/mode-atlas-storage.js');
+  const progress = read('assets/app/mode-atlas-progress.js');
+  const progressUi = read('assets/app/mode-atlas-progress-ui.js');
+  const pwa = read('assets/app/mode-atlas-pwa.js');
+  const dev = read('assets/app/mode-atlas-dev-console.js');
+  const shared = read('assets/trainer/mode-atlas-trainer-shared.js');
+  const reading = read('assets/pages/mode-atlas-default-page.js');
+  const writing = read('assets/pages/mode-atlas-reverse-page.js');
+  const cloud = read('cloud-sync.js');
+
+  assert.match(frontend, /assets\/app\/mode-atlas-progress-ui\.js/);
+  assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress.js'") < frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'"));
+  assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'") < frontend.indexOf("'assets/app/mode-atlas-pwa.js'"));
+
+  assert.match(progress, /const STATE_VERSION = 2/);
+  assert.match(progress, /adjustments/);
+  assert.match(progress, /function debugAdjustXP/);
+  assert.match(progress, /source: 'dev\.xpAdjust'/);
+  assert.match(progress, /previousLevel/);
+  assert.match(cloud, /data\.state\?\.adjustments/);
+
+  assert.match(progressUi, /modeAtlasProgressChanged/);
+  assert.match(progressUi, /pendingLevelUp/);
+  assert.match(progressUi, /naturalBreak/);
+  assert.match(progressUi, /title: 'Level up'/);
+
+  assert.match(shared, /startXp/);
+  assert.match(shared, /function getTrainerSessionXpGain/);
+  assert.match(shared, /\["XP gained", `\+\$\{xpGain\} XP`\]/);
+  assert.match(shared, /settleTrainerProgressionBreak/);
+  for (const page of [reading, writing]) {
+    assert.match(page, /\["XP gained", `\+\$\{getTrainerSessionXpGain\(sessionStats\)\} XP`\]/);
+    assert.match(page, /gameOverAnswerEl\.textContent \+= ` · \+\$\{sessionXp\} XP`/);
+    assert.match(page, /formal-test-summary/);
+  }
+
+  assert.match(pwa, /AUTO_INSTALL_CORRECT_THRESHOLD = 100/);
+  assert.match(pwa, /ModeAtlasProgress\?\.getLifetimeCorrect/);
+  assert.match(pwa, /function naturalBreak/);
+  assert.match(pwa, /beforeinstallprompt/);
+  assert.match(pwa, /Share → Add to Home Screen/);
+  assert.doesNotMatch(pwa, /modeAtlasProgressChanged[\s\S]{0,180}showInstallPrompt/,
+    'crossing the milestone must not immediately interrupt an answer');
+
+  const backupBlock = storage.split('const APP_BACKUP_EXACT', 2)[1]?.split('const APP_LOCAL_EXACT', 1)[0] || '';
+  const localBlock = storage.split('const APP_LOCAL_EXACT', 2)[1]?.split('const APP_LOCAL_SET', 1)[0] || '';
+  assert.doesNotMatch(backupBlock, /modeAtlasInstallPromptSeen|modeAtlasInstallPromptDismissedAt/,
+    'automatic install prompt acknowledgement must stay device-local');
+  assert.match(localBlock, /modeAtlasInstallPromptSeen/);
+  assert.match(localBlock, /modeAtlasInstallPromptDismissedAt/);
+
+  assert.match(dev, /Progress \/ XP/);
+  assert.match(dev, /data-ma-dev-xp-amount/);
+  assert.match(dev, /debugAdjustXP/);
+  assert.doesNotMatch(dev, /setJSON\(['"]modeAtlasProgress|localStorage\.setItem\(['"]modeAtlasProgress/,
+    'developer XP controls must use the progression API rather than raw progression storage');
+});
+
+test('2.43 Achievements are category-owned and sequential milestones rank up in place', () => {
+  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
+  const css = read('assets/css/mode-atlas-achievements.css');
+
+  for (const category of ['Mode Atlas', 'Kana Trainer', 'Word Bank']) assert.match(achievements, new RegExp(`title:'${category.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}'`));
+  for (const future of ['Listening', 'Grammar', 'Reading Comprehension']) assert.match(achievements, new RegExp(`title:'${future}'`));
+
+  assert.match(achievements, /const ACHIEVEMENT_TRACKS/);
+  assert.match(achievements, /id:'speed-goal',name:'Speed Goal'/);
+  assert.match(achievements, /id:'word-collection',name:'Word Collection'/);
+  assert.match(achievements, /state\.complete\?'Max rank'/);
+  assert.match(achievements, /Achievement ranked up/);
+  assert.match(achievements, /dataset\.maAchRankNav/);
+  assert.match(achievements, /← Previous rank/);
+  assert.match(achievements, /Next rank →/);
+
+  for (const level of [5,10,20,50,100]) assert.match(achievements, new RegExp(`target:${level},key:'atlasLevel'`));
+  assert.match(achievements, /ModeAtlasProgress\?\.getSummary/);
+  assert.match(achievements, /modeAtlasProgressChanged/);
+
+  // Existing milestone IDs remain behind the ranked presentation, preventing false re-unlocks.
+  for (const id of ['general-0','general-4','kana-8','kana-10','wordbank-0','wordbank-4']) assert.match(achievements, new RegExp(`unlockId:'${id}'`));
+  assert.doesNotMatch(achievements, /const DEFINITIONS =/);
+
+  assert.match(css, /--ma-ach-rank/);
+  assert.match(css, /\.ma-ach-rank-history/);
+  assert.match(css, /\.ma-achievement-section--future/);
+});
+
+test('2.43.1 achievement tiles breathe and detail navigation has distinct destinations', () => {
+  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
+  const achievementCss = read('assets/css/mode-atlas-achievements.css');
+  const dialog = read('assets/app/mode-atlas-dialog.js');
+  const components = read('assets/css/mode-atlas-components.css');
+
+  assert.match(achievements, /const RANK_ACCENTS = Object\.freeze\(\['184,92,62','148,163,184','248,196,70'/);
+  assert.match(achievements, /const copy=achEl\('div','ma-ach-copy'\)/);
+  assert.match(achievementCss, /\.ma-achievement-tile\{[^}]*display:flex;flex-direction:column[^}]*min-height:190px/);
+  assert.match(achievementCss, /\.ma-ach-copy\{[^}]*margin-bottom:18px/);
+  assert.match(achievementCss, /\.ma-ach-meter\{[^}]*position:relative[^}]*margin-top:auto/);
+
+  assert.match(achievements, /backLabel:'← Back to achievements'/);
+  assert.match(achievements, /backLabel:'← Back to Mastery Map'/);
+  assert.doesNotMatch(achievements, /ma-ach-info-back','Back'/);
+  assert.match(achievements, /closeLabel:'×'/);
+  assert.match(achievements, /Close achievements/);
+  assert.match(dialog, /close\.classList\.toggle\('ma-dialog__close--icon', opts\.closeIcon\)/);
+  assert.match(components, /\.ma-dialog__close--icon/);
+});
+
+test('2.44 app-wide UX vocabulary keeps product destinations and actions semantically consistent', () => {
+  const frontend = read('frontend_components.py');
+  const home = read('index.html');
+  const kana = read('kana/index.html');
+  const kanaJs = read('assets/pages/mode-atlas-kana-page.js');
+  const results = read('results/index.html');
+  const resultsUi = read('assets/results/mode-atlas-results-ui.js');
+  const resultsPage = read('assets/pages/mode-atlas-test-page.js');
+  const wordbank = read('wordbank/index.html');
+  const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
+  const settings = read('assets/ui/mode-atlas-settings-menu.js');
+
+  assert.match(frontend, /'results\/index\.html': NavConfig\('results', '測', 'Kana Trainer', 'Test Results'/);
+  assert.match(frontend, /\('results', 'Test Results', '\/results\/'\)/);
+  assert.match(frontend, /'reading\/index\.html': NavConfig\([^\n]*brand_href='\/kana\/'/);
+  assert.match(frontend, /'writing\/index\.html': NavConfig\([^\n]*brand_href='\/kana\/'/);
+  assert.match(frontend, /Kana Trainer home/);
+  assert.match(frontend, />Start practice<\/span>/);
+  assert.match(frontend, />End session<\/span>/);
+  assert.match(frontend, />Try again<\/button>/);
+  assert.match(frontend, />View Test Results<\/span>/);
+  assert.doesNotMatch(frontend, /View full Results|Try Again|>Wrong</);
+
+  for (const html of [home, kana]) assert.match(html, /Test Results/);
+  assert.match(kana, />Open Reading /);
+  assert.match(kana, />Open Writing /);
+  assert.match(kanaJs, /label: 'Review weak kana'/);
+  assert.match(kanaJs, /label: 'Open Test Results'/);
+  assert.doesNotMatch(kanaJs, /label: 'Start Reading'|label: 'Go to Writing'|label: 'Open Results'/);
+
+  assert.match(results, />Incorrect<\/div>/);
+  assert.match(results, /No assessment selected/);
+  assert.match(results, /Back to Kana Trainer/);
+  assert.doesNotMatch(results, /No result selected|Open Kana hub/);
+  assert.match(resultsUi, /Test Average/);
+  assert.doesNotMatch(resultsUi, /Overall Average/);
+  assert.match(resultsPage, /Reading average/);
+  assert.match(resultsPage, /correct \/ \$\{item\.wrong\} incorrect/);
+  assert.match(resultsPage, /Correct: \$\{row\.correct\} · Incorrect: \$\{row\.wrong\}/);
+
+  assert.match(wordbank, />Kana word<\/label>/);
+  assert.match(wordbank, />Add word<\/button>/);
+  assert.match(wordbankJs, /"Save changes"/);
+  assert.match(wordbankJs, /Clear search and filters/);
+  assert.doesNotMatch(wordbankJs, /'warn'|'ok'|Save Changes|Clear search & filters/);
+
+  assert.match(settings, /data-display="tablet" type="button">Tablet<\/button>/);
+  assert.match(settings, />Data and app<\/strong>/);
+  assert.doesNotMatch(settings, />iPad<\/button>|>Data & app<\/strong>/);
+});
+
+
+test('2.45 responsive and accessibility QA keeps landmarks, keyboard controls, focus traps, and touch targets shared', () => {
+  const frontend = read('frontend_components.py');
+  const navigation = read('assets/css/mode-atlas-navigation.css');
+  const components = read('assets/css/mode-atlas-components.css');
+  const profileSettings = read('assets/css/mode-atlas-profile-settings.css');
+  const dialog = read('assets/app/mode-atlas-dialog.js');
+  const controller = read('assets/trainer/mode-atlas-trainer-controller.js');
+  const sharedTrainer = read('assets/trainer/mode-atlas-trainer-shared.js');
+  const studyCss = read('assets/css/mode-atlas-study-shared.css');
+  const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
+  const kanaCss = read('assets/css/mode-atlas-kana-page.css');
+
+  assert.match(frontend, /ma-skip-link[^>]+href=\"#mainContent\"/);
+  assert.match(frontend, /<main id=\"mainContent\" class=\"app-shell ma-trainer-shell\"/);
+  assert.match(frontend, /<button class=\"panel-header\" id=\"scoresHeader\" type=\"button\" aria-expanded=\"true\" aria-controls=\"scoresContent\"/);
+  assert.match(frontend, /<button class=\"panel-header\" id=\"statsHeader\" type=\"button\" aria-expanded=\"true\" aria-controls=\"statsContent\"/);
+  assert.match(frontend, /<button class=\"tab-button\" id=\"modifiersTab\" type=\"button\" aria-expanded=\"false\" aria-controls=\"modifiersContent\"/);
+
+  for (const page of ['index.html','kana/index.html','reading/index.html','writing/index.html','results/index.html','wordbank/index.html','privacy/index.html','terms/index.html']) {
+    const html = read(page);
+    assert.equal((html.match(/id=\"mainContent\"/g) || []).length, 1, `${page} should expose one main content target`);
+    assert.match(html, /class=\"ma-skip-link\" href=\"#mainContent\"/);
+  }
+
+  assert.match(navigation, /\.ma-skip-link\{/);
+  assert.match(navigation, /@media\(pointer:coarse\)[\s\S]*\.ma-nav__section-link[\s\S]*min-height:44px/);
+  assert.match(components, /@media\(pointer:coarse\)[\s\S]*\.ma-button--small\{--ma-button-min-height:44px;\}/);
+  assert.match(profileSettings, /body\.profile-open,body\.settings-open\{overflow:hidden;\}/);
+  assert.match(wordbankCss, /@media\(pointer:coarse\)\{\.summary-toggle\{width:44px;height:44px;\}\}/);
+  assert.match(kanaCss, /@media\(pointer:coarse\)\{\.kana-ghost-action,\.kana-map-action,\.kana-inline-btn\{--ma-button-min-height:44px;\}\}/);
+
+  assert.match(dialog, /message\.id = 'maDialogMessage'/);
+  assert.match(dialog, /el\.getClientRects\(\)\.length > 0/);
+  assert.match(dialog, /panel\.setAttribute\('aria-describedby', message\.id\)/);
+  assert.match(controller, /modifiersTabEl\?\.setAttribute\('aria-expanded', String\(modifiersOpen\)\)/);
+  assert.match(controller, /byId\('statsHeader'\)\?\.setAttribute\('aria-expanded'/);
+  assert.match(controller, /byId\('scoresHeader'\)\?\.setAttribute\('aria-expanded'/);
+  assert.match(sharedTrainer, /document\.createElement\(\"button\"\)[\s\S]*View mastery details/);
+  assert.match(sharedTrainer, /e\.detail === 0[\s\S]*getBoundingClientRect/);
+  assert.match(sharedTrainer, /e\.key !== \"Escape\"/);
+  assert.match(studyCss, /button\.cell\{appearance:none;min-height:0/);
+
+  const sharedPage = read('assets/css/mode-atlas-page-shared.css');
+  assert.match(sharedPage, /button:focus-visible,a:focus-visible/);
+  assert.match(sharedPage, /prefers-reduced-motion:reduce/);
+});
+
+
+test('2.46 production boot keeps developer diagnostics lazy and revision-build owned', () => {
+  const frontend = read('frontend_components.py');
+  const builder = read('build_revision_assets.py');
+  const loader = read('assets/app/mode-atlas-dev-console-loader.js');
+  const version = read('assets/app/mode-atlas-version.js');
+  const revision = (version.match(/CACHE_REVISION\s*=\s*['\"]([^'\"]+)/) || [])[1];
+
+  assert.match(frontend, /assets\/app\/mode-atlas-dev-console-loader\.js/);
+  assert.doesNotMatch(frontend, /['\"]assets\/app\/mode-atlas-dev-console\.js['\"]/);
+  assert.doesNotMatch(frontend, /['\"]assets\/css\/mode-atlas-dev-console\.css['\"]/);
+  assert.match(builder, /LAZY_ASSETS/);
+  assert.match(builder, /assets\/app\/mode-atlas-dev-console\.js/);
+  assert.match(builder, /assets\/css\/mode-atlas-dev-console\.css/);
+  assert.match(loader, /document\.currentScript/);
+  assert.match(loader, /kanaCloudSyncStatusChanged/);
+  assert.match(loader, /admin@mode-atlas\.com/);
+  assert.match(loader, /loadIfEligible/);
+
+  for (const page of ['index.html','kana/index.html','reading/index.html','writing/index.html','results/index.html','wordbank/index.html']) {
+    const html = read(page);
+    assert.match(html, new RegExp(`mode-atlas-dev-console-loader\\.${revision}\\.js`));
+    assert.doesNotMatch(html, new RegExp(`mode-atlas-dev-console\\.${revision}\\.js`));
+    assert.doesNotMatch(html, new RegExp(`mode-atlas-dev-console\\.${revision}\\.css`));
+  }
+});
+
+
+test('2.47 release candidate hardening keeps release tooling reproducible', () => {
+  const lock = read('package-lock.json');
+  assert.doesNotMatch(lock, /internal\.api\.openai|applied-caas|artifactory\/api\/npm/i,
+    'package-lock must remain installable from public infrastructure');
+
+  const build = read('build_revision_assets.py');
+  assert.match(build, /BUILD_IGNORED_DIRS\s*=\s*\{[^}]*'node_modules'/,
+    'revision builder must not treat installed dependencies as application source');
+  assert.match(build, /def iter_project_html\(\):/,
+    'revision builder must own project HTML discovery explicitly');
+
+  const audit = read('audit_project.py');
+  assert.match(audit, /AUDIT_IGNORED_DIRS\s*=\s*\{[^}]*'node_modules'/,
+    'release audit must not treat installed dependencies as application source');
+
+  const manifest = JSON.parse(read('site.webmanifest'));
+  const resultsShortcut = (manifest.shortcuts || []).find((shortcut) => shortcut.url === '/results/');
+  assert.ok(resultsShortcut, 'PWA manifest must keep the Test Results shortcut');
+  assert.equal(resultsShortcut.name, 'Test Results');
+  assert.equal(resultsShortcut.short_name, 'Test Results');
+
+  const kana = read('kana/index.html');
+  assert.doesNotMatch(kana, /<main[^>]*\bid=["']mainContent["'][^>]*\bid=/,
+    'Kana Hub main landmark must not contain duplicate id attributes');
+  assert.match(kana, /<main id=["']mainContent["'] class=["']kana-hub ma-page-section["']>/,
+    'Kana Hub must keep the shared mainContent landmark');
+
+  const wordBankPage = read('assets/pages/mode-atlas-wordbank-page.js');
+  assert.match(wordBankPage, /^\(function ModeAtlasWordBankPage\(\)\{/,
+    'Word Bank page declarations must stay in page-local scope and not collide with shared kana data');
+  assert.match(wordBankPage, /\}\)\(\);\s*$/,
+    'Word Bank page module scope must close cleanly');
+
+  const smoke = read('tests/smoke.spec.js');
+  assert.doesNotMatch(smoke, /window\.ModeAtlasSettings\?\.open/,
+    'browser smoke must open Settings through the real user control');
+  assert.match(smoke, /\[data-settings-open\]:visible/,
+    'browser smoke must select the visible shared Settings trigger');
+  assert.match(smoke, /toHaveAttribute\('data-settings-bound', 'shared'/,
+    'browser smoke must wait for shared Settings binding readiness');
+  assert.match(smoke, /modeAtlasOnboardingComplete[\s\S]*modeAtlasKanaSetupComplete/,
+    'core browser smoke must seed a completed stable-user setup rather than be blocked by onboarding');
+  assert.match(smoke, /maWhatsNewSeen["'], 'smoke'/,
+    'core browser smoke must suppress release notes so unrelated interaction tests stay isolated');
+  assert.doesNotMatch(smoke, /ma-trainer-card \.ma-pause-overlay/,
+    'trainer smoke must validate canonical paused state rather than a presentation-only overlay');
+  assert.match(smoke, /atlas-product__action\[href=\\?"\/kana\/\\?"\]/,
+    'Atlas navigation smoke must use the current visible Kana product action');
+  assert.match(smoke, /wordBankAddJumpBtn[\s\S]*kanaInput/,
+    'Word Bank smoke must open the Add Word dialog before interacting with its form');
+  assert.doesNotMatch(smoke, /details\.card\[data-id\]/,
+    'Word Bank smoke must use the current wordbank-entry row markup');
+  assert.match(smoke, /details\.wordbank-entry\[data-id\]/,
+    'Word Bank smoke must verify the persisted entry through the current row markup');
+
+  const gate = read('.github/workflows/release-check.yml');
+  assert.match(gate, /npm ci --ignore-scripts --registry=https:\/\/registry\.npmjs\.org\//,
+    'release gate must install from the public npm registry');
+  assert.match(gate, /npm run release:check/, 'release gate must run static and Node release checks');
+  assert.match(gate, /desktop-chromium/, 'release gate must exercise the desktop browser project');
+  assert.match(gate, /mobile-chromium/, 'release gate must exercise the mobile browser project');
+  assert.match(gate, /git diff --exit-code/, 'release gate must reject uncommitted generated assets');
+});

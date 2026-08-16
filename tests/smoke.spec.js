@@ -35,6 +35,13 @@ async function seedStableLocalState(page) {
       if (localStorage.getItem('modeAtlasSmokeSeeded') === '1') return;
       localStorage.clear();
       localStorage.setItem('modeAtlasSmokeSeeded', '1');
+      localStorage.setItem('modeAtlasStarterSeen', 'true');
+      localStorage.setItem('modeAtlasOnboardingComplete', 'true');
+      localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
+      localStorage.setItem('modeAtlasLegalAccepted', 'true');
+      localStorage.setItem('modeAtlasLegalAcceptedAt', String(Date.now()));
+      localStorage.setItem('modeAtlasLegalVersion', '2026-05');
+      localStorage.setItem('maWhatsNewSeen', 'smoke');
       localStorage.setItem('settings', JSON.stringify(readingSettings));
     localStorage.setItem('reverseSettings', JSON.stringify(writingSettings));
     localStorage.setItem('charStats', JSON.stringify({}));
@@ -93,7 +100,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('#branches')).toBeVisible();
 
       await gotoApp(page, '/kana/');
-      await expect(page.locator('#kanaHub')).toBeVisible();
+      await expect(page.locator('#mainContent.kana-hub')).toBeVisible();
       await expect(page.locator('#kanaContinueAction')).toBeVisible();
       await expect(page.locator('#kanaMasteryGrid')).toBeVisible();
 
@@ -108,10 +115,10 @@ test.describe('Mode Atlas core smoke tests', () => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/');
       await Promise.all([
-        page.waitForURL(/\/kana\/$/, { timeout: 5000 }),
-        page.locator('a.branch.kana').click(),
+        page.waitForURL(/\/kana\/$/, { timeout: 7500, waitUntil: 'commit' }),
+        page.locator('a.atlas-product__action[href="/kana/"]').click({ noWaitAfter: true }),
       ]);
-      await expect(page.locator('#kanaHub')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('#mainContent.kana-hub')).toBeVisible({ timeout: 5000 });
       const url = new URL(page.url());
       expect(url.pathname).toBe('/kana/');
       expect(url.searchParams.has('build')).toBe(false);
@@ -123,11 +130,19 @@ test.describe('Mode Atlas core smoke tests', () => {
   test('Settings update check survives click bursts and tab switching does not blank the app', async ({ page, context }) => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/kana/');
-      await expect(page.locator('#kanaHub')).toBeVisible();
+      await expect(page.locator('#mainContent.kana-hub')).toBeVisible();
 
-      await page.evaluate(() => window.ModeAtlasSettings?.open?.());
+      const settingsButton = page.locator('[data-settings-open]:visible').first();
+      const settingsDrawer = page.locator('#settingsDrawer');
+      await expect(settingsDrawer).toBeAttached({ timeout: 5000 });
+      await expect(settingsButton).toBeVisible();
+      await expect(settingsButton).toHaveAttribute('data-settings-bound', 'shared', { timeout: 5000 });
+      await settingsButton.click();
+      await expect(settingsDrawer).toBeVisible();
+
       const updateButton = page.locator('#maCheckUpdatesBtn');
       const updateStatus = page.locator('#maUpdateStatus');
+      await expect(updateButton).toBeVisible();
       await updateButton.click();
       await expect(updateStatus).toContainText('You are up to date', { timeout: 6000 });
       await expect(updateButton).toBeEnabled();
@@ -145,7 +160,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await otherTab.bringToFront();
       await page.waitForTimeout(150);
       await page.bringToFront();
-      await expect(page.locator('#kanaHub')).toBeVisible();
+      await expect(page.locator('#mainContent.kana-hub')).toBeVisible();
       await otherTab.close();
     });
   });
@@ -168,7 +183,8 @@ test.describe('Mode Atlas core smoke tests', () => {
 
       await page.locator('#pauseSessionBtn').click();
       await expect(page.locator('body')).toHaveClass(/ma-session-paused/);
-      await expect(page.locator('.ma-trainer-card .ma-pause-overlay')).toBeVisible();
+      await expect(page.locator('#pauseSessionBtn [data-ma-pause-label]')).toHaveText('Resume');
+      await expect(page.locator('#input')).toBeDisabled();
 
       await page.locator('#pauseSessionBtn').click();
       await expect(page.locator('body')).not.toHaveClass(/ma-session-paused/);
@@ -204,13 +220,15 @@ test.describe('Mode Atlas core smoke tests', () => {
   test('Word Bank Add stays on the page and persists a new kana entry', async ({ page }) => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/wordbank/');
+      await page.locator('#wordBankAddJumpBtn').click();
       const input = page.locator('#kanaInput');
       const add = page.locator('#addWordBtn');
+      await expect(input).toBeVisible();
       await expect(add).toBeEnabled();
       await input.fill('ねこ');
       await add.click();
       await expect(page).toHaveURL(/\/wordbank\/$/);
-      await expect(page.locator('details.card[data-id]').filter({ hasText: 'ねこ' }).first()).toBeVisible();
+      await expect(page.locator('details.wordbank-entry[data-id]').filter({ hasText: 'ねこ' }).first()).toBeVisible();
       const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('kanaWordBank') || '[]'));
       expect(stored.some(item => item && item.kana === 'ねこ')).toBe(true);
     });
@@ -219,7 +237,7 @@ test.describe('Mode Atlas core smoke tests', () => {
   test('Light appearance persists across fresh page documents', async ({ page }) => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/kana/');
-      await page.locator('[data-settings-open]').first().click();
+      await page.locator('[data-settings-open]:visible').first().click();
       await page.locator('[data-ma-theme-choice="light"]').click();
       await expect(page.locator('html')).toHaveAttribute('data-ma-theme', 'light');
 
@@ -242,17 +260,21 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(profileDrawer).toBeVisible();
       await expect(page.locator('#profileCloseBtn')).toBeFocused();
       await page.locator('#profileCloseBtn').click();
-      await expect(profileDrawer).toBeHidden();
+      await expect(profileDrawer).toHaveAttribute('aria-hidden', 'true');
+      await expect(profileDrawer).not.toHaveClass(/\bopen\b/);
+      await expect(page.locator('body')).not.toHaveClass(/profile-open/);
       await expect(profileTrigger).toBeFocused();
 
-      const settingsButton = page.locator('[data-settings-open]').first();
+      const settingsButton = page.locator('[data-settings-open]:visible').first();
       await settingsButton.click();
       const settingsDrawer = page.locator('#settingsDrawer');
       await expect(settingsDrawer).toBeVisible();
       await expect(page.locator('#settingsCloseBtn')).toBeFocused();
 
       await page.locator('#settingsCloseBtn').click();
-      await expect(settingsDrawer).toBeHidden();
+      await expect(settingsDrawer).toHaveAttribute('aria-hidden', 'true');
+      await expect(settingsDrawer).not.toHaveClass(/\bopen\b/);
+      await expect(page.locator('body')).not.toHaveClass(/settings-open/);
       await expect(settingsButton).toBeFocused();
     });
   });

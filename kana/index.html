@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <!-- MODE_ATLAS_HEAD_ASSETS_START -->
-<script src="../assets/app/mode-atlas-version.assets-2.30.0.js"></script>
-<script src="../assets/app/mode-atlas-legacy-sw-retirement.assets-2.30.0.js"></script>
-<script src="../assets/app/mode-atlas-version-check.assets-2.30.0.js"></script>
-<script src="../assets/app/mode-atlas-head-bootstrap.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-version.assets-2.47.0.js"></script>
+<script src="../assets/app/mode-atlas-legacy-sw-retirement.assets-2.47.0.js"></script>
+<script src="../assets/app/mode-atlas-version-check.assets-2.47.0.js"></script>
+<script src="../assets/app/mode-atlas-head-bootstrap.assets-2.47.0.js"></script>
 <!-- MODE_ATLAS_HEAD_ASSETS_END -->
 
 <meta charset="UTF-8" />
@@ -30,20 +30,19 @@
   <meta property="og:image" content="https://mode-atlas.app/assets/social-preview.svg" />
 <meta name="twitter:card" content="summary" />
 <!-- MODE_ATLAS_STYLE_ASSETS_START -->
-<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.assets-2.30.0.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-dev-console.assets-2.30.0.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.assets-2.30.0.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.assets-2.30.0.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.assets-2.30.0.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-theme.assets-2.30.0.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-components.assets-2.30.0.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-navigation.assets-2.30.0.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.assets-2.30.0.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-kana-page.assets-2.30.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.assets-2.47.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.assets-2.47.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.assets-2.47.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.assets-2.47.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-theme.assets-2.47.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-components.assets-2.47.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-navigation.assets-2.47.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.assets-2.47.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-kana-page.assets-2.47.0.css" />
 <!-- MODE_ATLAS_STYLE_ASSETS_END -->
 </head>
 <body class="ma-kana-page"><!-- MODE_ATLAS_EARLY_ASSETS_START -->
-<script src="../assets/app/mode-atlas-early-loader.assets-2.30.0.js"></script>
+<script src="../assets/app/mode-atlas-early-loader.assets-2.47.0.js"></script>
 <!-- MODE_ATLAS_EARLY_ASSETS_END --><!-- MODE_ATLAS_LOADER_START -->
 <div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite">
   <div class="ma-loading-card">
@@ -62,6 +61,7 @@
 <!-- MODE_ATLAS_LOADER_END -->
 <div class="shell ma-page-frame">
 <!-- MODE_ATLAS_NAV_START -->
+<a class="ma-skip-link" href="#mainContent">Skip to main content</a>
 <nav class="ma-nav ma-nav--kana" data-ma-navigation="shared" data-ma-page="kana" aria-label="Mode Atlas navigation">
   <a class="ma-nav__brand" href="/" aria-label="Mode Atlas home">
     <span class="ma-nav__mark" aria-hidden="true">かな</span>
@@ -71,94 +71,117 @@
     </span>
   </a>
   <div class="ma-nav__content">
-    <div class="ma-nav__links"><a class="ma-nav__link" data-ma-nav-item="atlas" href="/">Atlas</a> <a class="ma-nav__link is-active" data-ma-nav-item="kana" href="/kana/" aria-current="page">Kana</a> <a class="ma-nav__link" data-ma-nav-item="reading" href="/reading/">Reading</a> <a class="ma-nav__link" data-ma-nav-item="writing" href="/writing/">Writing</a> <a class="ma-nav__link" data-ma-nav-item="results" href="/results/">Results</a> <a class="ma-nav__link" data-ma-nav-item="wordbank" href="/wordbank/">Word Bank</a></div>
+    <div class="ma-nav__primary">
+      <div class="ma-nav__links"><a class="ma-nav__link" data-ma-nav-scope="product" data-ma-nav-item="atlas" href="/">Atlas</a> <div class="ma-nav__menu" data-ma-kana-menu><a class="ma-nav__link ma-nav__menu-trigger is-active" href="/kana/" data-ma-nav-scope="product" data-ma-nav-item="kana" data-ma-kana-menu-trigger aria-haspopup="true" aria-expanded="false" aria-controls="maKanaMenu"><span>Kana Trainer</span><span class="ma-nav__menu-chevron" aria-hidden="true"></span></a><div class="ma-nav__flyout" id="maKanaMenu" data-ma-kana-nav aria-label="Kana Trainer sections"><a class="ma-nav__section-link is-active" data-ma-nav-scope="kana" data-ma-kana-nav-item="kana" href="/kana/" aria-current="page">Overview</a> <a class="ma-nav__section-link" data-ma-nav-scope="kana" data-ma-kana-nav-item="reading" href="/reading/">Reading</a> <a class="ma-nav__section-link" data-ma-nav-scope="kana" data-ma-kana-nav-item="writing" href="/writing/">Writing</a> <a class="ma-nav__section-link" data-ma-nav-scope="kana" data-ma-kana-nav-item="results" href="/results/">Test Results</a></div></div> <a class="ma-nav__link" data-ma-nav-scope="product" data-ma-nav-item="wordbank" href="/wordbank/">Word Bank</a></div>
       <div class="ma-nav__actions">
         <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
           <span class="ma-nav__avatar" id="topProfileDot" aria-hidden="true">M</span>
           <span class="ma-nav__action-label">Profile</span>
         </button>
         <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="settingsDrawer" aria-label="Open settings" title="Settings">
-          <span class="ma-nav__settings-icon" aria-hidden="true">⚙</span>
+          <svg class="ma-icon ma-nav__settings-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-settings"></use></svg>
           <span class="ma-nav__action-label">Settings</span>
         </button>
         
       </div>
+    </div>
   </div>
 </nav>
 <!-- MODE_ATLAS_NAV_END -->
-    <section class="kana-hub-hero glass ma-card ma-page-hero">
+    <section class="kana-hub-hero ma-page-hero" aria-labelledby="kanaHeroTitle">
         <div class="kana-hero-main">
-            <div class="hero-tagline">
-                <span>かな</span>
-                <span>Trainer hub</span>
-            </div>
-            <h1>Kana Trainer</h1>
-            <p class="kana-hero-lead">Build recognition, recall, speed, and mastery one focused session at a time.</p>
+            <div class="hero-tagline"><span aria-hidden="true">かな</span><span class="ma-kicker">Kana Trainer</span></div>
+            <h1 id="kanaHeroTitle">Make kana feel automatic.</h1>
+            <p class="kana-hero-lead">Build fast recognition in Reading, active recall in Writing, and use Test Results to keep each practice session focused.</p>
             <div class="kana-hero-actions ma-action-row">
-                <a class="kana-primary-action ma-button" id="kanaContinueAction" href="/reading/">
-                    <span>Continue practice</span>
-                    <strong id="kanaContinueHint">Recommended next step</strong>
-                </a>
-                <div class="kana-hero-secondary-actions ma-action-row" aria-label="Kana hub shortcuts">
-                    <a class="kana-action reading ma-button" href="/reading/">Reading</a>
-                    <a class="kana-action writing ma-button" href="/writing/">Writing</a>
-                    <a class="kana-action results ma-button" href="/results/">Results</a>
-                </div>
+                <a class="kana-primary-action ma-button" id="kanaContinueAction" href="/reading/"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg><span class="kana-primary-action__copy"><span>Continue practice</span><strong id="kanaContinueHint">Recommended next step</strong></span></a>
             </div>
         </div>
-        <div class="kana-today-card ma-card ma-card--flat" id="kanaTodayCard" aria-live="polite"></div>
+        <div class="kana-hero-visual" aria-hidden="true">
+            <span class="kana-hero-glyph kana-hero-glyph--a">あ</span>
+            <span class="kana-hero-glyph kana-hero-glyph--ka">カ</span>
+            <span class="kana-hero-glyph kana-hero-glyph--yo">よ</span>
+            <div class="kana-hero-script"><strong>ひらがな</strong><span>カタカナ</span></div>
+        </div>
     </section>
 
-    <main class="kana-hub ma-page-section" id="kanaHub">
-        <section class="kana-section kana-next-panel glass ma-card" id="kanaNextPanel"></section>
+    <section class="kana-pathways ma-page-section" aria-labelledby="kanaPracticeTitle">
+        <header class="kana-pathways-head">
+            <span class="ma-kicker">Practice areas</span>
+            <h2 id="kanaPracticeTitle">Choose how you want to train.</h2>
+            <p>Switch between recognition, recall, and formal test analysis without leaving Kana Trainer.</p>
+        </header>
+        <div class="kana-pathway-list">
+            <a class="kana-pathway kana-pathway--reading" href="/reading/"><span class="ma-kicker">Recognise</span><strong>Reading</strong><p>See kana and recall the matching romaji quickly and accurately.</p><span class="kana-pathway__action">Open Reading <svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-arrow"></use></svg></span></a>
+            <a class="kana-pathway kana-pathway--writing" href="/writing/"><span class="ma-kicker">Recall</span><strong>Writing</strong><p>See the romaji and choose or type the kana from memory.</p><span class="kana-pathway__action">Open Writing <svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-arrow"></use></svg></span></a>
+            <a class="kana-pathway kana-pathway--results" href="/results/"><span class="ma-kicker">Understand</span><strong>Test Results</strong><p>Review formal tests, performance trends, and the kana that need more work.</p><span class="kana-pathway__action">View Test Results <svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-arrow"></use></svg></span></a>
+        </div>
+    </section>
 
-        <section class="kana-section kana-mastery-panel glass ma-card">
+    <main id="mainContent" class="kana-hub ma-page-section">
+        <header class="kana-progress-intro">
+            <span class="ma-kicker">Your progress</span>
+            <h2>Know where you stand. Know what to practise next.</h2>
+            <p>Track recognition, recall, mastery, and the kana most worth your attention.</p>
+        </header>
+
+        <section class="kana-today-card kana-progress-overview" id="kanaTodayCard" aria-live="polite">
+            <div class="ma-skeleton-text">Progress snapshot</div><div class="ma-skeleton-block"></div><div class="ma-skeleton-block"></div>
+        </section>
+
+        <section class="kana-section kana-next-panel" id="kanaNextPanel">
+            <div class="ma-skeleton-block" aria-hidden="true"></div>
+        </section>
+
+        <section class="kana-section kana-mastery-panel">
             <div class="kana-section-head ma-section-head">
                 <div>
                     <span class="kana-section-kicker ma-kicker">Mastery overview</span>
                     <h2>Kana mastery</h2>
-                    <p>Watch your kana move from first practice to confident recall.</p>
+                    <p>See how your kana are moving from first attempts to fast, reliable recall.</p>
                 </div>
                 <div class="kana-head-actions ma-action-row">
                     <button type="button" class="kana-ghost-action ma-button" data-ma-mastery-help>How mastery works</button>
                     <button type="button" class="kana-map-action ma-button" data-ma-mastery-open>Open Mastery Map</button>
                 </div>
             </div>
-            <div class="kana-mastery-grid" id="kanaMasteryGrid"></div>
-            <div class="kana-mastery-focus" id="kanaMasteryFocus"></div>
+            <div class="kana-mastery-grid" id="kanaMasteryGrid"><div class="ma-skeleton-block" aria-hidden="true"></div></div>
+            <div class="kana-mastery-focus" id="kanaMasteryFocus"><div class="ma-skeleton-block" aria-hidden="true"></div></div>
         </section>
 
-        <section class="kana-section kana-preset-panel glass ma-card" id="kanaPresetPanel"></section>
-
-        <section class="kana-section kana-records-panel glass ma-card" id="kanaRecordsPanel"></section>
+        <section class="kana-section kana-preset-panel" id="kanaPresetPanel"><div class="ma-skeleton-block" aria-hidden="true"></div></section>
+        <section class="kana-section kana-records-panel" id="kanaRecordsPanel"><div class="ma-skeleton-block" aria-hidden="true"></div></section>
     </main>
 </div>
 <!-- MODE_ATLAS_BODY_ASSETS_START -->
-<script src="../assets/app/mode-atlas-toast.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-dialog.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-feedback.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-theme.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-display-mode.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-storage.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-save-repair.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-page-state.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-dev-console.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-pwa.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-about.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-visit-flows.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-import-export.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-date.assets-2.30.0.js" defer></script>
-<script src="../assets/data/mode-atlas-kana-data.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-kana-metrics.assets-2.30.0.js" defer></script>
-<script src="../assets/achievements/mode-atlas-achievements-ui.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-presets.assets-2.30.0.js" defer></script>
-<script src="../firebase-config.assets-2.30.0.js" defer></script>
-<script src="../cloud-sync.assets-2.30.0.js" defer></script>
-<script src="../assets/ui/mode-atlas-profile-menu.assets-2.30.0.js" defer></script>
-<script src="../assets/ui/mode-atlas-settings-menu.assets-2.30.0.js" defer></script>
-<script src="../assets/ui/mode-atlas-profile-drawer-bindings.assets-2.30.0.js" defer></script>
-<script src="../assets/pages/mode-atlas-kana-page.assets-2.30.0.js" defer></script>
-<script src="../assets/app/mode-atlas-sounds.assets-2.30.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-navigation-menu.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-toast.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dialog.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-feedback.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-theme.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-display-mode.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-storage.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-progress.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-progress-ui.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-save-repair.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-page-state.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dev-console-loader.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-pwa.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-about.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-visit-flows.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-import-export.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-date.assets-2.47.0.js" defer></script>
+<script src="../assets/data/mode-atlas-kana-data.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-kana-metrics.assets-2.47.0.js" defer></script>
+<script src="../assets/achievements/mode-atlas-achievements-ui.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-presets.assets-2.47.0.js" defer></script>
+<script src="../firebase-config.assets-2.47.0.js" defer></script>
+<script src="../cloud-sync.assets-2.47.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-menu.assets-2.47.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-settings-menu.assets-2.47.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-drawer-bindings.assets-2.47.0.js" defer></script>
+<script src="../assets/pages/mode-atlas-kana-page.assets-2.47.0.js" defer></script>
+<script src="../assets/app/mode-atlas-sounds.assets-2.47.0.js" defer></script>
 <!-- MODE_ATLAS_BODY_ASSETS_END -->
 </body>
 </html>
