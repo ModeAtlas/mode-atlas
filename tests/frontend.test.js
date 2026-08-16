@@ -1104,5 +1104,33 @@ test('2.33.2 Kana setup is destination-owned and persisted as app state', () => 
   assert.match(storage, /'modeAtlasKanaSetupComplete'/);
   assert.match(storage, /'modeAtlasPendingDestination'/);
   assert.doesNotMatch(wordbank, /mode-atlas-presets\.assets-/);
-  assert.match(kana, /mode-atlas-presets\.assets-2\.33\.2\.js/);
+  assert.match(kana, new RegExp(`mode-atlas-presets\\.${REVISION.replaceAll('.', '\\.')}\\.js`));
+});
+
+test('2.34 product navigation separates Mode Atlas destinations from Kana sections', () => {
+  const frontend = read('frontend_components.py');
+  const navCss = read('assets/css/mode-atlas-navigation.css');
+  const productPages = ['index.html', 'wordbank/index.html'];
+  const kanaPages = ['kana/index.html', 'reading/index.html', 'writing/index.html', 'results/index.html'];
+
+  assert.match(frontend, /PRIMARY_LINKS = \([\s\S]*?'Atlas'[\s\S]*?'Kana Trainer'[\s\S]*?'Word Bank'[\s\S]*?\)/);
+  assert.doesNotMatch(frontend.match(/PRIMARY_LINKS = \([\s\S]*?\)\n/)[0], /'Reading'|'Writing'|'Results'/);
+  assert.match(frontend, /KANA_LINKS = \([\s\S]*?'Overview'[\s\S]*?'Reading'[\s\S]*?'Writing'[\s\S]*?'Results'/);
+  assert.match(navCss, /\.ma-nav__subnav\{/);
+  assert.match(navCss, /\.ma-nav__section-link\.is-active\{/);
+
+  for (const rel of productPages) {
+    const html = read(rel);
+    assert.equal(count(html, /data-ma-nav-scope="product"/g), 3, `${rel} product navigation count`);
+    assert.equal(count(html, /data-ma-kana-nav(?:\s|>)/g), 0, `${rel} should not show Kana-local nav`);
+    assert.equal(count(html, /aria-current="page"/g), 1, `${rel} one current page`);
+  }
+  for (const rel of kanaPages) {
+    const html = read(rel);
+    assert.equal(count(html, /data-ma-nav-scope="product"/g), 3, `${rel} product navigation count`);
+    assert.equal(count(html, /data-ma-nav-scope="kana"/g), 4, `${rel} Kana-local navigation count`);
+    assert.equal(count(html, /data-ma-kana-nav(?:\s|>)/g), 1, `${rel} one Kana-local nav owner`);
+    assert.equal(count(html, /aria-current="page"/g), 1, `${rel} local page alone owns aria-current`);
+    assert.match(html, /data-ma-nav-item="kana"[^>]*class="[^"]*is-active|class="[^"]*is-active[^"]*"[^>]*data-ma-nav-item="kana"/, `${rel} Kana Trainer product active`);
+  }
 });

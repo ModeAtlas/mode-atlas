@@ -27,6 +27,7 @@
 .ma-nav--words{--ma-nav-accent:var(--ma-words);}
 
 .ma-nav__brand{
+  align-self:center;
   display:flex;
   align-items:center;
   gap:var(--ma-space-3);
@@ -74,6 +75,11 @@
 .ma-nav__content{
   min-width:0;
   flex:1 1 auto;
+  display:grid;
+  gap:8px;
+}
+.ma-nav__primary{
+  min-width:0;
   display:flex;
   align-items:center;
   justify-content:flex-end;
@@ -86,6 +92,19 @@
 }
 .ma-nav__links{min-width:0;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;}
 .ma-nav__links::-webkit-scrollbar{display:none;}
+.ma-nav__subnav{
+  min-width:0;
+  padding-top:8px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:4px;
+  overflow-x:auto;
+  border-top:1px solid color-mix(in srgb,var(--ma-border) 78%,transparent);
+  scrollbar-width:none;
+  overscroll-behavior-x:contain;
+}
+.ma-nav__subnav::-webkit-scrollbar{display:none;}
 
 .ma-nav__link,.ma-nav__action{
   appearance:none;
@@ -114,10 +133,35 @@
   background:var(--ma-control-hover);
   color:var(--ma-text);
 }
-.ma-nav__link:focus-visible,.ma-nav__action:focus-visible,.ma-nav-handle:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
+.ma-nav__link:focus-visible,.ma-nav__section-link:focus-visible,.ma-nav__action:focus-visible,.ma-nav-handle:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
 .ma-nav__link.is-active{
   border-color:color-mix(in srgb,var(--ma-nav-accent) 48%,var(--ma-border));
   background:color-mix(in srgb,var(--ma-nav-accent) 15%,var(--ma-card-2));
+  color:var(--ma-text-strong);
+}
+.ma-nav__section-link{
+  flex:0 0 auto;
+  min-height:34px;
+  padding:0 10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid transparent;
+  border-radius:var(--ma-radius-control);
+  color:var(--ma-muted);
+  font-size:.75rem;
+  font-weight:800;
+  line-height:1;
+  text-decoration:none;
+  transition:background var(--ma-motion-fast) ease,border-color var(--ma-motion-fast) ease,color var(--ma-motion-fast) ease;
+}
+.ma-nav__section-link:hover{
+  background:var(--ma-control-hover);
+  color:var(--ma-text);
+}
+.ma-nav__section-link.is-active{
+  border-color:color-mix(in srgb,var(--ma-nav-accent) 34%,transparent);
+  background:color-mix(in srgb,var(--ma-nav-accent) 11%,transparent);
   color:var(--ma-text-strong);
 }
 .ma-nav__actions{flex:0 0 auto;}
@@ -182,8 +226,10 @@ body.study-nav-hidden .ma-nav-handle{display:inline-flex;align-items:center;just
   }
   .ma-nav__brand{grid-column:1;max-width:none;}
   .ma-nav__mark{width:40px;height:40px;flex-basis:40px;border-radius:13px;}
-  .ma-nav__content{grid-column:1 / -1;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;}
+  .ma-nav__content{grid-column:1 / -1;width:100%;gap:8px;}
+  .ma-nav__primary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;}
   .ma-nav__links{width:100%;gap:6px;}
+  .ma-nav__subnav{justify-content:flex-start;gap:4px;padding-top:8px;}
   .ma-nav__link{min-height:40px;padding:0 11px;font-size:.78rem;}
   .ma-nav__actions{gap:6px;}
   .ma-nav__profile,.ma-nav__settings{width:42px;min-width:42px;min-height:42px;padding:0;}
@@ -194,7 +240,7 @@ body.study-nav-hidden .ma-nav-handle{display:inline-flex;align-items:center;just
 @media(max-width:520px){
   .ma-nav__kicker{display:none;}
   .ma-nav__title{font-size:.84rem;}
-  .ma-nav__content{grid-template-columns:minmax(0,1fr) auto;}
+  .ma-nav__primary{grid-template-columns:minmax(0,1fr) auto;}
   .ma-nav__link{padding:0 10px;}
   .ma-nav__action--quiet{display:none;}
 }
@@ -207,9 +253,11 @@ html[data-ma-theme="light"] .ma-nav__action{
 }
 html[data-ma-theme="light"] .ma-nav__link{color:var(--ma-muted);-webkit-text-fill-color:var(--ma-muted);}
 html[data-ma-theme="light"] .ma-nav__link.is-active{color:var(--ma-text-strong);-webkit-text-fill-color:var(--ma-text-strong);}
+html[data-ma-theme="light"] .ma-nav__section-link{color:var(--ma-muted);-webkit-text-fill-color:var(--ma-muted);}
+html[data-ma-theme="light"] .ma-nav__section-link.is-active{color:var(--ma-text-strong);-webkit-text-fill-color:var(--ma-text-strong);}
 
 @media(prefers-reduced-motion:reduce){
-  .ma-nav__link,.ma-nav__action{transition:none;}
+  .ma-nav__link,.ma-nav__section-link,.ma-nav__action{transition:none;}
 }
 
 /* 2.31 utility actions use the shared icon vocabulary. */

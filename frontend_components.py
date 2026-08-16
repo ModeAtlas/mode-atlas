@@ -62,11 +62,11 @@ class NavConfig:
     hideable: bool = False
 
 NAV_CONFIGS: dict[str, NavConfig] = {
-    'index.html': NavConfig('atlas', 'あア', 'Mode Atlas', 'Study ecosystem'),
+    'index.html': NavConfig('atlas', 'あア', 'Mode Atlas', 'Learn Japanese'),
     'kana/index.html': NavConfig('kana', 'かな', 'Mode Atlas', 'Kana Trainer', accent='kana'),
     'reading/index.html': NavConfig('reading', '読', 'Kana Trainer', 'Reading Practice', accent='reading', hideable=True),
     'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Writing Practice', accent='writing', hideable=True),
-    'results/index.html': NavConfig('results', '測', 'Kana Trainer', 'Test Results', brand_href='/kana/', accent='results'),
+    'results/index.html': NavConfig('results', '測', 'Kana Trainer', 'Results', brand_href='/kana/', accent='results'),
     'wordbank/index.html': NavConfig('wordbank', '語', 'Mode Atlas', 'Word Bank', accent='words'),
     'privacy/index.html': NavConfig('privacy', 'あア', 'Mode Atlas', 'Privacy Policy', account_actions=False),
     'terms/index.html': NavConfig('terms', 'あア', 'Mode Atlas', 'Terms of Use', account_actions=False),
@@ -74,12 +74,17 @@ NAV_CONFIGS: dict[str, NavConfig] = {
 
 PRIMARY_LINKS = (
     ('atlas', 'Atlas', '/'),
-    ('kana', 'Kana', '/kana/'),
+    ('kana', 'Kana Trainer', '/kana/'),
+    ('wordbank', 'Word Bank', '/wordbank/'),
+)
+
+KANA_LINKS = (
+    ('kana', 'Overview', '/kana/'),
     ('reading', 'Reading', '/reading/'),
     ('writing', 'Writing', '/writing/'),
     ('results', 'Results', '/results/'),
-    ('wordbank', 'Word Bank', '/wordbank/'),
 )
+KANA_KEYS = frozenset(key for key, _label, _href in KANA_LINKS)
 
 LEGAL_LINKS = (
     ('atlas', 'Atlas', '/'),
@@ -93,22 +98,38 @@ def _attr(value: str) -> str:
 
 
 def render_navigation(config: NavConfig) -> str:
-    links = LEGAL_LINKS if config.key in {'privacy', 'terms'} else PRIMARY_LINKS
+    legal_page = config.key in {'privacy', 'terms'}
+    links = LEGAL_LINKS if legal_page else PRIMARY_LINKS
+    kana_section = not legal_page and config.key in KANA_KEYS
+    product_active = 'kana' if kana_section else config.key
+
     link_markup = []
     for key, label, href in links:
-        active = key == config.key
+        active = key == product_active
         classes = 'ma-nav__link' + (' is-active' if active else '')
-        current = ' aria-current="page"' if active else ''
+        current = ' aria-current="page"' if (not kana_section and key == config.key) else ''
         link_markup.append(
-            f'<a class="{classes}" data-ma-nav-item="{_attr(key)}" href="{_attr(href)}"{current}>{html.escape(label)}</a>'
+            f'<a class="{classes}" data-ma-nav-scope="product" data-ma-nav-item="{_attr(key)}" href="{_attr(href)}"{current}>{html.escape(label)}</a>'
         )
+
+    subnav_markup = ''
+    if kana_section:
+        local_links = []
+        for key, label, href in KANA_LINKS:
+            active = key == config.key
+            classes = 'ma-nav__section-link' + (' is-active' if active else '')
+            current = ' aria-current="page"' if active else ''
+            local_links.append(
+                f'<a class="{classes}" data-ma-nav-scope="kana" data-ma-kana-nav-item="{_attr(key)}" href="{_attr(href)}"{current}>{html.escape(label)}</a>'
+            )
+        subnav_markup = f'<div class="ma-nav__subnav" data-ma-kana-nav aria-label="Kana Trainer sections">{" ".join(local_links)}</div>'
 
     action_markup = ''
     if config.account_actions:
         hide_action = ''
         if config.hideable:
             hide_action = '<button class="ma-nav__action ma-nav__action--quiet ma-nav__focus" id="studyNavHideBtn" type="button" aria-label="Enter focus mode" title="Focus mode"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span class="ma-nav__action-label">Focus mode</span></button>'
-        action_markup = f'''
+        action_markup = f"""
       <div class="ma-nav__actions">
         <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
           <span class="ma-nav__avatar" id="topProfileDot" aria-hidden="true">M</span>
@@ -119,15 +140,16 @@ def render_navigation(config: NavConfig) -> str:
           <span class="ma-nav__action-label">Settings</span>
         </button>
         {hide_action}
-      </div>'''
+      </div>"""
 
     nav_id = ' id="studyNav"' if config.hideable else ''
     handle = ''
     if config.hideable:
         handle = '\n<button class="ma-nav-handle" id="studyNavShowBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span>Exit focus mode</span></button>'
 
-    return f'''{NAV_START}
-<nav class="ma-nav ma-nav--{_attr(config.accent)}"{nav_id} data-ma-navigation="shared" data-ma-page="{_attr(config.key)}" aria-label="Mode Atlas navigation">
+    subnav_class = ' ma-nav--has-subnav' if kana_section else ''
+    return f"""{NAV_START}
+<nav class="ma-nav ma-nav--{_attr(config.accent)}{subnav_class}"{nav_id} data-ma-navigation="shared" data-ma-page="{_attr(config.key)}" aria-label="Mode Atlas navigation">
   <a class="ma-nav__brand" href="{_attr(config.brand_href)}" aria-label="Mode Atlas home">
     <span class="ma-nav__mark" aria-hidden="true">{html.escape(config.mark)}</span>
     <span class="ma-nav__brand-copy">
@@ -136,10 +158,13 @@ def render_navigation(config: NavConfig) -> str:
     </span>
   </a>
   <div class="ma-nav__content">
-    <div class="ma-nav__links">{' '.join(link_markup)}</div>{action_markup}
+    <div class="ma-nav__primary">
+      <div class="ma-nav__links">{' '.join(link_markup)}</div>{action_markup}
+    </div>
+    {subnav_markup}
   </div>
 </nav>{handle}
-{NAV_END}'''
+{NAV_END}"""
 
 HEAD_ASSETS_START = '<!-- MODE_ATLAS_HEAD_ASSETS_START -->'
 HEAD_ASSETS_END = '<!-- MODE_ATLAS_HEAD_ASSETS_END -->'
