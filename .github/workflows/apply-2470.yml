@@ -1,0 +1,177 @@
+name: Apply Mode Atlas 2.47.0
+
+on:
+  push:
+    branches:
+      - 'agent/mode-atlas-2.47.0-release-candidate-hardening'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out release branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/mode-atlas-2.47.0-release-candidate-hardening
+          fetch-depth: 0
+
+      - name: Apply 2.47.0 source fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          root = Path('.')
+
+          version_path = root / 'assets/app/mode-atlas-version.js'
+          version = version_path.read_text(encoding='utf-8')
+          version = version.replace("var VERSION = '2.46.0';", "var VERSION = '2.47.0';")
+          version = version.replace("var CACHE_REVISION = 'assets-2.46.0';", "var CACHE_REVISION = 'assets-2.47.0';")
+          version_path.write_text(version, encoding='utf-8')
+
+          package_path = root / 'package.json'
+          package = json.loads(package_path.read_text(encoding='utf-8'))
+          package['version'] = '2.47.0'
+          package_path.write_text(json.dumps(package, indent=2) + '\n', encoding='utf-8')
+
+          lock_path = root / 'package-lock.json'
+          lock_text = lock_path.read_text(encoding='utf-8').replace(
+              'https://packages.applied-caas-gateway1.internal.api.openai.org/artifactory/api/npm/npm-public/',
+              'https://registry.npmjs.org/'
+          )
+          lock = json.loads(lock_text)
+          lock['version'] = '2.47.0'
+          if isinstance((lock.get('packages') or {}).get(''), dict):
+              lock['packages']['']['version'] = '2.47.0'
+          lock_path.write_text(json.dumps(lock, indent=2) + '\n', encoding='utf-8')
+
+          manifest_path = root / 'site.webmanifest'
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          for shortcut in manifest.get('shortcuts', []):
+              if shortcut.get('url') == '/results/':
+                  shortcut['name'] = 'Test Results'
+                  shortcut['short_name'] = 'Test Results'
+          manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+
+          smoke_path = root / 'tests/smoke.spec.js'
+          smoke = smoke_path.read_text(encoding='utf-8')
+          old = """      await page.evaluate(() => window.ModeAtlasSettings?.open?.());
+      const updateButton = page.locator('#maCheckUpdatesBtn');
+      const updateStatus = page.locator('#maUpdateStatus');
+"""
+          new = """      const settingsButton = page.locator('[data-settings-open]').first();
+      const settingsDrawer = page.locator('#settingsDrawer');
+      await expect(settingsDrawer).toBeAttached({ timeout: 5000 });
+      await expect(settingsButton).toBeVisible();
+      await expect(settingsButton).toHaveAttribute('data-settings-bound', 'shared', { timeout: 5000 });
+      await settingsButton.click();
+      await expect(settingsDrawer).toBeVisible();
+
+      const updateButton = page.locator('#maCheckUpdatesBtn');
+      const updateStatus = page.locator('#maUpdateStatus');
+      await expect(updateButton).toBeVisible();
+"""
+          if old not in smoke:
+              raise SystemExit('Could not find the stale Settings smoke-test opener.')
+          smoke_path.write_text(smoke.replace(old, new, 1), encoding='utf-8')
+
+          frontend_path = root / 'tests/frontend.test.js'
+          frontend = frontend_path.read_text(encoding='utf-8')
+          marker = "test('2.47 release candidate hardening keeps release tooling reproducible'"
+          if marker not in frontend:
+              frontend += r'''
+
+test('2.47 release candidate hardening keeps release tooling reproducible', () => {
+  const lock = read('package-lock.json');
+  assert.doesNotMatch(lock, /internal\.api\.openai|applied-caas|artifactory\/api\/npm/i,
+    'package-lock must remain installable from public infrastructure');
+
+  const manifest = JSON.parse(read('site.webmanifest'));
+  const resultsShortcut = (manifest.shortcuts || []).find((shortcut) => shortcut.url === '/results/');
+  assert.ok(resultsShortcut, 'PWA manifest must keep the Test Results shortcut');
+  assert.equal(resultsShortcut.name, 'Test Results');
+  assert.equal(resultsShortcut.short_name, 'Test Results');
+
+  const smoke = read('tests/smoke.spec.js');
+  assert.doesNotMatch(smoke, /window\.ModeAtlasSettings\?\.open/,
+    'browser smoke must open Settings through the real user control');
+  assert.match(smoke, /toHaveAttribute\('data-settings-bound', 'shared'/,
+    'browser smoke must wait for shared Settings binding readiness');
+
+  const gate = read('.github/workflows/release-check.yml');
+  assert.match(gate, /npm ci --ignore-scripts --registry=https:\/\/registry\.npmjs\.org\//,
+    'release gate must install from the public npm registry');
+  assert.match(gate, /npm run release:check/, 'release gate must run static and Node release checks');
+  assert.match(gate, /desktop-chromium/, 'release gate must exercise the desktop browser project');
+  assert.match(gate, /mobile-chromium/, 'release gate must exercise the mobile browser project');
+  assert.match(gate, /git diff --exit-code/, 'release gate must reject uncommitted generated assets');
+});
+'''
+              frontend_path.write_text(frontend, encoding='utf-8')
+
+          changelog_path = root / 'CHANGELOG.md'
+          changelog = changelog_path.read_text(encoding='utf-8')
+          if not changelog.startswith('## 2.47.0'):
+              entry = """## 2.47.0 - 2026-08-16
+- Repaired package-lock package URLs so clean machines install Playwright dependencies from the public npm registry instead of an environment-specific internal registry.
+- Made the Settings update-check browser smoke test wait for the shared drawer binding and open Settings through the real visible control rather than an optional internal API.
+- Added a permanent release gate covering the project audit, Node regressions, generated-asset cleanliness, and desktop/mobile Playwright smoke tests.
+- Renamed the PWA assessment shortcut to Test Results so installed-app terminology matches the formal Test Mode reporting experience.
+- Kept trainer behaviour, scoring/SRS, storage schemas, cloud sync, progression, onboarding, PWA install ownership, and update-check application logic unchanged.
+
+"""
+              changelog_path.write_text(entry + changelog, encoding='utf-8')
+          PY
+
+      - name: Verify public package metadata
+        shell: bash
+        run: |
+          if grep -Eiq 'internal\.api\.openai|applied-caas|artifactory/api/npm' package-lock.json; then
+            echo 'Internal npm registry URL remains in package-lock.json.' >&2
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies from public npm
+        run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+
+      - name: Build revisioned assets
+        run: python3 build_revision_assets.py
+
+      - name: Run project audit and Node regressions
+        run: |
+          python3 audit_project.py
+          node --test tests/backend.test.js tests/frontend.test.js
+
+      - name: Install Chromium for browser validation
+        run: npx playwright install --with-deps chromium
+
+      - name: Run desktop and mobile smoke tests
+        run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
+
+      - name: Confirm release build is idempotent
+        run: |
+          python3 build_revision_assets.py
+          python3 audit_project.py
+
+      - name: Commit validated release
+        shell: bash
+        run: |
+          git config user.name 'Mode Atlas Release Bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'Release Mode Atlas 2.47.0 RC hardening'
+          git push origin HEAD:agent/mode-atlas-2.47.0-release-candidate-hardening
