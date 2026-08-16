@@ -5,4 +5,5 @@ s=s.replace("        action_markup = f'''\n", "        action_markup = f\"\"\"\n
 s=s.replace("      </div>'''\n\n    nav_id", "      </div>\"\"\"\n\n    nav_id", 1)
 s=s.replace("    return f'''{NAV_START}\n", "    return f\"\"\"{NAV_START}\n", 1)
 s=s.replace("{NAV_END}'''\n'''\nfront,count", "{NAV_END}\"\"\"\n'''\nfront,count", 1)
+s=s.replace('front,count=re.subn(r"def render_navigation\\(config: NavConfig\\) -> str:[\\s\\S]*?(?=\\nHEAD_ASSETS_START =)",new_render,front,count=1)', 'front,count=re.subn(r"def render_navigation\\(config: NavConfig\\) -> str:[\\s\\S]*?(?=\\nHEAD_ASSETS_START =)",lambda _match:new_render,front,count=1)', 1)
 p.write_text(s,encoding='utf-8')
