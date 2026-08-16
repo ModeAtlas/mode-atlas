@@ -786,8 +786,8 @@ test('trainer consolidation preserves score, heatmap, modifier, nav-clearance, a
     'tablet side panels must return to document flow');
   assert.match(trainerCss, /body\[data-effective-display-mode="phone"\] \.ma-trainer-side-panel,[\s\S]*?position:static;/,
     'phone side panels must return to document flow');
-  assert.match(trainerCss, /body\[data-effective-display-mode="phone"\] \.ma-trainer-card\{[\s\S]*?padding:18px 12px 126px;/,
-    'phone trainer card must retain compact responsive padding');
+  assert.match(trainerCss, /body\[data-effective-display-mode="phone"\] \.ma-trainer-card\{[\s\S]*?padding:18px 12px 28px;/,
+    'idle phone trainer card must retain compact responsive padding');
 });
 
 test('Kana, Results, and Word Bank consume shared page UI primitives without re-owning their mechanics', () => {
@@ -1715,4 +1715,37 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
   assert.match(gate, /desktop-chromium/, 'release gate must exercise the desktop browser project');
   assert.match(gate, /mobile-chromium/, 'release gate must exercise the mobile browser project');
   assert.match(gate, /git diff --exit-code/, 'release gate must reject uncommitted generated assets');
+});
+
+
+test('2.47 final responsive polish keeps explicit display modes and Atlas rank milestones aligned', () => {
+  const bindings = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const navigation = read('assets/css/mode-atlas-navigation.css');
+  const drawers = read('assets/css/mode-atlas-profile-settings.css');
+  const study = read('assets/css/mode-atlas-study-shared.css');
+
+  assert.match(bindings, /if \(level >= 75\) return 'teal'/);
+  assert.match(bindings, /if \(level >= 50\) return 'violet'/);
+  assert.match(bindings, /if \(level >= 25\) return 'gold'/);
+  assert.match(bindings, /if \(level >= 10\) return 'silver'/);
+  assert.doesNotMatch(bindings, /level >= (?:76|51|26|11)/,
+    'Atlas rank colours must change on the milestone level itself');
+
+  assert.match(navigation, /body\[data-effective-display-mode="phone"\] \.ma-nav__content/);
+  assert.match(navigation, /body\[data-effective-display-mode="phone"\] \.ma-nav__links\{[\s\S]*grid-row:2/);
+  assert.match(navigation, /body\[data-effective-display-mode="phone"\] \.ma-nav__actions\{[\s\S]*grid-row:1/);
+
+  assert.match(drawers, /body\[data-effective-display-mode="tablet"\] \.ma-drawer\{/);
+  assert.match(drawers, /overflow-x:hidden;overflow-y:auto/);
+  assert.doesNotMatch(drawers, /@media\(max-width:1180px\)\{\s*body\[data-effective-display-mode="tablet"\]/,
+    'explicit Tablet drawer geometry must not depend on physical viewport width');
+  assert.match(drawers, /\.ma-progression-footer\{display:flex;flex-wrap:wrap/);
+
+  assert.match(study, /safe-area-inset-top/);
+  assert.doesNotMatch(study, /padding:20px 14px 130px/,
+    'idle mobile trainer must not retain the retired viewport-filling bottom padding');
+  assert.doesNotMatch(study, /padding:18px 12px 126px/,
+    'explicit Phone trainer must not retain the retired viewport-filling bottom padding');
+  assert.match(study, /body\.trainer-session-active \.ma-trainer-prompt-wrap/,
+    'focused active-session sizing must remain owned separately');
 });

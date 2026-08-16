@@ -278,4 +278,88 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(settingsButton).toBeFocused();
     });
   });
+
+  test('phone navigation, idle trainer, and explicit Tablet drawers stay inside their layouts', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expectNoSevereConsoleErrors(page, async () => {
+      await gotoApp(page, '/wordbank/');
+      await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'phone');
+
+      const phoneNav = await page.evaluate(() => {
+        const nav = document.querySelector('.ma-nav');
+        const links = nav?.querySelector('.ma-nav__links');
+        const actions = nav?.querySelector('.ma-nav__actions');
+        if (!nav || !links || !actions) return null;
+        const nr = nav.getBoundingClientRect();
+        const lr = links.getBoundingClientRect();
+        const ar = actions.getBoundingClientRect();
+        const overlaps = lr.left < ar.right && lr.right > ar.left && lr.top < ar.bottom && lr.bottom > ar.top;
+        const controls = [...links.children, ...actions.children].map(node => node.getBoundingClientRect());
+        return {
+          overlaps,
+          contained: controls.every(rect => rect.left >= nr.left - 1 && rect.right <= nr.right + 1),
+          linksBelowActions: lr.top >= ar.bottom - 1
+        };
+      });
+      expect(phoneNav).not.toBeNull();
+      expect(phoneNav.overlaps).toBe(false);
+      expect(phoneNav.contained).toBe(true);
+      expect(phoneNav.linksBelowActions).toBe(true);
+
+      await gotoApp(page, '/reading/');
+      const idleTrainer = await page.evaluate(() => {
+        const card = document.querySelector('.ma-trainer-card');
+        const style = card ? getComputedStyle(card) : null;
+        return style ? {
+          paddingBottom: parseFloat(style.paddingBottom),
+          minHeight: parseFloat(style.minHeight) || 0,
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+        } : null;
+      });
+      expect(idleTrainer).not.toBeNull();
+      expect(idleTrainer.paddingBottom).toBeLessThanOrEqual(32);
+      expect(idleTrainer.minHeight).toBe(0);
+      expect(idleTrainer.overflow).toBeLessThanOrEqual(1);
+    });
+
+    await page.setViewportSize({ width: 1366, height: 1024 });
+    await page.addInitScript(() => localStorage.setItem('modeAtlasDisplayMode', 'tablet'));
+    await gotoApp(page, '/kana/');
+    await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'tablet');
+
+    const assertDrawerFits = async (selector) => {
+      const metrics = await page.locator(selector).evaluate((drawer) => {
+        const rect = drawer.getBoundingClientRect();
+        return {
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+          width: rect.width,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
+          horizontalOverflow: drawer.scrollWidth - drawer.clientWidth
+        };
+      });
+      expect(metrics.left).toBeGreaterThanOrEqual(0);
+      expect(metrics.top).toBeGreaterThanOrEqual(0);
+      expect(metrics.right).toBeLessThanOrEqual(metrics.viewportWidth + 1);
+      expect(metrics.bottom).toBeLessThanOrEqual(metrics.viewportHeight + 1);
+      expect(metrics.width).toBeLessThanOrEqual(620);
+      expect(metrics.horizontalOverflow).toBeLessThanOrEqual(1);
+    };
+
+    const settingsTrigger = page.locator('[data-settings-open]:visible').first();
+    await settingsTrigger.click();
+    await expect(page.locator('#settingsDrawer')).toBeVisible();
+    await assertDrawerFits('#settingsDrawer');
+    await page.locator('#settingsCloseBtn').click();
+
+    const profileTrigger = page.locator('#profileOpenBtn');
+    await profileTrigger.click();
+    await expect(page.locator('#profileDrawer')).toBeVisible();
+    await assertDrawerFits('#profileDrawer');
+    await page.locator('#profileCloseBtn').click();
+  });
+
 });

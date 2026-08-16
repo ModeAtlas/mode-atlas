@@ -31,10 +31,10 @@
   }
 
   function atlasLevelRank(level){
-    if (level >= 76) return 'teal';
-    if (level >= 51) return 'violet';
-    if (level >= 26) return 'gold';
-    if (level >= 11) return 'silver';
+    if (level >= 75) return 'teal';
+    if (level >= 50) return 'violet';
+    if (level >= 25) return 'gold';
+    if (level >= 10) return 'silver';
     return 'bronze';
   }
 
