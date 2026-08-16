@@ -34,8 +34,12 @@
   }
 
   trigger.addEventListener('click', function(event){
-    event.preventDefault();
-    setOpen(!isOpen());
+    var finePointer = !!(hoverQuery && hoverQuery.matches);
+    if (finePointer) return;
+    if (!isOpen()) {
+      event.preventDefault();
+      setOpen(true);
+    }
   });
 
   menu.addEventListener('focusin', function(){ setOpen(true); });

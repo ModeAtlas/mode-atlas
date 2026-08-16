@@ -185,7 +185,8 @@
   padding:0 11px;
   display:flex;
   align-items:center;
-  justify-content:flex-start;
+  justify-content:center;
+  text-align:center;
   border:1px solid transparent;
   border-radius:12px;
   color:var(--ma-muted);

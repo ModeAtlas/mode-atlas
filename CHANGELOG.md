@@ -1,3 +1,9 @@
+## 2.34.2 - 2026-08-16
+- Restored Kana Trainer as a direct navigation destination while retaining the compact Kana section flyout.
+- Desktop/fine-pointer users can hover to inspect Kana sections and click Kana Trainer to go straight to the Kana overview.
+- Touch users open the flyout on the first tap and navigate to Kana on a second tap of the Kana Trainer control, avoiding a fragile timed double-tap gesture.
+- Centered Overview, Reading, Writing, and Results labels within the flyout controls.
+
 ## 2.34.1 - 2026-08-16
 - Replaced the in-flow Kana Trainer secondary navigation row with a compact floating flyout so the shared header stays single-height on desktop.
 - Kana Trainer now opens its Overview, Reading, Writing, and Results destinations on hover/focus with pointer devices and on tap/click for touch devices.

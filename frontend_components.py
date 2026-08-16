@@ -127,11 +127,11 @@ def render_navigation(config: NavConfig) -> str:
             classes = 'ma-nav__link ma-nav__menu-trigger' + (' is-active' if active else '')
             link_markup.append(
                 '<div class="ma-nav__menu" data-ma-kana-menu>'
-                f'<button class="{classes}" type="button" data-ma-nav-scope="product" '
+                f'<a class="{classes}" href="/kana/" data-ma-nav-scope="product" '
                 'data-ma-nav-item="kana" data-ma-kana-menu-trigger aria-haspopup="true" '
                 'aria-expanded="false" aria-controls="maKanaMenu">'
                 f'<span>{html.escape(label)}</span><span class="ma-nav__menu-chevron" aria-hidden="true"></span>'
-                '</button>'
+                '</a>'
                 f'{kana_flyout}'
                 '</div>'
             )

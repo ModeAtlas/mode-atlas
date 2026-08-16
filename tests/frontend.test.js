@@ -1150,3 +1150,16 @@ test('2.34.1 Kana navigation flyout stays out of header flow and supports pointe
     assert.match(html, new RegExp(`mode-atlas-navigation-menu\\.${REVISION.replaceAll('.', '\\.')}\\.js`), `${rel} shared Kana menu runtime`);
   }
 });
+
+test('2.34.2 Kana flyout keeps fast desktop navigation and deliberate touch access', () => {
+  const frontend = read('frontend_components.py');
+  const navJs = read('assets/ui/mode-atlas-navigation-menu.js');
+  const navCss = read('assets/css/mode-atlas-navigation.css');
+  assert.match(frontend, /f'<a class="\{classes\}" href="\/kana\/" data-ma-nav-scope="product"/);
+  assert.doesNotMatch(frontend, /f'<button class="\{classes\}" type="button" data-ma-nav-scope="product"/);
+  assert.match(navJs, /var finePointer = !!\(hoverQuery && hoverQuery\.matches\)/);
+  assert.match(navJs, /if \(finePointer\) return/);
+  assert.match(navJs, /if \(!isOpen\(\)\) \{\s*event\.preventDefault\(\);\s*setOpen\(true\);/);
+  assert.doesNotMatch(navJs, /setOpen\(!isOpen\(\)\)/);
+  assert.match(navCss, /\.ma-nav__section-link\{[\s\S]*?justify-content:center;[\s\S]*?text-align:center;/);
+});
