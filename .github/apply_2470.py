@@ -59,11 +59,25 @@ manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\
 
 smoke_path = ROOT / 'tests/smoke.spec.js'
 smoke = smoke_path.read_text(encoding='utf-8')
+seed_anchor = "      localStorage.setItem('modeAtlasSmokeSeeded', '1');\n"
+seed_block = """      localStorage.setItem('modeAtlasSmokeSeeded', '1');
+      localStorage.setItem('modeAtlasStarterSeen', 'true');
+      localStorage.setItem('modeAtlasOnboardingComplete', 'true');
+      localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
+      localStorage.setItem('modeAtlasLegalAccepted', 'true');
+      localStorage.setItem('modeAtlasLegalAcceptedAt', String(Date.now()));
+      localStorage.setItem('modeAtlasLegalVersion', '2026-05');
+"""
+if "localStorage.setItem('modeAtlasOnboardingComplete', 'true');" not in smoke:
+    if seed_anchor not in smoke:
+        raise SystemExit('Smoke-test local state seed is in an unexpected state.')
+    smoke = smoke.replace(seed_anchor, seed_block, 1)
+
 old = """      await page.evaluate(() => window.ModeAtlasSettings?.open?.());
       const updateButton = page.locator('#maCheckUpdatesBtn');
       const updateStatus = page.locator('#maUpdateStatus');
 """
-new = """      const settingsButton = page.locator('[data-settings-open]').first();
+new = """      const settingsButton = page.locator('[data-settings-open]:visible').first();
       const settingsDrawer = page.locator('#settingsDrawer');
       await expect(settingsDrawer).toBeAttached({ timeout: 5000 });
       await expect(settingsButton).toBeVisible();
@@ -79,6 +93,10 @@ if old in smoke:
     smoke = smoke.replace(old, new, 1)
 elif new not in smoke:
     raise SystemExit('Settings smoke-test opener is in an unexpected state.')
+smoke = smoke.replace(
+    "page.locator('[data-settings-open]').first()",
+    "page.locator('[data-settings-open]:visible').first()",
+)
 smoke_path.write_text(smoke, encoding='utf-8')
 
 frontend_path = ROOT / 'tests/frontend.test.js'
@@ -111,8 +129,12 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
   const smoke = read('tests/smoke.spec.js');
   assert.doesNotMatch(smoke, /window\.ModeAtlasSettings\?\.open/,
     'browser smoke must open Settings through the real user control');
+  assert.match(smoke, /\[data-settings-open\]:visible/,
+    'browser smoke must select the visible shared Settings trigger');
   assert.match(smoke, /toHaveAttribute\('data-settings-bound', 'shared'/,
     'browser smoke must wait for shared Settings binding readiness');
+  assert.match(smoke, /modeAtlasOnboardingComplete[\s\S]*modeAtlasKanaSetupComplete/,
+    'core browser smoke must seed a completed stable-user setup rather than be blocked by onboarding');
 
   const gate = read('.github/workflows/release-check.yml');
   assert.match(gate, /npm ci --ignore-scripts --registry=https:\/\/registry\.npmjs\.org\//,
@@ -131,7 +153,7 @@ if not changelog.startswith('## 2.47.0'):
     entry = """## 2.47.0 - 2026-08-16
 - Repaired package-lock package URLs so clean machines install Playwright dependencies from the public npm registry instead of an environment-specific internal registry.
 - Restricted revision-build and release-audit HTML discovery to Mode Atlas source, preventing installed dependencies and browser-test output from being interpreted as application pages on clean CI machines.
-- Made the Settings update-check browser smoke test wait for the shared drawer binding and open Settings through the real visible control rather than an optional internal API.
+- Made Settings browser smoke coverage wait for the shared drawer binding and use the real visible Settings control, while core smoke state now explicitly represents a completed learner setup so onboarding cannot intercept unrelated interaction tests.
 - Added a permanent release gate covering the project audit, Node regressions, generated-asset cleanliness, and desktop/mobile Playwright smoke tests.
 - Renamed the PWA assessment shortcut to Test Results so installed-app terminology matches the formal Test Mode reporting experience.
 - Kept trainer behaviour, scoring/SRS, storage schemas, cloud sync, progression, onboarding, PWA install ownership, and update-check application logic unchanged.
