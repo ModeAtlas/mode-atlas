@@ -45,6 +45,7 @@
     head.append(heading, close);
 
     const message = create('p', 'ma-dialog__message');
+    message.id = 'maDialogMessage';
     message.dataset.maDialogMessage = '';
     const content = create('div', 'ma-dialog__content');
     content.dataset.maDialogContent = '';
@@ -78,7 +79,7 @@
 
   function focusables(panel){
     return Array.from(panel.querySelectorAll('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'))
-      .filter((el) => !el.hidden && el.getAttribute('aria-hidden') !== 'true');
+      .filter((el) => !el.hidden && el.getAttribute('aria-hidden') !== 'true' && el.getClientRects().length > 0);
   }
 
   function settle(value){
@@ -117,6 +118,8 @@
     title.textContent = opts.title;
     message.textContent = opts.message;
     message.hidden = !opts.message;
+    if (opts.message) panel.setAttribute('aria-describedby', message.id);
+    else panel.removeAttribute('aria-describedby');
     content.replaceChildren();
     content.hidden = !opts.contentNode;
     if (opts.contentNode) content.appendChild(opts.contentNode);

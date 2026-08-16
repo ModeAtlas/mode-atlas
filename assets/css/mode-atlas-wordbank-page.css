@@ -226,3 +226,5 @@ body[data-effective-display-mode="phone"] .card-summary{grid-template-columns:mi
 body[data-effective-display-mode="phone"] .summary-col{display:none;}
 
 @media(prefers-reduced-motion:reduce){.card-summary,.summary-toggle{transition:none;}}
+
+@media(pointer:coarse){.summary-toggle{width:44px;height:44px;}}

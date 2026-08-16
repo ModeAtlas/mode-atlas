@@ -624,3 +624,9 @@ body[data-effective-display-mode="phone"] .ma-setting-row__control{justify-self:
   .ma-progress__fill,.ma-trend__bar{transition:none;}
   .ma-skeleton-block::after,.ma-skeleton-text::after{animation:none;display:none;}
 }
+
+
+@media(pointer:coarse){
+  .ma-button--small{--ma-button-min-height:44px;}
+  .ma-icon-button,.ma-dialog__close--icon{min-width:44px;min-height:44px;}
+}

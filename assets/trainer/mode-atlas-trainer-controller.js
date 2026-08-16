@@ -186,15 +186,19 @@
       const scoresContentEl = byId('scoresContent');
       const scoresChevronEl = byId('scoresChevron');
 
-      modifiersContentEl?.classList.toggle('open', settings.activeBottomTab === 'modifiers');
+      const modifiersOpen = settings.activeBottomTab === 'modifiers';
+      modifiersContentEl?.classList.toggle('open', modifiersOpen);
       optionsContentEl?.classList.toggle('open', false);
-      modifiersTabEl?.classList.toggle('active', settings.activeBottomTab === 'modifiers');
+      modifiersTabEl?.classList.toggle('active', modifiersOpen);
+      modifiersTabEl?.setAttribute('aria-expanded', String(modifiersOpen));
       optionsTabEl?.classList.toggle('active', false);
       if (modifiersTabEl) modifiersTabEl.textContent = settings.activeBottomTab === 'modifiers' ? 'Practice setup ▲' : 'Practice setup ▼';
       if (optionsTabEl) optionsTabEl.textContent = 'Options ▼';
       statsContentEl?.classList.toggle('hidden', !settings.statsVisible);
+      byId('statsHeader')?.setAttribute('aria-expanded', String(!!settings.statsVisible));
       if (statsChevronEl) statsChevronEl.textContent = settings.statsVisible ? '▼' : '▲';
       scoresContentEl?.classList.toggle('hidden', !settings.scoresVisible);
+      byId('scoresHeader')?.setAttribute('aria-expanded', String(!!settings.scoresVisible));
       if (scoresChevronEl) scoresChevronEl.textContent = settings.scoresVisible ? '▼' : '▲';
       document.body.classList.toggle('mobile-mode', !!settings.mobileMode);
     }

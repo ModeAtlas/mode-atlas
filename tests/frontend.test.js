@@ -1576,3 +1576,51 @@ test('2.44 app-wide UX vocabulary keeps product destinations and actions semanti
   assert.match(settings, />Data and app<\/strong>/);
   assert.doesNotMatch(settings, />iPad<\/button>|>Data & app<\/strong>/);
 });
+
+
+test('2.45 responsive and accessibility QA keeps landmarks, keyboard controls, focus traps, and touch targets shared', () => {
+  const frontend = read('frontend_components.py');
+  const navigation = read('assets/css/mode-atlas-navigation.css');
+  const components = read('assets/css/mode-atlas-components.css');
+  const profileSettings = read('assets/css/mode-atlas-profile-settings.css');
+  const dialog = read('assets/app/mode-atlas-dialog.js');
+  const controller = read('assets/trainer/mode-atlas-trainer-controller.js');
+  const sharedTrainer = read('assets/trainer/mode-atlas-trainer-shared.js');
+  const studyCss = read('assets/css/mode-atlas-study-shared.css');
+  const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
+  const kanaCss = read('assets/css/mode-atlas-kana-page.css');
+
+  assert.match(frontend, /ma-skip-link[^>]+href=\"#mainContent\"/);
+  assert.match(frontend, /<main id=\"mainContent\" class=\"app-shell ma-trainer-shell\"/);
+  assert.match(frontend, /<button class=\"panel-header\" id=\"scoresHeader\" type=\"button\" aria-expanded=\"true\" aria-controls=\"scoresContent\"/);
+  assert.match(frontend, /<button class=\"panel-header\" id=\"statsHeader\" type=\"button\" aria-expanded=\"true\" aria-controls=\"statsContent\"/);
+  assert.match(frontend, /<button class=\"tab-button\" id=\"modifiersTab\" type=\"button\" aria-expanded=\"false\" aria-controls=\"modifiersContent\"/);
+
+  for (const page of ['index.html','kana/index.html','reading/index.html','writing/index.html','results/index.html','wordbank/index.html','privacy/index.html','terms/index.html']) {
+    const html = read(page);
+    assert.equal((html.match(/id=\"mainContent\"/g) || []).length, 1, `${page} should expose one main content target`);
+    assert.match(html, /class=\"ma-skip-link\" href=\"#mainContent\"/);
+  }
+
+  assert.match(navigation, /\.ma-skip-link\{/);
+  assert.match(navigation, /@media\(pointer:coarse\)[\s\S]*\.ma-nav__section-link[\s\S]*min-height:44px/);
+  assert.match(components, /@media\(pointer:coarse\)[\s\S]*\.ma-button--small\{--ma-button-min-height:44px;\}/);
+  assert.match(profileSettings, /body\.profile-open,body\.settings-open\{overflow:hidden;\}/);
+  assert.match(wordbankCss, /@media\(pointer:coarse\)\{\.summary-toggle\{width:44px;height:44px;\}\}/);
+  assert.match(kanaCss, /@media\(pointer:coarse\)\{\.kana-ghost-action,\.kana-map-action,\.kana-inline-btn\{--ma-button-min-height:44px;\}\}/);
+
+  assert.match(dialog, /message\.id = 'maDialogMessage'/);
+  assert.match(dialog, /el\.getClientRects\(\)\.length > 0/);
+  assert.match(dialog, /panel\.setAttribute\('aria-describedby', message\.id\)/);
+  assert.match(controller, /modifiersTabEl\?\.setAttribute\('aria-expanded', String\(modifiersOpen\)\)/);
+  assert.match(controller, /byId\('statsHeader'\)\?\.setAttribute\('aria-expanded'/);
+  assert.match(controller, /byId\('scoresHeader'\)\?\.setAttribute\('aria-expanded'/);
+  assert.match(sharedTrainer, /document\.createElement\(\"button\"\)[\s\S]*View mastery details/);
+  assert.match(sharedTrainer, /e\.detail === 0[\s\S]*getBoundingClientRect/);
+  assert.match(sharedTrainer, /e\.key !== \"Escape\"/);
+  assert.match(studyCss, /button\.cell\{appearance:none;min-height:0/);
+
+  const sharedPage = read('assets/css/mode-atlas-page-shared.css');
+  assert.match(sharedPage, /button:focus-visible,a:focus-visible/);
+  assert.match(sharedPage, /prefers-reduced-motion:reduce/);
+});

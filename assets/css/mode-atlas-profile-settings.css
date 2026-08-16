@@ -1,3 +1,4 @@
+body.profile-open,body.settings-open{overflow:hidden;}
 /* Shared Profile and Settings drawers. The drawers present account/settings
    information; navigation stays owned by the shared top navigation. */
 .ma-drawer-backdrop{

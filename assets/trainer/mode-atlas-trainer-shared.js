@@ -632,10 +632,13 @@ function renderHeatmap() {
         : activeChars;
 
     for (const ch of heatmapChars) {
-        const cell = document.createElement("div");
+        const cell = document.createElement("button");
+        cell.type = "button";
         cell.className = "cell";
         if (String(ch).length > 1) cell.classList.add("combo");
         cell.textContent = ch;
+        const cellStats = getStats(ch);
+        cell.setAttribute("aria-label", `${ch}: ${cellStats.correct || 0} correct, ${cellStats.wrong || 0} incorrect. View mastery details`);
         cell.style.background = heatmapColor(ch);
 
         cell.addEventListener("mouseenter", (e) => {
@@ -656,7 +659,19 @@ function renderHeatmap() {
             e.stopPropagation();
             popupLocked = true;
             hoveredCell = cell;
-            showPopupForChar(ch, e);
+            if (e.detail === 0) {
+                const rect = cell.getBoundingClientRect();
+                showPopupForChar(ch, { clientX: rect.left + (rect.width / 2), clientY: rect.top + (rect.height / 2) });
+            } else {
+                showPopupForChar(ch, e);
+            }
+        });
+        cell.addEventListener("keydown", (e) => {
+            if (e.key !== "Escape") return;
+            e.preventDefault();
+            popupLocked = false;
+            hoveredCell = null;
+            closePopup();
         });
 
         heatmapEl.appendChild(cell);

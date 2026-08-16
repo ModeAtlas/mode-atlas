@@ -314,3 +314,38 @@ html[data-ma-theme="light"] .ma-nav__section-link.is-active{color:var(--ma-text-
 @media(max-width:520px){
   .ma-nav__focus{display:inline-flex;}
 }
+
+
+/* Keyboard bypass link stays out of the visual shell until focused. */
+.ma-skip-link{
+  position:fixed;
+  top:max(12px,env(safe-area-inset-top));
+  left:max(12px,env(safe-area-inset-left));
+  z-index:12050;
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  padding:0 16px;
+  border:1px solid var(--ma-border-strong);
+  border-radius:var(--ma-radius-control);
+  background:var(--ma-surface-strong);
+  color:var(--ma-text-strong);
+  box-shadow:var(--ma-shadow-soft);
+  font-weight:850;
+  text-decoration:none;
+  opacity:0;
+  transform:translateY(calc(-100% - 24px));
+  pointer-events:none;
+}
+.ma-skip-link:focus-visible{
+  opacity:1;
+  transform:none;
+  pointer-events:auto;
+  outline:3px solid var(--ma-focus-ring);
+  outline-offset:2px;
+}
+
+@media(pointer:coarse){
+  .ma-nav__link,.ma-nav__section-link,.ma-nav__action{min-height:44px;}
+  .ma-nav__profile,.ma-nav__settings{width:44px;min-width:44px;min-height:44px;}
+}

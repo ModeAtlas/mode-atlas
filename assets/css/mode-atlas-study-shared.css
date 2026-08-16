@@ -1763,3 +1763,20 @@ body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-si
   body.trainer-session-active .bottom-shell.ma-modifiers-only,
   body:not(.trainer-session-active) .bottom-shell.ma-modifiers-only{transition:none;}
 }
+
+
+/* Trainer disclosure controls are native buttons for keyboard operation without changing their visual role. */
+.ma-trainer-side-panel button.panel-header,
+.bottom-shell button.tab-button{
+  appearance:none;
+  width:100%;
+  margin:0;
+  background:transparent;
+  color:inherit;
+  -webkit-text-fill-color:currentColor;
+  box-shadow:none;
+  font:inherit;
+}
+.ma-trainer-side-panel button.panel-header{border:0;text-align:inherit;}
+.bottom-shell button.tab-button{border-top:0;border-bottom:0;border-left:0;}
+button.cell{appearance:none;min-height:0;padding:0;color:inherit;-webkit-text-fill-color:currentColor;font:inherit;box-shadow:none;}

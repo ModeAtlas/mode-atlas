@@ -430,3 +430,5 @@ a.kana-next-card{text-decoration:none;}
   .kana-accuracy-card{grid-template-columns:1fr;text-align:center;}.kana-ring{justify-self:center;}.kana-mini-grid{text-align:left;}
 }
 @media(prefers-reduced-motion:reduce){.kana-pathway,.kana-next-card--recommended,.kana-stage-card{transition:none;}}
+
+@media(pointer:coarse){.kana-ghost-action,.kana-map-action,.kana-inline-btn{--ma-button-min-height:44px;}}

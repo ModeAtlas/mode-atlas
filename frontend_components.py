@@ -166,6 +166,7 @@ def render_navigation(config: NavConfig) -> str:
         handle = '\n<button class="ma-nav-handle" id="studyNavShowBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span>Exit focus mode</span></button>'
 
     return f"""{NAV_START}
+<a class="ma-skip-link" href="#mainContent">Skip to main content</a>
 <nav class="ma-nav ma-nav--{_attr(config.accent)}"{nav_id} data-ma-navigation="shared" data-ma-page="{_attr(config.key)}" aria-label="Mode Atlas navigation">
   <a class="ma-nav__brand" href="{_attr(config.brand_href)}" aria-label="{_attr('Kana Trainer home' if config.brand_href == '/kana/' else 'Mode Atlas home')}">
     <span class="ma-nav__mark" aria-hidden="true">{html.escape(config.mark)}</span>
@@ -567,7 +568,7 @@ def _trainer_prompt(config: TrainerConfig) -> str:
 
 def _trainer_score_panels(config: TrainerConfig) -> str:
     return f'''    <div class="side-panel ma-card ma-card--flat ma-trainer-side-panel left-panel">
-        <div class="panel-header" id="scoresHeader"><span>Records</span><span id="scoresChevron">▼</span></div>
+        <button class="panel-header" id="scoresHeader" type="button" aria-expanded="true" aria-controls="scoresContent"><span>Records</span><span id="scoresChevron" aria-hidden="true">▼</span></button>
         <div class="panel-content" id="scoresContent">
             <a class="ma-button ma-button--small ma-button--wide ma-trainer-results-link" href="/results/"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-chart"></use></svg><span>View Test Results</span></a>
             <div class="score-block ma-card ma-card--flat ma-trainer-score-card">
@@ -594,7 +595,7 @@ def _trainer_score_panels(config: TrainerConfig) -> str:
     </div>
 
     <div class="side-panel ma-card ma-card--flat ma-trainer-side-panel right-panel">
-        <div class="panel-header" id="statsHeader"><span>Mastery</span><span id="statsChevron">▼</span></div>
+        <button class="panel-header" id="statsHeader" type="button" aria-expanded="true" aria-controls="statsContent"><span>Mastery</span><span id="statsChevron" aria-hidden="true">▼</span></button>
         <div class="panel-content" id="statsContent"><div id="heatmap" class="heatmap"></div></div>
     </div>'''
 
@@ -616,7 +617,7 @@ def _trainer_modifier_shell(config: TrainerConfig) -> str:
     return f'''<div id="popup" class="popup" hidden></div>
 
 <div class="bottom-shell ma-modifiers-only" data-ma-trainer-modifiers="shared">
-    <div class="tab-row"><div class="tab-button" id="modifiersTab">Practice setup ▼</div></div>
+    <div class="tab-row"><button class="tab-button" id="modifiersTab" type="button" aria-expanded="false" aria-controls="modifiersContent">Practice setup ▼</button></div>
     <div class="drawer-content" id="modifiersContent">
         <div class="ma-practice-setup-head"><div><span class="ma-kicker">Before you start</span><h2>Practice setup</h2><p>Choose a preset or customise the question flow, input and kana included in this session.</p></div></div>
         <div class="options-stack">
@@ -634,7 +635,7 @@ def render_trainer_shell(config: TrainerConfig) -> str:
         beta = '        <div class="beta-badge writing-beta-badge">Experimental Feature <span class="beta-badge-muted">Beta</span></div>\n'
     daily_badge = f"{config.daily_title} · First try sets today's official score"
     return f'''{TRAINER_START}
-<div class="app-shell ma-trainer-shell" data-ma-trainer-shell="shared" data-ma-trainer-mode="{_attr(config.mode)}">
+<main id="mainContent" class="app-shell ma-trainer-shell" data-ma-trainer-shell="shared" data-ma-trainer-mode="{_attr(config.mode)}">
     <div class="main ma-card ma-trainer-card">
         <header class="ma-trainer-header">
 {beta}            <h1>{html.escape(config.title)}</h1>
@@ -673,7 +674,7 @@ def render_trainer_shell(config: TrainerConfig) -> str:
     </div>
 
 {_trainer_score_panels(config)}
-</div>
+</main>
 
 {_trainer_modifier_shell(config)}
 {TRAINER_END}'''
