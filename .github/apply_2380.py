@@ -79,9 +79,12 @@ end_marker = '@media(prefers-reduced-motion:reduce){'
 end_start = css.find(end_marker, start)
 if end_start < 0:
     raise RuntimeError('trainer active-state reduced-motion block not found')
-end = css.find('}', end_start)
+inner_end = css.find('}', end_start)
+if inner_end < 0:
+    raise RuntimeError('trainer active-state inner reduced-motion block end not found')
+end = css.find('}', inner_end + 1)
 if end < 0:
-    raise RuntimeError('trainer active-state block end not found')
+    raise RuntimeError('trainer active-state outer reduced-motion block end not found')
 end += 1
 new_block = r'''/* Setup and active practice are distinct visual states. The shared trainer
    visibility owner toggles body.trainer-session-active; presentation consumes
