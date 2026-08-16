@@ -53,3 +53,22 @@ jobs:
 
       - name: Run desktop and mobile browser smoke tests
         run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
+
+      - name: Stage validated source artifact
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          release_dir="${RUNNER_TEMP}/mode-atlas-release"
+          rm -rf "$release_dir"
+          mkdir -p "$release_dir"
+          git archive HEAD | tar -x -C "$release_dir"
+
+      - name: Upload validated source artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mode-Atlas-2.47.0-${{ github.sha }}
+          path: ${{ runner.temp }}/mode-atlas-release
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
