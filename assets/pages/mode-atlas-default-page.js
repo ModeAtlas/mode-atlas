@@ -142,97 +142,70 @@ const dailyHistoryListEl = document.getElementById("dailyHistoryList");
 const timeTrialTop3El = document.getElementById("timeTrialTop3");
 const speedRunTop3El = document.getElementById("speedRunTop3");
 
-function saveAll() {
-    window.ModeAtlasTrainerCore.saveTrainerState({
-        mode: "reading",
-        section: "reading",
-        settings,
-        stats,
-        times,
-        srs,
-        scoreHistory,
-        dailyChallengeHistory,
-        highScore
-    });
-}
+const trainerController = window.ModeAtlasTrainerController.create({
+    mode: "reading",
+    defaults: DEFAULT_SETTINGS,
+    dailySeedPrefix: "daily",
+    getDailyPoolMap: () => getDailyChallengePoolMap(),
+    showOfficialWhenRecorded: false,
+    clearLastWrongOnCorrect: false,
+    labels: {
+        dailyTitle: 'Reading Daily Challenge',
+        dailySubline: '20 questions · All hiragana, katakana, and dakuten',
+        testTitle: 'Reading Test Mode',
+        testSubline: 'One full shuffled pass through all enabled test kana',
+        practiceTitle: 'Reading Practice',
+        practiceSubline: 'Enter the matching romaji'
+    },
+    getSnapshot: () => ({
+        settings, stats, times, srs, scoreHistory, dailyChallengeHistory, highScore,
+        sessionStarted, sessionStats, streak, endlessRunTotal, endlessRunWrong,
+        dailyIndex, dailyCorrect, dailyWrong, testIndex, testCorrect, testWrong,
+        testSequence, trialTarget, activeChars, locked
+    }),
+    applySaveBackedState: (next) => {
+        settings = next.settings;
+        stats = next.stats;
+        times = next.times;
+        srs = next.srs;
+        scoreHistory = next.scoreHistory;
+        dailyChallengeHistory = next.dailyChallengeHistory;
+        highScore = next.highScore;
+    },
+    setScoreHistory: (next) => { scoreHistory = next; },
+    getDebugPanel: () => DEBUG_PANEL,
+    getRows: () => ({ hiraganaRows, katakanaRows }),
+    hooks: {
+        rebuildCharMap,
+        ensureDataObjects,
+        buildModifierButtons,
+        buildOptionButtons,
+        buildRows,
+        applyPanelStates,
+        updateTrialConfigVisibility,
+        renderHeatmap,
+        updateTopStats,
+        renderDebugPanel,
+        renderScoreHistory,
+        showIdleState
+    }
+});
+const { debugEl, debugLine, debugValueLine, debugRow, debugCard } = window.ModeAtlasTrainerController.debug;
+
+function saveAll() { return trainerController.saveAll(); }
 
 
 function getDailyChallengePoolMap() {
     return DAILY_CHALLENGE_CHAR_MAP;
 }
 
-function buildDailySequence(dateKey = getTodayKey()) {
-    return window.ModeAtlasTrainerCore.buildDailySequence({
-        poolMap: getDailyChallengePoolMap(),
-        count: 20,
-        seed: `daily:${dateKey}`,
-        rngFactory: createSeededRng
-    });
-}
+function buildDailySequence(dateKey = getTodayKey()) { return trainerController.buildDailySequence(dateKey); }
 
 
 
-function applyDailyChallengeTheme() {
-    const dailyActive = isDailyChallengeSession();
-    const testActive = isTestModeSession();
+function applyDailyChallengeTheme() { return trainerController.applyDailyChallengeTheme(); }
 
-    document.body.classList.toggle("daily-challenge-active", dailyActive);
-    document.body.classList.toggle("test-mode-active", testActive);
-
-    if (dailyBadgeEl) setElementVisible(dailyBadgeEl, dailyActive);
-    if (testBadgeEl) setElementVisible(testBadgeEl, testActive);
-
-    if (dailyActive) {
-        titleEl.textContent = "Reading Daily Challenge";
-        sublineEl.textContent = "20 questions · All hiragana, katakana, and dakuten";
-    } else if (testActive) {
-        titleEl.textContent = "Reading Test Mode";
-        sublineEl.textContent = "One full shuffled pass through all enabled test kana";
-    } else {
-        titleEl.textContent = "Reading Practice";
-        sublineEl.textContent = "Enter the matching romaji";
-    }
-}
-
-function updateDailyChallengePills() {
-    const dailyActive = isDailyChallengeSession() && sessionStarted;
-    setElementVisible(dailyProgressPill, dailyActive);
-    setElementVisible(dailyCorrectPill, dailyActive);
-    setElementVisible(dailyWrongPill, dailyActive);
-
-    if (dailyActive) {
-        dailyProgressEl.textContent = Math.min(dailyIndex + 1, 20);
-        dailyCorrectEl.textContent = dailyCorrect;
-        dailyWrongEl.textContent = dailyWrong;
-    }
-
-    const todayRecord = getTodayDailyRecord();
-    setElementVisible(dailyOfficialPill, dailyActive);
-    dailyOfficialEl.textContent = todayRecord ? `${todayRecord.officialScore}/${todayRecord.total}` : "—";
-
-    const testActive = isTestModeSession() && sessionStarted;
-    setElementVisible(testQuestionPill, testActive);
-    setElementVisible(testCorrectPill, testActive);
-    setElementVisible(testWrongPill, testActive);
-
-    if (testActive) {
-        testQuestionEl.textContent = Math.min(testIndex + 1, testSequence.length || 0);
-        testTotalEl.textContent = testSequence.length || 0;
-        testCorrectEl.textContent = testCorrect;
-        testWrongEl.textContent = testWrong;
-    }
-
-    if (testActive) updateSessionProgressBar(Math.min(testIndex + 1, testSequence.length || 0), testSequence.length || 0, 'Test progress', true);
-    else if (dailyActive) updateSessionProgressBar(Math.min(dailyIndex + 1, 20), 20, 'Daily challenge', true);
-    else updateSessionProgressBar(0, 0, 'Session progress', false);
-}
-
-function updateComboKanaBestScore() {
-    if (!settings.comboKana) return;
-    scoreHistory = normalizeScoreHistory(scoreHistory);
-    const comboKey = settings.comboMode === "same_row" ? "same_row" : "random";
-    scoreHistory.comboKanaBest[comboKey] = Math.max(scoreHistory.comboKanaBest[comboKey] || 0, streak);
-}
+function updateDailyChallengePills() { return trainerController.updateDailyChallengePills(); }
 
 function endDailyChallenge() {
     window.KanaCloudSync?.setSessionCloudPause?.(false);
@@ -286,25 +259,7 @@ function validRomajiSet() {
     return new Set(Object.values(sourceMap));
 }
 
-function applyPanelStates() {
-    if (settings.activeBottomTab === "options") settings.activeBottomTab = null;
-    modifiersContentEl.classList.toggle("open", settings.activeBottomTab === "modifiers");
-    if (optionsContentEl) optionsContentEl.classList.toggle("open", false);
-
-    modifiersTabEl.classList.toggle("active", settings.activeBottomTab === "modifiers");
-    if (optionsTabEl) optionsTabEl.classList.toggle("active", false);
-
-    modifiersTabEl.textContent = settings.activeBottomTab === "modifiers" ? "Practice setup ▲" : "Practice setup ▼";
-    if (optionsTabEl) optionsTabEl.textContent = "Options ▼";
-
-    statsContentEl.classList.toggle("hidden", !settings.statsVisible);
-    statsChevronEl.textContent = settings.statsVisible ? "▼" : "▲";
-
-    scoresContentEl.classList.toggle("hidden", !settings.scoresVisible);
-    scoresChevronEl.textContent = settings.scoresVisible ? "▼" : "▲";
-
-    document.body.classList.toggle("mobile-mode", !!settings.mobileMode);
-}
+function applyPanelStates() { return trainerController.applyBasePanelStates(); }
 
 
 document.addEventListener("click", (e) => {
@@ -315,21 +270,7 @@ document.addEventListener("click", (e) => {
 });
 
 function onSettingsChanged() {
-
-    rebuildCharMap();
-    ensureDataObjects();
-    buildModifierButtons();
-    buildOptionButtons();
-    buildRows("rowOptions", hiraganaRows, "hiraganaRows", "h_");
-    buildRows("katakanaRowOptions", katakanaRows, "katakanaRows", "k_");
-    applyPanelStates();
-    updateTrialConfigVisibility();
-    renderHeatmap();
-    updateTopStats();
-    if (DEBUG_PANEL) renderDebugPanel();
-    renderScoreHistory();
-    saveAll();
-
+    trainerController.refreshCommonUi({ save: true });
     if (sessionStarted && !locked) nextCharacter();
 }
 
@@ -378,41 +319,6 @@ function getSrsWeightBreakdown(char) {
 
 function getDebugActiveChar() {
     return debugActiveChar || currentChar || activeChars[0] || null;
-}
-
-function debugEl(tag, className = "", text = "") {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== "") node.textContent = String(text);
-    return node;
-}
-
-function debugLine(label, value) {
-    const row = document.createElement("div");
-    const strong = document.createElement("strong");
-    strong.textContent = `${label}:`;
-    row.append(strong, document.createTextNode(" "));
-    if (value instanceof Node) row.append(value);
-    else row.append(debugEl("span", "srs-debug-muted", value));
-    return row;
-}
-
-function debugValueLine(label, value) {
-    const row = document.createElement("div");
-    row.append(document.createTextNode(`${label}: `), debugEl("strong", "", value));
-    return row;
-}
-
-function debugRow(label, value, className = "") {
-    const row = debugEl("div", className ? `srs-debug-row ${className}` : "srs-debug-row");
-    row.append(debugEl("span", "", label), debugEl("strong", "", value));
-    return row;
-}
-
-function debugCard(title, children = []) {
-    const card = debugEl("div", "srs-debug-card");
-    card.append(debugEl("div", "srs-debug-card-title", title), ...children);
-    return card;
 }
 
 function renderDebugPanel() {
@@ -716,15 +622,7 @@ function startSession() {
     onSettingsChanged();
 }
 
-function updateSrsCorrect(char) {
-    const entry = srs[char] || { level: 0, due: 0, lastSeen: 0, lastWrong: 0 };
-    entry.level = Math.min(entry.level + 1, 8);
-    const intervals = [3000, 8000, 15000, 30000, 60000, 120000, 300000, 600000, 1200000];
-    const delay = intervals[entry.level] ?? 1200000;
-    entry.due = Date.now() + delay;
-    entry.lastSeen = Date.now();
-    srs[char] = entry;
-}
+function updateSrsCorrect(char) { return trainerController.updateSrsCorrect(char); }
 
 function flashResult(correct, onDone) {
     locked = true;
@@ -761,7 +659,7 @@ function handleCorrect() {
 
     streak += 1;
     highScore = Math.max(highScore, streak);
-    updateComboKanaBestScore();
+    trainerController.recordComboBest();
 
     const nextComboLength = getComboLength();
     if (settings.comboKana && nextComboLength > lastComboLength) showComboTierNotice(nextComboLength);
@@ -912,14 +810,10 @@ const TEST_RESULTS_STORAGE_KEY = TEST_RESULTS_KEYS.primary;
 const TEST_RESULTS_STORAGE_BACKUP_KEY = TEST_RESULTS_KEYS.backup;
 const TEST_RESULTS_UPDATED_AT_KEY = TEST_RESULTS_KEYS.updatedAt;
 
-function normalizeStoredTestModeResults(list) {
-    return window.ModeAtlasTrainerCore.normalizeTestResults("reading", list);
-}
+function normalizeStoredTestModeResults(list) { return trainerController.normalizeStoredTestModeResults(list); }
 
 
-function persistStoredTestModeResults(list) {
-    return window.ModeAtlasTrainerCore.persistTestResults("reading", list);
-}
+function persistStoredTestModeResults(list) { return trainerController.persistStoredTestModeResults(list); }
 
 
 function saveTestModeResult() {
@@ -988,84 +882,9 @@ function endTestMode() {
     saveAll();
     onSettingsChanged();
 }
-function updateBestScores() {
-    scoreHistory = normalizeScoreHistory(scoreHistory);
+function updateBestScores() { return trainerController.updateBestScores(); }
 
-    if (settings.comboKana) {
-        updateComboKanaBestScore();
-    }
-
-    if (settings.endless) {
-        const correct = Math.max(0, endlessRunTotal - endlessRunWrong);
-        if (correct > (scoreHistory.endlessBest.correct || 0)) {
-            scoreHistory.endlessBest = {
-                total: endlessRunTotal,
-                correct,
-                wrong: endlessRunWrong
-            };
-        }
-    }
-
-    if (settings.speedRun) {
-        const correct = Math.max(0, endlessRunTotal - endlessRunWrong);
-        const answered = Math.max(0, endlessRunTotal);
-        const wrong = Math.max(0, endlessRunWrong);
-        const durationMs = Math.max(1, (sessionStats.endTime || Date.now()) - (sessionStats.startTime || Date.now()));
-        const avgMs = sessionStats.timings.length ? Math.round(average(sessionStats.timings)) : 0;
-        const accuracy = answered ? correct / answered : 0;
-        const score = Math.max(0, Math.round((correct * 100) + (accuracy * 250) - (wrong * 50) - (avgMs / 20)));
-        const entry = {
-            durationSeconds: Math.round(durationMs / 1000),
-            answered,
-            correct,
-            wrong,
-            accuracy: Math.round(accuracy * 100),
-            avgMs,
-            score
-        };
-        scoreHistory.speedRunTop3.push(entry);
-        scoreHistory.speedRunTop3.sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            if (b.correct !== a.correct) return b.correct - a.correct;
-            if (a.avgMs !== b.avgMs) return a.avgMs - b.avgMs;
-            return a.wrong - b.wrong;
-        });
-        scoreHistory.speedRunTop3 = scoreHistory.speedRunTop3.slice(0, 3);
-    }
-
-    if (settings.timeTrial) {
-        const timeVal = Number(trialTimeEl.value) || 0.5;
-        const entry = {
-            time: timeVal,
-            target: trialTarget || Math.max(1, Number(trialTargetEl.value) || 20),
-            score: sessionStats.correct,
-            ratio: sessionStats.correct / Math.max(0.1, timeVal),
-            overTarget: sessionStats.correct - (trialTarget || Math.max(1, Number(trialTargetEl.value) || 20))
-        };
-
-        scoreHistory.timeTrialTop3.push(entry);
-        scoreHistory.timeTrialTop3.sort((a, b) => {
-            if (b.overTarget !== a.overTarget) return b.overTarget - a.overTarget;
-            if (b.ratio !== a.ratio) return b.ratio - a.ratio;
-            return b.score - a.score;
-        });
-        scoreHistory.timeTrialTop3 = scoreHistory.timeTrialTop3.slice(0, 3);
-    }
-
-    renderScoreHistory();
-    saveAll();
-}
-
-function showSessionModal(autoEnded = false) {
-    showTrainerSessionModal({
-        autoEnded,
-        sessionStats,
-        settings,
-        endlessRunTotal,
-        endlessRunWrong,
-        trialTarget
-    });
-}
+function showSessionModal(autoEnded = false) { return trainerController.showSessionModal(autoEnded); }
 
 function endSession(autoEnded = false) {
     if (!sessionStarted) return;
@@ -1133,84 +952,14 @@ scoresHeaderEl.addEventListener("click", () => {
     saveAll();
 });
 
-function refreshSaveBackedStateFromCloud() {
-    const preservedBottomTab = (settings && settings.activeBottomTab === "modifiers") || document.getElementById("modifiersContent")?.classList.contains("open") ? "modifiers" : null;
-    settings = { ...DEFAULT_SETTINGS, ...window.ModeAtlasStorage.readModeJSON("reading", "settings", DEFAULT_SETTINGS) };
-    settings.activeBottomTab = preservedBottomTab;
-    stats = window.ModeAtlasStorage.readModeJSON("reading", "charStats", {});
-    times = window.ModeAtlasStorage.readModeJSON("reading", "charTimes", {});
-    srs = window.ModeAtlasStorage.readModeJSON("reading", "srs", {});
-    scoreHistory = normalizeScoreHistory(window.ModeAtlasStorage.readModeJSON("reading", "scoreHistory", createDefaultScoreHistory()));
-    dailyChallengeHistory = window.ModeAtlasStorage.readModeJSON("reading", "dailyHistory", {});
-    highScore = window.ModeAtlasStorage.readModeNumber("reading", "highScore", 0);
-    if (!Array.isArray(settings.hiraganaRows)) settings.hiraganaRows = Object.keys(hiraganaRows);
-    if (!Array.isArray(settings.katakanaRows)) settings.katakanaRows = [];
-    if (!["same_row", "random"].includes(settings.comboMode)) settings.comboMode = "random";
-    rebuildCharMap();
-    ensureDataObjects();
-    buildModifierButtons();
-    buildOptionButtons();
-    buildRows("rowOptions", hiraganaRows, "hiraganaRows", "h_");
-    buildRows("katakanaRowOptions", katakanaRows, "katakanaRows", "k_");
-    applyPanelStates();
-    updateTrialConfigVisibility();
-    updateTopStats();
-    renderHeatmap();
-    renderScoreHistory();
-    if (!sessionStarted) showIdleState();
-    if (DEBUG_PANEL) renderDebugPanel();
-    window.ModeAtlasLifecycle?.emit?.('trainer-ready', { page: window.ModeAtlasPageName?.() || '' });
-}
+function refreshSaveBackedStateFromCloud() { return trainerController.refreshSaveBackedStateFromCloud(); }
 
 window.refreshSaveBackedStateFromCloud = refreshSaveBackedStateFromCloud;
 
-function init() {
-    rebuildCharMap();
+function init() { return trainerController.init(); }
 
-    if (!Array.isArray(settings.hiraganaRows)) settings.hiraganaRows = Object.keys(hiraganaRows);
-    if (!Array.isArray(settings.katakanaRows)) settings.katakanaRows = [];
-    if (!["same_row", "random"].includes(settings.comboMode)) settings.comboMode = "random";
-    scoreHistory = normalizeScoreHistory(scoreHistory);
-
-    ensureDataObjects();
-    buildModifierButtons();
-    buildOptionButtons();
-    buildRows("rowOptions", hiraganaRows, "hiraganaRows", "h_");
-    buildRows("katakanaRowOptions", katakanaRows, "katakanaRows", "k_");
-    applyPanelStates();
-    updateTrialConfigVisibility();
-    updateTopStats();
-    if (DEBUG_PANEL) renderDebugPanel();
-    renderHeatmap();
-    renderScoreHistory();
-    showIdleState();
-    // Do not save during initial boot; wait for actual user changes.
-}
-
-let trainerRefreshQueued = false;
-
-function requestTrainerRefresh(source = "unknown") {
-    if (trainerRefreshQueued) return;
-    trainerRefreshQueued = true;
-    const run = () => {
-        trainerRefreshQueued = false;
-        try { refreshSaveBackedStateFromCloud(); }
-        catch (err) { console.warn("Trainer refresh failed", source, err); }
-    };
-    if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
-    else setTimeout(run, 0);
-}
-
-// Trainers render local save data immediately. Cloud-sync owns Firebase/auth/
-// hydration and emits this event only when it actually writes newer cloud data
-// into local storage. Status/focus changes never trigger another cloud read.
-window.addEventListener("modeAtlasCloudDataChanged", (event) => {
-    const sections = Array.isArray(event.detail?.sections) ? event.detail.sections : [];
-    if (!sections.length || sections.includes("reading")) requestTrainerRefresh("cloud-data");
-});
-window.addEventListener("pageshow", (event) => {
-    if (event.persisted === true) requestTrainerRefresh("bfcache-restore");
-});
-document.addEventListener("ma:ui-refresh", () => requestTrainerRefresh("ui-refresh"));
+// Trainers render local save data immediately. The shared controller owns
+// refresh coalescing plus cloud/bfcache/UI refresh event bindings.
+trainerController.bindRefreshEvents();
 
 init();

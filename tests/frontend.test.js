@@ -1286,3 +1286,49 @@ test('2.38 trainer sessions use one active-state owner and a focused shared stag
   assert.match(css, /body\.trainer-session-active\.ma-writing-page \.prompt/);
 });
 
+test('2.39 Reading and Writing share controller lifecycle while answer adapters stay mode-specific', () => {
+  const frontend = read('frontend_components.py');
+  const controller = read('assets/trainer/mode-atlas-trainer-controller.js');
+  const reading = read('assets/pages/mode-atlas-default-page.js');
+  const writing = read('assets/pages/mode-atlas-reverse-page.js');
+  const readingHtml = read('reading/index.html');
+  const writingHtml = read('writing/index.html');
+
+  assert.equal(count(frontend, /'assets\/trainer\/mode-atlas-trainer-controller\.js'/g), 2,
+    'shared trainer controller must be in both trainer manifests');
+  for (const html of [readingHtml, writingHtml]) {
+    const sharedIndex = html.indexOf('mode-atlas-trainer-controller.assets-2.39.0.js');
+    const pageIndex = Math.max(html.indexOf('mode-atlas-default-page.assets-2.39.0.js'), html.indexOf('mode-atlas-reverse-page.assets-2.39.0.js'));
+    assert.ok(sharedIndex >= 0 && pageIndex > sharedIndex, 'controller must load before the mode adapter');
+  }
+
+  for (const source of [reading, writing]) {
+    assert.match(source, /ModeAtlasTrainerController\.create\(/);
+    assert.doesNotMatch(source, /function debugEl\(|function debugLine\(|function debugValueLine\(|function debugRow\(|function debugCard\(/,
+      'debug element primitives must not remain duplicated in page adapters');
+    assert.doesNotMatch(source, /modeAtlasCloudDataChanged|trainerRefreshQueued/,
+      'page adapters must not own refresh scheduling/listeners');
+    assert.doesNotMatch(source, /accuracy \* 250|speedRunTop3\.sort|timeTrialTop3\.sort/,
+      'score ranking formulas must be controller-owned');
+  }
+
+  for (const marker of [
+    'modeAtlasCloudDataChanged', 'refreshCommonUi', 'updateBestScores', 'updateSrsCorrect',
+    'normalizeStoredTestModeResults', 'persistStoredTestModeResults', 'debugEl'
+  ]) assert.match(controller, new RegExp(marker), `shared controller missing ${marker}`);
+
+  assert.match(reading, /dailySeedPrefix: "daily"/);
+  assert.match(writing, /dailySeedPrefix: "reverse-daily"/);
+  assert.match(reading, /showOfficialWhenRecorded: false/);
+  assert.match(writing, /showOfficialWhenRecorded: true/);
+  assert.match(reading, /clearLastWrongOnCorrect: false/);
+  assert.match(writing, /clearLastWrongOnCorrect: true/);
+
+  assert.match(reading, /validRomajiSet/);
+  assert.match(reading, /expected\.startsWith\(compactValue\)/);
+  for (const writingOnly of ['buildChoiceOptionStrings', 'getRepeatSafePool', 'isRomajiKeyboardMode', 'getAcceptedAnswersForCurrentChar']) {
+    assert.match(writing, new RegExp(writingOnly), `Writing adapter must retain ${writingOnly}`);
+    assert.doesNotMatch(reading, new RegExp(writingOnly), `Reading adapter must not absorb ${writingOnly}`);
+  }
+});
+

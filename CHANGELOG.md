@@ -1,3 +1,10 @@
+## 2.39.0 - 2026-08-16
+- Added one shared Reading/Writing trainer controller for common page lifecycle and persistence behavior while retaining thin mode-specific answer adapters.
+- Consolidated trainer save/load refresh, cloud/bfcache/UI refresh coalescing, Daily/Test header and HUD state, shared panel state, score-history formulas, test-result persistence adapters, SRS-correct scheduling, session-summary plumbing, and debug element primitives.
+- Removed duplicate controller-owned score formulas and refresh listeners from the Reading/Writing page files; both modes now consume the same implementation with explicit mode configuration.
+- Kept Writing-only choice generation, repeat limiting, keyboard modes, accepted-answer handling, and prompt rendering local; Reading romaji input and its answer progression remain local as well.
+- Preserved all existing trainer IDs, scoring/SRS weights, Daily/Test sequences and seeds, result schemas, save keys, cloud behavior, Practice Setup, and the 2.38 active-session UI.
+
 ## 2.38.0 - 2026-08-16
 - Reworked active Reading and Writing sessions into a focused shared practice stage: compact mode context, session HUD, large prompt, answer area, and quieter session controls now form one clear hierarchy.
 - Made the existing shared `trainer-session-active` state the sole presentation owner for active practice, removing duplicate CSS session detection based on `:has(#startWrap[hidden])`.
