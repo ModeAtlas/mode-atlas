@@ -1,0 +1,55 @@
+name: Mode Atlas release gate
+
+on:
+  push:
+    branches:
+      - main
+      - 'agent/mode-atlas-*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mode-atlas-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-check:
+    name: Audit, regressions, and browser smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Guard public npm lockfile
+        shell: bash
+        run: |
+          if grep -Eiq 'internal\.api\.openai|applied-caas|artifactory/api/npm' package-lock.json; then
+            echo 'package-lock.json contains a non-public package registry URL.' >&2
+            exit 1
+          fi
+
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run release checks
+        run: npm run release:check
+
+      - name: Verify generated release assets are committed
+        run: git diff --exit-code
+
+      - name: Run desktop and mobile browser smoke tests
+        run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
