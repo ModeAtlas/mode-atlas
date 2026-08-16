@@ -1261,3 +1261,28 @@ test('2.37 Word Bank is collection-first, state-aware, and keeps editing progres
   assert.match(css, /\.wordbank-entry\{/);
   assert.match(css, /\.ma-wordbank-page\.ma-wordbank-populated \.wordbank-intro/);
 });
+
+test('2.38 trainer sessions use one active-state owner and a focused shared stage', () => {
+  const frontend = read('frontend_components.py');
+  const shared = read('assets/trainer/mode-atlas-trainer-shared.js');
+  const css = read('assets/css/mode-atlas-study-shared.css');
+  const reading = read('reading/index.html');
+  const writing = read('writing/index.html');
+
+  for (const marker of ['ma-trainer-header', 'ma-trainer-stage', 'ma-trainer-session-controls']) {
+    assert.match(frontend, new RegExp(marker), `shared trainer shell missing ${marker}`);
+    assert.match(reading, new RegExp(marker), `Reading generated shell missing ${marker}`);
+    assert.match(writing, new RegExp(marker), `Writing generated shell missing ${marker}`);
+  }
+  assert.match(shared, /document\.body\.classList\.toggle\("trainer-session-active", !!visible\)/,
+    'shared UI visibility helper must own trainer active state');
+  assert.doesNotMatch(css, /:has\(#startWrap\[hidden\]\)/,
+    'trainer CSS must not infer session state from the Start wrapper');
+  assert.match(css, /body\.trainer-session-active \.ma-trainer-card/);
+  assert.match(css, /body\.trainer-session-active \.bottom-shell\.ma-modifiers-only/);
+  assert.match(css, /body\.trainer-session-active \.ma-trainer-side-panel/);
+  assert.match(css, /data-effective-display-mode="tablet"\]\.trainer-session-active \.ma-trainer-side-panel/);
+  assert.match(css, /body\.trainer-session-active\.ma-reading-page \.hiragana/);
+  assert.match(css, /body\.trainer-session-active\.ma-writing-page \.prompt/);
+});
+

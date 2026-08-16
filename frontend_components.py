@@ -632,15 +632,20 @@ def render_trainer_shell(config: TrainerConfig) -> str:
     return f'''{TRAINER_START}
 <div class="app-shell ma-trainer-shell" data-ma-trainer-shell="shared" data-ma-trainer-mode="{_attr(config.mode)}">
     <div class="main ma-card ma-trainer-card">
-{beta}        <h1>{html.escape(config.title)}</h1>
-        <div class="subline">{html.escape(config.subline)}</div>
-        <div id="dailyBadge" class="daily-badge">{html.escape(daily_badge)}</div>
-        <div id="testBadge" class="daily-badge test-badge-{_attr(config.mode)}" hidden>{html.escape(config.test_badge)}</div>
+        <header class="ma-trainer-header">
+{beta}            <h1>{html.escape(config.title)}</h1>
+            <div class="subline">{html.escape(config.subline)}</div>
+            <div id="dailyBadge" class="daily-badge">{html.escape(daily_badge)}</div>
+            <div id="testBadge" class="daily-badge test-badge-{_attr(config.mode)}" hidden>{html.escape(config.test_badge)}</div>
+        </header>
 
+        <div class="ma-trainer-stage">
 {_trainer_scoreline()}
 
 {_trainer_prompt(config)}
+        </div>
 
+        <div class="ma-trainer-session-controls">
         <div class="trial-config" id="trialConfig" hidden>
             <div class="trial-box"><label for="trialTime">Time (mins)</label><input class="ma-input ma-trainer-input ma-trainer-input--number" id="trialTime" type="number" min="0.1" step="0.1" value="0.5" /></div>
             <div class="trial-box"><label for="trialTarget">Target</label><input class="ma-input ma-trainer-input ma-trainer-input--number" id="trialTarget" type="number" min="1" step="1" value="20" /></div>
@@ -660,6 +665,7 @@ def render_trainer_shell(config: TrainerConfig) -> str:
             <button class="btn btn-secondary ma-button ma-trainer-button" id="endSessionBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-stop"></use></svg><span>End session</span></button>
         </div>
         <div id="gameOver" class="game-over" hidden><div class="game-over-title">Wrong</div><div id="gameOverAnswer" class="game-over-answer"></div><button class="btn ma-button ma-trainer-button" id="retryBtn" type="button" hidden>Try Again</button></div>
+        </div>
     </div>
 
 {_trainer_score_panels(config)}

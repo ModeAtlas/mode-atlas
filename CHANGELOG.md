@@ -1,3 +1,10 @@
+## 2.38.0 - 2026-08-16
+- Reworked active Reading and Writing sessions into a focused shared practice stage: compact mode context, session HUD, large prompt, answer area, and quieter session controls now form one clear hierarchy.
+- Made the existing shared `trainer-session-active` state the sole presentation owner for active practice, removing duplicate CSS session detection based on `:has(#startWrap[hidden])`.
+- Kept Records and Mastery reachable but visually secondary on desktop during practice, while tablet and phone sessions remove those side panels from the active question flow.
+- Hid Practice Setup while a session is active and restored it automatically when the shared session state ends, without changing trainer settings or session lifecycle logic.
+- Preserved all trainer IDs, Reading/Writing input modes, presets, modifiers, Daily Challenge, Test Mode, scoring, SRS, pause/skip/end behavior, result storage, save schema, and cloud sync.
+
 ## 2.37.0 - 2026-08-16
 - Reworked Word Bank from nested hero/library/entry cards into an open, collection-first vocabulary surface with scan-friendly rows.
 - Added collection-aware page copy: empty libraries explain how to begin, while established libraries lead with saved-word, favourite, and missing-meaning context instead of repeating product onboarding copy.

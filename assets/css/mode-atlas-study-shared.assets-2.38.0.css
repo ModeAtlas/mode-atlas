@@ -1567,36 +1567,148 @@ body[data-effective-display-mode="phone"].study-nav-hidden .ma-trainer-side-pane
   background:var(--ma-surface-inset);
 }
 
-/* Setup and active practice are distinct visual states. Session state is
-   derived from the existing start control's hidden state; no second JS owner. */
-.ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-card{
-  width:min(620px,calc(100vw - 32px));
-  padding-bottom:34px;
-  border-color:color-mix(in srgb,var(--ma-trainer-accent) 34%,var(--ma-border));
+/* Setup and active practice are distinct visual states. The shared trainer
+   visibility owner toggles body.trainer-session-active; presentation consumes
+   that state directly instead of re-deriving session state from DOM shape. */
+.ma-trainer-header{
+  display:grid;
+  justify-items:center;
+  gap:0;
 }
-.ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel{
-  opacity:.32;
+.ma-trainer-stage{
+  width:100%;
+  display:grid;
+  justify-items:center;
+  gap:0;
+}
+.ma-trainer-session-controls{
+  width:100%;
+  display:grid;
+  justify-items:center;
+}
+
+body.trainer-session-active .ma-trainer-card{
+  width:min(660px,calc(100vw - 32px));
+  padding:18px 34px 24px;
+  border-color:color-mix(in srgb,var(--ma-trainer-accent) 36%,var(--ma-border));
+  box-shadow:var(--ma-shadow),0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 10%,transparent);
+}
+body.trainer-session-active .ma-trainer-header{
+  min-height:28px;
+  margin-bottom:2px;
+}
+body.trainer-session-active .ma-trainer-header h1{
+  margin:0;
+  color:var(--ma-text-soft);
+  font-size:.88rem;
+  font-weight:850;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  text-shadow:none;
+}
+body.trainer-session-active .ma-trainer-header .subline,
+body.trainer-session-active .writing-beta-badge{
+  display:none;
+}
+body.trainer-session-active .daily-badge:not([hidden]){
+  margin:8px auto 0;
+}
+body.trainer-session-active .ma-trainer-stage{
+  gap:10px;
+  padding-top:4px;
+}
+body.trainer-session-active .ma-session-hud{
+  width:100%;
+  padding:0 0 12px;
+  border-bottom:1px solid color-mix(in srgb,var(--ma-trainer-accent) 14%,var(--ma-border));
+}
+body.trainer-session-active .ma-session-hud .scoreline{
+  margin-bottom:0;
+}
+body.trainer-session-active .ma-session-progress{
+  margin-top:10px;
+}
+body.trainer-session-active .ma-trainer-prompt-wrap{
+  min-height:220px;
+  margin:0;
+  padding:14px 0 6px;
+}
+body.trainer-session-active.ma-reading-page .hiragana{
+  font-size:clamp(8rem,13vw,10.5rem);
+}
+body.trainer-session-active.ma-writing-page .prompt{
+  font-size:clamp(6.5rem,10vw,8.25rem);
+}
+body.trainer-session-active.ma-writing-page .prompt-small{
+  font-size:clamp(5rem,8vw,6.5rem);
+}
+body.trainer-session-active .ma-trainer-answer-wrap{
+  width:100%;
+  margin-top:0;
+}
+body.trainer-session-active .ma-trainer-input{
+  width:min(340px,100%);
+  min-height:56px;
+  font-size:26px;
+  border-radius:var(--ma-radius-control);
+}
+body.trainer-session-active.ma-writing-page .choice-grid{
+  width:min(480px,100%);
+  gap:12px;
+  margin:0 auto;
+}
+body.trainer-session-active.ma-writing-page .choice-btn{
+  min-height:78px;
+  padding:16px 8px;
+  border-color:color-mix(in srgb,var(--ma-trainer-accent) 18%,var(--ma-border));
+}
+body.trainer-session-active .ma-trainer-session-controls{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid color-mix(in srgb,var(--ma-trainer-accent) 10%,var(--ma-border));
+}
+body.trainer-session-active .session-actions{
+  width:100%;
+  margin-top:0;
+  justify-content:center;
+}
+body.trainer-session-active .session-actions .ma-button{
+  min-height:38px;
+  padding:7px 12px;
+  font-size:.82rem;
+}
+body.trainer-session-active .session-actions .ma-trainer-skip{
+  opacity:.68;
+}
+body.trainer-session-active .session-actions .ma-trainer-skip:hover,
+body.trainer-session-active .session-actions .ma-trainer-skip:focus-visible{
+  opacity:1;
+}
+
+body.trainer-session-active .ma-trainer-side-panel{
+  opacity:.24;
   transform:scale(.985);
   transition:opacity var(--ma-motion-fast) ease,transform var(--ma-motion-fast) ease;
 }
-.ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel:hover,
-.ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel:focus-within{
+body.trainer-session-active .ma-trainer-side-panel:hover,
+body.trainer-session-active .ma-trainer-side-panel:focus-within{
   opacity:1;
   transform:none;
 }
-body:has(#startWrap[hidden]) .bottom-shell.ma-modifiers-only{
+body.trainer-session-active .bottom-shell.ma-modifiers-only{
   opacity:0;
   transform:translateY(102%);
   pointer-events:none;
   transition:opacity var(--ma-motion-fast) ease,transform var(--ma-motion-medium) ease;
 }
-body:not(:has(#startWrap[hidden])) .bottom-shell.ma-modifiers-only{
+body:not(.trainer-session-active) .bottom-shell.ma-modifiers-only{
   opacity:1;
   transform:translateY(0);
   transition:opacity var(--ma-motion-fast) ease,transform var(--ma-motion-medium) ease;
 }
 body.study-nav-hidden .ma-trainer-side-panel{display:none;}
 body.study-nav-hidden .ma-trainer-card{width:min(700px,calc(100vw - 32px));}
+body.study-nav-hidden.trainer-session-active .ma-trainer-card{width:min(760px,calc(100vw - 32px));}
 
 @media(max-width:900px){
   .ma-kana-selection{grid-template-columns:1fr;}
@@ -1606,13 +1718,48 @@ body.study-nav-hidden .ma-trainer-card{width:min(700px,calc(100vw - 32px));}
   .ma-session-hud .ma-trainer-score{width:auto!important;min-width:0!important;flex:1 1 calc(50% - 7px);font-size:.78rem;}
   .ma-session-hud .ma-trainer-score strong{font-size:.86rem;}
   .ma-practice-setup-head{align-items:flex-start;}
-  .ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-card{width:100%;padding-bottom:28px;margin-bottom:18px;min-height:calc(100svh - 150px);}
-  .ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel{display:none;}
-  .session-actions .ma-button{min-width:0;flex:1 1 auto;}
-  .session-actions .ma-trainer-skip{flex-basis:100%;order:3;}
+  body.trainer-session-active .ma-trainer-card{
+    width:100%;
+    margin-bottom:18px;
+    padding:14px 12px 18px;
+    min-height:calc(100svh - 150px);
+  }
+  body.trainer-session-active .ma-trainer-header{min-height:22px;}
+  body.trainer-session-active .ma-trainer-header h1{font-size:.72rem;letter-spacing:.11em;}
+  body.trainer-session-active .ma-trainer-prompt-wrap{
+    min-height:clamp(185px,34svh,285px);
+    padding:10px 0 2px;
+  }
+  body.trainer-session-active.ma-reading-page .hiragana{font-size:clamp(6.8rem,33vw,9rem);}
+  body.trainer-session-active.ma-writing-page .prompt{font-size:clamp(5.2rem,24vw,7rem);}
+  body.trainer-session-active.ma-writing-page .prompt-small{font-size:clamp(4rem,19vw,5.5rem);}
+  body.trainer-session-active .ma-trainer-input{width:min(100%,340px);min-height:52px;font-size:22px;}
+  body.trainer-session-active.ma-writing-page .choice-grid{gap:9px;}
+  body.trainer-session-active.ma-writing-page .choice-btn{min-height:64px;padding:12px 6px;}
+  body.trainer-session-active .ma-trainer-side-panel{display:none;}
+  body.trainer-session-active .session-actions{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  body.trainer-session-active .session-actions .ma-button{width:100%;min-width:0;}
+  body.trainer-session-active .session-actions .ma-trainer-skip{
+    grid-column:1 / -1;
+    order:3;
+  }
 }
+
+body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-card{
+  width:min(760px,calc(100vw - 28px));
+  margin-bottom:22px;
+  padding:18px 28px 24px;
+}
+body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-side-panel{
+  display:none;
+}
+
 @media(prefers-reduced-motion:reduce){
-  .ma-trainer-shell:has(#startWrap[hidden]) .ma-trainer-side-panel,
-  body:has(#startWrap[hidden]) .bottom-shell.ma-modifiers-only,
-  body:not(:has(#startWrap[hidden])) .bottom-shell.ma-modifiers-only{transition:none;}
+  body.trainer-session-active .ma-trainer-side-panel,
+  body.trainer-session-active .bottom-shell.ma-modifiers-only,
+  body:not(.trainer-session-active) .bottom-shell.ma-modifiers-only{transition:none;}
 }
