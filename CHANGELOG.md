@@ -1,3 +1,10 @@
+## 2.37.0 - 2026-08-16
+- Reworked Word Bank from nested hero/library/entry cards into an open, collection-first vocabulary surface with scan-friendly rows.
+- Added collection-aware page copy: empty libraries explain how to begin, while established libraries lead with saved-word, favourite, and missing-meaning context instead of repeating product onboarding copy.
+- Kept kana, meaning, and romaji as the primary scan targets while moving type, update date, notes state, favourite controls, and editing into quieter supporting positions.
+- Added distinct empty-library and zero-filter-result states, including a one-click clear-search-and-filters action when the collection exists but the current view is empty.
+- Preserved Word Bank schema, romaji generation, persistence order, duplicate handling, cloud sync, import/export ownership, and destructive-confirmation behavior.
+
 ## 2.36.1 - 2026-08-16
 - Kept the full Kana orientation hero for zero-history learners, while regular learners now receive a compact state-aware header instead of repeated introductory marketing copy.
 - Returning Kana headers now summarise saved coverage, mastered kana, streak state, and current weak-kana focus so the buffer is personal and useful without competing with the statistics below.

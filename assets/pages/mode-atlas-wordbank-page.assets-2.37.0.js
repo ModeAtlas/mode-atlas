@@ -23,7 +23,10 @@ function refreshProfileShell() {
       addJumpBtn: document.getElementById('wordBankAddJumpBtn'),
       addPanel: document.getElementById('wordBankAddPanel'),
       actionsBtn: document.getElementById('wordBankActionsBtn'),
-      actionsPanel: document.getElementById('wordBankActionsPanel')
+      actionsPanel: document.getElementById('wordBankActionsPanel'),
+      introLead: document.getElementById('wordBankIntroLead'),
+      libraryCount: document.getElementById('wordBankLibraryCount'),
+      resultsMeta: document.getElementById('wordBankResultsMeta')
     };
 
     const baseMap = {
@@ -335,7 +338,7 @@ function refreshProfileShell() {
 
     function updateStats() {
       const total = wordBank.length;
-      const withEnglish = wordBank.filter(entry => entry.english.trim()).length;
+      const withEnglish = wordBank.filter(entry => String(entry.english || '').trim()).length;
       const favorites = wordBank.filter(entry => entry.favorite).length;
       const missingEnglish = total - withEnglish;
       elements.statTotal.textContent = total;
@@ -343,6 +346,23 @@ function refreshProfileShell() {
       elements.statFavorites.textContent = favorites;
       elements.statMissing.textContent = missingEnglish;
       [elements.statTotal, elements.statEnglish, elements.statFavorites, elements.statMissing].forEach(el => el?.classList.remove('ma-skeleton-text'));
+      updateExperienceState({ total, favorites, missingEnglish });
+    }
+
+    function updateExperienceState({ total, favorites, missingEnglish }) {
+      const populated = total > 0;
+      document.body?.classList?.toggle?.('ma-wordbank-populated', populated);
+      if (document.body?.dataset) document.body.dataset.maWordBankExperience = populated ? 'collection' : 'empty';
+      if (elements.introLead) {
+        elements.introLead.textContent = populated
+          ? `${total} saved word${total === 1 ? '' : 's'}${favorites ? ` · ${favorites} favourite${favorites === 1 ? '' : 's'}` : ''}${missingEnglish ? ` · ${missingEnglish} still need${missingEnglish === 1 ? 's' : ''} a meaning` : ''}.`
+          : 'Keep useful Japanese words close, then add meaning and notes as your vocabulary grows.';
+      }
+      if (elements.libraryCount) {
+        elements.libraryCount.textContent = populated
+          ? `${total} word${total === 1 ? '' : 's'} in your collection. Search, filter, or open a row to edit it.`
+          : 'Add your first word to start a searchable vocabulary collection.';
+      }
     }
 
     function formatDate(iso) {
@@ -352,6 +372,13 @@ function refreshProfileShell() {
       return date.toLocaleString([], {
         year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
       });
+    }
+
+    function formatCompactDate(iso) {
+      if (!iso) return 'Unknown';
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return 'Unknown';
+      return date.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
     }
 
 
@@ -410,7 +437,7 @@ function refreshProfileShell() {
       const englishMissing = !String(entry.english || "").trim();
       const isExpanded = expandedEntries.has(entryId);
 
-      const details = createEl("details", "card ma-card ma-card--soft");
+      const details = createEl("details", "wordbank-entry");
       details.id = `entry-${safeId}`;
       details.dataset.id = entryId;
       details.open = isExpanded;
@@ -436,11 +463,11 @@ function refreshProfileShell() {
       const typeCol = createEl("div", "summary-col");
       typeCol.append(
         createEl("div", "summary-label ma-kicker", "Type"),
-        createEl("div", "summary-value", `${type}${englishMissing ? " · missing English" : ""}`)
+        createEl("div", "summary-value", `${type}${entry.notes?.trim() ? " · notes" : ""}${englishMissing ? " · needs meaning" : ""}`)
       );
 
       const dateCol = createEl("div", "summary-col summary-date");
-      dateCol.append(createEl("div", "summary-label ma-kicker", "Added"), createEl("div", "summary-value", formatDate(entry.createdAt)));
+      dateCol.append(createEl("div", "summary-label ma-kicker", "Updated"), createEl("div", "summary-value", formatCompactDate(entry.updatedAt || entry.createdAt)));
 
       const toggle = createEl("div", "summary-toggle");
       toggle.append(createIcon("chevron", "ma-icon ma-icon--small"));
@@ -518,14 +545,37 @@ function refreshProfileShell() {
     function renderEntries(focusId = null) {
       updateStats();
       const items = getFilteredEntries();
+      const queryActive = !!elements.searchInput.value.trim();
+      const filterActive = elements.filterSelect.value !== 'all';
+      if (elements.resultsMeta) {
+        elements.resultsMeta.textContent = wordBank.length
+          ? `${items.length} of ${wordBank.length} word${wordBank.length === 1 ? '' : 's'} shown`
+          : '';
+      }
 
       if (!items.length) {
-        const empty = createEl("div", "empty ma-card ma-empty-state");
-        empty.append(createEl("div", "", "No matching words yet."));
-        const addFirst = createEl("button", "ma-button ma-button--primary", "Add a word");
+        const empty = createEl("div", "empty ma-empty-state");
+        const title = createEl("h3", "", wordBank.length ? 'No words match this view.' : 'Start your Word Bank.');
+        const copy = createEl("p", "", wordBank.length
+          ? 'Try a different search or remove the current filter.'
+          : 'Add a Japanese word now. Romaji is generated automatically, and you can add its meaning or notes whenever you are ready.');
+        const actions = createEl('div','wordbank-empty-actions ma-action-row');
+        if (wordBank.length && (queryActive || filterActive)) {
+          const clearView = createEl('button','ma-button ma-button--ghost','Clear search & filters');
+          clearView.type = 'button';
+          clearView.addEventListener('click', () => {
+            elements.searchInput.value = '';
+            elements.filterSelect.value = 'all';
+            renderEntries();
+            elements.searchInput.focus();
+          });
+          actions.append(clearView);
+        }
+        const addFirst = createEl("button", "ma-button ma-button--primary", wordBank.length ? 'Add another word' : 'Add your first word');
         addFirst.type = "button";
         addFirst.addEventListener("click", openAddWordDialog);
-        empty.append(addFirst);
+        actions.append(addFirst);
+        empty.append(title, copy, actions);
         elements.entries.replaceChildren(empty);
         return;
       }
@@ -535,7 +585,7 @@ function refreshProfileShell() {
       elements.entries.replaceChildren(fragment);
 
       if (focusId) {
-        const target = Array.from(elements.entries.querySelectorAll("details.card"))
+        const target = Array.from(elements.entries.querySelectorAll("details.wordbank-entry"))
           .find(node => node.dataset.id === String(focusId));
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
@@ -584,7 +634,7 @@ function refreshProfileShell() {
     });
 
     elements.entries.addEventListener('toggle', event => {
-      const details = event.target.closest('details.card');
+      const details = event.target.closest('details.wordbank-entry');
       if (!details) return;
       const id = details.dataset.id || details.id.replace('entry-', '');
       if (details.open) expandedEntries.add(id);

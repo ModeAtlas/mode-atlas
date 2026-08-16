@@ -590,12 +590,14 @@ test('shared drawer, card, and form primitives replace page-local surface owners
 
   assert.match(wordbankHtml, /class="ma-input" id="kanaInput"/);
   assert.match(wordbankHtml, /class="ma-select" id="sortSelect"/);
-  assert.match(wordbankHtml, /class="stat ma-stat ma-card ma-card--flat"/);
-  assert.match(wordbankHtml, /class="panel [^"]*ma-card"/);
+  assert.match(wordbankHtml, /class="wordbank-overview"/);
+  assert.match(wordbankHtml, /class="wordbank-library ma-page-section"/);
+  assert.doesNotMatch(wordbankHtml, /library-panel ma-card|class="stat ma-stat ma-card/);
   assert.match(wordbankJs, /field-small ma-field/);
   assert.match(wordbankJs, /input\.className = "ma-input"/);
   assert.match(wordbankJs, /notes\.className = "ma-textarea"/);
-  assert.match(wordbankJs, /card ma-card ma-card--soft/);
+  assert.match(wordbankJs, /createEl\("details", "wordbank-entry"\)/);
+  assert.doesNotMatch(wordbankJs, /card ma-card ma-card--soft/);
   assert.doesNotMatch(wordbankCss, /input\[type="text"\]\s*,\s*textarea\s*,\s*select/);
   assert.doesNotMatch(wordbankCss, /\.field-small label\s*\{/);
 });
@@ -833,18 +835,19 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   assert.doesNotMatch(resultsCss, /\.summary-row\s*\{/,
     'dead Results summary-row surface owner should remain removed');
 
-  assert.match(wordbankHtml, /stats ma-stat-grid/);
-  assert.match(wordbankHtml, /hero ma-card ma-page-hero ma-page-intro/);
+  assert.match(wordbankHtml, /class="wordbank-overview"/);
+  assert.match(wordbankHtml, /class="wordbank-intro ma-page-hero"/);
+  assert.doesNotMatch(wordbankHtml, /wordbank-intro[^\n]*ma-card|class="stat ma-stat ma-card/,
+    'Word Bank overview should remain an open collection surface rather than nested cards');
   assert.match(wordbankHtml, /ma-toolbar-shared ma-toolbar-shared--sticky/);
   assert.match(wordbankHtml, /id="wordBankActionsBtn"/);
   assert.doesNotMatch(wordbankHtml, /<details class="wordbank-tools">/);
-  assert.match(wordbankJs, /empty ma-card ma-empty-state/);
-  const wordbankStatBlock = wordbankCss.match(/\.stats?\s*\{([\s\S]*?)\n\}/)?.[1] || '';
-  assert.doesNotMatch(wordbankStatBlock, /(^|\n)\s*border\s*:/,
-    'Word Bank stats should not re-own shared stat card mechanics');
+  assert.match(wordbankJs, /empty ma-empty-state/);
+  assert.match(wordbankJs, /createEl\("details", "wordbank-entry"\)/);
   const wordbankEmptyBlock = wordbankCss.match(/\.empty\s*\{([\s\S]*?)\n\}/)?.[1] || '';
   assert.doesNotMatch(wordbankEmptyBlock, /(^|\n)\s*border\s*:/,
     'Word Bank empty state should configure variables instead of re-owning its border');
+  assert.match(wordbankEmptyBlock, /--ma-empty-border:transparent/);
 });
 
 test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and collection contracts', () => {
@@ -891,7 +894,7 @@ test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and c
   assert.match(resultsJs, /function renderGuidance\(/);
   assert.match(resultsJs, /function renderTrend\(/);
 
-  const libraryIndex = wordbank.indexOf('class="panel library-panel ma-card"');
+  const libraryIndex = wordbank.indexOf('class="wordbank-library ma-page-section"');
   const addIndex = wordbank.indexOf('id="wordBankAddPanel"');
   assert.ok(libraryIndex >= 0 && addIndex > libraryIndex, 'Word Bank collection must precede quick capture in document order');
   assert.match(wordbank, /id="wordBankAddJumpBtn"/);
@@ -1238,3 +1241,23 @@ test('2.36.1 Kana keeps first-use orientation but compacts established learner h
     'returning practice shortcuts should be compact rather than explanatory cards');
 });
 
+test('2.37 Word Bank is collection-first, state-aware, and keeps editing progressive', () => {
+  const html = read('wordbank/index.html');
+  const js = read('assets/pages/mode-atlas-wordbank-page.js');
+  const css = read('assets/css/mode-atlas-wordbank-page.css');
+
+  assert.match(html, /class="wordbank-intro ma-page-hero"/);
+  assert.doesNotMatch(html, /class="hero ma-card ma-page-hero/);
+  assert.match(html, /class="wordbank-overview"/);
+  assert.match(html, /class="wordbank-library ma-page-section"/);
+  assert.doesNotMatch(html, /library-panel ma-card/);
+  assert.match(js, /function updateExperienceState/);
+  assert.match(js, /ma-wordbank-populated/);
+  assert.match(js, /No words match this view\./);
+  assert.match(js, /Start your Word Bank\./);
+  assert.match(js, /Clear search & filters/);
+  assert.match(js, /createEl\("details", "wordbank-entry"\)/);
+  assert.doesNotMatch(js, /createEl\("details", "card ma-card ma-card--soft"\)/);
+  assert.match(css, /\.wordbank-entry\{/);
+  assert.match(css, /\.ma-wordbank-page\.ma-wordbank-populated \.wordbank-intro/);
+});
