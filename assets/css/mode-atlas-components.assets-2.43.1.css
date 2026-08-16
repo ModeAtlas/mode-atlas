@@ -341,6 +341,7 @@ html[data-ma-theme="light"] .ma-button:hover:not(:disabled):not([aria-disabled="
 .ma-dialog__kicker{font-size:.72rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:var(--ma-muted);}
 .ma-dialog__title{margin:3px 0 0;font-size:clamp(1.35rem,3vw,1.75rem);line-height:1.08;letter-spacing:-.02em;}
 .ma-dialog__close{flex:0 0 auto;}
+.ma-dialog__close--icon{--ma-button-padding:0;width:var(--ma-control-height-sm);min-width:var(--ma-control-height-sm);height:var(--ma-control-height-sm);font-size:1.25rem;line-height:1;}
 .ma-dialog__message{margin:0;color:var(--ma-muted);line-height:1.55;}
 .ma-dialog__content{margin-top:16px;}
 .ma-dialog__content[hidden]{display:none;}

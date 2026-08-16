@@ -1504,3 +1504,24 @@ test('2.43 Achievements are category-owned and sequential milestones rank up in 
   assert.match(css, /\.ma-ach-rank-history/);
   assert.match(css, /\.ma-achievement-section--future/);
 });
+
+test('2.43.1 achievement tiles breathe and detail navigation has distinct destinations', () => {
+  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
+  const achievementCss = read('assets/css/mode-atlas-achievements.css');
+  const dialog = read('assets/app/mode-atlas-dialog.js');
+  const components = read('assets/css/mode-atlas-components.css');
+
+  assert.match(achievements, /const RANK_ACCENTS = Object\.freeze\(\['184,92,62','148,163,184','248,196,70'/);
+  assert.match(achievements, /const copy=achEl\('div','ma-ach-copy'\)/);
+  assert.match(achievementCss, /\.ma-achievement-tile\{[^}]*display:flex;flex-direction:column[^}]*min-height:190px/);
+  assert.match(achievementCss, /\.ma-ach-copy\{[^}]*margin-bottom:18px/);
+  assert.match(achievementCss, /\.ma-ach-meter\{[^}]*position:relative[^}]*margin-top:auto/);
+
+  assert.match(achievements, /backLabel:'← Back to achievements'/);
+  assert.match(achievements, /backLabel:'← Back to Mastery Map'/);
+  assert.doesNotMatch(achievements, /ma-ach-info-back','Back'/);
+  assert.match(achievements, /closeLabel:'×'/);
+  assert.match(achievements, /Close achievements/);
+  assert.match(dialog, /close\.classList\.toggle\('ma-dialog__close--icon', opts\.closeIcon\)/);
+  assert.match(components, /\.ma-dialog__close--icon/);
+});

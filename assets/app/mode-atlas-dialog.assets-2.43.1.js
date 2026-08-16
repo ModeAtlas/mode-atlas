@@ -69,6 +69,9 @@
     opts.hideActions = opts.kind === 'feature' ? true : opts.hideActions === true;
     opts.size = ['wide', 'large'].includes(opts.size) ? opts.size : (opts.wide === true ? 'wide' : 'default');
     opts.cancelLabel = opts.cancelLabel || 'Cancel';
+    opts.closeLabel = opts.closeLabel || 'Close';
+    opts.closeAriaLabel = opts.closeAriaLabel || 'Close dialog';
+    opts.closeIcon = opts.closeIcon === true;
     opts.dismissOnBackdrop = opts.dismissOnBackdrop !== false;
     return opts;
   }
@@ -140,6 +143,9 @@
     }
     actions.hidden = opts.hideActions;
 
+    close.textContent = opts.closeLabel;
+    close.setAttribute('aria-label', opts.closeAriaLabel);
+    close.classList.toggle('ma-dialog__close--icon', opts.closeIcon);
     close.hidden = opts.hideClose === true;
     layer.hidden = false;
     requestAnimationFrame(() => layer.classList.add('is-open'));

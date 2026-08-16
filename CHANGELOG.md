@@ -1,3 +1,9 @@
+## 2.43.1 - 2026-08-16
+- Rebalanced achievement tile composition so status, icon, title, requirement, and progress use the available card height without crowding the progress bar.
+- Increased visual separation between bronze and gold rank accents while retaining the restrained five-rank palette.
+- Replaced the ambiguous achievement detail Close / Back pairing with an icon-style dialog close control and an explicit Back to achievements action.
+- Kept achievement categories, thresholds, rank progression, legacy unlock IDs, Atlas Level integration, and unlock history unchanged.
+
 ## 2.43.0 - 2026-08-16
 - Reorganized Achievements into Mode Atlas, Kana Trainer, and Word Bank categories with placeholder sections for Listening, Grammar, and Reading Comprehension.
 - Consolidated sequential milestones into ranked achievement tracks so one tile advances through its next rank instead of filling the menu with separate tier tiles.

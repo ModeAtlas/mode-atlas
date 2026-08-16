@@ -141,7 +141,7 @@ function applyAchievementVisuals(root = document) {
     Object.freeze({title:'Reading Comprehension',icon:'読',copy:'Reading Comprehension achievements will appear here when that branch launches.'})
   ]);
 
-  const RANK_ACCENTS = Object.freeze(['180,119,74','148,163,184','245,195,93','167,139,250','103,232,249']);
+  const RANK_ACCENTS = Object.freeze(['184,92,62','148,163,184','248,196,70','167,139,250','103,232,249']);
 
   const ACHIEVEMENT_TRACKS = Object.freeze({
     modeAtlas:Object.freeze([
@@ -270,7 +270,9 @@ function applyAchievementVisuals(root = document) {
     meter.setAttribute('aria-hidden','true');
     meter.append(setProgress(achEl('span','ma-ach-meter-fill'),state.pct));
 
-    tile.append(top,graphic,achEl('strong','',track.name),achEl('small','',state.rank.short),meter);
+    const copy=achEl('div','ma-ach-copy');
+    copy.append(achEl('strong','',track.name),achEl('small','',state.rank.short));
+    tile.append(top,graphic,copy,meter);
     return tile;
   }
 
@@ -378,7 +380,7 @@ function applyAchievementVisuals(root = document) {
     return wrap;
   }
 
-  function createInfoTopbar({branch, cls='', done=false, accent='96,165,250', rankAccentValue='', symbol='✦', kicker='', title='', tier=''}){
+  function createInfoTopbar({branch, cls='', done=false, accent='96,165,250', rankAccentValue='', symbol='✦', kicker='', title='', tier='', backLabel='← Back'}){
     const topbar=achEl('div','ma-ach-info-topbar');
     const hero=achEl('div',`ma-ach-info-hero branch-${branch} ${cls || (done?'done':'')}`);
     hero.dataset.maAchAccent=accent;
@@ -386,8 +388,8 @@ function applyAchievementVisuals(root = document) {
     const sym=achEl('span','ma-ach-info-symbol',symbol); sym.setAttribute('aria-hidden','true');
     const titleWrap=document.createElement('div'); titleWrap.append(achEl('span','ma-ach-info-kicker',kicker));
     const h3=achEl('h3','',title); if(tier)h3.append(document.createTextNode(' '),achEl('em','',tier)); titleWrap.append(h3); hero.append(sym,titleWrap);
-    const back=achButton('ma-button ma-button--ghost ma-button--small ma-ach-info-back','Back'); back.dataset.maFeatureBack='';
-    topbar.append(hero,back); return topbar;
+    const back=achButton('ma-button ma-button--ghost ma-button--small ma-ach-info-back',backLabel); back.dataset.maFeatureBack='';
+    topbar.append(back,hero); return topbar;
   }
 
   function buildAchievementInfo(id,requestedRankIndex){
@@ -404,7 +406,7 @@ function applyAchievementVisuals(root = document) {
     const valueText=rank.key==='atlasLevel' ? `Level ${Math.min(value,rank.target)} / ${rank.target}` : `${Math.min(value,rank.target)} / ${rank.target}`;
     row.append(achEl('strong','',done?'Rank complete':'In progress'),achEl('span','',valueText));
     const meter=document.createElement('i'); meter.append(setProgress(document.createElement('b'),pct)); progress.append(row,meter);
-    body.append(createInfoTopbar({branch:categoryKey,done:state.complete,accent:meta.accent,rankAccentValue:rankAccent(viewIndex),symbol:track.icon||meta.icon,kicker:meta.title,title:track.name,tier:ranked?`Rank ${rank.tier}`:''}),achEl('p','ma-ach-info-copy',rank.detail),progress);
+    body.append(createInfoTopbar({branch:categoryKey,done:state.complete,accent:meta.accent,rankAccentValue:rankAccent(viewIndex),symbol:track.icon||meta.icon,kicker:meta.title,title:track.name,tier:ranked?`Rank ${rank.tier}`:'',backLabel:'← Back to achievements'}),achEl('p','ma-ach-info-copy',rank.detail),progress);
 
     if(ranked){
       const history=achEl('div','ma-ach-rank-history');
@@ -447,7 +449,7 @@ function applyAchievementVisuals(root = document) {
     const body=achEl('div','ma-ach-info-body'),progress=achEl('div','ma-ach-info-progress'),row=achEl('div','ma-ach-info-progress-row'); row.append(achEl('strong','','Total progress'),achEl('span','',`${item.correct} correct / ${item.total} attempts`));
     const meter=document.createElement('i'); meter.append(setProgress(document.createElement('b'),Math.min(100,Math.round((targetAttempts+targetAccuracy+speedPct)/3)))); progress.append(row,meter);
     const stats=achEl('div','ma-ach-info-stats'); [['Reading',`${item.rc}✓ / ${item.rw}×`],['Writing',`${item.wc}✓ / ${item.ww}×`],['Accuracy',item.total?formatAccuracyPercent(item.accuracy):'No attempts yet'],['Avg time',avgText]].forEach(([label,value])=>{const stat=document.createElement('div');stat.append(achEl('b','',label),achEl('span','',value));stats.append(stat);});
-    body.append(createInfoTopbar({branch:'kana',cls:item.label.cls,accent:'80,220,155',symbol:ch,kicker:'Mastery Map',title:ch,tier:item.label.label}),achEl('p','ma-ach-info-copy',item.label.detail),progress,stats,achEl('p','ma-ach-info-copy','Mastered needs 50+ correct, 95%+ accuracy, and an average recognition time of 1.0s or faster.'));
+    body.append(createInfoTopbar({branch:'kana',cls:item.label.cls,accent:'80,220,155',symbol:ch,kicker:'Mastery Map',title:ch,tier:item.label.label,backLabel:'← Back to Mastery Map'}),achEl('p','ma-ach-info-copy',item.label.detail),progress,stats,achEl('p','ma-ach-info-copy','Mastered needs 50+ correct, 95%+ accuracy, and an average recognition time of 1.0s or faster.'));
     applyAchievementVisuals(body); return body;
   }
 
@@ -526,7 +528,7 @@ function applyAchievementVisuals(root = document) {
   }
   function openModal(kind){
     if(featureOpen||!window.ModeAtlasDialog?.feature)return false; featureOpen=true;
-    window.ModeAtlasDialog.feature({kicker:kind==='mastery'?'Kana progress':'Mode Atlas progress',title:kind==='mastery'?'Mastery Map':'Achievements',message:kind==='mastery'?'A full kana grid showing accuracy, repetition, and speed progress.':'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.',contentNode:buildFeatureContent(kind),size:'large'}).finally(()=>{featureOpen=false;});
+    window.ModeAtlasDialog.feature({kicker:kind==='mastery'?'Kana progress':'Mode Atlas progress',title:kind==='mastery'?'Mastery Map':'Achievements',message:kind==='mastery'?'A full kana grid showing accuracy, repetition, and speed progress.':'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.',contentNode:buildFeatureContent(kind),size:'large',closeLabel:'×',closeAriaLabel:kind==='mastery'?'Close Mastery Map':'Close achievements',closeIcon:true}).finally(()=>{featureOpen=false;});
     return true;
   }
 
