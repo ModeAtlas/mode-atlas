@@ -30,6 +30,14 @@
     return Array.isArray(set) ? set.length : 0;
   }
 
+  function atlasLevelRank(level){
+    if (level >= 76) return 'teal';
+    if (level >= 51) return 'violet';
+    if (level >= 26) return 'gold';
+    if (level >= 11) return 'silver';
+    return 'bronze';
+  }
+
   function formatTime(ts){
     const n = Number(ts || 0);
     if (!n) return 'Never synced';
@@ -330,6 +338,8 @@
   function updateProgressStatus(){
     const summary = window.ModeAtlasProgress?.getSummary?.();
     if (!summary) return;
+    const atlasLevel = Math.max(1, Math.min(100, Math.floor(Number(summary.level) || 1)));
+    const atlasRank = atlasLevelRank(atlasLevel);
     const level = document.getElementById('profileAtlasLevel');
     const xp = document.getElementById('profileAtlasXp');
     const next = document.getElementById('profileAtlasXpNext');
@@ -338,13 +348,19 @@
     const reading = document.getElementById('profileReadingCorrect');
     const writing = document.getElementById('profileWritingCorrect');
     const percent = Math.max(0, Math.min(100, Math.round(Number(summary.progress || 0) * 100)));
-    if (level) level.textContent = String(summary.level || 1);
+    if (level) level.textContent = String(atlasLevel);
     if (xp) xp.textContent = `${summary.xp || 0} XP`;
     if (next) next.textContent = `${summary.levelXp || 0} / ${summary.levelRequirement || 100} XP`;
     if (progress) progress.setAttribute('aria-valuenow', String(percent));
     if (bar) bar.style.width = `${percent}%`;
     if (reading) reading.textContent = String(summary.readingCorrect || 0);
     if (writing) writing.textContent = String(summary.writingCorrect || 0);
+    document.querySelectorAll('.ma-nav__profile').forEach((button) => {
+      button.dataset.maAtlasRank = atlasRank;
+      button.setAttribute('aria-label', `Open profile, Atlas Level ${atlasLevel}`);
+      const label = button.querySelector('.ma-nav__action-label');
+      if (label) label.textContent = `Lv ${atlasLevel}`;
+    });
   }
 
   function updateSyncStatus(){

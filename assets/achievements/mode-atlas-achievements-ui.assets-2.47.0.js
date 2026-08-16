@@ -223,6 +223,9 @@ function applyAchievementVisuals(root = document) {
   function valueFor(s,key){ return Number(s[key]||0); }
   function isRankDone(rank,s){ return valueFor(s,rank.key)>=Number(rank.target||0); }
   function rankAccent(index){ return RANK_ACCENTS[Math.min(RANK_ACCENTS.length-1,Math.max(0,index))]; }
+  function trackRankAccent(track,index,done=false){
+    return track?.ranks?.length===1 && done ? RANK_ACCENTS[RANK_ACCENTS.length-1] : rankAccent(index);
+  }
   function rankProgress(track,index,s){
     const rank=track.ranks[index];
     if(!rank) return 0;
@@ -254,7 +257,7 @@ function applyAchievementVisuals(root = document) {
 
     const tile=achButton(`ma-achievement-tile category-${categoryKey} rank-${state.displayIndex+1}${state.completedCount?' has-rank':''}${state.complete?' done':''}`);
     tile.dataset.maAchAccent=meta.accent;
-    tile.dataset.maAchRankAccent=rankAccent(state.displayIndex);
+    tile.dataset.maAchRankAccent=trackRankAccent(track,state.displayIndex,state.complete);
     tile.dataset.maAchId=id;
     tile.setAttribute('aria-label', state.complete ? `${track.name}, maximum rank unlocked` : `${track.name}, ${ranked?`Rank ${state.rank.tier}, `:''}${state.pct}% toward ${state.rank.short}`);
 
@@ -399,14 +402,15 @@ function applyAchievementVisuals(root = document) {
     const viewIndex=Number.isInteger(requestedRankIndex)?Math.max(0,Math.min(track.ranks.length-1,requestedRankIndex)):state.displayIndex;
     const rank=track.ranks[viewIndex];
     const value=valueFor(snapshot,rank.key), done=value>=rank.target, pct=rankProgress(track,viewIndex,snapshot);
+    const rankAccentValue=trackRankAccent(track,viewIndex,done);
     const body=achEl('div','ma-ach-info-body');
     body.dataset.maAchId=id;
-    const progress=achEl('div','ma-ach-info-progress'); progress.dataset.maAchRankAccent=rankAccent(viewIndex);
+    const progress=achEl('div','ma-ach-info-progress'); progress.dataset.maAchRankAccent=rankAccentValue;
     const row=achEl('div','ma-ach-info-progress-row');
     const valueText=rank.key==='atlasLevel' ? `Level ${Math.min(value,rank.target)} / ${rank.target}` : `${Math.min(value,rank.target)} / ${rank.target}`;
     row.append(achEl('strong','',done?'Rank complete':'In progress'),achEl('span','',valueText));
     const meter=document.createElement('i'); meter.append(setProgress(document.createElement('b'),pct)); progress.append(row,meter);
-    body.append(createInfoTopbar({branch:categoryKey,done:state.complete,accent:meta.accent,rankAccentValue:rankAccent(viewIndex),symbol:track.icon||meta.icon,kicker:meta.title,title:track.name,tier:ranked?`Rank ${rank.tier}`:'',backLabel:'← Back to achievements'}),achEl('p','ma-ach-info-copy',rank.detail),progress);
+    body.append(createInfoTopbar({branch:categoryKey,done:state.complete,accent:meta.accent,rankAccentValue,symbol:track.icon||meta.icon,kicker:meta.title,title:track.name,tier:ranked?`Rank ${rank.tier}`:'',backLabel:'← Back to achievements'}),achEl('p','ma-ach-info-copy',rank.detail),progress);
 
     if(ranked){
       const history=achEl('div','ma-ach-rank-history');
