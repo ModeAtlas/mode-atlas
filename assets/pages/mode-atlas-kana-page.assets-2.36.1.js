@@ -337,7 +337,50 @@
         return { title: 'Take a formal test', text: 'You have enough history for a useful check-in. Test mode will show weak rows and timing clearly.', href: '../results/', label: 'Open Results', kind: 'test' };
     }
 
+    function hasKanaHistory(summaries) {
+        const attempts = Number(summaries?.reading?.totals?.attempts || 0) + Number(summaries?.writing?.totals?.attempts || 0);
+        const dailyHistory = Number(summaries?.reading?.daily?.entries?.length || 0) + Number(summaries?.writing?.daily?.entries?.length || 0);
+        return attempts > 0 || dailyHistory > 0 || formalTestCount() > 0;
+    }
+
+    function returningHeroLead(summaries, mastery, action) {
+        const overview = [
+            `${mastery.seen}/${mastery.total} kana seen`,
+            `${mastery.counts.Mastered} mastered`
+        ];
+        const streak = trainerStreak();
+        if (streak > 0) overview.push(`${streak}-day streak`);
+
+        let context = 'Your next session is ready when you are.';
+        if (mastery.weak.length) context = `Current focus: ${compactKanaList(mastery.weak, 4)}.`;
+        else if (action.kind === 'writing') context = 'Writing is currently behind Reading.';
+        else if (action.kind === 'test') context = 'Your practice history is ready for a formal check-in.';
+        else if (action.kind === 'new') context = 'Fresh kana are still waiting in your set.';
+        return `${overview.join(' · ')}. ${context}`;
+    }
+
+    function applyKanaExperienceState(summaries, mastery, action) {
+        const returning = hasKanaHistory(summaries);
+        document.body.classList.toggle('ma-kana-returning', returning);
+        document.body.dataset.maKanaExperience = returning ? 'returning' : 'new';
+
+        const heroTitle = $('#kanaHeroTitle');
+        const heroLead = $('.kana-hero-lead');
+        const progressTitle = $('.kana-progress-intro h2');
+        const progressLead = $('.kana-progress-intro p');
+        if (heroTitle) heroTitle.textContent = returning ? 'Your kana' : 'Make kana feel automatic.';
+        if (heroLead) heroLead.textContent = returning
+            ? returningHeroLead(summaries, mastery, action)
+            : 'Build fast recognition in Reading, active recall in Writing, and use Results to keep each practice session focused.';
+        if (progressTitle) progressTitle.textContent = returning ? 'Progress overview' : 'Know where you stand. Know what to practise next.';
+        if (progressLead) progressLead.textContent = returning
+            ? 'Coverage, mastery, recommendations, accuracy and records from your saved practice.'
+            : 'Track recognition, recall, mastery, and the kana most worth your attention.';
+        return returning;
+    }
+
     function renderHero(summaries, mastery, action) {
+        applyKanaExperienceState(summaries, mastery, action);
         const continueLink = $('#kanaContinueAction');
         const continueHint = $('#kanaContinueHint');
         if (continueLink) continueLink.href = action.href;

@@ -163,6 +163,55 @@ body.ma-kana-page::before{
 .kana-hero-glyph--ka{right:2%;top:9%;width:94px;height:94px;font-size:2.4rem;border-color:color-mix(in srgb,var(--ma-writing) 38%,var(--ma-border));}
 .kana-hero-glyph--yo{right:10%;bottom:5%;width:70px;height:70px;font-size:1.8rem;border-color:color-mix(in srgb,var(--ma-results) 36%,var(--ma-border));}
 
+/* Returning learners already know the product. Keep a small contextual buffer,
+   then get Reading / Writing / Results and saved progress into view quickly. */
+.ma-kana-page.ma-kana-returning .kana-hub-hero{
+  grid-template-columns:minmax(0,1fr);
+  gap:0;
+  padding:30px 0 26px;
+}
+.ma-kana-page.ma-kana-returning .kana-hero-main{max-width:980px;}
+.ma-kana-page.ma-kana-returning .hero-tagline{margin-bottom:10px;}
+.ma-kana-page.ma-kana-returning .hero-tagline>span:first-child{width:34px;height:34px;border-radius:12px;font-size:.78rem;}
+.ma-kana-page.ma-kana-returning .kana-hero-main h1{
+  max-width:none;
+  font-size:clamp(2.15rem,4vw,3rem);
+  line-height:1;
+  letter-spacing:-.05em;
+}
+.ma-kana-page.ma-kana-returning .kana-hero-lead{
+  max-width:900px;
+  margin-top:10px;
+  font-size:clamp(.9rem,1.25vw,1rem);
+  line-height:1.5;
+}
+.ma-kana-page.ma-kana-returning .kana-hero-actions{margin-top:18px;}
+.ma-kana-page.ma-kana-returning .kana-primary-action{
+  --ma-button-min-height:48px;
+  --ma-button-padding:8px 14px;
+  --ma-button-radius:15px;
+  min-width:0;
+  max-width:280px;
+}
+.ma-kana-page.ma-kana-returning .kana-hero-visual{display:none;}
+.ma-kana-page.ma-kana-returning .kana-pathways{padding:14px 0 24px;}
+.ma-kana-page.ma-kana-returning .kana-pathways-head{display:none;}
+.ma-kana-page.ma-kana-returning .kana-pathway{
+  min-height:82px;
+  flex-direction:row;
+  align-items:center;
+  gap:14px;
+  padding:16px 20px;
+}
+.ma-kana-page.ma-kana-returning .kana-pathway>.ma-kicker,
+.ma-kana-page.ma-kana-returning .kana-pathway>p{display:none;}
+.ma-kana-page.ma-kana-returning .kana-pathway::before{left:20px;width:32px;}
+.ma-kana-page.ma-kana-returning .kana-pathway strong{margin:0;font-size:clamp(1.05rem,1.8vw,1.3rem);}
+.ma-kana-page.ma-kana-returning .kana-pathway__action{margin:0 0 0 auto;justify-content:flex-end;font-size:.78rem;}
+.ma-kana-page.ma-kana-returning .kana-progress-intro{padding:34px 0 20px;}
+.ma-kana-page.ma-kana-returning .kana-progress-intro h2{font-size:clamp(1.8rem,3vw,2.55rem);}
+.ma-kana-page.ma-kana-returning .kana-progress-intro p{margin-top:10px;font-size:.9rem;line-height:1.5;}
+
 /* Practice destinations are navigation, not dashboard cards. */
 .kana-pathways{
   width:min(1180px,100%);

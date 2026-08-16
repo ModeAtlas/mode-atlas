@@ -1,3 +1,9 @@
+## 2.36.1 - 2026-08-16
+- Kept the full Kana orientation hero for zero-history learners, while regular learners now receive a compact state-aware header instead of repeated introductory marketing copy.
+- Returning Kana headers now summarise saved coverage, mastered kana, streak state, and current weak-kana focus so the buffer is personal and useful without competing with the statistics below.
+- Collapsed Reading / Writing / Results into a slim shortcut band for returning learners and tightened the progress intro so saved statistics arrive much sooner on repeat visits.
+- Preserved the complete first-use Kana experience and all existing recommendation, mastery, Daily Challenge, preset, Results, storage, sync, and trainer behaviour.
+
 ## 2.36.0 - 2026-08-16
 - Refined Kana Trainer into a clearer sub-homepage: a calm, action-first introduction now leads into practice destinations before any progress data appears.
 - Replaced the three large pathway cards with a lighter Reading / Writing / Results navigation band so the top of Kana has more breathing room while keeping each destination distinct.

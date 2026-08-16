@@ -1212,3 +1212,29 @@ test('2.36 Kana hub keeps orientation calm and moves detailed progress below pra
   assert.match(kanaCss, /\.kana-mastery-grid\{[\s\S]*?border:1px solid var\(--ma-border\)/);
   assert.match(kanaCss, /\.kana-preset-grid\{[\s\S]*?border:1px solid var\(--ma-border\)/);
 });
+
+test('2.36.1 Kana keeps first-use orientation but compacts established learner hierarchy', () => {
+  const kanaHtml = read('kana/index.html');
+  const kanaJs = read('assets/pages/mode-atlas-kana-page.js');
+  const kanaCss = read('assets/css/mode-atlas-kana-page.css');
+
+  assert.match(kanaHtml, /id="kanaHeroTitle">Make kana feel automatic\.<\/h1>/,
+    'zero-history learners should retain the full Kana introduction');
+  assert.match(kanaJs, /function hasKanaHistory\(summaries\)/);
+  assert.match(kanaJs, /attempts > 0 \|\| dailyHistory > 0 \|\| formalTestCount\(\) > 0/,
+    'returning state should derive from real saved Kana history rather than a second preference flag');
+  assert.match(kanaJs, /classList\.toggle\('ma-kana-returning', returning\)/);
+  assert.match(kanaJs, /heroTitle\.textContent = returning \? 'Your kana' : 'Make kana feel automatic\.'/);
+  assert.match(kanaJs, /Current focus: \$\{compactKanaList\(mastery\.weak, 4\)\}/,
+    'returning header should surface a learner-specific focus when weak kana exist');
+  assert.match(kanaJs, /progressTitle\.textContent = returning \? 'Progress overview'/);
+
+  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-hub-hero\{[\s\S]*?padding:30px 0 26px;/,
+    'returning Kana hero should be materially shorter than the first-use hero');
+  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-hero-visual\{display:none;\}/);
+  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-pathways-head\{display:none;\}/,
+    'repeat visitors should not repeatedly receive the practice-area explainer');
+  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-pathway>p\{display:none;\}/,
+    'returning practice shortcuts should be compact rather than explanatory cards');
+});
+
