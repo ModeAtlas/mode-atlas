@@ -1,3 +1,17 @@
+## 2.46.0 - 2026-08-16
+- Split Firebase startup so App/Auth still restore returning accounts immediately while Firestore loads only when an authenticated cloud operation actually needs it; signed-out visitors no longer download Firestore on every page.
+- Replaced the always-loaded developer console JavaScript/CSS with a small eligibility loader that loads the full diagnostics only on localhost or for the developer account.
+- Kept lazy developer assets revisioned and build-owned so production diagnostics remain cache-safe without adding unmanaged runtime files.
+- Removed stray macOS metadata from the repository and added regression/audit guards for the new production dependency boundaries.
+- Preserved auth restoration, cloud hydration/merge ownership, save schemas, PWA/update behaviour, trainer scoring/SRS, Test Results, Atlas Level, and achievement calculations.
+
+## 2.45.0 - 2026-08-16
+- Added a shared keyboard bypass link and stable main-content landmarks across the real application pages.
+- Converted trainer Records, Mastery, Practice Setup, and mastery heatmap interactions to native keyboard-operable controls with shared ARIA state ownership.
+- Improved shared dialog focus semantics and modal drawer scroll locking while retaining existing Escape/focus-return behaviour.
+- Raised compact interactive touch targets on coarse-pointer devices without inflating passive pills, badges, or desktop-only presentation.
+- Kept reduced-motion, focus-visible, trainer/scoring/progression/storage/cloud/PWA behaviour under their existing owners and added focused accessibility regression coverage.
+
 ## 2.44.0 - 2026-08-16
 - Standardized app-wide action language so Start begins an actual practice session, destination links use Open/View/Back, and shared trainer controls use consistent sentence case.
 - Renamed the Kana assessment destination to Test Results across navigation, Atlas, Kana, trainer links, and formal-assessment UI while preserving all Test Mode data and analysis behavior.

@@ -1624,3 +1624,30 @@ test('2.45 responsive and accessibility QA keeps landmarks, keyboard controls, f
   assert.match(sharedPage, /button:focus-visible,a:focus-visible/);
   assert.match(sharedPage, /prefers-reduced-motion:reduce/);
 });
+
+
+test('2.46 production boot keeps developer diagnostics lazy and revision-build owned', () => {
+  const frontend = read('frontend_components.py');
+  const builder = read('build_revision_assets.py');
+  const loader = read('assets/app/mode-atlas-dev-console-loader.js');
+  const version = read('assets/app/mode-atlas-version.js');
+  const revision = (version.match(/CACHE_REVISION\s*=\s*['\"]([^'\"]+)/) || [])[1];
+
+  assert.match(frontend, /assets\/app\/mode-atlas-dev-console-loader\.js/);
+  assert.doesNotMatch(frontend, /['\"]assets\/app\/mode-atlas-dev-console\.js['\"]/);
+  assert.doesNotMatch(frontend, /['\"]assets\/css\/mode-atlas-dev-console\.css['\"]/);
+  assert.match(builder, /LAZY_ASSETS/);
+  assert.match(builder, /assets\/app\/mode-atlas-dev-console\.js/);
+  assert.match(builder, /assets\/css\/mode-atlas-dev-console\.css/);
+  assert.match(loader, /document\.currentScript/);
+  assert.match(loader, /kanaCloudSyncStatusChanged/);
+  assert.match(loader, /admin@mode-atlas\.com/);
+  assert.match(loader, /loadIfEligible/);
+
+  for (const page of ['index.html','kana/index.html','reading/index.html','writing/index.html','results/index.html','wordbank/index.html']) {
+    const html = read(page);
+    assert.match(html, new RegExp(`mode-atlas-dev-console-loader\\.${revision}\\.js`));
+    assert.doesNotMatch(html, new RegExp(`mode-atlas-dev-console\\.${revision}\\.js`));
+    assert.doesNotMatch(html, new RegExp(`mode-atlas-dev-console\\.${revision}\\.css`));
+  }
+});

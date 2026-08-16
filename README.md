@@ -6,7 +6,7 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.45.0
+Version: 2.46.0
 ## 2.20.19
 - Made `ModeAtlasKanaData` the single canonical kana inventory owner (240 kana) and moved Kana Metrics/Achievements to consume the same collections and mastery rules.
 - Replaced per-page automatic save repair with explicit save-schema migrations; clean page loads no longer schedule cloud sync, while genuine repairs and post-hydration legacy fixes sync once.

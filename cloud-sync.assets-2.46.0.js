@@ -3,17 +3,73 @@ let getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirec
 let getFirestore, doc, getDoc, setDoc;
 let firebaseModulesPromise = null;
 let firebaseModulesLoaded = false;
-async function loadFirebaseModules() {
+let firestoreModulePromise = null;
+let firestoreModuleLoaded = false;
+
+function firebaseEnvironmentAllowsModules() {
   if (window.ModeAtlasEnv && window.ModeAtlasEnv.canUseFirebase === false) return false;
   if (location.protocol === 'file:') return false;
+  return true;
+}
+
+async function loadFirestoreModule() {
+  if (!firebaseEnvironmentAllowsModules()) return false;
+  if (firestoreModuleLoaded) return true;
+  // Backend tests and local harnesses may inject the Firestore API through the
+  // core loader. Treat an already-complete API surface as loaded rather than
+  // issuing a real network import.
+  if ([getFirestore, doc, getDoc, setDoc].every((fn) => typeof fn === 'function')) {
+    firestoreModuleLoaded = true;
+    return true;
+  }
+  if (firestoreModulePromise) return firestoreModulePromise;
+
+  const attempt = import('https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js')
+    .then((firestoreMod) => {
+      getFirestore = firestoreMod.getFirestore;
+      doc = firestoreMod.doc;
+      getDoc = firestoreMod.getDoc;
+      setDoc = firestoreMod.setDoc;
+      return true;
+    })
+    .catch((error) => {
+      console.warn('Firebase Firestore module could not be loaded.', error);
+      return false;
+    });
+
+  firestoreModulePromise = (async () => {
+    try {
+      const loaded = await attempt;
+      firestoreModuleLoaded = loaded === true;
+      return loaded;
+    } finally {
+      firestoreModulePromise = null;
+    }
+  })();
+  return firestoreModulePromise;
+}
+
+async function ensureFirestore() {
+  if (db) return true;
+  if (!app) {
+    const setupReady = await setupFirebase();
+    if (!setupReady || !app) return false;
+  }
+  const loaded = await loadFirestoreModule();
+  if (!loaded || typeof getFirestore !== 'function') return false;
+  if (!db) db = getFirestore(app);
+  return !!db;
+}
+
+async function loadFirebaseModules() {
+  if (!firebaseEnvironmentAllowsModules()) return false;
   if (firebaseModulesLoaded) return true;
   if (firebaseModulesPromise) return firebaseModulesPromise;
 
   const attempt = Promise.all([
     import('https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js'),
-    import('https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js'),
-    import('https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js')
-  ]).then(([appMod, authMod, firestoreMod]) => {
+    import('https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js')
+  ]).then(([appMod, authMod]) => {
     initializeApp = appMod.initializeApp;
     getApps = appMod.getApps;
     getApp = appMod.getApp;
@@ -24,13 +80,9 @@ async function loadFirebaseModules() {
     getRedirectResult = authMod.getRedirectResult;
     signOut = authMod.signOut;
     onAuthStateChanged = authMod.onAuthStateChanged;
-    getFirestore = firestoreMod.getFirestore;
-    doc = firestoreMod.doc;
-    getDoc = firestoreMod.getDoc;
-    setDoc = firestoreMod.setDoc;
     return true;
   }).catch((error) => {
-    console.warn('Firebase modules could not be loaded.', error);
+    console.warn('Firebase App/Auth modules could not be loaded.', error);
     return false;
   });
 
@@ -946,7 +998,7 @@ async function setupFirebase() {
   // setupFirebase() is the single Firebase setup owner. Concurrent callers join
   // one attempt; failed transient attempts are released so a later online event
   // or user action can retry without reloading the page.
-  if (app && auth && db && authListenerInstalled) return true;
+  if (app && auth && authListenerInstalled) return true;
   if (firebaseSetupPromise) return firebaseSetupPromise;
 
   const attempt = (async () => {
@@ -973,7 +1025,6 @@ async function setupFirebase() {
     if (!app) {
       app = getApps().length ? getApp() : initializeApp(CONFIG);
       auth = getAuth(app);
-      db = getFirestore(app);
       try { await getRedirectResult(auth); } catch (error) { console.warn('Redirect sign-in result was not available.', error); }
     }
 
@@ -988,7 +1039,7 @@ async function setupFirebase() {
 
         // Auth state owns initial cloud hydration. Pages wait for this owner;
         // they never start a competing Firestore read themselves.
-        if (user && db) {
+        if (user) {
           initialHydrationPromise = hydrateFromCloud(false).catch((error) => {
             console.warn('Cloud hydrate after auth restore failed.', error);
             return false;
@@ -1026,7 +1077,8 @@ async function hydrateFromCloud(force = false) {
     Object.keys(SECTION_DEFS).map((name) => [name, normalizeTimestamp(storeGet(SECTION_DEFS[name].updatedAtKey, '0'))])
   );
   await authReady;
-  if (!CONFIG_READY || !currentUser || !db) return false;
+  if (!CONFIG_READY || !currentUser) return false;
+  if (!await ensureFirestore()) return false;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     setCloudState(false, 'Browser is offline');
     return false;
@@ -1196,7 +1248,8 @@ async function performSyncOnce() {
     return false;
   }
   await authReady;
-  if (!CONFIG_READY || !currentUser || !db) return false;
+  if (!CONFIG_READY || !currentUser) return false;
+  if (!await ensureFirestore()) return false;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     setCloudState(false, 'Browser is offline');
     return false;
@@ -1479,7 +1532,8 @@ async function importLocalBackup(obj) {
 
     let cloudStatusEmitted = false;
     const importUid = currentUser?.uid || null;
-    if (CONFIG_READY && importUid && db && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
+    const firestoreReady = importUid ? await ensureFirestore() : false;
+    if (CONFIG_READY && importUid && firestoreReady && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
       try {
         await setDoc(getDocRef(importUid), buildLocalSnapshot(), { merge: true });
         if (currentUser?.uid === importUid) {
@@ -1536,7 +1590,8 @@ async function resetAllData() {
 
   try {
     const resetUid = currentUser?.uid || null;
-    if (CONFIG_READY && resetUid && db) {
+    const firestoreReady = resetUid ? await ensureFirestore() : false;
+    if (CONFIG_READY && resetUid && firestoreReady) {
       await setDoc(getDocRef(resetUid), buildEmptySnapshot());
       if (currentUser?.uid === resetUid) hydratedForUserId = resetUid;
     }

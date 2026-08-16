@@ -244,6 +244,23 @@ def main() -> int:
         if re.search(r'class=["\'][^"\']*(?:topbar|branch-nav|study-nav|nav-link|branch-link|study-link|profile-trigger|profile-dot|ma-settings-trigger)', page_html):
             fail(errors, f'page still contains a legacy navigation class: {page_path.relative_to(ROOT)}')
 
+    # Production-only diagnostics are lazy: normal learners load only the small
+    # eligibility owner, while the revision builder still fingerprints the full
+    # console JS/CSS for localhost/developer use.
+    frontend_source = text(ROOT / 'frontend_components.py')
+    revision_builder = text(ROOT / 'build_revision_assets.py')
+    dev_loader = text(ROOT / 'assets/app/mode-atlas-dev-console-loader.js')
+    if "'assets/app/mode-atlas-dev-console-loader.js'" not in frontend_source:
+        fail(errors, 'production frontend manifest is missing the developer-console eligibility loader')
+    if "'assets/app/mode-atlas-dev-console.js'" in frontend_source or "'assets/css/mode-atlas-dev-console.css'" in frontend_source:
+        fail(errors, 'full developer-console assets are still loaded eagerly by the production manifest')
+    for lazy_asset in ('assets/app/mode-atlas-dev-console.js', 'assets/css/mode-atlas-dev-console.css'):
+        if lazy_asset not in revision_builder:
+            fail(errors, f'revision builder does not own lazy developer asset: {lazy_asset}')
+    for marker in ('document.currentScript', 'kanaCloudSyncStatusChanged', 'loadIfEligible', 'admin@mode-atlas.com'):
+        if marker not in dev_loader:
+            fail(errors, f'developer-console loader missing eligibility/revision marker: {marker}')
+
     # Public page dependency stacks and the early loader are build-time owned.
     asset_regions = (
         ('MODE_ATLAS_HEAD_ASSETS_START', 'MODE_ATLAS_HEAD_ASSETS_END'),
@@ -451,6 +468,10 @@ def main() -> int:
     for marker in (
         "firebaseModulesLoaded = loaded === true;",
         "firebaseModulesPromise = null;",
+        "firestoreModuleLoaded = loaded === true;",
+        "firestoreModulePromise = null;",
+        "async function ensureFirestore()",
+        "if (!await ensureFirestore()) return false;",
         "firebaseSetupPromise = null;",
         "const joinedExistingSetup = !!firebaseSetupPromise;",
         "if (!ready && joinedExistingSetup",
@@ -458,6 +479,15 @@ def main() -> int:
     ):
         if marker not in cloud:
             fail(errors, f"Firebase setup is missing retry/recovery marker: {marker}")
+    core_loader = re.search(r"async function loadFirebaseModules\(\) \{(?P<body>.*?)\n\}", cloud, re.S)
+    firestore_loader = re.search(r"async function loadFirestoreModule\(\) \{(?P<body>.*?)\n\}", cloud, re.S)
+    if not core_loader or 'firebase-firestore.js' in core_loader.group('body'):
+        fail(errors, 'Firebase core startup still eagerly imports Firestore')
+    if not firestore_loader or 'firebase-firestore.js' not in firestore_loader.group('body'):
+        fail(errors, 'Firestore no longer has a dedicated lazy module owner')
+    setup_firebase = re.search(r"async function setupFirebase\(\) \{(?P<body>.*?)\n\}\n\nfunction getDocRef", cloud, re.S)
+    if setup_firebase and 'db = getFirestore(app)' in setup_firebase.group('body'):
+        fail(errors, 'Firebase auth startup still eagerly initializes Firestore')
     if "version: BACKUP_FORMAT_VERSION" not in cloud or "CLOUD_SNAPSHOT_VERSION" not in cloud:
         fail(errors, "cloud backup/snapshot envelopes do not use central release format metadata")
 

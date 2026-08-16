@@ -216,7 +216,6 @@ HEAD_SCRIPTS = (
 EARLY_BODY_SCRIPTS = ('assets/app/mode-atlas-early-loader.js',)
 
 INTERACTIVE_CHROME_STYLES = (
-    'assets/css/mode-atlas-dev-console.css',
     'assets/css/mode-atlas-app-modals.css',
     'assets/css/mode-atlas-profile-settings.css',
 )
@@ -259,7 +258,7 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-progress-ui.js',
     'assets/app/mode-atlas-save-repair.js',
     'assets/app/mode-atlas-page-state.js',
-    'assets/app/mode-atlas-dev-console.js',
+    'assets/app/mode-atlas-dev-console-loader.js',
     'assets/app/mode-atlas-pwa.js',
     'assets/app/mode-atlas-about.js',
     'assets/app/mode-atlas-visit-flows.js',

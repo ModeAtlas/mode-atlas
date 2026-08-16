@@ -71,6 +71,10 @@ CRITICAL = {
     'mode-atlas-head-bootstrap.js',
     'mode-atlas-early-loader.js',
 }
+LAZY_ASSETS = (
+    'assets/app/mode-atlas-dev-console.js',
+    'assets/css/mode-atlas-dev-console.css',
+)
 
 FINGERPRINT_RE = re.compile(r'\.(?:assets-\d+\.\d+\.\d+)\.(js|css)$', re.I)
 ASSET_ATTR_RE = re.compile(
@@ -166,6 +170,21 @@ for html_path, canonical, fingerprinted in referenced:
         raise SystemExit(f'Asset path escapes project root: {html_path} -> {canonical}')
     if not src.exists():
         raise SystemExit(f'Missing canonical asset: {html_path.relative_to(ROOT)} -> {canonical}')
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+
+# Some production-only features are loaded on demand rather than referenced by
+# static HTML. They still receive the same release fingerprint and source-equality
+# guarantees as manifest assets.
+for lazy_rel in LAZY_ASSETS:
+    src = (ROOT / lazy_rel).resolve()
+    try:
+        src.relative_to(ROOT)
+    except ValueError:
+        raise SystemExit(f'Lazy asset escapes project root: {lazy_rel}')
+    if not src.exists():
+        raise SystemExit(f'Missing canonical lazy asset: {lazy_rel}')
+    dst = src.with_name(src.stem + '.' + REVISION + src.suffix)
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
 
