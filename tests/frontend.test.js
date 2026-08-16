@@ -1297,8 +1297,8 @@ test('2.39 Reading and Writing share controller lifecycle while answer adapters 
   assert.equal(count(frontend, /'assets\/trainer\/mode-atlas-trainer-controller\.js'/g), 2,
     'shared trainer controller must be in both trainer manifests');
   for (const html of [readingHtml, writingHtml]) {
-    const sharedIndex = html.indexOf('mode-atlas-trainer-controller.assets-2.39.0.js');
-    const pageIndex = Math.max(html.indexOf('mode-atlas-default-page.assets-2.39.0.js'), html.indexOf('mode-atlas-reverse-page.assets-2.39.0.js'));
+    const sharedIndex = html.indexOf(`mode-atlas-trainer-controller.${REVISION}.js`);
+    const pageIndex = Math.max(html.indexOf(`mode-atlas-default-page.${REVISION}.js`), html.indexOf(`mode-atlas-reverse-page.${REVISION}.js`));
     assert.ok(sharedIndex >= 0 && pageIndex > sharedIndex, 'controller must load before the mode adapter');
   }
 
@@ -1332,3 +1332,28 @@ test('2.39 Reading and Writing share controller lifecycle while answer adapters 
   }
 });
 
+test('2.40 Results is a formal Test Mode report and preserves comprehensive assessment visuals', () => {
+  const html = read('results/index.html');
+  const page = read('assets/pages/mode-atlas-test-page.js');
+  const engine = read('assets/results/mode-atlas-results-engine.js');
+  const ui = read('assets/results/mode-atlas-results-ui.js');
+  const storage = read('assets/results/mode-atlas-results-storage.js');
+
+  assert.match(html, /Formal assessment/);
+  assert.match(html, /Test Mode only · practice sessions are not included/);
+  assert.match(html, /Assessment history/);
+  assert.match(html, /Kana-level analysis/);
+  assert.match(html, /Before your next test/);
+  assert.match(html, /id="testHeatmap"/);
+  assert.match(html, /id="rowPerformanceMount"/);
+  assert.match(ui, /row-doughnut-card/);
+  assert.match(ui, /document\.createElement\("canvas"\)/);
+  assert.match(page, /drawRowCharts\(result, activeRowGraphView\)/);
+  assert.match(page, /item\.mode === mode/);
+  assert.match(page, /Reading tests compare with Reading tests|most recent.*Test Mode assessments/);
+  assert.match(engine, /function isFormalTestResultRecord/);
+  assert.match(engine, /if \(!isFormalTestResultRecord\(item\)\) return/);
+  assert.match(storage, /testModeResults/);
+  assert.doesNotMatch(page, /readModeJSON\([^\n]*(?:scoreHistory|dailyHistory|charStats)/);
+  assert.doesNotMatch(page, /speedRunTop3|endlessBest|dailyChallengeHistory/);
+});

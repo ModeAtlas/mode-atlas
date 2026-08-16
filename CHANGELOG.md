@@ -1,3 +1,10 @@
+## 2.40.0 - 2026-08-16
+- Reframed Results as the formal assessment report for Reading and Writing Test Mode only.
+- Preserved the full kana heatmap, row doughnut graphs, modifier-row analysis, fastest/slowest markers, pinned test averages, master/detail history, trends, and Recommended Review.
+- Split improvement trends by assessment skill: Reading compares only with Reading tests and Writing only with Writing tests.
+- Added a formal-test consumption guard so non-Test-Mode records cannot be interpreted as assessment results even if they appear in a results storage key.
+- Improved empty states and assessment terminology without changing Test Mode scoring, stored result schemas, or trainer behavior.
+
 ## 2.39.0 - 2026-08-16
 - Added one shared Reading/Writing trainer controller for common page lifecycle and persistence behavior while retaining thin mode-specific answer adapters.
 - Consolidated trainer save/load refresh, cloud/bfcache/UI refresh coalescing, Daily/Test header and HUD state, shared panel state, score-history formulas, test-result persistence adapters, SRS-correct scheduling, session-summary plumbing, and debug element primitives.

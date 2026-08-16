@@ -97,6 +97,7 @@ const RESULTS_GUIDANCE_TEXT = document.getElementById("resultsGuidanceText");
 const RESULTS_GUIDANCE_KANA = document.getElementById("resultsGuidanceKana");
 const RESULTS_PRACTICE_ACTION = document.getElementById("resultsPracticeAction");
 const RESULTS_TREND = document.getElementById("resultsTrend");
+const RESULTS_TREND_TITLE = document.getElementById("resultsTrendTitle");
 const RESULTS_TREND_SUMMARY = document.getElementById("resultsTrendSummary");
 const RESULTS_TREND_NOTE = document.getElementById("resultsTrendNote");
 
@@ -438,50 +439,59 @@ function renderGuidance(result) {
 
     if (!result) {
         RESULTS_GUIDANCE_CARD?.classList.remove("reading", "writing");
-        RESULTS_GUIDANCE_TITLE.textContent = "Complete a formal test";
-        RESULTS_GUIDANCE_TEXT.textContent = "A Reading or Writing Test Mode result gives Mode Atlas enough information to recommend a focused review.";
+        RESULTS_GUIDANCE_TITLE.textContent = "Complete your first formal assessment";
+        RESULTS_GUIDANCE_TEXT.textContent = "Finish Reading or Writing Test Mode to unlock row, kana, speed, and accuracy recommendations here.";
         RESULTS_PRACTICE_ACTION.href = "/reading/";
-        RESULTS_PRACTICE_ACTION.querySelector("span").textContent = "Start a Reading test";
+        RESULTS_PRACTICE_ACTION.querySelector("span").textContent = "Open Reading trainer";
         return;
     }
 
     const mode = result.mode === "writing" ? "writing" : "reading";
     const weakKana = getWeakKana(result, 5);
     const weakRow = getWeakestRow(result);
+    const scope = result.type === "average" ? `${mode} Test Mode history` : `this ${mode} Test Mode assessment`;
     RESULTS_GUIDANCE_CARD?.classList.toggle("reading", mode === "reading");
     RESULTS_GUIDANCE_CARD?.classList.toggle("writing", mode === "writing");
 
     if (weakKana.length) {
-        RESULTS_GUIDANCE_TITLE.textContent = weakRow ? `Review the ${weakRow.key} row` : `Review your weakest ${mode} kana`;
+        RESULTS_GUIDANCE_TITLE.textContent = weakRow ? `Focus on the ${weakRow.key} row` : `Review your weakest ${mode} test kana`;
         RESULTS_GUIDANCE_TEXT.textContent = weakRow
-            ? `${weakRow.key} is the weakest regular row in this ${result.type === "average" ? "overall summary" : "result"} at ${weakRow.accuracy}% accuracy${weakRow.avgMs ? ` and ${formatDuration(weakRow.avgMs)} average response time` : ""}.`
-            : `These kana currently have the weakest combination of accuracy and response time in the selected ${mode} result.`;
+            ? `${weakRow.key} is the clearest focus area from ${scope}: ${weakRow.accuracy}% accuracy${weakRow.avgMs ? ` with ${formatDuration(weakRow.avgMs)} average response time` : ""}. Practise it before the next formal test.`
+            : `These kana have the weakest combination of accuracy and response speed across ${scope}.`;
         weakKana.forEach(item => {
             const chip = createResultEl("span", "results-focus-kana__item ma-pill", item.kana);
             chip.title = `${item.accuracy}% accuracy${item.avgMs ? ` · ${formatDuration(item.avgMs)}` : ""}`;
             RESULTS_GUIDANCE_KANA.append(chip);
         });
     } else {
-        RESULTS_GUIDANCE_TITLE.textContent = `Build more ${mode} history`;
-        RESULTS_GUIDANCE_TEXT.textContent = "There is not enough kana-level history in this result to rank a focused review yet.";
+        RESULTS_GUIDANCE_TITLE.textContent = `Build more ${mode} test history`;
+        RESULTS_GUIDANCE_TEXT.textContent = "There is not enough kana-level formal assessment data to rank a focused review yet.";
     }
 
     RESULTS_PRACTICE_ACTION.href = `/${mode}/?focusWeak=1`;
-    RESULTS_PRACTICE_ACTION.querySelector("span").textContent = `Practice ${mode === "reading" ? "Reading" : "Writing"} weak kana`;
+    RESULTS_PRACTICE_ACTION.querySelector("span").textContent = `Practice recommended ${mode === "reading" ? "Reading" : "Writing"} kana`;
 }
 
-function renderTrend() {
+function renderTrend(result) {
     if (!RESULTS_TREND || !RESULTS_TREND_SUMMARY || !RESULTS_TREND_NOTE) return;
-    const tests = STORED_RESULTS
-        .filter(item => item.type !== "average")
-        .sort((a, b) => parseStoredResultTimestamp(a) - parseStoredResultTimestamp(b))
-        .slice(-8);
+    const individualTests = STORED_RESULTS.filter(item => item.type !== "average");
+    const latest = [...individualTests].sort((a, b) => parseStoredResultTimestamp(b) - parseStoredResultTimestamp(a))[0] || null;
+    const mode = result?.mode || latest?.mode || null;
+    const modeLabel = mode === "writing" ? "Writing" : "Reading";
+    const tests = mode
+        ? individualTests
+            .filter(item => item.mode === mode)
+            .sort((a, b) => parseStoredResultTimestamp(a) - parseStoredResultTimestamp(b))
+            .slice(-8)
+        : [];
+
+    if (RESULTS_TREND_TITLE) RESULTS_TREND_TITLE.textContent = mode ? `${modeLabel} test trend` : "Formal test progress";
 
     if (!tests.length) {
         RESULTS_TREND.replaceChildren(createResultEl("div", "results-trend-empty", "Complete a formal test to start your trend."));
         RESULTS_TREND.style.setProperty("--ma-trend-count", "1");
         RESULTS_TREND_SUMMARY.textContent = "No history yet";
-        RESULTS_TREND_NOTE.textContent = "Only formal Reading and Writing Test Mode results appear in this trend.";
+        RESULTS_TREND_NOTE.textContent = "Only formal Reading and Writing Test Mode results appear here.";
         return;
     }
 
@@ -490,8 +500,8 @@ function renderTrend() {
         const score = Math.max(0, Math.min(100, Number(item.overallScore || 0)));
         const bar = createResultEl("div", "ma-trend__bar");
         bar.style.setProperty("--ma-trend-height", `${Math.max(8, score)}%`);
-        bar.style.setProperty("--ma-trend-color", item.mode === "writing" ? "var(--ma-writing)" : "var(--ma-reading)");
-        bar.title = `${item.mode === "writing" ? "Writing" : "Reading"} · ${score}% · ${item.date || "Saved test"}`;
+        bar.style.setProperty("--ma-trend-color", mode === "writing" ? "var(--ma-writing)" : "var(--ma-reading)");
+        bar.title = `${modeLabel} Test Mode · ${score}% · ${item.date || "Saved test"}`;
         bar.setAttribute("aria-label", bar.title);
         return bar;
     });
@@ -504,8 +514,8 @@ function renderTrend() {
         ? `${last}% latest`
         : Math.abs(delta) <= 2 ? "Steady" : `${delta > 0 ? "+" : ""}${delta} pts`;
     RESULTS_TREND_NOTE.textContent = tests.length === 1
-        ? "One formal test saved. More tests will make the direction clearer."
-        : `${tests.length} most recent formal tests · latest score ${last}%.`;
+        ? `One ${modeLabel} Test Mode assessment saved. More formal tests will make the trend clearer.`
+        : `${tests.length} most recent ${modeLabel} Test Mode assessments · latest score ${last}%.`;
 }
 
 function getModifierTags(result) {
@@ -525,12 +535,14 @@ function createResultTile(item) {
     const titleWrap = document.createElement("div");
     titleWrap.append(
         createResultEl("div", "test-title", item.title),
-        createResultEl("div", "test-sub", `${item.date} · ${item.startedAt} · ${item.kanaAsked} kana shown`)
+        createResultEl("div", "test-sub", item.type === "average"
+            ? `${item.date} · ${item.kanaAsked} kana represented`
+            : `${item.date} · ${item.startedAt} · ${item.kanaAsked} kana assessed`)
     );
     top.append(titleWrap, createResultEl("div", "test-score", `${item.overallScore}%`));
 
     const tagRow = createResultEl("div", "tag-row");
-    if (item.type === "average") tagRow.append(createResultEl("span", "tag gold ma-pill ma-pill--small", "Overall Average"));
+    tagRow.append(createResultEl("span", `tag ${item.type === "average" ? "gold" : item.mode} ma-pill ma-pill--small`, item.type === "average" ? "Test Average" : "Formal Test"));
     getModifierTags(item).forEach(tag => tagRow.append(createResultEl("span", "tag gold ma-pill ma-pill--small", tag)));
     tagRow.append(createResultEl("span", "tag ma-pill ma-pill--small", `${item.correct} right / ${item.wrong} wrong`));
 
@@ -545,30 +557,40 @@ function createResultTile(item) {
 
 function renderResultsList() {
     if (!STORED_RESULTS.length) {
-        TESTS_GRID.replaceChildren(createResultEl("div", "empty ma-card ma-empty-state", "No test results yet. Complete a test in Reading Practice or Writing Practice and it will appear here."));
+        const empty = createResultEl("div", "empty ma-card ma-empty-state results-empty-assessment");
+        empty.append(
+            createResultEl("strong", "results-empty-assessment__title", "No formal test results yet"),
+            createResultEl("p", "results-empty-assessment__copy", "Complete Test Mode in Reading or Writing to receive a comprehensive assessment of kana accuracy, speed, rows, modifiers, and focus areas.")
+        );
+        const actions = createResultEl("div", "results-empty-assessment__actions ma-action-row");
+        const reading = createResultEl("a", "ma-button ma-button--primary", "Open Reading trainer");
+        reading.href = "/reading/";
+        const writing = createResultEl("a", "ma-button ma-button--ghost", "Open Writing trainer");
+        writing.href = "/writing/";
+        actions.append(reading, writing);
+        empty.append(actions);
+        TESTS_GRID.replaceChildren(empty);
         return;
     }
     TESTS_GRID.replaceChildren(...STORED_RESULTS.map(createResultTile));
 }
 
 function renderSnapshot(result) {
-    OVERALL_KICKER.textContent = result.type === "average" ? "Selected overall average" : "Selected test score";
+    const modeLabel = result.mode === "writing" ? "Writing" : "Reading";
+    OVERALL_KICKER.textContent = result.type === "average" ? `${modeLabel} test average` : `${modeLabel} formal test`;
     OVERALL_SELECTED_NAME.textContent = result.title;
     OVERALL_SCORE.textContent = `${result.overallScore}%`;
-    OVERALL_SUB.textContent = result.notes;
+    OVERALL_SUB.textContent = result.type === "average"
+        ? `Average performance across all saved ${modeLabel} Test Mode assessments.`
+        : `${result.kanaAsked} kana assessed in Test Mode${result.avgMs ? ` · ${formatDuration(result.avgMs)} average response` : ""}.`;
     OVERALL_MODE.textContent = getResultTypeLabel(result);
     OVERALL_CORRECT.textContent = result.correct;
     OVERALL_WRONG.textContent = result.wrong;
     OVERALL_TIME.textContent = formatDuration(result.durationMs);
 
     OVERALL_SCORE_CARD.classList.remove("reading", "writing", "average");
-    if (result.type === "average") {
-        OVERALL_SCORE_CARD.classList.add("average");
-    } else if (result.mode === "reading") {
-        OVERALL_SCORE_CARD.classList.add("reading");
-    } else {
-        OVERALL_SCORE_CARD.classList.add("writing");
-    }
+    if (result.type === "average") OVERALL_SCORE_CARD.classList.add("average");
+    else OVERALL_SCORE_CARD.classList.add(result.mode === "reading" ? "reading" : "writing");
 
     renderRowPerformanceInto(result, activeRowGraphView);
 
@@ -578,18 +600,21 @@ function renderSnapshot(result) {
         ["Dakuten", result.type === "average" ? (result.dakuten ? "Mixed" : "Off") : (result.dakuten ? "On" : "Off")],
         ["Yōon", result.type === "average" ? (result.yoon ? "Mixed" : "Off") : (result.yoon ? "On" : "Off")],
         ["Ext. Katakana", result.type === "average" ? (result.extendedKatakana ? "Mixed" : "Off") : (result.extendedKatakana ? "On" : "Off")],
-        ["Kana shown", result.kanaAsked]
+        ["Kana assessed", result.kanaAsked]
     ]);
 }
 
 function renderDetailHeader(result) {
+    const modeLabel = result.mode === "writing" ? "Writing" : "Reading";
     DETAIL_TITLE.textContent = result.title;
-    DETAIL_SUB.textContent = `${result.mode === "reading" ? "Reading Practice" : "Writing Practice"} · ${result.type === "average" ? "Pinned summary" : result.date} · ${result.type === "average" ? "Click a kana for its average timing" : formatDuration(result.durationMs) + " total time"}`;
+    DETAIL_SUB.textContent = result.type === "average"
+        ? `${modeLabel} Test Mode · pinned formal-test average · click a kana for its average timing`
+        : `${modeLabel} Test Mode · ${result.date} · ${formatDuration(result.durationMs)} total assessment time`;
     renderMetricCards(DETAIL_METRICS, [
-        ["Overall", `${result.overallScore}%`],
+        ["Accuracy", `${result.overallScore}%`],
         ["Correct", `${result.correct}`],
         ["Wrong", `${result.wrong}`],
-        ["Avg Time", `${formatDuration(result.avgMs)}`]
+        ["Avg response", `${formatDuration(result.avgMs)}`]
     ]);
     const hideBtn = document.getElementById("hideUnusedBtn");
     if (hideBtn) {
@@ -719,12 +744,12 @@ function renderAll() {
     renderHero();
     renderResultsList();
     renderGuidance(result);
-    renderTrend();
+    renderTrend(result);
     if (!result) {
-        OVERALL_KICKER.textContent = "Selected result score";
-        OVERALL_SELECTED_NAME.textContent = "No test results yet";
+        OVERALL_KICKER.textContent = "Formal assessment";
+        OVERALL_SELECTED_NAME.textContent = "No Test Mode results yet";
         OVERALL_SCORE.textContent = "—";
-        OVERALL_SUB.textContent = "This page is ready for saved data from Test Mode in Reading Practice and Writing Practice.";
+        OVERALL_SUB.textContent = "Complete Reading or Writing Test Mode to populate this formal assessment report.";
         OVERALL_MODE.textContent = "—";
         OVERALL_CORRECT.textContent = "0";
         OVERALL_WRONG.textContent = "0";
@@ -734,16 +759,16 @@ function renderAll() {
         renderMegaInlineCards(SNAPSHOT_BREAKDOWN, [
             ["Reading tests", "0"],
             ["Writing tests", "0"],
-            ["Overall averages", "Pending"],
-            ["Status", "Ready for Test Mode"]
+            ["Test averages", "Pending"],
+            ["Assessment", "Ready for Test Mode"]
         ]);
         ROW_PERFORMANCE_MOUNT.replaceChildren();
-        DETAIL_TITLE.textContent = "No result selected";
-        DETAIL_SUB.textContent = "Complete a test to populate this page.";
+        DETAIL_TITLE.textContent = "No assessment selected";
+        DETAIL_SUB.textContent = "Complete Test Mode to unlock the full kana heatmap and row analysis.";
         DETAIL_METRICS.replaceChildren();
         const hideBtn = document.getElementById("hideUnusedBtn");
         if (hideBtn) { hideBtn.classList.remove("active"); hideBtn.textContent = "Hide unused kana"; }
-        TEST_HEATMAP.replaceChildren(createResultEl("div", "empty test-heatmap-empty ma-card ma-empty-state", "No kana data yet."));
+        TEST_HEATMAP.replaceChildren(createResultEl("div", "empty test-heatmap-empty ma-card ma-empty-state", "No formal assessment data yet."));
         return;
     }
     renderSnapshot(result);
@@ -759,7 +784,6 @@ function renderAll() {
             renderHeatmap(result);
         };
     }
-    // row view toggle is handled by a single delegated listener below
 }
 
 

@@ -51,8 +51,8 @@ body.results-page::before {
         --ma-card-bg:
             radial-gradient(circle at top left, color-mix(in srgb,var(--ma-results) 12%,transparent), transparent 32%),
             var(--ma-surface);
-        padding:28px;
-        margin-bottom: 20px;
+        padding:22px 24px;
+        margin-bottom: 18px;
         overflow:hidden;
         position:relative;
     }
@@ -107,7 +107,7 @@ body.results-page::before {
 
 h1 {
         margin: 0 0 10px;
-        font-size: 44px;
+        font-size: 38px;
         line-height: 0.98;
         letter-spacing: -0.03em;
     }
@@ -175,7 +175,7 @@ h1 {
 .results-kicker{--ma-kicker-color:var(--ma-results);margin-bottom:6px;}
 .results-guidance{
         display:grid;
-        grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);
+        grid-template-columns:minmax(280px,.72fr) minmax(0,1.28fr);
         gap:14px;
         margin-bottom:18px;
     }
@@ -1465,3 +1465,11 @@ body[data-effective-display-mode="phone"] svg {
 
 
 
+
+/* Formal assessment-specific presentation. */
+.results-assessment-scope{margin-top:10px;color:var(--ma-muted);font-size:.76rem;line-height:1.4;}
+.results-empty-assessment{display:grid;gap:12px;text-align:left;}
+.results-empty-assessment__title{color:var(--ma-text-strong);font-size:1rem;}
+.results-empty-assessment__copy{margin:0;color:var(--ma-muted);font-size:.86rem;line-height:1.55;max-width:52ch;}
+.results-empty-assessment__actions{justify-content:flex-start;}
+@media (max-width:760px){.results-assessment-hero{padding:18px;}.results-assessment-scope{font-size:.72rem;}}

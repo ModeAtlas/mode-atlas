@@ -22,11 +22,23 @@
     return arrays;
   }
 
+  function isFormalTestResultRecord(item){
+    if (!item || typeof item !== 'object') return false;
+    if (item.type && item.type !== 'test') return false;
+    const id = String(item.id || '');
+    const title = String(item.title || '');
+    const notes = String(item.notes || '');
+    const hasAssessmentShape = !!item.kana && typeof item.kana === 'object' && !!item.breakdown && typeof item.breakdown === 'object';
+    const hasTestIdentity = item.type === 'test' || /(?:^|-)test(?:-|$)/i.test(id) || /test/i.test(title) || /test run/i.test(notes);
+    return hasAssessmentShape && hasTestIdentity;
+  }
+
   function loadModeResultsFromKeys(keys, expectedMode, normalizeTestResult){
     const mergedMap = new Map();
     const pushItems = (arr) => {
       if (!Array.isArray(arr)) return;
       arr.forEach((item) => {
+        if (!isFormalTestResultRecord(item)) return;
         let itemWithModeHint = item;
         if (item && typeof item === 'object' && !item.mode && expectedMode) {
           itemWithModeHint = { ...item, mode: expectedMode };
@@ -89,6 +101,7 @@
     readArraysFromKeys,
     loadModeResultsFromKeys,
     parseStoredResultTimestamp,
+    isFormalTestResultRecord,
     loadStoredResults
   };
 })();
