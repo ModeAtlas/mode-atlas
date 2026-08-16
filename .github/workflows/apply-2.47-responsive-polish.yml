@@ -24,6 +24,9 @@ jobs:
       - name: Apply scoped responsive source fixes
         run: python3 .github/scripts/apply-2.47-responsive-polish.py
 
+      - name: Align legacy trainer geometry and regression contract
+        run: python3 .github/scripts/finalize-2.47-responsive-polish.py
+
       - name: Rebuild active revision assets
         run: python3 build_revision_assets.py
 
