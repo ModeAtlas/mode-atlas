@@ -25,6 +25,20 @@ if isinstance((lock.get('packages') or {}).get(''), dict):
     lock['packages']['']['version'] = '2.47.0'
 lock_path.write_text(json.dumps(lock, indent=2) + '\n', encoding='utf-8')
 
+build_path = ROOT / 'build_revision_assets.py'
+build = build_path.read_text(encoding='utf-8')
+if 'def iter_project_html()' not in build:
+    build = build.replace(
+        "for html_path in ROOT.rglob('*.html'):",
+        'for html_path in iter_project_html():',
+    )
+    build = build.replace(
+        'referenced = set()\n',
+        "BUILD_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}\n\ndef iter_project_html():\n    for html_path in ROOT.rglob('*.html'):\n        relative = html_path.relative_to(ROOT)\n        if any(part in BUILD_IGNORED_DIRS for part in relative.parts[:-1]):\n            continue\n        yield html_path\n\nreferenced = set()\n",
+        1,
+    )
+build_path.write_text(build, encoding='utf-8')
+
 manifest_path = ROOT / 'site.webmanifest'
 manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
 for shortcut in manifest.get('shortcuts', []):
@@ -68,6 +82,12 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
   assert.doesNotMatch(lock, /internal\.api\.openai|applied-caas|artifactory\/api\/npm/i,
     'package-lock must remain installable from public infrastructure');
 
+  const build = read('build_revision_assets.py');
+  assert.match(build, /BUILD_IGNORED_DIRS\s*=\s*\{[^}]*'node_modules'/,
+    'revision builder must not treat installed dependencies as application source');
+  assert.match(build, /def iter_project_html\(\):/,
+    'revision builder must own project HTML discovery explicitly');
+
   const manifest = JSON.parse(read('site.webmanifest'));
   const resultsShortcut = (manifest.shortcuts || []).find((shortcut) => shortcut.url === '/results/');
   assert.ok(resultsShortcut, 'PWA manifest must keep the Test Results shortcut');
@@ -96,6 +116,7 @@ changelog = changelog_path.read_text(encoding='utf-8')
 if not changelog.startswith('## 2.47.0'):
     entry = """## 2.47.0 - 2026-08-16
 - Repaired package-lock package URLs so clean machines install Playwright dependencies from the public npm registry instead of an environment-specific internal registry.
+- Restricted revision-build HTML discovery to Mode Atlas source, preventing installed dependencies and browser-test output from being interpreted as application pages on clean CI machines.
 - Made the Settings update-check browser smoke test wait for the shared drawer binding and open Settings through the real visible control rather than an optional internal API.
 - Added a permanent release gate covering the project audit, Node regressions, generated-asset cleanliness, and desktop/mobile Playwright smoke tests.
 - Renamed the PWA assessment shortcut to Test Results so installed-app terminology matches the formal Test Mode reporting experience.
