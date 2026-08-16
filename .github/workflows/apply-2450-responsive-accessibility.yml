@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Correct transformer quote assumption
+        run: python3 .github/fix_2450_transformer.py
       - name: Validate transformer
         run: python3 -m py_compile .github/apply_2450.py
       - name: Apply source fixes
@@ -51,7 +53,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -f .github/apply_2450.py .github/qa_245.py .github/workflows/apply-2450-responsive-accessibility.yml .github/workflows/qa-245-responsive-accessibility.yml
+          git rm -f .github/apply_2450.py .github/fix_2450_transformer.py .github/qa_245.py .github/workflows/apply-2450-responsive-accessibility.yml .github/workflows/qa-245-responsive-accessibility.yml
           rm -rf __pycache__ .github/__pycache__
           git add -A
           test -z "$(git ls-files | grep -E '(^|/)__pycache__/|\.pyc$' || true)"
