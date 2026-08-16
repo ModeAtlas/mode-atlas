@@ -1,3 +1,10 @@
+## 2.43.0 - 2026-08-16
+- Reorganized Achievements into Mode Atlas, Kana Trainer, and Word Bank categories with placeholder sections for Listening, Grammar, and Reading Comprehension.
+- Consolidated sequential milestones into ranked achievement tracks so one tile advances through its next rank instead of filling the menu with separate tier tiles.
+- Added rank-aware visual progression and achievement detail navigation for reviewing earlier completed ranks or inspecting later requirements.
+- Added the Atlas Level achievement track at Levels 5, 10, 20, 50, and 100, consuming the shared ModeAtlasProgress level rather than calculating progression locally.
+- Preserved legacy per-rank unlock IDs so existing achievement history remains stable while the visible menu becomes substantially less cluttered.
+
 ## 2.42.0 - 2026-08-16
 - Made the automatic install suggestion progression-aware: it becomes eligible after 100 lifetime correct Kana Reading/Writing answers and only appears at a natural break rather than interrupting the milestone answer.
 - Kept install prompting under the single shared PWA owner, including manual browser/iPad instructions when `beforeinstallprompt` is unavailable, and made automatic prompt acknowledgement device-local rather than exported account state.

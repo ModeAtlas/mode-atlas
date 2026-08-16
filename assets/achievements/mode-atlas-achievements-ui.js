@@ -29,6 +29,9 @@ function applyAchievementVisuals(root = document) {
     scope.querySelectorAll("[data-ma-ach-accent]").forEach(el => {
         el.style.setProperty("--ma-ach-accent", el.dataset.maAchAccent || "96,165,250");
     });
+    scope.querySelectorAll("[data-ma-ach-rank-accent]").forEach(el => {
+        el.style.setProperty("--ma-ach-rank", el.dataset.maAchRankAccent || "148,163,184");
+    });
     window.ModeAtlasUi?.applyProgressWidths?.(scope);
 }
 
@@ -78,12 +81,13 @@ function applyAchievementVisuals(root = document) {
   function countStats(){
     const snapshot=Metrics.createSnapshot();
     const r=snapshot.readingStats, w=snapshot.writingStats;
-    const words=readJSON('kanaWordBank',[]), tests=readJSON('testModeResults',[]);
+    const words=readJSON('kanaWordBank',[]);
+    const progression=window.ModeAtlasProgress?.getSummary?.()||{};
     const readingTotals=Metrics.statTotals(r), writingTotals=Metrics.statTotals(w);
     const correct=readingTotals.c+writingTotals.c, wrong=readingTotals.w+writingTotals.w;
     const seen=ALL.reduce((count,ch)=>count+(Metrics.charCorrect(ch,snapshot)+Metrics.charWrong(ch,snapshot)>0?1:0),0);
     const mastery=Metrics.masteryCounts(ALL,snapshot);
-    let under2=0, under1=0, speed3to2=0, speed2to1=0, speedUnder1=0, perfect=0, avgSum=0, avgCount=0;
+    let under2=0, under1=0, speed3to2=0, speed2to1=0, speedUnder1=0, avgSum=0, avgCount=0;
     ALL.forEach(ch=>{
       const avg=Metrics.charAvg(ch,snapshot);
       if(avg){
@@ -101,144 +105,210 @@ function applyAchievementVisuals(root = document) {
     });
     const wordCount = Array.isArray(words) ? words.length : (words&&typeof words==='object'?Object.keys(words).length:0);
     const resultCount = Metrics.formalTestCount(snapshot);
-    try { perfect = (Array.isArray(tests)?tests:[]).filter(t=>Number(t.accuracy||0)>=100 || (Number(t.wrong||t.incorrect||0)===0 && Number(t.correct||0)>0)).length; } catch {}
+    const perfectSeen = new Set();
+    Object.entries(snapshot.tests||{}).forEach(([storageKey,list])=>{
+      (Array.isArray(list)?list:[]).forEach(test=>{
+        if(!test || typeof test!=='object' || test.type==='average') return;
+        const correctCount=Number(test.correct||test.right||0);
+        const wrongCount=Number(test.wrong||test.incorrect||0);
+        const accuracy=Number(test.accuracy||0);
+        if(correctCount<=0 || !(wrongCount===0 || accuracy>=100)) return;
+        const mode=test.mode==='writing' || /writing|reverse/i.test(storageKey) ? 'writing' : 'reading';
+        const signature=String(test.id||test.createdAt||test.completedAt||test.startedAt||test.date||`${correctCount}|${wrongCount}`);
+        perfectSeen.add(`${mode}|${signature}`);
+      });
+    });
     const cloud = achStoreGet('modeAtlasLastCloudSyncAt', '') ? 1 : 0;
     const backup = achStoreGet('modeAtlasLastExportAt', '') || achStoreGet('modeAtlasLastBackupAt', '') ? 1 : 0;
     const recentSave = latestTimestamp(['settingsUpdatedAt','resultsUpdatedAt','srsUpdatedAt','dailyUpdatedAt','profileUpdatedAt','kanaWordBankUpdatedAt']);
     return {
       correct,wrong,total:correct+wrong,seen,
       new:mastery.New,mastered:mastery.Mastered,reviewing:mastery.Reviewing,learning:mastery.Learning,
-      under2,under1,speed3to2,speed2to1,speedUnder1,wordCount,resultCount,perfect,cloud,backup,recentSave,
-      avg:avgCount?avgSum/avgCount:0,snapshot,...presetValues
+      under2,under1,speed3to2,speed2to1,speedUnder1,wordCount,resultCount,perfect:perfectSeen.size,cloud,backup,recentSave,
+      atlasLevel:Number(progression.level||1),avg:avgCount?avgSum/avgCount:0,snapshot,...presetValues
     };
   }
-  const DEFINITIONS = {
-    general: [
-      {name:'First Steps', tier:'I', short:'25 answers', detail:'Answer 25 questions anywhere in Mode Atlas. Reading, Writing, Tests, and future branches all count.', target:25, key:'total'},
-      {name:'Study Rhythm', tier:'I', short:'250 answers', detail:'Answer 250 total questions. This rewards steady practice across the app.', target:250, key:'total'},
-      {name:'Study Rhythm', tier:'II', short:'1,000 answers', detail:'Answer 1,000 total questions across Mode Atlas.', target:1000, key:'total'},
-      {name:'Study Rhythm', tier:'III', short:'2,500 answers', detail:'Answer 2,500 total questions across Mode Atlas.', target:2500, key:'total'},
-      {name:'Study Rhythm', tier:'IV', short:'5,000 answers', detail:'Answer 5,000 total questions. This is for long-term consistency.', target:5000, key:'total'},
-      {name:'Cloud Ready', tier:'Sync', short:'Cloud synced', detail:'Sign in and complete at least one successful cloud save so progress can follow you across devices.', target:1, key:'cloud'},
-      {name:'Safety Net', tier:'Backup', short:'Export backup', detail:'Export or copy a save backup at least once. Backups help protect progress before big app updates.', target:1, key:'backup'}
-    ],
-    kana: [
-      {name:'Kana Started', tier:'I', short:'25 kana seen', detail:'Practise at least 25 unique kana in Reading or Writing.', target:25, key:'seen'},
-      {name:'Kana Collector', tier:'I', short:'75 kana seen', detail:'Practise at least 75 unique kana in the Kana Trainer.', target:75, key:'seen'},
-      {name:'Kana Collector', tier:'II', short:'125 kana seen', detail:'Practise at least 125 unique kana across the trainer.', target:125, key:'seen'},
-      {name:'Kana Collector', tier:'III', short:'175 kana seen', detail:'Practise 175 unique kana, covering most of the app’s kana set.', target:175, key:'seen'},
-      {name:'Preset Complete', tier:'Starter', short:'Starter 100/100', detail:'Reach 100 correct answers in the Starter preset.', target:100, key:'presetStarter'},
-      {name:'Preset Complete', tier:'Intermediate', short:'Intermediate 100/100', detail:'Reach 100 correct answers in the Intermediate preset.', target:100, key:'presetIntermediate'},
-      {name:'Preset Complete', tier:'Advanced', short:'Advanced 100/100', detail:'Reach 100 correct answers in the Advanced preset.', target:100, key:'presetAdvanced'},
-      {name:'Preset Complete', tier:'Pro', short:'Pro 100/100', detail:'Reach 100 correct answers in the Pro preset.', target:100, key:'presetPro'},
-      {name:'Speed Goal', tier:'I', short:'25 under 2.0s', detail:'Build timing history until 25 kana average under 2.0 seconds.', target:25, key:'under2'},
-      {name:'Speed Goal', tier:'II', short:'50 under 2.0s', detail:'Reach the 2.0 second recognition goal on 50 kana.', target:50, key:'under2'},
-      {name:'Speed Goal', tier:'III', short:'100 under 2.0s', detail:'Reach the 2.0 second recognition goal on 100 kana.', target:100, key:'under2'},
-      {name:'Fluent Target', tier:'I', short:'10 under 1.0s', detail:'Build timing history until 10 kana average under 1.0 second.', target:10, key:'under1'},
-      {name:'Fluent Target', tier:'II', short:'25 under 1.0s', detail:'Reach fluent-speed timing on 25 kana. This is the second tier after the first fluent target.', target:25, key:'under1'},
-      {name:'Fluent Target', tier:'III', short:'50 under 1.0s', detail:'Reach fluent-speed timing on 50 kana. This is a strong recognition milestone.', target:50, key:'under1'},
-      {name:'Mastery Path', tier:'I', short:'20 mastered', detail:'Reach Mastered on 20 kana. Mastered combines attempts, accuracy, and speed.', target:20, key:'mastered'},
-      {name:'Mastery Path', tier:'II', short:'50 mastered', detail:'Reach Mastered on 50 kana.', target:50, key:'mastered'},
-      {name:'Mastery Path', tier:'III', short:'100 mastered', detail:'Reach Mastered on 100 kana.', target:100, key:'mastered'},
-      {name:'Test Taker', tier:'I', short:'1 formal test', detail:'Complete your first formal Kana Trainer test.', target:1, key:'resultCount'},
-      {name:'Test Taker', tier:'II', short:'10 formal tests', detail:'Complete 10 formal Kana Trainer tests.', target:10, key:'resultCount'},
-      {name:'Perfect Form', tier:'I', short:'1 perfect test', detail:'Complete a formal test with no mistakes.', target:1, key:'perfect'},
-      {name:'Perfect Form', tier:'II', short:'5 perfect tests', detail:'Complete five formal tests with no mistakes.', target:5, key:'perfect'}
-    ],
-    wordbank: [
-      {name:'First Saved Word', tier:'I', short:'1 word', detail:'Save your first word in Word Bank.', target:1, key:'wordCount'},
-      {name:'Word Stash', tier:'I', short:'25 words', detail:'Save 25 words in Word Bank.', target:25, key:'wordCount'},
-      {name:'Word Stash', tier:'II', short:'100 words', detail:'Save 100 words in Word Bank.', target:100, key:'wordCount'},
-      {name:'Word Archive', tier:'I', short:'250 words', detail:'Save 250 words in Word Bank.', target:250, key:'wordCount'},
-      {name:'Word Archive', tier:'II', short:'500 words', detail:'Save 500 words in Word Bank.', target:500, key:'wordCount'}
-    ]
-  };
+
+  const CATEGORY_META = Object.freeze({
+    modeAtlas:Object.freeze({title:'Mode Atlas',description:'Account-wide learning, progression, and app milestones.',accent:'245,195,93',icon:'✦'}),
+    kana:Object.freeze({title:'Kana Trainer',description:'Recognition, recall, speed, mastery, presets, and formal Test Mode milestones.',accent:'167,139,250',icon:'あ'}),
+    wordbank:Object.freeze({title:'Word Bank',description:'Milestones for building and maintaining your personal Japanese vocabulary collection.',accent:'96,165,250',icon:'語'})
+  });
+
+  const FUTURE_CATEGORIES = Object.freeze([
+    Object.freeze({title:'Listening',icon:'聴',copy:'Listening achievements will appear here when the Listening branch launches.'}),
+    Object.freeze({title:'Grammar',icon:'文',copy:'Grammar achievements will appear here when the Grammar branch launches.'}),
+    Object.freeze({title:'Reading Comprehension',icon:'読',copy:'Reading Comprehension achievements will appear here when that branch launches.'})
+  ]);
+
+  const RANK_ACCENTS = Object.freeze(['180,119,74','148,163,184','245,195,93','167,139,250','103,232,249']);
+
+  const ACHIEVEMENT_TRACKS = Object.freeze({
+    modeAtlas:Object.freeze([
+      Object.freeze({id:'study-rhythm',name:'Study Rhythm',icon:'◎',ranks:Object.freeze([
+        Object.freeze({tier:'I',short:'25 answers',detail:'Answer 25 questions in Mode Atlas. This is the first step toward a sustained study rhythm.',target:25,key:'total',unlockId:'general-0'}),
+        Object.freeze({tier:'II',short:'250 answers',detail:'Answer 250 total questions and establish a repeatable practice rhythm.',target:250,key:'total',unlockId:'general-1'}),
+        Object.freeze({tier:'III',short:'1,000 answers',detail:'Answer 1,000 total questions across your study sessions.',target:1000,key:'total',unlockId:'general-2'}),
+        Object.freeze({tier:'IV',short:'2,500 answers',detail:'Answer 2,500 total questions across Mode Atlas.',target:2500,key:'total',unlockId:'general-3'}),
+        Object.freeze({tier:'V',short:'5,000 answers',detail:'Answer 5,000 total questions. This rank represents long-term study consistency.',target:5000,key:'total',unlockId:'general-4'})
+      ])}),
+      Object.freeze({id:'atlas-level',name:'Atlas Level',icon:'▲',ranks:Object.freeze([
+        Object.freeze({tier:'I',short:'Reach Atlas Level 5',detail:'Reach Atlas Level 5 through learning activity across Mode Atlas.',target:5,key:'atlasLevel',unlockId:'modeatlas-level-5'}),
+        Object.freeze({tier:'II',short:'Reach Atlas Level 10',detail:'Reach Atlas Level 10.',target:10,key:'atlasLevel',unlockId:'modeatlas-level-10'}),
+        Object.freeze({tier:'III',short:'Reach Atlas Level 20',detail:'Reach Atlas Level 20.',target:20,key:'atlasLevel',unlockId:'modeatlas-level-20'}),
+        Object.freeze({tier:'IV',short:'Reach Atlas Level 50',detail:'Reach Atlas Level 50 through sustained learning activity.',target:50,key:'atlasLevel',unlockId:'modeatlas-level-50'}),
+        Object.freeze({tier:'V',short:'Reach Atlas Level 100',detail:'Reach Atlas Level 100, the highest milestone in the initial Atlas Level achievement track.',target:100,key:'atlasLevel',unlockId:'modeatlas-level-100'})
+      ])}),
+      Object.freeze({id:'cloud-ready',name:'Cloud Ready',icon:'☁',ranks:Object.freeze([
+        Object.freeze({tier:'',short:'Complete a cloud sync',detail:'Sign in and complete at least one successful cloud save so progress can follow you across devices.',target:1,key:'cloud',unlockId:'general-5'})
+      ])}),
+      Object.freeze({id:'safety-net',name:'Safety Net',icon:'⟲',ranks:Object.freeze([
+        Object.freeze({tier:'',short:'Export a backup',detail:'Export or copy a save backup at least once. Backups help protect progress before major changes.',target:1,key:'backup',unlockId:'general-6'})
+      ])})
+    ]),
+    kana:Object.freeze([
+      Object.freeze({id:'kana-discovery',name:'Kana Discovery',icon:'カ',ranks:Object.freeze([
+        Object.freeze({tier:'I',short:'25 kana seen',detail:'Practise at least 25 unique kana in Reading or Writing.',target:25,key:'seen',unlockId:'kana-0'}),
+        Object.freeze({tier:'II',short:'75 kana seen',detail:'Practise at least 75 unique kana in the Kana Trainer.',target:75,key:'seen',unlockId:'kana-1'}),
+        Object.freeze({tier:'III',short:'125 kana seen',detail:'Practise at least 125 unique kana across the trainer.',target:125,key:'seen',unlockId:'kana-2'}),
+        Object.freeze({tier:'IV',short:'175 kana seen',detail:'Practise 175 unique kana, covering most of the current Kana Trainer inventory.',target:175,key:'seen',unlockId:'kana-3'})
+      ])}),
+      Object.freeze({id:'preset-starter',name:'Starter Preset',icon:'賞',ranks:Object.freeze([
+        Object.freeze({tier:'',short:'Starter 100/100',detail:'Reach 100 correct answers while progressing through the Starter preset.',target:100,key:'presetStarter',unlockId:'kana-4'})
+      ])}),
+      Object.freeze({id:'preset-intermediate',name:'Intermediate Preset',icon:'賞',ranks:Object.freeze([
+        Object.freeze({tier:'',short:'Intermediate 100/100',detail:'Reach 100 correct answers while progressing through the Intermediate preset.',target:100,key:'presetIntermediate',unlockId:'kana-5'})
+      ])}),
+      Object.freeze({id:'preset-advanced',name:'Advanced Preset',icon:'賞',ranks:Object.freeze([
+        Object.freeze({tier:'',short:'Advanced 100/100',detail:'Reach 100 correct answers while progressing through the Advanced preset.',target:100,key:'presetAdvanced',unlockId:'kana-6'})
+      ])}),
+      Object.freeze({id:'preset-pro',name:'Pro Preset',icon:'賞',ranks:Object.freeze([
+        Object.freeze({tier:'',short:'Pro 100/100',detail:'Reach 100 correct answers while progressing through the Pro preset.',target:100,key:'presetPro',unlockId:'kana-7'})
+      ])}),
+      Object.freeze({id:'speed-goal',name:'Speed Goal',icon:'速',ranks:Object.freeze([
+        Object.freeze({tier:'I',short:'25 kana under 2.0s',detail:'Build timing history until 25 kana average under 2.0 seconds.',target:25,key:'under2',unlockId:'kana-8'}),
+        Object.freeze({tier:'II',short:'50 kana under 2.0s',detail:'Reach the 2.0 second recognition goal on 50 kana.',target:50,key:'under2',unlockId:'kana-9'}),
+        Object.freeze({tier:'III',short:'100 kana under 2.0s',detail:'Reach the 2.0 second recognition goal on 100 kana.',target:100,key:'under2',unlockId:'kana-10'})
+      ])}),
+      Object.freeze({id:'fluent-target',name:'Fluent Target',icon:'流',ranks:Object.freeze([
+        Object.freeze({tier:'I',short:'10 kana under 1.0s',detail:'Build timing history until 10 kana average under 1.0 second.',target:10,key:'under1',unlockId:'kana-11'}),
+        Object.freeze({tier:'II',short:'25 kana under 1.0s',detail:'Reach fluent-speed timing on 25 kana.',target:25,key:'under1',unlockId:'kana-12'}),
+        Object.freeze({tier:'III',short:'50 kana under 1.0s',detail:'Reach fluent-speed timing on 50 kana. This is a strong recognition milestone.',target:50,key:'under1',unlockId:'kana-13'})
+      ])}),
+      Object.freeze({id:'mastery-path',name:'Mastery Path',icon:'達',ranks:Object.freeze([
+        Object.freeze({tier:'I',short:'20 mastered',detail:'Reach Mastered on 20 kana. Mastered combines attempts, accuracy, and speed.',target:20,key:'mastered',unlockId:'kana-14'}),
+        Object.freeze({tier:'II',short:'50 mastered',detail:'Reach Mastered on 50 kana.',target:50,key:'mastered',unlockId:'kana-15'}),
+        Object.freeze({tier:'III',short:'100 mastered',detail:'Reach Mastered on 100 kana.',target:100,key:'mastered',unlockId:'kana-16'})
+      ])}),
+      Object.freeze({id:'test-taker',name:'Test Taker',icon:'試',ranks:Object.freeze([
+        Object.freeze({tier:'I',short:'1 formal test',detail:'Complete your first formal Kana Trainer Test Mode assessment.',target:1,key:'resultCount',unlockId:'kana-17'}),
+        Object.freeze({tier:'II',short:'10 formal tests',detail:'Complete 10 formal Kana Trainer Test Mode assessments.',target:10,key:'resultCount',unlockId:'kana-18'})
+      ])}),
+      Object.freeze({id:'perfect-form',name:'Perfect Form',icon:'✓',ranks:Object.freeze([
+        Object.freeze({tier:'I',short:'1 perfect test',detail:'Complete a formal Reading or Writing Test Mode assessment with no mistakes.',target:1,key:'perfect',unlockId:'kana-19'}),
+        Object.freeze({tier:'II',short:'5 perfect tests',detail:'Complete five formal Test Mode assessments with no mistakes.',target:5,key:'perfect',unlockId:'kana-20'})
+      ])})
+    ]),
+    wordbank:Object.freeze([
+      Object.freeze({id:'word-collection',name:'Word Collection',icon:'語',ranks:Object.freeze([
+        Object.freeze({tier:'I',short:'Save your first word',detail:'Save your first word in Word Bank.',target:1,key:'wordCount',unlockId:'wordbank-0'}),
+        Object.freeze({tier:'II',short:'25 saved words',detail:'Build your Word Bank to 25 saved words.',target:25,key:'wordCount',unlockId:'wordbank-1'}),
+        Object.freeze({tier:'III',short:'100 saved words',detail:'Build your Word Bank to 100 saved words.',target:100,key:'wordCount',unlockId:'wordbank-2'}),
+        Object.freeze({tier:'IV',short:'250 saved words',detail:'Build your Word Bank to 250 saved words.',target:250,key:'wordCount',unlockId:'wordbank-3'}),
+        Object.freeze({tier:'V',short:'500 saved words',detail:'Build your Word Bank to 500 saved words.',target:500,key:'wordCount',unlockId:'wordbank-4'})
+      ])})
+    ])
+  });
+
   function valueFor(s,key){ return Number(s[key]||0); }
-  function achievementVisual(item,branch){
-    const name=String(item&&item.name||'').toLowerCase();
-    const out={
-      branchLabel: branch==='kana' ? 'Kana Trainer' : branch==='wordbank' ? 'Word Bank' : 'General',
-      accent: branch==='kana' ? '80,220,155' : branch==='wordbank' ? '96,165,250' : '245,195,93',
-      icon: branch==='kana' ? 'あ' : branch==='wordbank' ? '語' : '✦'
-    };
-    if(branch==='general'){
-      if(name.includes('rhythm')) out.icon='◎';
-      else if(name.includes('cloud')) out.icon='☁';
-      else if(name.includes('safety')) out.icon='⟲';
-      else if(name.includes('first')) out.icon='✦';
-    }
-    if(branch==='kana'){
-      if(name.includes('preset')) out.icon='賞';
-      else if(name.includes('collector')) out.icon='カ';
-      else if(name.includes('speed')) out.icon='速';
-      else if(name.includes('fluent')) out.icon='流';
-      else if(name.includes('mastery')) out.icon='達';
-      else if(name.includes('test')) out.icon='試';
-      else if(name.includes('perfect')) out.icon='✓';
-    }
-    if(branch==='wordbank'){
-      if(name.includes('first')) out.icon='初';
-      else if(name.includes('stash')) out.icon='帳';
-      else if(name.includes('archive')) out.icon='保';
-    }
+  function isRankDone(rank,s){ return valueFor(s,rank.key)>=Number(rank.target||0); }
+  function rankAccent(index){ return RANK_ACCENTS[Math.min(RANK_ACCENTS.length-1,Math.max(0,index))]; }
+  function rankProgress(track,index,s){
+    const rank=track.ranks[index];
+    if(!rank) return 0;
+    const value=valueFor(s,rank.key);
+    if(value>=rank.target) return 100;
+    const previous=index>0?track.ranks[index-1]:null;
+    const floor=previous && previous.key===rank.key ? Number(previous.target||0) : 0;
+    const span=Math.max(1,Number(rank.target||0)-floor);
+    return clamp((value-floor)/span*100);
+  }
+  function trackState(track,s){
+    const completedCount=track.ranks.filter(rank=>isRankDone(rank,s)).length;
+    const complete=completedCount>=track.ranks.length;
+    const displayIndex=complete?track.ranks.length-1:Math.min(completedCount,track.ranks.length-1);
+    return {completedCount,complete,displayIndex,rank:track.ranks[displayIndex],pct:rankProgress(track,displayIndex,s)};
+  }
+  function milestoneList(){
+    const out=[];
+    Object.entries(ACHIEVEMENT_TRACKS).forEach(([category,tracks])=>tracks.forEach(track=>track.ranks.forEach((rank,rankIndex)=>out.push({category,track,rank,rankIndex}))));
     return out;
   }
-  function achievement(item,s,branch,index){
-    const value=valueFor(s,item.key), done=value>=item.target, pct=clamp(item.target ? value/item.target*100 : 0);
-    const id=branch+'-'+index;
-    const visual=achievementVisual(item,branch);
-    ACH_INDEX[id]={...item, ...visual, value, pct, done, branch};
 
-    const tile=achButton(`ma-achievement-tile branch-${branch} ${done?'done':''}`);
-    tile.dataset.maAchAccent=visual.accent;
+  function achievementTile(track,s,categoryKey){
+    const meta=CATEGORY_META[categoryKey];
+    const state=trackState(track,s);
+    const ranked=track.ranks.length>1;
+    const id=`${categoryKey}:${track.id}`;
+    ACH_INDEX[id]={track,state,categoryKey,meta,snapshot:s};
+
+    const tile=achButton(`ma-achievement-tile category-${categoryKey} rank-${state.displayIndex+1}${state.completedCount?' has-rank':''}${state.complete?' done':''}`);
+    tile.dataset.maAchAccent=meta.accent;
+    tile.dataset.maAchRankAccent=rankAccent(state.displayIndex);
     tile.dataset.maAchId=id;
-    tile.setAttribute('aria-label', `${item.name} ${item.tier} achievement details`);
+    tile.setAttribute('aria-label', state.complete ? `${track.name}, maximum rank unlocked` : `${track.name}, ${ranked?`Rank ${state.rank.tier}, `:''}${state.pct}% toward ${state.rank.short}`);
 
     const top=achEl('div','ma-ach-topline');
-    top.append(achEl('span','ma-ach-status-text', done?'Unlocked':pct+'%'));
+    top.append(
+      achEl('span','ma-ach-rank-badge',ranked?`Rank ${state.rank.tier}`:(state.complete?'Unlocked':'Milestone')),
+      achEl('span','ma-ach-status-text',state.complete?'Max rank':`${state.pct}%`)
+    );
 
-    const graphic=achEl('span','ma-ach-graphic', visual.icon);
+    const graphic=achEl('span','ma-ach-graphic',track.icon||meta.icon);
     graphic.setAttribute('aria-hidden','true');
-
     const meter=achEl('div','ma-ach-meter');
     meter.setAttribute('aria-hidden','true');
-    meter.append(setProgress(achEl('span','ma-ach-meter-fill'), pct), achEl('span','ma-ach-meter-label', pct+'%'));
+    meter.append(setProgress(achEl('span','ma-ach-meter-fill'),state.pct));
 
-    tile.append(
-      top,
-      graphic,
-      achEl('strong','',item.name),
-      achEl('em','',item.tier),
-      achEl('small','',item.short),
-      meter
-    );
+    tile.append(top,graphic,achEl('strong','',track.name),achEl('small','',state.rank.short),meter);
     return tile;
   }
 
-  function branchSection(title,key,s){
-    const list=DEFINITIONS[key]||[];
-    const unlocked=list.filter(item=>valueFor(s,item.key)>=item.target).length;
-    const section=achEl('section','ma-achievement-section');
+  function categorySection(categoryKey,s){
+    const meta=CATEGORY_META[categoryKey];
+    const tracks=ACHIEVEMENT_TRACKS[categoryKey]||[];
+    const milestones=tracks.flatMap(track=>track.ranks);
+    const unlocked=milestones.filter(rank=>isRankDone(rank,s)).length;
+    const section=achEl('section',`ma-achievement-section category-${categoryKey}`);
+    section.dataset.maAchAccent=meta.accent;
     const head=achEl('div','ma-ach-section-head');
-    head.append(achEl('h3','',title), achEl('span','',`${unlocked}/${list.length} unlocked`));
-
+    const copy=document.createElement('div');
+    copy.append(achEl('h3','',meta.title),achEl('p','ma-ach-section-copy',meta.description));
+    head.append(copy,achEl('span','ma-ach-section-count',`${unlocked}/${milestones.length} milestones`));
     const grid=achEl('div','ma-achievement-grid');
-    list.forEach((x,i)=>grid.append(achievement(x,s,key,i)));
+    tracks.forEach(track=>grid.append(achievementTile(track,s,categoryKey)));
     section.append(head,grid);
+    return section;
+  }
+
+  function futureSection(item){
+    const section=achEl('section','ma-achievement-section ma-achievement-section--future');
+    const head=achEl('div','ma-ach-section-head');
+    const copy=document.createElement('div');
+    copy.append(achEl('h3','',item.title),achEl('p','ma-ach-section-copy',item.copy));
+    head.append(copy,achEl('span','ma-ach-future-status','Future branch'));
+    const placeholder=achEl('div','ma-ach-future-placeholder');
+    placeholder.append(achEl('span','ma-ach-future-icon',item.icon),achEl('strong','',`${item.title} achievements`),achEl('small','','Coming later'));
+    section.append(head,placeholder);
     return section;
   }
 
   function currentUnlockedAchievements(){
     const s=countStats();
-    const out=[];
-    Object.keys(DEFINITIONS).forEach(branch=>{
-      (DEFINITIONS[branch]||[]).forEach((item,index)=>{
-        if(valueFor(s,item.key)>=item.target){
-          out.push({id:branch+'-'+index, branch, index, name:item.name, tier:item.tier});
-        }
-      });
-    });
-    return out;
+    return milestoneList().filter(({rank})=>isRankDone(rank,s)).map(({category,track,rank,rankIndex})=>({
+      id:rank.unlockId||`${category}:${track.id}:${rankIndex}`,
+      category,name:track.name,tier:rank.tier,ranked:track.ranks.length>1,rankIndex
+    }));
   }
   function getSeenAchievementSet(){
     try { return new Set(achStoreJSON('modeAtlasSeenAchievementUnlocks', [])); }
@@ -266,7 +336,8 @@ function applyAchievementVisuals(root = document) {
       if(!silent){
         const first=fresh[0];
         const suffix=fresh.length>1 ? ` +${fresh.length-1} more` : '';
-        achievementToast(`Achievement unlocked: ${first.name} ${first.tier}${suffix}`);
+        const action=first.ranked && first.rankIndex>0 ? 'Achievement ranked up' : 'Achievement unlocked';
+        achievementToast(`${action}: ${first.name}${first.tier?` ${first.tier}`:''}${suffix}`);
       }
     }
     return fresh;
@@ -278,8 +349,9 @@ function applyAchievementVisuals(root = document) {
 
     const checkFromEvent = () => checkAchievementUnlocks();
     window.addEventListener('storage',e=>{
-      if(e && e.key && /charStats|reverseCharStats|charTimes|testModeResults|kanaWordBank|modeAtlasLastCloudSyncAt|modeAtlasLastExportAt|modeAtlasLastBackupAt|modeAtlasPresetAchievementProgress/.test(e.key)) checkAchievementUnlocks();
+      if(e && e.key && /charStats|reverseCharStats|charTimes|testModeResults|kanaWordBank|modeAtlasProgress|modeAtlasLastCloudSyncAt|modeAtlasLastExportAt|modeAtlasLastBackupAt|modeAtlasPresetAchievementProgress/.test(e.key)) checkAchievementUnlocks();
     });
+    window.addEventListener('modeAtlasProgressChanged',checkFromEvent);
     document.addEventListener('ma:progress-updated',checkFromEvent);
     document.addEventListener('ma:preset-progress-updated',checkFromEvent);
     window.addEventListener('modeAtlasCloudDataChanged',checkFromEvent);
@@ -287,28 +359,30 @@ function applyAchievementVisuals(root = document) {
   }
   function renderAchievements(){
     const s=countStats(); ACH_INDEX={};
-    const totalDefs=[...DEFINITIONS.general,...DEFINITIONS.kana,...DEFINITIONS.wordbank];
-    const unlocked=totalDefs.filter(item=>valueFor(s,item.key)>=item.target).length;
+    const milestones=milestoneList();
+    const unlocked=milestones.filter(({rank})=>isRankDone(rank,s)).length;
+    const trackCount=Object.values(ACHIEVEMENT_TRACKS).reduce((sum,tracks)=>sum+tracks.length,0);
 
     const wrap=document.createDocumentFragment();
-
     const overview=achEl('div','ma-ach-overview');
-    [[unlocked,'Unlocked'],[totalDefs.length,'Total'],[clamp(unlocked/Math.max(1,totalDefs.length)*100)+'%','Complete']].forEach(([value,label])=>{
+    [[unlocked,'Milestones unlocked'],[trackCount,'Achievement tracks'],[clamp(unlocked/Math.max(1,milestones.length)*100)+'%','Complete']].forEach(([value,label])=>{
       const item=document.createElement('div');
       item.append(achEl('b','',value), achEl('span','',label));
       overview.append(item);
     });
 
     const layout=achEl('div','ma-achievement-layout');
-    layout.append(branchSection('General','general',s), branchSection('Kana Trainer','kana',s), branchSection('Word Bank','wordbank',s));
-
+    layout.append(categorySection('modeAtlas',s),categorySection('kana',s),categorySection('wordbank',s));
+    FUTURE_CATEGORIES.forEach(item=>layout.append(futureSection(item)));
     wrap.append(overview,layout);
     return wrap;
   }
 
-  function createInfoTopbar({branch, cls='', done=false, accent='96,165,250', symbol='✦', kicker='', title='', tier=''}){
+  function createInfoTopbar({branch, cls='', done=false, accent='96,165,250', rankAccentValue='', symbol='✦', kicker='', title='', tier=''}){
     const topbar=achEl('div','ma-ach-info-topbar');
-    const hero=achEl('div',`ma-ach-info-hero branch-${branch} ${cls || (done?'done':'')}`); hero.dataset.maAchAccent=accent;
+    const hero=achEl('div',`ma-ach-info-hero branch-${branch} ${cls || (done?'done':'')}`);
+    hero.dataset.maAchAccent=accent;
+    hero.dataset.maAchRankAccent=rankAccentValue||accent;
     const sym=achEl('span','ma-ach-info-symbol',symbol); sym.setAttribute('aria-hidden','true');
     const titleWrap=document.createElement('div'); titleWrap.append(achEl('span','ma-ach-info-kicker',kicker));
     const h3=achEl('h3','',title); if(tier)h3.append(document.createTextNode(' '),achEl('em','',tier)); titleWrap.append(h3); hero.append(sym,titleWrap);
@@ -316,12 +390,45 @@ function applyAchievementVisuals(root = document) {
     topbar.append(hero,back); return topbar;
   }
 
-  function buildAchievementInfo(id){
+  function buildAchievementInfo(id,requestedRankIndex){
     const item=ACH_INDEX[id]; if(!item)return null;
-    const body=achEl('div','ma-ach-info-body'); const progress=achEl('div','ma-ach-info-progress'); const row=achEl('div','ma-ach-info-progress-row');
-    row.append(achEl('strong','',item.done?'Unlocked':'In progress'),achEl('span','',`${Math.min(item.value,item.target)} / ${item.target}`));
-    const meter=document.createElement('i'); meter.append(setProgress(document.createElement('b'),item.pct)); progress.append(row,meter);
-    body.append(createInfoTopbar({branch:item.branch,done:item.done,accent:item.accent||'96,165,250',symbol:item.icon||'✦',kicker:item.branchLabel||item.branch.replace(/^./,c=>c.toUpperCase()),title:item.name,tier:item.tier}),achEl('p','ma-ach-info-copy',item.detail),progress);
+    const {track,state,categoryKey,meta,snapshot}=item;
+    const ranked=track.ranks.length>1;
+    const viewIndex=Number.isInteger(requestedRankIndex)?Math.max(0,Math.min(track.ranks.length-1,requestedRankIndex)):state.displayIndex;
+    const rank=track.ranks[viewIndex];
+    const value=valueFor(snapshot,rank.key), done=value>=rank.target, pct=rankProgress(track,viewIndex,snapshot);
+    const body=achEl('div','ma-ach-info-body');
+    body.dataset.maAchId=id;
+    const progress=achEl('div','ma-ach-info-progress'); progress.dataset.maAchRankAccent=rankAccent(viewIndex);
+    const row=achEl('div','ma-ach-info-progress-row');
+    const valueText=rank.key==='atlasLevel' ? `Level ${Math.min(value,rank.target)} / ${rank.target}` : `${Math.min(value,rank.target)} / ${rank.target}`;
+    row.append(achEl('strong','',done?'Rank complete':'In progress'),achEl('span','',valueText));
+    const meter=document.createElement('i'); meter.append(setProgress(document.createElement('b'),pct)); progress.append(row,meter);
+    body.append(createInfoTopbar({branch:categoryKey,done:state.complete,accent:meta.accent,rankAccentValue:rankAccent(viewIndex),symbol:track.icon||meta.icon,kicker:meta.title,title:track.name,tier:ranked?`Rank ${rank.tier}`:''}),achEl('p','ma-ach-info-copy',rank.detail),progress);
+
+    if(ranked){
+      const history=achEl('div','ma-ach-rank-history');
+      track.ranks.forEach((entry,index)=>{
+        const step=achButton(`ma-ach-rank-step${isRankDone(entry,snapshot)?' done':''}${index===viewIndex?' current':''}`,`Rank ${entry.tier}`);
+        step.dataset.maAchRankNav=id;
+        step.dataset.maAchRankIndex=String(index);
+        step.dataset.maAchRankAccent=rankAccent(index);
+        step.setAttribute('aria-label',`View ${track.name} Rank ${entry.tier}`);
+        history.append(step);
+      });
+      const nav=achEl('div','ma-ach-rank-nav');
+      const previous=achButton('ma-button ma-button--ghost ma-button--small','← Previous rank');
+      previous.dataset.maAchRankNav=id;
+      previous.dataset.maAchRankIndex=String(Math.max(0,viewIndex-1));
+      previous.disabled=viewIndex===0;
+      const position=achEl('span','',`Rank ${viewIndex+1} of ${track.ranks.length}`);
+      const next=achButton('ma-button ma-button--ghost ma-button--small','Next rank →');
+      next.dataset.maAchRankNav=id;
+      next.dataset.maAchRankIndex=String(Math.min(track.ranks.length-1,viewIndex+1));
+      next.disabled=viewIndex===track.ranks.length-1;
+      nav.append(previous,position,next);
+      body.append(history,nav);
+    }
     applyAchievementVisuals(body); return body;
   }
 
@@ -403,6 +510,15 @@ function applyAchievementVisuals(root = document) {
     const showMain=()=>{view.replaceChildren(kind==='mastery'?renderMasteryMap():renderAchievements());applyAchievementVisuals(view);};
     root.addEventListener('click',e=>{
       if(e.target.closest('[data-ma-feature-back]')){e.preventDefault();showMain();return;}
+      const rankNav=e.target.closest('[data-ma-ach-rank-nav]');
+      if(rankNav && !rankNav.disabled){
+        e.preventDefault();
+        const id=rankNav.getAttribute('data-ma-ach-rank-nav');
+        const index=Number(rankNav.getAttribute('data-ma-ach-rank-index'));
+        const detail=buildAchievementInfo(id,Number.isFinite(index)?index:undefined);
+        if(detail)view.replaceChildren(detail);
+        return;
+      }
       const ach=e.target.closest('[data-ma-ach-id]'); if(ach){e.preventDefault();const detail=buildAchievementInfo(ach.getAttribute('data-ma-ach-id'));if(detail)view.replaceChildren(detail);return;}
       const kana=e.target.closest('[data-ma-mastery-kana]'); if(kana){e.preventDefault();view.replaceChildren(buildMasteryKanaInfo(kana.getAttribute('data-ma-mastery-kana')));}
     });
@@ -410,7 +526,7 @@ function applyAchievementVisuals(root = document) {
   }
   function openModal(kind){
     if(featureOpen||!window.ModeAtlasDialog?.feature)return false; featureOpen=true;
-    window.ModeAtlasDialog.feature({kicker:kind==='mastery'?'Kana progress':'Mode Atlas progress',title:kind==='mastery'?'Mastery Map':'Achievements',message:kind==='mastery'?'A full kana grid showing accuracy, repetition, and speed progress.':'Milestones across Mode Atlas. Select a tile to see the full unlock requirement.',contentNode:buildFeatureContent(kind),size:'large'}).finally(()=>{featureOpen=false;});
+    window.ModeAtlasDialog.feature({kicker:kind==='mastery'?'Kana progress':'Mode Atlas progress',title:kind==='mastery'?'Mastery Map':'Achievements',message:kind==='mastery'?'A full kana grid showing accuracy, repetition, and speed progress.':'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.',contentNode:buildFeatureContent(kind),size:'large'}).finally(()=>{featureOpen=false;});
     return true;
   }
 

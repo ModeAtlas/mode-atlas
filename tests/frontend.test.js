@@ -1475,3 +1475,32 @@ test('2.42 contextual install and progression feedback stay under shared owners'
   assert.doesNotMatch(dev, /setJSON\(['"]modeAtlasProgress|localStorage\.setItem\(['"]modeAtlasProgress/,
     'developer XP controls must use the progression API rather than raw progression storage');
 });
+
+test('2.43 Achievements are category-owned and sequential milestones rank up in place', () => {
+  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
+  const css = read('assets/css/mode-atlas-achievements.css');
+
+  for (const category of ['Mode Atlas', 'Kana Trainer', 'Word Bank']) assert.match(achievements, new RegExp(`title:'${category.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}'`));
+  for (const future of ['Listening', 'Grammar', 'Reading Comprehension']) assert.match(achievements, new RegExp(`title:'${future}'`));
+
+  assert.match(achievements, /const ACHIEVEMENT_TRACKS/);
+  assert.match(achievements, /id:'speed-goal',name:'Speed Goal'/);
+  assert.match(achievements, /id:'word-collection',name:'Word Collection'/);
+  assert.match(achievements, /state\.complete\?'Max rank'/);
+  assert.match(achievements, /Achievement ranked up/);
+  assert.match(achievements, /dataset\.maAchRankNav/);
+  assert.match(achievements, /← Previous rank/);
+  assert.match(achievements, /Next rank →/);
+
+  for (const level of [5,10,20,50,100]) assert.match(achievements, new RegExp(`target:${level},key:'atlasLevel'`));
+  assert.match(achievements, /ModeAtlasProgress\?\.getSummary/);
+  assert.match(achievements, /modeAtlasProgressChanged/);
+
+  // Existing milestone IDs remain behind the ranked presentation, preventing false re-unlocks.
+  for (const id of ['general-0','general-4','kana-8','kana-10','wordbank-0','wordbank-4']) assert.match(achievements, new RegExp(`unlockId:'${id}'`));
+  assert.doesNotMatch(achievements, /const DEFINITIONS =/);
+
+  assert.match(css, /--ma-ach-rank/);
+  assert.match(css, /\.ma-ach-rank-history/);
+  assert.match(css, /\.ma-achievement-section--future/);
+});

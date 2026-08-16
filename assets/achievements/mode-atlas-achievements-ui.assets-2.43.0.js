@@ -1,64 +1,84 @@
-from pathlib import Path
-import re
-
-ROOT = Path(__file__).resolve().parents[1]
-
-
-def read(path):
-    return (ROOT / path).read_text()
-
-
-def write(path, text):
-    (ROOT / path).write_text(text)
-
-
-def replace_once(text, old, new, label):
-    count = text.count(old)
-    if count != 1:
-        raise SystemExit(f'{label}: expected 1 match, found {count}')
-    return text.replace(old, new, 1)
-
-
-# Release metadata.
-version_path = 'assets/app/mode-atlas-version.js'
-version = read(version_path)
-version = replace_once(version, "var VERSION = '2.42.0';", "var VERSION = '2.43.0';", 'version')
-version = replace_once(version, "var CACHE_REVISION = 'assets-2.42.0';", "var CACHE_REVISION = 'assets-2.43.0';", 'cache revision')
-write(version_path, version)
-
-for path in ['package.json', 'package-lock.json']:
-    text = read(path)
-    if '2.42.0' not in text:
-        raise SystemExit(f'{path}: 2.42.0 not found')
-    write(path, text.replace('2.42.0', '2.43.0'))
-
-readme = read('README.md')
-readme = replace_once(readme, 'Version: 2.42.0', 'Version: 2.43.0', 'README version')
-write('README.md', readme)
-
-changelog = read('CHANGELOG.md')
-entry = """## 2.43.0 - 2026-08-16
-- Reorganized Achievements into Mode Atlas, Kana Trainer, and Word Bank categories with placeholder sections for Listening, Grammar, and Reading Comprehension.
-- Consolidated sequential milestones into ranked achievement tracks so one tile advances through its next rank instead of filling the menu with separate tier tiles.
-- Added rank-aware visual progression and achievement detail navigation for reviewing earlier completed ranks or inspecting later requirements.
-- Added the Atlas Level achievement track at Levels 5, 10, 20, 50, and 100, consuming the shared ModeAtlasProgress level rather than calculating progression locally.
-- Preserved legacy per-rank unlock IDs so existing achievement history remains stable while the visible menu becomes substantially less cluttered.
-
-"""
-if not changelog.startswith('## 2.42.0'):
-    raise SystemExit('CHANGELOG: expected 2.42.0 at top')
-write('CHANGELOG.md', entry + changelog)
+/* Mode Atlas achievements and mastery UI. */
+(function(){
+  'use strict';
+  const VERSION = (window.ModeAtlasEnv && window.ModeAtlasEnv.appVersion) || window.ModeAtlasVersion || 'dev-local';
+  const KanaData = window.ModeAtlasKanaData;
+  const Metrics = window.ModeAtlasKanaMetrics;
+  const Collections = KanaData?.collections;
+  if (!Collections || !Metrics) {
+    console.error('Mode Atlas Achievements requires ModeAtlasKanaData and ModeAtlasKanaMetrics.');
+    return;
+  }
+  const HIRA = Collections.hiragana;
+  const KATA = Collections.katakana;
+  const DAK = Collections.dakuten;
+  const YOON = Collections.yoon;
+  const EXT = Collections.extended;
+  const ALL = Collections.all;
+  const PRESET_TRACKERS = [
+    {id:'presetStarter', name:'Starter', desc:'A-row with hints', chars:Object.freeze(Object.keys(KanaData.hiraganaRows.h_a))},
+    {id:'presetIntermediate', name:'Intermediate', desc:'All Hiragana, no hints', chars:HIRA},
+    {id:'presetAdvanced', name:'Advanced', desc:'Hiragana + Katakana + Dakuten', chars:Object.freeze([...HIRA,...KATA,...DAK])},
+    {id:'presetPro', name:'Pro', desc:'Everything enabled', chars:ALL}
+  ];
+  let ACH_INDEX = {};
+  function readJSON(k, fallback){ try{ return achStoreJSON(k, fallback); }catch(e){ return fallback; } }
+  
+function applyAchievementVisuals(root = document) {
+    const scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll("[data-ma-ach-accent]").forEach(el => {
+        el.style.setProperty("--ma-ach-accent", el.dataset.maAchAccent || "96,165,250");
+    });
+    scope.querySelectorAll("[data-ma-ach-rank-accent]").forEach(el => {
+        el.style.setProperty("--ma-ach-rank", el.dataset.maAchRankAccent || "148,163,184");
+    });
+    window.ModeAtlasUi?.applyProgressWidths?.(scope);
+}
 
 
-# Rebuild the achievement presentation/model while preserving the mastery map below it.
-ach_path = 'assets/achievements/mode-atlas-achievements-ui.js'
-ach = read(ach_path)
-start = ach.find('  function countStats(){')
-end = ach.find('  function masteryLabel(')
-if start < 0 or end < 0 or end <= start:
-    raise SystemExit('Achievements block boundaries not found')
+  function achEl(tag, className='', text=''){
+    const el=document.createElement(tag);
+    if(className) el.className=className;
+    if(text!=='') el.textContent=String(text);
+    return el;
+  }
+  function achButton(className='', text=''){
+    const btn=achEl('button', className, text);
+    btn.type='button';
+    return btn;
+  }
+  function achStoreGet(key, fallback=''){
+    const store = window.ModeAtlasStorage;
+    return store?.get?.(key, fallback) ?? localStorage.getItem(key) ?? fallback;
+  }
 
-new_block = r'''  function countStats(){
+  function achStoreSet(key, value){
+    const store = window.ModeAtlasStorage;
+    return store?.set?.(key, value) ?? localStorage.setItem(key, String(value));
+  }
+
+  function achStoreJSON(key, fallback){
+    const store = window.ModeAtlasStorage;
+    if (store?.json) return store.json(key, fallback);
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  }
+
+  function achStoreSetJSON(key, value){
+    const store = window.ModeAtlasStorage;
+    return store?.setJSON?.(key, value) ?? localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function setProgress(el,pct){
+    el.dataset.maProgress=String(clamp(pct));
+    return el;
+  }
+  function clamp(n){return Math.round(Math.max(0, Math.min(100, Number(n)||0)));}
+  function formatAccuracyPercent(value){
+    return `${(Number(value)||0).toFixed(2)}%`;
+  }
+  function latestTimestamp(keys){ let best=0; keys.forEach(k=>{ const v=achStoreGet(k, ''); const t=v?Date.parse(v):0; if(t>best) best=t; }); return best; }
+  function countStats(){
     const snapshot=Metrics.createSnapshot();
     const r=snapshot.readingStats, w=snapshot.writingStats;
     const words=readJSON('kanaWordBank',[]);
@@ -362,7 +382,7 @@ new_block = r'''  function countStats(){
     const topbar=achEl('div','ma-ach-info-topbar');
     const hero=achEl('div',`ma-ach-info-hero branch-${branch} ${cls || (done?'done':'')}`);
     hero.dataset.maAchAccent=accent;
-    if(rankAccentValue) hero.dataset.maAchRankAccent=rankAccentValue;
+    hero.dataset.maAchRankAccent=rankAccentValue||accent;
     const sym=achEl('span','ma-ach-info-symbol',symbol); sym.setAttribute('aria-hidden','true');
     const titleWrap=document.createElement('div'); titleWrap.append(achEl('span','ma-ach-info-kicker',kicker));
     const h3=achEl('h3','',title); if(tier)h3.append(document.createTextNode(' '),achEl('em','',tier)); titleWrap.append(h3); hero.append(sym,titleWrap);
@@ -379,7 +399,7 @@ new_block = r'''  function countStats(){
     const value=valueFor(snapshot,rank.key), done=value>=rank.target, pct=rankProgress(track,viewIndex,snapshot);
     const body=achEl('div','ma-ach-info-body');
     body.dataset.maAchId=id;
-    const progress=achEl('div','ma-ach-info-progress');
+    const progress=achEl('div','ma-ach-info-progress'); progress.dataset.maAchRankAccent=rankAccent(viewIndex);
     const row=achEl('div','ma-ach-info-progress-row');
     const valueText=rank.key==='atlasLevel' ? `Level ${Math.min(value,rank.target)} / ${rank.target}` : `${Math.min(value,rank.target)} / ${rank.target}`;
     row.append(achEl('strong','',done?'Rank complete':'In progress'),achEl('span','',valueText));
@@ -412,24 +432,80 @@ new_block = r'''  function countStats(){
     applyAchievementVisuals(body); return body;
   }
 
-'''
-ach = ach[:start] + new_block + ach[end:]
+  function masteryLabel(ch,snapshot){
+    const data=snapshot||Metrics.createSnapshot(); const c=Metrics.charCorrect(ch,data),x=Metrics.charWrong(ch,data),total=c+x,avg=Metrics.charAvg(ch,data); const avgText=avg?` · ${Metrics.formatMs(avg)}`:''; const label=Metrics.masteryLabel(ch,data);
+    if(label==='New')return {label:'New',cls:'new',detail:'Not practised yet'}; return {label,cls:Metrics.masteryClass(label),detail:`${c}/${total} correct${avgText}`};
+  }
+  function masteryStats(ch,snapshot){
+    const data=snapshot||Metrics.createSnapshot(); const rs=(data.readingStats&&data.readingStats[ch])||{},ws=(data.writingStats&&data.writingStats[ch])||{};
+    const rc=Number(rs.correct||rs.right||0),rw=Number(rs.wrong||rs.incorrect||0),wc=Number(ws.correct||ws.right||0),ww=Number(ws.wrong||ws.incorrect||0); const correct=rc+wc,wrong=rw+ww,total=correct+wrong;
+    const avgMs=Metrics.charAvg(ch,data),avg=avgMs?avgMs/1000:0,accuracy=total?(correct/total*100):0,label=masteryLabel(ch,data); return {ch,rc,rw,wc,ww,correct,wrong,total,accuracy,avg,label};
+  }
+  function buildMasteryKanaInfo(ch){
+    const item=masteryStats(ch),avgText=item.avg?item.avg.toFixed(2)+'s':'No timing yet';
+    const targetAttempts=Math.min(100,Math.round(item.correct/20*100)),targetAccuracy=item.total?Math.min(100,Math.round(item.accuracy)):0,speedPct=item.avg?Math.max(0,Math.min(100,Math.round((2/Math.max(0.1,item.avg))*100))):0;
+    const body=achEl('div','ma-ach-info-body'),progress=achEl('div','ma-ach-info-progress'),row=achEl('div','ma-ach-info-progress-row'); row.append(achEl('strong','','Total progress'),achEl('span','',`${item.correct} correct / ${item.total} attempts`));
+    const meter=document.createElement('i'); meter.append(setProgress(document.createElement('b'),Math.min(100,Math.round((targetAttempts+targetAccuracy+speedPct)/3)))); progress.append(row,meter);
+    const stats=achEl('div','ma-ach-info-stats'); [['Reading',`${item.rc}✓ / ${item.rw}×`],['Writing',`${item.wc}✓ / ${item.ww}×`],['Accuracy',item.total?formatAccuracyPercent(item.accuracy):'No attempts yet'],['Avg time',avgText]].forEach(([label,value])=>{const stat=document.createElement('div');stat.append(achEl('b','',label),achEl('span','',value));stats.append(stat);});
+    body.append(createInfoTopbar({branch:'kana',cls:item.label.cls,accent:'80,220,155',symbol:ch,kicker:'Mastery Map',title:ch,tier:item.label.label}),achEl('p','ma-ach-info-copy',item.label.detail),progress,stats,achEl('p','ma-ach-info-copy','Mastered needs 50+ correct, 95%+ accuracy, and an average recognition time of 1.0s or faster.'));
+    applyAchievementVisuals(body); return body;
+  }
 
-old_visuals = '''    scope.querySelectorAll("[data-ma-ach-accent]").forEach(el => {\n        el.style.setProperty("--ma-ach-accent", el.dataset.maAchAccent || "96,165,250");\n    });\n    window.ModeAtlasUi?.applyProgressWidths?.(scope);'''
-new_visuals = '''    scope.querySelectorAll("[data-ma-ach-accent]").forEach(el => {\n        el.style.setProperty("--ma-ach-accent", el.dataset.maAchAccent || "96,165,250");\n    });\n    scope.querySelectorAll("[data-ma-ach-rank-accent]").forEach(el => {\n        el.style.setProperty("--ma-ach-rank", el.dataset.maAchRankAccent || "148,163,184");\n    });\n    window.ModeAtlasUi?.applyProgressWidths?.(scope);'''
-ach = replace_once(ach, old_visuals, new_visuals, 'achievement visual variables')
 
-old_feature = r'''  function buildFeatureContent(kind){
-    const root=achEl('div','ma-ach-dialog-content'),view=achEl('div','ma-ach-dialog-view'); root.append(view);
-    const showMain=()=>{view.replaceChildren(kind==='mastery'?renderMasteryMap():renderAchievements());applyAchievementVisuals(view);};
-    root.addEventListener('click',e=>{
-      if(e.target.closest('[data-ma-feature-back]')){e.preventDefault();showMain();return;}
-      const ach=e.target.closest('[data-ma-ach-id]'); if(ach){e.preventDefault();const detail=buildAchievementInfo(ach.getAttribute('data-ma-ach-id'));if(detail)view.replaceChildren(detail);return;}
-      const kana=e.target.closest('[data-ma-mastery-kana]'); if(kana){e.preventDefault();view.replaceChildren(buildMasteryKanaInfo(kana.getAttribute('data-ma-mastery-kana')));}
+  function grid(title, chars, snapshot){
+    const section=achEl('section','ma-mastery-group');
+    section.append(achEl('h3','',title));
+    const gridEl=achEl('div','ma-mastery-grid');
+    chars.forEach(ch=>{
+      const m=masteryLabel(ch,snapshot);
+      const btn=achButton(`ma-mastery-cell ${m.cls}`);
+      btn.dataset.maMasteryKana=ch;
+      btn.title=`${ch} · ${m.label} · ${m.detail}`;
+      btn.setAttribute('aria-label', `${ch} mastery details: ${m.label}`);
+      btn.append(achEl('strong','',ch), achEl('span','',m.label));
+      gridEl.append(btn);
     });
-    showMain(); return root;
-  }'''
-new_feature = r'''  function buildFeatureContent(kind){
+    section.append(gridEl);
+    return section;
+  }
+
+  function renderMasteryMap(){
+    const s=countStats();
+    const snapshot=s.snapshot;
+    const wrap=document.createDocumentFragment();
+
+    const legend=achEl('div','ma-mastery-legend');
+    [
+      ['new','New','Not practised yet.'],
+      ['learning','Learning','At least 1 attempt, but not yet 10+ correct, 85%+ accuracy, and 2.5s or faster recognition.'],
+      ['reviewing','Reviewing','10+ correct, 85%+ accuracy, and 2.5s or faster recognition.'],
+      ['mastered','Mastered','50+ correct, 95%+ accuracy, and 1.0s or faster recognition.']
+    ].forEach(([cls,label,copy])=>{
+      const item=achEl('div',cls);
+      item.append(achEl('b','',label), achEl('span','',copy));
+      legend.append(item);
+    });
+
+    const summary=achEl('div','ma-mastery-summary ma-mastery-stage-summary');
+    [['new',s.new,'new'],['learning',s.learning,'learning'],['reviewing',s.reviewing,'reviewing'],['mastered',s.mastered,'mastered']].forEach(([cls,value,label])=>{
+      const item=achEl('span',cls);
+      item.append(achEl('b','',value), document.createTextNode(' '+label));
+      summary.append(item);
+    });
+
+    const speed=achEl('div','ma-speed-summary');
+    [[s.speed3to2,'3.0s–2.0s'],[s.speed2to1,'2.0s–1.0s'],[s.speedUnder1,'Under 1.0s']].forEach(([value,label])=>{
+      const item=document.createElement('span');
+      item.append(achEl('b','',value), document.createTextNode(' '+label));
+      speed.append(item);
+    });
+
+    wrap.append(legend,summary,speed,grid('Hiragana',HIRA,snapshot),grid('Katakana',KATA,snapshot),grid('Dakuten',DAK,snapshot),grid('Yōon',YOON,snapshot),grid('Extended Katakana',EXT,snapshot));
+    return wrap;
+  }
+
+  let featureOpen=false;
+  function buildFeatureContent(kind){
     const root=achEl('div','ma-ach-dialog-content'),view=achEl('div','ma-ach-dialog-view'); root.append(view);
     const showMain=()=>{view.replaceChildren(kind==='mastery'?renderMasteryMap():renderAchievements());applyAchievementVisuals(view);};
     root.addEventListener('click',e=>{
@@ -447,124 +523,30 @@ new_feature = r'''  function buildFeatureContent(kind){
       const kana=e.target.closest('[data-ma-mastery-kana]'); if(kana){e.preventDefault();view.replaceChildren(buildMasteryKanaInfo(kana.getAttribute('data-ma-mastery-kana')));}
     });
     showMain(); return root;
-  }'''
-ach = replace_once(ach, old_feature, new_feature, 'feature content rank navigation')
-ach = replace_once(ach, "'Milestones across Mode Atlas. Select a tile to see the full unlock requirement.'", "'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.'", 'achievement dialog message')
-write(ach_path, ach)
+  }
+  function openModal(kind){
+    if(featureOpen||!window.ModeAtlasDialog?.feature)return false; featureOpen=true;
+    window.ModeAtlasDialog.feature({kicker:kind==='mastery'?'Kana progress':'Mode Atlas progress',title:kind==='mastery'?'Mastery Map':'Achievements',message:kind==='mastery'?'A full kana grid showing accuracy, repetition, and speed progress.':'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.',contentNode:buildFeatureContent(kind),size:'large'}).finally(()=>{featureOpen=false;});
+    return true;
+  }
 
-
-# Replace accumulated Achievement CSS with one canonical presentation source while preserving Mastery Map styles.
-css = r'''.ma-ach-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 22px}
-.ma-ach-overview>div{padding:14px 15px;border:1px solid var(--ma-border);border-radius:var(--ma-radius-lg);background:var(--ma-surface-soft)}
-.ma-ach-overview b{display:block;color:var(--ma-text);font-size:1.45rem;line-height:1;font-weight:950;letter-spacing:-.04em}
-.ma-ach-overview span{display:block;margin-top:6px;color:var(--ma-muted);font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
-.ma-achievement-layout{display:grid;gap:28px}
-.ma-achievement-section{--ma-ach-accent:148,163,184;min-width:0}
-.ma-ach-section-head{display:flex;align-items:end;justify-content:space-between;gap:18px;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--ma-border)}
-.ma-ach-section-head h3{margin:0;color:var(--ma-text);font-size:1.15rem;letter-spacing:-.025em}
-.ma-ach-section-copy{margin:5px 0 0;max-width:720px;color:var(--ma-muted);font-size:.84rem;line-height:1.45}
-.ma-ach-section-count,.ma-ach-future-status{flex:0 0 auto;color:var(--ma-muted);font-size:.74rem;font-weight:900;white-space:nowrap}
-.ma-achievement-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.ma-achievement-tile{--ma-ach-rank:148,163,184;position:relative;min-height:160px;appearance:none;border:1px solid rgba(var(--ma-ach-rank),.38);border-radius:22px;padding:12px;text-align:left;color:var(--ma-text);background:radial-gradient(circle at 18% 0%,rgba(var(--ma-ach-accent),.14),transparent 48%),var(--ma-surface-soft);box-shadow:var(--ma-shadow-soft);cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
-.ma-achievement-tile:hover,.ma-achievement-tile:focus-visible{transform:translateY(-2px);border-color:rgba(var(--ma-ach-rank),.7);box-shadow:var(--ma-shadow);outline:none}
-.ma-achievement-tile.done{background:radial-gradient(circle at 18% 0%,rgba(var(--ma-ach-rank),.22),transparent 48%),var(--ma-surface-soft);border-color:rgba(var(--ma-ach-rank),.62)}
-.ma-ach-topline{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.ma-ach-rank-badge,.ma-ach-status-text{display:inline-flex;align-items:center;min-height:25px;padding:4px 7px;border-radius:999px;font-size:.67rem;font-weight:950;letter-spacing:.055em;text-transform:uppercase}
-.ma-ach-rank-badge{color:rgb(var(--ma-ach-rank));background:rgba(var(--ma-ach-rank),.12);border:1px solid rgba(var(--ma-ach-rank),.22)}
-.ma-ach-status-text{color:var(--ma-muted);background:var(--ma-control);border:1px solid var(--ma-border)}
-.ma-achievement-tile.done .ma-ach-status-text{color:rgb(var(--ma-ach-rank));border-color:rgba(var(--ma-ach-rank),.25)}
-.ma-ach-graphic{display:grid;place-items:center;width:48px;height:48px;margin:16px 0 13px;border-radius:16px;color:rgb(var(--ma-ach-rank));background:rgba(var(--ma-ach-rank),.12);border:1px solid rgba(var(--ma-ach-rank),.2);font-size:1.45rem;font-weight:950}
-.ma-achievement-tile strong{display:block;color:var(--ma-text);font-size:1rem;line-height:1.12;letter-spacing:-.025em}
-.ma-achievement-tile small{display:block;margin-top:5px;color:var(--ma-muted);font-size:.78rem;font-weight:760;line-height:1.3}
-.ma-ach-meter{position:absolute;left:12px;right:12px;bottom:11px;height:5px;border-radius:999px;background:var(--ma-control);overflow:hidden}
-.ma-ach-meter-fill{display:block;height:100%;width:var(--ma-progress,0%);border-radius:999px;background:rgb(var(--ma-ach-rank));transition:width .2s ease}
-.ma-achievement-section--future{opacity:.78}
-.ma-ach-future-placeholder{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:14px 16px;border:1px dashed var(--ma-border-strong);border-radius:18px;background:var(--ma-surface-soft);color:var(--ma-muted)}
-.ma-ach-future-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:13px;background:var(--ma-control);color:var(--ma-text);font-weight:950}
-.ma-ach-future-placeholder strong{color:var(--ma-text);font-size:.9rem}.ma-ach-future-placeholder small{font-weight:900;text-transform:uppercase;letter-spacing:.06em;font-size:.68rem}
-
-.ma-ach-info-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
-.ma-ach-info-hero{--ma-ach-accent:148,163,184;--ma-ach-rank:148,163,184;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;min-width:0}
-.ma-ach-info-symbol{display:grid;place-items:center;width:56px;height:56px;border-radius:18px;background:rgba(var(--ma-ach-rank),.13);border:1px solid rgba(var(--ma-ach-rank),.26);color:rgb(var(--ma-ach-rank));font-size:1.65rem;font-weight:950}
-.ma-ach-info-kicker{display:inline-flex;margin-bottom:7px;color:rgb(var(--ma-ach-accent));font-weight:950;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em}
-.ma-ach-info-body h3{margin:0;color:var(--ma-text);font-size:1.65rem;letter-spacing:-.045em;line-height:1}
-.ma-ach-info-body h3 em{font-style:normal;color:rgb(var(--ma-ach-rank));font-size:.92rem;vertical-align:middle;margin-left:6px}
-.ma-ach-info-copy{color:var(--ma-muted);line-height:1.58;margin:18px 0}
-.ma-ach-info-progress{--ma-ach-rank:148,163,184;border:1px solid var(--ma-border);border-radius:18px;padding:14px;background:var(--ma-surface-soft)}
-.ma-ach-info-progress-row{display:flex;justify-content:space-between;gap:14px}.ma-ach-info-progress strong{color:var(--ma-text)}.ma-ach-info-progress span{color:var(--ma-muted);font-weight:850;text-align:right}
-.ma-ach-info-progress i{display:block;margin-top:10px;height:7px;border-radius:999px;background:var(--ma-control);overflow:hidden}.ma-ach-info-progress i b{display:block;width:var(--ma-progress,0%);height:100%;border-radius:999px;background:rgb(var(--ma-ach-rank))}
-.ma-ach-rank-history{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.ma-ach-rank-step{--ma-ach-rank:148,163,184;appearance:none;border:1px solid rgba(var(--ma-ach-rank),.25);border-radius:999px;padding:7px 10px;background:transparent;color:var(--ma-muted);font:inherit;font-size:.73rem;font-weight:900;cursor:pointer}
-.ma-ach-rank-step.done{color:rgb(var(--ma-ach-rank));background:rgba(var(--ma-ach-rank),.09)}.ma-ach-rank-step.current{box-shadow:0 0 0 2px rgba(var(--ma-ach-rank),.2);border-color:rgba(var(--ma-ach-rank),.62)}
-.ma-ach-rank-nav{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--ma-border)}
-.ma-ach-rank-nav span{text-align:center;color:var(--ma-muted);font-size:.76rem;font-weight:900}.ma-ach-rank-nav button:last-child{justify-self:end}.ma-ach-rank-nav button:disabled{opacity:.35;cursor:not-allowed}
-
-/* Mastery Map remains a separate Kana analysis feature within the same shared dialog owner. */
-.ma-mastery-legend{display:grid;gap:12px;margin-bottom:14px}
-.ma-mastery-legend div{padding:14px 15px;border-radius:18px;border:1px solid var(--ma-border);background:var(--ma-surface-soft)}
-.ma-mastery-legend b{display:block;color:var(--ma-text);margin-bottom:5px}.ma-mastery-legend span{color:var(--ma-muted);font-size:.88rem;line-height:1.35}
-.ma-mastery-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
-.ma-mastery-summary span{border:1px solid var(--ma-border);background:var(--ma-surface-soft);border-radius:18px;padding:14px 16px;color:var(--ma-muted)}
-.ma-mastery-summary b{display:block;color:var(--ma-text);font-size:1.8rem;line-height:1.1}
-.ma-speed-summary{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}.ma-speed-summary span{padding:8px 10px;border-radius:999px;background:var(--ma-control);border:1px solid var(--ma-border);color:var(--ma-muted);font-size:.78rem}.ma-speed-summary b{color:var(--ma-text)}
-.ma-mastery-group{margin-top:22px}.ma-mastery-group h3{margin:0 0 14px;color:var(--ma-text);font-size:1.15rem}
-.ma-mastery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:9px}
-.ma-mastery-cell{appearance:none;border:1px solid var(--ma-border);border-radius:18px;min-height:74px;background:var(--ma-surface-soft);color:var(--ma-text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer}
-.ma-mastery-cell:hover,.ma-mastery-cell:focus-visible{outline:none;border-color:var(--ma-control-active-border);box-shadow:0 0 0 3px var(--ma-focus-ring)}
-.ma-mastery-cell strong{font-size:1.45rem}.ma-mastery-cell span{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;font-weight:900}.ma-mastery-cell.new{opacity:.62}.ma-mastery-cell.learning{background:color-mix(in srgb,var(--ma-warning) 12%,var(--ma-surface-soft));border-color:color-mix(in srgb,var(--ma-warning) 35%,var(--ma-border))}.ma-mastery-cell.reviewing{background:color-mix(in srgb,var(--ma-writing) 12%,var(--ma-surface-soft));border-color:color-mix(in srgb,var(--ma-writing) 35%,var(--ma-border))}.ma-mastery-cell.mastered{background:color-mix(in srgb,var(--ma-success) 12%,var(--ma-surface-soft));border-color:color-mix(in srgb,var(--ma-success) 35%,var(--ma-border))}
-.ma-ach-info-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}.ma-ach-info-stats>div{padding:12px;border-radius:16px;background:var(--ma-surface-soft);border:1px solid var(--ma-border)}.ma-ach-info-stats b,.ma-ach-info-stats span{display:block}.ma-ach-info-stats span{margin-top:5px;color:var(--ma-muted);font-size:.78rem}
-.ma-kana-pro-head .ma-mastery-open-btn{margin-top:0;align-self:flex-start;white-space:nowrap}
-.ma-mastery-breakdown{grid-template-columns:repeat(4,minmax(0,1fr))}
-
-@media(max-width:760px){
-  .ma-ach-overview{gap:8px}.ma-ach-overview>div{padding:11px}.ma-ach-overview b{font-size:1.15rem}.ma-ach-overview span{font-size:.63rem}
-  .ma-ach-section-head{align-items:flex-start;flex-direction:column;gap:7px}.ma-ach-section-count,.ma-ach-future-status{white-space:normal}
-  .ma-achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.ma-achievement-tile{min-height:148px;border-radius:18px;padding:10px}.ma-ach-graphic{width:42px;height:42px;margin:13px 0 11px}.ma-achievement-tile strong{font-size:.9rem}.ma-achievement-tile small{font-size:.71rem}.ma-ach-meter{left:10px;right:10px}
-  .ma-ach-info-topbar{align-items:center}.ma-ach-info-body h3{font-size:1.35rem}.ma-ach-rank-nav{grid-template-columns:1fr 1fr}.ma-ach-rank-nav span{grid-column:1/-1;grid-row:1}.ma-ach-rank-nav button:last-child{justify-self:stretch}.ma-ach-rank-nav button{justify-content:center}
-  .ma-mastery-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.ma-mastery-grid{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px}.ma-mastery-cell{min-height:60px;border-radius:14px}.ma-mastery-cell strong{font-size:1.18rem}.ma-ach-info-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(max-width:480px){.ma-ach-overview{grid-template-columns:1fr}.ma-achievement-grid{grid-template-columns:1fr}.ma-achievement-tile{min-height:140px}.ma-ach-future-placeholder{grid-template-columns:auto 1fr}.ma-ach-future-placeholder small{grid-column:2}.ma-ach-info-symbol{width:48px;height:48px}.ma-ach-info-back{flex:0 0 auto}}
-@media(prefers-reduced-motion:reduce){.ma-achievement-tile{transition:none}.ma-achievement-tile:hover,.ma-achievement-tile:focus-visible{transform:none}.ma-ach-meter-fill{transition:none}}
-'''
-write('assets/css/mode-atlas-achievements.css', css)
-
-
-# Add a focused regression contract for ranked/category ownership.
-test_path = 'tests/frontend.test.js'
-tests = read(test_path)
-new_test = r'''
-
-test('2.43 Achievements are category-owned and sequential milestones rank up in place', () => {
-  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
-  const css = read('assets/css/mode-atlas-achievements.css');
-
-  for (const category of ['Mode Atlas', 'Kana Trainer', 'Word Bank']) assert.match(achievements, new RegExp(`title:'${category.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}'`));
-  for (const future of ['Listening', 'Grammar', 'Reading Comprehension']) assert.match(achievements, new RegExp(`title:'${future}'`));
-
-  assert.match(achievements, /const ACHIEVEMENT_TRACKS/);
-  assert.match(achievements, /id:'speed-goal',name:'Speed Goal'/);
-  assert.match(achievements, /id:'word-collection',name:'Word Collection'/);
-  assert.match(achievements, /state\.complete\?'Max rank'/);
-  assert.match(achievements, /Achievement ranked up/);
-  assert.match(achievements, /data\.maAchRankNav/);
-  assert.match(achievements, /← Previous rank/);
-  assert.match(achievements, /Next rank →/);
-
-  for (const level of [5,10,20,50,100]) assert.match(achievements, new RegExp(`target:${level},key:'atlasLevel'`));
-  assert.match(achievements, /ModeAtlasProgress\?\.getSummary/);
-  assert.match(achievements, /modeAtlasProgressChanged/);
-
-  // Existing milestone IDs remain behind the ranked presentation, preventing false re-unlocks.
-  for (const id of ['general-0','general-4','kana-8','kana-10','wordbank-0','wordbank-4']) assert.match(achievements, new RegExp(`unlockId:'${id}'`));
-  assert.doesNotMatch(achievements, /const DEFINITIONS =/);
-
-  assert.match(css, /--ma-ach-rank/);
-  assert.match(css, /\.ma-ach-rank-history/);
-  assert.match(css, /\.ma-achievement-section--future/);
-});
-'''
-if "test('2.43 Achievements are category-owned" in tests:
-    raise SystemExit('2.43 test already present')
-write(test_path, tests.rstrip() + new_test + '\n')
-
-print('Applied Mode Atlas 2.43.0 ranked achievements source changes')
+  function init(){
+    startAchievementWatcher();
+    if(!window.__maFeatureClickBound){
+      window.__maFeatureClickBound=true;
+      document.addEventListener('click',e=>{
+        if(e.target.closest('[data-ma-achievements-open]')) {
+          e.preventDefault();
+          openModal('achievements');
+          return;
+        }
+        if(e.target.closest('[data-ma-mastery-open]')) {
+          e.preventDefault();
+          openModal('mastery');
+        }
+      });
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  window.ModeAtlasFeatures={openAchievements:()=>openModal('achievements'), openMasteryMap:()=>openModal('mastery'), checkAchievements:()=>checkAchievementUnlocks(), version:VERSION};
+})();
