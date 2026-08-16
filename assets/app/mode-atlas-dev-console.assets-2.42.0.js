@@ -218,6 +218,8 @@
       writingAnswers: writing.total,
       readingTests: countArray('testModeResults') + countArray('readingTestModeResults') + countArray('kanaTrainerReadingTestModeResults'),
       writingTests: countArray('writingTestModeResults') + countArray('kanaTrainerWritingTestModeResults'),
+      atlasLevel: window.ModeAtlasProgress?.getSummary?.().level || 1,
+      atlasXp: window.ModeAtlasProgress?.getSummary?.().xp || 0,
       dataFlow: JSON.stringify(collectDataFlow())
     };
   }
@@ -271,6 +273,62 @@
     catch (error) { return { error: error?.message || String(error) }; }
   }
 
+  function progressData(){
+    const summary = window.ModeAtlasProgress?.getSummary?.() || {};
+    const remaining = Math.max(0, Number(summary.levelRequirement || 0) - Number(summary.levelXp || 0));
+    return {
+      atlasLevel: summary.level || 1,
+      xp: summary.xp || 0,
+      xpToNextLevel: remaining,
+      lifetimeCorrect: summary.lifetimeCorrect || 0,
+      readingCorrect: summary.readingCorrect || 0,
+      writingCorrect: summary.writingCorrect || 0
+    };
+  }
+
+  function renderProgressPanel(){
+    const panel = devEl('div', 'ma-dev-progress-panel');
+    panel.append(renderKeyValueTable(progressData()));
+    const controls = devEl('div', 'ma-dev-progress-controls');
+    const label = devEl('label', 'ma-dev-progress-field');
+    label.append(devEl('span', '', 'XP adjustment'));
+    const input = devEl('input', 'ma-dev-progress-input');
+    input.type = 'number';
+    input.min = '1';
+    input.step = '1';
+    input.value = '100';
+    input.dataset.maDevXpAmount = '';
+    label.append(input);
+    controls.append(
+      label,
+      devButton('Add XP', 'maDevXpAdd', 'action'),
+      devButton('Remove XP', 'maDevXpRemove', 'action')
+    );
+    panel.append(controls);
+    return panel;
+  }
+
+  function adjustDevXp(backdrop, direction){
+    const input = backdrop.querySelector('[data-ma-dev-xp-amount]');
+    const amount = Math.max(1, Math.floor(Number(input?.value || 0)));
+    if (!Number.isFinite(amount)) {
+      toast('Enter a valid XP amount.', 'warning');
+      return;
+    }
+    const result = window.ModeAtlasProgress?.debugAdjustXP?.(direction * amount);
+    if (!result) {
+      toast('Progression debug controls are unavailable.', 'warning');
+      return;
+    }
+    replaceDevBody(backdrop, [renderProgressPanel()]);
+    const applied = Number(result.applied || 0);
+    toast(`${applied >= 0 ? '+' : ''}${applied} XP applied · Level ${result.after?.level || 1}.`);
+    if (Number(result.after?.level || 1) > Number(result.before?.level || 1)) {
+      backdrop.classList.remove('open');
+      void window.ModeAtlasProgressUI?.naturalBreak?.('dev-xp-adjustment');
+    }
+  }
+
   function openDevMenu(){
     if (!canUseDevTools()) {
       toast('Developer tools are only available locally or to the developer account.', 'err');
@@ -300,6 +358,7 @@
       devButton('Data flow', 'maDevDataFlow', 'diagnostic'),
       devButton('Storage keys', 'maDevStorageKeys', 'diagnostic'),
       devButton('Service worker', 'maDevServiceWorker', 'diagnostic'),
+      devButton('Progress / XP', 'maDevProgress', 'diagnostic'),
       devButton('Copy diagnostics', 'maDevCopy', 'action'),
       devButton('Copy save snapshot', 'maDevCopySnapshot', 'action'),
       devButton('Repair save data', 'maDevRepair', 'action'),
@@ -329,6 +388,9 @@
         replaceDevBody(backdrop, [renderKeyValueTable({ loading: 'Checking Service Worker…' })]);
         getServiceWorkerInfo().then(info => replaceDevBody(backdrop, [renderJsonPanel('Service worker', info)])).catch(error => replaceDevBody(backdrop, [renderJsonPanel('Service worker error', { error: error?.message || String(error) })]));
       }
+      if (event.target.closest('[data-ma-dev-progress]')) replaceDevBody(backdrop, [renderProgressPanel()]);
+      if (event.target.closest('[data-ma-dev-xp-add]')) adjustDevXp(backdrop, 1);
+      if (event.target.closest('[data-ma-dev-xp-remove]')) adjustDevXp(backdrop, -1);
       if (event.target.closest('[data-ma-dev-copy]')) navigator.clipboard?.writeText(JSON.stringify({ diagnostics: safeDevData(), dataFlow: safeDataFlow() }, null, 2)).then(() => toast('Diagnostics copied.'));
       if (event.target.closest('[data-ma-dev-copy-snapshot]')) navigator.clipboard?.writeText(JSON.stringify(window.KanaCloudSync?.debugLocalSnapshot?.() || {}, null, 2)).then(() => toast('Save snapshot copied.'));
       if (event.target.closest('[data-ma-dev-repair]')) {

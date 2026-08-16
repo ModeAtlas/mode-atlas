@@ -5,6 +5,7 @@ function createEmptySessionStats() {
         active: false,
         startTime: null,
         endTime: null,
+        startXp: 0,
         answered: 0,
         correct: 0,
         wrong: 0,
@@ -972,6 +973,7 @@ function prepareTrainerSessionStart(options = {}) {
     const sessionStats = createEmptySessionStats();
     sessionStats.active = true;
     sessionStats.startTime = now;
+    sessionStats.startXp = Math.max(0, Number(window.ModeAtlasProgress?.getXP?.() || 0));
 
     const dailyActive = typeof options.isDailyChallengeSession === "function" && options.isDailyChallengeSession();
     const testActive = typeof options.isTestModeSession === "function" && options.isTestModeSession();
@@ -1057,6 +1059,22 @@ function startTrainerTimedSession(options = {}) {
 }
 
 
+function getTrainerSessionXpGain(stats = sessionStats) {
+    const startXp = Math.max(0, Number(stats?.startXp || 0));
+    const currentXp = Math.max(0, Number(window.ModeAtlasProgress?.getXP?.() || startXp));
+    return Math.max(0, Math.floor(currentXp - startXp));
+}
+
+function settleTrainerProgressionBreak(reason = 'trainer-session-end') {
+    const levelPromise = window.ModeAtlasProgressUI?.naturalBreak?.(reason) || Promise.resolve(false);
+    return Promise.resolve(levelPromise)
+        .catch(() => false)
+        .then(() => {
+            try { return window.ModeAtlasInstall?.naturalBreak?.(reason) || false; }
+            catch { return false; }
+        });
+}
+
 function showTrainerSessionModal(options = {}) {
     const {
         autoEnded = false,
@@ -1077,10 +1095,12 @@ function showTrainerSessionModal(options = {}) {
     const fastest = timings.length ? Math.min(...timings) : 0;
     const slowest = timings.length ? Math.max(...timings) : 0;
     const durationMs = sessionStats.startTime ? (sessionStats.endTime - sessionStats.startTime) : 0;
+    const xpGain = getTrainerSessionXpGain(sessionStats);
 
     const cards = [
         ["Answered", total], ["Right", sessionStats.correct], ["Wrong", sessionStats.wrong],
         ["Accuracy", `${accuracy.toFixed(1)}%`], ["Best Streak", sessionStats.bestStreak],
+        ["XP gained", `+${xpGain} XP`],
         ["Avg Time", formatDuration(avgTime)], ["Fastest", formatDuration(fastest)],
         ["Slowest", formatDuration(slowest)], ["Session Time", formatDuration(durationMs)]
     ];
@@ -1115,6 +1135,7 @@ function showTrainerSessionModal(options = {}) {
     content.append(sessionStatsGrid, sessionHardList, sessionEasyList);
 
     const title = autoEnded ? (settings?.speedRun ? "Speed Run Complete" : "Time Trial Complete") : "Session Stats";
-    window.ModeAtlasDialog.feature({ kicker:'Session complete', title, contentNode:content, size:'wide' });
+    const dialogPromise = window.ModeAtlasDialog.feature({ kicker:'Session complete', title, contentNode:content, size:'wide' });
+    Promise.resolve(dialogPromise).then(() => settleTrainerProgressionBreak('trainer-session-summary'));
     return true;
 }

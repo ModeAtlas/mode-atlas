@@ -243,6 +243,9 @@ function endDailyChallenge() {
         gameOverAnswerEl.textContent = `Practice replay complete. ${dailyCorrect}/${total} vs Official score ${existing.officialScore}/${existing.total}`;
     }
 
+    const sessionXp = getTrainerSessionXpGain(sessionStats);
+    gameOverAnswerEl.textContent += ` · +${sessionXp} XP`;
+
     setGameOverVisible(true);
     buildModifierButtons();
     buildRows("rowOptions", hiraganaRows, "hiraganaRows", "h_");
@@ -253,6 +256,7 @@ function endDailyChallenge() {
     renderScoreHistory();
     applyDailyChallengeTheme();
     saveAll();
+    void settleTrainerProgressionBreak('daily-challenge-complete');
 }
 
 function validRomajiSet() {
@@ -868,15 +872,17 @@ function endTestMode() {
         ["Wrong", testWrong],
         ["Questions", testSequence.length || totalAnswered || 0],
         ["Avg Time", formatDuration(sessionStats.timings.length ? average(sessionStats.timings) : 0)],
-        ["Test Time", formatDuration(durationMs)]
+        ["Test Time", formatDuration(durationMs)],
+        ["XP gained", `+${getTrainerSessionXpGain(sessionStats)} XP`]
     ]);
     testDialogContent.append(testDialogGrid);
-    window.ModeAtlasDialog?.feature?.({
+    const testDialogPromise = window.ModeAtlasDialog?.feature?.({
         kicker: "Formal test",
         title: "Reading Test Complete",
         contentNode: testDialogContent,
         size: "wide"
     });
+    Promise.resolve(testDialogPromise).then(() => settleTrainerProgressionBreak('formal-test-summary'));
 
     updateTopStats();
     if (DEBUG_PANEL) renderDebugPanel();
@@ -908,6 +914,7 @@ function endSession(autoEnded = false) {
             afterPromptReset: () => { currentChar = ""; }
         });
         onSettingsChanged();
+        void settleTrainerProgressionBreak('daily-session-ended');
         return;
     }
 

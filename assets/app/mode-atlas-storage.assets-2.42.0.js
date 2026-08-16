@@ -109,8 +109,6 @@
     'modeAtlasDailyReturnSeenDate',
     'modeAtlasDefaultPreset',
     'modeAtlasDisplayMode',
-    'modeAtlasInstallPromptDismissedAt',
-    'modeAtlasInstallPromptSeen',
     'modeAtlasLastBackupAt',
     'modeAtlasLastExportAt',
     'modeAtlasLastKanaPage',
@@ -138,6 +136,8 @@
   const APP_LOCAL_EXACT = Object.freeze([
     ...APP_BACKUP_EXACT,
     'modeAtlasCloudAccessState',
+    'modeAtlasInstallPromptDismissedAt',
+    'modeAtlasInstallPromptSeen',
     'modeAtlasLastCloudErrorAt',
     'modeAtlasLastCloudErrorMessage',
     'modeAtlasLastCloudSyncAt',

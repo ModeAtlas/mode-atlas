@@ -5,7 +5,7 @@
   const STORAGE_KEY = 'modeAtlasProgress';
   const UPDATED_AT_KEY = 'modeAtlasProgressUpdatedAt';
   const DEVICE_KEY = 'modeAtlasProgressDeviceId';
-  const STATE_VERSION = 1;
+  const STATE_VERSION = 2;
   const LEGACY_SOURCE = 'legacy-baseline';
 
   const COUNTER_XP = Object.freeze({
@@ -23,6 +23,10 @@
   function finiteCount(value){
     const number = Number(value || 0);
     return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
+  }
+  function finiteInteger(value){
+    const number = Number(value || 0);
+    return Number.isFinite(number) ? Math.trunc(number) : 0;
   }
   function object(value){ return value && typeof value === 'object' && !Array.isArray(value) ? value : {}; }
 
@@ -45,6 +49,14 @@
     return { type, id, at: finiteCount(event.at) || Date.now() };
   }
 
+  function normalizeAdjustment(adjustment, fallbackKey = ''){
+    if (!adjustment || typeof adjustment !== 'object' || Array.isArray(adjustment)) return null;
+    const id = String(adjustment.id || fallbackKey || '').trim();
+    const amount = finiteInteger(adjustment.amount);
+    if (!id || !amount) return null;
+    return { id, amount, at: finiteCount(adjustment.at) || Date.now() };
+  }
+
   function normalizeState(input){
     const value = object(input);
     const sources = {};
@@ -57,11 +69,17 @@
       const normalized = normalizeEvent(event, key);
       if (normalized) events[`${normalized.type}|${normalized.id}`] = normalized;
     });
+    const adjustments = {};
+    Object.entries(object(value.adjustments)).forEach(([key, adjustment]) => {
+      const normalized = normalizeAdjustment(adjustment, key);
+      if (normalized) adjustments[normalized.id] = normalized;
+    });
     return {
       version: STATE_VERSION,
       legacySeeded: value.legacySeeded === true,
       sources,
       events,
+      adjustments,
       updatedAt: finiteCount(value.updatedAt)
     };
   }
@@ -74,6 +92,7 @@
       legacySeeded: a.legacySeeded || b.legacySeeded,
       sources: {},
       events: {},
+      adjustments: {},
       updatedAt: Math.max(a.updatedAt, b.updatedAt)
     };
     const sourceIds = new Set([...Object.keys(a.sources), ...Object.keys(b.sources)]);
@@ -89,6 +108,10 @@
     Object.assign(merged.events, a.events);
     Object.entries(b.events).forEach(([key, event]) => {
       if (!merged.events[key] || finiteCount(event.at) < finiteCount(merged.events[key].at)) merged.events[key] = event;
+    });
+    Object.assign(merged.adjustments, a.adjustments);
+    Object.entries(b.adjustments).forEach(([key, adjustment]) => {
+      if (!merged.adjustments[key] || finiteCount(adjustment.at) < finiteCount(merged.adjustments[key].at)) merged.adjustments[key] = adjustment;
     });
     return merged;
   }
@@ -112,13 +135,23 @@
     return normalizeState(store()?.json?.(STORAGE_KEY, {}) || {});
   }
 
-  function emit(summary, source = 'local'){
-    try { root.dispatchEvent(new CustomEvent('modeAtlasProgressChanged', { detail: { ...summary, source } })); } catch {}
+  function emit(summary, source = 'local', previousSummary = summary){
+    try {
+      root.dispatchEvent(new CustomEvent('modeAtlasProgressChanged', {
+        detail: {
+          ...summary,
+          source,
+          previousLevel: Number(previousSummary?.level || summary.level || 1),
+          previousXp: Number(previousSummary?.xp || 0)
+        }
+      }));
+    } catch {}
   }
 
   function persistState(input, options = {}){
     const storage = store();
     if (!storage?.setJSON) return normalizeState(input);
+    const previousSummary = getSummary(readState());
     const state = normalizeState(input);
     state.updatedAt = Math.max(Date.now(), finiteCount(state.updatedAt));
     storage.setJSON(STORAGE_KEY, state);
@@ -128,7 +161,7 @@
       try { root.KanaCloudSync?.scheduleSync?.(); } catch {}
     }
     const summary = getSummary(state);
-    if (options.emit !== false) emit(summary, options.source || 'local');
+    if (options.emit !== false) emit(summary, options.source || 'local', previousSummary);
     return state;
   }
 
@@ -194,6 +227,7 @@
       Object.entries(source).forEach(([type, count]) => { xp += finiteCount(count) * (COUNTER_XP[type] || 0); });
     });
     Object.values(state.events).forEach((event) => { xp += EVENT_XP[event.type] || 0; });
+    Object.values(state.adjustments).forEach((adjustment) => { xp += finiteInteger(adjustment.amount); });
     return Math.max(0, Math.floor(xp));
   }
 
@@ -234,11 +268,26 @@
     };
   }
 
+  function debugAdjustXP(amount){
+    const requested = finiteInteger(amount);
+    if (!requested) return false;
+    const state = ensureSeeded({ sync: false, emit: false });
+    const before = getSummary(state);
+    const applied = requested < 0 ? Math.max(requested, -before.xp) : requested;
+    if (!applied) return { requested, applied: 0, before, after: before };
+    const sourceId = getDeviceId();
+    const id = `dev-xp-${sourceId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    state.adjustments[id] = { id, amount: applied, at: Date.now() };
+    const persisted = persistState(state, { source: 'dev.xpAdjust' });
+    return { requested, applied, before, after: getSummary(persisted) };
+  }
+
   root.ModeAtlasProgress = Object.freeze({
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
-    award, awardOnce, getXP, getLifetimeCorrect, getLevelFromXP, getSummary
+    award, awardOnce, debugAdjustXP,
+    getXP, getLifetimeCorrect, getLevelFromXP, getSummary
   });
 
   // Seed locally before cloud hydration. The cloud owner will merge/push this

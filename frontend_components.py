@@ -255,6 +255,7 @@ INTERACTIVE_SCRIPTS_BEFORE_STORAGE = (
 )
 INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-progress.js',
+    'assets/app/mode-atlas-progress-ui.js',
     'assets/app/mode-atlas-save-repair.js',
     'assets/app/mode-atlas-page-state.js',
     'assets/app/mode-atlas-dev-console.js',

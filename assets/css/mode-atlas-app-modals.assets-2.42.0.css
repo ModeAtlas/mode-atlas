@@ -28,6 +28,12 @@
 .ma-install-prompt div{display:grid;gap:2px}
 .ma-install-prompt span{color:var(--ma-muted)}
 
+.ma-level-up-card{display:grid;justify-items:center;text-align:center;gap:8px;padding:10px 8px 4px}
+.ma-level-up-badge{width:88px;height:88px;display:grid;place-items:center;border-radius:28px;background:var(--ma-control-active);border:1px solid var(--ma-control-active-border);box-shadow:var(--ma-shadow-control);font-family:var(--ma-font-display);font-size:2.5rem;font-weight:950;letter-spacing:-.06em;color:var(--ma-text-strong)}
+.ma-level-up-label{font-size:.72rem;font-weight:950;letter-spacing:.16em;text-transform:uppercase;color:var(--ma-muted)}
+.ma-level-up-card p{max-width:420px;margin:2px 0 0;color:var(--ma-muted);line-height:1.55}
+@media(max-width:640px){.ma-install-prompt{align-items:stretch;flex-wrap:wrap}.ma-install-prompt>div{flex:1 0 100%}.ma-install-prompt .ma-button{flex:1}.ma-level-up-badge{width:76px;height:76px;border-radius:24px;font-size:2.2rem}}
+
 /* === About Mode Atlas modal === */
 .ma-about-content{min-width:0}.ma-about-hero{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;padding:18px;border-radius:26px;background:var(--ma-surface-soft);border:1px solid var(--ma-border)}
 .ma-about-mark{width:62px;height:62px;border-radius:20px;display:grid;place-items:center;font-weight:950;color:var(--ma-app-bg);background:linear-gradient(135deg,var(--ma-reading),var(--ma-writing));box-shadow:0 16px 40px color-mix(in srgb,var(--ma-writing) 20%,transparent)}

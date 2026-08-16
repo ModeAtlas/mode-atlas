@@ -1413,3 +1413,65 @@ test('2.41 Atlas Level uses one mergeable semantic progression owner and Profile
   assert.doesNotMatch(home, /profileAtlasLevel|Atlas Level \d|XP to Level/,
     'Atlas homepage must remain free of account XP UI');
 });
+
+
+
+test('2.42 contextual install and progression feedback stay under shared owners', () => {
+  const frontend = read('frontend_components.py');
+  const storage = read('assets/app/mode-atlas-storage.js');
+  const progress = read('assets/app/mode-atlas-progress.js');
+  const progressUi = read('assets/app/mode-atlas-progress-ui.js');
+  const pwa = read('assets/app/mode-atlas-pwa.js');
+  const dev = read('assets/app/mode-atlas-dev-console.js');
+  const shared = read('assets/trainer/mode-atlas-trainer-shared.js');
+  const reading = read('assets/pages/mode-atlas-default-page.js');
+  const writing = read('assets/pages/mode-atlas-reverse-page.js');
+  const cloud = read('cloud-sync.js');
+
+  assert.match(frontend, /assets\/app\/mode-atlas-progress-ui\.js/);
+  assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress.js'") < frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'"));
+  assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'") < frontend.indexOf("'assets/app/mode-atlas-pwa.js'"));
+
+  assert.match(progress, /const STATE_VERSION = 2/);
+  assert.match(progress, /adjustments/);
+  assert.match(progress, /function debugAdjustXP/);
+  assert.match(progress, /source: 'dev\.xpAdjust'/);
+  assert.match(progress, /previousLevel/);
+  assert.match(cloud, /data\.state\?\.adjustments/);
+
+  assert.match(progressUi, /modeAtlasProgressChanged/);
+  assert.match(progressUi, /pendingLevelUp/);
+  assert.match(progressUi, /naturalBreak/);
+  assert.match(progressUi, /title: 'Level up'/);
+
+  assert.match(shared, /startXp/);
+  assert.match(shared, /function getTrainerSessionXpGain/);
+  assert.match(shared, /\["XP gained", `\+\$\{xpGain\} XP`\]/);
+  assert.match(shared, /settleTrainerProgressionBreak/);
+  for (const page of [reading, writing]) {
+    assert.match(page, /\["XP gained", `\+\$\{getTrainerSessionXpGain\(sessionStats\)\} XP`\]/);
+    assert.match(page, /gameOverAnswerEl\.textContent \+= ` · \+\$\{sessionXp\} XP`/);
+    assert.match(page, /formal-test-summary/);
+  }
+
+  assert.match(pwa, /AUTO_INSTALL_CORRECT_THRESHOLD = 100/);
+  assert.match(pwa, /ModeAtlasProgress\?\.getLifetimeCorrect/);
+  assert.match(pwa, /function naturalBreak/);
+  assert.match(pwa, /beforeinstallprompt/);
+  assert.match(pwa, /Share → Add to Home Screen/);
+  assert.doesNotMatch(pwa, /modeAtlasProgressChanged[\s\S]{0,180}showInstallPrompt/,
+    'crossing the milestone must not immediately interrupt an answer');
+
+  const backupBlock = storage.split('const APP_BACKUP_EXACT', 2)[1]?.split('const APP_LOCAL_EXACT', 1)[0] || '';
+  const localBlock = storage.split('const APP_LOCAL_EXACT', 2)[1]?.split('const APP_LOCAL_SET', 1)[0] || '';
+  assert.doesNotMatch(backupBlock, /modeAtlasInstallPromptSeen|modeAtlasInstallPromptDismissedAt/,
+    'automatic install prompt acknowledgement must stay device-local');
+  assert.match(localBlock, /modeAtlasInstallPromptSeen/);
+  assert.match(localBlock, /modeAtlasInstallPromptDismissedAt/);
+
+  assert.match(dev, /Progress \/ XP/);
+  assert.match(dev, /data-ma-dev-xp-amount/);
+  assert.match(dev, /debugAdjustXP/);
+  assert.doesNotMatch(dev, /setJSON\(['"]modeAtlasProgress|localStorage\.setItem\(['"]modeAtlasProgress/,
+    'developer XP controls must use the progression API rather than raw progression storage');
+});

@@ -1,3 +1,16 @@
+## 2.42.0 - 2026-08-16
+- Made the automatic install suggestion progression-aware: it becomes eligible after 100 lifetime correct Kana Reading/Writing answers and only appears at a natural break rather than interrupting the milestone answer.
+- Kept install prompting under the single shared PWA owner, including manual browser/iPad instructions when `beforeinstallprompt` is unavailable, and made automatic prompt acknowledgement device-local rather than exported account state.
+- Added XP gained to standard session summaries, formal Test Mode completion summaries, and Daily Challenge completion feedback.
+- Added a queued Atlas Level-up dialog that waits for session/Test summaries to finish before appearing, then lets the install suggestion run afterwards when eligible.
+- Added developer Progress / XP diagnostics with controlled Add XP and Remove XP actions through `ModeAtlasProgress`, including merge-safe signed debug adjustments and level-up testing without raw storage writes.
+
+## 2.41.0 - 2026-08-16
+- Added account-wide Atlas Level progression to Profile with XP, level progress, Reading correct, Writing correct, and lifetime correct totals.
+- Added one shared `ModeAtlasProgress` owner with semantic Kana correct/Daily/Test events, one-time legacy seeding from existing trainer statistics, and centrally derived XP/levels.
+- Added merge-safe per-device monotonic answer counters plus unique one-time completion events so cross-device sync cannot lose or double-award progression.
+- Kept Atlas Level separate from Kana mastery and Test performance, and exposed lifetime correct as a stable engagement signal for future install eligibility.
+
 ## 2.40.0 - 2026-08-16
 - Reframed Results as the formal assessment report for Reading and Writing Test Mode only.
 - Preserved the full kana heatmap, row doughnut graphs, modifier-row analysis, fastest/slowest markers, pinned test averages, master/detail history, trends, and Recommended Review.

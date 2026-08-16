@@ -580,7 +580,7 @@ function buildEmptySnapshot() {
     readingTests: { primary: [], backup: [], altPrimary: [], altBackup: [] },
     writingTests: { primary: [], backup: [] },
     wordBank: { items: [] },
-    progress: { state: { version: 1, legacySeeded: true, sources: {}, events: {}, updatedAt: now } }
+    progress: { state: { version: 2, legacySeeded: true, sources: {}, events: {}, adjustments: {}, updatedAt: now } }
   };
   const sections = {};
   Object.keys(SECTION_DEFS).forEach((name) => { sections[name] = { updatedAt: now, data: empty[name] || {} }; });
@@ -644,7 +644,7 @@ function clearLocalImportGuard() {
 function sectionHasMeaningfulData(sectionName, data = {}) {
   if (!data || typeof data !== 'object') return false;
   if (sectionName === 'wordBank') return arrayHasItems(data.items);
-  if (sectionName === 'progress') return deepHasProgress(data.state?.sources) || deepHasProgress(data.state?.events);
+  if (sectionName === 'progress') return deepHasProgress(data.state?.sources) || deepHasProgress(data.state?.events) || deepHasProgress(data.state?.adjustments);
   if (sectionName === 'readingTests' || sectionName === 'writingTests') {
     return arrayHasItems(data.primary) || arrayHasItems(data.backup) || arrayHasItems(data.altPrimary) || arrayHasItems(data.altBackup);
   }

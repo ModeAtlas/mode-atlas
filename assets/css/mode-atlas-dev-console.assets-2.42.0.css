@@ -62,3 +62,10 @@
     font-size: .82rem;
     line-height: 1.45;
 }
+
+
+.ma-dev-progress-panel{display:grid;gap:14px}
+.ma-dev-progress-controls{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;gap:10px;align-items:end;padding-top:4px}
+.ma-dev-progress-field{display:grid;gap:6px;font-size:12px;font-weight:900;color:var(--ma-muted,#9aa6bd)}
+.ma-dev-progress-input{width:100%;box-sizing:border-box;border:1px solid rgba(148,163,184,.28);border-radius:12px;background:rgba(255,255,255,.06);color:inherit;padding:10px 12px;font:700 13px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace}
+@media(max-width:640px){.ma-dev-progress-controls{grid-template-columns:1fr}.ma-dev-progress-controls .ma-button{width:100%}}
