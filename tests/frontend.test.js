@@ -786,7 +786,7 @@ test('trainer consolidation preserves score, heatmap, modifier, nav-clearance, a
     'tablet side panels must return to document flow');
   assert.match(trainerCss, /body\[data-effective-display-mode="phone"\] \.ma-trainer-side-panel,[\s\S]*?position:static;/,
     'phone side panels must return to document flow');
-  assert.match(trainerCss, /body\[data-effective-display-mode="phone"\] \.ma-trainer-card\{[\s\S]*?padding:18px 12px 28px;/,
+  assert.match(trainerCss, /body\[data-effective-display-mode="phone"\] \.ma-trainer-card\{[\s\S]*?padding:18px 10px 22px;/,
     'idle phone trainer card must retain compact responsive padding');
 });
 
@@ -1723,6 +1723,8 @@ test('2.47 final responsive polish keeps explicit display modes and Atlas rank m
   const navigation = read('assets/css/mode-atlas-navigation.css');
   const drawers = read('assets/css/mode-atlas-profile-settings.css');
   const study = read('assets/css/mode-atlas-study-shared.css');
+  const home = read('assets/css/mode-atlas-home-page.css');
+  const kana = read('assets/css/mode-atlas-kana-page.css');
 
   assert.match(bindings, /if \(level >= 75\) return 'teal'/);
   assert.match(bindings, /if \(level >= 50\) return 'violet'/);
@@ -1734,6 +1736,17 @@ test('2.47 final responsive polish keeps explicit display modes and Atlas rank m
   assert.match(navigation, /body\[data-effective-display-mode="phone"\] \.ma-nav__content/);
   assert.match(navigation, /body\[data-effective-display-mode="phone"\] \.ma-nav__links\{[\s\S]*grid-row:2/);
   assert.match(navigation, /body\[data-effective-display-mode="phone"\] \.ma-nav__actions\{[\s\S]*grid-row:1/);
+  assert.match(navigation, /body\[data-effective-display-mode="tablet"\] \.ma-nav\{[\s\S]*display:flex/,
+  'explicit Tablet navigation must stay a compact single-row composition');
+
+assert.match(home, /body\[data-effective-display-mode="tablet"\] \.atlas-hero__stage/,
+  'Atlas home must consume explicit Tablet mode directly');
+assert.match(home, /body\[data-effective-display-mode="phone"\] \.atlas-hero/,
+  'Atlas home must consume explicit Phone mode directly');
+assert.match(kana, /body\[data-effective-display-mode="tablet"\] \.kana-hub-hero/,
+  'Kana hub must consume explicit Tablet mode directly');
+assert.match(kana, /body\[data-effective-display-mode="phone"\] \.kana-mastery-grid/,
+  'Kana Phone mode must own compact progress density');
 
   assert.match(drawers, /body\[data-effective-display-mode="tablet"\] \.ma-drawer\{/);
   assert.match(drawers, /overflow-x:hidden;overflow-y:auto/);
@@ -1748,4 +1761,8 @@ test('2.47 final responsive polish keeps explicit display modes and Atlas rank m
     'explicit Phone trainer must not retain the retired viewport-filling bottom padding');
   assert.match(study, /body\.trainer-session-active \.ma-trainer-prompt-wrap/,
     'focused active-session sizing must remain owned separately');
+  assert.match(study, /body\[data-effective-display-mode="phone"\]:not\(\.trainer-session-active\) \.ma-trainer-prompt-wrap\{min-height:96px/,
+  'idle Phone trainer must not reserve active-session prompt height');
+assert.match(study, /@media\(min-width:980px\)[\s\S]*data-effective-display-mode="tablet"[\s\S]*grid-template-columns:minmax\(0,1fr\) minmax\(260px,300px\)/,
+  'wide Tablet trainer must use the available workspace instead of a narrow centred desktop card');
 });

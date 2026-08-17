@@ -114,17 +114,17 @@ body[data-effective-display-mode="tablet"] .ma-drawer{
   right:16px;
   bottom:auto;
   left:auto;
-  width:min(620px,calc(100vw - 32px));
-  max-width:calc(100vw - 32px);
+  width:min(680px,calc(100vw - 28px));
+  max-width:calc(100vw - 28px);
   max-height:calc(100dvh - 32px);
   padding:18px;
   border-radius:var(--ma-radius-lg);
 }
 body[data-effective-display-mode="phone"] .ma-drawer{
-  top:calc(env(safe-area-inset-top,0px) + 12px);
-  right:10px;
-  bottom:calc(env(safe-area-inset-bottom,0px) + 12px);
-  left:10px;
+  top:calc(env(safe-area-inset-top,0px) + 8px);
+  right:6px;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+  left:6px;
   width:auto;
   max-width:none;
   max-height:none;

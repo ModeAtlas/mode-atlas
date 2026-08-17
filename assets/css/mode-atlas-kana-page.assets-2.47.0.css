@@ -429,6 +429,75 @@ a.kana-next-card{text-decoration:none;}
   .kana-map-row{grid-template-columns:70px 1fr 38px;gap:8px;}.kana-head-actions{flex-direction:column;}.kana-head-actions .ma-button{width:100%;}
   .kana-accuracy-card{grid-template-columns:1fr;text-align:center;}.kana-ring{justify-self:center;}.kana-mini-grid{text-align:left;}
 }
+/* Explicit display modes own Kana page density as well as the shared shell.
+   Tablet uses the available touch workspace; Phone keeps progress scannable
+   without turning every compact metric into a full-width row. */
+body[data-effective-display-mode="tablet"].ma-kana-page{padding-left:18px;padding-right:18px;}
+body[data-effective-display-mode="tablet"].ma-kana-page .shell{width:min(1100px,100%);}
+body[data-effective-display-mode="tablet"] .kana-hub-hero{width:100%;grid-template-columns:minmax(0,1fr) minmax(320px,.72fr);gap:44px;padding:54px 0 66px;}
+body[data-effective-display-mode="tablet"] .kana-hero-main h1{font-size:clamp(4rem,7vw,5.2rem);}
+body[data-effective-display-mode="tablet"] .kana-hero-lead{margin-top:20px;font-size:1.02rem;}
+body[data-effective-display-mode="tablet"] .kana-hero-actions{margin-top:26px;}
+body[data-effective-display-mode="tablet"] .kana-hero-visual{min-height:300px;}
+body[data-effective-display-mode="tablet"] .kana-pathways{padding:54px 0 64px;}
+body[data-effective-display-mode="tablet"] .kana-section{padding-block:54px;}
+body[data-effective-display-mode="tablet"] .kana-section-head{margin-bottom:34px;}
+body[data-effective-display-mode="tablet"] .kana-section-head h2{font-size:clamp(2.35rem,4.3vw,3rem);}
+body[data-effective-display-mode="tablet"] .kana-record-layout{gap:28px;}
+
+body[data-effective-display-mode="phone"].ma-kana-page{padding-left:8px;padding-right:8px;padding-bottom:18px;}
+body[data-effective-display-mode="phone"].ma-kana-page .shell{width:100%;}
+body[data-effective-display-mode="phone"] .kana-hub-hero{grid-template-columns:1fr;padding:24px 4px 34px;gap:20px;}
+body[data-effective-display-mode="phone"] .hero-tagline{margin-bottom:12px;}
+body[data-effective-display-mode="phone"] .hero-tagline>span:first-child{width:36px;height:36px;border-radius:12px;}
+body[data-effective-display-mode="phone"] .kana-hero-main h1{max-width:10ch;font-size:clamp(2.9rem,13vw,3.35rem);line-height:.92;}
+body[data-effective-display-mode="phone"] .kana-hero-lead{margin-top:16px;font-size:.94rem;line-height:1.55;}
+body[data-effective-display-mode="phone"] .kana-hero-actions{margin-top:20px;}
+body[data-effective-display-mode="phone"] .kana-primary-action{--ma-button-min-height:52px;--ma-button-radius:16px;width:100%;max-width:none;}
+body[data-effective-display-mode="phone"] .kana-hero-visual{min-height:150px;max-width:360px;}
+body[data-effective-display-mode="phone"] .kana-hero-script strong{font-size:2.35rem;}
+body[data-effective-display-mode="phone"] .kana-hero-script span{font-size:1.25rem;}
+body[data-effective-display-mode="phone"] .kana-hero-glyph--a{width:52px;height:52px;font-size:1.3rem;}
+body[data-effective-display-mode="phone"] .kana-hero-glyph--ka{width:60px;height:60px;font-size:1.55rem;}
+body[data-effective-display-mode="phone"] .kana-hero-glyph--yo{display:none;}
+body[data-effective-display-mode="phone"] .kana-pathways{padding:34px 4px 40px;}
+body[data-effective-display-mode="phone"] .kana-pathway{padding:20px 2px;}
+body[data-effective-display-mode="phone"] .kana-progress-intro{padding:38px 2px 22px;}
+body[data-effective-display-mode="phone"] .kana-section{padding-block:36px;}
+body[data-effective-display-mode="phone"] .kana-section-head{margin-bottom:24px;}
+body[data-effective-display-mode="phone"] .kana-section-head h2{font-size:2.15rem;}
+body[data-effective-display-mode="phone"] .kana-section-head p{font-size:.9rem;line-height:1.5;}
+body[data-effective-display-mode="phone"] .kana-next-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0;}
+body[data-effective-display-mode="phone"] .kana-next-card--recommended{grid-column:1 / -1;padding:18px;margin:0 0 8px;}
+body[data-effective-display-mode="phone"] .kana-next-card--secondary{min-width:0;padding:16px 10px;border-top:1px solid var(--ma-border);}
+body[data-effective-display-mode="phone"] .kana-next-card--secondary:nth-child(2){border-left:0;border-right:1px solid var(--ma-border);}
+body[data-effective-display-mode="phone"] .kana-mastery-grid,
+body[data-effective-display-mode="phone"] .kana-preset-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+body[data-effective-display-mode="phone"] .kana-stage-card,
+body[data-effective-display-mode="phone"] .kana-preset-card{padding:15px;border-right:1px solid var(--ma-border);border-bottom:1px solid var(--ma-border)!important;}
+body[data-effective-display-mode="phone"] .kana-stage-card:nth-child(2n),
+body[data-effective-display-mode="phone"] .kana-preset-card:nth-child(2n){border-right:0;}
+body[data-effective-display-mode="phone"] .kana-stage-card:nth-last-child(-n+2),
+body[data-effective-display-mode="phone"] .kana-preset-card:nth-last-child(-n+2){border-bottom:0!important;}
+body[data-effective-display-mode="phone"] .kana-preset-card p{min-height:0;margin:8px 0 12px;font-size:.68rem;}
+body[data-effective-display-mode="phone"] .kana-mastery-focus{grid-template-columns:repeat(2,minmax(0,1fr));}
+body[data-effective-display-mode="phone"] .kana-focus-card{min-width:0;padding:16px 10px;border-right:1px solid var(--ma-border);border-bottom:0;}
+body[data-effective-display-mode="phone"] .kana-focus-card:nth-child(2){border-right:0;}
+body[data-effective-display-mode="phone"] .kana-focus-card:last-child{grid-column:1 / -1;border-top:1px solid var(--ma-border);padding-inline:0;}
+body[data-effective-display-mode="phone"] .kana-record-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+body[data-effective-display-mode="phone"] .kana-record-card,
+body[data-effective-display-mode="phone"] .kana-record-card:nth-child(2n),
+body[data-effective-display-mode="phone"] .kana-record-card:nth-last-child(-n+2){min-height:104px;padding:14px;border-right:1px solid var(--ma-border);border-bottom:1px solid var(--ma-border);}
+body[data-effective-display-mode="phone"] .kana-record-card:nth-child(2n){border-right:0;}
+body[data-effective-display-mode="phone"] .kana-record-card:nth-last-child(-n+2){border-bottom:0;}
+body[data-effective-display-mode="phone"] .kana-record-card.total{grid-column:1 / -1;min-height:0;border-right:0;border-top:1px solid var(--ma-border);}
+
+@media(max-width:900px){
+  body[data-effective-display-mode="tablet"] .kana-hub-hero{grid-template-columns:1fr;gap:26px;padding-top:42px;}
+  body[data-effective-display-mode="tablet"] .kana-hero-main h1{max-width:10.5ch;}
+  body[data-effective-display-mode="tablet"] .kana-hero-visual{min-height:235px;max-width:600px;width:100%;margin-inline:auto;}
+}
+
 @media(prefers-reduced-motion:reduce){.kana-pathway,.kana-next-card--recommended,.kana-stage-card{transition:none;}}
 
 @media(pointer:coarse){.kana-ghost-action,.kana-map-action,.kana-inline-btn{--ma-button-min-height:44px;}}

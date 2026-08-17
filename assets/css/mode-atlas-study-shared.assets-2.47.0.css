@@ -629,180 +629,46 @@ body[data-display-mode="mobile"] .main {
   }
 }
 
-/* === Source-level display mode layout for trainer pages === */
-body[data-effective-display-mode="tablet"] {
-  display: block;
-  padding: 14px;
-  min-height: 100dvh;
-  overflow-x: hidden;
-}
-
-body[data-effective-display-mode="tablet"] .app-shell {
-  display: block;
-  min-height: auto;
-}
-
-body[data-effective-display-mode="tablet"] .main {
-  width: min(680px, calc(100vw - 28px));
-  max-width: none;
-  margin: 0 auto 120px;
-  padding: 22px 24px 136px;
-}
-
+/* Display-mode trainer control sizing. Structural card/panel geometry is owned
+   once by the responsive trainer workspace section below. */
 body[data-effective-display-mode="tablet"] .hiragana,
-body[data-effective-display-mode="tablet"] .prompt {
-  font-size: clamp(6.6rem, 15vw, 8.2rem);
-}
-
+body[data-effective-display-mode="tablet"] .prompt{font-size:clamp(6.6rem,15vw,8.2rem);}
 body[data-effective-display-mode="tablet"] .hiragana-wrap,
-body[data-effective-display-mode="tablet"] .prompt-wrap {
-  min-height: 148px;
-}
-
-body[data-effective-display-mode="tablet"] .scoreline {
-  grid-template-columns: repeat(2, minmax(0, max-content));
-  gap: 9px;
-}
-
+body[data-effective-display-mode="tablet"] .prompt-wrap{min-height:148px;}
+body[data-effective-display-mode="tablet"] .scoreline{grid-template-columns:repeat(2,minmax(0,max-content));gap:9px;}
 body[data-effective-display-mode="tablet"] .score-pill,
 body[data-effective-display-mode="tablet"] .score-pill:nth-child(2),
 body[data-effective-display-mode="tablet"] #endlessWrongPill,
 body[data-effective-display-mode="tablet"] #dailyProgressPill,
-body[data-effective-display-mode="tablet"] #testQuestionPill {
-  min-width: 0;
-  width: auto;
-}
-
-body[data-effective-display-mode="tablet"] .left-panel,
-body[data-effective-display-mode="tablet"] .right-panel,
-html[data-effective-display-mode="tablet"] .left-panel,
-html[data-effective-display-mode="tablet"] .right-panel {
-  position: static;
-  width: min(680px, calc(100vw - 28px));
-  max-height: none;
-  margin: 12px auto;
-}
-
-body[data-effective-display-mode="tablet"] .panel-content {
-  max-height: 320px;
-}
-
-body[data-effective-display-mode="tablet"] .bottom-shell .drawer-content {
-  max-height: min(54vh, 520px);
-}
-
-body[data-effective-display-mode="tablet"] .button-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-body[data-effective-display-mode="tablet"] .rows-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
+body[data-effective-display-mode="tablet"] #testQuestionPill{min-width:0;width:auto;}
+body[data-effective-display-mode="tablet"] .panel-content{max-height:320px;}
+body[data-effective-display-mode="tablet"] .bottom-shell .drawer-content{max-height:min(54vh,520px);}
+body[data-effective-display-mode="tablet"] .button-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+body[data-effective-display-mode="tablet"] .rows-grid{grid-template-columns:repeat(5,minmax(0,1fr));}
 body[data-effective-display-mode="tablet"] .toggle-btn,
-body[data-effective-display-mode="tablet"] .btn {
-  min-height: 46px;
-  font-size: 0.98rem;
-}
+body[data-effective-display-mode="tablet"] .btn{min-height:46px;font-size:.98rem;}
 
-body[data-effective-display-mode="phone"] {
-  display: block;
-  padding: max(10px, env(safe-area-inset-top, 0px)) 10px max(10px, env(safe-area-inset-bottom, 0px));
-  min-height: 100dvh;
-  overflow-x: hidden;
-}
-
-body[data-effective-display-mode="phone"] .app-shell {
-  display: block;
-  min-height: auto;
-}
-
-body[data-effective-display-mode="phone"] .main {
-  width: 100%;
-  max-width: none;
-  margin: 0 auto 92px;
-  border-radius: 24px;
-  padding: 18px 12px 28px;
-  min-height: auto;
-}
-
-body[data-effective-display-mode="phone"] .main h1 {
-  font-size: clamp(1.9rem, 9.4vw, 2.85rem);
-}
-
-body[data-effective-display-mode="phone"] .scoreline {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  
-}
-
+body[data-effective-display-mode="phone"] .main h1{font-size:clamp(1.85rem,8.6vw,2.55rem);}
+body[data-effective-display-mode="phone"] .scoreline{grid-template-columns:repeat(2,minmax(0,1fr));}
 body[data-effective-display-mode="phone"] .score-pill,
 body[data-effective-display-mode="phone"] .score-pill:nth-child(2),
 body[data-effective-display-mode="phone"] #endlessWrongPill,
 body[data-effective-display-mode="phone"] #dailyProgressPill,
-body[data-effective-display-mode="phone"] #testQuestionPill {
-  min-width: 0;
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 0.9rem;
-}
-
+body[data-effective-display-mode="phone"] #testQuestionPill{min-width:0;width:100%;padding:8px 10px;font-size:.9rem;}
 body[data-effective-display-mode="phone"] .hiragana-wrap,
-body[data-effective-display-mode="phone"] .prompt-wrap {
-  min-height: 124px;
-}
-
+body[data-effective-display-mode="phone"] .prompt-wrap{min-height:112px;}
 body[data-effective-display-mode="phone"] .hiragana,
-body[data-effective-display-mode="phone"] .prompt {
-  font-size: clamp(4.8rem, 27vw, 6.8rem);
-}
-
-body[data-effective-display-mode="phone"] input[type="text"] {
-  width: min(100%, 320px);
-  font-size: 20px;
-}
-
-body[data-effective-display-mode="phone"] .left-panel,
-body[data-effective-display-mode="phone"] .right-panel {
-  position: static;
-  width: 100%;
-  max-height: none;
-  margin: 10px auto;
-}
-
-body[data-effective-display-mode="phone"] .panel-content {
-  max-height: 260px;
-}
-
+body[data-effective-display-mode="phone"] .prompt{font-size:clamp(4.8rem,27vw,6.8rem);}
+body[data-effective-display-mode="phone"] input[type="text"]{width:min(100%,320px);font-size:20px;}
+body[data-effective-display-mode="phone"] .panel-content{max-height:260px;}
 body[data-effective-display-mode="phone"] .choice-grid,
 body[data-effective-display-mode="phone"] .button-grid,
-body[data-effective-display-mode="phone"] .rows-grid {
-  width: 100%;
-  gap: 8px;
-}
-
-body[data-effective-display-mode="phone"] .button-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-body[data-effective-display-mode="phone"] .rows-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-body[data-effective-display-mode="phone"] .choice-btn {
-  min-height: 56px;
-  font-size: 28px;
-  border-radius: 12px;
-}
-
-body[data-effective-display-mode="phone"] .bottom-shell {
-  z-index: 75;
-}
-
-body[data-effective-display-mode="phone"] .drawer-content {
-  max-height: min(62vh, 460px);
-  padding: 12px;
-}
-
+body[data-effective-display-mode="phone"] .rows-grid{width:100%;gap:8px;}
+body[data-effective-display-mode="phone"] .button-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+body[data-effective-display-mode="phone"] .rows-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+body[data-effective-display-mode="phone"] .choice-btn{min-height:56px;font-size:28px;border-radius:12px;}
+body[data-effective-display-mode="phone"] .bottom-shell{z-index:75;}
+body[data-effective-display-mode="phone"] .drawer-content{max-height:min(62vh,460px);padding:12px;}
 
 /* Mode-specific static states previously stored as inline styles. */
 .daily-badge.test-badge-reading {
@@ -1391,93 +1257,54 @@ body.ma-writing-page.test-mode-active{
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 22%,transparent),0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 14%,transparent),0 10px 24px color-mix(in srgb,var(--ma-trainer-accent) 10%,transparent);
 }
 
-/* Responsive trainer ownership. These selectors deliberately target the new
-   shared trainer classes so desktop base rules cannot override tablet/phone. */
+/* Responsive trainer workspace. One shared owner controls card, side-panel,
+   and page geometry for the effective display mode. */
 @media (max-width:1180px) and (min-width:761px){
   body.ma-reading-page,
-  body.ma-writing-page{--ma-trainer-side-top:124px;}
-  .ma-trainer-side-panel{width:218px;max-height:calc(100vh - var(--ma-trainer-side-top) - 86px);}
-  .ma-trainer-card{width:min(520px,calc(100vw - 32px));padding:22px 28px 132px;}
+  body.ma-writing-page{--ma-trainer-side-top:104px;}
+  .ma-trainer-card{width:min(760px,calc(100vw - 32px));}
 }
-
 @media (max-width:760px){
   .ma-pause-overlay{display:none!important;}
   .session-actions .ma-button{min-width:130px;padding-inline:14px;}
   body.ma-reading-page,
-  body.ma-writing-page{display:block;padding:max(10px,env(safe-area-inset-top,0px)) 10px max(10px,env(safe-area-inset-bottom,0px));min-height:100svh;overflow-x:hidden;}
+  body.ma-writing-page{display:block;padding:max(6px,env(safe-area-inset-top,0px)) 6px max(14px,env(safe-area-inset-bottom,0px));min-height:100svh;overflow-x:hidden;}
   .ma-trainer-shell{display:block;min-height:auto;}
-  .ma-trainer-card{
-    width:100%;
-    max-width:none;
-    box-sizing:border-box;
-    margin:0 auto 94px;
-    border-radius:26px;
-    padding:20px 14px 28px;
-    min-height:auto;
-  }
+  .ma-trainer-card{width:100%;max-width:none;box-sizing:border-box;margin:0 auto 86px;border-radius:22px;padding:18px 10px 22px;min-height:auto;}
   .ma-trainer-score{padding:8px 11px;font-size:.95rem;}
   .ma-trainer-input{width:min(100%,320px);font-size:20px;padding:10px 12px;}
   .ma-trainer-input--number{width:120px;font-size:18px;}
-  .ma-trainer-side-panel{
-    position:static;
-    width:100%;
-    max-height:none;
-    margin:10px auto;
-  }
+  .ma-trainer-side-panel{position:static;width:100%;max-height:none;margin:8px auto;}
   body.study-nav-hidden .ma-trainer-side-panel{position:static;max-height:none;}
   .ma-reading-page .bottom-shell,
   .ma-writing-page .bottom-shell{width:100%;max-width:100%;overflow-x:hidden;}
 }
-
 body[data-effective-display-mode="tablet"].ma-reading-page,
-body[data-effective-display-mode="tablet"].ma-writing-page{
-  display:block;
-  padding:14px;
-  min-height:100dvh;
-  overflow-x:hidden;
-}
-body[data-effective-display-mode="tablet"] .ma-trainer-shell{display:block;min-height:auto;}
-body[data-effective-display-mode="tablet"] .ma-trainer-card{
-  width:min(680px,calc(100vw - 28px));
-  max-width:none;
-  box-sizing:border-box;
-  margin:0 auto 120px;
-  padding:22px 24px 136px;
-}
+body[data-effective-display-mode="tablet"].ma-writing-page{display:block;padding:max(8px,env(safe-area-inset-top,0px)) 8px max(18px,env(safe-area-inset-bottom,0px));min-height:100dvh;overflow-x:hidden;}
+body[data-effective-display-mode="tablet"] .ma-trainer-shell{display:block;width:100%;min-height:auto;margin-inline:auto;}
+body[data-effective-display-mode="tablet"] .ma-trainer-card{width:min(760px,calc(100vw - 32px));max-width:none;box-sizing:border-box;margin:0 auto 94px;padding:22px 28px 58px;}
 body[data-effective-display-mode="tablet"] .ma-trainer-side-panel,
-html[data-effective-display-mode="tablet"] body .ma-trainer-side-panel{
-  position:static;
-  width:min(680px,calc(100vw - 28px));
-  max-height:none;
-  margin:12px auto;
-}
+html[data-effective-display-mode="tablet"] body .ma-trainer-side-panel{position:static;width:min(760px,calc(100vw - 32px));max-height:none;margin:10px auto;}
 body[data-effective-display-mode="tablet"].study-nav-hidden .ma-trainer-side-panel{position:static;max-height:none;}
 
 body[data-effective-display-mode="phone"].ma-reading-page,
-body[data-effective-display-mode="phone"].ma-writing-page{
-  display:block;
-  padding:max(10px,env(safe-area-inset-top,0px)) 10px max(10px,env(safe-area-inset-bottom,0px));
-  min-height:100dvh;
-  overflow-x:hidden;
-}
+body[data-effective-display-mode="phone"].ma-writing-page{display:block;padding:max(6px,env(safe-area-inset-top,0px)) 6px max(14px,env(safe-area-inset-bottom,0px));min-height:100dvh;overflow-x:hidden;}
 body[data-effective-display-mode="phone"] .ma-trainer-shell{display:block;min-height:auto;}
-body[data-effective-display-mode="phone"] .ma-trainer-card{
-  width:100%;
-  max-width:none;
-  box-sizing:border-box;
-  margin:0 auto 96px;
-  padding:18px 12px 28px;
-  border-radius:22px;
-}
+body[data-effective-display-mode="phone"] .ma-trainer-card{width:100%;max-width:none;box-sizing:border-box;margin:0 auto 86px;padding:18px 10px 22px;border-radius:22px;}
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-trainer-prompt-wrap{min-height:96px;margin-bottom:4px;}
 body[data-effective-display-mode="phone"] .ma-trainer-input{width:min(100%,320px);font-size:20px;padding:10px 12px;}
 body[data-effective-display-mode="phone"] .ma-trainer-side-panel,
-html[data-effective-display-mode="phone"] body .ma-trainer-side-panel{
-  position:static;
-  width:100%;
-  max-height:none;
-  margin:10px auto;
-}
+html[data-effective-display-mode="phone"] body .ma-trainer-side-panel{position:static;width:100%;max-height:none;margin:8px auto;}
 body[data-effective-display-mode="phone"].study-nav-hidden .ma-trainer-side-panel{position:static;max-height:none;}
+
+@media(min-width:980px){
+  body[data-effective-display-mode="tablet"]:not(.trainer-session-active) .ma-trainer-shell{width:min(1080px,calc(100vw - 32px));display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,300px);grid-template-rows:auto auto;gap:14px 18px;align-items:start;margin:0 auto 94px;}
+  body[data-effective-display-mode="tablet"]:not(.trainer-session-active) .ma-trainer-card{grid-column:1;grid-row:1 / span 2;width:100%;margin:0;}
+  body[data-effective-display-mode="tablet"]:not(.trainer-session-active) .ma-trainer-side-panel,
+  html[data-effective-display-mode="tablet"] body:not(.trainer-session-active) .ma-trainer-side-panel{width:100%;margin:0;}
+  body[data-effective-display-mode="tablet"]:not(.trainer-session-active) .left-panel{grid-column:2;grid-row:1;}
+  body[data-effective-display-mode="tablet"]:not(.trainer-session-active) .right-panel{grid-column:2;grid-row:2;}
+}
 
 /* === 2.31 focused trainer workspace === */
 .ma-session-hud{
@@ -1722,7 +1549,7 @@ body.study-nav-hidden.trainer-session-active .ma-trainer-card{width:min(760px,ca
     width:100%;
     margin-bottom:18px;
     padding:14px 12px 18px;
-    min-height:calc(100svh - 150px);
+    min-height:calc(100svh - 138px);
   }
   body.trainer-session-active .ma-trainer-header{min-height:22px;}
   body.trainer-session-active .ma-trainer-header h1{font-size:.72rem;letter-spacing:.11em;}
@@ -1750,7 +1577,7 @@ body.study-nav-hidden.trainer-session-active .ma-trainer-card{width:min(760px,ca
 }
 
 body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-card{
-  width:min(760px,calc(100vw - 28px));
+  width:min(820px,calc(100vw - 32px));
   margin-bottom:22px;
   padding:18px 28px 24px;
 }
