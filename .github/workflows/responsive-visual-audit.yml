@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p responsive-audit
-          cat > /tmp/responsive-audit.js <<'NODE'
+          cat > responsive-audit-runner.js <<'NODE'
           const { chromium } = require('@playwright/test');
           const fs = require('fs');
           const path = require('path');
@@ -146,7 +146,8 @@ jobs:
             await browser.close();
           })().catch(err=>{ console.error(err); process.exit(1); });
           NODE
-          node /tmp/responsive-audit.js
+          node responsive-audit-runner.js
+          rm responsive-audit-runner.js
       - name: Upload responsive audit
         uses: actions/upload-artifact@v4
         with:
