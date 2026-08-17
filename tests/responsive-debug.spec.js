@@ -15,32 +15,64 @@ test('diagnose phone Kana hero geometry', async ({ page }) => {
   await page.waitForSelector('body');
   await page.waitForTimeout(1000);
   const metrics = await page.evaluate(() => {
-    const rect = (selector) => {
+    const inspect = (selector) => {
       const node = document.querySelector(selector);
       if (!node) return null;
       const r = node.getBoundingClientRect();
       const s = getComputedStyle(node);
       return {
         top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height),
-        display: s.display, position: s.position, paddingTop: s.paddingTop,
-        paddingBottom: s.paddingBottom, marginTop: s.marginTop, marginBottom: s.marginBottom,
+        display: s.display, position: s.position,
+        width: s.width, heightCss: s.height, minHeight: s.minHeight, maxHeight: s.maxHeight,
+        paddingTop: s.paddingTop, paddingBottom: s.paddingBottom,
+        marginTop: s.marginTop, marginBottom: s.marginBottom,
+        alignItems: s.alignItems, alignContent: s.alignContent, alignSelf: s.alignSelf,
+        justifyItems: s.justifyItems, justifyContent: s.justifyContent, justifySelf: s.justifySelf,
+        gridTemplateColumns: s.gridTemplateColumns, gridTemplateRows: s.gridTemplateRows,
+        gridAutoRows: s.gridAutoRows, gridAutoFlow: s.gridAutoFlow,
         fontSize: s.fontSize, lineHeight: s.lineHeight, transform: s.transform
       };
     };
+    const hero = document.querySelector('.kana-hub-hero');
+    const matchingRules = [];
+    if (hero) {
+      for (const sheet of [...document.styleSheets]) {
+        let rules;
+        try { rules = sheet.cssRules; } catch { continue; }
+        const walk = (list, media = '') => {
+          for (const rule of [...list]) {
+            if (rule.cssRules) {
+              const nextMedia = rule.conditionText || rule.media?.mediaText || media;
+              walk(rule.cssRules, nextMedia);
+              continue;
+            }
+            if (!rule.selectorText) continue;
+            try {
+              if (hero.matches(rule.selectorText)) matchingRules.push({ href: sheet.href, media, selector: rule.selectorText, css: rule.style.cssText });
+            } catch {}
+          }
+        };
+        walk(rules);
+      }
+    }
     return {
       viewport: [innerWidth, innerHeight],
       mode: document.body.dataset.effectiveDisplayMode,
+      bodyClass: document.body.className,
       scrollY,
       bodyHeight: document.body.scrollHeight,
-      nav: rect('.ma-nav'),
-      hero: rect('.kana-hub-hero'),
-      heroMain: rect('.kana-hero-main'),
-      tagline: rect('.hero-tagline'),
-      title: rect('.kana-hero-main h1'),
-      lead: rect('.kana-hero-lead'),
-      actions: rect('.kana-hero-actions'),
-      action: rect('.kana-primary-action'),
-      visual: rect('.kana-hero-visual')
+      nav: inspect('.ma-nav'),
+      shell: inspect('.shell'),
+      mainContent: inspect('#mainContent'),
+      hero: inspect('.kana-hub-hero'),
+      heroMain: inspect('.kana-hero-main'),
+      tagline: inspect('.hero-tagline'),
+      title: inspect('.kana-hero-main h1'),
+      lead: inspect('.kana-hero-lead'),
+      actions: inspect('.kana-hero-actions'),
+      action: inspect('.kana-primary-action'),
+      visual: inspect('.kana-hero-visual'),
+      matchingRules
     };
   });
   console.log('KANA_PHONE_GEOMETRY=' + JSON.stringify(metrics));
