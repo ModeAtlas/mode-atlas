@@ -1,5 +1,6 @@
 name: Temporary responsive visual audit
 
+# Temporary render matrix used only while validating the 2.47 responsive rewrite.
 on:
   push:
     branches:
