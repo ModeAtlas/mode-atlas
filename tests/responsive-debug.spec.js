@@ -22,7 +22,7 @@ test('diagnose phone Kana hero geometry', async ({ page }) => {
       const s = getComputedStyle(node);
       return {
         top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height),
-        display: s.display, position: s.position,
+        display: s.display, position: s.position, flex: s.flex, flexDirection: s.flexDirection,
         width: s.width, heightCss: s.height, minHeight: s.minHeight, maxHeight: s.maxHeight,
         paddingTop: s.paddingTop, paddingBottom: s.paddingBottom,
         marginTop: s.marginTop, marginBottom: s.marginBottom,
@@ -33,28 +33,29 @@ test('diagnose phone Kana hero geometry', async ({ page }) => {
         fontSize: s.fontSize, lineHeight: s.lineHeight, transform: s.transform
       };
     };
-    const hero = document.querySelector('.kana-hub-hero');
-    const matchingRules = [];
-    if (hero) {
+    const rulesFor = (selector) => {
+      const target = document.querySelector(selector);
+      const matches = [];
+      if (!target) return matches;
       for (const sheet of [...document.styleSheets]) {
         let rules;
         try { rules = sheet.cssRules; } catch { continue; }
         const walk = (list, media = '') => {
           for (const rule of [...list]) {
             if (rule.cssRules) {
-              const nextMedia = rule.conditionText || rule.media?.mediaText || media;
-              walk(rule.cssRules, nextMedia);
+              walk(rule.cssRules, rule.conditionText || rule.media?.mediaText || media);
               continue;
             }
             if (!rule.selectorText) continue;
             try {
-              if (hero.matches(rule.selectorText)) matchingRules.push({ href: sheet.href, media, selector: rule.selectorText, css: rule.style.cssText });
+              if (target.matches(rule.selectorText)) matches.push({ href: sheet.href, media, selector: rule.selectorText, css: rule.style.cssText });
             } catch {}
           }
         };
         walk(rules);
       }
-    }
+      return matches;
+    };
     return {
       viewport: [innerWidth, innerHeight],
       mode: document.body.dataset.effectiveDisplayMode,
@@ -66,13 +67,11 @@ test('diagnose phone Kana hero geometry', async ({ page }) => {
       mainContent: inspect('#mainContent'),
       hero: inspect('.kana-hub-hero'),
       heroMain: inspect('.kana-hero-main'),
-      tagline: inspect('.hero-tagline'),
-      title: inspect('.kana-hero-main h1'),
-      lead: inspect('.kana-hero-lead'),
-      actions: inspect('.kana-hero-actions'),
       action: inspect('.kana-primary-action'),
       visual: inspect('.kana-hero-visual'),
-      matchingRules
+      shellRules: rulesFor('.shell'),
+      mainRules: rulesFor('#mainContent'),
+      heroRules: rulesFor('.kana-hub-hero')
     };
   });
   console.log('KANA_PHONE_GEOMETRY=' + JSON.stringify(metrics));
