@@ -8,7 +8,7 @@ body.profile-open,body.settings-open{overflow:hidden;}
 .ma-drawer-backdrop.open{display:block;}
 .ma-drawer{
   position:fixed;top:18px;right:18px;z-index:90;
-  width:min(500px,calc(100vw - 36px));max-height:calc(100vh - 36px);overflow-y:auto;
+  width:min(500px,calc(100vw - 36px));max-height:calc(100vh - 36px);overflow-x:hidden;overflow-y:auto;
   padding:18px;box-sizing:border-box;border:1px solid var(--ma-border);border-radius:var(--ma-radius-lg);
   background:var(--ma-surface-strong);box-shadow:var(--ma-shadow);color:var(--ma-text);
   transform:translateX(calc(100% + 44px));transition:transform var(--ma-motion-medium) ease;
@@ -26,6 +26,9 @@ body.profile-open,body.settings-open{overflow:hidden;}
 .ma-account-avatar{width:50px;height:50px;border-radius:var(--ma-radius-md);object-fit:cover;background:var(--ma-writing-soft);border:1px solid var(--ma-border-strong);}
 .ma-account-name{font-size:1.03rem;font-weight:900;color:var(--ma-text-strong);overflow-wrap:anywhere;}
 .ma-account-email,.ma-sync-detail{color:var(--ma-muted);font-size:13px;line-height:1.45;overflow-wrap:anywhere;}
+.ma-drawer .ma-card,.ma-drawer .ma-setting-list,.ma-drawer .ma-setting-row,
+.ma-account-copy,.ma-profile-card-head>div{min-width:0;max-width:100%;}
+.ma-sync-detail{width:100%;max-width:100%;white-space:normal;}
 .ma-auth-actions{margin-top:14px;display:grid;grid-template-columns:1fr;gap:10px;}
 .ma-profile-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .ma-profile-card-title{margin-top:3px;font-size:1.03rem;font-weight:900;color:var(--ma-text-strong);}
@@ -47,11 +50,11 @@ body.profile-open,body.settings-open{overflow:hidden;}
 .ma-level-progress{height:8px;overflow:hidden;border-radius:999px;background:var(--ma-surface-inset);border:1px solid var(--ma-border);}
 .ma-level-progress>span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--ma-results),color-mix(in srgb,var(--ma-results) 62%,var(--ma-writing)));transition:width var(--ma-motion-medium) ease;}
 .ma-level-activity{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;}
-.ma-level-activity>div{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 10px;padding:10px 12px;border-radius:var(--ma-radius-md);background:var(--ma-surface-inset);border:1px solid var(--ma-border);}
+.ma-level-activity>div{min-width:0;display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 10px;padding:10px 12px;border-radius:var(--ma-radius-md);background:var(--ma-surface-inset);border:1px solid var(--ma-border);}
 .ma-level-activity span{font-size:12px;font-weight:800;color:var(--ma-muted);}
 .ma-level-activity strong{grid-row:1 / span 2;grid-column:2;font-size:1.25rem;color:var(--ma-text-strong);}
 .ma-level-activity small{font-size:10px;color:var(--ma-muted);}
-.ma-progression-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--ma-border);}
+.ma-progression-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--ma-border);}
 .ma-progression-footer .ma-achievement-summary{margin:0;}
 .ma-progression-footer .ma-achievement-summary strong{font-size:1.35rem;}
 
@@ -93,9 +96,6 @@ html[data-ma-signed-in="false"] [data-ma-sign-out]{display:none;visibility:hidde
 html[data-ma-signed-in="true"] [data-ma-sign-out],
 html[data-ma-signed-in="false"] [data-ma-sign-in]{visibility:visible;pointer-events:auto;}
 
-@media(max-width:1180px){
-  body[data-effective-display-mode="tablet"] .ma-drawer{width:min(620px,calc(100vw - 32px));max-height:calc(100dvh - 32px);}
-}
 @media(max-width:760px),(max-width:900px) and (orientation:portrait),(pointer:coarse){
   .ma-drawer{
     top:calc(env(safe-area-inset-top,0px) + 12px);right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:10px;
@@ -108,6 +108,30 @@ html[data-ma-signed-in="false"] [data-ma-sign-in]{visibility:visible;pointer-eve
   .ma-settings-inline-actions{display:grid;grid-template-columns:1fr 1fr;width:100%;}
   .ma-settings-inline-actions .ma-button{width:100%;}
 }
+/* Explicit display modes win over pointer capability. */
+body[data-effective-display-mode="tablet"] .ma-drawer{
+  top:max(16px,env(safe-area-inset-top,0px));
+  right:16px;
+  bottom:auto;
+  left:auto;
+  width:min(620px,calc(100vw - 32px));
+  max-width:calc(100vw - 32px);
+  max-height:calc(100dvh - 32px);
+  padding:18px;
+  border-radius:var(--ma-radius-lg);
+}
+body[data-effective-display-mode="phone"] .ma-drawer{
+  top:calc(env(safe-area-inset-top,0px) + 12px);
+  right:10px;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 12px);
+  left:10px;
+  width:auto;
+  max-width:none;
+  max-height:none;
+  padding:14px;
+  border-radius:var(--ma-page-card-radius-phone);
+}
+
 @media(max-width:560px){
   .ma-shared-profile-drawer .ma-button,.ma-shared-settings-drawer .ma-button{font-size:13px;}
   .ma-settings-segmented--display{--ma-segment-count:2!important;}

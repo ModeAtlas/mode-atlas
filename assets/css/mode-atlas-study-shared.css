@@ -462,8 +462,8 @@ input[type="text"]:disabled,
     max-width: none;
     margin: 0 auto 94px;
     border-radius: 26px;
-    padding: 20px 14px 130px;
-    min-height: calc(100svh - 230px);
+    padding: 20px 14px 28px;
+    min-height: auto;
   }
   .main h1 { font-size: clamp(2rem, 9vw, 3rem); }
   .subline { font-size: 1rem; margin-bottom: 14px; }
@@ -496,7 +496,7 @@ input[type="text"]:disabled,
 body[data-display-mode="mobile"] .main {
   width: 100%;
   max-width: none;
-  padding: 20px 14px 130px;
+  padding: 20px 14px 28px;
 }
 
 @media (max-width: 760px) {
@@ -707,7 +707,7 @@ body[data-effective-display-mode="tablet"] .btn {
 
 body[data-effective-display-mode="phone"] {
   display: block;
-  padding: 10px;
+  padding: max(10px, env(safe-area-inset-top, 0px)) 10px max(10px, env(safe-area-inset-bottom, 0px));
   min-height: 100dvh;
   overflow-x: hidden;
 }
@@ -722,7 +722,7 @@ body[data-effective-display-mode="phone"] .main {
   max-width: none;
   margin: 0 auto 92px;
   border-radius: 24px;
-  padding: 18px 12px 126px;
+  padding: 18px 12px 28px;
   min-height: auto;
 }
 
@@ -1404,7 +1404,7 @@ body.ma-writing-page.test-mode-active{
   .ma-pause-overlay{display:none!important;}
   .session-actions .ma-button{min-width:130px;padding-inline:14px;}
   body.ma-reading-page,
-  body.ma-writing-page{display:block;padding:10px;min-height:100svh;overflow-x:hidden;}
+  body.ma-writing-page{display:block;padding:max(10px,env(safe-area-inset-top,0px)) 10px max(10px,env(safe-area-inset-bottom,0px));min-height:100svh;overflow-x:hidden;}
   .ma-trainer-shell{display:block;min-height:auto;}
   .ma-trainer-card{
     width:100%;
@@ -1412,8 +1412,8 @@ body.ma-writing-page.test-mode-active{
     box-sizing:border-box;
     margin:0 auto 94px;
     border-radius:26px;
-    padding:20px 14px 130px;
-    min-height:calc(100svh - 230px);
+    padding:20px 14px 28px;
+    min-height:auto;
   }
   .ma-trainer-score{padding:8px 11px;font-size:.95rem;}
   .ma-trainer-input{width:min(100%,320px);font-size:20px;padding:10px 12px;}
@@ -1456,7 +1456,7 @@ body[data-effective-display-mode="tablet"].study-nav-hidden .ma-trainer-side-pan
 body[data-effective-display-mode="phone"].ma-reading-page,
 body[data-effective-display-mode="phone"].ma-writing-page{
   display:block;
-  padding:10px;
+  padding:max(10px,env(safe-area-inset-top,0px)) 10px max(10px,env(safe-area-inset-bottom,0px));
   min-height:100dvh;
   overflow-x:hidden;
 }
@@ -1466,7 +1466,7 @@ body[data-effective-display-mode="phone"] .ma-trainer-card{
   max-width:none;
   box-sizing:border-box;
   margin:0 auto 96px;
-  padding:18px 12px 126px;
+  padding:18px 12px 28px;
   border-radius:22px;
 }
 body[data-effective-display-mode="phone"] .ma-trainer-input{width:min(100%,320px);font-size:20px;padding:10px 12px;}
