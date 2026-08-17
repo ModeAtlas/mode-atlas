@@ -1,0 +1,156 @@
+name: Temporary responsive visual audit
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.47.0-release-candidate-hardening
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+      - run: npx playwright install --with-deps chromium
+      - name: Start static server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/mode-atlas-http.log 2>&1 &
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep .25
+          done
+          cat /tmp/mode-atlas-http.log
+          exit 1
+      - name: Capture responsive pages
+        shell: bash
+        run: |
+          mkdir -p responsive-audit
+          cat > /tmp/responsive-audit.js <<'NODE'
+          const { chromium } = require('@playwright/test');
+          const fs = require('fs');
+          const path = require('path');
+
+          const base = 'http://127.0.0.1:4173';
+          const routes = [
+            ['home','/'],
+            ['kana','/kana/'],
+            ['reading','/reading/'],
+            ['writing','/writing/'],
+            ['results','/results/'],
+            ['wordbank','/wordbank/']
+          ];
+          const scenarios = [
+            { name:'phone-portrait', mode:'phone', width:390, height:844, hasTouch:true, isMobile:true },
+            { name:'tablet-portrait', mode:'tablet', width:820, height:1180, hasTouch:true, isMobile:true },
+            { name:'tablet-landscape', mode:'tablet', width:1180, height:820, hasTouch:true, isMobile:true },
+            { name:'tablet-explicit-desktop', mode:'tablet', width:1366, height:1024, hasTouch:false, isMobile:false }
+          ];
+
+          const readingSettings = {
+            focusWeak:false,dakuten:false,yoon:false,extendedKatakana:false,hint:false,srs:false,mobileMode:false,
+            endless:false,timeTrial:false,speedRun:false,dailyChallenge:false,testMode:false,comboKana:false,comboMode:'random',
+            hiraganaRows:['h_a'],katakanaRows:[],statsVisible:true,scoresVisible:true,activeBottomTab:null
+          };
+          const writingSettings = { ...readingSettings, keyboardMode:false, keyboardInputType:'kana', choiceCount:4 };
+
+          function seed(mode){
+            localStorage.clear();
+            localStorage.setItem('modeAtlasStarterSeen','true');
+            localStorage.setItem('modeAtlasOnboardingComplete','true');
+            localStorage.setItem('modeAtlasKanaSetupComplete','true');
+            localStorage.setItem('modeAtlasLegalAccepted','true');
+            localStorage.setItem('modeAtlasLegalAcceptedAt',String(Date.now()));
+            localStorage.setItem('modeAtlasLegalVersion','2026-05');
+            localStorage.setItem('maWhatsNewSeen','responsive-audit');
+            localStorage.setItem('modeAtlasDisplayMode',mode);
+            localStorage.setItem('settings',JSON.stringify(readingSettings));
+            localStorage.setItem('reverseSettings',JSON.stringify(writingSettings));
+            localStorage.setItem('charStats','{}');
+            localStorage.setItem('reverseCharStats','{}');
+            localStorage.setItem('charTimes','{}');
+            localStorage.setItem('reverseCharTimes','{}');
+            localStorage.setItem('charSrs','{}');
+            localStorage.setItem('reverseCharSrs','{}');
+            localStorage.setItem('scoreHistory',JSON.stringify({ endlessBest:{total:0,correct:0,wrong:0},speedRunTop3:[],comboKanaBest:{same_row:0,random:0},timeTrialTop3:[] }));
+            localStorage.setItem('reverseScoreHistory',JSON.stringify({ endlessBest:{total:0,correct:0,wrong:0},speedRunTop3:[],comboKanaBest:{same_row:0,random:0},timeTrialTop3:[] }));
+            localStorage.setItem('dailyChallengeHistory','{}');
+            localStorage.setItem('reverseDailyChallengeHistory','{}');
+            localStorage.setItem('highScore','0');
+            localStorage.setItem('reverseHighScore','0');
+          }
+
+          (async()=>{
+            const browser = await chromium.launch({ headless:true });
+            for (const scenario of scenarios){
+              const context = await browser.newContext({
+                viewport:{ width:scenario.width, height:scenario.height },
+                hasTouch:scenario.hasTouch,
+                isMobile:scenario.isMobile,
+                deviceScaleFactor:1
+              });
+              await context.addInitScript(seed, scenario.mode);
+              const page = await context.newPage();
+              await page.route(/https:\/\/(www\.)?gstatic\.com\/.*/, r=>r.abort());
+              await page.route(/https:\/\/(www\.)?googleapis\.com\/.*/, r=>r.abort());
+              for (const [slug, route] of routes){
+                await page.goto(base + route, { waitUntil:'domcontentloaded', timeout:10000 });
+                await page.waitForTimeout(1200);
+                const prefix = path.join('responsive-audit', scenario.name + '-' + slug);
+                await page.screenshot({ path:prefix + '-viewport.png', fullPage:false });
+                await page.screenshot({ path:prefix + '-full.png', fullPage:true });
+
+                const metrics = await page.evaluate(() => ({
+                  viewport:[innerWidth,innerHeight],
+                  scroll:[document.documentElement.scrollWidth,document.documentElement.scrollHeight],
+                  mode:document.body.dataset.effectiveDisplayMode || document.documentElement.dataset.effectiveDisplayMode || '',
+                  bodyClasses:document.body.className
+                }));
+                fs.appendFileSync('responsive-audit/metrics.jsonl', JSON.stringify({scenario:scenario.name,slug,...metrics})+'\n');
+
+                if (slug === 'kana'){
+                  const settings = page.locator('[data-settings-open]:visible').first();
+                  if (await settings.count()){
+                    await settings.click();
+                    await page.waitForTimeout(350);
+                    await page.screenshot({ path:prefix + '-settings.png', fullPage:false });
+                    const close = page.locator('#settingsCloseBtn'); if (await close.count()) await close.click();
+                  }
+                  const profile = page.locator('#profileOpenBtn');
+                  if (await profile.count()){
+                    await profile.click();
+                    await page.waitForTimeout(350);
+                    await page.screenshot({ path:prefix + '-profile.png', fullPage:false });
+                    const close = page.locator('#profileCloseBtn'); if (await close.count()) await close.click();
+                  }
+                }
+                if (slug === 'reading' || slug === 'writing'){
+                  const start = page.locator('#startBtn');
+                  if (await start.count() && await start.isVisible()){
+                    await start.click();
+                    await page.waitForTimeout(450);
+                    await page.screenshot({ path:prefix + '-session.png', fullPage:false });
+                  }
+                }
+              }
+              await context.close();
+            }
+            await browser.close();
+          })().catch(err=>{ console.error(err); process.exit(1); });
+          NODE
+          node /tmp/responsive-audit.js
+      - name: Upload responsive audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: responsive-visual-audit-${{ github.sha }}
+          path: responsive-audit
+          if-no-files-found: error
+          retention-days: 3
