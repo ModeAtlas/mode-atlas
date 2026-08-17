@@ -1,0 +1,40 @@
+name: Capture Kana geometry
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.47.0-responsive-recomposition
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    if: github.event.head_commit.message == 'Capture Kana geometry runtime'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - name: Capture geometry
+        shell: bash
+        run: |
+          npx playwright test tests/responsive-debug.spec.js --project=mobile-chromium --reporter=line 2>&1 | tee kana-geometry.log
+          grep 'KANA_GEOMETRY=' kana-geometry.log > kana-geometry.txt
+          rm -f kana-geometry.log
+      - name: Commit trace and remove workflow
+        shell: bash
+        run: |
+          rm -f .github/workflows/capture-kana-geometry.yml
+          git config user.name "Mode Atlas Release Bot"
+          git config user.email "48079170+ModeAtlas@users.noreply.github.com"
+          git add -A
+          git commit -m "Record Kana geometry trace"
+          git push origin HEAD:${GITHUB_REF_NAME}
