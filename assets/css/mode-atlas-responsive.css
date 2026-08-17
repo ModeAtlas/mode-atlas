@@ -1,84 +1,57 @@
 /* Mode Atlas shared responsive composition.
-   Viewport fallbacks and explicit effective display modes are owned here. Page
-   styles may refine their own internal grids, but should not re-own global page
-   gutters, generic shell sizing or shared responsive card geometry. */
+   Global device framing lives here. Page-specific grid/card decisions remain
+   with their page stylesheet; trainers own their workspace separately. */
 
-/* Loader safety: never let a stale script trap the app behind the loading screen. */
 #maLoadingScreen{animation:maLoaderSafetyFade .25s ease 3.6s forwards;}
 #maLoadingScreen.done{animation:none;}
 @keyframes maLoaderSafetyFade{to{opacity:0;visibility:hidden;pointer-events:none;}}
 
-:root{--ma-mobile-gutter:clamp(14px,4vw,24px);}
+:root{--ma-mobile-gutter:clamp(12px,3.6vw,18px);}
 
-/* Explicit display modes are resolved by mode-atlas-display-mode.js/head bootstrap. */
 html[data-effective-display-mode="desktop"],body[data-effective-display-mode="desktop"]{
   --ma-page-pad:var(--ma-page-gutter);
   --ma-card-pad:var(--ma-page-card-padding);
   --ma-responsive-card-radius:var(--ma-page-card-radius);
 }
 html[data-effective-display-mode="tablet"],body[data-effective-display-mode="tablet"]{
-  --ma-page-pad:var(--ma-page-gutter-tablet);
+  --ma-page-pad:clamp(18px,2.5vw,28px);
   --ma-card-pad:var(--ma-page-card-padding-tablet);
   --ma-responsive-card-radius:var(--ma-page-card-radius-tablet);
 }
 html[data-effective-display-mode="phone"],body[data-effective-display-mode="phone"]{
-  --ma-page-pad:var(--ma-page-gutter-phone);
+  --ma-page-pad:var(--ma-mobile-gutter);
   --ma-card-pad:var(--ma-page-card-padding-phone);
   --ma-responsive-card-radius:var(--ma-page-card-radius-phone);
 }
 
-body[data-effective-display-mode="tablet"],body[data-effective-display-mode="phone"]{
-  padding-left:var(--ma-page-pad);
-  padding-right:var(--ma-page-pad);
-  overflow-x:hidden;
-}
+body[data-effective-display-mode="tablet"],body[data-effective-display-mode="phone"]{overflow-x:hidden;}
 body[data-effective-display-mode="tablet"] .ma-page-frame{
-  width:min(100%,calc(100vw - 32px));
+  width:min(1120px,100%);
+  margin-left:auto;margin-right:auto;
 }
 body[data-effective-display-mode="phone"] .ma-page-frame{
-  width:min(100%,calc(100vw - 18px));
-  margin-left:auto;
-  margin-right:auto;
+  width:100%;max-width:none;margin-left:auto;margin-right:auto;
 }
-/* Page-specific card and grid internals stay with their page stylesheet. */
 
-/* Viewport fallback before/without an explicit effective display mode. */
-@media (max-width:1180px){
+@media(max-width:1180px){
   html:not([data-effective-display-mode]),body:not([data-effective-display-mode]){
     --ma-page-pad:var(--ma-page-gutter-tablet);
     --ma-card-pad:var(--ma-page-card-padding-tablet);
     --ma-responsive-card-radius:var(--ma-page-card-radius-tablet);
   }
-  body:not([data-effective-display-mode]) .ma-page-frame{width:min(100%,calc(100vw - 28px));}
 }
-
-@media (max-width:900px){
-  body{padding-left:var(--ma-mobile-gutter);padding-right:var(--ma-mobile-gutter);}
-  .shell,.app-shell,.main,.container,.page,.content{width:100%;max-width:100%;margin-left:auto;margin-right:auto;}
+@media(max-width:900px){
+  .shell,.app-shell,.main,.container,.page,.content{max-width:100%;margin-left:auto;margin-right:auto;}
 }
-
-@media (max-width:760px), (max-width:900px) and (orientation:portrait){
-  body{padding-top:max(10px,env(safe-area-inset-top));}
+@media(max-width:760px),(max-width:900px) and (orientation:portrait){
   body.study-nav-hidden .app-shell{padding-top:8px;}
   body.study-nav-hidden .main{margin-top:0;}
 }
-
-@media (max-width:760px){
+@media(max-width:760px){
   html:not([data-effective-display-mode]),body:not([data-effective-display-mode]){
-    --ma-page-pad:var(--ma-page-gutter-phone);
+    --ma-page-pad:var(--ma-mobile-gutter);
     --ma-card-pad:var(--ma-page-card-padding-phone);
     --ma-responsive-card-radius:var(--ma-page-card-radius-phone);
   }
-  body{padding-left:var(--ma-page-pad);padding-right:var(--ma-page-pad);overflow-x:hidden;}
-  body:not([data-effective-display-mode]) .ma-page-frame{width:min(100%,calc(100vw - 20px));margin-left:auto;margin-right:auto;}
-}
-
-body[data-display-mode="mobile"]{padding-left:var(--ma-page-gutter-phone);padding-right:var(--ma-page-gutter-phone);overflow-x:hidden;}
-body[data-display-mode="mobile"] .ma-page-frame{width:min(100%,calc(100vw - 20px));}
-@media (max-width:520px){
-  body{padding-left:var(--ma-page-gutter-phone);padding-right:var(--ma-page-gutter-phone);}
-}
-
-@media (min-width:761px) and (max-width:1024px) and (orientation:portrait){
-  body{padding-left:var(--ma-page-gutter-tablet);padding-right:var(--ma-page-gutter-tablet);}
+  body:not([data-effective-display-mode]) .ma-page-frame{width:100%;max-width:none;}
 }

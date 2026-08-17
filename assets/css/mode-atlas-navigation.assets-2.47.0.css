@@ -263,86 +263,121 @@ body.study-nav-hidden .ma-nav-handle{display:inline-flex;align-items:center;just
   .ma-nav__settings{width:44px;min-width:44px;padding:0;}
 }
 
+/* Tablet keeps the desktop information hierarchy, but trims the chrome and
+   reserves more room for page content. */
+body[data-effective-display-mode="tablet"] .ma-nav{
+  width:min(1100px,calc(100% - 24px));
+  margin:10px auto 16px;
+  padding:9px 10px;
+  gap:10px;
+  border-radius:20px;
+}
+body[data-effective-display-mode="tablet"] .ma-nav__brand{max-width:190px;}
+body[data-effective-display-mode="tablet"] .ma-nav__links,
+body[data-effective-display-mode="tablet"] .ma-nav__actions{gap:5px;}
+body[data-effective-display-mode="tablet"] .ma-nav__link{min-height:40px;padding:0 10px;font-size:.78rem;}
+body[data-effective-display-mode="tablet"] .ma-nav__action{min-height:40px;}
+body[data-effective-display-mode="tablet"] .ma-nav__settings{width:40px;min-width:40px;padding:0;}
+
+/* Phone is a two-row app bar: identity/account controls above, product
+   navigation below. Product labels get real width instead of being squeezed
+   into whatever is left beside Profile/Settings. */
 @media(max-width:760px), (max-width:900px) and (orientation:portrait){
   .ma-nav{
-    position:relative;
-    top:auto;
-    width:calc(100% - 20px);
-    margin:10px auto 16px;
-    padding:10px;
+    position:sticky;
+    top:max(6px,env(safe-area-inset-top,0px));
+    width:calc(100% - 12px);
+    margin:6px auto 12px;
+    padding:8px;
     display:grid;
     grid-template-columns:minmax(0,1fr) auto;
-    gap:10px;
-    border-radius:22px;
+    gap:7px 10px;
+    border-radius:18px;
   }
-  .ma-nav__brand{grid-column:1;max-width:none;}
-  .ma-nav__mark{width:40px;height:40px;flex-basis:40px;border-radius:13px;}
-  .ma-nav__content{grid-column:1 / -1;width:100%;gap:8px;}
-  .ma-nav__primary{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;}
-  .ma-nav__links{width:100%;gap:6px;}
-  .ma-nav__link{min-height:40px;padding:0 11px;font-size:.78rem;}
-  .ma-nav__flyout{width:264px;}
-  .ma-nav__actions{gap:6px;}
-  .ma-nav__profile{width:auto;min-width:0;min-height:42px;padding:0 7px 0 5px;}
-  .ma-nav__profile .ma-nav__action-label{display:inline-flex;}
-  .ma-nav__settings{width:42px;min-width:42px;min-height:42px;padding:0;}
-  .ma-nav__avatar{width:30px;height:30px;min-width:30px;}
-  .ma-nav__action--quiet{padding:0 10px;font-size:.76rem;}
-}
-
-@media(max-width:520px){
+  .ma-nav__brand{grid-column:1;grid-row:1;max-width:none;gap:8px;}
+  .ma-nav__mark{width:38px;height:38px;flex-basis:38px;border-radius:12px;font-size:.84rem;}
   .ma-nav__kicker{display:none;}
-  .ma-nav__title{font-size:.84rem;}
+  .ma-nav__title{font-size:.82rem;}
   .ma-nav__content,.ma-nav__primary{display:contents;}
-  .ma-nav__links{grid-column:1 / -1;grid-row:2;width:100%;justify-content:space-between;gap:4px;}
+  .ma-nav__links{
+    grid-column:1 / -1;
+    grid-row:2;
+    width:100%;
+    display:grid;
+    grid-template-columns:minmax(58px,.72fr) minmax(112px,1.34fr) minmax(84px,.94fr);
+    gap:5px;
+  }
+  .ma-nav__menu{min-width:0;}
+  .ma-nav__link{
+    width:100%;
+    min-width:0;
+    min-height:42px;
+    padding:0 8px;
+    border-color:var(--ma-border);
+    background:color-mix(in srgb,var(--ma-card-3) 48%,transparent);
+    font-size:.75rem;
+    white-space:nowrap;
+  }
+  .ma-nav__menu-trigger{width:100%;gap:6px;}
+  .ma-nav__flyout{
+    left:50%;
+    width:min(292px,calc(100vw - 28px));
+    transform:translate(-50%,-5px);
+  }
+  .ma-nav__menu:hover .ma-nav__flyout,
+  .ma-nav__menu:focus-within .ma-nav__flyout,
+  .ma-nav__menu.is-open .ma-nav__flyout{transform:translate(-50%,0);}
   .ma-nav__actions{grid-column:2;grid-row:1;justify-self:end;gap:5px;}
-  .ma-nav__link{padding:0 8px;font-size:.75rem;}
-  .ma-nav__flyout{left:0;width:min(268px,calc(100vw - 28px));transform:translateY(-5px);}
-  .ma-nav__menu:hover .ma-nav__flyout,.ma-nav__menu:focus-within .ma-nav__flyout,.ma-nav__menu.is-open .ma-nav__flyout{transform:translateY(0);}
-  .ma-nav__action--quiet{display:none;}
+  .ma-nav__action{min-height:40px;}
+  .ma-nav__profile{width:auto;min-width:0;padding:0 7px 0 5px;}
+  .ma-nav__profile .ma-nav__action-label{display:inline-flex;font-size:.72rem;}
+  .ma-nav__avatar{width:28px;height:28px;min-width:28px;}
+  .ma-nav__settings,.ma-nav__focus{width:40px;min-width:40px;padding:0;}
+  .ma-nav__settings .ma-nav__action-label,.ma-nav__focus .ma-nav__action-label{display:none;}
+  .ma-nav__action--quiet{font-size:.74rem;}
 }
 
-/* Explicit Phone mode uses the same compact composition even when it is
-   selected on a wider physical viewport. */
 body[data-effective-display-mode="phone"] .ma-nav{
-  position:relative;
-  top:auto;
-  width:calc(100% - 20px);
-  margin:10px auto 16px;
-  padding:10px;
+  position:sticky;
+  top:max(6px,env(safe-area-inset-top,0px));
+  width:calc(100% - 12px);
+  margin:6px auto 12px;
+  padding:8px;
   display:grid;
   grid-template-columns:minmax(0,1fr) auto;
-  gap:10px;
-  border-radius:22px;
+  gap:7px 10px;
+  border-radius:18px;
 }
-body[data-effective-display-mode="phone"] .ma-nav__brand{grid-column:1;max-width:none;}
-body[data-effective-display-mode="phone"] .ma-nav__mark{width:40px;height:40px;flex-basis:40px;border-radius:13px;}
+body[data-effective-display-mode="phone"] .ma-nav__brand{grid-column:1;grid-row:1;max-width:none;gap:8px;}
+body[data-effective-display-mode="phone"] .ma-nav__mark{width:38px;height:38px;flex-basis:38px;border-radius:12px;font-size:.84rem;}
 body[data-effective-display-mode="phone"] .ma-nav__kicker{display:none;}
-body[data-effective-display-mode="phone"] .ma-nav__title{font-size:.84rem;}
+body[data-effective-display-mode="phone"] .ma-nav__title{font-size:.82rem;}
 body[data-effective-display-mode="phone"] .ma-nav__content,
 body[data-effective-display-mode="phone"] .ma-nav__primary{display:contents;}
 body[data-effective-display-mode="phone"] .ma-nav__links{
-  grid-column:1 / -1;
-  grid-row:2;
-  width:100%;
-  justify-content:space-between;
-  gap:4px;
+  grid-column:1 / -1;grid-row:2;width:100%;display:grid;
+  grid-template-columns:minmax(58px,.72fr) minmax(112px,1.34fr) minmax(84px,.94fr);gap:5px;
 }
-body[data-effective-display-mode="phone"] .ma-nav__actions{
-  grid-column:2;
-  grid-row:1;
-  justify-self:end;
-  gap:5px;
+body[data-effective-display-mode="phone"] .ma-nav__menu{min-width:0;}
+body[data-effective-display-mode="phone"] .ma-nav__link{
+  width:100%;min-width:0;min-height:42px;padding:0 8px;border-color:var(--ma-border);
+  background:color-mix(in srgb,var(--ma-card-3) 48%,transparent);font-size:.75rem;white-space:nowrap;
 }
-body[data-effective-display-mode="phone"] .ma-nav__link{min-height:40px;padding:0 8px;font-size:.75rem;}
-body[data-effective-display-mode="phone"] .ma-nav__profile{width:auto;min-width:0;min-height:42px;padding:0 7px 0 5px;}
-body[data-effective-display-mode="phone"] .ma-nav__profile .ma-nav__action-label{display:inline-flex;}
-body[data-effective-display-mode="phone"] .ma-nav__settings{width:42px;min-width:42px;min-height:42px;padding:0;}
-body[data-effective-display-mode="phone"] .ma-nav__flyout{left:0;width:min(268px,calc(100vw - 28px));transform:translateY(-5px);}
+body[data-effective-display-mode="phone"] .ma-nav__menu-trigger{width:100%;gap:6px;}
+body[data-effective-display-mode="phone"] .ma-nav__flyout{left:50%;width:min(292px,calc(100vw - 28px));transform:translate(-50%,-5px);}
 body[data-effective-display-mode="phone"] .ma-nav__menu:hover .ma-nav__flyout,
 body[data-effective-display-mode="phone"] .ma-nav__menu:focus-within .ma-nav__flyout,
-body[data-effective-display-mode="phone"] .ma-nav__menu.is-open .ma-nav__flyout{transform:translateY(0);}
-body[data-effective-display-mode="phone"] .ma-nav__focus{display:none;}
+body[data-effective-display-mode="phone"] .ma-nav__menu.is-open .ma-nav__flyout{transform:translate(-50%,0);}
+body[data-effective-display-mode="phone"] .ma-nav__actions{grid-column:2;grid-row:1;justify-self:end;gap:5px;}
+body[data-effective-display-mode="phone"] .ma-nav__action{min-height:40px;}
+body[data-effective-display-mode="phone"] .ma-nav__profile{width:auto;min-width:0;padding:0 7px 0 5px;}
+body[data-effective-display-mode="phone"] .ma-nav__profile .ma-nav__action-label{display:inline-flex;font-size:.72rem;}
+body[data-effective-display-mode="phone"] .ma-nav__avatar{width:28px;height:28px;min-width:28px;}
+body[data-effective-display-mode="phone"] .ma-nav__settings,
+body[data-effective-display-mode="phone"] .ma-nav__focus{display:inline-flex;width:40px;min-width:40px;padding:0;}
+body[data-effective-display-mode="phone"] .ma-nav__settings .ma-nav__action-label,
+body[data-effective-display-mode="phone"] .ma-nav__focus .ma-nav__action-label{display:none;}
+body[data-effective-display-mode="phone"] .ma-nav__action--quiet{font-size:.74rem;}
 
 html[data-ma-theme="light"] .ma-nav__action{
   background:var(--ma-control);
@@ -364,11 +399,8 @@ html[data-ma-theme="light"] .ma-nav__section-link.is-active{color:var(--ma-text-
 .ma-nav__focus{gap:7px;}
 .ma-nav-handle{gap:8px;}
 @media(max-width:1080px){
-  .ma-nav__focus{width:44px;min-width:44px;padding:0;}
+  .ma-nav__focus{width:40px;min-width:40px;padding:0;}
   .ma-nav__focus .ma-nav__action-label{display:none;}
-}
-@media(max-width:520px){
-  .ma-nav__focus{display:inline-flex;}
 }
 
 

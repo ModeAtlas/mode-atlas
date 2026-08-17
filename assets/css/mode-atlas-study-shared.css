@@ -440,91 +440,6 @@ input[type="text"]:disabled,
 
 
 
-@media (max-width: 1180px) and (min-width: 761px) {
-  body { padding: 18px; }
-  .main { width: min(520px, calc(100vw - 32px)); padding: 22px 28px 132px; }
-  .hiragana, .prompt { font-size: 116px; }
-  .hiragana-wrap, .prompt-wrap { min-height: 142px; }
-  .side-panel { top: 124px; width: 218px; }
-  .bottom-shell .drawer-content { max-height: 46vh; }
-}
-
-@media (max-width: 760px) {
-  body {
-    display: block;
-    padding: 10px;
-    min-height: 100svh;
-    overflow-x: hidden;
-  }
-  .app-shell { display: block; min-height: auto; }
-  .main {
-    width: 100%;
-    max-width: none;
-    margin: 0 auto 94px;
-    border-radius: 26px;
-    padding: 20px 14px 28px;
-    min-height: auto;
-  }
-  .main h1 { font-size: clamp(2rem, 9vw, 3rem); }
-  .subline { font-size: 1rem; margin-bottom: 14px; }
-  .scoreline { gap: 8px; margin-bottom: 12px; }
-  .score-pill { padding: 8px 11px; font-size: 0.95rem; }
-  .hiragana-wrap, .prompt-wrap { min-height: 132px; margin-bottom: 8px; }
-  .hiragana, .prompt { font-size: clamp(5rem, 28vw, 7rem); }
-  .prompt-small { font-size: clamp(3.8rem, 20vw, 5rem); }
-  .hint, .combo-tier-notice { font-size: 0.9rem; min-height: 20px; }
-  input[type="text"] { width: min(100%, 320px); font-size: 20px; padding: 10px 12px; }
-  .trial-config { margin-top: 8px; gap: 8px; }
-  .choice-grid { width: 100%; gap: 8px; }
-  .choice-btn { min-height: 58px; font-size: 30px; padding: 12px 6px; border-radius: 12px; }
-  .choice-btn.choice-combo { font-size: 24px; }
-  .left-panel, .right-panel {
-    position: static;
-    width: 100%;
-    max-height: none;
-    margin: 10px auto;
-  }
-  .panel-content { max-height: 260px; }
-  .bottom-shell { z-index: 75; }
-  .tab-button { padding: 12px 10px; font-size: 1rem; }
-  .drawer-content { height: auto; min-height: 0; max-height: min(62vh, 460px); padding: 12px; }
-  .button-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .rows-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .toggle-btn, .btn { padding: 10px 10px; font-size: 0.95rem; }
-}
-
-body[data-display-mode="mobile"] .main {
-  width: 100%;
-  max-width: none;
-  padding: 20px 14px 28px;
-}
-
-@media (max-width: 760px) {
-  body {
-    padding-top: 10px;
-    background-color: #05060b;
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  .app-shell { align-items: flex-start; }
-  .main { margin-top: 0; }
-}
-
-@media (min-width: 761px) {
-  
-}
-
 .bottom-shell.ma-modifiers-only{background:linear-gradient(180deg,rgba(11,14,20,.96),rgba(5,6,10,.98));border-top:1px solid rgba(255,255,255,.08);box-shadow:0 -18px 50px rgba(0,0,0,.38)}
 
 .bottom-shell.ma-modifiers-only .tab-row{grid-template-columns:1fr;width:min(520px,100%);margin:0 auto}
@@ -1391,93 +1306,106 @@ body.ma-writing-page.test-mode-active{
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 22%,transparent),0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 14%,transparent),0 10px 24px color-mix(in srgb,var(--ma-trainer-accent) 10%,transparent);
 }
 
-/* Responsive trainer ownership. These selectors deliberately target the new
-   shared trainer classes so desktop base rules cannot override tablet/phone. */
-@media (max-width:1180px) and (min-width:761px){
-  body.ma-reading-page,
-  body.ma-writing-page{--ma-trainer-side-top:124px;}
-  .ma-trainer-side-panel{width:218px;max-height:calc(100vh - var(--ma-trainer-side-top) - 86px);}
-  .ma-trainer-card{width:min(520px,calc(100vw - 32px));padding:22px 28px 132px;}
-}
-
-@media (max-width:760px){
-  .ma-pause-overlay{display:none!important;}
-  .session-actions .ma-button{min-width:130px;padding-inline:14px;}
-  body.ma-reading-page,
-  body.ma-writing-page{display:block;padding:max(10px,env(safe-area-inset-top,0px)) 10px max(10px,env(safe-area-inset-bottom,0px));min-height:100svh;overflow-x:hidden;}
-  .ma-trainer-shell{display:block;min-height:auto;}
-  .ma-trainer-card{
-    width:100%;
-    max-width:none;
-    box-sizing:border-box;
-    margin:0 auto 94px;
-    border-radius:26px;
-    padding:20px 14px 28px;
-    min-height:auto;
-  }
-  .ma-trainer-score{padding:8px 11px;font-size:.95rem;}
-  .ma-trainer-input{width:min(100%,320px);font-size:20px;padding:10px 12px;}
-  .ma-trainer-input--number{width:120px;font-size:18px;}
-  .ma-trainer-side-panel{
-    position:static;
-    width:100%;
-    max-height:none;
-    margin:10px auto;
-  }
-  body.study-nav-hidden .ma-trainer-side-panel{position:static;max-height:none;}
-  .ma-reading-page .bottom-shell,
-  .ma-writing-page .bottom-shell{width:100%;max-width:100%;overflow-x:hidden;}
+/* Responsive trainer ownership. Tablet uses its horizontal room for a
+   workspace + secondary column; Phone removes the idle quiz stage so the first
+   screen is orientation/start controls rather than a large empty desktop card. */
+@media(max-width:1180px) and (min-width:761px){
+  body.ma-reading-page,body.ma-writing-page{--ma-trainer-side-top:112px;}
 }
 
 body[data-effective-display-mode="tablet"].ma-reading-page,
 body[data-effective-display-mode="tablet"].ma-writing-page{
   display:block;
-  padding:14px;
+  padding:12px clamp(18px,2.6vw,28px) 74px;
   min-height:100dvh;
   overflow-x:hidden;
 }
-body[data-effective-display-mode="tablet"] .ma-trainer-shell{display:block;min-height:auto;}
+body[data-effective-display-mode="tablet"] .ma-trainer-shell{
+  width:min(1120px,100%);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(240px,280px);
+  grid-template-areas:"trainer records" "trainer mastery";
+  gap:14px;
+  align-items:start;
+}
 body[data-effective-display-mode="tablet"] .ma-trainer-card{
-  width:min(680px,calc(100vw - 28px));
-  max-width:none;
-  box-sizing:border-box;
-  margin:0 auto 120px;
-  padding:22px 24px 136px;
+  grid-area:trainer;
+  width:100%;max-width:none;min-width:0;
+  margin:0;
+  padding:22px 24px 88px;
+  border-radius:22px;
 }
 body[data-effective-display-mode="tablet"] .ma-trainer-side-panel,
 html[data-effective-display-mode="tablet"] body .ma-trainer-side-panel{
-  position:static;
-  width:min(680px,calc(100vw - 28px));
-  max-height:none;
-  margin:12px auto;
+  position:static;width:100%;max-height:none;margin:0;
 }
-body[data-effective-display-mode="tablet"].study-nav-hidden .ma-trainer-side-panel{position:static;max-height:none;}
+body[data-effective-display-mode="tablet"] .ma-trainer-side-panel.left-panel{grid-area:records;}
+body[data-effective-display-mode="tablet"] .ma-trainer-side-panel.right-panel{grid-area:mastery;}
+body[data-effective-display-mode="tablet"] .ma-reading-page .bottom-shell,
+body[data-effective-display-mode="tablet"] .ma-writing-page .bottom-shell{
+  left:16px;right:16px;bottom:10px;width:auto;
+  border:1px solid color-mix(in srgb,var(--ma-trainer-accent) 20%,var(--ma-border));
+  border-radius:18px;overflow:hidden;
+}
+body[data-effective-display-mode="tablet"] .bottom-shell.ma-modifiers-only .drawer-content{max-height:min(66dvh,620px);}
 
 body[data-effective-display-mode="phone"].ma-reading-page,
 body[data-effective-display-mode="phone"].ma-writing-page{
   display:block;
-  padding:max(10px,env(safe-area-inset-top,0px)) 10px max(10px,env(safe-area-inset-bottom,0px));
+  padding:0 10px max(72px,calc(env(safe-area-inset-bottom,0px) + 64px));
   min-height:100dvh;
   overflow-x:hidden;
 }
-body[data-effective-display-mode="phone"] .ma-trainer-shell{display:block;min-height:auto;}
+body[data-effective-display-mode="phone"] .ma-trainer-shell{display:block;width:100%;min-height:auto;}
 body[data-effective-display-mode="phone"] .ma-trainer-card{
-  width:100%;
-  max-width:none;
-  box-sizing:border-box;
-  margin:0 auto 96px;
+  width:100%;max-width:none;box-sizing:border-box;
+  margin:0 auto 10px;
   padding:18px 12px 28px;
-  border-radius:22px;
+  border-radius:20px;
 }
-body[data-effective-display-mode="phone"] .ma-trainer-input{width:min(100%,320px);font-size:20px;padding:10px 12px;}
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-session-hud,
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-trainer-prompt-wrap,
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-trainer-answer-wrap,
+body[data-effective-display-mode="tablet"]:not(.trainer-session-active) .ma-session-hud,
+body[data-effective-display-mode="tablet"]:not(.trainer-session-active) .ma-trainer-prompt-wrap,
+body[data-effective-display-mode="tablet"]:not(.trainer-session-active) .ma-trainer-answer-wrap{display:none;}
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-trainer-header{margin-bottom:4px;}
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-trainer-header h1{font-size:1.55rem;margin-bottom:5px;}
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-trainer-header .subline{margin-bottom:8px;font-size:.88rem;}
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-trainer-session-controls{padding-top:2px;}
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .start-wrap{width:100%;margin-top:8px;}
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .start-wrap .ma-button{width:100%;min-height:50px;}
+body[data-effective-display-mode="phone"] .ma-trainer-input{width:min(100%,330px);font-size:20px;padding:10px 12px;}
 body[data-effective-display-mode="phone"] .ma-trainer-side-panel,
 html[data-effective-display-mode="phone"] body .ma-trainer-side-panel{
-  position:static;
-  width:100%;
-  max-height:none;
-  margin:10px auto;
+  position:static;width:100%;max-height:none;margin:8px auto;
+  border-radius:16px;
 }
-body[data-effective-display-mode="phone"].study-nav-hidden .ma-trainer-side-panel{position:static;max-height:none;}
+body[data-effective-display-mode="phone"] .ma-trainer-side-panel .panel-content{max-height:210px;padding:10px;}
+body[data-effective-display-mode="phone"] .ma-reading-page .bottom-shell,
+body[data-effective-display-mode="phone"] .ma-writing-page .bottom-shell{
+  left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom,0px));width:auto;
+  border:1px solid color-mix(in srgb,var(--ma-trainer-accent) 24%,var(--ma-border));
+  border-radius:18px;overflow:hidden;
+}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .tab-row{width:100%;}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .tab-button{min-height:48px;font-size:.92rem;}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .drawer-content{
+  max-height:min(72dvh,620px);padding:12px;
+}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .options-stack{gap:10px;}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .options-stack>div{padding:11px;border-radius:15px;}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .button-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .rows-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+
+@media(max-width:900px) and (orientation:portrait){
+  body[data-effective-display-mode="tablet"] .ma-trainer-shell{grid-template-columns:1fr;grid-template-areas:"trainer" "records" "mastery";}
+  body[data-effective-display-mode="tablet"] .ma-trainer-card{padding-bottom:82px;}
+}
+@media(max-width:760px){
+  .ma-pause-overlay{display:none!important;}
+}
 
 /* === 2.31 focused trainer workspace === */
 .ma-session-hud{
@@ -1713,49 +1641,49 @@ body.study-nav-hidden.trainer-session-active .ma-trainer-card{width:min(760px,ca
 @media(max-width:900px){
   .ma-kana-selection{grid-template-columns:1fr;}
 }
-@media(max-width:760px){
-  .ma-session-hud .scoreline{gap:7px;}
-  .ma-session-hud .ma-trainer-score{width:auto!important;min-width:0!important;flex:1 1 calc(50% - 7px);font-size:.78rem;}
-  .ma-session-hud .ma-trainer-score strong{font-size:.86rem;}
-  .ma-practice-setup-head{align-items:flex-start;}
-  body.trainer-session-active .ma-trainer-card{
-    width:100%;
-    margin-bottom:18px;
-    padding:14px 12px 18px;
-    min-height:calc(100svh - 150px);
-  }
-  body.trainer-session-active .ma-trainer-header{min-height:22px;}
-  body.trainer-session-active .ma-trainer-header h1{font-size:.72rem;letter-spacing:.11em;}
-  body.trainer-session-active .ma-trainer-prompt-wrap{
-    min-height:clamp(185px,34svh,285px);
-    padding:10px 0 2px;
-  }
-  body.trainer-session-active.ma-reading-page .hiragana{font-size:clamp(6.8rem,33vw,9rem);}
-  body.trainer-session-active.ma-writing-page .prompt{font-size:clamp(5.2rem,24vw,7rem);}
-  body.trainer-session-active.ma-writing-page .prompt-small{font-size:clamp(4rem,19vw,5.5rem);}
-  body.trainer-session-active .ma-trainer-input{width:min(100%,340px);min-height:52px;font-size:22px;}
-  body.trainer-session-active.ma-writing-page .choice-grid{gap:9px;}
-  body.trainer-session-active.ma-writing-page .choice-btn{min-height:64px;padding:12px 6px;}
-  body.trainer-session-active .ma-trainer-side-panel{display:none;}
-  body.trainer-session-active .session-actions{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:8px;
-  }
-  body.trainer-session-active .session-actions .ma-button{width:100%;min-width:0;}
-  body.trainer-session-active .session-actions .ma-trainer-skip{
-    grid-column:1 / -1;
-    order:3;
-  }
-}
 
+body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-shell{display:block;width:min(900px,100%);}
 body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-card{
-  width:min(760px,calc(100vw - 28px));
-  margin-bottom:22px;
-  padding:18px 28px 24px;
+  width:100%;margin:0 auto 14px;padding:18px 26px 22px;
 }
-body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-side-panel{
-  display:none;
+body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-side-panel{display:none;}
+body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-prompt-wrap{min-height:240px;}
+body[data-effective-display-mode="tablet"].trainer-session-active.ma-reading-page .hiragana{font-size:clamp(8rem,16vw,10rem);}
+
+body[data-effective-display-mode="phone"].trainer-session-active .ma-trainer-card{
+  width:100%;margin:0 auto 8px;padding:12px 11px 14px;min-height:0;
+}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-trainer-header{min-height:20px;margin-bottom:0;}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-trainer-header h1{font-size:.7rem;letter-spacing:.11em;}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-session-hud{gap:7px;margin-bottom:4px;padding-bottom:8px;}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-session-hud .scoreline{gap:5px;}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-session-hud .ma-trainer-score{
+  width:auto!important;min-width:0!important;flex:1 1 calc(33.333% - 5px);max-width:calc(33.333% - 3px);
+  min-height:30px;padding:5px 6px;font-size:.68rem;gap:4px;
+}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-session-hud .ma-trainer-score strong{font-size:.76rem;}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-session-progress{margin-top:5px;padding:8px 9px;}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-session-progress__meta{margin-bottom:5px;font-size:.68rem;}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-trainer-prompt-wrap{
+  min-height:clamp(150px,25svh,205px);padding:4px 0 0;
+}
+body[data-effective-display-mode="phone"].trainer-session-active.ma-reading-page .hiragana{font-size:clamp(6.2rem,31vw,8rem);}
+body[data-effective-display-mode="phone"].trainer-session-active.ma-writing-page .prompt{font-size:clamp(4.8rem,23vw,6.5rem);}
+body[data-effective-display-mode="phone"].trainer-session-active.ma-writing-page .prompt-small{font-size:clamp(3.8rem,18vw,5rem);}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-trainer-input{width:min(100%,340px);min-height:50px;font-size:21px;}
+body[data-effective-display-mode="phone"].trainer-session-active.ma-writing-page .choice-grid{gap:8px;}
+body[data-effective-display-mode="phone"].trainer-session-active.ma-writing-page .choice-btn{min-height:60px;padding:10px 5px;}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-trainer-side-panel{display:none;}
+body[data-effective-display-mode="phone"].trainer-session-active .ma-trainer-session-controls{margin-top:9px;padding-top:9px;}
+body[data-effective-display-mode="phone"].trainer-session-active .session-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+body[data-effective-display-mode="phone"].trainer-session-active .session-actions .ma-button{width:100%;min-width:0;min-height:42px;}
+body[data-effective-display-mode="phone"].trainer-session-active .session-actions .ma-trainer-skip{grid-column:1 / -1;order:3;}
+
+@media(max-width:760px){
+  body:not([data-effective-display-mode]).trainer-session-active .ma-trainer-card{width:100%;margin-bottom:8px;padding:12px 11px 14px;min-height:0;}
+  body:not([data-effective-display-mode]):not(.trainer-session-active) .ma-session-hud,
+  body:not([data-effective-display-mode]):not(.trainer-session-active) .ma-trainer-prompt-wrap,
+  body:not([data-effective-display-mode]):not(.trainer-session-active) .ma-trainer-answer-wrap{display:none;}
 }
 
 @media(prefers-reduced-motion:reduce){

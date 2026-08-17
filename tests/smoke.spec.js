@@ -303,19 +303,67 @@ test.describe('Mode Atlas core smoke tests', () => {
       expect(phoneNav.contained).toBe(true);
       expect(phoneNav.linksBelowActions).toBe(true);
 
+      const phoneNavMetrics = await page.locator('.ma-nav').evaluate((nav) => {
+        const rect = nav.getBoundingClientRect();
+        const links = [...nav.querySelectorAll('.ma-nav__links > *')].map((node) => node.getBoundingClientRect().width);
+        return { height: rect.height, linkWidths: links };
+      });
+      expect(phoneNavMetrics.height).toBeLessThanOrEqual(112);
+      expect(phoneNavMetrics.linkWidths.every(width => width >= 54)).toBe(true);
+
+      await gotoApp(page, '/');
+      const homeFirstScreen = await page.evaluate(() => {
+        const primary = document.querySelector('.atlas-primary-action');
+        const readingPreview = document.querySelector('.atlas-preview--reading');
+        const secondaryPreviews = [...document.querySelectorAll('.atlas-preview--words,.atlas-preview--writing')];
+        return {
+          primaryBottom: primary?.getBoundingClientRect().bottom || Infinity,
+          readingPreviewDisplay: readingPreview ? getComputedStyle(readingPreview).display : 'none',
+          secondaryHidden: secondaryPreviews.every(node => getComputedStyle(node).display === 'none'),
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+        };
+      });
+      expect(homeFirstScreen.primaryBottom).toBeLessThan(844);
+      expect(homeFirstScreen.readingPreviewDisplay).not.toBe('none');
+      expect(homeFirstScreen.secondaryHidden).toBe(true);
+      expect(homeFirstScreen.overflow).toBeLessThanOrEqual(1);
+
+      await gotoApp(page, '/kana/');
+      const kanaFirstScreen = await page.evaluate(() => {
+        const action = document.querySelector('.kana-primary-action');
+        const visual = document.querySelector('.kana-hero-visual');
+        return {
+          actionBottom: action?.getBoundingClientRect().bottom || Infinity,
+          visualHidden: visual ? getComputedStyle(visual).display === 'none' : false,
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+        };
+      });
+      expect(kanaFirstScreen.actionBottom).toBeLessThan(844);
+      expect(kanaFirstScreen.visualHidden).toBe(true);
+      expect(kanaFirstScreen.overflow).toBeLessThanOrEqual(1);
+
       await gotoApp(page, '/reading/');
       const idleTrainer = await page.evaluate(() => {
         const card = document.querySelector('.ma-trainer-card');
         const style = card ? getComputedStyle(card) : null;
+        const hud = document.querySelector('.ma-session-hud');
+        const prompt = document.querySelector('.ma-trainer-prompt-wrap');
+        const start = document.querySelector('#startBtn');
         return style ? {
           paddingBottom: parseFloat(style.paddingBottom),
           minHeight: parseFloat(style.minHeight) || 0,
+          hudHidden: hud ? getComputedStyle(hud).display === 'none' : false,
+          promptHidden: prompt ? getComputedStyle(prompt).display === 'none' : false,
+          startBottom: start?.getBoundingClientRect().bottom || Infinity,
           overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
         } : null;
       });
       expect(idleTrainer).not.toBeNull();
-      expect(idleTrainer.paddingBottom).toBeLessThanOrEqual(32);
+      expect(idleTrainer.paddingBottom).toBeLessThanOrEqual(24);
       expect(idleTrainer.minHeight).toBe(0);
+      expect(idleTrainer.hudHidden).toBe(true);
+      expect(idleTrainer.promptHidden).toBe(true);
+      expect(idleTrainer.startBottom).toBeLessThan(844);
       expect(idleTrainer.overflow).toBeLessThanOrEqual(1);
     });
 
@@ -324,6 +372,25 @@ test.describe('Mode Atlas core smoke tests', () => {
     await gotoApp(page, '/kana/');
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'tablet');
 
+    await gotoApp(page, '/reading/');
+    const tabletTrainer = await page.evaluate(() => {
+      const card = document.querySelector('.ma-trainer-card');
+      const records = document.querySelector('.ma-trainer-side-panel.left-panel');
+      if (!card || !records) return null;
+      const cardRect = card.getBoundingClientRect();
+      const recordsRect = records.getBoundingClientRect();
+      return {
+        cardWidth: cardRect.width,
+        recordsBesideCard: recordsRect.left >= cardRect.right - 1,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+      };
+    });
+    expect(tabletTrainer).not.toBeNull();
+    expect(tabletTrainer.cardWidth).toBeGreaterThanOrEqual(700);
+    expect(tabletTrainer.recordsBesideCard).toBe(true);
+    expect(tabletTrainer.overflow).toBeLessThanOrEqual(1);
+
+    await gotoApp(page, '/kana/');
     const readDrawerMetrics = (selector) => page.locator(selector).evaluate((drawer) => {
       const rect = drawer.getBoundingClientRect();
       return {

@@ -108,29 +108,39 @@ html[data-ma-signed-in="false"] [data-ma-sign-in]{visibility:visible;pointer-eve
   .ma-settings-inline-actions{display:grid;grid-template-columns:1fr 1fr;width:100%;}
   .ma-settings-inline-actions .ma-button{width:100%;}
 }
-/* Explicit display modes win over pointer capability. */
+/* Explicit display modes win over pointer capability. Tablet stays a
+   contained side panel; Phone becomes a bottom sheet so settings do not feel
+   like a desktop drawer squeezed into the viewport. */
 body[data-effective-display-mode="tablet"] .ma-drawer{
-  top:max(16px,env(safe-area-inset-top,0px));
-  right:16px;
-  bottom:auto;
-  left:auto;
-  width:min(620px,calc(100vw - 32px));
-  max-width:calc(100vw - 32px);
-  max-height:calc(100dvh - 32px);
+  top:max(18px,env(safe-area-inset-top,0px));
+  right:20px;bottom:auto;left:auto;
+  width:min(540px,calc(100vw - 40px));
+  max-width:calc(100vw - 40px);
+  max-height:calc(100dvh - 36px);
   padding:18px;
-  border-radius:var(--ma-radius-lg);
+  border-radius:22px;
 }
 body[data-effective-display-mode="phone"] .ma-drawer{
-  top:calc(env(safe-area-inset-top,0px) + 12px);
-  right:10px;
-  bottom:calc(env(safe-area-inset-bottom,0px) + 12px);
-  left:10px;
-  width:auto;
-  max-width:none;
-  max-height:none;
-  padding:14px;
-  border-radius:var(--ma-page-card-radius-phone);
+  top:auto;right:0;bottom:0;left:0;
+  width:100%;max-width:none;
+  max-height:min(88dvh,760px);
+  padding:16px 14px max(16px,env(safe-area-inset-bottom,0px));
+  border-radius:24px 24px 0 0;
+  transform:translateY(calc(100% + 28px));
 }
+body[data-effective-display-mode="phone"] .ma-drawer.open{transform:translateY(0);}
+body[data-effective-display-mode="phone"] .ma-drawer-head{
+  top:-16px;margin:-16px 0 12px;padding:15px 0 11px;
+  border-radius:24px 24px 0 0;
+}
+body[data-effective-display-mode="phone"] .ma-drawer-title{font-size:1.55rem;}
+body[data-effective-display-mode="phone"] .ma-setting-list{border-radius:16px;}
+body[data-effective-display-mode="phone"] .ma-setting-row{padding:14px;gap:10px;}
+body[data-effective-display-mode="phone"] .ma-settings-section{margin-top:8px;}
+body[data-effective-display-mode="phone"] .ma-settings-disclosure{margin-top:12px;}
+body[data-effective-display-mode="phone"] .ma-segmented .ma-button{min-height:44px;padding-inline:8px;font-size:.8rem;}
+body[data-effective-display-mode="phone"] .ma-settings-inline-actions{grid-template-columns:1fr 1fr;gap:8px;}
+body[data-effective-display-mode="phone"] .ma-save-section .ma-settings-inline-actions .ma-button:first-child{grid-column:1 / -1;}
 
 @media(max-width:560px){
   .ma-shared-profile-drawer .ma-button,.ma-shared-settings-drawer .ma-button{font-size:13px;}
