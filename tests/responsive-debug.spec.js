@@ -1,6 +1,6 @@
 const { test } = require('@playwright/test');
 
-test('diagnose phone Kana hero stylesheet owner', async ({ page }) => {
+test('diagnose phone Kana hero geometry', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     localStorage.setItem('modeAtlasStarterSeen', 'true');
@@ -15,26 +15,26 @@ test('diagnose phone Kana hero stylesheet owner', async ({ page }) => {
   await page.waitForSelector('body');
   await page.waitForTimeout(1000);
   const result = await page.evaluate(() => {
-    const target = document.querySelector('#mainContent');
-    const matches = [];
-    for (const sheet of [...document.styleSheets]) {
-      let rules;
-      try { rules = sheet.cssRules; } catch { continue; }
-      for (const rule of [...rules]) {
-        if (!rule.selectorText) continue;
-        try {
-          if (target?.matches(rule.selectorText) && (rule.selectorText === 'main' || rule.selectorText.includes('.shell'))) {
-            matches.push({
-              href: sheet.href,
-              selector: rule.selectorText,
-              css: rule.style.cssText,
-              owner: sheet.ownerNode?.outerHTML || null
-            });
-          }
-        } catch {}
-      }
-    }
-    return matches;
+    const info = (selector) => {
+      const node = document.querySelector(selector);
+      if (!node) return null;
+      const r = node.getBoundingClientRect();
+      const s = getComputedStyle(node);
+      return {
+        top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height), width: Math.round(r.width),
+        display: s.display, position: s.position, minHeight: s.minHeight, heightCss: s.height,
+        paddingTop: s.paddingTop, paddingBottom: s.paddingBottom, marginTop: s.marginTop, marginBottom: s.marginBottom,
+        gridTemplateRows: s.gridTemplateRows, gridTemplateColumns: s.gridTemplateColumns,
+        alignItems: s.alignItems, alignContent: s.alignContent, justifyContent: s.justifyContent
+      };
+    };
+    return {
+      scrollY: Math.round(scrollY), bodyHeight: document.body.scrollHeight,
+      nav: info('.ma-nav'), shell: info('.shell'), hero: info('.kana-hub-hero'), main: info('.kana-hero-main'),
+      tagline: info('.hero-tagline'), title: info('.kana-hero-main h1'), lead: info('.kana-hero-lead'),
+      actions: info('.kana-hero-actions'), action: info('.kana-primary-action'), visual: info('.kana-hero-visual'),
+      pathways: info('.kana-pathways'), progress: info('#mainContent')
+    };
   });
-  console.log('KANA_STYLE_OWNERS=' + JSON.stringify(result));
+  console.log('KANA_GEOMETRY=' + JSON.stringify(result));
 });
