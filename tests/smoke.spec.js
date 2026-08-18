@@ -362,7 +362,12 @@ test.describe('Mode Atlas core smoke tests', () => {
     await settingsTrigger.click();
     await expect(page.locator('#settingsDrawer')).toBeVisible();
     await assertDrawerFits('#settingsDrawer');
-    await page.locator('#settingsCloseBtn').click();
+
+    await page.evaluate(() => document.getElementById('profileOpenBtn')?.click());
+    await expect(page.locator('#profileDrawer')).toBeVisible();
+    await expect(page.locator('#settingsDrawer')).not.toHaveClass(/\bopen\b/);
+    await expect(page.locator('.ma-drawer.open')).toHaveCount(1);
+    await page.locator('#profileCloseBtn').click();
 
     const profileTrigger = page.locator('#profileOpenBtn');
     await profileTrigger.click();

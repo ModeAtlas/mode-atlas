@@ -1761,8 +1761,8 @@ assert.match(kana, /body\[data-effective-display-mode="phone"\] \.kana-mastery-g
     'explicit Phone trainer must not retain the retired viewport-filling bottom padding');
   assert.match(study, /body\.trainer-session-active \.ma-trainer-prompt-wrap/,
     'focused active-session sizing must remain owned separately');
-  assert.match(study, /body\[data-effective-display-mode="phone"\]:not\(\.trainer-session-active\) \.ma-trainer-prompt-wrap\{min-height:96px/,
-  'idle Phone trainer must not reserve active-session prompt height');
+  assert.match(study, /body\[data-effective-display-mode="phone"\]:not\(\.trainer-session-active\) \.ma-trainer-prompt-wrap\{min-height:64px/,
+  'idle Phone trainer must keep its placeholder area compact');
 assert.match(study, /@media\(min-width:980px\)[\s\S]*data-effective-display-mode="tablet"[\s\S]*grid-template-columns:minmax\(0,1fr\) minmax\(260px,300px\)/,
   'wide Tablet trainer must use the available workspace instead of a narrow centred desktop card');
 });

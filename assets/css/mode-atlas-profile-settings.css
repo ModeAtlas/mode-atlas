@@ -114,8 +114,8 @@ body[data-effective-display-mode="tablet"] .ma-drawer{
   right:16px;
   bottom:auto;
   left:auto;
-  width:min(680px,calc(100vw - 28px));
-  max-width:calc(100vw - 28px);
+  width:min(600px,calc(100vw - 32px));
+  max-width:calc(100vw - 32px);
   max-height:calc(100dvh - 32px);
   padding:18px;
   border-radius:var(--ma-radius-lg);
