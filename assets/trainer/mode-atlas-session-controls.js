@@ -3,6 +3,7 @@
   window.__modeAtlasSessionControlsInstalled = true;
 
   let paused = false, pauseRemaining = 0;
+  let phoneFrameTimer = 0;
 
   const choiceButtons = () => {
     try { return (typeof choiceGridEl !== 'undefined' && choiceGridEl) ? choiceGridEl.querySelectorAll('button') : []; }
@@ -63,10 +64,48 @@
     try { inputEl.disabled = disabled; } catch {}
     try { choiceButtons().forEach(button => { button.disabled = disabled; }); } catch {}
   }
+  function isPhoneTrainerSession(){
+    return document.body?.dataset?.effectiveDisplayMode === 'phone'
+      && document.body.classList.contains('trainer-session-active');
+  }
+  function alignPhoneTrainerFrame(){
+    if (!isPhoneTrainerSession()) return;
+    const activeInput = document.getElementById('input');
+    const prompt = document.querySelector('.ma-trainer-prompt-wrap');
+    if (!activeInput || !prompt || document.activeElement !== activeInput) return;
+
+    const promptRect = prompt.getBoundingClientRect();
+    const inputRect = activeInput.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    const viewportTop = Number(viewport?.offsetTop || 0);
+    const viewportHeight = Number(viewport?.height || window.innerHeight || 0);
+    if (!viewportHeight) return;
+
+    const available = Math.max(0, viewportHeight - 24);
+    const regionHeight = Math.max(0, inputRect.bottom - promptRect.top);
+    let targetTop = viewportTop + 12;
+    if (regionHeight < available) {
+      targetTop += Math.min(32, Math.max(0, (available - regionHeight) * 0.18));
+    } else {
+      targetTop = Math.max(viewportTop + 8, viewportTop + viewportHeight - 12 - regionHeight);
+    }
+
+    const delta = promptRect.top - targetTop;
+    if (Math.abs(delta) > 2) window.scrollTo(0, Math.max(0, window.scrollY + delta));
+  }
+  function schedulePhoneTrainerFrame(){
+    window.clearTimeout(phoneFrameTimer);
+    if (!isPhoneTrainerSession()) return;
+    window.requestAnimationFrame(() => window.requestAnimationFrame(alignPhoneTrainerFrame));
+    phoneFrameTimer = window.setTimeout(alignPhoneTrainerFrame, 220);
+  }
   function focusInputIfNeeded(){
     try {
       const hasKeyboardMode = typeof settings !== 'undefined' && Object.prototype.hasOwnProperty.call(settings, 'keyboardMode');
-      if (!hasKeyboardMode || settings.keyboardMode) inputEl.focus();
+      if (!hasKeyboardMode || settings.keyboardMode) {
+        try { inputEl.focus({ preventScroll: true }); } catch { inputEl.focus(); }
+        schedulePhoneTrainerFrame();
+      }
     } catch {}
   }
   function setPauseButtonState(isPaused){
@@ -123,6 +162,14 @@
     document.body.classList.remove('ma-session-paused');
     setPauseButtonState(false);
   }
+
+  document.addEventListener('focusin', (event) => {
+    if (event.target?.id === 'input') schedulePhoneTrainerFrame();
+  });
+  window.visualViewport?.addEventListener('resize', () => {
+    if (document.activeElement?.id === 'input') schedulePhoneTrainerFrame();
+  }, { passive: true });
+  window.addEventListener('orientationchange', schedulePhoneTrainerFrame, { passive: true });
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('#startBtn') || event.target.closest('#retryBtn') || event.target.closest('#endSessionBtn')) {
