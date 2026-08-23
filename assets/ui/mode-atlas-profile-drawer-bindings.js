@@ -183,7 +183,8 @@
   }
 
   function openDrawer(name, trigger){
-    if (activeDrawerName && activeDrawerName !== name) setDrawerOpen(activeDrawerName, false);
+    const otherName = name === 'settings' ? 'profile' : 'settings';
+    setDrawerOpen(otherName, false);
     drawerReturnFocus = trigger || document.activeElement || drawerReturnFocus;
     activeDrawerName = name;
     setDrawerOpen(name, true);

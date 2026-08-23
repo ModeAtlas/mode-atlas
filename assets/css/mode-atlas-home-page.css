@@ -329,4 +329,63 @@ body.ma-atlas-page::after{
   .atlas-mode-card{grid-template-columns:50px minmax(0,1fr);padding-inline:13px;}.atlas-mode-card>span{width:44px;height:44px;}
   .atlas-bank-row>div{align-items:flex-start;flex-direction:column;gap:3px;}
 }
+/* Saved display modes own the page composition as well as the global shell.
+   This keeps Tablet and Phone visually distinct even on a wider device. */
+body[data-effective-display-mode="tablet"].ma-atlas-page .shell{--ma-page-max:1100px;}
+body[data-effective-display-mode="tablet"] .atlas-hero{padding-block:56px 72px;}
+body[data-effective-display-mode="tablet"] .atlas-hero__stage{grid-template-columns:minmax(0,1fr) minmax(340px,.82fr);gap:42px;}
+body[data-effective-display-mode="tablet"] .atlas-hero h1{max-width:9.6ch;font-size:clamp(4rem,7vw,5.4rem);}
+body[data-effective-display-mode="tablet"] .atlas-hero__lead{max-width:560px;margin-top:22px;font-size:1.04rem;}
+body[data-effective-display-mode="tablet"] .home-continue{margin-top:28px;}
+body[data-effective-display-mode="tablet"] .atlas-showcase{min-height:430px;}
+body[data-effective-display-mode="tablet"] .atlas-tools{padding-block:58px;}
+body[data-effective-display-mode="tablet"] .atlas-section-intro{margin-bottom:44px;}
+body[data-effective-display-mode="tablet"] .atlas-section-intro h2,
+body[data-effective-display-mode="tablet"] .atlas-future h2{font-size:clamp(2.7rem,5vw,3.7rem);}
+body[data-effective-display-mode="tablet"] .atlas-product{grid-template-columns:minmax(0,.92fr) minmax(340px,1.08fr);gap:44px;min-height:370px;padding-block:56px;}
+body[data-effective-display-mode="tablet"] .atlas-product h3{font-size:clamp(2.45rem,4.5vw,3.35rem);}
+body[data-effective-display-mode="tablet"] .atlas-future{padding-block:58px;}
+
+body[data-effective-display-mode="phone"].ma-atlas-page .shell{--ma-page-max:none;}
+body[data-effective-display-mode="phone"] .atlas-hero{padding-block:28px 42px;}
+body[data-effective-display-mode="phone"] .atlas-hero__stage{grid-template-columns:1fr;gap:26px;}
+body[data-effective-display-mode="phone"] .atlas-eyebrow{margin-bottom:14px;}
+body[data-effective-display-mode="phone"] .atlas-hero h1{max-width:10ch;font-size:clamp(2.85rem,12.5vw,3.35rem);line-height:.92;}
+body[data-effective-display-mode="phone"] .atlas-hero__lead{margin-top:18px;font-size:.96rem;line-height:1.55;}
+body[data-effective-display-mode="phone"] .home-continue{gap:12px;margin-top:22px;padding:14px 0;}
+body[data-effective-display-mode="phone"] .atlas-text-link--returning{margin-top:12px;}
+body[data-effective-display-mode="phone"] .atlas-showcase{min-height:320px;}
+body[data-effective-display-mode="phone"] .atlas-preview--reading{top:36px;min-height:250px;}
+body[data-effective-display-mode="phone"] .atlas-preview__prompt{min-height:94px;font-size:3.8rem;}
+body[data-effective-display-mode="phone"] .atlas-preview--words{min-height:188px;}
+body[data-effective-display-mode="phone"] .atlas-preview--writing{min-height:154px;}
+body[data-effective-display-mode="phone"] .atlas-writing-preview{gap:11px;padding:14px 12px;}
+body[data-effective-display-mode="phone"] .atlas-writing-preview>span{font-size:1.5rem;}
+body[data-effective-display-mode="phone"] .atlas-writing-preview b{min-height:36px;}
+body[data-effective-display-mode="phone"] .atlas-tools{padding-block:38px;}
+body[data-effective-display-mode="phone"] .atlas-section-intro{margin-bottom:30px;}
+body[data-effective-display-mode="phone"] .atlas-section-intro h2,
+body[data-effective-display-mode="phone"] .atlas-future h2{font-size:2.35rem;}
+body[data-effective-display-mode="phone"] .atlas-section-intro p,
+body[data-effective-display-mode="phone"] .atlas-future__copy p{margin-top:13px;font-size:.94rem;line-height:1.55;}
+body[data-effective-display-mode="phone"] .atlas-product{grid-template-columns:1fr;gap:26px;min-height:0;padding-block:38px;}
+body[data-effective-display-mode="phone"] .atlas-product--words .atlas-product__copy,
+body[data-effective-display-mode="phone"] .atlas-product--words .atlas-product__visual{order:initial;}
+body[data-effective-display-mode="phone"] .atlas-product h3{margin-top:13px;font-size:2.35rem;}
+body[data-effective-display-mode="phone"] .atlas-product__copy>p{margin-top:14px;font-size:.94rem;line-height:1.55;}
+body[data-effective-display-mode="phone"] .atlas-product__action{margin-top:20px;}
+body[data-effective-display-mode="phone"] .atlas-kana-visual{padding:16px;}
+body[data-effective-display-mode="phone"] .atlas-mode-card{min-height:68px;gap:12px;padding:10px 12px;}
+body[data-effective-display-mode="phone"] .atlas-benefits{gap:30px;padding-block:40px;}
+body[data-effective-display-mode="phone"] .atlas-future{gap:26px;padding-block:42px;}
+
+@media(max-width:900px){
+  body[data-effective-display-mode="tablet"] .atlas-hero__stage{grid-template-columns:1fr;gap:32px;}
+  body[data-effective-display-mode="tablet"] .atlas-showcase{min-height:390px;max-width:720px;width:100%;margin-inline:auto;}
+  body[data-effective-display-mode="tablet"] .atlas-product{grid-template-columns:1fr;gap:32px;min-height:0;}
+  body[data-effective-display-mode="tablet"] .atlas-product--words .atlas-product__copy,
+  body[data-effective-display-mode="tablet"] .atlas-product--words .atlas-product__visual{order:initial;}
+  body[data-effective-display-mode="tablet"] .atlas-product__visual{max-width:760px;width:100%;}
+}
+
 @media(prefers-reduced-motion:reduce){.atlas-preview{transform:none;}}
