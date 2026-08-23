@@ -11,6 +11,12 @@
   var closeTimer = 0;
   var hoverQuery = window.matchMedia ? window.matchMedia('(hover:hover) and (pointer:fine)') : null;
 
+  function effectiveDisplayMode(){
+    return document.body?.dataset?.effectiveDisplayMode
+      || document.documentElement?.dataset?.effectiveDisplayMode
+      || '';
+  }
+
   function isOpen(){
     return menu.classList.contains('is-open');
   }
@@ -35,10 +41,14 @@
 
   trigger.addEventListener('click', function(event){
     var finePointer = !!(hoverQuery && hoverQuery.matches);
+    var mode = effectiveDisplayMode();
+    if (mode === 'phone' || mode === 'tablet') finePointer = false;
     if (finePointer) return;
     if (!isOpen()) {
       event.preventDefault();
       setOpen(true);
+    } else {
+      event.preventDefault();
     }
   });
 

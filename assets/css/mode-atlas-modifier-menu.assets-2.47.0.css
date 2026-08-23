@@ -85,3 +85,51 @@
 @media (max-width:900px){
   .ma-structured-modifiers{grid-template-columns:1fr ;}
 }
+
+/* Explicit display modes own Practice Setup density. The fixed setup tab also
+   reserves its own page clearance so Records/Mastery content can scroll above it. */
+body[data-effective-display-mode="tablet"]:not(.trainer-session-active) .ma-trainer-shell{
+  padding-bottom:72px;
+}
+body[data-effective-display-mode="tablet"] .ma-structured-modifiers{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+body[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-trainer-shell{
+  padding-bottom:calc(72px + env(safe-area-inset-bottom,0px));
+}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .drawer-content{
+  max-height:min(76dvh,680px);
+  padding-inline:10px;
+}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .options-stack{
+  gap:10px;
+}
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .options-stack > div,
+body[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .ma-settings-section{
+  padding:10px;
+  border-radius:16px;
+}
+body[data-effective-display-mode="phone"] .ma-structured-modifiers{
+  grid-template-columns:1fr;
+  gap:10px;
+}
+body[data-effective-display-mode="phone"] .ma-modifier-group{
+  min-width:0;
+  padding:12px;
+  border-radius:16px;
+}
+body[data-effective-display-mode="phone"] .ma-modifier-group-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+body[data-effective-display-mode="phone"] .ma-structured-toggle{
+  min-width:0;
+  min-height:52px;
+  padding:9px 8px;
+  font-size:.9rem;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body[data-effective-display-mode="phone"] .ma-preset-toggle{min-height:78px;}
+body[data-effective-display-mode="phone"] .ma-preset-toggle span{font-size:.92rem;}
+body[data-effective-display-mode="phone"] .ma-preset-toggle small{font-size:.72rem;}
