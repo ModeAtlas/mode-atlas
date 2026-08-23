@@ -44,8 +44,12 @@
     var mode = effectiveDisplayMode();
     if (mode === 'phone' || mode === 'tablet') finePointer = false;
     if (finePointer) return;
-    event.preventDefault();
-    if (!isOpen()) setOpen(true);
+    if (!isOpen()) {
+      event.preventDefault();
+      setOpen(true);
+    } else {
+      event.preventDefault();
+    }
   });
 
   menu.addEventListener('focusin', function(){ setOpen(true); });
