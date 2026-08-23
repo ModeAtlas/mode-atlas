@@ -5,7 +5,7 @@
   "description": "Mode Atlas static web app smoke tests",
   "scripts": {
     "test": "playwright test",
-    "test:smoke": "playwright test tests/smoke.spec.js",
+    "test:smoke": "playwright test tests/smoke.spec.js tests/phone-tablet-ux.spec.js",
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report",
     "build:revision": "python3 build_revision_assets.py",
