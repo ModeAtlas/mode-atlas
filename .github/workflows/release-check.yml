@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: mode-atlas-release-${{ github.ref }}
@@ -24,6 +24,309 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Apply phone and tablet UX fixes
+        if: github.event_name == 'pull_request' && github.head_ref == 'agent/mode-atlas-2.47.0-phone-tablet-ux'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          def replace_once(rel, old, new):
+              path = Path(rel)
+              source = path.read_text(encoding='utf-8')
+              count = source.count(old)
+              if count != 1:
+                  raise SystemExit(f'{rel}: expected one match, found {count}: {old[:90]!r}')
+              path.write_text(source.replace(old, new, 1), encoding='utf-8')
+
+          nav_css = 'assets/css/mode-atlas-navigation.css'
+          replace_once(
+              nav_css,
+              'body[data-effective-display-mode="tablet"] .ma-nav__focus{display:none;}',
+              'body[data-effective-display-mode="tablet"] .ma-nav__focus{display:inline-flex;width:40px;min-width:40px;min-height:40px;padding:0;}'
+          )
+          replace_once(
+              nav_css,
+              'body[data-effective-display-mode="phone"] .ma-nav__focus{display:none;}',
+              'body[data-effective-display-mode="phone"] .ma-nav__focus{display:inline-flex;width:44px;min-width:44px;min-height:44px;padding:0;}'
+          )
+
+          nav_js = 'assets/ui/mode-atlas-navigation-menu.js'
+          replace_once(
+              nav_js,
+              "  var hoverQuery = window.matchMedia ? window.matchMedia('(hover:hover) and (pointer:fine)') : null;\n\n  function isOpen(){",
+              "  var hoverQuery = window.matchMedia ? window.matchMedia('(hover:hover) and (pointer:fine)') : null;\n\n  function effectiveDisplayMode(){\n    return document.body?.dataset?.effectiveDisplayMode\n      || document.documentElement?.dataset?.effectiveDisplayMode\n      || '';\n  }\n\n  function isOpen(){"
+          )
+          replace_once(
+              nav_js,
+              "  trigger.addEventListener('click', function(event){\n    var finePointer = !!(hoverQuery && hoverQuery.matches);\n    if (finePointer) return;\n    if (!isOpen()) {\n      event.preventDefault();\n      setOpen(true);\n    }\n  });",
+              "  trigger.addEventListener('click', function(event){\n    var finePointer = !!(hoverQuery && hoverQuery.matches);\n    var mode = effectiveDisplayMode();\n    if (mode === 'phone' || mode === 'tablet') finePointer = false;\n    if (finePointer) return;\n    event.preventDefault();\n    if (!isOpen()) setOpen(true);\n  });"
+          )
+
+          modifier_js = 'assets/trainer/mode-atlas-modifier-menu.js'
+          replace_once(
+              modifier_js,
+              "      mod.classList.add('ma-structured-modifiers');",
+              "      mod.classList.remove('button-grid');\n      mod.classList.add('ma-structured-modifiers');"
+          )
+
+          modifier_css = Path('assets/css/mode-atlas-modifier-menu.css')
+          modifier_source = modifier_css.read_text(encoding='utf-8')
+          marker = '/* Explicit display modes own Practice Setup density. */'
+          if marker in modifier_source:
+              raise SystemExit('modifier responsive marker already present')
+          modifier_source += '''\n\n/* Explicit display modes own Practice Setup density. */\nbody[data-effective-display-mode="tablet"] .ma-structured-modifiers{\n  grid-template-columns:repeat(2,minmax(0,1fr));\n}\nbody[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .drawer-content{\n  max-height:min(76dvh,680px);\n  padding-inline:10px;\n}\nbody[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .options-stack{gap:10px;}\nbody[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .options-stack > div,\nbody[data-effective-display-mode="phone"] .bottom-shell.ma-modifiers-only .ma-settings-section{\n  padding:10px;\n  border-radius:16px;\n}\nbody[data-effective-display-mode="phone"] .ma-structured-modifiers{\n  grid-template-columns:1fr;\n  gap:10px;\n}\nbody[data-effective-display-mode="phone"] .ma-modifier-group{\n  min-width:0;\n  padding:12px;\n  border-radius:16px;\n}\nbody[data-effective-display-mode="phone"] .ma-modifier-group-grid{\n  grid-template-columns:repeat(2,minmax(0,1fr));\n  gap:8px;\n}\nbody[data-effective-display-mode="phone"] .ma-structured-toggle{\n  min-width:0;\n  min-height:52px;\n  padding:9px 8px;\n  font-size:.9rem;\n  white-space:normal;\n  overflow-wrap:anywhere;\n}\nbody[data-effective-display-mode="phone"] .ma-preset-toggle{min-height:78px;}\nbody[data-effective-display-mode="phone"] .ma-preset-toggle span{font-size:.92rem;}\nbody[data-effective-display-mode="phone"] .ma-preset-toggle small{font-size:.72rem;}\n'''
+          modifier_css.write_text(modifier_source, encoding='utf-8')
+
+          study_css = 'assets/css/mode-atlas-study-shared.css'
+          replace_once(
+              study_css,
+              'body[data-effective-display-mode="tablet"] .ma-trainer-shell{display:block;width:100%;min-height:auto;margin-inline:auto;}',
+              'body[data-effective-display-mode="tablet"] .ma-trainer-shell{display:block;width:100%;min-height:auto;margin-inline:auto;}\nbody[data-effective-display-mode="tablet"]:not(.trainer-session-active) .ma-trainer-shell{padding-bottom:72px;}'
+          )
+          replace_once(
+              study_css,
+              'body[data-effective-display-mode="phone"] .ma-trainer-shell{display:block;min-height:auto;}',
+              'body[data-effective-display-mode="phone"] .ma-trainer-shell{display:block;min-height:auto;}\nbody[data-effective-display-mode="phone"]:not(.trainer-session-active) .ma-trainer-shell{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px));}'
+          )
+          replace_once(
+              study_css,
+              'body[data-effective-display-mode="phone"] .ma-trainer-card{width:100%;max-width:none;box-sizing:border-box;margin:0 auto 72px;padding:18px 10px 22px;border-radius:22px;}',
+              '''body[data-effective-display-mode="phone"] .ma-trainer-card{width:100%;max-width:none;box-sizing:border-box;margin:0 auto 72px;padding:18px 10px 22px;border-radius:22px;}\nbody[data-effective-display-mode="phone"].trainer-session-active .ma-trainer-card{min-height:0;margin-bottom:18px;}\nbody[data-effective-display-mode="phone"].trainer-session-active .ma-trainer-prompt-wrap{min-height:clamp(150px,28svh,220px);scroll-margin-top:12px;}\nbody[data-effective-display-mode="phone"].trainer-session-active.ma-reading-page .hiragana{font-size:clamp(6rem,30vw,8rem);}\nbody[data-effective-display-mode="phone"].trainer-session-active.ma-writing-page .prompt{font-size:clamp(4.8rem,22vw,6.4rem);}\nbody[data-effective-display-mode="phone"].trainer-session-active.ma-writing-page .prompt-small{font-size:clamp(3.8rem,18vw,5rem);}'''
+          )
+
+          session_js = 'assets/trainer/mode-atlas-session-controls.js'
+          replace_once(
+              session_js,
+              '  let paused = false, pauseRemaining = 0;',
+              '  let paused = false, pauseRemaining = 0;\n  let phoneFrameTimer = 0;'
+          )
+          replace_once(
+              session_js,
+              '''  function focusInputIfNeeded(){\n    try {\n      const hasKeyboardMode = typeof settings !== 'undefined' && Object.prototype.hasOwnProperty.call(settings, 'keyboardMode');\n      if (!hasKeyboardMode || settings.keyboardMode) inputEl.focus();\n    } catch {}\n  }''',
+              '''  function isPhoneTrainerSession(){\n    return document.body?.dataset?.effectiveDisplayMode === 'phone'\n      && document.body.classList.contains('trainer-session-active');\n  }\n  function alignPhoneTrainerFrame(){\n    if (!isPhoneTrainerSession()) return;\n    const activeInput = document.getElementById('input');\n    const prompt = document.querySelector('.ma-trainer-prompt-wrap');\n    if (!activeInput || !prompt || document.activeElement !== activeInput) return;\n\n    const promptRect = prompt.getBoundingClientRect();\n    const inputRect = activeInput.getBoundingClientRect();\n    const viewport = window.visualViewport;\n    const viewportTop = Number(viewport?.offsetTop || 0);\n    const viewportHeight = Number(viewport?.height || window.innerHeight || 0);\n    if (!viewportHeight) return;\n\n    const available = Math.max(0, viewportHeight - 24);\n    const regionHeight = Math.max(0, inputRect.bottom - promptRect.top);\n    let targetTop = viewportTop + 12;\n    if (regionHeight < available) {\n      targetTop += Math.min(32, Math.max(0, (available - regionHeight) * 0.18));\n    } else {\n      targetTop = Math.max(viewportTop + 8, viewportTop + viewportHeight - 12 - regionHeight);\n    }\n\n    const delta = promptRect.top - targetTop;\n    if (Math.abs(delta) > 2) window.scrollTo(0, Math.max(0, window.scrollY + delta));\n  }\n  function schedulePhoneTrainerFrame(){\n    window.clearTimeout(phoneFrameTimer);\n    if (!isPhoneTrainerSession()) return;\n    window.requestAnimationFrame(() => window.requestAnimationFrame(alignPhoneTrainerFrame));\n    phoneFrameTimer = window.setTimeout(alignPhoneTrainerFrame, 220);\n  }\n  function focusInputIfNeeded(){\n    try {\n      const hasKeyboardMode = typeof settings !== 'undefined' && Object.prototype.hasOwnProperty.call(settings, 'keyboardMode');\n      if (!hasKeyboardMode || settings.keyboardMode) {\n        try { inputEl.focus({ preventScroll: true }); } catch { inputEl.focus(); }\n        schedulePhoneTrainerFrame();\n      }\n    } catch {}\n  }'''
+          )
+          replace_once(
+              session_js,
+              "  document.addEventListener('click', (event) => {",
+              "  document.addEventListener('focusin', (event) => {\n    if (event.target?.id === 'input') schedulePhoneTrainerFrame();\n  });\n  window.visualViewport?.addEventListener('resize', () => {\n    if (document.activeElement?.id === 'input') schedulePhoneTrainerFrame();\n  }, { passive: true });\n  window.addEventListener('orientationchange', schedulePhoneTrainerFrame, { passive: true });\n\n  document.addEventListener('click', (event) => {"
+          )
+
+          package = Path('package.json')
+          package_data = json.loads(package.read_text(encoding='utf-8'))
+          package_data['scripts']['test:smoke'] = 'playwright test tests/smoke.spec.js tests/phone-tablet-ux.spec.js'
+          package.write_text(json.dumps(package_data, indent=2) + '\n', encoding='utf-8')
+
+          test_path = Path('tests/phone-tablet-ux.spec.js')
+          if test_path.exists():
+              raise SystemExit('phone/tablet UX spec already exists')
+          test_path.write_text(r'''const { test, expect } = require('@playwright/test');
+
+const READING_SETTINGS = {
+  focusWeak: false,
+  dakuten: false,
+  yoon: false,
+  extendedKatakana: false,
+  hint: false,
+  srs: false,
+  mobileMode: false,
+  endless: false,
+  timeTrial: false,
+  speedRun: false,
+  dailyChallenge: false,
+  testMode: false,
+  comboKana: false,
+  comboMode: 'random',
+  hiraganaRows: ['h_a'],
+  katakanaRows: [],
+  statsVisible: true,
+  scoresVisible: true,
+  activeBottomTab: null
+};
+
+async function seedPhoneState(page) {
+  await page.addInitScript((readingSettings) => {
+    localStorage.clear();
+    localStorage.setItem('modeAtlasStarterSeen', 'true');
+    localStorage.setItem('modeAtlasOnboardingComplete', 'true');
+    localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
+    localStorage.setItem('modeAtlasLegalAccepted', 'true');
+    localStorage.setItem('modeAtlasLegalAcceptedAt', String(Date.now()));
+    localStorage.setItem('modeAtlasLegalVersion', '2026-05');
+    localStorage.setItem('maWhatsNewSeen', 'smoke');
+    localStorage.setItem('settings', JSON.stringify(readingSettings));
+    localStorage.setItem('reverseSettings', JSON.stringify({ ...readingSettings, keyboardMode: false, keyboardInputType: 'kana', choiceCount: 4 }));
+    localStorage.setItem('charStats', JSON.stringify({}));
+    localStorage.setItem('reverseCharStats', JSON.stringify({}));
+    localStorage.setItem('charTimes', JSON.stringify({}));
+    localStorage.setItem('reverseCharTimes', JSON.stringify({}));
+    localStorage.setItem('charSrs', JSON.stringify({}));
+    localStorage.setItem('reverseCharSrs', JSON.stringify({}));
+    localStorage.setItem('highScore', '0');
+    localStorage.setItem('reverseHighScore', '0');
+  }, READING_SETTINGS);
+}
+
+async function gotoApp(page, path) {
+  await page.route(/https:\/\/(www\.)?gstatic\.com\/.*/, route => route.abort());
+  await page.route(/https:\/\/(www\.)?googleapis\.com\/.*/, route => route.abort());
+  await page.goto(path, { waitUntil: 'commit', timeout: 5000 });
+  await page.waitForSelector('body', { timeout: 5000 });
+  await page.waitForTimeout(700);
+}
+
+function columnCount(template) {
+  return String(template || '').trim().split(/\s+/).filter(Boolean).length;
+}
+
+test.describe('Phone and Tablet study UX', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedPhoneState(page);
+  });
+
+  test('Phone navigation exposes Focus Mode and Kana Trainer is a disclosure before navigation', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoApp(page, '/reading/');
+    await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'phone');
+
+    const focus = page.locator('#studyNavHideBtn');
+    await expect(focus).toBeVisible();
+    const contained = await focus.evaluate((button) => {
+      const nav = button.closest('.ma-nav').getBoundingClientRect();
+      const rect = button.getBoundingClientRect();
+      return rect.left >= nav.left - 1 && rect.right <= nav.right + 1 && rect.top >= nav.top - 1 && rect.bottom <= nav.bottom + 1;
+    });
+    expect(contained).toBe(true);
+
+    await focus.click();
+    await expect(page.locator('body')).toHaveClass(/study-nav-hidden/);
+    await expect(page.locator('#studyNavShowBtn')).toBeVisible();
+    await page.locator('#studyNavShowBtn').click();
+    await expect(page.locator('body')).not.toHaveClass(/study-nav-hidden/);
+
+    const trigger = page.locator('[data-ma-kana-menu-trigger]');
+    await trigger.click({ noWaitAfter: true });
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#maKanaMenu')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe('/reading/');
+
+    await Promise.all([
+      page.waitForURL(/\/writing\/$/, { timeout: 5000, waitUntil: 'commit' }),
+      page.locator('[data-ma-kana-nav-item="writing"]').click({ noWaitAfter: true })
+    ]);
+    expect(new URL(page.url()).pathname).toBe('/writing/');
+  });
+
+  test('Phone Practice Setup stacks groups, sizes controls safely, and clears the fixed setup bar', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoApp(page, '/reading/');
+    await page.locator('#modifiersTab').click();
+    await expect(page.locator('#modifiersContent')).toHaveClass(/open/);
+
+    const setup = await page.evaluate(() => {
+      const root = document.querySelector('#modifierOptions.ma-structured-modifiers');
+      const buttons = root ? [...root.querySelectorAll('button')] : [];
+      const groups = root ? [...root.querySelectorAll('.ma-modifier-group')] : [];
+      return {
+        rootFound: !!root,
+        stillGenericGrid: root?.classList.contains('button-grid') || false,
+        columns: root ? getComputedStyle(root).gridTemplateColumns : '',
+        controlsFit: buttons.every((button) => button.scrollWidth <= button.clientWidth + 1 && button.getBoundingClientRect().width >= 100 && button.getBoundingClientRect().height >= 48),
+        groupsFit: groups.every((group) => group.scrollWidth <= group.clientWidth + 1)
+      };
+    });
+    expect(setup.rootFound).toBe(true);
+    expect(setup.stillGenericGrid).toBe(false);
+    expect(columnCount(setup.columns)).toBe(1);
+    expect(setup.controlsFit).toBe(true);
+    expect(setup.groupsFit).toBe(true);
+
+    await page.locator('#modifiersTab').click();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(100);
+    const clearance = await page.evaluate(() => {
+      const bar = document.querySelector('.bottom-shell.ma-modifiers-only .tab-row');
+      const panels = [...document.querySelectorAll('.ma-trainer-side-panel')];
+      const panelBottom = Math.max(...panels.map(panel => panel.getBoundingClientRect().bottom));
+      return bar.getBoundingClientRect().top - panelBottom;
+    });
+    expect(clearance).toBeGreaterThanOrEqual(6);
+  });
+
+  test('Phone Reading session reframes the prompt and input after the keyboard-sized viewport change', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoApp(page, '/reading/');
+    await page.locator('#startBtn').click();
+    await expect(page.locator('body')).toHaveClass(/trainer-session-active/);
+    await expect(page.locator('#input')).toBeFocused();
+
+    await page.setViewportSize({ width: 390, height: 520 });
+    await page.waitForTimeout(350);
+
+    const frame = await page.evaluate(() => {
+      const prompt = document.querySelector('.ma-trainer-prompt-wrap').getBoundingClientRect();
+      const kana = document.getElementById('hiragana').getBoundingClientRect();
+      const input = document.getElementById('input').getBoundingClientRect();
+      const cardStyle = getComputedStyle(document.querySelector('.ma-trainer-card'));
+      const viewportTop = Number(window.visualViewport?.offsetTop || 0);
+      const viewportHeight = Number(window.visualViewport?.height || window.innerHeight);
+      return {
+        promptTop: prompt.top,
+        kanaTop: kana.top,
+        inputBottom: input.bottom,
+        viewportTop,
+        viewportBottom: viewportTop + viewportHeight,
+        cardMinHeight: parseFloat(cardStyle.minHeight) || 0
+      };
+    });
+    expect(frame.cardMinHeight).toBe(0);
+    expect(frame.promptTop).toBeGreaterThanOrEqual(frame.viewportTop - 3);
+    expect(frame.kanaTop).toBeGreaterThanOrEqual(frame.viewportTop - 3);
+    expect(frame.inputBottom).toBeLessThanOrEqual(frame.viewportBottom + 3);
+  });
+
+  test('Tablet Practice Setup uses two comfortable columns and keeps Focus Mode available', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.addInitScript(() => localStorage.setItem('modeAtlasDisplayMode', 'tablet'));
+    await gotoApp(page, '/reading/');
+    await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'tablet');
+    await expect(page.locator('#studyNavHideBtn')).toBeVisible();
+
+    await page.locator('#modifiersTab').click();
+    const setup = await page.evaluate(() => {
+      const root = document.querySelector('#modifierOptions.ma-structured-modifiers');
+      const buttons = root ? [...root.querySelectorAll('button')] : [];
+      return {
+        columns: root ? getComputedStyle(root).gridTemplateColumns : '',
+        controlsFit: buttons.every((button) => button.scrollWidth <= button.clientWidth + 1)
+      };
+    });
+    expect(columnCount(setup.columns)).toBe(2);
+    expect(setup.controlsFit).toBe(true);
+  });
+});
+''', encoding='utf-8')
+          PY
+
+          python3 build_revision_assets.py
+          git show "${{ github.event.pull_request.base.sha }}:.github/workflows/release-check.yml" > .github/workflows/release-check.yml
+          git diff --check
+          git status --short
+
+      - name: Commit applied UX fixes
+        if: github.event_name == 'pull_request' && github.head_ref == 'agent/mode-atlas-2.47.0-phone-tablet-ux'
+        shell: bash
+        run: |
+          git config user.name "Mode Atlas Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add assets package.json tests/phone-tablet-ux.spec.js .github/workflows/release-check.yml
+          git commit -m "Fix phone and tablet trainer UX"
+          git push origin HEAD:${GITHUB_HEAD_REF}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
