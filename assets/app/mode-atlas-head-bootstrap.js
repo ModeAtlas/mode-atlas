@@ -7,6 +7,15 @@
   var protocol = location.protocol;
   var host = location.hostname;
   var search = location.search || '';
+  var capacitor = window.Capacitor || null;
+  var nativePlatform = '';
+  try {
+    nativePlatform = capacitor && typeof capacitor.getPlatform === 'function' ? String(capacitor.getPlatform() || '') : '';
+  } catch(e) {}
+  var isNativeApp = !!(capacitor && (
+    (typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform())
+    || (nativePlatform && nativePlatform !== 'web')
+  ));
   var isLocalFile = protocol === 'file:';
   var isLocalhost = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(host || '');
   var isLocalServer = isLocalhost && (protocol === 'http:' || protocol === 'https:');
@@ -15,7 +24,11 @@
   var isHttp = protocol === 'http:' || protocol === 'https:';
   var isProduction = isOfficialDomain || isGitHubPages;
   var isSupportedHost = isHttp;
-  var canUseFirebase = isSupportedHost;
+  var isSupportedRuntime = isSupportedHost || isNativeApp;
+  // Native authentication/cloud ownership is introduced through the platform
+  // bridge. Until that bridge owns auth, do not silently run browser Firebase
+  // authentication inside the iOS WebView.
+  var canUseFirebase = isSupportedHost && !isNativeApp;
 
 
   function getPageName(){
@@ -94,6 +107,8 @@
     backupFormatVersion: Number(window.ModeAtlasBackupFormatVersion || 1),
     cloudSnapshotVersion: Number(window.ModeAtlasCloudSnapshotVersion || 1),
     buildDate: String(window.ModeAtlasBuildDate || ''),
+    isNativeApp: isNativeApp,
+    nativePlatform: nativePlatform || (isNativeApp ? 'ios' : ''),
     isLocalFile: isLocalFile,
     isLocalhost: isLocalhost,
     isLocalServer: isLocalServer,
@@ -105,12 +120,14 @@
     isHosted: isSupportedHost,
     isProduction: isProduction,
     isSupportedHost: isSupportedHost,
+    isSupportedRuntime: isSupportedRuntime,
     canUseFirebase: canUseFirebase,
     allowDevTools: (isLocalServer || search.indexOf('dev=1') !== -1 || safeStorageGet('modeAtlasDevTools') === '1'),
     baseUrl: (isOfficialDomain ? 'https://mode-atlas.app/' : (location.origin + '/'))
   });
 
-  document.documentElement.dataset.maEnv = isLocalFile ? 'file-fallback' : (isProduction ? 'production' : (isLocalServer ? 'local-server' : 'hosted'));
+  document.documentElement.dataset.maEnv = isNativeApp ? 'native-ios' : (isLocalFile ? 'file-fallback' : (isProduction ? 'production' : (isLocalServer ? 'local-server' : 'hosted')));
+  document.documentElement.dataset.maRuntime = isNativeApp ? 'ios' : 'web';
   document.documentElement.dataset.maVersion = APP_VERSION;
   applyEarlyTheme();
   applyEarlyDisplayMode();
@@ -133,7 +150,7 @@
 
   function attachManifest(){
     try {
-      if (!isSupportedHost) return;
+      if (!isSupportedHost || isNativeApp) return;
       if (document.querySelector('link[rel="manifest"]')) return;
       var link = document.createElement('link');
       link.rel = 'manifest';
@@ -145,7 +162,7 @@
   function runDailyVersionFileCheck(){
     var versionFile = window.ModeAtlasVersionFile;
     if (!versionFile || typeof versionFile.runAutomaticCheck !== 'function') return;
-    versionFile.runAutomaticCheck({ enabled: isSupportedHost });
+    versionFile.runAutomaticCheck({ enabled: isSupportedHost && !isNativeApp });
   }
 
 
@@ -154,9 +171,11 @@
   // no SW lifecycle work is allowed to race or participate in page navigation.
 
   attachManifest();
-  try { window.ModeAtlasVersionFile?.installNavigationCacheGuard?.(); } catch(e) {}
-  runDailyVersionFileCheck();
-  onReady(function(){
-    try { window.ModeAtlasVersionFile?.revisionizeDocumentLinks?.(document); } catch(e) {}
-  });
+  if (!isNativeApp) {
+    try { window.ModeAtlasVersionFile?.installNavigationCacheGuard?.(); } catch(e) {}
+    runDailyVersionFileCheck();
+    onReady(function(){
+      try { window.ModeAtlasVersionFile?.revisionizeDocumentLinks?.(document); } catch(e) {}
+    });
+  }
 })();
