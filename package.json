@@ -16,9 +16,16 @@
     "build:ios-web": "python3 build_ios_web.py",
     "check:ios-web": "python3 build_ios_web.py --check",
     "test:ios-foundation": "node --test tests/ios-foundation.test.js",
-    "test:ios-shell": "playwright test tests/ios-shell.spec.js"
+    "test:ios-shell": "playwright test tests/ios-shell.spec.js",
+    "ios:sync": "npm run build:ios-web && npx cap sync ios",
+    "ios:open": "npx cap open ios"
   },
   "devDependencies": {
-    "@playwright/test": "^1.49.0"
+    "@playwright/test": "^1.49.0",
+    "@capacitor/cli": "8.5.2"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2"
   }
 }
