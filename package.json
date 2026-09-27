@@ -27,6 +27,8 @@
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",
-    "@capacitor/ios": "8.5.2"
+    "@capacitor/ios": "8.5.2",
+    "@capacitor-firebase/authentication": "8.5.2",
+    "firebase": "12.12.1"
   }
 }
