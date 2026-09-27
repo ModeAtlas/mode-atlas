@@ -3,6 +3,21 @@
   if (window.__modeAtlasPwaLoaded) return;
   window.__modeAtlasPwaLoaded = true;
 
+  if (window.ModeAtlasEnv?.isNativeApp) {
+    window.ModeAtlasInstall = Object.assign(window.ModeAtlasInstall || {}, {
+      show: async () => false,
+      naturalBreak: () => false,
+      isEligible: () => false,
+      lifetimeCorrect: () => 0,
+      isStandalone: () => true,
+      hasSeenPrompt: () => true,
+      markPromptSeen: () => {},
+      threshold: 100,
+      deferredPrompt: null
+    });
+    return;
+  }
+
   const PROMPT_SEEN_KEY = 'modeAtlasInstallPromptSeen';
   const PROMPT_DISMISSED_AT_KEY = 'modeAtlasInstallPromptDismissedAt';
   const AUTO_INSTALL_CORRECT_THRESHOLD = 100;
