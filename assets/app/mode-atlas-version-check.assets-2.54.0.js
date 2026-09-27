@@ -11,6 +11,25 @@
   var DEFAULT_TIMEOUT_MS = 4500;
   var inFlight = null;
 
+  function isNativeRuntime(){
+    try {
+      var capacitor = root.Capacitor;
+      if (!capacitor) return false;
+      if (typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform()) return true;
+      return typeof capacitor.getPlatform === 'function' && String(capacitor.getPlatform() || '') !== 'web';
+    } catch(e) {
+      return false;
+    }
+  }
+
+  function bundledVersion(){
+    return {
+      version: currentVersion(),
+      cacheRevision: currentRevision(),
+      source: 'native-bundle'
+    };
+  }
+
   function currentVersion(){
     return String(root.ModeAtlasVersion || root.MODE_ATLAS_VERSION || 'dev-local');
   }
@@ -77,6 +96,7 @@
 
   function readDeployedVersion(options){
     options = options || {};
+    if (isNativeRuntime()) return Promise.resolve(bundledVersion());
     var timeoutMs = Math.max(250, Number(options.timeoutMs || DEFAULT_TIMEOUT_MS));
 
     // There can only be one actual deployed-version request at a time. A manual
@@ -161,6 +181,10 @@
   function documentRequestUrl(path, revision){
     var url = new URL(String(path == null ? '' : path) || '/', location.href);
     if (!isAppDocumentUrl(url)) return url.href;
+    if (isNativeRuntime()) {
+      removeTransportParams(url);
+      return url.pathname + url.search + url.hash;
+    }
     removeTransportParams(url);
     var buildRevision = String(revision || currentRevision() || '');
     if (buildRevision) url.searchParams.set('build', buildRevision);
@@ -174,6 +198,7 @@
   }
 
   function installNavigationCacheGuard(){
+    if (isNativeRuntime()) return false;
     if (root.__modeAtlasNavigationCacheGuardInstalled) return false;
     root.__modeAtlasNavigationCacheGuardInstalled = true;
 
@@ -239,6 +264,7 @@
   }
 
   function reloadWithRevision(revision){
+    if (isNativeRuntime()) return false;
     var deployedRevision = String(revision || currentRevision() || currentVersion());
     var url = new URL(location.href);
     url.searchParams.set('build', deployedRevision);
@@ -276,6 +302,7 @@
 
   async function runDailyCheck(options){
     options = options || {};
+    if (isNativeRuntime()) return { skipped: 'native-bundle' };
     if (options.enabled === false) return { skipped: 'disabled' };
     if (location.protocol !== 'http:' && location.protocol !== 'https:') return { skipped: 'unsupported-protocol' };
 
@@ -330,6 +357,7 @@
   root.ModeAtlasVersionFile = Object.freeze({
     currentVersion: currentVersion,
     currentRevision: currentRevision,
+    isNativeRuntime: isNativeRuntime,
     readDeployedVersion: readDeployedVersion,
     check: check,
     compare: compare,
