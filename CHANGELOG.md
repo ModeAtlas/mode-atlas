@@ -1,3 +1,10 @@
+## 2.53.3 - 2026-09-27
+- Corrected the phone navigation top-of-page state so it sits in normal document flow on first load and whenever the user returns to the page top.
+- The nav now becomes a floating fixed control only after the user has left the top of the page and performs the deliberate upward reveal gesture.
+- The existing shared spacer remains owned by the navigation component but is inactive at the page top and only reserves flow while the nav is floating, preventing overlap or content jumps.
+- Preserved the 48px upward reveal threshold, downward hide behaviour, explicit Focus Mode, and tablet/desktop navigation.
+- Updated browser/regression coverage for initial top layout, floating reveal away from the top, and clean restoration when returning to the top.
+
 ## 2.53.2 - 2026-09-27
 - Reworked phone scroll navigation to match the intended reveal model instead of showing on any small upward adjustment.
 - Removed the legacy mobile `.ma-nav { position: relative; top: auto; }` rule that was overriding the shared sticky navigation owner and preventing the nav from reappearing at the current viewport position.

@@ -13,6 +13,7 @@
     if (!nav || nav.dataset.maPhoneScrollBound === '1') return;
     nav.dataset.maPhoneScrollBound = '1';
 
+    var navSpacer = document.querySelector('[data-ma-nav-spacer]');
     var lastY = Math.max(0, window.scrollY || 0);
     var direction = 0;
     var travel = 0;
@@ -20,12 +21,12 @@
 
     function syncPhoneNavGeometry(){
       if (!navSpacer) return;
-      if (effectiveDisplayMode() !== 'phone') {
+      if (effectiveDisplayMode() !== 'phone' || document.body?.classList.contains('study-nav-hidden')) {
         navSpacer.style.removeProperty('height');
         return;
       }
-      var height = Math.ceil(nav.getBoundingClientRect().height);
-      navSpacer.style.height = Math.max(0, height + 18) + 'px';
+      var rect = nav.getBoundingClientRect();
+      navSpacer.style.height = Math.max(0, Math.ceil(rect.bottom + 12)) + 'px';
     }
 
     function reveal(){
@@ -98,7 +99,6 @@
     syncPhoneNavGeometry();
     update();
   }
-
   bindPhoneScrollNavigation();
 
   var menu = document.querySelector('[data-ma-kana-menu]');

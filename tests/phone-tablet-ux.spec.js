@@ -117,12 +117,27 @@ test.describe('Phone and Tablet study UX', () => {
     expect(new URL(page.url()).pathname).toBe('/writing/');
   });
 
-  test('Phone navigation requires deliberate upward travel and reappears at the current viewport top', async ({ page }) => {
+  test('Phone navigation reserves the top cleanly, hides downward, and requires deliberate upward travel to return', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoApp(page, '/kana/');
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'phone');
     const nav = page.locator('.ma-nav');
     await expect(nav).toBeVisible();
+
+    const topLayout = await page.evaluate(() => {
+      const nav = document.querySelector('.ma-nav').getBoundingClientRect();
+      const spacer = document.querySelector('[data-ma-nav-spacer]').getBoundingClientRect();
+      const hero = document.querySelector('.kana-hub-hero').getBoundingClientRect();
+      return {
+        navTop: nav.top,
+        navBottom: nav.bottom,
+        spacerHeight: spacer.height,
+        heroTop: hero.top
+      };
+    });
+    expect(topLayout.navTop).toBeGreaterThanOrEqual(0);
+    expect(topLayout.spacerHeight).toBeGreaterThanOrEqual(topLayout.navBottom + 8);
+    expect(topLayout.heroTop).toBeGreaterThanOrEqual(topLayout.navBottom + 8);
 
     await page.evaluate(async () => {
       for (let y = 0; y <= 420; y += 6) {
@@ -155,8 +170,7 @@ test.describe('Phone and Tablet study UX', () => {
       const rect = element.getBoundingClientRect();
       return {
         top: rect.top,
-        scrollY: window.scrollY,
-        viewportHeight: window.innerHeight
+        scrollY: window.scrollY
       };
     });
     expect(visibleAtCurrentViewport.scrollY).toBeGreaterThan(300);
@@ -173,8 +187,19 @@ test.describe('Phone and Tablet study UX', () => {
     await expect(nav).toHaveClass(/ma-nav--scroll-hidden/);
 
     await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(80);
     await expect(nav).not.toHaveClass(/ma-nav--scroll-hidden/);
+    await expect.poll(
+      () => nav.evaluate((element) => element.getBoundingClientRect().top),
+      { timeout: 1200 }
+    ).toBeGreaterThanOrEqual(0);
+
+    const returnedTop = await page.evaluate(() => {
+      const nav = document.querySelector('.ma-nav').getBoundingClientRect();
+      const hero = document.querySelector('.kana-hub-hero').getBoundingClientRect();
+      return { navTop: nav.top, navBottom: nav.bottom, heroTop: hero.top };
+    });
+    expect(returnedTop.navTop).toBeGreaterThanOrEqual(0);
+    expect(returnedTop.heroTop).toBeGreaterThanOrEqual(returnedTop.navBottom + 8);
   });
 
   test('Phone Practice Setup stacks groups, sizes controls safely, and clears the fixed setup bar', async ({ page }) => {

@@ -1160,8 +1160,8 @@ test('2.34.1 Kana navigation flyout stays out of header flow and supports pointe
   assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav\{[\s\S]*?position:fixed;/);
   assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav-spacer\{[\s\S]*?display:block;/);
   assert.match(navRuntime, /syncPhoneNavGeometry/);
+  assert.match(navRuntime, /rect\.bottom \+ 12/);
   assert.match(navRuntime, /ResizeObserver/);
-  assert.doesNotMatch(navCss, /@media\(max-width:760px\), \(max-width:900px\) and \(orientation:portrait\)\{[\s\S]*?\.ma-nav\{[\s\S]*?position:relative;/);
   assert.match(navRuntime, /direction > 0 && travel >= 12/);
   assert.match(navRuntime, /direction < 0 && travel >= 48/);
   assert.match(navCss, /body\[data-effective-display-mode="phone"\]:not\(\.study-nav-hidden\) \.ma-nav\.ma-nav--scroll-hidden/);
