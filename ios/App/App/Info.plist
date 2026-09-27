@@ -30,6 +30,12 @@
 			<key>CFBundleURLSchemes</key>
 			<array><string>modeatlas</string></array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.modeatlas.google-sign-in</string>
+			<key>CFBundleURLSchemes</key>
+			<array><string>$(GOOGLE_REVERSED_CLIENT_ID)</string></array>
+		</dict>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>

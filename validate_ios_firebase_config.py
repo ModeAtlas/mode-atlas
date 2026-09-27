@@ -10,6 +10,7 @@ from __future__ import annotations
 from argparse import ArgumentParser
 from pathlib import Path
 import plistlib
+import re
 
 ROOT = Path(__file__).resolve().parent
 PLIST = ROOT / "ios/App/App/GoogleService-Info.plist"
@@ -42,6 +43,12 @@ def validate(require: bool = False) -> bool:
     for key in ("GOOGLE_APP_ID", "CLIENT_ID", "REVERSED_CLIENT_ID", "API_KEY"):
         if not str(data.get(key) or "").strip():
             raise SystemExit(f"GoogleService-Info.plist is missing required {key}.")
+    if data.get("IS_SIGNIN_ENABLED") is not True:
+        raise SystemExit("Google sign-in is not enabled in the iOS Firebase app configuration.")
+    if data["REVERSED_CLIENT_ID"] != ".".join(reversed(data["CLIENT_ID"].split("."))):
+        raise SystemExit("GoogleService-Info.plist has mismatched Google callback identifiers.")
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9.+-]*", data["REVERSED_CLIENT_ID"]):
+        raise SystemExit("GoogleService-Info.plist has an invalid iOS callback URL scheme.")
 
     print(
         "Mode Atlas iOS Firebase config PASS: "

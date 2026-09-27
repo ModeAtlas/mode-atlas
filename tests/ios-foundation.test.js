@@ -102,6 +102,20 @@ test('native auth transport keeps Firebase JS as the single session and Firestor
   assert.doesNotMatch(cloud, /FirebaseAuthentication\.signInWithGoogle/);
 });
 
+test('provisioned iOS Google config is a bundled resource with a separate callback scheme', () => {
+  const project = read('ios/App/App.xcodeproj/project.pbxproj');
+  const info = read('ios/App/App/Info.plist');
+  const scene = read('ios/App/App/SceneDelegate.swift');
+  const sync = read('sync_ios_project.py');
+  assert.match(project, /GoogleService-Info\.plist in Resources/);
+  assert.match(project, /GOOGLE_REVERSED_CLIENT_ID = /);
+  assert.match(info, /\$\(GOOGLE_REVERSED_CLIENT_ID\)/);
+  assert.match(info, /<string>modeatlas<\/string>/);
+  assert.match(scene, /GIDSignIn\.sharedInstance\.handle/);
+  assert.match(sync, /validate_firebase\(require=True\)/);
+  assert.ok(fs.existsSync(path.join(ROOT, 'ios/App/App/GoogleService-Info.plist')));
+});
+
 test('native destination router accepts only product links and consumes a launch once', async () => {
   const navigations = [];
   const memory = new Map();

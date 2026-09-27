@@ -1,3 +1,10 @@
+## 2.57.0 - 2026-09-27
+
+- Provisioned the real Firebase Apple app registration for `app.modeatlas` in the existing `mode-atlus` project.
+- Bundled the validated Firebase plist with the iOS target and derived the Google callback URL scheme from that single configuration owner.
+- Routed the Google callback through the iOS scene delegate while retaining Capacitor navigation URL handling.
+- Made Firebase configuration mandatory for release checks and verified the built simulator app's bundled plist and resolved URL scheme.
+
 ## 2.56.0 - 2026-09-27
 
 - Route cold and warm iOS launches through Capacitor App to shared Mode Atlas destinations, with a dedicated `modeatlas://open/` navigation scheme.

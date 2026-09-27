@@ -80,7 +80,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: Mode-Atlas-2.56.0-${{ github.sha }}
+          name: Mode-Atlas-2.57.0-${{ github.sha }}
           path: ${{ runner.temp }}/mode-atlas-release
           include-hidden-files: true
           if-no-files-found: error
@@ -90,7 +90,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: Mode-Atlas-iOS-Web-2.56.0-${{ github.sha }}
+          name: Mode-Atlas-iOS-Web-2.57.0-${{ github.sha }}
           path: .build/ios-web
           include-hidden-files: true
           if-no-files-found: error
@@ -138,6 +138,10 @@ jobs:
           app_path="${RUNNER_TEMP}/ModeAtlasDerivedData/Build/Products/Debug-iphonesimulator/App.app"
           test -d "$app_path"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")" = "app.modeatlas"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "2.56.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "2056000"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "2.57.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "2057000"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "modeatlas"
+          test -f "$app_path/GoogleService-Info.plist"
+          cmp ios/App/App/GoogleService-Info.plist "$app_path/GoogleService-Info.plist"
+          google_scheme="$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' "$app_path/GoogleService-Info.plist")"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:1:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "$google_scheme"

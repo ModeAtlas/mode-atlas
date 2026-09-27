@@ -7,7 +7,10 @@ from __future__ import annotations
 
 from pathlib import Path
 import os
+import plistlib
 import re
+
+from validate_ios_firebase_config import PLIST as FIREBASE_PLIST, validate as validate_firebase
 
 ROOT = Path(__file__).resolve().parent
 VERSION_SOURCE = ROOT / "assets/app/mode-atlas-version.js"
@@ -36,14 +39,30 @@ def ios_build_number(version: str) -> int:
 def sync() -> tuple[str, int, bool]:
     version = release_version()
     build = ios_build_number(version)
+    validate_firebase(require=True)
+    with FIREBASE_PLIST.open("rb") as handle:
+        firebase = plistlib.load(handle)
+    reversed_client_id = firebase["REVERSED_CLIENT_ID"]
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9.+-]*", reversed_client_id):
+        raise SystemExit("Firebase REVERSED_CLIENT_ID is not a valid iOS URL scheme.")
     source = PBXPROJ.read_text(encoding="utf-8")
     updated = re.sub(r"MARKETING_VERSION = [^;]+;", f"MARKETING_VERSION = {version};", source)
     updated = re.sub(r"CURRENT_PROJECT_VERSION = [^;]+;", f"CURRENT_PROJECT_VERSION = {build};", updated)
+    if "GOOGLE_REVERSED_CLIENT_ID = " in updated:
+        updated = re.sub(r"GOOGLE_REVERSED_CLIENT_ID = [^;]+;", f"GOOGLE_REVERSED_CLIENT_ID = {reversed_client_id};", updated)
+    else:
+        updated = re.sub(
+            r"(?m)^(\s*)CURRENT_PROJECT_VERSION = [^;]+;",
+            lambda match: match.group(0) + "\n" + match.group(1) + f"GOOGLE_REVERSED_CLIENT_ID = {reversed_client_id};",
+            updated,
+        )
 
     if updated.count(f"MARKETING_VERSION = {version};") < 2:
         raise SystemExit("Could not synchronize all Xcode marketing-version build settings.")
     if updated.count(f"CURRENT_PROJECT_VERSION = {build};") < 2:
         raise SystemExit("Could not synchronize all Xcode build-number settings.")
+    if updated.count(f"GOOGLE_REVERSED_CLIENT_ID = {reversed_client_id};") != 2:
+        raise SystemExit("Could not synchronize the Firebase callback scheme in both Xcode configurations.")
 
     changed = updated != source
     if changed:
