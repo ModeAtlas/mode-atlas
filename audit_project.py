@@ -137,6 +137,37 @@ def main() -> int:
     if legacy_changelog_workflow.exists():
         fail(errors, 'legacy GitHub release workflow still has a second owner for CHANGELOG.md')
 
+    # Native/iOS foundation ownership: the web app remains canonical while one
+    # shared platform facade exposes browser/native capabilities. Browser-only
+    # PWA/update mechanisms must not become a second lifecycle owner in iOS.
+    native_foundation_files = (
+        ROOT / 'assets/platform/mode-atlas-platform.js',
+        ROOT / 'assets/platform/mode-atlas-platform-web.js',
+        ROOT / 'assets/platform/mode-atlas-platform-native.js',
+        ROOT / 'build_ios_web.py',
+    )
+    for native_file in native_foundation_files:
+        if not native_file.exists():
+            fail(errors, f'missing native foundation owner: {native_file.relative_to(ROOT)}')
+
+    head_bootstrap_source = text(ROOT / 'assets/app/mode-atlas-head-bootstrap.js')
+    version_check_source = text(ROOT / 'assets/app/mode-atlas-version-check.js')
+    pwa_source = text(ROOT / 'assets/app/mode-atlas-pwa.js')
+    frontend_source_for_native = text(ROOT / 'frontend_components.py')
+    for asset in (
+        'assets/platform/mode-atlas-platform.js',
+        'assets/platform/mode-atlas-platform-web.js',
+        'assets/platform/mode-atlas-platform-native.js',
+    ):
+        if asset not in frontend_source_for_native:
+            fail(errors, f'shared head manifest is missing native platform asset: {asset}')
+    if 'isNativeApp' not in head_bootstrap_source or 'isSupportedRuntime' not in head_bootstrap_source:
+        fail(errors, 'head bootstrap does not expose first-class native runtime state')
+    if 'isNativeRuntime' not in version_check_source or 'native-bundle' not in version_check_source:
+        fail(errors, 'version owner does not explicitly exclude native bundled runtime from web update checks')
+    if 'ModeAtlasEnv?.isNativeApp' not in pwa_source:
+        fail(errors, 'PWA install owner does not explicitly disable itself in native runtime')
+
     readme_path = ROOT / 'README.md'
     if readme_path.exists():
         readme_version = re.search(r'(?m)^Version:\s*(\S+)', text(readme_path))
