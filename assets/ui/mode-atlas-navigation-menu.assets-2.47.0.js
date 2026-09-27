@@ -39,17 +39,8 @@
     menu.addEventListener('mouseleave', closeAfterPointerLeave);
   }
 
-  trigger.addEventListener('click', function(event){
-    var finePointer = !!(hoverQuery && hoverQuery.matches);
-    var mode = effectiveDisplayMode();
-    if (mode === 'phone' || mode === 'tablet') finePointer = false;
-    if (finePointer) return;
-    if (!isOpen()) {
-      event.preventDefault();
-      setOpen(true);
-    } else {
-      event.preventDefault();
-    }
+  trigger.addEventListener('click', function(){
+    setOpen(true);
   });
 
   menu.addEventListener('focusin', function(){ setOpen(true); });
