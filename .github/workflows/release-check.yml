@@ -80,7 +80,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: Mode-Atlas-2.54.0-${{ github.sha }}
+          name: Mode-Atlas-2.55.0-${{ github.sha }}
           path: ${{ runner.temp }}/mode-atlas-release
           include-hidden-files: true
           if-no-files-found: error
@@ -90,7 +90,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: Mode-Atlas-iOS-Web-2.54.0-${{ github.sha }}
+          name: Mode-Atlas-iOS-Web-2.55.0-${{ github.sha }}
           path: .build/ios-web
           include-hidden-files: true
           if-no-files-found: error
@@ -138,5 +138,5 @@ jobs:
           app_path="${RUNNER_TEMP}/ModeAtlasDerivedData/Build/Products/Debug-iphonesimulator/App.app"
           test -d "$app_path"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")" = "app.modeatlas"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "2.54.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "2054000"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "2.55.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "2055000"

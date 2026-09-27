@@ -1,3 +1,13 @@
+## 2.55.0 - 2026-09-27
+- Added native Google sign-in transport for the iOS shell using Capacitor Firebase Authentication 8.5.2.
+- Kept Firebase JavaScript Auth as the single authenticated session owner across web and iOS; native iOS owns only the Google account chooser and returns an OAuth credential to the existing cloud-sync owner.
+- Configured the Capacitor Firebase plugin with `skipNativeAuth: true` and only the `google.com` provider to prevent duplicate native/web Firebase sessions.
+- Updated `cloud-sync.js` to exchange the native Google credential through `GoogleAuthProvider.credential()` and `signInWithCredential()`, preserving the same Firebase UID, Firestore path, hydration, merge and sync logic used by the website.
+- Added explicit native auth capabilities to the shared `AtlasPlatform` boundary instead of placing iOS-specific calls in trainer/page code.
+- Added a Firebase Apple configuration validator and documented the required `app.modeatlas` registration in the existing `mode-atlus` Firebase project. Native Google sign-in remains intentionally unavailable until the real iOS `GoogleService-Info.plist` is provisioned; no placeholder client IDs are committed.
+- Synchronized the real Capacitor iOS project and Swift Package Manager dependencies with the Google-only Firebase Authentication trait.
+- Extended audit, regression and simulated native-shell coverage for the single-owner authentication boundary.
+
 ## 2.54.0 - 2026-09-27
 - Added the first Mode Atlas iOS/native foundation without duplicating learning logic or creating a separate frontend implementation.
 - Introduced one shared `AtlasPlatform` facade with explicit web and iOS adapters for native-capability boundaries such as app version, external links, destinations, notifications, badges, and widget snapshots.
