@@ -103,12 +103,14 @@ function createTrainerUiVisibilityControls(elements = {}) {
         if (!gameOverEl) return;
         setElementVisible(gameOverEl, !!visible);
         gameOverEl.classList.toggle("is-active", !!visible);
+        document.body.classList.toggle("trainer-session-result", !!visible);
     }
 
     function setRetryButtonVisible(visible = true) {
         if (!retryBtn) return;
         setElementVisible(retryBtn, !!visible);
         retryBtn.classList.toggle("is-active", !!visible);
+        document.body.classList.toggle("trainer-session-retry", !!visible);
     }
 
     return {
