@@ -1,5 +1,5 @@
 let initializeApp, getApps, getApp;
-let getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged;
+let getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, signOut, onAuthStateChanged;
 let getFirestore, doc, getDoc, setDoc;
 let firebaseModulesPromise = null;
 let firebaseModulesLoaded = false;
@@ -78,6 +78,7 @@ async function loadFirebaseModules() {
     signInWithPopup = authMod.signInWithPopup;
     signInWithRedirect = authMod.signInWithRedirect;
     getRedirectResult = authMod.getRedirectResult;
+    signInWithCredential = authMod.signInWithCredential;
     signOut = authMod.signOut;
     onAuthStateChanged = authMod.onAuthStateChanged;
     return true;
@@ -1025,7 +1026,9 @@ async function setupFirebase() {
     if (!app) {
       app = getApps().length ? getApp() : initializeApp(CONFIG);
       auth = getAuth(app);
-      try { await getRedirectResult(auth); } catch (error) { console.warn('Redirect sign-in result was not available.', error); }
+      if (!window.ModeAtlasEnv?.isNativeApp) {
+        try { await getRedirectResult(auth); } catch (error) { console.warn('Redirect sign-in result was not available.', error); }
+      }
     }
 
     if (!authListenerInstalled && auth && onAuthStateChanged) {
@@ -1179,30 +1182,67 @@ async function signInWithGoogle() {
     await window.ModeAtlasFeedback?.alert?.({
       kicker: 'Cloud sync',
       title: 'Google sign-in is not configured',
-      message: 'Add your Firebase project details to firebase-config.js before using Google sign-in.',
+      message: 'Mode Atlas cloud sign-in is not configured for this build.',
       tone: 'warning',
       confirmLabel: 'OK'
     });
-    return;
+    return false;
   }
+
   try {
-    await signInWithPopup(auth, provider);
+    if (window.ModeAtlasEnv?.isNativeApp) {
+      const nativeResult = await window.AtlasPlatform?.authenticate?.('google.com');
+      const credential = nativeResult?.credential || null;
+      if (!nativeResult?.handled || !credential?.idToken) {
+        const error = new Error('Native Google authentication did not return a usable credential.');
+        error.code = 'native-auth-missing-credential';
+        throw error;
+      }
+      if (typeof signInWithCredential !== 'function' || !GoogleAuthProvider?.credential) {
+        const error = new Error('Firebase credential sign-in is unavailable.');
+        error.code = 'native-auth-web-session-unavailable';
+        throw error;
+      }
+
+      // Native iOS owns only the Google account chooser. The existing Firebase
+      // JS Auth instance remains the single session owner for Firestore/cloud
+      // sync so the website and app use the same UID and persistence model.
+      const webCredential = GoogleAuthProvider.credential(
+        credential.idToken,
+        credential.accessToken || undefined
+      );
+      await signInWithCredential(auth, webCredential);
+    } else {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        const code = String(error?.code || '');
+        if (code.includes('popup') || code.includes('cancelled')) {
+          await signInWithRedirect(auth, provider);
+          return true;
+        }
+        throw error;
+      }
+    }
+
     await hydrateFromCloud(false);
     await syncNow();
+    return true;
   } catch (error) {
-    const code = String(error?.code || '');
-    if (code.includes('popup') || code.includes('cancelled')) {
-      await signInWithRedirect(auth, provider);
-      return;
-    }
     console.error('Google sign-in failed.', error);
+    const code = String(error?.code || '');
+    const nativeSetupProblem = code.includes('native-auth')
+      || /GoogleService-Info|client id|configuration/i.test(String(error?.message || ''));
     await window.ModeAtlasFeedback?.alert?.({
       kicker: 'Cloud sync',
       title: 'Google sign-in failed',
-      message: 'Mode Atlas could not complete Google sign-in. Check your connection and Firebase Auth setup, then try again.',
+      message: nativeSetupProblem
+        ? 'This iOS build is not yet registered for Google sign-in. Mode Atlas needs its Firebase iOS configuration before native sign-in can be used.'
+        : 'Mode Atlas could not complete Google sign-in. Check your connection and Firebase Auth setup, then try again.',
       tone: 'error',
       confirmLabel: 'OK'
     });
+    return false;
   }
 }
 
@@ -1210,6 +1250,9 @@ async function signOutUser() {
   if (!auth) return;
   await signOut(auth);
   hydratedForUserId = null;
+  if (window.ModeAtlasEnv?.isNativeApp) {
+    try { await window.AtlasPlatform?.signOutIdentityProvider?.(); } catch {}
+  }
 }
 
 function isSessionCloudPaused() {
