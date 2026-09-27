@@ -142,6 +142,15 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "2057000"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "modeatlas"
           test -f "$app_path/GoogleService-Info.plist"
-          cmp ios/App/App/GoogleService-Info.plist "$app_path/GoogleService-Info.plist"
+          python3 - "$app_path/GoogleService-Info.plist" <<'PY'
+          import plistlib
+          import sys
+          from pathlib import Path
+
+          source = plistlib.loads(Path('ios/App/App/GoogleService-Info.plist').read_bytes())
+          bundled = plistlib.loads(Path(sys.argv[1]).read_bytes())
+          if source != bundled:
+              raise SystemExit('Bundled Firebase configuration differs from source')
+          PY
           google_scheme="$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' "$app_path/GoogleService-Info.plist")"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:1:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "$google_scheme"
