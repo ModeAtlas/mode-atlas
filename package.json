@@ -15,7 +15,8 @@
     "test:frontend": "node --test tests/frontend.test.js",
     "build:ios-web": "python3 build_ios_web.py",
     "check:ios-web": "python3 build_ios_web.py --check",
-    "test:ios-foundation": "node --test tests/ios-foundation.test.js"
+    "test:ios-foundation": "node --test tests/ios-foundation.test.js",
+    "test:ios-shell": "playwright test tests/ios-shell.spec.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0"
