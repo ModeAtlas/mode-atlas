@@ -980,16 +980,6 @@ body[data-effective-display-mode="phone"] #trialTimerPill:not([hidden]) {
   
 }
 
-@media (max-width: 760px), (max-width: 900px) and (orientation: portrait){
-  
-
-  
-
-  #studyNavHideBtn{
-    display:none;
-  }
-}
-
 /* Responsive bottom-shell ownership moved from mode-atlas-responsive.css. */
 @media (max-width: 760px) {
   /* Avoid the bottom modifier control creating sideways page scroll. */
