@@ -71,7 +71,11 @@ test('native launch links reach shared practice setup and ignore foreign callbac
   await expect(page).toHaveURL(/\/reading\/?$/);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('settings') || '{}').dailyChallenge)).toBe(true);
 
-  await page.evaluate(() => window.modeAtlasOpenUrl({ url: 'modeatlas://open/reading?mode=review' }));
+  await Promise.all([
+    page.waitForEvent('framenavigated'),
+    page.evaluate(() => window.modeAtlasOpenUrl({ url: 'modeatlas://open/reading?mode=review' }))
+  ]);
+  await page.waitForLoadState('domcontentloaded');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('settings') || '{}').focusWeak)).toBe(true);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('settings') || '{}').dailyChallenge)).toBe(false);
 
