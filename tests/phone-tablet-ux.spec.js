@@ -83,13 +83,18 @@ test.describe('Phone and Tablet study UX', () => {
       const brand = document.querySelector('.ma-nav__brand').getBoundingClientRect();
       const actions = document.querySelector('.ma-nav__actions').getBoundingClientRect();
       const button = document.getElementById('studyNavHideBtn').getBoundingClientRect();
+      const label = document.querySelector('#studyNavHideBtn .ma-nav__action-label');
       return {
         focusContained: button.left >= nav.left - 1 && button.right <= nav.right + 1 && button.top >= nav.top - 1 && button.bottom <= nav.bottom + 1,
-        firstRowClear: brand.right <= actions.left + 1
+        firstRowClear: brand.right <= actions.left + 1,
+        focusContentFits: document.getElementById('studyNavHideBtn').scrollWidth <= document.getElementById('studyNavHideBtn').clientWidth + 1,
+        focusLabelHidden: label ? getComputedStyle(label).display === 'none' : true
       };
     });
     expect(navGeometry.focusContained).toBe(true);
     expect(navGeometry.firstRowClear).toBe(true);
+    expect(navGeometry.focusContentFits).toBe(true);
+    expect(navGeometry.focusLabelHidden).toBe(true);
 
     await focus.click();
     await expect(page.locator('body')).toHaveClass(/study-nav-hidden/);
@@ -194,12 +199,75 @@ test.describe('Phone and Tablet study UX', () => {
     expect(frame.inputBottom).toBeLessThanOrEqual(frame.viewportBottom + 3);
   });
 
+  test('Achievement detail uses the dialog close control as Back before dismissing', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await gotoApp(page, '/kana/');
+    await page.evaluate(() => window.ModeAtlasFeatures.openAchievements());
+    const dialog = page.locator('[data-ma-dialog-layer]');
+    await expect(dialog).toBeVisible();
+    await page.locator('[data-ma-ach-id]').first().click();
+    await expect(page.locator('.ma-ach-info-body')).toBeVisible();
+    await expect(page.getByText('Back to achievements')).toHaveCount(0);
+
+    await page.locator('.ma-dialog__close').click();
+    await expect(dialog).toBeVisible();
+    await expect(page.locator('.ma-achievement-layout')).toBeVisible();
+
+    await page.locator('.ma-dialog__close').click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('Phone Mastery Map reveals the kana grid without an initial scroll hunt', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoApp(page, '/kana/');
+    await page.evaluate(() => window.ModeAtlasFeatures.openMasteryMap());
+    await expect(page.locator('[data-ma-dialog-layer]')).toBeVisible();
+    const geometry = await page.evaluate(() => {
+      const panel = document.querySelector('[data-ma-dialog-panel]').getBoundingClientRect();
+      const firstGroup = document.querySelector('.ma-mastery-group').getBoundingClientRect();
+      const overview = document.querySelector('.ma-mastery-overview').getBoundingClientRect();
+      return {
+        firstGroupVisible: firstGroup.top < panel.bottom - 12,
+        overviewHeight: overview.height
+      };
+    });
+    expect(geometry.firstGroupVisible).toBe(true);
+    expect(geometry.overviewHeight).toBeLessThan(190);
+  });
+
+  test('Phone loss state keeps the correct answer and Try again action in the visible trainer frame', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoApp(page, '/reading/');
+    await page.locator('#startBtn').click();
+    await page.locator('#input').fill('zz');
+    await expect(page.locator('#gameOver')).toBeVisible();
+    await expect(page.locator('#retryBtn')).toBeVisible();
+    await expect(page.locator('#sessionActions')).toBeHidden();
+    const frame = await page.evaluate(() => {
+      const answer = document.getElementById('gameOverAnswer').getBoundingClientRect();
+      const retry = document.getElementById('retryBtn').getBoundingClientRect();
+      const viewportBottom = Number(window.visualViewport?.height || window.innerHeight) + Number(window.visualViewport?.offsetTop || 0);
+      return {
+        answerVisible: answer.top >= -2 && answer.bottom <= viewportBottom + 2,
+        retryVisible: retry.top >= -2 && retry.bottom <= viewportBottom + 2
+      };
+    });
+    expect(frame.answerVisible).toBe(true);
+    expect(frame.retryVisible).toBe(true);
+  });
+
   test('Tablet Practice Setup uses two comfortable columns and keeps Focus Mode available', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.addInitScript(() => localStorage.setItem('modeAtlasDisplayMode', 'tablet'));
     await gotoApp(page, '/reading/');
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'tablet');
     await expect(page.locator('#studyNavHideBtn')).toBeVisible();
+    const focusGeometry = await page.locator('#studyNavHideBtn').evaluate((button) => ({
+      fits: button.scrollWidth <= button.clientWidth + 1,
+      labelHidden: getComputedStyle(button.querySelector('.ma-nav__action-label')).display === 'none'
+    }));
+    expect(focusGeometry.fits).toBe(true);
+    expect(focusGeometry.labelHidden).toBe(true);
 
     await page.locator('#modifiersTab').click();
     const setup = await page.evaluate(() => {
