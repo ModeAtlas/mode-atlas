@@ -1,0 +1,62 @@
+name: Synchronize native auth dependencies
+
+on:
+  push:
+    branches:
+      - agent/mode-atlas-2.55.0-native-auth
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mode-atlas-ios-auth-sync
+  cancel-in-progress: true
+
+jobs:
+  sync-native-auth:
+    if: "!contains(github.event.head_commit.message, 'Synchronize Capacitor Firebase auth dependencies')"
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Resolve dependency lockfile
+        run: npm install --package-lock-only --ignore-scripts --registry=https://registry.npmjs.org/
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+
+      - name: Build native web payload
+        run: |
+          python3 build_revision_assets.py
+          python3 build_ios_web.py
+
+      - name: Synchronize Capacitor iOS project
+        run: npx cap sync ios
+
+      - name: Validate native shell compiles with Firebase auth transport
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Remove generated web payload
+        run: rm -rf ios/App/App/public
+
+      - name: Commit synchronized dependencies
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json ios
+          git rm .github/workflows/ios-auth-sync.yml
+          git commit -m "Synchronize Capacitor Firebase auth dependencies"
+          git push origin HEAD:agent/mode-atlas-2.55.0-native-auth
