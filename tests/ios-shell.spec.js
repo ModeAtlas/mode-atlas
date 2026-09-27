@@ -10,7 +10,19 @@ test('bundled iOS runtime uses native lifecycle without web update or PWA owners
     window.Capacitor = {
       isNativePlatform: () => true,
       getPlatform: () => 'ios',
-      Plugins: {}
+      Plugins: {
+        FirebaseAuthentication: {
+          signInWithGoogle: async () => ({
+            user: null,
+            credential: {
+              providerId: 'google.com',
+              idToken: 'simulated-native-id-token',
+              accessToken: 'simulated-native-access-token'
+            }
+          }),
+          signOut: async () => {}
+        }
+      }
     };
   });
 
@@ -21,15 +33,20 @@ test('bundled iOS runtime uses native lifecycle without web update or PWA owners
   const state = await page.evaluate(async () => ({
     native: window.ModeAtlasEnv?.isNativeApp,
     firebaseWebAuthEnabled: window.ModeAtlasEnv?.canUseFirebase,
+    authTransport: window.ModeAtlasEnv?.firebaseAuthTransport,
     platform: window.AtlasPlatform?.environment,
+    capabilities: window.AtlasPlatform?.getCapabilities?.(),
     hasManifest: !!document.querySelector('link[rel="manifest"]'),
     dailyCheck: await window.ModeAtlasVersionFile?.runDailyCheck?.(),
     widgetPublish: await window.AtlasPlatform?.publishWidgetSnapshot?.({ streak: 1 })
   }));
 
   expect(state.native).toBe(true);
-  expect(state.firebaseWebAuthEnabled).toBe(false);
+  expect(state.firebaseWebAuthEnabled).toBe(true);
+  expect(state.authTransport).toBe('native-provider-web-session');
   expect(state.platform).toBe('ios');
+  expect(state.capabilities.authentication).toBe(true);
+  expect(state.capabilities.authProviders).toEqual(['google.com']);
   expect(state.hasManifest).toBe(false);
   expect(state.dailyCheck?.skipped).toBe('native-bundle');
   expect(state.widgetPublish).toBe(false);
