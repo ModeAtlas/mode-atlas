@@ -1156,16 +1156,16 @@ test('2.34.1 Kana navigation flyout stays out of header flow and supports pointe
   }
 });
 
-test('2.34.2 Kana flyout keeps fast desktop navigation and deliberate touch access', () => {
+test('2.34.2 Kana flyout uses one disclosure control across pointer, touch, and keyboard input', () => {
   const frontend = read('frontend_components.py');
   const navJs = read('assets/ui/mode-atlas-navigation-menu.js');
   const navCss = read('assets/css/mode-atlas-navigation.css');
-  assert.match(frontend, /f'<a class="\{classes\}" href="\/kana\/" data-ma-nav-scope="product"/);
-  assert.doesNotMatch(frontend, /f'<button class="\{classes\}" type="button" data-ma-nav-scope="product"/);
-  assert.match(navJs, /var finePointer = !!\(hoverQuery && hoverQuery\.matches\)/);
-  assert.match(navJs, /if \(finePointer\) return/);
-  assert.match(navJs, /if \(!isOpen\(\)\) \{\s*event\.preventDefault\(\);\s*setOpen\(true\);/);
-  assert.doesNotMatch(navJs, /setOpen\(!isOpen\(\)\)/);
+  assert.match(frontend, /f'<button class="\{classes\}" type="button" data-ma-nav-scope="product"/);
+  assert.doesNotMatch(frontend, /f'<a class="\{classes\}" href="\/kana\/" data-ma-nav-scope="product"/);
+  assert.match(navJs, /trigger\.addEventListener\('click', function\(\)\{\s*setOpen\(true\);/);
+  assert.match(navJs, /menu\.addEventListener\('focusin', function\(\)\{ setOpen\(true\); \}\);/);
+  assert.match(navJs, /document\.addEventListener\('pointerdown'/);
+  assert.doesNotMatch(navJs, /location\.href|location\.assign/);
   assert.match(navCss, /\.ma-nav__section-link\{[\s\S]*?justify-content:center;[\s\S]*?text-align:center;/);
 });
 
