@@ -213,6 +213,9 @@ HEAD_SCRIPTS = (
     'assets/app/mode-atlas-legacy-sw-retirement.js',
     'assets/app/mode-atlas-version-check.js',
     'assets/app/mode-atlas-head-bootstrap.js',
+    'assets/platform/mode-atlas-platform.js',
+    'assets/platform/mode-atlas-platform-web.js',
+    'assets/platform/mode-atlas-platform-native.js',
 )
 EARLY_BODY_SCRIPTS = ('assets/app/mode-atlas-early-loader.js',)
 
