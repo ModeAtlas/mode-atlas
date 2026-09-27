@@ -1,0 +1,5 @@
+{
+  "appId": "app.modeatlas",
+  "appName": "Mode Atlas",
+  "webDir": ".build/ios-web"
+}
