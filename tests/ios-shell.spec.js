@@ -53,3 +53,31 @@ test('bundled iOS runtime uses native lifecycle without web update or PWA owners
   expect(versionChecks).toHaveLength(0);
   await expect(page.locator('#maInstallPrompt')).toHaveCount(0);
 });
+
+test('native launch links reach shared practice setup and ignore foreign callbacks', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.Capacitor = {
+      isNativePlatform: () => true,
+      getPlatform: () => 'ios',
+      Plugins: {
+        App: {
+          addListener: (_name, callback) => { window.modeAtlasOpenUrl = callback; },
+          getLaunchUrl: async () => ({ url: 'modeatlas://open/reading?mode=daily' })
+        }
+      }
+    };
+  });
+  await page.goto('/kana/');
+  await expect(page).toHaveURL(/\/reading\/?$/);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('settings') || '{}').dailyChallenge)).toBe(true);
+
+  await page.evaluate(() => window.modeAtlasOpenUrl({ url: 'modeatlas://open/reading?mode=review' }));
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('settings') || '{}').focusWeak)).toBe(true);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('settings') || '{}').dailyChallenge)).toBe(false);
+
+  const currentUrl = page.url();
+  await page.evaluate(() => window.modeAtlasOpenUrl({ url: 'com.googleusercontent.apps.example:/oauth?mode=daily' }));
+  expect(page.url()).toBe(currentUrl);
+  expect(await page.evaluate(() => window.AtlasPlatform.destinationFromUrl('https://evil.example/reading/?mode=daily'))).toBe('');
+  expect(await page.evaluate(() => window.AtlasPlatform.destinationFromUrl('modeatlas://open/wordbank'))).toBe('wordBank');
+});

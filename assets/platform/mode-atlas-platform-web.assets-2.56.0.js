@@ -4,20 +4,9 @@
   var platform = root.AtlasPlatform;
   if (!platform || root.ModeAtlasEnv?.isNativeApp) return;
 
-  var DESTINATIONS = Object.freeze({
-    atlas: '/',
-    kana: '/kana/',
-    reading: '/reading/',
-    writing: '/writing/',
-    daily: '/reading/?mode=daily',
-    review: '/reading/?mode=review',
-    results: '/results/',
-    wordBank: '/wordbank/'
-  });
-
   function destinationUrl(destination){
-    var key = String(destination || '');
-    var path = DESTINATIONS[key] || key || '/';
+    var path = platform.destinationPath(destination);
+    if (!path) return '';
     try { return root.ModeAtlasVersionFile?.appUrl?.(path) || path; }
     catch (_) { return path; }
   }
@@ -45,6 +34,7 @@
     },
     openDestination: function(destination, options){
       var url = destinationUrl(destination);
+      if (!url) return false;
       if (options && options.replace === true) location.replace(url);
       else location.assign(url);
       return true;

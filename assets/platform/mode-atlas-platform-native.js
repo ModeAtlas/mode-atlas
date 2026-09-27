@@ -10,23 +10,49 @@
   var plugins = capacitor.Plugins || {};
   var nativeBridge = plugins.ModeAtlasNative || null;
   var firebaseAuth = plugins.FirebaseAuthentication || null;
+  var app = plugins.App || null;
 
   function hasBridge(method){ return !!(nativeBridge && typeof nativeBridge[method] === 'function'); }
   function hasFirebaseAuth(method){ return !!(firebaseAuth && typeof firebaseAuth[method] === 'function'); }
 
-  function destinationPath(destination){
-    var map = {
-      atlas: '/',
-      kana: '/kana/',
-      reading: '/reading/',
-      writing: '/writing/',
-      daily: '/reading/?mode=daily',
-      review: '/reading/?mode=review',
-      results: '/results/',
-      wordBank: '/wordbank/'
-    };
-    var key = String(destination || '');
-    return map[key] || key || '/';
+  function navigate(destination, replace){
+    var path = platform.destinationPath(destination);
+    if (!path) return false;
+    var target = root.ModeAtlasVersionFile?.appUrl?.(path) || path;
+    if (location.pathname + location.search === target) return true;
+    if (replace) location.replace(target);
+    else location.assign(target);
+    return true;
+  }
+
+  // Capacitor's App plugin forwards scene URL events. The cold-launch URL may
+  // also be delivered as an event, so navigation is idempotent for that pair.
+  if (app && typeof app.addListener === 'function') {
+    var receivedUrlEvent = false;
+    var launchKey = 'modeAtlasNativeLaunchChecked';
+    app.addListener('appUrlOpen', function(event){
+      var destination = platform.destinationFromUrl(event && event.url);
+      if (destination) {
+        receivedUrlEvent = true;
+        try { sessionStorage.setItem(launchKey, '1'); } catch (_) {}
+        navigate(destination, false);
+      }
+    });
+    if (typeof app.getLaunchUrl === 'function') {
+      var alreadyChecked = false;
+      try { alreadyChecked = sessionStorage.getItem(launchKey) === '1'; } catch (_) {}
+      if (!alreadyChecked) {
+        app.getLaunchUrl().then(function(event){
+          if (receivedUrlEvent) return;
+          var destination = platform.destinationFromUrl(event && event.url);
+          if (!destination) return;
+          // A document navigation reloads this adapter while Capacitor retains
+          // its launch URL. Consume it once per WebView session.
+          try { sessionStorage.setItem(launchKey, '1'); } catch (_) {}
+          navigate(destination, true);
+        }).catch(function(error){ console.warn('Mode Atlas launch URL unavailable', error); });
+      }
+    }
   }
 
   function normalizeCredential(result){
@@ -47,7 +73,7 @@
         notifications: hasBridge('requestNotifications'),
         appBadge: hasBridge('setBadge'),
         widgets: hasBridge('publishWidgetSnapshot'),
-        appIntents: hasBridge('openDestination'),
+        appIntents: false,
         authentication: hasFirebaseAuth('signInWithGoogle'),
         authProviders: hasFirebaseAuth('signInWithGoogle') ? ['google.com'] : []
       };
@@ -68,15 +94,7 @@
       return false;
     },
     openDestination: async function(destination, options){
-      var path = destinationPath(destination);
-      if (hasBridge('openDestination')) {
-        await nativeBridge.openDestination({ destination:String(destination || ''), path:path });
-        return true;
-      }
-      var target = root.ModeAtlasVersionFile?.appUrl?.(path) || path;
-      if (options && options.replace === true) location.replace(target);
-      else location.assign(target);
-      return true;
+      return navigate(destination, options && options.replace === true);
     },
     requestNotifications: async function(){
       if (!hasBridge('requestNotifications')) return { granted:false, supported:false };

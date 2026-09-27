@@ -9,6 +9,37 @@
     adapter: Object.create(null)
   };
 
+  // These are product destinations, shared by website navigation and native
+  // entry points. Keep incoming links on known pages in the bundled app.
+  var destinations = Object.freeze({
+    atlas: '/', kana: '/kana/', reading: '/reading/', writing: '/writing/',
+    daily: '/reading/?mode=daily', review: '/reading/?mode=review',
+    results: '/results/', wordBank: '/wordbank/'
+  });
+
+  function destinationPath(destination){
+    return destinations[String(destination || '')] || '';
+  }
+
+  function destinationFromUrl(raw){
+    try {
+      var url = new URL(String(raw || ''));
+      var path = '';
+      if (url.protocol === 'modeatlas:' && url.hostname === 'open') {
+        path = url.pathname;
+      } else if (url.protocol === 'https:' && (url.hostname === 'mode-atlas.app' || url.hostname === 'www.mode-atlas.app')) {
+        path = url.pathname;
+      } else return '';
+      var pages = { '/':'atlas', '/kana/':'kana', '/reading/':'reading', '/writing/':'writing', '/results/':'results', '/wordbank/':'wordBank' };
+      if (path !== '/' && !path.endsWith('/')) path += '/';
+      var key = pages[path];
+      if (!key) return '';
+      if (key === 'reading' && url.searchParams.get('mode') === 'daily') return 'daily';
+      if (key === 'reading' && (url.searchParams.get('mode') === 'review' || url.searchParams.get('focusWeak') === '1')) return 'review';
+      return key;
+    } catch (_) { return ''; }
+  }
+
   function asPromise(value){
     return value && typeof value.then === 'function' ? value : Promise.resolve(value);
   }
@@ -29,6 +60,8 @@
     },
     get environment(){ return state.name; },
     get isNative(){ return state.name === 'ios'; },
+    destinationPath: destinationPath,
+    destinationFromUrl: destinationFromUrl,
     getCapabilities: function(){
       var value = state.adapter && typeof state.adapter.getCapabilities === 'function'
         ? state.adapter.getCapabilities()

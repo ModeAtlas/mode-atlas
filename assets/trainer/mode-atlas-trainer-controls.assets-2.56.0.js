@@ -256,12 +256,24 @@
   function bootFromHub(){
     try{
       const params=new URLSearchParams(location.search);
-      if(params.get('confusable')==='1'||storeGet('modeAtlasConfusableMode')==='1'){
+      const confusable = params.get('confusable')==='1'||storeGet('modeAtlasConfusableMode')==='1';
+      const daily = params.get('mode')==='daily';
+      const review = params.get('mode')==='review'||params.get('focusWeak')==='1';
+      if(confusable){
         const s=getSettings();
         Object.assign(s,{confusableKana:true,hint:false,srs:true,focusWeak:false,endless:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,speedRun:false,dakuten:false,yoon:false,extendedKatakana:false,hiraganaRows:CONF_HIRA_ROWS.slice(),katakanaRows:CONF_KATA_ROWS.slice(),activeBottomTab:'modifiers'});
         setSettings(s); setActivePreset(''); storeRemove('modeAtlasConfusableMode');
-        if(params.get('confusable')==='1'&&history.replaceState) history.replaceState(null,'',location.pathname);
         saveAndRefresh();
+      } else if(daily || review){
+        const s=getSettings();
+        Object.assign(s, {confusableKana:false,focusWeak:review,srs:true,endless:false,timeTrial:false,dailyChallenge:daily,testMode:false,comboKana:false,speedRun:false});
+        if(daily) s.hint=false;
+        setSettings(s); setActivePreset('');
+        saveAndRefresh();
+      }
+      if(params.has('confusable') || params.has('mode') || params.has('focusWeak')){
+        params.delete('confusable'); params.delete('mode'); params.delete('focusWeak');
+        if(history.replaceState) history.replaceState(null,'',location.pathname+(params.size?'?'+params.toString():'')+location.hash);
       }
     }catch{}
   }

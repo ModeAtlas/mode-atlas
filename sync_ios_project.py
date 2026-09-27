@@ -6,11 +6,13 @@ build settings are derived output and are verified by the release gate.
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import re
 
 ROOT = Path(__file__).resolve().parent
 VERSION_SOURCE = ROOT / "assets/app/mode-atlas-version.js"
 PBXPROJ = ROOT / "ios/App/App.xcodeproj/project.pbxproj"
+SPM_SYMLINK = ROOT / "ios/App/CapApp-SPM/symlinks/CapacitorFirebaseAuthentication"
 
 
 def release_version() -> str:
@@ -49,7 +51,22 @@ def sync() -> tuple[str, int, bool]:
     return version, build, changed
 
 
+def normalize_spm_link() -> None:
+    """Capacitor writes an absolute checkout path; commit a portable SPM link."""
+    if not SPM_SYMLINK.is_symlink():
+        return
+    dependency = ROOT / "node_modules/@capacitor-firebase/authentication"
+    relative = os.path.relpath(dependency, SPM_SYMLINK.parent)
+    if os.readlink(SPM_SYMLINK) != relative:
+        SPM_SYMLINK.unlink()
+        SPM_SYMLINK.symlink_to(relative)
+
+
 if __name__ == "__main__":
+    import sys
+    if sys.argv[1:] == ["--normalize-spm-links"]:
+        normalize_spm_link()
+        raise SystemExit(0)
     version, build, changed = sync()
     status = "updated" if changed else "already synchronized"
     print(f"Mode Atlas iOS version {status}: {version} ({build})")

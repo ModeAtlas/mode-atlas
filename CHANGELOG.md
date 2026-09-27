@@ -1,3 +1,10 @@
+## 2.56.0 - 2026-09-27
+
+- Route cold and warm iOS launches through Capacitor App to shared Mode Atlas destinations, with a dedicated `modeatlas://open/` navigation scheme.
+- Activate the Reading Daily Challenge and weak-kana review setup from destination links, including the existing website review links.
+- Keep native launch URL handling restricted to known Mode Atlas destinations and ignore unrelated authentication callbacks.
+- Normalize Capacitor's generated Firebase SPM symlink to a repository-relative target during iOS sync so builds stay source-clean across checkout locations.
+
 ## 2.55.0 - 2026-09-27
 - Added native Google sign-in transport for the iOS shell using Capacitor Firebase Authentication 8.5.2.
 - Kept Firebase JavaScript Auth as the single authenticated session owner across web and iOS; native iOS owns only the Google account chooser and returns an OAuth credential to the existing cloud-sync owner.

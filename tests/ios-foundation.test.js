@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const ROOT = path.resolve(__dirname, '..');
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -17,6 +18,9 @@ test('iOS foundation has one platform facade with web and native adapters', () =
   assert.match(native, /registerAdapter\('ios'/);
   assert.match(native, /plugins\.ModeAtlasNative/);
   assert.match(native, /plugins\.FirebaseAuthentication/);
+  assert.match(native, /plugins\.App/);
+  assert.match(native, /appUrlOpen/);
+  assert.match(native, /getLaunchUrl/);
   assert.match(native, /signInWithGoogle\(\{ skipNativeAuth:true \}\)/);
   assert.match(native, /Native iOS owns only the Google account chooser|Native provider UI lives here/);
   assert.doesNotMatch(native, /question selection|mastery calculation/i);
@@ -62,8 +66,10 @@ test('Capacitor iOS shell is repository-owned and versioned from Mode Atlas rele
   assert.equal(config.appName, 'Mode Atlas');
   assert.equal(config.webDir, '.build/ios-web');
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.modeatlas;/);
-  assert.match(project, /MARKETING_VERSION = 2\.55\.0;/);
-  assert.match(project, /CURRENT_PROJECT_VERSION = 2055000;/);
+  const version = JSON.parse(read('package.json')).version;
+  const [major, minor, patch] = version.split('.').map(Number);
+  assert.ok(project.includes(`MARKETING_VERSION = ${version};`));
+  assert.ok(project.includes(`CURRENT_PROJECT_VERSION = ${major * 1_000_000 + minor * 1_000 + patch};`));
   assert.match(sync, /Mode Atlas' canonical version owner/);
   assert.match(sync, /major \* 1_000_000 \+ minor \* 1_000 \+ patch/);
 });
@@ -84,6 +90,7 @@ test('native auth transport keeps Firebase JS as the single session and Firestor
   const config = JSON.parse(read('capacitor.config.json'));
   const pkg = JSON.parse(read('package.json'));
   assert.equal(pkg.dependencies['@capacitor-firebase/authentication'], '8.5.2');
+  assert.equal(pkg.dependencies['@capacitor/app'], '8.0.1');
   assert.equal(pkg.dependencies.firebase, '12.12.1');
   assert.equal(config.plugins.FirebaseAuthentication.skipNativeAuth, true);
   assert.deepEqual(config.plugins.FirebaseAuthentication.providers, ['google.com']);
@@ -93,4 +100,43 @@ test('native auth transport keeps Firebase JS as the single session and Firestor
   assert.match(cloud, /GoogleAuthProvider\.credential/);
   assert.match(cloud, /single session owner/);
   assert.doesNotMatch(cloud, /FirebaseAuthentication\.signInWithGoogle/);
+});
+
+test('native destination router accepts only product links and consumes a launch once', async () => {
+  const navigations = [];
+  const memory = new Map();
+  const context = {
+    URL,
+    Promise,
+    console,
+    sessionStorage: {
+      getItem: key => memory.get(key) || null,
+      setItem: (key, value) => memory.set(key, value)
+    },
+    location: {
+      pathname: '/kana/', search: '',
+      replace: path => navigations.push(['replace', path]),
+      assign: path => navigations.push(['assign', path])
+    }
+  };
+  let openUrl;
+  let launchCount = 0;
+  context.window = {
+    ModeAtlasEnv: { isNativeApp: true },
+    Capacitor: { Plugins: { App: {
+      addListener: (_event, callback) => { openUrl = callback; },
+      getLaunchUrl: async () => { launchCount++; return { url:'modeatlas://open/reading?mode=daily' }; }
+    } } }
+  };
+  vm.createContext(context);
+  vm.runInContext(read('assets/platform/mode-atlas-platform.js'), context);
+  vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'), context);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(navigations, [['replace', '/reading/?mode=daily']]);
+  assert.equal(context.window.AtlasPlatform.destinationFromUrl('com.googleusercontent.apps.test:/oauth'), '');
+  assert.equal(context.window.AtlasPlatform.destinationFromUrl('https://evil.example/reading/?mode=daily'), '');
+  openUrl({ url:'modeatlas://open/reading?mode=review' });
+  assert.deepEqual(navigations.at(-1), ['assign', '/reading/?mode=review']);
+  vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'), context);
+  assert.equal(launchCount, 1);
 });

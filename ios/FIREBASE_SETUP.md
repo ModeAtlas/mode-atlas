@@ -27,3 +27,5 @@ After the file is available, run:
 `python3 validate_ios_firebase_config.py --require`
 
 Google Sign-In also requires the plist's `REVERSED_CLIENT_ID` to be registered as an iOS URL scheme. That project setting should be generated from the real plist rather than checked in with a guessed or placeholder client ID.
+
+The checked-in `modeatlas` URL scheme is reserved for Mode Atlas navigation, for example `modeatlas://open/reading?mode=daily`. It is separate from the Google callback scheme and does not replace the required `REVERSED_CLIENT_ID` registration. Capacitor's App plugin routes recognized Mode Atlas links into the shared web trainer setup; unrelated callback URLs are ignored by the navigation router.
