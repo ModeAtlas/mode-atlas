@@ -391,8 +391,12 @@ function applyAchievementVisuals(root = document) {
     const sym=achEl('span','ma-ach-info-symbol',symbol); sym.setAttribute('aria-hidden','true');
     const titleWrap=document.createElement('div'); titleWrap.append(achEl('span','ma-ach-info-kicker',kicker));
     const h3=achEl('h3','',title); if(tier)h3.append(document.createTextNode(' '),achEl('em','',tier)); titleWrap.append(h3); hero.append(sym,titleWrap);
-    const back=achButton('ma-button ma-button--ghost ma-button--small ma-ach-info-back',backLabel); back.dataset.maFeatureBack='';
-    topbar.append(back,hero); return topbar;
+    if(backLabel){
+      const back=achButton('ma-button ma-button--ghost ma-button--small ma-ach-info-back',backLabel);
+      back.dataset.maFeatureBack='';
+      topbar.append(back);
+    }
+    topbar.append(hero); return topbar;
   }
 
   function buildAchievementInfo(id,requestedRankIndex){
@@ -410,7 +414,7 @@ function applyAchievementVisuals(root = document) {
     const valueText=rank.key==='atlasLevel' ? `Level ${Math.min(value,rank.target)} / ${rank.target}` : `${Math.min(value,rank.target)} / ${rank.target}`;
     row.append(achEl('strong','',done?'Rank complete':'In progress'),achEl('span','',valueText));
     const meter=document.createElement('i'); meter.append(setProgress(document.createElement('b'),pct)); progress.append(row,meter);
-    body.append(createInfoTopbar({branch:categoryKey,done:state.complete,accent:meta.accent,rankAccentValue,symbol:track.icon||meta.icon,kicker:meta.title,title:track.name,tier:ranked?`Rank ${rank.tier}`:'',backLabel:'← Back to achievements'}),achEl('p','ma-ach-info-copy',rank.detail),progress);
+    body.append(createInfoTopbar({branch:categoryKey,done:state.complete,accent:meta.accent,rankAccentValue,symbol:track.icon||meta.icon,kicker:meta.title,title:track.name,tier:ranked?`Rank ${rank.tier}`:''}),achEl('p','ma-ach-info-copy',rank.detail),progress);
 
     if(ranked){
       const history=achEl('div','ma-ach-rank-history');
@@ -480,40 +484,50 @@ function applyAchievementVisuals(root = document) {
     const snapshot=s.snapshot;
     const wrap=document.createDocumentFragment();
 
-    const legend=achEl('div','ma-mastery-legend');
-    [
-      ['new','New','Not practised yet.'],
-      ['learning','Learning','At least 1 attempt, but not yet 10+ correct, 85%+ accuracy, and 2.5s or faster recognition.'],
-      ['reviewing','Reviewing','10+ correct, 85%+ accuracy, and 2.5s or faster recognition.'],
-      ['mastered','Mastered','50+ correct, 95%+ accuracy, and 1.0s or faster recognition.']
-    ].forEach(([cls,label,copy])=>{
-      const item=achEl('div',cls);
-      item.append(achEl('b','',label), achEl('span','',copy));
-      legend.append(item);
-    });
+    const guide=achEl('div','ma-mastery-guide');
+    guide.append(
+      achEl('p','','Tap any kana for its Reading/Writing accuracy and timing. The stage colour shows what needs improving next.')
+    );
 
-    const summary=achEl('div','ma-mastery-summary ma-mastery-stage-summary');
-    [['new',s.new,'new'],['learning',s.learning,'learning'],['reviewing',s.reviewing,'reviewing'],['mastered',s.mastered,'mastered']].forEach(([cls,value,label])=>{
-      const item=achEl('span',cls);
-      item.append(achEl('b','',value), document.createTextNode(' '+label));
-      summary.append(item);
+    const overview=achEl('div','ma-mastery-overview');
+    [
+      ['new',s.new,'New','No attempts yet'],
+      ['learning',s.learning,'Learning','Building reps, accuracy, or speed'],
+      ['reviewing',s.reviewing,'Reviewing','10+ correct · 85%+ · ≤2.5s'],
+      ['mastered',s.mastered,'Mastered','50+ correct · 95%+ · ≤1.0s']
+    ].forEach(([cls,value,label,copy])=>{
+      const item=achEl('div',`ma-mastery-stage ${cls}`);
+      item.append(achEl('b','',value),achEl('strong','',label),achEl('span','',copy));
+      overview.append(item);
     });
 
     const speed=achEl('div','ma-speed-summary');
-    [[s.speed3to2,'3.0s–2.0s'],[s.speed2to1,'2.0s–1.0s'],[s.speedUnder1,'Under 1.0s']].forEach(([value,label])=>{
+    speed.append(achEl('strong','ma-speed-summary-label','Recognition speed'));
+    [[s.speed3to2,'3.0–2.0s'],[s.speed2to1,'2.0–1.0s'],[s.speedUnder1,'Under 1.0s']].forEach(([value,label])=>{
       const item=document.createElement('span');
       item.append(achEl('b','',value), document.createTextNode(' '+label));
       speed.append(item);
     });
 
-    wrap.append(legend,summary,speed,grid('Hiragana',HIRA,snapshot),grid('Katakana',KATA,snapshot),grid('Dakuten',DAK,snapshot),grid('Yōon',YOON,snapshot),grid('Extended Katakana',EXT,snapshot));
+    wrap.append(guide,overview,speed,grid('Hiragana',HIRA,snapshot),grid('Katakana',KATA,snapshot),grid('Dakuten',DAK,snapshot),grid('Yōon',YOON,snapshot),grid('Extended Katakana',EXT,snapshot));
     return wrap;
   }
 
   let featureOpen=false;
   function buildFeatureContent(kind){
-    const root=achEl('div','ma-ach-dialog-content'),view=achEl('div','ma-ach-dialog-view'); root.append(view);
-    const showMain=()=>{view.replaceChildren(kind==='mastery'?renderMasteryMap():renderAchievements());applyAchievementVisuals(view);};
+    const root=achEl('div','ma-ach-dialog-content'),view=achEl('div','ma-ach-dialog-view');
+    let atRoot=true;
+    root.append(view);
+    const showMain=()=>{
+      atRoot=true;
+      view.replaceChildren(kind==='mastery'?renderMasteryMap():renderAchievements());
+      applyAchievementVisuals(view);
+    };
+    root.handleFeatureCloseRequest=()=>{
+      if(atRoot) return false;
+      showMain();
+      return true;
+    };
     root.addEventListener('click',e=>{
       if(e.target.closest('[data-ma-feature-back]')){e.preventDefault();showMain();return;}
       const rankNav=e.target.closest('[data-ma-ach-rank-nav]');
@@ -522,17 +536,36 @@ function applyAchievementVisuals(root = document) {
         const id=rankNav.getAttribute('data-ma-ach-rank-nav');
         const index=Number(rankNav.getAttribute('data-ma-ach-rank-index'));
         const detail=buildAchievementInfo(id,Number.isFinite(index)?index:undefined);
-        if(detail)view.replaceChildren(detail);
+        if(detail){atRoot=false;view.replaceChildren(detail);}
         return;
       }
-      const ach=e.target.closest('[data-ma-ach-id]'); if(ach){e.preventDefault();const detail=buildAchievementInfo(ach.getAttribute('data-ma-ach-id'));if(detail)view.replaceChildren(detail);return;}
-      const kana=e.target.closest('[data-ma-mastery-kana]'); if(kana){e.preventDefault();view.replaceChildren(buildMasteryKanaInfo(kana.getAttribute('data-ma-mastery-kana')));}
+      const ach=e.target.closest('[data-ma-ach-id]');
+      if(ach){
+        e.preventDefault();
+        const detail=buildAchievementInfo(ach.getAttribute('data-ma-ach-id'));
+        if(detail){atRoot=false;view.replaceChildren(detail);}
+        return;
+      }
+      const kana=e.target.closest('[data-ma-mastery-kana]');
+      if(kana){e.preventDefault();atRoot=false;view.replaceChildren(buildMasteryKanaInfo(kana.getAttribute('data-ma-mastery-kana')));}
     });
     showMain(); return root;
   }
   function openModal(kind){
-    if(featureOpen||!window.ModeAtlasDialog?.feature)return false; featureOpen=true;
-    window.ModeAtlasDialog.feature({kicker:kind==='mastery'?'Kana progress':'Mode Atlas progress',title:kind==='mastery'?'Mastery Map':'Achievements',message:kind==='mastery'?'A full kana grid showing accuracy, repetition, and speed progress.':'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.',contentNode:buildFeatureContent(kind),size:'large',closeLabel:'×',closeAriaLabel:kind==='mastery'?'Close Mastery Map':'Close achievements',closeIcon:true}).finally(()=>{featureOpen=false;});
+    if(featureOpen||!window.ModeAtlasDialog?.feature)return false;
+    featureOpen=true;
+    const content=buildFeatureContent(kind);
+    window.ModeAtlasDialog.feature({
+      kicker:kind==='mastery'?'Kana progress':'Mode Atlas progress',
+      title:kind==='mastery'?'Mastery Map':'Achievements',
+      message:kind==='mastery'?'Tap a kana for details. Colours show its current mastery stage.':'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.',
+      contentNode:content,
+      size:'large',
+      closeLabel:'×',
+      closeAriaLabel:kind==='mastery'?'Close Mastery Map or return to the map':'Close achievements or return to achievements',
+      closeIcon:true,
+      onCloseRequest:()=>content.handleFeatureCloseRequest?.()===true
+    }).finally(()=>{featureOpen=false;});
     return true;
   }
 
