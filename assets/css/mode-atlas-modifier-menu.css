@@ -44,22 +44,22 @@
   width:100%;
   max-width:100%;
   min-width:0;
-  min-height:48px ;
+  --ma-button-min-height:48px;
+  --ma-button-padding:10px;
   box-sizing:border-box;
   display:flex ;
   align-items:center ;
   justify-content:center ;
   text-align:center ;
   line-height:1.05 ;
-  padding:10px ;
   white-space:normal;
   overflow-wrap:anywhere;
 }
 .ma-preset-toggle{
+  --ma-button-min-height:62px;
+  --ma-button-padding:10px 12px;
   flex-direction:column ;
   gap:4px ;
-  min-height:62px ;
-  padding:10px 12px ;
 }
 .ma-preset-toggle span{
   display:block;
@@ -130,10 +130,10 @@ body[data-effective-display-mode="phone"] .ma-modifier-group-grid{
   gap:8px;
 }
 body[data-effective-display-mode="phone"] .ma-structured-toggle{
-  min-height:52px;
-  padding:9px 8px;
+  --ma-button-min-height:52px;
+  --ma-button-padding:9px 8px;
   font-size:.9rem;
 }
-body[data-effective-display-mode="phone"] .ma-preset-toggle{min-height:78px;}
+body[data-effective-display-mode="phone"] .ma-preset-toggle{--ma-button-min-height:78px;}
 body[data-effective-display-mode="phone"] .ma-preset-toggle span{font-size:.92rem;}
 body[data-effective-display-mode="phone"] .ma-preset-toggle small{font-size:.72rem;}
