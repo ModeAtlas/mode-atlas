@@ -145,6 +145,9 @@ def main() -> int:
         ROOT / 'assets/platform/mode-atlas-platform-web.js',
         ROOT / 'assets/platform/mode-atlas-platform-native.js',
         ROOT / 'build_ios_web.py',
+        ROOT / 'sync_ios_project.py',
+        ROOT / 'capacitor.config.json',
+        ROOT / 'ios/App/App.xcodeproj/project.pbxproj',
     )
     for native_file in native_foundation_files:
         if not native_file.exists():
@@ -167,6 +170,25 @@ def main() -> int:
         fail(errors, 'version owner does not explicitly exclude native bundled runtime from web update checks')
     if 'ModeAtlasEnv?.isNativeApp' not in pwa_source:
         fail(errors, 'PWA install owner does not explicitly disable itself in native runtime')
+
+    capacitor_config = json.loads(text(ROOT / 'capacitor.config.json'))
+    if capacitor_config.get('appId') != 'app.modeatlas':
+        fail(errors, 'Capacitor appId drifted from app.modeatlas')
+    if capacitor_config.get('webDir') != '.build/ios-web':
+        fail(errors, 'Capacitor webDir must consume the deterministic iOS web bundle')
+
+    ios_project_source = text(ROOT / 'ios/App/App.xcodeproj/project.pbxproj')
+    ios_version_match = re.search(r"var\s+VERSION\s*=\s*['\"]([^'\"]+)['\"]", version_source)
+    if ios_version_match:
+        ios_version = ios_version_match.group(1)
+        major, minor, patch = (int(part) for part in ios_version.split('.'))
+        ios_build = major * 1_000_000 + minor * 1_000 + patch
+        if f'MARKETING_VERSION = {ios_version};' not in ios_project_source:
+            fail(errors, 'Xcode marketing version is not synchronized with Mode Atlas VERSION')
+        if f'CURRENT_PROJECT_VERSION = {ios_build};' not in ios_project_source:
+            fail(errors, 'Xcode build number is not synchronized with Mode Atlas VERSION')
+    if 'PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;' not in ios_project_source:
+        fail(errors, 'Xcode bundle identifier drifted from app.modeatlas')
 
     readme_path = ROOT / 'README.md'
     if readme_path.exists():
