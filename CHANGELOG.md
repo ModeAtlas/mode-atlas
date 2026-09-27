@@ -1,3 +1,13 @@
+## 2.54.0 - 2026-09-27
+- Added the first Mode Atlas iOS/native foundation without duplicating learning logic or creating a separate frontend implementation.
+- Introduced one shared `AtlasPlatform` facade with explicit web and iOS adapters for native-capability boundaries such as app version, external links, destinations, notifications, badges, and widget snapshots.
+- Added first-class native runtime detection to the shared head bootstrap. Native mode is now an explicit environment rather than an inferred browser special case.
+- Browser-only PWA install prompts, deployed-version checks, document revision guards, and Service Worker/update ownership are explicitly disabled inside the native runtime.
+- Kept browser Firebase authentication disabled inside the native WebView until the native Firebase authentication bridge owns that responsibility; existing web Firebase behaviour is unchanged.
+- Added a deterministic `build_ios_web.py` builder that packages the validated revisioned web runtime for iOS while excluding Service Worker/PWA transport files and duplicate canonical JS/CSS sources.
+- Restored the permanent release gate, removed the legacy duplicate changelog workflow, and added native-foundation source tests plus a simulated Capacitor/iOS lifecycle smoke test.
+- No Reading, Writing, Kana, Results, Word Bank, SRS, mastery, achievement, scoring, or persistence logic was rewritten for iOS.
+
 ## 2.53.3 - 2026-09-27
 - Corrected the phone navigation top-of-page state so it sits in normal document flow on first load and whenever the user returns to the page top.
 - The nav now becomes a floating fixed control only after the user has left the top of the page and performs the deliberate upward reveal gesture.
