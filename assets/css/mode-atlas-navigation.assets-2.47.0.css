@@ -331,6 +331,7 @@ body[data-effective-display-mode="tablet"] .ma-nav__profile .ma-nav__action-labe
 body[data-effective-display-mode="tablet"] .ma-nav__settings{width:40px;min-width:40px;min-height:40px;padding:0;}
 body[data-effective-display-mode="tablet"] .ma-nav__avatar{width:28px;height:28px;min-width:28px;}
 body[data-effective-display-mode="tablet"] .ma-nav__focus{display:inline-flex;width:40px;min-width:40px;min-height:40px;padding:0;}
+body[data-effective-display-mode="tablet"] .ma-nav__focus .ma-nav__action-label{display:none;}
 
 body[data-effective-display-mode="phone"] .ma-nav{
   position:relative;
@@ -364,6 +365,7 @@ body[data-effective-display-mode="phone"] .ma-nav__menu:hover .ma-nav__flyout,
 body[data-effective-display-mode="phone"] .ma-nav__menu:focus-within .ma-nav__flyout,
 body[data-effective-display-mode="phone"] .ma-nav__menu.is-open .ma-nav__flyout{transform:translateY(0);}
 body[data-effective-display-mode="phone"] .ma-nav__focus{display:inline-flex;width:44px;min-width:44px;min-height:44px;padding:0;}
+body[data-effective-display-mode="phone"] .ma-nav__focus .ma-nav__action-label{display:none;}
 
 html[data-ma-theme="light"] .ma-nav__action{
   background:var(--ma-control);
