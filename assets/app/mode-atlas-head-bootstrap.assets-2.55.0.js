@@ -25,10 +25,9 @@
   var isProduction = isOfficialDomain || isGitHubPages;
   var isSupportedHost = isHttp;
   var isSupportedRuntime = isSupportedHost || isNativeApp;
-  // Native authentication/cloud ownership is introduced through the platform
-  // bridge. Until that bridge owns auth, do not silently run browser Firebase
-  // authentication inside the iOS WebView.
-  var canUseFirebase = isSupportedHost && !isNativeApp;
+  // Firebase JS remains the single Mode Atlas session/Firestore owner on web
+  // and iOS. Native mode changes only the identity-provider UI transport.
+  var canUseFirebase = isSupportedRuntime;
 
 
   function getPageName(){
@@ -122,6 +121,7 @@
     isSupportedHost: isSupportedHost,
     isSupportedRuntime: isSupportedRuntime,
     canUseFirebase: canUseFirebase,
+    firebaseAuthTransport: isNativeApp ? 'native-provider-web-session' : 'web',
     allowDevTools: (isLocalServer || search.indexOf('dev=1') !== -1 || safeStorageGet('modeAtlasDevTools') === '1'),
     baseUrl: (isOfficialDomain ? 'https://mode-atlas.app/' : (location.origin + '/'))
   });

@@ -63,6 +63,8 @@
       else await navigator.setAppBadge(count);
       return true;
     },
-    publishWidgetSnapshot: function(){ return false; }
+    publishWidgetSnapshot: function(){ return false; },
+    authenticate: function(){ return { handled:false }; },
+    signOutIdentityProvider: function(){ return false; }
   });
 })(window);

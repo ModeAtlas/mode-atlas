@@ -48,7 +48,9 @@
     openDestination: function(destination, options){ return call('openDestination', [destination, options || {}], false); },
     requestNotifications: function(){ return call('requestNotifications', [], { granted:false, supported:false }); },
     setBadge: function(value){ return call('setBadge', [value], false); },
-    publishWidgetSnapshot: function(snapshot){ return call('publishWidgetSnapshot', [snapshot], false); }
+    publishWidgetSnapshot: function(snapshot){ return call('publishWidgetSnapshot', [snapshot], false); },
+    authenticate: function(provider){ return call('authenticate', [String(provider || '')], { handled:false }); },
+    signOutIdentityProvider: function(){ return call('signOutIdentityProvider', [], false); }
   };
 
   root.AtlasPlatform = Object.freeze(api);
