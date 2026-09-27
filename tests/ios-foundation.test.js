@@ -15,8 +15,8 @@ test('iOS foundation has one platform facade with web and native adapters', () =
   }
   assert.match(web, /registerAdapter\('web'/);
   assert.match(native, /registerAdapter\('ios'/);
-  assert.match(native, /Plugins\.ModeAtlasNative/);
-  assert.match(native, /Plugins\.FirebaseAuthentication/);
+  assert.match(native, /plugins\.ModeAtlasNative/);
+  assert.match(native, /plugins\.FirebaseAuthentication/);
   assert.match(native, /signInWithGoogle\(\{ skipNativeAuth:true \}\)/);
   assert.match(native, /Native iOS owns only the Google account chooser|Native provider UI lives here/);
   assert.doesNotMatch(native, /question selection|mastery calculation/i);
