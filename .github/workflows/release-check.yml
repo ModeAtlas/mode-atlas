@@ -1,0 +1,94 @@
+name: Mode Atlas release gate
+
+on:
+  push:
+    branches:
+      - main
+      - 'agent/mode-atlas-*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mode-atlas-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-check:
+    name: Audit, regressions, browser smoke, and native web bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Guard public npm lockfile
+        shell: bash
+        run: |
+          if grep -Eiq 'internal\.api\.openai|applied-caas|artifactory/api/npm' package-lock.json; then
+            echo 'package-lock.json contains a non-public package registry URL.' >&2
+            exit 1
+          fi
+
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run release checks
+        run: npm run release:check
+
+      - name: Verify generated release assets are committed
+        run: git diff --exit-code
+
+      - name: Run desktop and mobile browser smoke tests
+        run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
+
+      - name: Build deterministic iOS web payload
+        run: npm run build:ios-web
+
+      - name: Verify native payload excludes browser-only lifecycle files
+        shell: bash
+        run: |
+          test -f .build/ios-web/mode-atlas-native-manifest.json
+          test ! -e .build/ios-web/sw.js
+          test ! -e .build/ios-web/site.webmanifest
+
+      - name: Stage validated source artifact
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          release_dir="${RUNNER_TEMP}/mode-atlas-release"
+          rm -rf "$release_dir"
+          mkdir -p "$release_dir"
+          git archive HEAD | tar -x -C "$release_dir"
+
+      - name: Upload validated source artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mode-Atlas-2.54.0-${{ github.sha }}
+          path: ${{ runner.temp }}/mode-atlas-release
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload validated iOS web payload
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mode-Atlas-iOS-Web-2.54.0-${{ github.sha }}
+          path: .build/ios-web
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
