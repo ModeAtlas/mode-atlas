@@ -146,6 +146,7 @@ def main() -> int:
         ROOT / 'assets/platform/mode-atlas-platform-native.js',
         ROOT / 'build_ios_web.py',
         ROOT / 'sync_ios_project.py',
+        ROOT / 'validate_ios_firebase_config.py',
         ROOT / 'capacitor.config.json',
         ROOT / 'ios/App/App.xcodeproj/project.pbxproj',
     )
@@ -176,6 +177,25 @@ def main() -> int:
         fail(errors, 'Capacitor appId drifted from app.modeatlas')
     if capacitor_config.get('webDir') != '.build/ios-web':
         fail(errors, 'Capacitor webDir must consume the deterministic iOS web bundle')
+    native_auth = (capacitor_config.get('plugins') or {}).get('FirebaseAuthentication') or {}
+    if native_auth.get('skipNativeAuth') is not True:
+        fail(errors, 'native Firebase provider transport must keep skipNativeAuth=true so JS Auth remains the session owner')
+    if native_auth.get('providers') != ['google.com']:
+        fail(errors, 'native Firebase provider transport must currently enable only google.com')
+    package_json = json.loads(text(ROOT / 'package.json'))
+    dependencies = package_json.get('dependencies') or {}
+    if dependencies.get('@capacitor-firebase/authentication') != '8.5.2':
+        fail(errors, 'Capacitor Firebase Authentication must remain pinned to 8.5.2 for the Capacitor 8.5.2 shell')
+    if dependencies.get('firebase') != '12.12.1':
+        fail(errors, 'Firebase JS dependency must match the cloud-sync Firebase 12.12.1 runtime')
+    native_adapter_source = text(ROOT / 'assets/platform/mode-atlas-platform-native.js')
+    cloud_sync_source = text(ROOT / 'cloud-sync.js')
+    if "signInWithGoogle({ skipNativeAuth:true })" not in native_adapter_source:
+        fail(errors, 'native adapter does not enforce provider-only Google sign-in')
+    if "AtlasPlatform?.authenticate?.('google.com')" not in cloud_sync_source or 'signInWithCredential' not in cloud_sync_source:
+        fail(errors, 'cloud sync does not exchange native Google credentials into the shared Firebase JS session')
+    if 'FirebaseAuthentication.signInWithGoogle' in cloud_sync_source:
+        fail(errors, 'cloud-sync.js directly owns native provider implementation instead of using AtlasPlatform')
 
     ios_project_source = text(ROOT / 'ios/App/App.xcodeproj/project.pbxproj')
     ios_version_match = re.search(r"var\s+VERSION\s*=\s*['\"]([^'\"]+)['\"]", version_source)
