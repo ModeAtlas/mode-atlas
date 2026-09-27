@@ -1509,6 +1509,25 @@ body.trainer-session-active .session-actions .ma-trainer-skip:focus-visible{
   opacity:1;
 }
 
+/* Result state keeps the answer and retry action in the same visible practice frame. */
+body.trainer-session-result .ma-trainer-prompt-wrap{
+  min-height:150px;
+  padding:6px 0 2px;
+}
+body.trainer-session-result.ma-reading-page .hiragana{font-size:clamp(5.5rem,10vw,7.5rem);}
+body.trainer-session-result.ma-writing-page .prompt{font-size:clamp(4.8rem,8vw,6.2rem);}
+body.trainer-session-result .ma-trainer-session-controls{
+  margin-top:8px;
+  padding-top:10px;
+}
+body.trainer-session-result .game-over{
+  margin-top:0;
+  padding-top:2px;
+}
+body.trainer-session-result .game-over-title{margin-bottom:6px;}
+body.trainer-session-result .game-over-answer{margin-bottom:8px;}
+body.trainer-session-retry .session-actions{display:none!important;}
+
 body.trainer-session-active .ma-trainer-side-panel{
   opacity:.24;
   transform:scale(.985);
@@ -1558,6 +1577,13 @@ body.study-nav-hidden.trainer-session-active .ma-trainer-card{width:min(760px,ca
   body.trainer-session-active.ma-writing-page .prompt{font-size:clamp(5.2rem,24vw,7rem);}
   body.trainer-session-active.ma-writing-page .prompt-small{font-size:clamp(4rem,19vw,5.5rem);}
   body.trainer-session-active .ma-trainer-input{width:min(100%,340px);min-height:52px;font-size:22px;}
+  body.trainer-session-result .ma-trainer-card{min-height:0;}
+  body.trainer-session-result .ma-trainer-prompt-wrap{min-height:clamp(110px,22svh,155px);padding:4px 0;}
+  body.trainer-session-result.ma-reading-page .hiragana{font-size:clamp(4.9rem,25vw,6.6rem);}
+  body.trainer-session-result.ma-writing-page .prompt{font-size:clamp(4.1rem,20vw,5.6rem);}
+  body.trainer-session-result .ma-trainer-input{min-height:48px;}
+  body.trainer-session-result .game-over-title{font-size:1.15rem;}
+  body.trainer-session-result .game-over-answer{font-size:.92rem;}
   body.trainer-session-active.ma-writing-page .choice-grid{gap:9px;}
   body.trainer-session-active.ma-writing-page .choice-btn{min-height:64px;padding:12px 6px;}
   body.trainer-session-active .ma-trainer-side-panel{display:none;}
@@ -1580,6 +1606,12 @@ body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-ca
 }
 body[data-effective-display-mode="tablet"].trainer-session-active .ma-trainer-side-panel{
   display:none;
+}
+body[data-effective-display-mode="tablet"].trainer-session-result .ma-trainer-card{
+  min-height:0;
+}
+body[data-effective-display-mode="tablet"].trainer-session-result .ma-trainer-prompt-wrap{
+  min-height:135px;
 }
 
 @media(prefers-reduced-motion:reduce){
