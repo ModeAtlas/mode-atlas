@@ -363,8 +363,8 @@ body[data-effective-display-mode="tablet"] .ma-nav__focus{display:inline-flex;wi
 body[data-effective-display-mode="tablet"] .ma-nav__focus .ma-nav__action-label{display:inline-flex;}
 
 body[data-effective-display-mode="phone"] .ma-nav{
-  position:relative;
-  top:auto;
+  position:sticky;
+  top:max(6px,env(safe-area-inset-top,0px));
   width:calc(100% - 12px);
   margin:calc(env(safe-area-inset-top,0px) + 8px) auto 12px;
   padding:8px;
@@ -374,6 +374,8 @@ body[data-effective-display-mode="phone"] .ma-nav{
   column-gap:6px;
   row-gap:8px;
   border-radius:20px;
+  transition:transform var(--ma-motion-medium) ease,opacity var(--ma-motion-fast) ease,box-shadow var(--ma-motion-fast) ease;
+  will-change:transform;
 }
 body[data-effective-display-mode="phone"] .ma-nav__brand{grid-column:1;grid-row:1;min-width:0;max-width:none;gap:8px;}
 body[data-effective-display-mode="phone"] .ma-nav__mark{width:36px;height:36px;flex-basis:36px;border-radius:12px;}
@@ -395,6 +397,12 @@ body[data-effective-display-mode="phone"] .ma-nav__menu:focus-within .ma-nav__fl
 body[data-effective-display-mode="phone"] .ma-nav__menu.is-open .ma-nav__flyout{transform:translateY(0);}
 body[data-effective-display-mode="phone"] .ma-nav__focus{display:inline-flex;width:44px;min-width:44px;min-height:44px;padding:0;}
 body[data-effective-display-mode="phone"] .ma-nav__focus .ma-nav__action-label{display:none;}
+body[data-effective-display-mode="phone"]:not(.study-nav-hidden) .ma-nav.ma-nav--scroll-hidden{
+  transform:translateY(calc(-100% - max(12px,env(safe-area-inset-top,0px))));
+  opacity:0;
+  pointer-events:none;
+}
+body[data-effective-display-mode="phone"].ma-phone-keyboard-open .ma-nav-handle{display:none!important;}
 body[data-effective-display-mode="phone"].study-nav-hidden .ma-nav__focus{width:44px;min-width:44px;padding:0;}
 body[data-effective-display-mode="phone"].study-nav-hidden .ma-nav__focus .ma-nav__action-label{display:none;}
 body[data-effective-display-mode="phone"].study-nav-hidden .ma-nav-handle{display:inline-flex;align-items:center;justify-content:center;}
@@ -411,7 +419,7 @@ html[data-ma-theme="light"] .ma-nav__section-link{color:var(--ma-muted);-webkit-
 html[data-ma-theme="light"] .ma-nav__section-link.is-active{color:var(--ma-text-strong);-webkit-text-fill-color:var(--ma-text-strong);}
 
 @media(prefers-reduced-motion:reduce){
-  .ma-nav__link,.ma-nav__section-link,.ma-nav__action,.ma-nav__menu-chevron,.ma-nav__flyout{transition:none;}
+  .ma-nav,.ma-nav__link,.ma-nav__section-link,.ma-nav__action,.ma-nav__menu-chevron,.ma-nav__flyout{transition:none;}
 }
 
 /* 2.31 utility actions use the shared icon vocabulary. */

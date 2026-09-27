@@ -1,3 +1,12 @@
+## 2.53.0 - 2026-09-27
+- Refined the phone Reading/Writing active-session frame so the session HUD, kana/prompt, and active input are framed together when the software keyboard opens instead of scrolling the score HUD above the visible viewport.
+- Reduced active phone prompt height and oversized kana/prompt scaling so the interaction area sits more naturally in the available phone viewport without changing desktop/tablet trainer composition.
+- Added shared software-keyboard state ownership to the trainer session controller so phone-only presentation can respond cleanly to the iOS visual viewport; the bottom Focus exit handle is suppressed while the keyboard is open to avoid overlapping the keyboard controls.
+- Added phone-only scroll-aware shared navigation: scrolling down hides the sticky navigation, reversing direction reveals it immediately, and returning to the top keeps it visible.
+- Kept automatic phone navigation separate from explicit Focus Mode so Focus remains user-controlled.
+- Added regression/browser coverage for HUD visibility during keyboard-sized viewports and phone navigation hide/reveal direction behaviour.
+- Preserved trainer scoring/SRS, Reading/Writing mode identity, cloud/local persistence, Results, progression, PWA/update ownership, and tablet/desktop layouts.
+
 ## 2.52.0 - 2026-09-27
 - Polished the Results master-detail experience across desktop, tablet, and phone without changing assessment data or scoring.
 - Kept Assessment history and Kana-level analysis side by side through tablet widths where both remain usable, instead of forcing every explicit Tablet view into a long stacked layout.

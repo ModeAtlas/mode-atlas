@@ -1567,19 +1567,23 @@ body.study-nav-hidden.trainer-session-active .ma-trainer-card{width:min(760px,ca
   body.trainer-session-active .ma-trainer-card{
     width:100%;
     margin-bottom:18px;
-    padding:14px 12px 18px;
-    min-height:calc(100svh - 138px);
+    padding:12px 12px 16px;
+    min-height:0;
   }
   body.trainer-session-active .ma-trainer-header{min-height:22px;}
   body.trainer-session-active .ma-trainer-header h1{font-size:.72rem;letter-spacing:.11em;}
   body.trainer-session-active .ma-trainer-prompt-wrap{
-    min-height:clamp(185px,34svh,285px);
-    padding:10px 0 2px;
+    min-height:clamp(150px,27svh,220px);
+    padding:8px 0 2px;
   }
-  body.trainer-session-active.ma-reading-page .hiragana{font-size:clamp(6.8rem,33vw,9rem);}
-  body.trainer-session-active.ma-writing-page .prompt{font-size:clamp(5.2rem,24vw,7rem);}
-  body.trainer-session-active.ma-writing-page .prompt-small{font-size:clamp(4rem,19vw,5.5rem);}
-  body.trainer-session-active .ma-trainer-input{width:min(100%,340px);min-height:52px;font-size:22px;}
+  body.trainer-session-active.ma-reading-page .hiragana{font-size:clamp(6rem,30vw,8.25rem);}
+  body.trainer-session-active.ma-writing-page .prompt{font-size:clamp(4.8rem,22vw,6.4rem);}
+  body.trainer-session-active.ma-writing-page .prompt-small{font-size:clamp(3.8rem,18vw,5.1rem);}
+  body.trainer-session-active .ma-session-hud{padding-bottom:8px;}
+  body.trainer-session-active .ma-session-hud .scoreline{gap:6px;}
+  body.trainer-session-active .ma-session-hud .ma-trainer-score{min-height:32px;padding:6px 9px;font-size:.74rem;}
+  body.trainer-session-active .ma-session-hud .ma-trainer-score strong{font-size:.82rem;}
+  body.trainer-session-active .ma-trainer-input{width:min(100%,340px);min-height:50px;font-size:21px;}
   body.trainer-session-result .ma-trainer-card{min-height:0;}
   body.trainer-session-result .ma-trainer-prompt-wrap{min-height:clamp(110px,22svh,155px);padding:4px 0;}
   body.trainer-session-result.ma-reading-page .hiragana{font-size:clamp(4.9rem,25vw,6.6rem);}
@@ -1606,6 +1610,13 @@ body.study-nav-hidden.trainer-session-active .ma-trainer-card{width:min(760px,ca
   body.trainer-session-active .session-actions .ma-trainer-skip{
     grid-column:1 / -1;
     order:3;
+  }
+  body.ma-phone-keyboard-open.trainer-session-active .ma-trainer-prompt-wrap{
+    min-height:clamp(128px,23svh,180px);
+  }
+  body.ma-phone-keyboard-open.trainer-session-active .ma-trainer-session-controls{
+    margin-top:10px;
+    padding-top:10px;
   }
 }
 

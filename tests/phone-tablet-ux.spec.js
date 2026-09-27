@@ -117,6 +117,26 @@ test.describe('Phone and Tablet study UX', () => {
     expect(new URL(page.url()).pathname).toBe('/writing/');
   });
 
+  test('Phone navigation hides on downward scroll and returns as soon as scrolling reverses', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoApp(page, '/kana/');
+    await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'phone');
+    const nav = page.locator('.ma-nav');
+    await expect(nav).toBeVisible();
+
+    await page.evaluate(() => window.scrollTo(0, 600));
+    await page.waitForTimeout(120);
+    await expect(nav).toHaveClass(/ma-nav--scroll-hidden/);
+
+    await page.evaluate(() => window.scrollTo(0, 520));
+    await page.waitForTimeout(120);
+    await expect(nav).not.toHaveClass(/ma-nav--scroll-hidden/);
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(80);
+    await expect(nav).not.toHaveClass(/ma-nav--scroll-hidden/);
+  });
+
   test('Phone Practice Setup stacks groups, sizes controls safely, and clears the fixed setup bar', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoApp(page, '/reading/');
@@ -183,12 +203,14 @@ test.describe('Phone and Tablet study UX', () => {
     await page.waitForTimeout(350);
 
     const frame = await page.evaluate(() => {
+      const hud = document.querySelector('.ma-session-hud').getBoundingClientRect();
       const prompt = document.querySelector('.ma-trainer-prompt-wrap').getBoundingClientRect();
       const kana = document.getElementById('hiragana').getBoundingClientRect();
       const input = document.getElementById('input').getBoundingClientRect();
       const viewportTop = Number(window.visualViewport?.offsetTop || 0);
       const viewportHeight = Number(window.visualViewport?.height || window.innerHeight);
       return {
+        hudTop: hud.top,
         promptTop: prompt.top,
         kanaTop: kana.top,
         inputBottom: input.bottom,
@@ -196,6 +218,7 @@ test.describe('Phone and Tablet study UX', () => {
         viewportBottom: viewportTop + viewportHeight
       };
     });
+    expect(frame.hudTop).toBeGreaterThanOrEqual(frame.viewportTop - 3);
     expect(frame.promptTop).toBeGreaterThanOrEqual(frame.viewportTop - 3);
     expect(frame.kanaTop).toBeGreaterThanOrEqual(frame.viewportTop - 3);
     expect(frame.inputBottom).toBeLessThanOrEqual(frame.viewportBottom + 3);

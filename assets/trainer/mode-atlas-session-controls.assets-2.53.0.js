@@ -68,29 +68,48 @@
     return document.body?.dataset?.effectiveDisplayMode === 'phone'
       && document.body.classList.contains('trainer-session-active');
   }
-  function alignPhoneTrainerFrame(){
-    if (!isPhoneTrainerSession()) return;
-    const activeInput = document.getElementById('input');
-    const prompt = document.querySelector('.ma-trainer-prompt-wrap');
-    if (!activeInput || !prompt || document.activeElement !== activeInput) return;
+  function syncPhoneKeyboardState(){
+    const viewport = window.visualViewport;
+    const layoutHeight = Number(window.innerHeight || 0);
+    const visibleHeight = Number(viewport?.height || layoutHeight);
+    const keyboardOpen = isPhoneTrainerSession()
+      && document.activeElement?.id === 'input'
+      && layoutHeight > 0
+      && visibleHeight > 0
+      && (layoutHeight - visibleHeight) > 120;
+    document.body.classList.toggle('ma-phone-keyboard-open', keyboardOpen);
+  }
 
-    const promptRect = prompt.getBoundingClientRect();
+  function alignPhoneTrainerFrame(){
+    if (!isPhoneTrainerSession()) {
+      document.body.classList.remove('ma-phone-keyboard-open');
+      return;
+    }
+    const activeInput = document.getElementById('input');
+    const frameStart = document.querySelector('.ma-session-hud') || document.querySelector('.ma-trainer-header');
+    if (!activeInput || !frameStart || document.activeElement !== activeInput) return;
+
+    syncPhoneKeyboardState();
+
+    const frameRect = frameStart.getBoundingClientRect();
     const inputRect = activeInput.getBoundingClientRect();
     const viewport = window.visualViewport;
     const viewportTop = Number(viewport?.offsetTop || 0);
     const viewportHeight = Number(viewport?.height || window.innerHeight || 0);
     if (!viewportHeight) return;
 
-    const available = Math.max(0, viewportHeight - 24);
-    const regionHeight = Math.max(0, inputRect.bottom - promptRect.top);
-    let targetTop = viewportTop + 12;
+    const inset = 12;
+    const available = Math.max(0, viewportHeight - inset * 2);
+    const regionHeight = Math.max(0, inputRect.bottom - frameRect.top);
+    let targetTop = viewportTop + inset;
+
     if (regionHeight < available) {
-      targetTop += Math.min(32, Math.max(0, (available - regionHeight) * 0.18));
+      targetTop += Math.max(0, Math.min(36, (available - regionHeight) * 0.35));
     } else {
-      targetTop = Math.max(viewportTop + 8, viewportTop + viewportHeight - 12 - regionHeight);
+      targetTop = Math.max(viewportTop + 6, viewportTop + viewportHeight - inset - regionHeight);
     }
 
-    const delta = promptRect.top - targetTop;
+    const delta = frameRect.top - targetTop;
     if (Math.abs(delta) > 2) window.scrollTo(0, Math.max(0, window.scrollY + delta));
   }
   function schedulePhoneTrainerFrame(){
@@ -167,13 +186,24 @@
     if (event.target?.id === 'input') schedulePhoneTrainerFrame();
   });
   window.visualViewport?.addEventListener('resize', () => {
+    syncPhoneKeyboardState();
     if (document.activeElement?.id === 'input') schedulePhoneTrainerFrame();
   }, { passive: true });
-  window.addEventListener('orientationchange', schedulePhoneTrainerFrame, { passive: true });
+  window.addEventListener('orientationchange', () => {
+    syncPhoneKeyboardState();
+    schedulePhoneTrainerFrame();
+  }, { passive: true });
+  document.addEventListener('focusout', (event) => {
+    if (event.target?.id !== 'input') return;
+    window.setTimeout(syncPhoneKeyboardState, 80);
+  });
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('#startBtn') || event.target.closest('#retryBtn') || event.target.closest('#endSessionBtn')) {
       resetPauseUi();
+      if (event.target.closest('#endSessionBtn')) {
+        document.body.classList.remove('ma-phone-keyboard-open');
+      }
     }
   });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureButtons); else ensureButtons();

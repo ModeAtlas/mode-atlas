@@ -1,5 +1,64 @@
 (function initModeAtlasNavigationMenu(){
   'use strict';
+  var nav = document.querySelector('.ma-nav');
+
+  function effectiveDisplayMode(){
+    return document.body?.dataset?.effectiveDisplayMode
+      || document.documentElement?.dataset?.effectiveDisplayMode
+      || '';
+  }
+
+  function bindPhoneScrollNavigation(){
+    if (!nav || nav.dataset.maPhoneScrollBound === '1') return;
+    nav.dataset.maPhoneScrollBound = '1';
+
+    var lastY = Math.max(0, window.scrollY || 0);
+    var ticking = false;
+
+    function reveal(){
+      nav.classList.remove('ma-nav--scroll-hidden');
+    }
+
+    function update(){
+      ticking = false;
+      var currentY = Math.max(0, window.scrollY || 0);
+      var delta = currentY - lastY;
+
+      if (effectiveDisplayMode() !== 'phone' || document.body?.classList.contains('study-nav-hidden')) {
+        reveal();
+        lastY = currentY;
+        return;
+      }
+
+      if (currentY <= 12 || nav.contains(document.activeElement)) {
+        reveal();
+      } else if (delta > 3) {
+        nav.classList.add('ma-nav--scroll-hidden');
+      } else if (delta < -3) {
+        reveal();
+      }
+
+      lastY = currentY;
+    }
+
+    function schedule(){
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    }
+
+    window.addEventListener('scroll', schedule, { passive:true });
+    window.addEventListener('modeAtlasDisplayModeChanged', function(){
+      lastY = Math.max(0, window.scrollY || 0);
+      reveal();
+    });
+    nav.addEventListener('focusin', reveal);
+    nav.addEventListener('pointerdown', reveal);
+    update();
+  }
+
+  bindPhoneScrollNavigation();
+
   var menu = document.querySelector('[data-ma-kana-menu]');
   if (!menu || menu.dataset.maMenuBound === '1') return;
 
@@ -10,12 +69,6 @@
   menu.dataset.maMenuBound = '1';
   var closeTimer = 0;
   var hoverQuery = window.matchMedia ? window.matchMedia('(hover:hover) and (pointer:fine)') : null;
-
-  function effectiveDisplayMode(){
-    return document.body?.dataset?.effectiveDisplayMode
-      || document.documentElement?.dataset?.effectiveDisplayMode
-      || '';
-  }
 
   function isOpen(){
     return menu.classList.contains('is-open');

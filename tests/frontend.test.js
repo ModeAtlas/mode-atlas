@@ -1152,6 +1152,11 @@ test('2.34.1 Kana navigation flyout stays out of header flow and supports pointe
   assert.match(navRuntime, /\(hover:hover\) and \(pointer:fine\)/);
   assert.match(navRuntime, /pointerdown/);
   assert.match(navRuntime, /event\.key !== 'Escape'/);
+  assert.match(navRuntime, /bindPhoneScrollNavigation/);
+  assert.match(navRuntime, /window\.addEventListener\('scroll', schedule, \{ passive:true \}\)/);
+  assert.match(navRuntime, /ma-nav--scroll-hidden/);
+  assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav\{[\s\S]*?position:sticky;/);
+  assert.match(navCss, /body\[data-effective-display-mode="phone"\]:not\(\.study-nav-hidden\) \.ma-nav\.ma-nav--scroll-hidden/);
   for (const rel of APP_PAGES) {
     const html = read(rel);
     assert.match(html, new RegExp(`mode-atlas-navigation-menu\\.${REVISION.replaceAll('.', '\\.')}\\.js`), `${rel} shared Kana menu runtime`);
@@ -1267,6 +1272,7 @@ test('2.37 Word Bank is collection-first, state-aware, and keeps editing progres
 test('2.38 trainer sessions use one active-state owner and a focused shared stage', () => {
   const frontend = read('frontend_components.py');
   const shared = read('assets/trainer/mode-atlas-trainer-shared.js');
+  const sessionControls = read('assets/trainer/mode-atlas-session-controls.js');
   const css = read('assets/css/mode-atlas-study-shared.css');
   const reading = read('reading/index.html');
   const writing = read('writing/index.html');
@@ -1286,6 +1292,11 @@ test('2.38 trainer sessions use one active-state owner and a focused shared stag
   assert.match(css, /data-effective-display-mode="tablet"\]\.trainer-session-active \.ma-trainer-side-panel/);
   assert.match(css, /body\.trainer-session-active\.ma-reading-page \.hiragana/);
   assert.match(css, /body\.trainer-session-active\.ma-writing-page \.prompt/);
+  assert.match(sessionControls, /const frameStart = document\.querySelector\('\.ma-session-hud'\)/,
+    'phone keyboard reframing must anchor from the session HUD rather than cropping it above the prompt');
+  assert.match(sessionControls, /ma-phone-keyboard-open/,
+    'shared session controls must own real software-keyboard state for phone presentation');
+  assert.match(css, /body\.ma-phone-keyboard-open\.trainer-session-active \.ma-trainer-prompt-wrap/);
 });
 
 test('2.39 Reading and Writing share controller lifecycle while answer adapters stay mode-specific', () => {
