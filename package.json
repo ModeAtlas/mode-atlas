@@ -10,15 +10,16 @@
     "test:report": "playwright show-report",
     "build:revision": "python3 build_revision_assets.py",
     "audit": "python3 audit_project.py",
-    "release:check": "python3 build_revision_assets.py && python3 audit_project.py && python3 build_ios_web.py --check && node --test tests/backend.test.js tests/frontend.test.js tests/ios-foundation.test.js",
+    "release:check": "python3 build_revision_assets.py && python3 sync_ios_project.py && python3 audit_project.py && python3 build_ios_web.py --check && node --test tests/backend.test.js tests/frontend.test.js tests/ios-foundation.test.js",
     "test:backend": "node --test tests/backend.test.js",
     "test:frontend": "node --test tests/frontend.test.js",
     "build:ios-web": "python3 build_ios_web.py",
     "check:ios-web": "python3 build_ios_web.py --check",
     "test:ios-foundation": "node --test tests/ios-foundation.test.js",
     "test:ios-shell": "playwright test tests/ios-shell.spec.js",
-    "ios:sync": "npm run build:ios-web && npx cap sync ios",
-    "ios:open": "npx cap open ios"
+    "ios:sync": "python3 sync_ios_project.py && npm run build:ios-web && npx cap sync ios",
+    "ios:open": "npx cap open ios",
+    "ios:check-version": "python3 sync_ios_project.py"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
