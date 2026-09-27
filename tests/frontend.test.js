@@ -1517,13 +1517,39 @@ test('2.43.1 achievement tiles breathe and detail navigation has distinct destin
   assert.match(achievementCss, /\.ma-ach-copy\{[^}]*margin-bottom:18px/);
   assert.match(achievementCss, /\.ma-ach-meter\{[^}]*position:relative[^}]*margin-top:auto/);
 
-  assert.match(achievements, /backLabel:'← Back to achievements'/);
+  assert.doesNotMatch(achievements, /backLabel:'← Back to achievements'/);
   assert.match(achievements, /backLabel:'← Back to Mastery Map'/);
-  assert.doesNotMatch(achievements, /ma-ach-info-back','Back'/);
+  assert.match(achievements, /handleFeatureCloseRequest/);
+  assert.match(achievements, /onCloseRequest:/);
   assert.match(achievements, /closeLabel:'×'/);
-  assert.match(achievements, /Close achievements/);
+  assert.match(achievements, /Close achievements or return to achievements/);
+  assert.match(dialog, /opts\.onCloseRequest = typeof opts\.onCloseRequest === 'function'/);
+  assert.match(dialog, /if \(opts\.onCloseRequest\?\.\(\) === true\) return;/);
   assert.match(dialog, /close\.classList\.toggle\('ma-dialog__close--icon', opts\.closeIcon\)/);
   assert.match(components, /\.ma-dialog__close--icon/);
+});
+
+test('2.43.2 responsive UX keeps results, mastery, focus mode, and trainer result states readable', () => {
+  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
+  const achievementCss = read('assets/css/mode-atlas-achievements.css');
+  const resultsUi = read('assets/results/mode-atlas-results-ui.js');
+  const resultsCss = read('assets/css/mode-atlas-test-page.css');
+  const navCss = read('assets/css/mode-atlas-navigation.css');
+  const trainerShared = read('assets/trainer/mode-atlas-trainer-shared.js');
+  const trainerCss = read('assets/css/mode-atlas-study-shared.css');
+
+  assert.match(achievements, /ma-mastery-overview/);
+  assert.match(achievementCss, /\.ma-mastery-overview\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(achievementCss, /\.ma-mastery-cell::before/);
+  assert.match(resultsUi, /Select a row for details/);
+  assert.match(resultsCss, /grid-template-columns: repeat\(10, minmax\(88px, 1fr\)\)/);
+  assert.match(resultsCss, /body\[data-effective-display-mode="tablet"\] \.row-doughnut-strip/);
+  assert.match(resultsCss, /body\[data-effective-display-mode="phone"\] \.row-doughnut-strip/);
+  assert.match(navCss, /body\[data-effective-display-mode="tablet"\] \.ma-nav__focus \.ma-nav__action-label\{display:none;\}/);
+  assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav__focus \.ma-nav__action-label\{display:none;\}/);
+  assert.match(trainerShared, /trainer-session-result/);
+  assert.match(trainerShared, /trainer-session-retry/);
+  assert.match(trainerCss, /body\.trainer-session-retry \.session-actions\{display:none!important;\}/);
 });
 
 test('2.44 app-wide UX vocabulary keeps product destinations and actions semantically consistent', () => {
