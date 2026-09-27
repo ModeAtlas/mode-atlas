@@ -95,3 +95,48 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+
+
+  ios-native-build:
+    name: Build native iOS shell
+    needs: release-check
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+
+      - name: Synchronize native shell
+        run: npm run ios:sync
+
+      - name: Verify native generation is source-clean
+        run: git diff --exit-code -- . ':(exclude)ios/App/App/public' ':(exclude)ios/App/App/capacitor.config.json' ':(exclude)ios/App/App/config.xml'
+
+      - name: Build iPhone/iPad simulator target
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -derivedDataPath "${RUNNER_TEMP}/ModeAtlasDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Verify native product metadata
+        shell: bash
+        run: |
+          app_path="${RUNNER_TEMP}/ModeAtlasDerivedData/Build/Products/Debug-iphonesimulator/App.app"
+          test -d "$app_path"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")" = "app.modeatlas"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "2.54.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "2054000"
