@@ -1,5 +1,5 @@
 let initializeApp, getApps, getApp;
-let getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, signOut, onAuthStateChanged;
+let getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, signOut, onAuthStateChanged;
 let getFirestore, doc, getDoc, setDoc;
 let firebaseModulesPromise = null;
 let firebaseModulesLoaded = false;
@@ -74,6 +74,8 @@ async function loadFirebaseModules() {
     getApps = appMod.getApps;
     getApp = appMod.getApp;
     getAuth = authMod.getAuth;
+    initializeAuth = authMod.initializeAuth;
+    browserLocalPersistence = authMod.browserLocalPersistence;
     GoogleAuthProvider = authMod.GoogleAuthProvider;
     signInWithPopup = authMod.signInWithPopup;
     signInWithRedirect = authMod.signInWithRedirect;
@@ -1025,7 +1027,12 @@ async function setupFirebase() {
 
     if (!app) {
       app = getApps().length ? getApp() : initializeApp(CONFIG);
-      auth = getAuth(app);
+      // The native WebView navigates between bundled documents. Use its local
+      // storage directly for the one JS Firebase session instead of getAuth's
+      // browser dependency chain (which tries IndexedDB first on iOS).
+      auth = window.ModeAtlasEnv?.isNativeApp
+        ? initializeAuth(app, { persistence: browserLocalPersistence })
+        : getAuth(app);
       if (!window.ModeAtlasEnv?.isNativeApp) {
         try { await getRedirectResult(auth); } catch (error) { console.warn('Redirect sign-in result was not available.', error); }
       }
@@ -1211,7 +1218,22 @@ async function signInWithGoogle() {
         credential.idToken,
         credential.accessToken || undefined
       );
-      await signInWithCredential(auth, webCredential);
+      const handoff = signInWithCredential(auth, webCredential);
+      let timer;
+      try {
+        await Promise.race([
+          handoff,
+          new Promise((_, reject) => {
+            timer = setTimeout(() => {
+              const stalled = new Error('Firebase did not finish the native Google credential handoff.');
+              stalled.code = 'native-auth-handoff-timeout';
+              reject(stalled);
+            }, 15000);
+          })
+        ]);
+      } finally {
+        clearTimeout(timer);
+      }
     } else {
       try {
         await signInWithPopup(auth, provider);
@@ -1231,14 +1253,16 @@ async function signInWithGoogle() {
   } catch (error) {
     console.error('Google sign-in failed.', error);
     const code = String(error?.code || '');
-    const nativeSetupProblem = code.includes('native-auth')
+    const nativeSetupProblem = (code.includes('native-auth') && code !== 'native-auth-handoff-timeout')
       || /GoogleService-Info|client id|configuration/i.test(String(error?.message || ''));
     await window.ModeAtlasFeedback?.alert?.({
       kicker: 'Cloud sync',
-      title: 'Google sign-in failed',
-      message: nativeSetupProblem
-        ? 'This iOS build is not yet registered for Google sign-in. Mode Atlas needs its Firebase iOS configuration before native sign-in can be used.'
-        : 'Mode Atlas could not complete Google sign-in. Check your connection and Firebase Auth setup, then try again.',
+      title: code === 'native-auth-handoff-timeout' ? 'Google sign-in is taking too long' : 'Google sign-in failed',
+      message: code === 'native-auth-handoff-timeout'
+        ? 'Google returned to Mode Atlas, but Firebase has not finished signing in. Check Profile before trying again. If it stays on Guest, report native-auth-handoff-timeout.'
+        : nativeSetupProblem
+          ? 'This iOS build is not yet registered for Google sign-in. Mode Atlas needs its Firebase iOS configuration before native sign-in can be used.'
+          : 'Mode Atlas could not complete Google sign-in. Check your connection and Firebase Auth setup, then try again.' + (code ? ` (${code})` : ''),
       tone: 'error',
       confirmLabel: 'OK'
     });

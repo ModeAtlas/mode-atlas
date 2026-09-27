@@ -1,3 +1,8 @@
+## 2.57.2 - 2026-09-27
+
+- Initialized the iOS web session with explicit local storage persistence so native Google credential sign-in can persist across bundled page navigation without relying on WebKit IndexedDB startup.
+- Reported a stalled native credential handoff after 15 seconds and included Firebase error codes in sign-in feedback, avoiding a silent return to the Guest profile.
+
 ## 2.57.1 - 2026-09-27
 
 - Resolved the native shell's clean page URLs to their bundled HTML documents, restoring the correct Kana, Reading, Writing, Results and Word Bank pages with their styling and scripts.

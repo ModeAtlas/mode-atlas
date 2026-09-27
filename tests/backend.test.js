@@ -98,7 +98,8 @@ function patchFirebaseLoader(source) {
   const replacement = `async function loadFirebaseModules() {
     const m = __mocks;
     initializeApp=m.initializeApp; getApps=m.getApps; getApp=m.getApp;
-    getAuth=m.getAuth; GoogleAuthProvider=m.GoogleAuthProvider; signInWithPopup=m.signInWithPopup;
+    getAuth=m.getAuth; initializeAuth=m.initializeAuth; browserLocalPersistence=m.browserLocalPersistence;
+    GoogleAuthProvider=m.GoogleAuthProvider; signInWithCredential=m.signInWithCredential; signInWithPopup=m.signInWithPopup;
     signInWithRedirect=m.signInWithRedirect; getRedirectResult=m.getRedirectResult; signOut=m.signOut;
     onAuthStateChanged=m.onAuthStateChanged; getFirestore=m.getFirestore; doc=m.doc; getDoc=m.getDoc; setDoc=m.setDoc;
     return true;
@@ -115,7 +116,8 @@ function patchFirebaseLoaderWithTransientFailure(source) {
     if (__firebaseLoadAttempts.count === 1) return false;
     const m = __mocks;
     initializeApp=m.initializeApp; getApps=m.getApps; getApp=m.getApp;
-    getAuth=m.getAuth; GoogleAuthProvider=m.GoogleAuthProvider; signInWithPopup=m.signInWithPopup;
+    getAuth=m.getAuth; initializeAuth=m.initializeAuth; browserLocalPersistence=m.browserLocalPersistence;
+    GoogleAuthProvider=m.GoogleAuthProvider; signInWithCredential=m.signInWithCredential; signInWithPopup=m.signInWithPopup;
     signInWithRedirect=m.signInWithRedirect; getRedirectResult=m.getRedirectResult; signOut=m.signOut;
     onAuthStateChanged=m.onAuthStateChanged; getFirestore=m.getFirestore; doc=m.doc; getDoc=m.getDoc; setDoc=m.setDoc;
     return true;
@@ -231,6 +233,42 @@ test('cloud-sync falls back to localStorage and bindUi is idempotent', async () 
   assert.equal(first, second);
   assert.equal(signInBtn.counts.click, 1);
   assert.equal(signOutBtn.counts.click, 1);
+});
+
+test('native Google credential creates a persistent JS session and updates Profile', async () => {
+  const { context, window } = createBaseContext({ configured: true });
+  window.ModeAtlasEnv.isNativeApp = true;
+  window.AtlasPlatform = { authenticate: async () => ({ handled: true, credential: { idToken: 'google-token' } }) };
+  let authCallback;
+  let persistence;
+  const auth = { currentUser: null };
+  const user = { uid: 'native-user', email: 'learner@example.com' };
+  context.__mocks = {
+    initializeApp: () => ({}), getApps: () => [], getApp: () => ({}),
+    getAuth: () => { throw Error('native setup must not use browser defaults'); },
+    initializeAuth: (_app, dependencies) => { persistence = dependencies.persistence; return auth; },
+    browserLocalPersistence: { type: 'LOCAL' },
+    GoogleAuthProvider: class { setCustomParameters() {} static credential(token) { return { token }; } },
+    signInWithCredential: async (_auth, credential) => {
+      assert.equal(credential.token, 'google-token');
+      auth.currentUser = user;
+      authCallback(user);
+      return { user };
+    },
+    signInWithPopup: async () => {}, signInWithRedirect: async () => {}, getRedirectResult: async () => null,
+    signOut: async () => {}, onAuthStateChanged: (_auth, callback) => { authCallback = callback; callback(null); },
+    getFirestore: () => ({}), doc: (_db, ...parts) => parts.join('/'),
+    getDoc: async () => ({ exists: () => false }), setDoc: async () => {}
+  };
+  const source = patchFirebaseLoader(CLOUD_SYNC_SOURCE);
+  vm.runInContext(source, context, { filename: 'cloud-sync.js' });
+  await window.KanaCloudSync.ready;
+  const emailEl = { textContent: '' };
+  window.KanaCloudSync.bindUi({ emailEl });
+  assert.equal(await window.KanaCloudSync.signInWithGoogle(), true);
+  assert.equal(persistence.type, 'LOCAL');
+  assert.equal(window.KanaCloudSync.getUser().uid, 'native-user');
+  assert.equal(emailEl.textContent, user.email);
 });
 
 test('cloud-sync discards stale-account hydration and serializes sync bursts', async () => {
