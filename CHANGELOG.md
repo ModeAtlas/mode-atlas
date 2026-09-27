@@ -1,3 +1,47 @@
+## 2.52.0 - 2026-09-27
+- Polished the Results master-detail experience across desktop, tablet, and phone without changing assessment data or scoring.
+- Kept Assessment history and Kana-level analysis side by side through tablet widths where both remain usable, instead of forcing every explicit Tablet view into a long stacked layout.
+- Added a tablet-density pass for the history list, detail panel, metrics, and kana heatmap so the split view stays readable without oversized cards or wasted space.
+- Changed narrow tablet/phone Assessment history into a horizontal, scrollable test selector rather than a long vertical block that pushes the selected assessment far below the fold.
+- Reduced kana heatmap tile height, padding, type size, and badge size at each responsive tier while retaining five kana per row and the existing fastest/slowest markers.
+- Added browser coverage for the real 1024px iPad master-detail layout, tablet heatmap density, and phone history/heatmap composition.
+- Preserved formal Test Mode calculations, Results selection behaviour, storage, cloud/local persistence, navigation, trainer behaviour, and PWA/update ownership.
+
+## 2.51.0 - 2026-09-27
+- Fixed the remaining iPad Results dead-space issue at the owning Results tablet layout rule.
+- Removed `.summary-grid` from the generic Tablet two-column group; the selected-assessment summary has one child and therefore must remain a single full-width column.
+- This restores full-width use for the selected assessment card and its row-performance section while preserving the intended two-column Tablet layouts for metric, overview, and test grids.
+- Added regression coverage that explicitly prevents Tablet mode from assigning two columns to `.summary-grid`.
+- Updated the iPad browser test to assert the real Results summary is one column and that its content occupies the full available width.
+- Preserved the 2.50.0 shared End session icon fix, trainer behaviour, navigation, persistence, progression, and PWA/update ownership.
+
+## 2.50.0 - 2026-09-27
+- Corrected Results row-performance layout at its canonical stylesheet so iPad/tablet widths keep all ten row cards across the available panel instead of dropping to an artificial five-column grid.
+- Removed the obsolete 901–1180px five-column breakpoint that was reintroducing the large empty right-hand area on iPad.
+- Updated the shared stop icon in the central Mode Atlas SVG sprite to a clearer circular stop control with a filled stop glyph; Reading and Writing continue to consume the same parent icon asset.
+- Strengthened regression coverage to guard against reintroducing the tablet five-column Results rule and to verify the shared End session icon source.
+- Updated the iPad browser test to exercise a 1024px viewport so the breakpoint that previously failed is now directly covered.
+- Preserved trainer behaviour, shared navigation, cloud/local persistence, progression, PWA/update ownership, and existing responsive layouts outside this scope.
+
+## 2.49.0 - 2026-09-27
+- Unified Achievements and Mastery Map detail navigation so their shared dialog close control is the only back/close affordance: detail → parent menu, parent menu → originating page.
+- Removed the duplicate Mastery Map instruction line while retaining one compact in-map explanation.
+- Refined Focus Mode so the shared top-right control is clearly labelled on larger layouts, remains usable to exit Focus Mode, and keeps the extra bottom Exit control phone-only.
+- Corrected trainer retry-state controls so End session remains available after an incorrect answer, while Pause and I don’t know are temporarily hidden, and all controls restore after Try again.
+- Corrected Results row-performance responsiveness so wide iPad/tablet layouts use the available width instead of being forced into a five-column half-width block.
+- Added regression and browser coverage for the corrected navigation hierarchy, Focus Mode toggle behaviour, retry-state restoration, and wide-tablet Results layout.
+- Preserved trainer scoring/SRS, cloud/local persistence, save schemas, progression, PWA/update ownership, and existing Reading/Writing/Test behaviour.
+
+## 2.48.0 - 2026-09-27
+- Completed the phone/tablet UX hardening pass across Reading/Writing trainers, shared navigation, Results, Achievements, and the Kana Mastery Map.
+- Made the Achievements detail close control return to the Achievements overview before dismissing the feature dialog, removing the duplicate Back to achievements action.
+- Reworked Results row-performance charts so desktop, tablet, and phone layouts keep readable chart geometry instead of compressing row wheels.
+- Kept Focus Mode icon-only and contained at phone/tablet sizes while preserving its accessible label and shared navigation ownership.
+- Condensed and clarified the Mastery Map introduction so the kana grid appears immediately, with clearer stage summaries and kana-state accents.
+- Added a shared trainer result state that keeps the correct answer and Try again action together in the visible practice frame and removes no-longer-useful session actions.
+- Added responsive browser coverage for nested Achievements navigation, Mastery Map first-view visibility, Focus Mode containment, Practice Setup, keyboard framing, and trainer loss-state framing.
+- Preserved scoring/SRS, cloud/local persistence, save schemas, PWA/update ownership, progression, Test Results data, and Reading/Writing mode identity.
+
 ## 2.47.0 - 2026-08-16
 - Repaired package-lock package URLs so clean machines install Playwright dependencies from the public npm registry instead of an environment-specific internal registry.
 - Restricted revision-build and release-audit HTML discovery to Mode Atlas source, preventing installed dependencies and browser-test output from being interpreted as application pages on clean CI machines.

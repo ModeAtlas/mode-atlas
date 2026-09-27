@@ -99,6 +99,7 @@
         ]]
       ];
       mod.replaceChildren();
+      mod.classList.remove('button-grid');
       mod.classList.add('ma-structured-modifiers');
       groups.forEach(([title,items])=>{
         const section=document.createElement('div');

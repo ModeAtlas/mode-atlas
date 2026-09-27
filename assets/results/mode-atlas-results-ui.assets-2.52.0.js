@@ -186,7 +186,7 @@ function renderRowPerformanceNode(result, viewMode = "regular") {
     const renderSection = (title, rows, prefix, bestRow, worstRow) => {
         const section = makeResultNode("div", "row-performance-section");
         const head = makeResultNode("div", "row-performance-head");
-        head.append(makeResultNode("span", "", title), makeResultNode("span", "results-hover-hint", "Hover or click a row"));
+        head.append(makeResultNode("span", "", title), makeResultNode("span", "results-hover-hint", "Select a row for details"));
 
         const strip = makeResultNode("div", "row-doughnut-strip");
         rows.forEach((row, index) => {
@@ -231,7 +231,7 @@ function renderRowPerformanceNode(result, viewMode = "regular") {
     overlay.id = "rowTooltipOverlay";
     const card = makeResultNode("div", "row-tooltip-card");
     card.id = "rowTooltipCard";
-    card.append(makeResultNode("div", "title", "Row details"), makeResultNode("div", "sub", "Hover or click a row to see right vs wrong and average time."));
+    card.append(makeResultNode("div", "title", "Row details"), makeResultNode("div", "sub", "Select a row to see right vs wrong and average time."));
     overlay.append(card);
 
     root.append(

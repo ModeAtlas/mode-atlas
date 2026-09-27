@@ -73,6 +73,7 @@
     opts.closeLabel = opts.closeLabel || 'Close';
     opts.closeAriaLabel = opts.closeAriaLabel || 'Close dialog';
     opts.closeIcon = opts.closeIcon === true;
+    opts.onCloseRequest = typeof opts.onCloseRequest === 'function' ? opts.onCloseRequest : null;
     opts.dismissOnBackdrop = opts.dismissOnBackdrop !== false;
     return opts;
   }
@@ -188,6 +189,11 @@
     layer.onclick = (event) => {
       if (event.target.closest('[data-ma-dialog-confirm]')) {
         settle(true);
+        return;
+      }
+      if (event.target.closest('.ma-dialog__close')) {
+        if (opts.onCloseRequest?.() === true) return;
+        settle(opts.kind === 'confirm' ? false : true);
         return;
       }
       if (event.target.closest('[data-ma-dialog-cancel]')) {

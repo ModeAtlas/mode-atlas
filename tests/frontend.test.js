@@ -665,7 +665,8 @@ test('major feature popups use one shared dialog shell', () => {
   assert.doesNotMatch(appModalCss, /\.ma-whats-new-backdrop|\.ma-about-backdrop|\.ma-about-modal/);
 
   assert.match(achievements, /ModeAtlasDialog\.feature\(/);
-  assert.match(achievements, /data-ma-feature-back/);
+  assert.doesNotMatch(achievements, /data-ma-feature-back/);
+  assert.match(achievements, /handleFeatureCloseRequest/);
   assert.doesNotMatch(achievements, /maFeatureModal|maAchievementInfo|ma-feature-backdrop|ma-ach-info-backdrop/);
   assert.doesNotMatch(achievementCss, /\.ma-feature-modal|\.ma-feature-backdrop|\.ma-feature-panel|\.ma-ach-info-backdrop|\.ma-ach-info-panel/);
 });
@@ -722,6 +723,7 @@ test('post-consolidation frontend ownership keeps pause, dynamic controls, and p
   const trainerShared = read('assets/trainer/mode-atlas-trainer-shared.js');
   const modifier = read('assets/trainer/mode-atlas-modifier-menu.js');
   const trainerCss = read('assets/css/mode-atlas-study-shared.css');
+  const icons = read('assets/mode-atlas-icons.svg');
   const achievementsCss = read('assets/css/mode-atlas-achievements.css');
   const devConsole = read('assets/app/mode-atlas-dev-console.js');
   const displayMode = read('assets/app/mode-atlas-display-mode.js');
@@ -884,7 +886,7 @@ test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and c
   for (const trainer of [reading, writing]) {
     assert.match(trainer, /Practice setup ▼/);
     assert.match(trainer, /id="sessionProgressBar"/);
-    assert.match(trainer, />Focus mode<|Focus mode<\/span>/);
+    assert.match(trainer, />Focus<|Focus<\/span>/);
     assert.match(trainer, /Exit focus mode/);
     assert.doesNotMatch(trainer, />Hide nav<|>Show navigation<|>Modifiers ▼</);
   }
@@ -1156,16 +1158,16 @@ test('2.34.1 Kana navigation flyout stays out of header flow and supports pointe
   }
 });
 
-test('2.34.2 Kana flyout keeps fast desktop navigation and deliberate touch access', () => {
+test('2.34.2 Kana flyout uses one disclosure control across pointer, touch, and keyboard input', () => {
   const frontend = read('frontend_components.py');
   const navJs = read('assets/ui/mode-atlas-navigation-menu.js');
   const navCss = read('assets/css/mode-atlas-navigation.css');
-  assert.match(frontend, /f'<a class="\{classes\}" href="\/kana\/" data-ma-nav-scope="product"/);
-  assert.doesNotMatch(frontend, /f'<button class="\{classes\}" type="button" data-ma-nav-scope="product"/);
-  assert.match(navJs, /var finePointer = !!\(hoverQuery && hoverQuery\.matches\)/);
-  assert.match(navJs, /if \(finePointer\) return/);
-  assert.match(navJs, /if \(!isOpen\(\)\) \{\s*event\.preventDefault\(\);\s*setOpen\(true\);/);
-  assert.doesNotMatch(navJs, /setOpen\(!isOpen\(\)\)/);
+  assert.match(frontend, /f'<button class="\{classes\}" type="button" data-ma-nav-scope="product"/);
+  assert.doesNotMatch(frontend, /f'<a class="\{classes\}" href="\/kana\/" data-ma-nav-scope="product"/);
+  assert.match(navJs, /trigger\.addEventListener\('click', function\(\)\{\s*setOpen\(true\);/);
+  assert.match(navJs, /menu\.addEventListener\('focusin', function\(\)\{ setOpen\(true\); \}\);/);
+  assert.match(navJs, /document\.addEventListener\('pointerdown'/);
+  assert.doesNotMatch(navJs, /location\.href|location\.assign/);
   assert.match(navCss, /\.ma-nav__section-link\{[\s\S]*?justify-content:center;[\s\S]*?text-align:center;/);
 });
 
@@ -1517,13 +1519,51 @@ test('2.43.1 achievement tiles breathe and detail navigation has distinct destin
   assert.match(achievementCss, /\.ma-ach-copy\{[^}]*margin-bottom:18px/);
   assert.match(achievementCss, /\.ma-ach-meter\{[^}]*position:relative[^}]*margin-top:auto/);
 
-  assert.match(achievements, /backLabel:'← Back to achievements'/);
-  assert.match(achievements, /backLabel:'← Back to Mastery Map'/);
-  assert.doesNotMatch(achievements, /ma-ach-info-back','Back'/);
+  assert.doesNotMatch(achievements, /backLabel:/);
+  assert.doesNotMatch(achievements, /data-ma-feature-back/);
+  assert.match(achievements, /handleFeatureCloseRequest/);
+  assert.match(achievements, /onCloseRequest:/);
   assert.match(achievements, /closeLabel:'×'/);
-  assert.match(achievements, /Close achievements/);
+  assert.match(achievements, /Close achievements or return to achievements/);
+  assert.match(dialog, /opts\.onCloseRequest = typeof opts\.onCloseRequest === 'function'/);
+  assert.match(dialog, /if \(opts\.onCloseRequest\?\.\(\) === true\) return;/);
   assert.match(dialog, /close\.classList\.toggle\('ma-dialog__close--icon', opts\.closeIcon\)/);
   assert.match(components, /\.ma-dialog__close--icon/);
+});
+
+test('2.43.2 responsive UX keeps results, mastery, focus mode, and trainer result states readable', () => {
+  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
+  const achievementCss = read('assets/css/mode-atlas-achievements.css');
+  const resultsUi = read('assets/results/mode-atlas-results-ui.js');
+  const resultsCss = read('assets/css/mode-atlas-test-page.css');
+  const navCss = read('assets/css/mode-atlas-navigation.css');
+  const trainerShared = read('assets/trainer/mode-atlas-trainer-shared.js');
+  const trainerCss = read('assets/css/mode-atlas-study-shared.css');
+  const icons = read('assets/mode-atlas-icons.svg');
+
+  assert.match(achievements, /ma-mastery-overview/);
+  assert.match(achievementCss, /\.ma-mastery-overview\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(achievementCss, /\.ma-mastery-cell::before/);
+  assert.match(resultsUi, /Select a row for details/);
+  assert.match(resultsCss, /grid-template-columns: repeat\(10, minmax\(76px, 1fr\)\)/);
+  assert.doesNotMatch(resultsCss, /@media \(max-width:1180px\)[\s\S]*?row-doughnut-strip[\s\S]*?repeat\(5/);
+  assert.doesNotMatch(resultsCss, /body\[data-effective-display-mode="tablet"\] \.row-doughnut-strip\s*\{\s*grid-template-columns:/);
+  assert.doesNotMatch(resultsCss, /body\[data-effective-display-mode="tablet"\] \.summary-grid,/);
+  assert.doesNotMatch(resultsCss, /body\[data-effective-display-mode="tablet"\] \.results-layout,/);
+  assert.match(resultsCss, /@media \(min-width:901px\) and \(max-width:1180px\)[\s\S]*?\.results-layout\s*\{[\s\S]*?grid-template-columns:minmax\(250px,\.62fr\) minmax\(0,1\.38fr\)/);
+  assert.match(resultsCss, /@media \(max-width: 900px\)[\s\S]*?\.results-list-card \.tests-grid\{[\s\S]*?display:flex;[\s\S]*?overflow-x:auto;/);
+  assert.match(resultsCss, /\.cell \{[\s\S]*?min-height: 64px;/);
+  assert.match(resultsCss, /@media \(max-width: 760px\)[\s\S]*?\.results-detail-card \.cell\{min-height:50px/);
+  assert.match(resultsCss, /body\[data-effective-display-mode="phone"\] \.row-doughnut-strip/);
+  assert.match(navCss, /body\[data-effective-display-mode="tablet"\] \.ma-nav__focus \.ma-nav__action-label\{display:inline-flex;\}/);
+  assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav__focus \.ma-nav__action-label\{display:none;\}/);
+  assert.match(navCss, /body\.study-nav-hidden \.ma-nav__focus \.ma-nav__action-label\{display:inline-flex;\}/);
+  assert.match(trainerShared, /trainer-session-result/);
+  assert.match(trainerShared, /trainer-session-retry/);
+  assert.match(trainerShared, /if \(!next\) setRetryButtonVisible\(false\);/);
+  assert.match(trainerCss, /body\.trainer-session-retry \.session-actions #skipKanaBtn,[\s\S]*?#pauseSessionBtn\{display:none!important;\}/);
+  assert.match(trainerCss, /body\.trainer-session-retry \.session-actions #endSessionBtn\{display:inline-flex!important;\}/);
+  assert.match(icons, /id="icon-stop"[\s\S]*?<circle[^>]+r="8"[^>]*>[\s\S]*?<rect[^>]+width="7"[^>]+fill="currentColor"/);
 });
 
 test('2.44 app-wide UX vocabulary keeps product destinations and actions semantically consistent', () => {

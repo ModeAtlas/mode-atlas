@@ -11,6 +11,12 @@
   var closeTimer = 0;
   var hoverQuery = window.matchMedia ? window.matchMedia('(hover:hover) and (pointer:fine)') : null;
 
+  function effectiveDisplayMode(){
+    return document.body?.dataset?.effectiveDisplayMode
+      || document.documentElement?.dataset?.effectiveDisplayMode
+      || '';
+  }
+
   function isOpen(){
     return menu.classList.contains('is-open');
   }
@@ -33,13 +39,8 @@
     menu.addEventListener('mouseleave', closeAfterPointerLeave);
   }
 
-  trigger.addEventListener('click', function(event){
-    var finePointer = !!(hoverQuery && hoverQuery.matches);
-    if (finePointer) return;
-    if (!isOpen()) {
-      event.preventDefault();
-      setOpen(true);
-    }
+  trigger.addEventListener('click', function(){
+    setOpen(true);
   });
 
   menu.addEventListener('focusin', function(){ setOpen(true); });

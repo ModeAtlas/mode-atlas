@@ -101,14 +101,18 @@ function createTrainerUiVisibilityControls(elements = {}) {
 
     function setGameOverVisible(visible = true) {
         if (!gameOverEl) return;
-        setElementVisible(gameOverEl, !!visible);
-        gameOverEl.classList.toggle("is-active", !!visible);
+        const next = !!visible;
+        setElementVisible(gameOverEl, next);
+        gameOverEl.classList.toggle("is-active", next);
+        document.body.classList.toggle("trainer-session-result", next);
+        if (!next) setRetryButtonVisible(false);
     }
 
     function setRetryButtonVisible(visible = true) {
         if (!retryBtn) return;
         setElementVisible(retryBtn, !!visible);
         retryBtn.classList.toggle("is-active", !!visible);
+        document.body.classList.toggle("trainer-session-retry", !!visible);
     }
 
     return {

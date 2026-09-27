@@ -127,11 +127,11 @@ def render_navigation(config: NavConfig) -> str:
             classes = 'ma-nav__link ma-nav__menu-trigger' + (' is-active' if active else '')
             link_markup.append(
                 '<div class="ma-nav__menu" data-ma-kana-menu>'
-                f'<a class="{classes}" href="/kana/" data-ma-nav-scope="product" '
+                f'<button class="{classes}" type="button" data-ma-nav-scope="product" '
                 'data-ma-nav-item="kana" data-ma-kana-menu-trigger aria-haspopup="true" '
                 'aria-expanded="false" aria-controls="maKanaMenu">'
                 f'<span>{html.escape(label)}</span><span class="ma-nav__menu-chevron" aria-hidden="true"></span>'
-                '</a>'
+                '</button>'
                 f'{kana_flyout}'
                 '</div>'
             )
@@ -146,7 +146,7 @@ def render_navigation(config: NavConfig) -> str:
     if config.account_actions:
         hide_action = ''
         if config.hideable:
-            hide_action = '<button class="ma-nav__action ma-nav__action--quiet ma-nav__focus" id="studyNavHideBtn" type="button" aria-label="Enter focus mode" title="Focus mode"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span class="ma-nav__action-label">Focus mode</span></button>'
+            hide_action = '<button class="ma-nav__action ma-nav__action--quiet ma-nav__focus" id="studyNavHideBtn" type="button" aria-label="Enter focus mode" title="Focus mode"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span class="ma-nav__action-label">Focus</span></button>'
         action_markup = f"""
       <div class="ma-nav__actions">
         <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
