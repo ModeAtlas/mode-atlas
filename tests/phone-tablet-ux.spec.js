@@ -120,21 +120,35 @@ test.describe('Phone and Tablet study UX', () => {
       const root = document.querySelector('#modifierOptions.ma-structured-modifiers');
       const buttons = root ? [...root.querySelectorAll('button')] : [];
       const groups = root ? [...root.querySelectorAll('.ma-modifier-group')] : [];
+      const controlMetrics = buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        return {
+          text: button.textContent.trim().replace(/\s+/g, ' '),
+          width: rect.width,
+          height: rect.height,
+          clientWidth: button.clientWidth,
+          scrollWidth: button.scrollWidth,
+          clientHeight: button.clientHeight,
+          scrollHeight: button.scrollHeight
+        };
+      });
       return {
         rootFound: !!root,
         stillGenericGrid: root?.classList.contains('button-grid') || false,
         columns: root ? getComputedStyle(root).gridTemplateColumns : '',
-        controlsFit: buttons.every((button) => {
-          const rect = button.getBoundingClientRect();
-          return button.scrollWidth <= button.clientWidth + 1 && rect.width >= 100 && rect.height >= 48;
-        }),
+        controlsFit: controlMetrics.every((control) =>
+          control.scrollWidth <= control.clientWidth + 1 && control.width >= 100 && control.height >= 48
+        ),
+        controlMetrics,
         groupsFit: groups.every((group) => group.scrollWidth <= group.clientWidth + 1)
       };
     });
     expect(setup.rootFound).toBe(true);
     expect(setup.stillGenericGrid).toBe(false);
     expect(columnCount(setup.columns)).toBe(1);
-    expect(setup.controlsFit).toBe(true);
+    expect(setup.controlsFit, JSON.stringify(setup.controlMetrics.filter((control) =>
+      control.scrollWidth > control.clientWidth + 1 || control.width < 100 || control.height < 48
+    ), null, 2)).toBe(true);
     expect(setup.groupsFit).toBe(true);
 
     await page.locator('#modifiersTab').click();
