@@ -41,9 +41,6 @@ jobs:
       - name: Sync native project
         run: npx cap sync ios
 
-      - name: Remove generated web payload from project artifact
-        run: rm -rf ios/App/App/public
-
       - name: Validate Xcode project
         run: |
           xcodebuild -project ios/App/App.xcodeproj \
@@ -52,6 +49,9 @@ jobs:
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Remove generated web payload from project artifact
+        run: rm -rf ios/App/App/public
 
       - name: Stage bootstrap artifact
         run: |
