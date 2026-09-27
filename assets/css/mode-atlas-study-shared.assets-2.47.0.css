@@ -541,7 +541,7 @@ body[data-display-mode="mobile"] .main {
 
 .bottom-shell.ma-modifiers-only .button-grid,.bottom-shell.ma-modifiers-only .rows-grid{gap:8px}
 
-.bottom-shell.ma-modifiers-only .toggle-btn{min-height:44px;border-radius:14px;background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.09);font-weight:850}
+.bottom-shell.ma-modifiers-only .toggle-btn{border-radius:14px;background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.09);font-weight:850}
 
 .bottom-shell.ma-modifiers-only .toggle-btn.active{transform:translateY(-1px)}
 
