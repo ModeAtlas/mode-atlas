@@ -1,5 +1,5 @@
 /* Capacitor/iOS adapter for the shared Mode Atlas platform facade.
-   The native plugin is intentionally thin: learning/SRS/progress logic remains in JS. */
+   The native plugin is intentionally thin; learning logic remains JS-owned. */
 (function ModeAtlasNativePlatform(root){
   'use strict';
   var platform = root.AtlasPlatform;
