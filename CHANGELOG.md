@@ -1,3 +1,9 @@
+## 2.57.1 - 2026-09-27
+
+- Resolved the native shell's clean page URLs to their bundled HTML documents, restoring the correct Kana, Reading, Writing, Results and Word Bank pages with their styling and scripts.
+- Treated Capacitor's internal localhost as a native runtime, so developer diagnostics appear only for the signed-in admin account inside the iOS app.
+- Verified that the built iOS app contains the page and style assets used by native navigation.
+
 ## 2.57.0 - 2026-09-27
 
 - Provisioned the real Firebase Apple app registration for `app.modeatlas` in the existing `mode-atlus` project.

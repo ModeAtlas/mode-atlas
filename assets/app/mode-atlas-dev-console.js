@@ -30,6 +30,7 @@
 
   function isLocalDevHost(){
     try {
+      if (window.ModeAtlasEnv?.isNativeApp) return false;
       return !!window.ModeAtlasEnv?.isLocalhost || /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(location.hostname || '');
     } catch { return false; }
   }

@@ -138,10 +138,12 @@ jobs:
           app_path="${RUNNER_TEMP}/ModeAtlasDerivedData/Build/Products/Debug-iphonesimulator/App.app"
           test -d "$app_path"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")" = "app.modeatlas"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "2.57.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "2057000"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "2.57.1"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "2057001"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "modeatlas"
           test -f "$app_path/GoogleService-Info.plist"
+          test -f "$app_path/public/kana/index.html"
+          test -f "$app_path/public/assets/css/mode-atlas-page-shared.assets-2.57.1.css"
           python3 - "$app_path/GoogleService-Info.plist" <<'PY'
           import plistlib
           import sys

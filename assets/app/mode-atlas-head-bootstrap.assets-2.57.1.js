@@ -6,7 +6,6 @@
   var APP_VERSION = (window.ModeAtlasVersion || window.MODE_ATLAS_VERSION || 'dev-local');
   var protocol = location.protocol;
   var host = location.hostname;
-  var search = location.search || '';
   var capacitor = window.Capacitor || null;
   var nativePlatform = '';
   try {
@@ -122,7 +121,7 @@
     isSupportedRuntime: isSupportedRuntime,
     canUseFirebase: canUseFirebase,
     firebaseAuthTransport: isNativeApp ? 'native-provider-web-session' : 'web',
-    allowDevTools: (isLocalServer || search.indexOf('dev=1') !== -1 || safeStorageGet('modeAtlasDevTools') === '1'),
+    allowDevTools: !isNativeApp && isLocalServer,
     baseUrl: (isOfficialDomain ? 'https://mode-atlas.app/' : (location.origin + '/'))
   });
 

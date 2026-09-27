@@ -232,10 +232,12 @@ def main() -> int:
     transport = {"build", "v", "reload", "swretired"}
 
     referenced_generated: set[Path] = set()
-    AUDIT_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}
+    AUDIT_IGNORED_DIRS = {'node_modules', '.git', '.build', 'playwright-report', 'test-results'}
+    def is_native_output(path):
+        return path.relative_to(ROOT).parts[:4] == ('ios', 'App', 'App', 'public')
     html_files = sorted(
         path for path in ROOT.rglob("*.html")
-        if not any(part in AUDIT_IGNORED_DIRS for part in path.relative_to(ROOT).parts[:-1])
+        if not is_native_output(path) and not any(part in AUDIT_IGNORED_DIRS for part in path.relative_to(ROOT).parts[:-1])
     )
     for html_path in html_files:
         if "harness" in html_path.name.lower():
@@ -457,6 +459,8 @@ def main() -> int:
     for path in ROOT.rglob("*"):
         if not path.is_file():
             continue
+        if is_native_output(path) or '.build' in path.relative_to(ROOT).parts:
+            continue
         match = fingerprint_re.search(path.name)
         if not match:
             continue
@@ -479,7 +483,7 @@ def main() -> int:
     if re.search(r"addEventListener\s*\(\s*['\"]message['\"]", sw):
         fail(errors, "sw.js contains a message handler")
 
-    runtime_files = [p for p in ROOT.rglob("*.js") if not fingerprint_re.search(p.name) and 'tests' not in p.parts and 'node_modules' not in p.parts]
+    runtime_files = [p for p in ROOT.rglob("*.js") if not fingerprint_re.search(p.name) and 'tests' not in p.parts and 'node_modules' not in p.parts and '.build' not in p.relative_to(ROOT).parts and not is_native_output(p)]
     for path in runtime_files:
         src = text(path)
         if "serviceWorker.register(" in src:

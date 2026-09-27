@@ -91,14 +91,20 @@ def fingerprint_url(url):
     ext = '.js' if base.lower().endswith('.js') else '.css'
     return base[:-len(ext)] + '.' + REVISION + ext
 
-BUILD_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}
+BUILD_IGNORED_DIRS = {'node_modules', '.git', '.build', 'playwright-report', 'test-results'}
 
 def iter_project_html():
     for html_path in ROOT.rglob('*.html'):
         relative = html_path.relative_to(ROOT)
+        if relative.parts[:4] == ('ios', 'App', 'App', 'public'):
+            continue
         if any(part in BUILD_IGNORED_DIRS for part in relative.parts[:-1]):
             continue
         yield html_path
+
+def is_generated_output(path):
+    relative = path.relative_to(ROOT)
+    return '.build' in relative.parts or relative.parts[:4] == ('ios', 'App', 'App', 'public')
 
 referenced = set()
 for html_path in iter_project_html():
@@ -166,6 +172,8 @@ for html_path in iter_project_html():
 
 # Remove obsolete generated fingerprints; canonical source files are never deleted.
 for path in list(ROOT.rglob('*')):
+    if is_generated_output(path):
+        continue
     if path.is_file() and FINGERPRINT_RE.search(path.name) and ('.' + REVISION + '.') not in path.name:
         path.unlink()
 

@@ -29,6 +29,8 @@ test('bundled iOS runtime uses native lifecycle without web update or PWA owners
   await page.goto('/kana/');
   await expect(page.locator('html')).toHaveAttribute('data-ma-env', 'native-ios');
   await expect(page.locator('html')).toHaveAttribute('data-ma-runtime', 'ios');
+  expect(await page.evaluate(() => window.ModeAtlasDevConsoleLoader?.isEligible())).toBe(false);
+  await expect(page.locator('[aria-label="Developer diagnostics"]')).toHaveCount(0);
 
   const state = await page.evaluate(async () => ({
     native: window.ModeAtlasEnv?.isNativeApp,

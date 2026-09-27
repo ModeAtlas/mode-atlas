@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -81,7 +82,7 @@ test('generated native web payload stays out of source control', () => {
   assert.match(rootIgnore, /ios\/App\/App\/public\//);
   assert.match(iosIgnore, /App\/App\/public/);
   assert.ok(fs.existsSync(path.join(ROOT, 'ios/App/App.xcodeproj/project.pbxproj')));
-  assert.equal(fs.existsSync(path.join(ROOT, 'ios/App/App/public')), false);
+  assert.equal(spawnSync('git', ['check-ignore', '-q', 'ios/App/App/public/index.html'], { cwd:ROOT }).status, 0);
 });
 
 
