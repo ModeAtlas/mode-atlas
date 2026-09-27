@@ -13,10 +13,18 @@
     nav.dataset.maPhoneScrollBound = '1';
 
     var lastY = Math.max(0, window.scrollY || 0);
+    var direction = 0;
+    var travel = 0;
     var ticking = false;
 
     function reveal(){
       nav.classList.remove('ma-nav--scroll-hidden');
+    }
+
+    function resetMotion(currentY){
+      lastY = currentY;
+      direction = 0;
+      travel = 0;
     }
 
     function update(){
@@ -26,15 +34,31 @@
 
       if (effectiveDisplayMode() !== 'phone' || document.body?.classList.contains('study-nav-hidden')) {
         reveal();
-        lastY = currentY;
+        resetMotion(currentY);
         return;
       }
 
       if (currentY <= 12 || nav.contains(document.activeElement)) {
         reveal();
-      } else if (delta > 3) {
+        resetMotion(currentY);
+        return;
+      }
+
+      if (Math.abs(delta) < 0.5) {
+        lastY = currentY;
+        return;
+      }
+
+      var nextDirection = delta > 0 ? 1 : -1;
+      if (nextDirection !== direction) {
+        direction = nextDirection;
+        travel = 0;
+      }
+      travel += Math.abs(delta);
+
+      if (direction > 0 && travel >= 8) {
         nav.classList.add('ma-nav--scroll-hidden');
-      } else if (delta < -3) {
+      } else if (direction < 0 && travel >= 2) {
         reveal();
       }
 
@@ -49,7 +73,7 @@
 
     window.addEventListener('scroll', schedule, { passive:true });
     window.addEventListener('modeAtlasDisplayModeChanged', function(){
-      lastY = Math.max(0, window.scrollY || 0);
+      resetMotion(Math.max(0, window.scrollY || 0));
       reveal();
     });
     nav.addEventListener('focusin', reveal);

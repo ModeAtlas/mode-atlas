@@ -1,3 +1,9 @@
+## 2.53.1 - 2026-09-27
+- Fixed phone scroll-aware navigation on real touch devices by accumulating small scroll deltas instead of requiring a single scroll event to exceed the hide/reveal threshold.
+- Downward scrolling now hides the phone navigation after a small cumulative movement, while reversing upward reveals it almost immediately.
+- Updated browser coverage to reproduce touch-like incremental scrolling rather than relying on one large programmatic jump.
+- Preserved the 2.53.0 phone trainer framing and keyboard-aware focus-mode behaviour.
+
 ## 2.53.0 - 2026-09-27
 - Refined the phone Reading/Writing active-session frame so the session HUD, kana/prompt, and active input are framed together when the software keyboard opens instead of scrolling the score HUD above the visible viewport.
 - Reduced active phone prompt height and oversized kana/prompt scaling so the interaction area sits more naturally in the available phone viewport without changing desktop/tablet trainer composition.

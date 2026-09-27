@@ -124,12 +124,22 @@ test.describe('Phone and Tablet study UX', () => {
     const nav = page.locator('.ma-nav');
     await expect(nav).toBeVisible();
 
-    await page.evaluate(() => window.scrollTo(0, 600));
-    await page.waitForTimeout(120);
+    await page.evaluate(async () => {
+      for (let y = 0; y <= 80; y += 2) {
+        window.scrollTo(0, y);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+    });
+    await page.waitForTimeout(80);
     await expect(nav).toHaveClass(/ma-nav--scroll-hidden/);
 
-    await page.evaluate(() => window.scrollTo(0, 520));
-    await page.waitForTimeout(120);
+    await page.evaluate(async () => {
+      for (let y = 80; y >= 72; y -= 2) {
+        window.scrollTo(0, y);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+    });
+    await page.waitForTimeout(80);
     await expect(nav).not.toHaveClass(/ma-nav--scroll-hidden/);
 
     await page.evaluate(() => window.scrollTo(0, 0));
