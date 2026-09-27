@@ -1,3 +1,11 @@
+## 2.53.2 - 2026-09-27
+- Reworked phone scroll navigation to match the intended reveal model instead of showing on any small upward adjustment.
+- Removed the legacy mobile `.ma-nav { position: relative; top: auto; }` rule that was overriding the shared sticky navigation owner and preventing the nav from reappearing at the current viewport position.
+- Phone navigation now hides after deliberate downward travel, stays hidden through small upward corrections, and only reappears after a longer upward scroll.
+- When revealed away from the top of the page, the nav remains sticky at the top of the current viewport; reaching the page top always reveals it.
+- Updated responsive browser coverage to verify minor upward adjustments do not reveal the nav, longer upward travel does, and the revealed nav is accessible while the page remains deeply scrolled.
+- Preserved explicit Focus Mode, tablet/desktop navigation, trainer behaviour, Results, persistence, progression, and PWA/update ownership.
+
 ## 2.53.1 - 2026-09-27
 - Fixed phone scroll-aware navigation on real touch devices by accumulating small scroll deltas instead of requiring a single scroll event to exceed the hide/reveal threshold.
 - Downward scrolling now hides the phone navigation after a small cumulative movement, while reversing upward reveals it almost immediately.

@@ -117,7 +117,7 @@ test.describe('Phone and Tablet study UX', () => {
     expect(new URL(page.url()).pathname).toBe('/writing/');
   });
 
-  test('Phone navigation hides on downward scroll and returns as soon as scrolling reverses', async ({ page }) => {
+  test('Phone navigation requires deliberate upward travel and reappears at the current viewport top', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoApp(page, '/kana/');
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'phone');
@@ -125,7 +125,7 @@ test.describe('Phone and Tablet study UX', () => {
     await expect(nav).toBeVisible();
 
     await page.evaluate(async () => {
-      for (let y = 0; y <= 80; y += 2) {
+      for (let y = 0; y <= 420; y += 6) {
         window.scrollTo(0, y);
         await new Promise(resolve => requestAnimationFrame(resolve));
       }
@@ -134,13 +134,43 @@ test.describe('Phone and Tablet study UX', () => {
     await expect(nav).toHaveClass(/ma-nav--scroll-hidden/);
 
     await page.evaluate(async () => {
-      for (let y = 80; y >= 72; y -= 2) {
+      for (let y = 420; y >= 400; y -= 4) {
+        window.scrollTo(0, y);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+    });
+    await page.waitForTimeout(80);
+    await expect(nav).toHaveClass(/ma-nav--scroll-hidden/);
+
+    await page.evaluate(async () => {
+      for (let y = 400; y >= 348; y -= 4) {
         window.scrollTo(0, y);
         await new Promise(resolve => requestAnimationFrame(resolve));
       }
     });
     await page.waitForTimeout(80);
     await expect(nav).not.toHaveClass(/ma-nav--scroll-hidden/);
+
+    const visibleAtCurrentViewport = await nav.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        top: rect.top,
+        scrollY: window.scrollY,
+        viewportHeight: window.innerHeight
+      };
+    });
+    expect(visibleAtCurrentViewport.scrollY).toBeGreaterThan(300);
+    expect(visibleAtCurrentViewport.top).toBeGreaterThanOrEqual(0);
+    expect(visibleAtCurrentViewport.top).toBeLessThan(24);
+
+    await page.evaluate(async () => {
+      for (let y = 348; y <= 372; y += 4) {
+        window.scrollTo(0, y);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+    });
+    await page.waitForTimeout(80);
+    await expect(nav).toHaveClass(/ma-nav--scroll-hidden/);
 
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(80);

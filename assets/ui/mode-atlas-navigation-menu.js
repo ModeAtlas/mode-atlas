@@ -1,6 +1,7 @@
 (function initModeAtlasNavigationMenu(){
   'use strict';
   var nav = document.querySelector('.ma-nav');
+  var navSpacer = document.querySelector('[data-ma-nav-spacer]');
 
   function effectiveDisplayMode(){
     return document.body?.dataset?.effectiveDisplayMode
@@ -16,6 +17,16 @@
     var direction = 0;
     var travel = 0;
     var ticking = false;
+
+    function syncPhoneNavGeometry(){
+      if (!navSpacer) return;
+      if (effectiveDisplayMode() !== 'phone') {
+        navSpacer.style.removeProperty('height');
+        return;
+      }
+      var height = Math.ceil(nav.getBoundingClientRect().height);
+      navSpacer.style.height = Math.max(0, height + 18) + 'px';
+    }
 
     function reveal(){
       nav.classList.remove('ma-nav--scroll-hidden');
@@ -56,9 +67,9 @@
       }
       travel += Math.abs(delta);
 
-      if (direction > 0 && travel >= 8) {
+      if (direction > 0 && travel >= 12) {
         nav.classList.add('ma-nav--scroll-hidden');
-      } else if (direction < 0 && travel >= 2) {
+      } else if (direction < 0 && travel >= 48) {
         reveal();
       }
 
@@ -72,12 +83,19 @@
     }
 
     window.addEventListener('scroll', schedule, { passive:true });
+    window.addEventListener('resize', syncPhoneNavGeometry, { passive:true });
+    window.addEventListener('orientationchange', syncPhoneNavGeometry, { passive:true });
     window.addEventListener('modeAtlasDisplayModeChanged', function(){
       resetMotion(Math.max(0, window.scrollY || 0));
+      syncPhoneNavGeometry();
       reveal();
     });
     nav.addEventListener('focusin', reveal);
     nav.addEventListener('pointerdown', reveal);
+    if (window.ResizeObserver) {
+      new ResizeObserver(syncPhoneNavGeometry).observe(nav);
+    }
+    syncPhoneNavGeometry();
     update();
   }
 

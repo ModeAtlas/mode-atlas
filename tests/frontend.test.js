@@ -1142,6 +1142,7 @@ test('2.34 product navigation separates Mode Atlas destinations from Kana sectio
 });
 
 test('2.34.1 Kana navigation flyout stays out of header flow and supports pointer, touch, and keyboard dismissal', () => {
+  const frontend = read('frontend_components.py');
   const navCss = read('assets/css/mode-atlas-navigation.css');
   const navRuntime = read('assets/ui/mode-atlas-navigation-menu.js');
   assert.match(navCss, /\.ma-nav__flyout\{[\s\S]*?position:absolute;/);
@@ -1152,10 +1153,17 @@ test('2.34.1 Kana navigation flyout stays out of header flow and supports pointe
   assert.match(navRuntime, /\(hover:hover\) and \(pointer:fine\)/);
   assert.match(navRuntime, /pointerdown/);
   assert.match(navRuntime, /event\.key !== 'Escape'/);
+  assert.match(frontend, /data-ma-nav-spacer/);
   assert.match(navRuntime, /bindPhoneScrollNavigation/);
   assert.match(navRuntime, /window\.addEventListener\('scroll', schedule, \{ passive:true \}\)/);
   assert.match(navRuntime, /ma-nav--scroll-hidden/);
-  assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav\{[\s\S]*?position:sticky;/);
+  assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav\{[\s\S]*?position:fixed;/);
+  assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav-spacer\{[\s\S]*?display:block;/);
+  assert.match(navRuntime, /syncPhoneNavGeometry/);
+  assert.match(navRuntime, /ResizeObserver/);
+  assert.doesNotMatch(navCss, /@media\(max-width:760px\), \(max-width:900px\) and \(orientation:portrait\)\{[\s\S]*?\.ma-nav\{[\s\S]*?position:relative;/);
+  assert.match(navRuntime, /direction > 0 && travel >= 12/);
+  assert.match(navRuntime, /direction < 0 && travel >= 48/);
   assert.match(navCss, /body\[data-effective-display-mode="phone"\]:not\(\.study-nav-hidden\) \.ma-nav\.ma-nav--scroll-hidden/);
   for (const rel of APP_PAGES) {
     const html = read(rel);

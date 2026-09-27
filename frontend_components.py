@@ -180,7 +180,8 @@ def render_navigation(config: NavConfig) -> str:
       <div class="ma-nav__links">{' '.join(link_markup)}</div>{action_markup}
     </div>
   </div>
-</nav>{handle}
+</nav>
+<div class="ma-nav-spacer" data-ma-nav-spacer aria-hidden="true"></div>{handle}
 {NAV_END}"""
 
 HEAD_ASSETS_START = '<!-- MODE_ATLAS_HEAD_ASSETS_START -->'
