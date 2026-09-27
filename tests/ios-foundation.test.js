@@ -10,13 +10,16 @@ test('iOS foundation has one platform facade with web and native adapters', () =
   const facade = read('assets/platform/mode-atlas-platform.js');
   const web = read('assets/platform/mode-atlas-platform-web.js');
   const native = read('assets/platform/mode-atlas-platform-native.js');
-  for (const method of ['getAppVersion', 'openExternalLink', 'openDestination', 'requestNotifications', 'setBadge', 'publishWidgetSnapshot']) {
+  for (const method of ['getAppVersion', 'openExternalLink', 'openDestination', 'requestNotifications', 'setBadge', 'publishWidgetSnapshot', 'authenticate', 'signOutIdentityProvider']) {
     assert.match(facade, new RegExp(method));
   }
   assert.match(web, /registerAdapter\('web'/);
   assert.match(native, /registerAdapter\('ios'/);
   assert.match(native, /Plugins\.ModeAtlasNative/);
-  assert.doesNotMatch(native, /SRS|mastery calculation|question selection/i);
+  assert.match(native, /Plugins\.FirebaseAuthentication/);
+  assert.match(native, /signInWithGoogle\(\{ skipNativeAuth:true \}\)/);
+  assert.match(native, /Native iOS owns only the Google account chooser|Native provider UI lives here/);
+  assert.doesNotMatch(native, /question selection|mastery calculation/i);
 });
 
 test('native runtime disables browser-only update and install ownership', () => {
@@ -25,7 +28,8 @@ test('native runtime disables browser-only update and install ownership', () => 
   const pwa = read('assets/app/mode-atlas-pwa.js');
   assert.match(head, /isNativeApp/);
   assert.match(head, /isNativeApp\s*:\s*isNativeApp/);
-  assert.match(head, /!isNativeApp/);
+  assert.match(head, /firebaseAuthTransport/);
+  assert.match(head, /native-provider-web-session/);
   assert.match(versions, /isNativeRuntime/);
   assert.match(versions, /native-bundle/);
   assert.match(pwa, /ModeAtlasEnv\?\.isNativeApp/);
@@ -72,4 +76,21 @@ test('generated native web payload stays out of source control', () => {
   assert.match(iosIgnore, /App\/App\/public/);
   assert.ok(fs.existsSync(path.join(ROOT, 'ios/App/App.xcodeproj/project.pbxproj')));
   assert.equal(fs.existsSync(path.join(ROOT, 'ios/App/App/public')), false);
+});
+
+
+test('native auth transport keeps Firebase JS as the single session and Firestore owner', () => {
+  const cloud = read('cloud-sync.js');
+  const config = JSON.parse(read('capacitor.config.json'));
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.dependencies['@capacitor-firebase/authentication'], '8.5.2');
+  assert.equal(pkg.dependencies.firebase, '12.12.1');
+  assert.equal(config.plugins.FirebaseAuthentication.skipNativeAuth, true);
+  assert.deepEqual(config.plugins.FirebaseAuthentication.providers, ['google.com']);
+  assert.deepEqual(config.experimental.ios.spm.packageTraits['@capacitor-firebase/authentication'], ['Google']);
+  assert.match(cloud, /signInWithCredential/);
+  assert.match(cloud, /AtlasPlatform\?\.authenticate\?\.\('google\.com'\)/);
+  assert.match(cloud, /GoogleAuthProvider\.credential/);
+  assert.match(cloud, /single session owner/);
+  assert.doesNotMatch(cloud, /FirebaseAuthentication\.signInWithGoogle/);
 });
