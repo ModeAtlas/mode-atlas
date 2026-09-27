@@ -900,7 +900,7 @@ h1 {
 
 .row-doughnut-strip {
         display: grid;
-        grid-template-columns: repeat(10, minmax(0, 1fr));
+        grid-template-columns: repeat(10, minmax(88px, 1fr));
         gap: 10px;
         padding: 4px 2px 6px;
     }
@@ -914,6 +914,15 @@ h1 {
         padding:7px 5px;
         cursor:pointer;
         position:relative;
+        overflow:hidden;
+    }
+
+.row-doughnut-card canvas {
+        display:block;
+        width:min(70px,100%);
+        height:auto;
+        aspect-ratio:1;
+        margin:0 auto;
     }
 
 .row-doughnut-label {
@@ -1199,6 +1208,16 @@ h1 {
         
     }
 
+@media (max-width:1180px) and (min-width:901px) {
+  .row-doughnut-strip { grid-template-columns: repeat(5, minmax(88px, 1fr)); }
+}
+body[data-effective-display-mode="tablet"] .row-doughnut-strip {
+  grid-template-columns: repeat(5, minmax(88px, 1fr));
+}
+body[data-effective-display-mode="tablet"] .row-doughnut-card canvas {
+  width:min(64px,100%);
+}
+
 @media (max-width: 900px) {
   .results-guidance { grid-template-columns: 1fr; }
   .results-guidance-card { grid-template-columns: auto minmax(0,1fr); align-items:start; }
@@ -1212,16 +1231,18 @@ h1 {
     padding: 8px 2px 12px ;
     -webkit-overflow-scrolling: touch ;
     scrollbar-width: thin;
+    scroll-snap-type:x proximity;
   }
   .row-doughnut-card {
-    flex: 0 0 72px ;
-    width: 72px ;
-    min-width: 72px ;
+    flex: 0 0 82px ;
+    width: 82px ;
+    min-width: 82px ;
     padding: 7px 5px ;
+    scroll-snap-align:start;
   }
   .row-doughnut-card canvas {
-    width: 48px ;
-    height: 48px ;
+    width: 54px ;
+    height: auto ;
   }
   .row-doughnut-label {
     font-size: 20px ;
@@ -1473,3 +1494,19 @@ body[data-effective-display-mode="phone"] svg {
 .results-empty-assessment__copy{margin:0;color:var(--ma-muted);font-size:.86rem;line-height:1.55;max-width:52ch;}
 .results-empty-assessment__actions{justify-content:flex-start;}
 @media (max-width:760px){.results-assessment-hero{padding:18px;}.results-assessment-scope{font-size:.72rem;}}
+
+body[data-effective-display-mode="phone"] .row-doughnut-strip{
+  display:flex;
+  overflow-x:auto;
+  grid-template-columns:none;
+  gap:8px;
+  padding:7px 2px 10px;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+}
+body[data-effective-display-mode="phone"] .row-doughnut-card{
+  flex:0 0 80px;
+  width:80px;
+  min-width:80px;
+}
+body[data-effective-display-mode="phone"] .row-doughnut-card canvas{width:52px;height:auto;}
