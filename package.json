@@ -10,9 +10,12 @@
     "test:report": "playwright show-report",
     "build:revision": "python3 build_revision_assets.py",
     "audit": "python3 audit_project.py",
-    "release:check": "python3 build_revision_assets.py && python3 audit_project.py && node --test tests/backend.test.js tests/frontend.test.js",
+    "release:check": "python3 build_revision_assets.py && python3 audit_project.py && python3 build_ios_web.py --check && node --test tests/backend.test.js tests/frontend.test.js tests/ios-foundation.test.js",
     "test:backend": "node --test tests/backend.test.js",
-    "test:frontend": "node --test tests/frontend.test.js"
+    "test:frontend": "node --test tests/frontend.test.js",
+    "build:ios-web": "python3 build_ios_web.py",
+    "check:ios-web": "python3 build_ios_web.py --check",
+    "test:ios-foundation": "node --test tests/ios-foundation.test.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0"
