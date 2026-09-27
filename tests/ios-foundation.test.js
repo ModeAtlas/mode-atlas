@@ -62,7 +62,7 @@ test('Capacitor iOS shell is repository-owned and versioned from Mode Atlas rele
   assert.equal(config.appName, 'Mode Atlas');
   assert.equal(config.webDir, '.build/ios-web');
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.modeatlas;/);
-  assert.match(project, /MARKETING_VERSION = 2\.54\.0;/);
+  assert.match(project, /MARKETING_VERSION = 2\.55\.0;/);
   assert.match(project, /CURRENT_PROJECT_VERSION = 2055000;/);
   assert.match(sync, /Mode Atlas' canonical version owner/);
   assert.match(sync, /major \* 1_000_000 \+ minor \* 1_000 \+ patch/);
