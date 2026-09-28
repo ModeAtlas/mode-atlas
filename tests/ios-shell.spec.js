@@ -184,4 +184,8 @@ test('native Reading uses a compact answer keyboard while the website keeps text
   await expect(page.locator('.ma-ios-reading-keyboard')).toBeVisible();
   await expect(page.locator('.ma-ios-tabs')).toBeHidden();
   await expect(page.locator('.ma-ios-reading-keyboard__key')).toHaveCount(27);
+  const answer = await page.evaluate(() => getAnswerForCurrentChar());
+  expect(answer).toMatch(/^[a-z]+$/);
+  for (const letter of answer) await page.locator(`.ma-ios-reading-keyboard__key[data-key="${letter}"]`).click();
+  await expect(page.locator('#streak')).toHaveText('1');
 });
