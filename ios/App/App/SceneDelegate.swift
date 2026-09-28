@@ -1,4 +1,5 @@
 import UIKit
+import WebKit
 import Capacitor
 import GoogleSignIn
 
@@ -21,6 +22,14 @@ private struct ModeAtlasRouter: Router {
 
 private final class ModeAtlasBridgeViewController: CAPBridgeViewController {
     override func router() -> Router { ModeAtlasRouter() }
+
+    override func webView(with frame: CGRect, configuration: WKWebViewConfiguration) -> WKWebView {
+        let webView = super.webView(with: frame, configuration: configuration)
+        webView.isOpaque = false
+        webView.backgroundColor = UIColor(red: 18/255, green: 26/255, blue: 43/255, alpha: 1)
+        webView.scrollView.backgroundColor = webView.backgroundColor
+        return webView
+    }
 }
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
@@ -30,6 +39,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         window = UIWindow(windowScene: windowScene)
+        window?.backgroundColor = UIColor(red: 18/255, green: 26/255, blue: 43/255, alpha: 1)
         window?.rootViewController = ModeAtlasBridgeViewController()
         window?.makeKeyAndVisible()
 

@@ -15,6 +15,17 @@
     setTimeout(hide, delay);
   }
 
+  // The native launch screen hands off to this branded surface. Keep it up
+  // until the document and its CSS have painted, including on slower devices.
+  if (window.ModeAtlasEnv?.isNativeApp) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function(){ schedule(180); }, { once:true });
+    } else schedule(180);
+    window.addEventListener('pageshow', function(){ schedule(0); });
+    schedule(3200); // A failed asset must never leave the app covered.
+    return;
+  }
+
 
   // Do not wait for every blocking script at the end of the page. The loader
   // should disappear as soon as the loading shell exists and the page markup is

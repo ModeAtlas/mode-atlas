@@ -4,3 +4,6 @@ test-results/
 .build/
 ios/App/App/public/
 .DS_Store
+
+__pycache__/
+*.pyc

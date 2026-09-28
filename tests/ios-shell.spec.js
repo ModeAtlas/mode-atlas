@@ -87,3 +87,21 @@ test('native launch links reach shared practice setup and ignore foreign callbac
   expect(await page.evaluate(() => window.AtlasPlatform.destinationFromUrl('https://evil.example/reading/?mode=daily'))).toBe('');
   expect(await page.evaluate(() => window.AtlasPlatform.destinationFromUrl('modeatlas://open/wordbank'))).toBe('wordBank');
 });
+
+test('iOS study tabs navigate while the website keeps its original navigation', async ({ page }) => {
+  await page.goto('/kana/');
+  await expect(page.locator('.ma-ios-tabs')).toHaveCount(0);
+  await expect(page.locator('.ma-nav__links')).toBeVisible();
+
+  await page.addInitScript(() => {
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
+  });
+  await page.goto('/kana/');
+  await expect(page.locator('.ma-ios-tabs .ma-ios-tab')).toHaveCount(5);
+  await expect(page.locator('.ma-ios-tab[aria-current="page"]')).toHaveText('かなKana');
+  await expect(page.locator('.ma-nav__links')).toBeHidden();
+  await page.locator('.ma-ios-tab[href="/reading/"]').click();
+  await expect(page).toHaveURL(/\/reading\/?$/);
+  await expect(page.locator('.ma-ios-tab[aria-current="page"]')).toHaveText('読Reading');
+  await expect(page.locator('.ma-ios-tabs')).toBeVisible();
+});

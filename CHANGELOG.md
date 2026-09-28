@@ -1,3 +1,9 @@
+## 2.58.0 - 2026-09-28
+
+- Replaced the generic iOS launch image with a Mode Atlas launch screen and matched the native WebView background to prevent a blank flash during startup.
+- Added an iOS-only bottom navigation for the five main study areas, retaining profile and settings in the top bar and keeping the website unchanged.
+- Smoothed native document navigation and loading handoff, respected safe areas and reduced motion, and kept controls clear of the keyboard.
+
 ## 2.57.2 - 2026-09-27
 
 - Initialized the iOS web session with explicit local storage persistence so native Google credential sign-in can persist across bundled page navigation without relying on WebKit IndexedDB startup.

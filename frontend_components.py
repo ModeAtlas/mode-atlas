@@ -217,7 +217,10 @@ HEAD_SCRIPTS = (
     'assets/platform/mode-atlas-platform-web.js',
     'assets/platform/mode-atlas-platform-native.js',
 )
-EARLY_BODY_SCRIPTS = ('assets/app/mode-atlas-early-loader.js',)
+EARLY_BODY_SCRIPTS = (
+    'assets/app/mode-atlas-early-loader.js',
+    'assets/platform/mode-atlas-ios-chrome.js',
+)
 
 INTERACTIVE_CHROME_STYLES = (
     'assets/css/mode-atlas-app-modals.css',
@@ -229,6 +232,7 @@ INTERACTIVE_TAIL_STYLES = (
     'assets/css/mode-atlas-components.css',
     'assets/css/mode-atlas-navigation.css',
     'assets/css/mode-atlas-responsive.css',
+    'assets/css/mode-atlas-ios-chrome.css',
 )
 INTERACTIVE_STYLES = (
     'assets/css/mode-atlas-page-shared.css',
@@ -246,6 +250,7 @@ LEGAL_STYLES = (
     'assets/css/mode-atlas-components.css',
     'assets/css/mode-atlas-navigation.css',
     'assets/css/mode-atlas-responsive.css',
+    'assets/css/mode-atlas-ios-chrome.css',
 )
 
 INTERACTIVE_SCRIPTS_BEFORE_STORAGE = (
