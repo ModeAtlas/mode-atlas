@@ -107,6 +107,9 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-nav')).toBeHidden();
   await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveCount(1);
   await expect(page.locator('.ma-ios-tabs [data-settings-open]')).toHaveCount(1);
+  await expect(page.locator('.ma-ios-tabs #modifiersTab')).toBeVisible();
+  await expect(page.locator('.ma-ios-tabs #modifiersTab')).toContainText('Practice setup');
+  await expect(page.locator('.bottom-shell.ma-modifiers-only .tab-row')).toBeHidden();
   await expect(page.locator('html')).toHaveAttribute('data-ma-native-warm', 'true');
 
   const layout = await page.evaluate(() => {
@@ -115,8 +118,16 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
     return { setupBottom:setup.bottom, dockTop:dock.top };
   });
   expect(layout.setupBottom).toBeLessThanOrEqual(layout.dockTop + 1);
+  await page.locator('.ma-ios-tabs #modifiersTab').click();
+  await expect(page.locator('#modifiersContent')).toBeVisible();
+  await expect(page.locator('.ma-ios-tabs #modifiersTab')).toHaveAttribute('aria-expanded', 'true');
+  await page.locator('.ma-ios-tabs #modifiersTab').click();
+  await expect(page.locator('#modifiersContent')).toBeHidden();
 
   await page.evaluate(() => document.getElementById('studyNavHideBtn').click());
   await expect(page.locator('.ma-ios-tabs #studyNavShowBtn')).toBeVisible();
   await expect(page.locator('.ma-ios-tabs__links')).toBeHidden();
+  await page.locator('.ma-ios-tabs #studyNavShowBtn').click();
+  await page.locator('.ma-ios-tab[href="/"]').click();
+  await expect(page.locator('.ma-ios-tabs__title')).toHaveText('Mode Atlas');
 });

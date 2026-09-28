@@ -1,7 +1,6 @@
 /* Native iOS composition. Every selector is gated by the Capacitor runtime. */
 html[data-ma-runtime="ios"]{
   --ma-ios-dock-height:108px;
-  --ma-ios-setup-height:0px;
   background:#121a2b;
 }
 html[data-ma-runtime="ios"] body{
@@ -51,6 +50,17 @@ html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__action{
   display:inline-flex;min-width:38px;min-height:38px;padding:0 7px;
   border-radius:12px;background:var(--ma-control);border-color:var(--ma-border);
 }
+html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab{
+  min-height:40px;min-width:0;max-width:100%;padding:0 12px;
+  border:1px solid var(--ma-border);border-radius:12px;
+  background:color-mix(in srgb,var(--ma-kana) 16%,var(--ma-control));
+  color:var(--ma-text-strong);font-size:.81rem;white-space:nowrap;
+}
+html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab[aria-expanded="true"]{
+  border-color:var(--ma-kana);background:color-mix(in srgb,var(--ma-kana) 25%,var(--ma-control));
+}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):not(.trainer-session-active) .ma-ios-tabs__title,
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-ios-tabs__utilities #modifiersTab{display:none;}
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__profile .ma-nav__action-label,
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__settings .ma-nav__action-label,
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__focus .ma-nav__action-label{display:none;}
@@ -80,18 +90,19 @@ html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__utilities #study
 html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-ios-tabs{display:none;}
 html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing){--ma-ios-dock-height:0px;}
 
-/* Practice setup and the dock share one measured bottom boundary. */
+/* The native setup trigger lives in the dock; its existing drawer opens above it. */
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page){
   padding-top:max(12px,env(safe-area-inset-top,0px));
-  padding-bottom:calc(var(--ma-ios-dock-height) + var(--ma-ios-setup-height) + 22px);
+  padding-bottom:calc(var(--ma-ios-dock-height) + 22px);
 }
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active{--ma-ios-setup-height:0px;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only{
-  bottom:var(--ma-ios-dock-height);z-index:99;
-  background:var(--ma-surface-strong);box-shadow:0 -8px 22px rgba(0,0,0,.18);
+  bottom:var(--ma-ios-dock-height);z-index:99;height:0;
+  overflow:visible;pointer-events:none;border:0;background:transparent;box-shadow:none;
 }
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .tab-button{
-  min-height:48px;font-size:.9rem;background:transparent;
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .tab-row{display:none;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .drawer-content.open{
+  position:absolute;bottom:0;left:0;width:100%;pointer-events:auto;
+  box-shadow:0 -8px 22px rgba(0,0,0,.18);
 }
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .drawer-content{
   max-height:calc(100dvh - var(--ma-ios-dock-height) - env(safe-area-inset-top,0px) - 64px);
@@ -110,7 +121,7 @@ html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-train
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-session-controls{width:100%;justify-items:center;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).study-nav-hidden .ma-trainer-shell{
   display:flex;align-items:center;justify-content:center;
-  min-height:calc(100svh - var(--ma-ios-dock-height) - var(--ma-ios-setup-height) - env(safe-area-inset-top,0px) - 26px);
+  min-height:calc(100svh - var(--ma-ios-dock-height) - env(safe-area-inset-top,0px) - 26px);
 }
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).study-nav-hidden .ma-trainer-card{margin:0 auto;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-trainer-shell{

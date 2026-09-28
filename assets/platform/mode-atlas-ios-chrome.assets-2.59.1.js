@@ -23,8 +23,10 @@
     utilities.className = 'ma-ios-tabs__utilities';
     var title = document.createElement('span');
     title.className = 'ma-ios-tabs__title';
-    title.textContent = document.querySelector('.ma-nav__title')?.textContent || 'Mode Atlas';
+    title.textContent = current === 'atlas' ? 'Mode Atlas' : (document.querySelector('.ma-nav__title')?.textContent || 'Mode Atlas');
     utilities.appendChild(title);
+    var setup = document.getElementById('modifiersTab');
+    if (setup) utilities.appendChild(setup);
     var profile = document.getElementById('profileOpenBtn');
     var settings = document.querySelector('.ma-nav__settings');
     if (profile) utilities.appendChild(profile);
@@ -55,13 +57,8 @@
     dock.appendChild(links);
     document.body.appendChild(dock);
 
-    var setup = document.querySelector('.bottom-shell.ma-modifiers-only');
     function measure(){
       document.documentElement.style.setProperty('--ma-ios-dock-height', dock.getBoundingClientRect().height + 'px');
-      if (setup) {
-        var tab = setup.querySelector('.tab-row');
-        document.documentElement.style.setProperty('--ma-ios-setup-height', (tab ? tab.getBoundingClientRect().height : 0) + 'px');
-      }
     }
     new MutationObserver(measure).observe(document.body, {attributes:true, attributeFilter:['class']});
     root.visualViewport?.addEventListener('resize', measure);
