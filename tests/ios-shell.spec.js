@@ -188,4 +188,26 @@ test('native Reading uses a compact answer keyboard while the website keeps text
   expect(answer).toMatch(/^[a-z]+$/);
   for (const letter of answer) await page.locator(`.ma-ios-reading-keyboard__key[data-key="${letter}"]`).click();
   await expect(page.locator('#streak')).toHaveText('1');
+  expect(await page.locator('.ma-ios-reading-keyboard__key').first().evaluate(key => key.getBoundingClientRect().height)).toBeGreaterThanOrEqual(58);
+});
+
+test('native trainer page background follows the app theme after the splash', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
+  });
+  for (const route of ['/reading/', '/writing/']) {
+    await page.goto(route);
+    const colors = await page.evaluate(() => {
+      const probe = document.createElement('div');
+      probe.style.backgroundColor = 'var(--ma-app-bg)';
+      document.body.appendChild(probe);
+      const result = {
+        document: getComputedStyle(document.documentElement).backgroundColor,
+        theme: getComputedStyle(probe).backgroundColor
+      };
+      probe.remove();
+      return result;
+    });
+    expect(colors.document).toBe(colors.theme);
+  }
 });

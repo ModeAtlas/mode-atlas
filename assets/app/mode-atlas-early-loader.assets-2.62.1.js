@@ -8,7 +8,7 @@
     if (!el) return;
     hidden = true;
     el.classList.add('done');
-    setTimeout(function(){ try { el.remove(); } catch(e) {} }, 220);
+    setTimeout(function(){ try { el.remove(); } catch(e) {} }, window.ModeAtlasEnv?.isNativeApp ? 360 : 220);
   }
 
   function schedule(delay){
@@ -18,10 +18,15 @@
   // The native launch screen hands off to this branded surface. Keep it up
   // until the document and its CSS have painted, including on slower devices.
   if (window.ModeAtlasEnv?.isNativeApp) {
+    var coldLaunch = document.documentElement.dataset.maNativeWarm !== 'true';
+    function nativeReady(){
+      if (coldLaunch) document.getElementById('maLoadingScreen')?.classList.add('is-ready');
+      schedule(coldLaunch ? 430 : 0);
+    }
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function(){ schedule(180); }, { once:true });
-    } else schedule(180);
-    window.addEventListener('pageshow', function(){ schedule(0); });
+      document.addEventListener('DOMContentLoaded', nativeReady, { once:true });
+    } else nativeReady();
+    window.addEventListener('pageshow', function(event){ if (event.persisted) schedule(0); });
     schedule(3200); // A failed asset must never leave the app covered.
     return;
   }
