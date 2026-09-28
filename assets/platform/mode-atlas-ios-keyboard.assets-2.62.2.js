@@ -54,12 +54,33 @@
       root.requestAnimationFrame(measure);
     }).observe(document.body, {attributes:true, attributeFilter:['class']});
 
+    function feedback(){
+      var haptics = root.Capacitor?.Plugins?.Haptics;
+      if (haptics?.impact) Promise.resolve(haptics.impact({style:'LIGHT'})).catch(function(){});
+    }
+    var pressedKey = null;
+    function release(){
+      if (!pressedKey) return;
+      var key = pressedKey;
+      pressedKey = null;
+      root.setTimeout(function(){ key.classList.remove('is-pressed'); }, 85);
+    }
     keyboard.addEventListener('pointerdown', function(event){
-      if (event.target.closest('button')) event.preventDefault();
+      var key = event.target.closest('button[data-key]');
+      if (!key || input.disabled || !document.body.classList.contains('trainer-session-active')) return;
+      event.preventDefault();
+      release();
+      pressedKey = key;
+      key.classList.add('is-pressed');
+      feedback();
     });
+    keyboard.addEventListener('pointerup', release);
+    keyboard.addEventListener('pointercancel', release);
+    keyboard.addEventListener('pointerleave', release);
     keyboard.addEventListener('click', function(event){
       var key = event.target.closest('button[data-key]');
       if (!key || input.disabled || !document.body.classList.contains('trainer-session-active')) return;
+      if (event.detail === 0) feedback(); // Hardware keyboard/accessibility activation.
       var start = input.selectionStart ?? input.value.length;
       var end = input.selectionEnd ?? start;
       if (key.dataset.key === 'delete') {

@@ -20,8 +20,19 @@
   if (window.ModeAtlasEnv?.isNativeApp) {
     var coldLaunch = document.documentElement.dataset.maNativeWarm !== 'true';
     function nativeReady(){
-      if (coldLaunch) document.getElementById('maLoadingScreen')?.classList.add('is-ready');
-      schedule(coldLaunch ? 430 : 0);
+      if (!coldLaunch) { schedule(0); return; }
+      var screen = document.getElementById('maLoadingScreen');
+      var mark = screen?.querySelector('.ma-loading-mark');
+      if (!mark || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        schedule(100);
+        return;
+      }
+      mark.addEventListener('animationend', function(event){
+        if (event.target === mark && event.animationName === 'ma-ios-mark-spin') schedule(80);
+      }, {once:true});
+      // A missing animation event must not hold the first page hostage.
+      schedule(1100);
+      requestAnimationFrame(function(){ screen.classList.add('is-ready'); });
     }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', nativeReady, { once:true });

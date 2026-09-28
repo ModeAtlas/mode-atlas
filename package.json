@@ -1,6 +1,6 @@
 {
   "name": "mode-atlas",
-  "version": "2.62.1",
+  "version": "2.62.2",
   "private": true,
   "description": "Mode Atlas static web app smoke tests",
   "scripts": {
@@ -30,6 +30,7 @@
     "@capacitor-firebase/authentication": "8.5.2",
     "@capacitor/app": "8.0.1",
     "@capacitor/core": "8.5.2",
+    "@capacitor/haptics": "8.0.2",
     "@capacitor/ios": "8.5.2",
     "firebase": "12.12.1"
   }

@@ -17,7 +17,7 @@ Capacitor WebView. It does not load the live website at runtime.
 | Web-only transport and installation | Web platform adapter, PWA and update modules | Web |
 | Native sign-in chooser and app links | Native platform adapter and Capacitor plugins | iOS |
 | Bottom dock, setup drawer placement and native transition | `assets/platform/mode-atlas-ios-chrome.js`, `assets/css/mode-atlas-ios-chrome.css` | iOS |
-| Reading letter pad | `assets/platform/mode-atlas-ios-keyboard.js`, native CSS; shared Reading handler scores the input event | iOS |
+| Reading letter pad and touch feedback | `assets/platform/mode-atlas-ios-keyboard.js`, native CSS, Capacitor Haptics; shared Reading handler scores the input event | iOS |
 | Cold launch handoff | Static `LaunchScreen.storyboard`, shared early loader timing, native loading styles | iOS |
 | Native launch screen and icon | `ios/App/App/Assets.xcassets`, `LaunchScreen.storyboard` | iOS |
 
@@ -58,8 +58,11 @@ second runtime navigation system only into iOS.
 The 1024-pixel AppIcon is an opaque export of the existing
 `ModeAtlasLaunchMark` art. Its file lives in the Xcode asset catalog; the same
 mark is displayed by the launch storyboard and the bundled loading screen.
-The launch storyboard is static. A short logo motion begins in the bundled
-loading surface after the first document is ready, only on a cold native start.
+The launch storyboard is static. The bundled loading surface shows the same
+mark at rest, then spins it once after the first document is ready on a cold
+native start. The animation completion triggers the splash fade, with a timeout
+as a fallback. It never fades or shrinks the mark at the WebView handoff.
 The splash colour belongs to that surface; normal pages use the theme's
-`--ma-app-bg`. The iOS Reading pad updates the existing answer input and emits
-its normal input event. It does not own scoring, save data or Kana conversion.
+`--ma-app-bg`. The iOS Reading pad uses a brief inset touch state and the native
+Capacitor Haptics impact on keydown. It updates the existing answer input and
+emits its normal input event. It does not own scoring, save data or Kana conversion.

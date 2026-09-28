@@ -170,7 +170,11 @@ test('native Reading uses a compact answer keyboard while the website keeps text
   await page.goto('/reading/');
   await expect(page.locator('.ma-ios-reading-keyboard')).toHaveCount(0);
   await page.addInitScript(() => {
-    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
+    window.modeAtlasHapticCalls = [];
+    window.Capacitor = {
+      isNativePlatform: () => true, getPlatform: () => 'ios',
+      Plugins: { Haptics: { impact: async options => { window.modeAtlasHapticCalls.push(options.style); } } }
+    };
     localStorage.setItem('modeAtlasStarterSeen', 'true');
     localStorage.setItem('modeAtlasOnboardingComplete', 'true');
     localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
@@ -189,6 +193,7 @@ test('native Reading uses a compact answer keyboard while the website keeps text
   for (const letter of answer) await page.locator(`.ma-ios-reading-keyboard__key[data-key="${letter}"]`).click();
   await expect(page.locator('#streak')).toHaveText('1');
   expect(await page.locator('.ma-ios-reading-keyboard__key').first().evaluate(key => key.getBoundingClientRect().height)).toBeGreaterThanOrEqual(58);
+  expect(await page.evaluate(() => window.modeAtlasHapticCalls)).toEqual(Array(answer.length).fill('LIGHT'));
 });
 
 test('native trainer page background follows the app theme after the splash', async ({ page }) => {
