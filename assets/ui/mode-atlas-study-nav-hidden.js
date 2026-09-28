@@ -39,6 +39,9 @@
     document.body.classList.toggle('study-nav-hidden', next);
     syncFocusControls(next);
     writeHidden(next);
+    if (window.ModeAtlasEnv?.isNativeApp) {
+      window.requestAnimationFrame(() => window.scrollTo({ top:0, behavior:'instant' }));
+    }
   }
 
   const initialHidden = readHidden();

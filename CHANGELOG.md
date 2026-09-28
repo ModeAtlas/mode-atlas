@@ -1,3 +1,10 @@
+## 2.59.0 - 2026-09-28
+
+- Rebuilt the iOS dock as the only native navigation surface, moving the existing Profile, Settings and Focus controls into it without duplicating their behavior.
+- Placed Practice setup above the measured dock and centered the trainer against the visible iPhone viewport, including keyboard and focus states.
+- Matched the static iOS launch screen to the Mode Atlas kana mark and loading handoff, and removed the artificial page-navigation delay and warm-page splash.
+- Kept the website's navigation, layout and loading behavior unchanged.
+
 ## 2.58.0 - 2026-09-28
 
 - Replaced the generic iOS launch image with a Mode Atlas launch screen and matched the native WebView background to prevent a blank flash during startup.

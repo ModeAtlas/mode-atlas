@@ -104,4 +104,19 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page).toHaveURL(/\/reading\/?$/);
   await expect(page.locator('.ma-ios-tab[aria-current="page"]')).toHaveText('読Reading');
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
+  await expect(page.locator('.ma-nav')).toBeHidden();
+  await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveCount(1);
+  await expect(page.locator('.ma-ios-tabs [data-settings-open]')).toHaveCount(1);
+  await expect(page.locator('html')).toHaveAttribute('data-ma-native-warm', 'true');
+
+  const layout = await page.evaluate(() => {
+    const dock = document.querySelector('.ma-ios-tabs').getBoundingClientRect();
+    const setup = document.querySelector('.bottom-shell.ma-modifiers-only').getBoundingClientRect();
+    return { setupBottom:setup.bottom, dockTop:dock.top };
+  });
+  expect(layout.setupBottom).toBeLessThanOrEqual(layout.dockTop + 1);
+
+  await page.evaluate(() => document.getElementById('studyNavHideBtn').click());
+  await expect(page.locator('.ma-ios-tabs #studyNavShowBtn')).toBeVisible();
+  await expect(page.locator('.ma-ios-tabs__links')).toBeHidden();
 });

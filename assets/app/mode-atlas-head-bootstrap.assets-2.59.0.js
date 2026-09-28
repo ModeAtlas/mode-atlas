@@ -127,6 +127,10 @@
 
   document.documentElement.dataset.maEnv = isNativeApp ? 'native-ios' : (isLocalFile ? 'file-fallback' : (isProduction ? 'production' : (isLocalServer ? 'local-server' : 'hosted')));
   document.documentElement.dataset.maRuntime = isNativeApp ? 'ios' : 'web';
+  if (isNativeApp) {
+    try { document.documentElement.dataset.maNativeWarm = sessionStorage.getItem('modeAtlasNativeBooted') === '1' ? 'true' : 'false'; }
+    catch(e) { document.documentElement.dataset.maNativeWarm = 'false'; }
+  }
   document.documentElement.dataset.maVersion = APP_VERSION;
   applyEarlyTheme();
   applyEarlyDisplayMode();

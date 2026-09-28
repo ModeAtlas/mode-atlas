@@ -86,7 +86,9 @@
       return;
     }
     const activeInput = document.getElementById('input');
-    const frameStart = document.querySelector('.ma-session-hud') || document.querySelector('.ma-trainer-header');
+    const nativeIOS = window.ModeAtlasEnv?.isNativeApp && window.ModeAtlasEnv.nativePlatform === 'ios';
+    const frameStart = (nativeIOS && document.querySelector('.ma-trainer-card'))
+      || document.querySelector('.ma-session-hud') || document.querySelector('.ma-trainer-header');
     if (!activeInput || !frameStart || document.activeElement !== activeInput) return;
 
     syncPhoneKeyboardState();
@@ -104,7 +106,7 @@
     let targetTop = viewportTop + inset;
 
     if (regionHeight < available) {
-      targetTop += Math.max(0, Math.min(36, (available - regionHeight) * 0.35));
+      targetTop += nativeIOS ? Math.max(0, (available - regionHeight) / 2) : Math.max(0, Math.min(36, (available - regionHeight) * 0.35));
     } else {
       targetTop = Math.max(viewportTop + 6, viewportTop + viewportHeight - inset - regionHeight);
     }
