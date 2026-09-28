@@ -95,6 +95,8 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
 
   await page.addInitScript(() => {
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
+    localStorage.setItem('modeAtlasOnboardingComplete', 'true');
+    localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
   });
   await page.goto('/privacy/');
   await expect(page.locator('.ma-ios-tabs .ma-ios-tab')).toHaveCount(5);
