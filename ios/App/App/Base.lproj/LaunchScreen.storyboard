@@ -30,9 +30,6 @@
                                     <constraint firstItem="brand-glyph" firstAttribute="centerX" secondItem="brand-mark" secondAttribute="centerX" id="glyph-x"/>
                                     <constraint firstItem="brand-glyph" firstAttribute="centerY" secondItem="brand-mark" secondAttribute="centerY" id="glyph-y"/>
                                 </constraints>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius"><integer key="value" value="23"/></userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
                             </view>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Mode Atlas" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="brand-name">
                                 <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="22"/>
