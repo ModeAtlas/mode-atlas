@@ -110,6 +110,8 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await page.locator('.ma-dialog-layer.is-open').waitFor({ state: 'visible', timeout: 1500 }).catch(() => {});
   if (await page.locator('.ma-dialog-layer.is-open').isVisible()) {
     await page.locator('.ma-dialog__close').click();
+    await expect(page.locator('.ma-ios-tab[href="/kana/"]')).toHaveAttribute('aria-expanded', 'false');
+    await page.locator('.ma-ios-tab[href="/kana/"]').click();
   }
   await expect(page.locator('.ma-ios-tab[href="/kana/"]')).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('.ma-ios-kana-menu__item')).toHaveCount(3);
