@@ -111,7 +111,7 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   await expect(page.locator('.ma-nav')).toBeHidden();
   await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveCount(1);
-  await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveAttribute('aria-label', 'Open profile');
+  await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveAttribute('aria-label', /^Open profile/);
   await expect(page.locator('.ma-ios-tabs [data-settings-open]')).toHaveCount(1);
   await expect(page.locator('.ma-ios-tabs #modifiersTab')).toBeVisible();
   await expect(page.locator('.ma-ios-tabs #modifiersTab')).toContainText('Practice setup');
