@@ -13,7 +13,7 @@
                     <view key="view" contentMode="scaleToFill" id="snD-IY-ifK">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <viewLayoutGuide key="safeArea" id="safe-area"/>
-                        <color key="backgroundColor" red="0.070588" green="0.101961" blue="0.168627" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.658824" green="0.788235" blue="0.949020" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <subviews>
                             <imageView opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="ModeAtlasLaunchMark" translatesAutoresizingMaskIntoConstraints="NO" id="brand-mark">
                                 <rect key="frame" x="138.5" y="332" width="116" height="116"/>
@@ -24,11 +24,11 @@
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Mode Atlas" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="brand-name">
                                 <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="23"/>
-                                <color key="textColor" red="0.956863" green="0.968627" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="textColor" red="0.086275" green="0.133333" blue="0.227451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="YOUR JAPANESE LEARNING SPACE" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="brand-subtitle">
                                 <fontDescription key="fontDescription" type="system" weight="medium" pointSize="10"/>
-                                <color key="textColor" red="0.682353" green="0.737255" blue="0.823529" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="textColor" red="0.250980" green="0.341176" blue="0.450980" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </label>
                         </subviews>
                         <constraints>

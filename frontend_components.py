@@ -336,6 +336,7 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
                 'assets/trainer/mode-atlas-modifier-menu.js',
                 'assets/trainer/mode-atlas-session-controls.js',
                 'assets/trainer/mode-atlas-trainer-controls.js',
+                'assets/platform/mode-atlas-ios-keyboard.js',
             ),
         ),
     ),

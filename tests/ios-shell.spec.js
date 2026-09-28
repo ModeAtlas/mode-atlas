@@ -96,11 +96,15 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
 
   await page.addInitScript(() => {
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
+    localStorage.setItem('modeAtlasStarterSeen', 'true');
     localStorage.setItem('modeAtlasOnboardingComplete', 'true');
     localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
+    localStorage.setItem('modeAtlasLegalAccepted', 'true');
+    localStorage.setItem('modeAtlasLegalAcceptedAt', String(Date.now()));
+    localStorage.setItem('modeAtlasLegalVersion', '2026-05');
   });
   await page.goto('/privacy/');
-  await expect(page.locator('.ma-ios-tabs .ma-ios-tab')).toHaveCount(3);
+  await expect(page.locator('.ma-ios-tabs__links .ma-ios-tab')).toHaveCount(3);
   await expect(page.locator('.ma-ios-tab[href="/wordbank/"]')).toHaveCount(1);
   expect(await page.evaluate(() => [...document.querySelectorAll('style')].some(style => style.textContent.includes('@view-transition{navigation:auto}')))).toBe(true);
   await expect(page.locator('.ma-ios-tab[aria-current="page"]')).toHaveCount(0);
@@ -114,14 +118,15 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
     await page.locator('.ma-ios-tab[href="/kana/"]').click();
   }
   await expect(page.locator('.ma-ios-tab[href="/kana/"]')).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.locator('.ma-ios-kana-menu__item')).toHaveCount(3);
+  await expect(page.locator('.ma-ios-kana-menu .ma-ios-tab[href]')).toHaveCount(3);
+  await expect(page.locator('.ma-ios-tabs__rail')).toHaveClass(/is-kana-open/);
+  await page.locator('.ma-ios-kana-back').click();
+  await expect(page.locator('.ma-ios-tabs__rail')).not.toHaveClass(/is-kana-open/);
   await page.locator('.ma-ios-tab[href="/kana/"]').click();
-  await expect(page.locator('.ma-ios-kana-menu')).toBeHidden();
-  await page.locator('.ma-ios-tab[href="/kana/"]').click();
-  await page.locator('.ma-ios-kana-menu__item[href="/reading/"]').click();
+  await page.locator('.ma-ios-kana-menu .ma-ios-tab[href="/reading/"]').click();
   await expect(page).toHaveURL(/\/reading\/?$/);
-  await expect(page.locator('.ma-ios-kana-menu__item[aria-current="page"]')).toContainText('Reading');
-  await expect(page.locator('.ma-ios-tab.is-active')).toContainText('Kana');
+  await expect(page.locator('.ma-ios-kana-menu .ma-ios-tab[aria-current="page"]')).toContainText('Reading');
+  await expect(page.locator('.ma-ios-tabs__links .ma-ios-tab.is-active')).toContainText('Kana');
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   await expect(page.locator('.ma-nav')).toBeHidden();
   await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveCount(1);
@@ -156,6 +161,27 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-ios-tabs #studyNavShowBtn')).toBeVisible();
   await expect(page.locator('.ma-ios-tabs__links')).toBeHidden();
   await page.locator('.ma-ios-tabs #studyNavShowBtn').click();
-  await page.locator('.ma-ios-tab[href="/"]').click();
+  await page.locator('.ma-ios-kana-back').click();
+  await page.locator('.ma-ios-tabs__links .ma-ios-tab[href="/"]').click();
   await expect(page.locator('.ma-ios-tabs__title')).toHaveText('Mode Atlas');
+});
+
+test('native Reading uses a compact answer keyboard while the website keeps text entry', async ({ page }) => {
+  await page.goto('/reading/');
+  await expect(page.locator('.ma-ios-reading-keyboard')).toHaveCount(0);
+  await page.addInitScript(() => {
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
+    localStorage.setItem('modeAtlasStarterSeen', 'true');
+    localStorage.setItem('modeAtlasOnboardingComplete', 'true');
+    localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
+    localStorage.setItem('modeAtlasLegalAccepted', 'true');
+    localStorage.setItem('modeAtlasLegalAcceptedAt', String(Date.now()));
+    localStorage.setItem('modeAtlasLegalVersion', '2026-05');
+  });
+  await page.goto('/reading/');
+  await expect(page.locator('#input')).toHaveJSProperty('readOnly', true);
+  await page.locator('#startBtn').click();
+  await expect(page.locator('.ma-ios-reading-keyboard')).toBeVisible();
+  await expect(page.locator('.ma-ios-tabs')).toBeHidden();
+  await expect(page.locator('.ma-ios-reading-keyboard__key')).toHaveCount(27);
 });

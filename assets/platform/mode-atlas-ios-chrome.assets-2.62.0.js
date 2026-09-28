@@ -56,22 +56,31 @@
     if (exit) utilities.appendChild(exit);
     dock.appendChild(utilities);
 
+    var rail = document.createElement('div');
+    rail.className = 'ma-ios-tabs__rail';
     var links = document.createElement('div');
     links.className = 'ma-ios-tabs__links';
     var kanaMenu = document.createElement('div');
     kanaMenu.id = 'maIosKanaMenu';
     kanaMenu.className = 'ma-ios-kana-menu';
     kanaMenu.setAttribute('aria-label', 'Kana practice');
-    kanaMenu.hidden = true;
+    var back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'ma-ios-tab ma-ios-kana-back';
+    back.setAttribute('aria-label', 'Close Kana practice menu');
+    back.innerHTML = '<span class="ma-ios-tab__icon" aria-hidden="true">‹</span><span class="ma-ios-tab__label">Kana</span>';
+    kanaMenu.appendChild(back);
     kanaPages.forEach(function(tab){
       var item = document.createElement('a');
       item.href = root.AtlasPlatform.destinationPath(tab[0]);
-      item.className = 'ma-ios-kana-menu__item' + (tab[0] === currentPage ? ' is-active' : '');
-      item.textContent = tab[2] + '  ' + tab[1];
+      item.className = 'ma-ios-tab' + (tab[0] === currentPage ? ' is-active' : '');
+      item.innerHTML = '<span class="ma-ios-tab__icon" aria-hidden="true">' + tab[2] + '</span><span class="ma-ios-tab__label">' + tab[1] + '</span>';
       if (tab[0] === currentPage) item.setAttribute('aria-current', 'page');
+      item.addEventListener('click', function(){
+        try { sessionStorage.setItem('modeAtlasOpenKanaMenu', '1'); } catch (_) {}
+      });
       kanaMenu.appendChild(item);
     });
-    dock.appendChild(kanaMenu);
     tabs.forEach(function(tab){
       var link = document.createElement('a');
       link.className = 'ma-ios-tab' + (tab[0] === current ? ' is-active' : '');
@@ -92,14 +101,19 @@
       link.append(icon, label);
       links.appendChild(link);
     });
-    dock.appendChild(links);
+    rail.append(links, kanaMenu);
+    dock.appendChild(rail);
     document.body.appendChild(dock);
 
     var kanaTab = links.querySelector('[aria-controls="maIosKanaMenu"]');
     function setKanaMenu(open){
-      kanaMenu.hidden = !open;
+      rail.classList.toggle('is-kana-open', open);
       kanaTab.setAttribute('aria-expanded', String(open));
+      links.inert = open;
+      kanaMenu.inert = !open;
     }
+    setKanaMenu(false);
+    back.addEventListener('click', function(){ setKanaMenu(false); kanaTab.focus(); });
     kanaTab.addEventListener('click', function(event){
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       if (current !== 'kana') {
@@ -107,7 +121,7 @@
         return;
       }
       event.preventDefault();
-      setKanaMenu(kanaMenu.hidden);
+      setKanaMenu(!rail.classList.contains('is-kana-open'));
     });
     try {
       if (sessionStorage.getItem('modeAtlasOpenKanaMenu') === '1') setKanaMenu(true);
@@ -117,7 +131,7 @@
       if (!dock.contains(event.target)) setKanaMenu(false);
     });
     document.addEventListener('keydown', function(event){
-      if (event.key === 'Escape' && !kanaMenu.hidden) { setKanaMenu(false); kanaTab.focus(); }
+      if (event.key === 'Escape' && rail.classList.contains('is-kana-open')) { setKanaMenu(false); kanaTab.focus(); }
     });
 
     function measure(){
