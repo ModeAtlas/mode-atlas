@@ -89,6 +89,10 @@ test('native launch links reach shared practice setup and ignore foreign callbac
 });
 
 test('iOS study tabs navigate while the website keeps its original navigation', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('modeAtlasOnboardingComplete', 'true');
+    localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
+  });
   await page.goto('/kana/');
   await expect(page.locator('.ma-ios-tabs')).toHaveCount(0);
   await expect(page.locator('.ma-nav__links')).toBeVisible();
