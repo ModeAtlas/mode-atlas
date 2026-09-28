@@ -3,15 +3,28 @@
   'use strict';
   if (!root.ModeAtlasEnv?.isNativeApp || root.ModeAtlasEnv.nativePlatform !== 'ios') return;
 
+  // The platform facade owns destination paths for deep links and the dock.
   var tabs = [
-    ['atlas', 'Atlas', '/', 'あア'],
-    ['kana', 'Kana', '/kana/', 'かな'],
-    ['reading', 'Reading', '/reading/', '読'],
-    ['writing', 'Writing', '/writing/', '書'],
-    ['wordbank', 'Words', '/wordbank/', '語']
+    ['atlas', 'Atlas', 'あア'],
+    ['kana', 'Kana', 'かな'],
+    ['reading', 'Reading', '読'],
+    ['writing', 'Writing', '書'],
+    ['wordBank', 'Words', '語']
   ];
   var route = location.pathname.replace(/\/index\.html$/i, '/');
-  var current = ({'/':'atlas', '/kana/':'kana', '/reading/':'reading', '/writing/':'writing', '/wordbank/':'wordbank', '/results/':'kana'})[route] || '';
+  var current = route === root.AtlasPlatform.destinationPath('results') ? 'kana' :
+    (tabs.find(function(tab){ return root.AtlasPlatform.destinationPath(tab[0]) === route; }) || [])[0] || '';
+
+  // Cross-document transitions keep the previous local page visible until the
+  // next page is ready. Unsupported WebViews retain ordinary navigation.
+  var transitionStyle = document.createElement('style');
+  transitionStyle.textContent = '@view-transition{navigation:auto}' +
+    '@keyframes ma-ios-leave{to{opacity:0}}' +
+    '@keyframes ma-ios-enter{from{opacity:.92;transform:translateY(3px)}to{opacity:1;transform:none}}' +
+    '::view-transition-old(root){animation:90ms ease-out both ma-ios-leave}' +
+    '::view-transition-new(root){animation:140ms ease-out both ma-ios-enter}' +
+    '@media(prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation-duration:.01ms}}';
+  document.head.appendChild(transitionStyle);
 
   function render(){
     if (document.querySelector('.ma-ios-tabs')) return;
@@ -29,7 +42,10 @@
     if (setup) utilities.appendChild(setup);
     var profile = document.getElementById('profileOpenBtn');
     var settings = document.querySelector('.ma-nav__settings');
-    if (profile) utilities.appendChild(profile);
+    if (profile) {
+      profile.setAttribute('aria-label', 'Open profile');
+      utilities.appendChild(profile);
+    }
     if (settings) utilities.appendChild(settings);
     var focus = document.getElementById('studyNavHideBtn');
     if (focus) utilities.appendChild(focus);
@@ -42,12 +58,12 @@
     tabs.forEach(function(tab){
       var link = document.createElement('a');
       link.className = 'ma-ios-tab' + (tab[0] === current ? ' is-active' : '');
-      link.href = tab[2];
+      link.href = root.AtlasPlatform.destinationPath(tab[0]);
       if (tab[0] === current) link.setAttribute('aria-current', 'page');
       var icon = document.createElement('span');
       icon.className = 'ma-ios-tab__icon';
       icon.setAttribute('aria-hidden', 'true');
-      icon.textContent = tab[3];
+      icon.textContent = tab[2];
       var label = document.createElement('span');
       label.className = 'ma-ios-tab__label';
       label.textContent = tab[1];

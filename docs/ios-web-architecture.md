@@ -1,0 +1,58 @@
+# Web and iOS architecture
+
+Mode Atlas has one learning product, with two delivery targets. The website is
+the canonical source of page markup, study behavior, local save format, Firebase
+session and Firestore sync. The iOS app bundles those same pages and assets in a
+Capacitor WebView. It does not load the live website at runtime.
+
+## Source ownership
+
+| Concern | Owner | Used by |
+| --- | --- | --- |
+| Page markup, shared navigation and trainer shell | `frontend_components.py`, page documents | Both |
+| Page scripts, styles and asset order | `frontend_components.py` manifest, canonical `assets/` and root JS | Both |
+| Save format, learning logic and cloud sync | `assets/app/`, `assets/trainer/`, `assets/pages/`, `cloud-sync.js` | Both |
+| Version and build number | `assets/app/mode-atlas-version.js`, `sync_ios_project.py` | Both |
+| Platform API and destination paths | `assets/platform/mode-atlas-platform.js` | Both |
+| Web-only transport and installation | Web platform adapter, PWA and update modules | Web |
+| Native sign-in chooser and app links | Native platform adapter and Capacitor plugins | iOS |
+| Bottom dock, setup drawer placement and native transition | `assets/platform/mode-atlas-ios-chrome.js`, `assets/css/mode-atlas-ios-chrome.css` | iOS |
+| Native launch screen and icon | `ios/App/App/Assets.xcassets`, `LaunchScreen.storyboard` | iOS |
+
+`build_revision_assets.py` renders shared markup and makes revisioned assets.
+`build_ios_web.py` copies that versioned runtime into `.build/ios-web`, excluding
+the website's Service Worker and manifest. `npm run ios:sync` copies the payload
+into the native project. The generated `ios/App/App/public` is never edited or
+committed. The GitHub release gate checks the generated output, browser behavior,
+native-web behavior, and an unsigned iPhone/iPad simulator build.
+
+## Adding a feature
+
+Implement study rules, account state, storage and shared presentation in their
+canonical web owners. When the feature needs an OS capability, extend the
+`AtlasPlatform` facade and implement adapters for both targets; the shared UI
+calls the facade. Add iOS-specific layout only in the gated native chrome/CSS.
+Use `AtlasPlatform.destinationPath` for native navigation links and app links.
+This keeps a website feature available in the next iOS bundle without copying
+its business logic.
+
+The iOS bundle is a snapshot: changing the deployed website does not update an
+installed app. Signed-in Firestore data still syncs through the same account.
+Anonymous local storage belongs to each installation and is not shared across
+web and iOS. Shipping new bundled UI or logic requires a version bump,
+validated native bundle and a new signed iOS release.
+
+## Current navigation tradeoff
+
+Pages remain separate HTML documents. This preserves the tested web page
+controllers and avoids running two copies of initialization, auth or trainer
+state in a synthetic single-page router. On supported iOS WebViews, a native-only
+cross-document view transition keeps the previous page visible as the next
+bundled page opens. It smooths the handoff but does not remove the reload cost.
+If measured navigation remains too slow, profile the WebView and then consider a
+shared, source-level routing change for both targets rather than injecting a
+second runtime navigation system only into iOS.
+
+The 1024-pixel AppIcon is an opaque export of the existing
+`ModeAtlasLaunchMark` art. Its file lives in the Xcode asset catalog; the same
+mark is displayed by the launch storyboard and the bundled loading screen.

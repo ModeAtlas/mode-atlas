@@ -92,6 +92,7 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await page.goto('/privacy/');
   await expect(page.locator('.ma-ios-tabs')).toHaveCount(0);
   await expect(page.locator('.ma-nav__links')).toBeVisible();
+  expect(await page.evaluate(() => [...document.querySelectorAll('style')].some(style => style.textContent.includes('@view-transition{navigation:auto}')))).toBe(false);
 
   await page.addInitScript(() => {
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
@@ -100,6 +101,8 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   });
   await page.goto('/privacy/');
   await expect(page.locator('.ma-ios-tabs .ma-ios-tab')).toHaveCount(5);
+  await expect(page.locator('.ma-ios-tab[href="/wordbank/"]')).toHaveCount(1);
+  expect(await page.evaluate(() => [...document.querySelectorAll('style')].some(style => style.textContent.includes('@view-transition{navigation:auto}')))).toBe(true);
   await expect(page.locator('.ma-ios-tab[aria-current="page"]')).toHaveCount(0);
   await expect(page.locator('.ma-nav__links')).toBeHidden();
   await page.locator('.ma-ios-tab[href="/reading/"]').click();
@@ -108,6 +111,7 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   await expect(page.locator('.ma-nav')).toBeHidden();
   await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveCount(1);
+  await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveAttribute('aria-label', 'Open profile');
   await expect(page.locator('.ma-ios-tabs [data-settings-open]')).toHaveCount(1);
   await expect(page.locator('.ma-ios-tabs #modifiersTab')).toBeVisible();
   await expect(page.locator('.ma-ios-tabs #modifiersTab')).toContainText('Practice setup');

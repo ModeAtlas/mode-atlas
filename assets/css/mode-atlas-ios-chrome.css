@@ -17,7 +17,7 @@ html[data-ma-runtime="ios"] .ma-loading-card{
 }
 html[data-ma-runtime="ios"] .ma-loading-head{flex-direction:column;text-align:center;gap:14px;margin:0;}
 html[data-ma-runtime="ios"] .ma-loading-mark{
-  width:94px;height:94px;border:0;border-radius:24px;
+  width:116px;height:116px;border:0;border-radius:28px;
   background:transparent url('/assets/android-chrome-512.png') center / cover no-repeat;
   color:transparent;font-size:0;
   box-shadow:0 18px 42px rgba(0,0,0,.32);
@@ -29,7 +29,7 @@ html[data-ma-runtime="ios"][data-ma-native-warm="true"] .ma-loading-screen{displ
 
 /* The existing account and focus controls are moved here by the native owner. */
 html[data-ma-runtime="ios"] .ma-ios-tabs{
-  --ma-nav-accent:var(--ma-kana);
+  --ma-ios-accent:var(--ma-atlas);
   position:fixed;z-index:100;left:0;right:0;bottom:0;
   display:grid;gap:2px;
   padding:5px max(10px,env(safe-area-inset-right,0px)) calc(5px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
@@ -38,6 +38,10 @@ html[data-ma-runtime="ios"] .ma-ios-tabs{
   box-shadow:0 -10px 28px rgba(0,0,0,.19);
   backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
 }
+html[data-ma-runtime="ios"] body.ma-reading-page .ma-ios-tabs{--ma-ios-accent:var(--ma-reading);}
+html[data-ma-runtime="ios"] body.ma-writing-page .ma-ios-tabs{--ma-ios-accent:var(--ma-writing);}
+html[data-ma-runtime="ios"] body.ma-wordbank-page .ma-ios-tabs{--ma-ios-accent:var(--ma-words);}
+html[data-ma-runtime="ios"] body:is(.ma-kana-page,.ma-results-page) .ma-ios-tabs{--ma-ios-accent:var(--ma-kana);}
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities{
   display:flex;align-items:center;gap:8px;min-height:40px;
   padding:0 5px 4px;border-bottom:1px solid var(--ma-border);
@@ -53,11 +57,11 @@ html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__action{
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab{
   min-height:40px;min-width:0;max-width:100%;padding:0 12px;
   border:1px solid var(--ma-border);border-radius:12px;
-  background:color-mix(in srgb,var(--ma-kana) 16%,var(--ma-control));
+  background:color-mix(in srgb,var(--ma-ios-accent) 16%,var(--ma-control));
   color:var(--ma-text-strong);font-size:.81rem;white-space:nowrap;
 }
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab[aria-expanded="true"]{
-  border-color:var(--ma-kana);background:color-mix(in srgb,var(--ma-kana) 25%,var(--ma-control));
+  border-color:var(--ma-ios-accent);background:color-mix(in srgb,var(--ma-ios-accent) 25%,var(--ma-control));
 }
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):not(.trainer-session-active) .ma-ios-tabs__title,
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-ios-tabs__utilities #modifiersTab{display:none;}
@@ -74,7 +78,7 @@ html[data-ma-runtime="ios"] .ma-ios-tab{
   font-size:10px;font-weight:750;line-height:1.2;text-align:center;touch-action:manipulation;
 }
 html[data-ma-runtime="ios"] .ma-ios-tab__icon{font-family:var(--ma-font-jp);font-size:20px;font-weight:800;line-height:1.2;}
-html[data-ma-runtime="ios"] .ma-ios-tab.is-active{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-kana) 14%,transparent);}
+html[data-ma-runtime="ios"] .ma-ios-tab.is-active{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-ios-accent) 17%,transparent);}
 html[data-ma-runtime="ios"] .ma-ios-tab:focus-visible,
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
 
