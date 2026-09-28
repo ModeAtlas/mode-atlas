@@ -7,13 +7,16 @@
   var tabs = [
     ['atlas', 'Atlas', 'あア'],
     ['kana', 'Kana', 'かな'],
-    ['reading', 'Reading', '読'],
-    ['writing', 'Writing', '書'],
     ['wordBank', 'Words', '語']
   ];
+  var kanaPages = [
+    ['reading', 'Reading', '読'],
+    ['writing', 'Writing', '書'],
+    ['results', 'Results', '記']
+  ];
   var route = location.pathname.replace(/\/index\.html$/i, '/');
-  var current = route === root.AtlasPlatform.destinationPath('results') ? 'kana' :
-    (tabs.find(function(tab){ return root.AtlasPlatform.destinationPath(tab[0]) === route; }) || [])[0] || '';
+  var currentPage = (tabs.concat(kanaPages).find(function(tab){ return root.AtlasPlatform.destinationPath(tab[0]) === route; }) || [])[0] || '';
+  var current = kanaPages.some(function(tab){ return tab[0] === currentPage; }) ? 'kana' : currentPage;
 
   // Cross-document transitions keep the previous local page visible until the
   // next page is ready. Unsupported WebViews retain ordinary navigation.
@@ -55,11 +58,30 @@
 
     var links = document.createElement('div');
     links.className = 'ma-ios-tabs__links';
+    var kanaMenu = document.createElement('div');
+    kanaMenu.id = 'maIosKanaMenu';
+    kanaMenu.className = 'ma-ios-kana-menu';
+    kanaMenu.setAttribute('aria-label', 'Kana practice');
+    kanaMenu.hidden = true;
+    kanaPages.forEach(function(tab){
+      var item = document.createElement('a');
+      item.href = root.AtlasPlatform.destinationPath(tab[0]);
+      item.className = 'ma-ios-kana-menu__item' + (tab[0] === currentPage ? ' is-active' : '');
+      item.textContent = tab[2] + '  ' + tab[1];
+      if (tab[0] === currentPage) item.setAttribute('aria-current', 'page');
+      kanaMenu.appendChild(item);
+    });
+    dock.appendChild(kanaMenu);
     tabs.forEach(function(tab){
       var link = document.createElement('a');
       link.className = 'ma-ios-tab' + (tab[0] === current ? ' is-active' : '');
       link.href = root.AtlasPlatform.destinationPath(tab[0]);
-      if (tab[0] === current) link.setAttribute('aria-current', 'page');
+      if (tab[0] === currentPage) link.setAttribute('aria-current', 'page');
+      if (tab[0] === 'kana') {
+        link.setAttribute('aria-controls', kanaMenu.id);
+        link.setAttribute('aria-expanded', 'false');
+        link.setAttribute('aria-label', 'Kana page and practice menu');
+      }
       var icon = document.createElement('span');
       icon.className = 'ma-ios-tab__icon';
       icon.setAttribute('aria-hidden', 'true');
@@ -73,8 +95,34 @@
     dock.appendChild(links);
     document.body.appendChild(dock);
 
+    var kanaTab = links.querySelector('[aria-controls="maIosKanaMenu"]');
+    function setKanaMenu(open){
+      kanaMenu.hidden = !open;
+      kanaTab.setAttribute('aria-expanded', String(open));
+    }
+    kanaTab.addEventListener('click', function(event){
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (current !== 'kana') {
+        try { sessionStorage.setItem('modeAtlasOpenKanaMenu', '1'); } catch (_) {}
+        return;
+      }
+      event.preventDefault();
+      setKanaMenu(kanaMenu.hidden);
+    });
+    try {
+      if (sessionStorage.getItem('modeAtlasOpenKanaMenu') === '1') setKanaMenu(true);
+      sessionStorage.removeItem('modeAtlasOpenKanaMenu');
+    } catch (_) {}
+    document.addEventListener('click', function(event){
+      if (!dock.contains(event.target)) setKanaMenu(false);
+    });
+    document.addEventListener('keydown', function(event){
+      if (event.key === 'Escape' && !kanaMenu.hidden) { setKanaMenu(false); kanaTab.focus(); }
+    });
+
     function measure(){
       document.documentElement.style.setProperty('--ma-ios-dock-height', dock.getBoundingClientRect().height + 'px');
+      document.documentElement.style.setProperty('--ma-ios-visible-height', (root.visualViewport?.height || root.innerHeight) + 'px');
     }
     new MutationObserver(measure).observe(document.body, {attributes:true, attributeFilter:['class']});
     root.visualViewport?.addEventListener('resize', measure);
@@ -89,7 +137,7 @@
   // Bundled documents remain separate pages. Do not add a synthetic wait or
   // fullscreen cover: local navigation can start on the same tap.
   document.addEventListener('click', function(event){
-    var link = event.target.closest?.('.ma-ios-tab[href]');
+    var link = event.target.closest?.('.ma-ios-tab[href]:not([aria-controls])');
     if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (new URL(link.href, location.href).pathname === location.pathname) {
       event.preventDefault();
@@ -97,7 +145,14 @@
     }
   });
   document.addEventListener('focusin', function(event){
-    if (event.target.matches?.('input, textarea, [contenteditable="true"]')) document.body.classList.add('ma-ios-editing');
+    if (event.target.matches?.('input, textarea, [contenteditable="true"]')) {
+      document.body.classList.add('ma-ios-editing');
+      if (event.target.id === 'input') {
+        event.target.setAttribute('autocapitalize', 'off');
+        event.target.setAttribute('autocorrect', 'off');
+        event.target.setAttribute('enterkeyhint', 'done');
+      }
+    }
   });
   document.addEventListener('focusout', function(){
     root.setTimeout(function(){

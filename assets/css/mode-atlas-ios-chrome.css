@@ -17,7 +17,7 @@ html[data-ma-runtime="ios"] .ma-loading-card{
 }
 html[data-ma-runtime="ios"] .ma-loading-head{flex-direction:column;text-align:center;gap:14px;margin:0;}
 html[data-ma-runtime="ios"] .ma-loading-mark{
-  width:116px;height:116px;border:0;border-radius:28px;
+  width:116px;height:116px;border:0;border-radius:50%;
   background:transparent url('/assets/android-chrome-512.png') center / cover no-repeat;
   color:transparent;font-size:0;
   box-shadow:0 18px 42px rgba(0,0,0,.32);
@@ -55,7 +55,7 @@ html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__action{
   border-radius:12px;background:var(--ma-control);border-color:var(--ma-border);
 }
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab{
-  min-height:40px;min-width:0;max-width:100%;padding:0 12px;
+  min-height:40px;min-width:0;max-width:100%;margin-right:auto;padding:0 12px;
   border:1px solid var(--ma-border);border-radius:12px;
   background:color-mix(in srgb,var(--ma-ios-accent) 16%,var(--ma-control));
   color:var(--ma-text-strong);font-size:.81rem;white-space:nowrap;
@@ -70,6 +70,20 @@ html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__settings .ma-nav__a
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__focus .ma-nav__action-label{display:none;}
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__avatar{width:28px;height:28px;min-width:28px;}
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav-handle{display:none;}
+html[data-ma-runtime="ios"] .ma-ios-kana-menu[hidden]{display:none;}
+html[data-ma-runtime="ios"] .ma-ios-kana-menu{
+  position:absolute;left:24%;right:10px;bottom:calc(100% + 8px);
+  display:grid;gap:5px;padding:10px;border:1px solid var(--ma-border);
+  border-radius:18px;background:var(--ma-surface-strong);box-shadow:0 16px 36px rgba(0,0,0,.28);
+}
+html[data-ma-runtime="ios"] .ma-ios-kana-menu__item{
+  min-height:48px;display:flex;align-items:center;padding:0 15px;
+  border-radius:12px;color:var(--ma-text-strong);font-weight:800;text-decoration:none;
+}
+html[data-ma-runtime="ios"] .ma-ios-kana-menu__item.is-active{
+  background:color-mix(in srgb,var(--ma-kana) 18%,var(--ma-control));
+}
+html[data-ma-runtime="ios"] .ma-ios-kana-menu__item:focus-visible{outline:3px solid var(--ma-focus-ring);}
 html[data-ma-runtime="ios"] .ma-ios-tabs__links{display:flex;gap:2px;justify-content:space-around;}
 html[data-ma-runtime="ios"] .ma-ios-tab{
   flex:1 1 0;min-width:0;min-height:49px;
@@ -79,6 +93,7 @@ html[data-ma-runtime="ios"] .ma-ios-tab{
 }
 html[data-ma-runtime="ios"] .ma-ios-tab__icon{font-family:var(--ma-font-jp);font-size:20px;font-weight:800;line-height:1.2;}
 html[data-ma-runtime="ios"] .ma-ios-tab.is-active{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-ios-accent) 17%,transparent);}
+html[data-ma-runtime="ios"] .ma-ios-tab[aria-expanded="true"]{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-kana) 23%,var(--ma-control));}
 html[data-ma-runtime="ios"] .ma-ios-tab:focus-visible,
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
 
@@ -93,6 +108,9 @@ html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__utilities #study
 }
 html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-ios-tabs{display:none;}
 html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing){--ma-ios-dock-height:0px;}
+html[data-ma-runtime="ios"] body:is(.profile-open,.settings-open) .ma-drawer{
+  bottom:calc(var(--ma-ios-dock-height) + 8px);max-height:none;
+}
 
 /* The native setup trigger lives in the dock; its existing drawer opens above it. */
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page){
@@ -135,7 +153,10 @@ html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):is(.ma-ph
   padding:12px 12px 16px;margin:0 auto 12px;
 }
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active:is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-trainer-prompt-wrap{
-  min-height:clamp(94px,18svh,140px);padding:4px 0;
+  min-height:clamp(70px,15vh,110px);padding:2px 0;
+}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-trainer-shell{
+  max-height:var(--ma-ios-visible-height,100dvh);overflow-y:auto;overscroll-behavior:contain;
 }
 @media (prefers-reduced-motion:reduce){
   html[data-ma-runtime="ios"] .ma-ios-tabs,

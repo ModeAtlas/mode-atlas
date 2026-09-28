@@ -232,7 +232,8 @@
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        openProfile(button);
+        if (window.ModeAtlasEnv?.isNativeApp && activeDrawerName === 'profile') closeProfile();
+        else openProfile(button);
       }, true);
     });
     document.querySelectorAll('[data-settings-open]').forEach((button) => {
@@ -241,7 +242,8 @@
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        openSettings(button);
+        if (window.ModeAtlasEnv?.isNativeApp && activeDrawerName === 'settings') closeSettings();
+        else openSettings(button);
       }, true);
     });
     document.querySelectorAll('[data-ma-drawer-close="profile"],#profileCloseBtn').forEach((button) => {
