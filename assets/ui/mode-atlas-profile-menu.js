@@ -17,7 +17,7 @@
             <button class="ma-button ma-button--ghost ma-icon-button ma-drawer-close" id="profileCloseBtn" type="button" data-ma-drawer-close="profile" aria-label="Close profile" title="Close profile">${icon(href,'close')}</button>
           </div>
 
-          <section class="ma-card ma-card--soft ma-profile-card ma-account-card" aria-label="Google account">
+          <section class="ma-card ma-card--soft ma-profile-card ma-account-card" aria-label="Mode Atlas account">
             <div class="ma-account-user">
               <img class="ma-account-avatar" id="profileAvatar" alt="" />
               <div class="ma-account-copy">
@@ -29,6 +29,8 @@
               <button class="ma-button ma-button--primary ma-button--wide" id="profileAuthBtn" data-profile-auth type="button">
                 <span data-profile-auth-label>Sign in with Google</span>
               </button>
+              <button class="ma-button ma-button--ghost ma-button--wide" id="profileAppleBtn" type="button" hidden>Sign in with Apple</button>
+              <button class="ma-button ma-button--ghost ma-button--wide" id="profileLinkBtn" type="button" hidden>Link Apple to this account</button>
             </div>
           </section>
 
@@ -71,6 +73,9 @@
               <div class="ma-achievement-summary"><strong id="profileAchievementCount">0</strong><span>achievements</span></div>
               <button class="ma-button ma-button--ghost ma-button--small" type="button" data-ma-achievements-open>${icon(href,'achievement')}<span>Achievements</span></button>
             </div>
+          </section>
+          <section class="ma-profile-account-management" id="profileAccountManagement" aria-label="Account management" hidden>
+            <button class="ma-button ma-button--ghost ma-button--small" id="profileDeleteAccountBtn" type="button">Delete account and data</button>
           </section>
         </aside>`;
     }

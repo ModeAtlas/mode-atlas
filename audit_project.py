@@ -180,8 +180,8 @@ def main() -> int:
     native_auth = (capacitor_config.get('plugins') or {}).get('FirebaseAuthentication') or {}
     if native_auth.get('skipNativeAuth') is not True:
         fail(errors, 'native Firebase provider transport must keep skipNativeAuth=true so JS Auth remains the session owner')
-    if native_auth.get('providers') != ['google.com']:
-        fail(errors, 'native Firebase provider transport must currently enable only google.com')
+    if native_auth.get('providers') != ['google.com', 'apple.com']:
+        fail(errors, 'native Firebase provider transport must enable Google and Apple')
     package_json = json.loads(text(ROOT / 'package.json'))
     dependencies = package_json.get('dependencies') or {}
     if dependencies.get('@capacitor-firebase/authentication') != '8.5.2':
@@ -190,10 +190,10 @@ def main() -> int:
         fail(errors, 'Firebase JS dependency must match the cloud-sync Firebase 12.12.1 runtime')
     native_adapter_source = text(ROOT / 'assets/platform/mode-atlas-platform-native.js')
     cloud_sync_source = text(ROOT / 'cloud-sync.js')
-    if "signInWithGoogle({ skipNativeAuth:true })" not in native_adapter_source:
-        fail(errors, 'native adapter does not enforce provider-only Google sign-in')
-    if "AtlasPlatform?.authenticate?.('google.com')" not in cloud_sync_source or 'signInWithCredential' not in cloud_sync_source:
-        fail(errors, 'cloud sync does not exchange native Google credentials into the shared Firebase JS session')
+    if "firebaseAuth[method]({ skipNativeAuth:true })" not in native_adapter_source or "providerId === 'apple.com' ? 'signInWithApple' : 'signInWithGoogle'" not in native_adapter_source:
+        fail(errors, 'native adapter does not enforce provider-only Google and Apple sign-in')
+    if 'AtlasPlatform?.authenticate?.(providerId)' not in cloud_sync_source or 'signInWithCredential' not in cloud_sync_source or 'linkWithCredential' not in cloud_sync_source:
+        fail(errors, 'cloud sync does not exchange and link native credentials into the shared Firebase JS session')
     if 'FirebaseAuthentication.signInWithGoogle' in cloud_sync_source:
         fail(errors, 'cloud-sync.js directly owns native provider implementation instead of using AtlasPlatform')
 

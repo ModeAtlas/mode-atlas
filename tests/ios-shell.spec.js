@@ -1,5 +1,20 @@
 const { test, expect } = require('@playwright/test');
 
+test('Atlas home is compact on iOS and retains the website layout in the browser', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.atlas-hero')).toBeVisible();
+  await expect(page.locator('.atlas-ios-home')).toBeHidden();
+  await page.addInitScript(() => {
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
+  });
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-ma-runtime', 'ios');
+  await expect(page.locator('.atlas-ios-home')).toBeVisible();
+  await expect(page.locator('.atlas-hero')).toBeHidden();
+  await expect(page.locator('#iosHomeContinue')).toHaveAttribute('href', '/reading/');
+  await expect(page.locator('.atlas-ios-home__choices a')).toHaveCount(2);
+});
+
 test('bundled iOS runtime uses native lifecycle without web update or PWA ownership', async ({ page }) => {
   const versionChecks = [];
   page.on('request', request => {

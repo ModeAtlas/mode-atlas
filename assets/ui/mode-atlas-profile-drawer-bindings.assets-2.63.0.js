@@ -321,6 +321,15 @@
     }
   }
 
+  function bindAccountActions(){
+    const apple = document.getElementById('profileAppleBtn');
+    const link = document.getElementById('profileLinkBtn');
+    const remove = document.getElementById('profileDeleteAccountBtn');
+    apple?.addEventListener('click', () => { void window.KanaCloudSync?.signInWithApple?.(); });
+    link?.addEventListener('click', () => { void window.KanaCloudSync?.linkNativeProvider?.(link.dataset.provider); });
+    remove?.addEventListener('click', () => { void window.KanaCloudSync?.deleteAccount?.(); });
+  }
+
   function updateProfileDot(){
     const user = window.KanaCloudSync?.getUser?.();
     document.querySelectorAll('#topProfileDot').forEach((dot) => {
@@ -374,7 +383,7 @@
     const meta = document.getElementById('profileSyncMeta');
     const dot = document.getElementById('profileSyncDot');
     if (summary) summary.textContent = status.text || 'Progress saves on this device';
-    if (detail) detail.textContent = status.user ? 'Signed in with Google. Cloud sync updates automatically when progress changes.' : 'Not signed in. Your progress is saved locally on this device.';
+    if (detail) detail.textContent = status.user ? 'Signed in. Cloud sync updates automatically when progress changes.' : 'Not signed in. Your progress is saved locally on this device.';
     if (meta) meta.textContent = 'Last cloud sync: ' + formatTime(status.lastSync || storageGet('modeAtlasLastCloudSyncAt', '0'));
     if (dot) dot.className = 'ma-sync-dot ' + tone;
     const chip = document.getElementById('profileSyncChip');
@@ -383,6 +392,22 @@
       chip.className = 'ma-status-chip ma-status-chip--' + normalizedTone;
       chip.textContent = status.user ? (normalizedTone === 'success' ? 'Synced' : status.state || 'Cloud') : 'Local only';
     }
+    const native = window.ModeAtlasEnv?.isNativeApp === true;
+    const providers = status.user?.providerData?.map((item) => item.providerId) || [];
+    const available = window.AtlasPlatform?.getCapabilities?.().authProviders || [];
+    const apple = document.getElementById('profileAppleBtn');
+    const link = document.getElementById('profileLinkBtn');
+    if (apple) apple.hidden = !native || !!status.user || !available.includes('apple.com');
+    const missing = ['apple.com','google.com'].find((id) => available.includes(id) && !providers.includes(id));
+    if (link) {
+      link.hidden = !native || !status.user || !missing;
+      if (missing) {
+        link.dataset.provider = missing;
+        link.textContent = 'Link ' + (missing === 'apple.com' ? 'Apple' : 'Google') + ' to this account';
+      }
+    }
+    const management = document.getElementById('profileAccountManagement');
+    if (management) management.hidden = !status.user;
     updateProfileDot();
     updateProgressStatus();
     const ach = document.getElementById('profileAchievementCount');
@@ -402,6 +427,7 @@
     bindSettings();
     try { window.ModeAtlasTheme?.updateButtons?.(); } catch {}
     bindCloudUi();
+    bindAccountActions();
     updateSyncStatus();
     try { window.ModeAtlasSounds?.refresh?.(); } catch {}
     refreshUpdateLabels();

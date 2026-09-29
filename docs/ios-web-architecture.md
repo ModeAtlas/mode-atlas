@@ -16,6 +16,8 @@ Capacitor WebView. It does not load the live website at runtime.
 | Platform API and destination paths | `assets/platform/mode-atlas-platform.js` | Both |
 | Web-only transport and installation | Web platform adapter, PWA and update modules | Web |
 | Native sign-in chooser and app links | Native platform adapter and Capacitor plugins | iOS |
+| Account UID, provider linking, cloud save and deletion | `cloud-sync.js`, shared Profile drawer | Both |
+| Compact Atlas home | `index.html`, `assets/pages/mode-atlas-home-page.js`, native-gated home CSS | iOS |
 | Bottom dock, setup drawer placement and native transition | `assets/platform/mode-atlas-ios-chrome.js`, `assets/css/mode-atlas-ios-chrome.css` | iOS |
 | Reading letter pad and touch feedback | `assets/platform/mode-atlas-ios-keyboard.js`, native CSS, Capacitor Haptics; shared Reading handler scores the input event | iOS |
 | Cold launch handoff | Static `LaunchScreen.storyboard`, shared early loader timing, native loading styles | iOS |
@@ -43,6 +45,24 @@ installed app. Signed-in Firestore data still syncs through the same account.
 Anonymous local storage belongs to each installation and is not shared across
 web and iOS. Shipping new bundled UI or logic requires a version bump,
 validated native bundle and a new signed iOS release.
+
+The Atlas route remains one document. iOS displays its compact Today/Continue
+composition from the same home controller, progress summary and Kana metrics as
+the website. The web composition is hidden only under the native runtime flag.
+
+Apple and Google are separate Firebase users until a signed-in user explicitly
+links the second credential. Profile offers that link while retaining the
+current UID; a credential already belonging to another UID is rejected without
+merging or overwriting data. Native Apple sign-in requires the Apple capability
+for `app.modeatlas` on the signing team and Apple enabled in Firebase Auth. The
+app project contains the entitlement and provider integration; account and
+data deletion use the shared Firebase JS session. Account deletion reauthenticates,
+removes the one app-data document, revokes a fresh Apple authorization when
+applicable, then deletes the Auth user; if Auth deletion
+fails, it restores the document while the user is still signed in. This is a
+client-side sequence, not an atomic server transaction; a production rollout
+should verify Firestore delete permissions and Apple credential revocation on a
+real signed device before App Store submission.
 
 ## Current navigation tradeoff
 

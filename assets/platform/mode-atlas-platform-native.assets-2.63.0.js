@@ -69,13 +69,16 @@
 
   platform.registerAdapter('ios', {
     getCapabilities: function(){
+      var providers = [];
+      if (hasFirebaseAuth('signInWithGoogle')) providers.push('google.com');
+      if (hasFirebaseAuth('signInWithApple')) providers.push('apple.com');
       return {
         notifications: hasBridge('requestNotifications'),
         appBadge: hasBridge('setBadge'),
         widgets: hasBridge('publishWidgetSnapshot'),
         appIntents: false,
-        authentication: hasFirebaseAuth('signInWithGoogle'),
-        authProviders: hasFirebaseAuth('signInWithGoogle') ? ['google.com'] : []
+        authentication: providers.length > 0,
+        authProviders: providers
       };
     },
     getAppVersion: async function(){
@@ -112,28 +115,28 @@
     },
     authenticate: async function(provider){
       var providerId = String(provider || '');
-      if (providerId !== 'google.com') {
+      if (providerId !== 'google.com' && providerId !== 'apple.com') {
         return { handled:false, providerId:providerId };
       }
-      if (!hasFirebaseAuth('signInWithGoogle')) {
-        var unavailable = new Error('Native Google authentication is unavailable in this build.');
+      var method = providerId === 'apple.com' ? 'signInWithApple' : 'signInWithGoogle';
+      if (!hasFirebaseAuth(method)) {
+        var unavailable = new Error('Native ' + providerId + ' authentication is unavailable in this build.');
         unavailable.code = 'native-auth-unavailable';
         throw unavailable;
       }
 
-      // skipNativeAuth is deliberate: Capacitor owns the native Google account
-      // chooser only. The existing Firebase JS Auth instance remains the single
-      // session owner used by cloud-sync.js and Firestore.
-      var result = await firebaseAuth.signInWithGoogle({ skipNativeAuth:true });
+      // Capacitor owns only the provider chooser; the JS Auth session owns UID,
+      // persistence and Firestore for both website and iOS.
+      var result = await firebaseAuth[method]({ skipNativeAuth:true });
       var credential = normalizeCredential(result);
-      if (!credential || !credential.idToken) {
-        var missingCredential = new Error('Google Sign-In did not return an ID token.');
+      if (!credential || !credential.idToken || (providerId === 'apple.com' && !credential.nonce)) {
+        var missingCredential = new Error('Native sign-in did not return a usable ID token and nonce.');
         missingCredential.code = 'native-auth-missing-credential';
         throw missingCredential;
       }
       return {
         handled:true,
-        providerId:'google.com',
+        providerId:providerId,
         credential:credential
       };
     },
@@ -147,6 +150,11 @@
         // is best-effort here; JavaScript Firebase Auth remains authoritative.
         return false;
       }
+    },
+    revokeAppleAuthorization: async function(authorizationCode){
+      if (!hasFirebaseAuth('revokeAccessToken') || !authorizationCode) return false;
+      await firebaseAuth.revokeAccessToken({ token:authorizationCode });
+      return true;
     }
   });
 })(window);

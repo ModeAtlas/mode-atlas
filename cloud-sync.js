@@ -1,6 +1,6 @@
 let initializeApp, getApps, getApp;
-let getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, signOut, onAuthStateChanged;
-let getFirestore, doc, getDoc, setDoc;
+let getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, linkWithCredential, reauthenticateWithPopup, reauthenticateWithCredential, deleteUser, signOut, onAuthStateChanged;
+let getFirestore, doc, getDoc, setDoc, deleteDoc;
 let firebaseModulesPromise = null;
 let firebaseModulesLoaded = false;
 let firestoreModulePromise = null;
@@ -30,6 +30,7 @@ async function loadFirestoreModule() {
       doc = firestoreMod.doc;
       getDoc = firestoreMod.getDoc;
       setDoc = firestoreMod.setDoc;
+      deleteDoc = firestoreMod.deleteDoc;
       return true;
     })
     .catch((error) => {
@@ -77,10 +78,15 @@ async function loadFirebaseModules() {
     initializeAuth = authMod.initializeAuth;
     browserLocalPersistence = authMod.browserLocalPersistence;
     GoogleAuthProvider = authMod.GoogleAuthProvider;
+    OAuthProvider = authMod.OAuthProvider;
     signInWithPopup = authMod.signInWithPopup;
     signInWithRedirect = authMod.signInWithRedirect;
     getRedirectResult = authMod.getRedirectResult;
     signInWithCredential = authMod.signInWithCredential;
+    linkWithCredential = authMod.linkWithCredential;
+    reauthenticateWithCredential = authMod.reauthenticateWithCredential;
+    reauthenticateWithPopup = authMod.reauthenticateWithPopup;
+    deleteUser = authMod.deleteUser;
     signOut = authMod.signOut;
     onAuthStateChanged = authMod.onAuthStateChanged;
     return true;
@@ -1183,12 +1189,31 @@ async function waitForInitialHydration(timeoutMs = 2600) {
   return result === true || hydratedForUserId === currentUser?.uid;
 }
 
-async function signInWithGoogle() {
+function credentialFromNativeResult(providerId, nativeResult) {
+  const credential = nativeResult?.credential;
+  if (!nativeResult?.handled || !credential?.idToken) {
+    const error = new Error('Native provider did not return a usable credential.');
+    error.code = 'native-auth-missing-credential';
+    throw error;
+  }
+  if (providerId === 'apple.com') {
+    if (!credential.nonce || !OAuthProvider) throw new Error('Apple sign-in needs an ID token and raw nonce.');
+    return new OAuthProvider('apple.com').credential({idToken:credential.idToken, rawNonce:credential.nonce});
+  }
+  return GoogleAuthProvider.credential(credential.idToken, credential.accessToken || undefined);
+}
+async function nativeProviderCredential(providerId) {
+  return credentialFromNativeResult(providerId, await window.AtlasPlatform?.authenticate?.(providerId));
+}
+
+async function signInWithProvider(providerId = 'google.com') {
+  const isApple = providerId === 'apple.com';
+  const providerName = isApple ? 'Apple' : 'Google';
   await setupFirebase();
   if (!CONFIG_READY || !auth) {
     await window.ModeAtlasFeedback?.alert?.({
       kicker: 'Cloud sync',
-      title: 'Google sign-in is not configured',
+      title: providerName + ' sign-in is not configured',
       message: 'Mode Atlas cloud sign-in is not configured for this build.',
       tone: 'warning',
       confirmLabel: 'OK'
@@ -1198,26 +1223,12 @@ async function signInWithGoogle() {
 
   try {
     if (window.ModeAtlasEnv?.isNativeApp) {
-      const nativeResult = await window.AtlasPlatform?.authenticate?.('google.com');
-      const credential = nativeResult?.credential || null;
-      if (!nativeResult?.handled || !credential?.idToken) {
-        const error = new Error('Native Google authentication did not return a usable credential.');
-        error.code = 'native-auth-missing-credential';
-        throw error;
-      }
-      if (typeof signInWithCredential !== 'function' || !GoogleAuthProvider?.credential) {
+      if (typeof signInWithCredential !== 'function') {
         const error = new Error('Firebase credential sign-in is unavailable.');
         error.code = 'native-auth-web-session-unavailable';
         throw error;
       }
-
-      // Native iOS owns only the Google account chooser. The existing Firebase
-      // JS Auth instance remains the single session owner for Firestore/cloud
-      // sync so the website and app use the same UID and persistence model.
-      const webCredential = GoogleAuthProvider.credential(
-        credential.idToken,
-        credential.accessToken || undefined
-      );
+      const webCredential = await nativeProviderCredential(providerId);
       const handoff = signInWithCredential(auth, webCredential);
       let timer;
       try {
@@ -1225,7 +1236,7 @@ async function signInWithGoogle() {
           handoff,
           new Promise((_, reject) => {
             timer = setTimeout(() => {
-              const stalled = new Error('Firebase did not finish the native Google credential handoff.');
+              const stalled = new Error('Firebase did not finish the native credential handoff.');
               stalled.code = 'native-auth-handoff-timeout';
               reject(stalled);
             }, 15000);
@@ -1235,6 +1246,7 @@ async function signInWithGoogle() {
         clearTimeout(timer);
       }
     } else {
+      if (isApple) return false; // Apple is offered only by the iOS account chooser.
       try {
         await signInWithPopup(auth, provider);
       } catch (error) {
@@ -1251,23 +1263,119 @@ async function signInWithGoogle() {
     await syncNow();
     return true;
   } catch (error) {
-    console.error('Google sign-in failed.', error);
+    console.error(providerName + ' sign-in failed.', error);
     const code = String(error?.code || '');
     const nativeSetupProblem = (code.includes('native-auth') && code !== 'native-auth-handoff-timeout')
       || /GoogleService-Info|client id|configuration/i.test(String(error?.message || ''));
     await window.ModeAtlasFeedback?.alert?.({
       kicker: 'Cloud sync',
-      title: code === 'native-auth-handoff-timeout' ? 'Google sign-in is taking too long' : 'Google sign-in failed',
+      title: code === 'native-auth-handoff-timeout' ? providerName + ' sign-in is taking too long' : providerName + ' sign-in failed',
       message: code === 'native-auth-handoff-timeout'
-        ? 'Google returned to Mode Atlas, but Firebase has not finished signing in. Check Profile before trying again. If it stays on Guest, report native-auth-handoff-timeout.'
+        ? providerName + ' returned to Mode Atlas, but Firebase has not finished signing in. Check Profile before trying again.'
         : nativeSetupProblem
-          ? 'This iOS build is not yet registered for Google sign-in. Mode Atlas needs its Firebase iOS configuration before native sign-in can be used.'
-          : 'Mode Atlas could not complete Google sign-in. Check your connection and Firebase Auth setup, then try again.' + (code ? ` (${code})` : ''),
+          ? 'This iOS build is not yet configured for ' + providerName + ' sign-in.'
+          : 'Mode Atlas could not complete ' + providerName + ' sign-in. Check your connection and provider setup, then try again.' + (code ? ` (${code})` : ''),
       tone: 'error',
       confirmLabel: 'OK'
     });
     return false;
   }
+}
+const signInWithGoogle = () => signInWithProvider('google.com');
+const signInWithApple = () => signInWithProvider('apple.com');
+
+async function linkNativeProvider(providerId) {
+  await authReady;
+  const user = currentUser;
+  if (!window.ModeAtlasEnv?.isNativeApp || !user || !['apple.com','google.com'].includes(providerId)) return false;
+  if (user.providerData?.some((item) => item.providerId === providerId)) return true;
+  try {
+    const credential = await nativeProviderCredential(providerId);
+    await linkWithCredential(user, credential);
+    if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed while linking.');
+    emitStatus();
+    window.ModeAtlasFeedback?.toast?.('Account linked. Both sign-in methods now use the same progress.', 'success');
+    return true;
+  } catch (error) {
+    console.error('Provider linking failed.', error);
+    await window.ModeAtlasFeedback?.alert?.({
+      kicker:'Account', title:'Could not link account',
+      message:String(error?.code || '').includes('credential-already-in-use')
+        ? 'This sign-in method already belongs to another Mode Atlas account. Your accounts were not merged and your progress has not changed.'
+        : 'The account could not be linked. Check the provider setup and try again.' + (error?.code ? ` (${error.code})` : ''),
+      tone:'error', confirmLabel:'OK'
+    });
+    return false;
+  }
+}
+
+async function deleteAccount() {
+  await authReady;
+  const user = currentUser;
+  if (!user || !auth || !CONFIG_READY) return false;
+  if (navigator.onLine === false) {
+    await window.ModeAtlasFeedback?.alert?.({title:'Connect to delete your account',message:'Account deletion needs a connection to remove your cloud data.',tone:'warning',confirmLabel:'OK'});
+    return false;
+  }
+  const approved = await window.ModeAtlasFeedback?.confirm?.({
+    kicker:'Account', title:'Delete your Mode Atlas account?',
+    message:'This permanently deletes your account, cloud learning progress and this device’s Mode Atlas save. This cannot be undone.',
+    tone:'error', confirmLabel:'Delete account', cancelLabel:'Keep account'
+  });
+  if (!approved) return false;
+  const hasApple = user.providerData?.some((item) => item.providerId === 'apple.com');
+  const providerId = hasApple && window.ModeAtlasEnv?.isNativeApp ? 'apple.com' : 'google.com';
+  try {
+    // Firebase requires a recent login before deleting a user. Reconfirm the
+    // provider while the original UID is still signed in; never sign in as a
+    // different UID and never clear local data before cloud deletion succeeds.
+    let appleAuthorizationCode = '';
+    if (window.ModeAtlasEnv?.isNativeApp) {
+      const result = await window.AtlasPlatform?.authenticate?.(providerId);
+      await reauthenticateWithCredential(user, credentialFromNativeResult(providerId, result));
+      if (providerId === 'apple.com') appleAuthorizationCode = result?.credential?.authorizationCode || '';
+    } else {
+      await reauthenticateWithPopup(user, provider);
+    }
+    if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
+    if (!await ensureFirestore() || typeof deleteDoc !== 'function') throw new Error('Cloud data is unavailable. Please try again online.');
+    const ref = getDocRef(user.uid);
+    setSessionCloudPause(true);
+    clearTimeout(syncTimeout);
+    if (cloudSyncPromise) await cloudSyncPromise;
+    if (cloudHydrationPromise) await cloudHydrationPromise;
+    const snapshot = await getDoc(ref);
+    await deleteDoc(ref);
+    try {
+      if (providerId === 'apple.com') {
+        if (!appleAuthorizationCode || !await window.AtlasPlatform?.revokeAppleAuthorization?.(appleAuthorizationCode)) {
+          throw new Error('Apple authorization could not be revoked. Please try again.');
+        }
+      }
+      await deleteUser(user);
+    } catch (error) {
+      if (snapshot.exists()) await setDoc(ref, snapshot.data());
+      throw error;
+    }
+    try { clearLocalAppData(); }
+    catch (error) { console.error('Account deleted but local save cleanup failed.', error); }
+    hydratedForUserId = null;
+    deferredSessionSync = false;
+    window.ModeAtlasDeferredCloudSync = false;
+    if (window.ModeAtlasEnv?.isNativeApp) {
+      try { await window.AtlasPlatform?.signOutIdentityProvider?.(); } catch {}
+    }
+    window.ModeAtlasFeedback?.toast?.('Your account and learning data were deleted.', 'success');
+    return true;
+  } catch (error) {
+    console.error('Account deletion failed.', error);
+    await window.ModeAtlasFeedback?.alert?.({
+      kicker:'Account', title:'Account was not deleted',
+      message:'Your account could not be deleted. Check your connection and try again.' + (error?.code ? ` (${error.code})` : ''),
+      tone:'error', confirmLabel:'OK'
+    });
+    return false;
+  } finally { setSessionCloudPause(false); }
 }
 
 async function signOutUser() {
@@ -1703,6 +1811,9 @@ window.KanaCloudSync = {
   hydrateFromCloud,
   bindUi,
   signInWithGoogle,
+  signInWithApple,
+  linkNativeProvider,
+  deleteAccount,
   signOut: signOutUser,
   scheduleSync,
   syncNow,

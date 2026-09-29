@@ -99,9 +99,12 @@ function patchFirebaseLoader(source) {
     const m = __mocks;
     initializeApp=m.initializeApp; getApps=m.getApps; getApp=m.getApp;
     getAuth=m.getAuth; initializeAuth=m.initializeAuth; browserLocalPersistence=m.browserLocalPersistence;
-    GoogleAuthProvider=m.GoogleAuthProvider; signInWithCredential=m.signInWithCredential; signInWithPopup=m.signInWithPopup;
+    GoogleAuthProvider=m.GoogleAuthProvider; OAuthProvider=m.OAuthProvider;
+    signInWithCredential=m.signInWithCredential; linkWithCredential=m.linkWithCredential;
+    reauthenticateWithCredential=m.reauthenticateWithCredential; reauthenticateWithPopup=m.reauthenticateWithPopup;
+    deleteUser=m.deleteUser; signInWithPopup=m.signInWithPopup;
     signInWithRedirect=m.signInWithRedirect; getRedirectResult=m.getRedirectResult; signOut=m.signOut;
-    onAuthStateChanged=m.onAuthStateChanged; getFirestore=m.getFirestore; doc=m.doc; getDoc=m.getDoc; setDoc=m.setDoc;
+    onAuthStateChanged=m.onAuthStateChanged; getFirestore=m.getFirestore; doc=m.doc; getDoc=m.getDoc; setDoc=m.setDoc; deleteDoc=m.deleteDoc;
     return true;
   }`;
   return source.slice(0, start) + replacement + source.slice(end);
@@ -269,6 +272,56 @@ test('native Google credential creates a persistent JS session and updates Profi
   assert.equal(persistence.type, 'LOCAL');
   assert.equal(window.KanaCloudSync.getUser().uid, 'native-user');
   assert.equal(emailEl.textContent, user.email);
+});
+
+test('Apple links to the current Firebase UID and revokes authorization on account deletion', async () => {
+  const { context, window, localStorage } = createBaseContext({ configured: true });
+  window.ModeAtlasEnv.isNativeApp = true;
+  window.ModeAtlasStorage = { clearAppData: () => localStorage.clear() };
+  window.ModeAtlasFeedback = { confirm: async () => true, alert: async () => {}, toast: () => {} };
+  const user = { uid: 'shared-uid', providerData: [{ providerId:'google.com' }] };
+  const auth = { currentUser: user };
+  const calls = [];
+  window.AtlasPlatform = {
+    authenticate: async (providerId) => {
+      assert.equal(providerId, 'apple.com');
+      return { handled:true, credential:{ idToken:'apple-token', nonce:'raw-nonce', authorizationCode:'apple-code' } };
+    },
+    revokeAppleAuthorization: async (code) => { calls.push('revoke:' + code); return true; },
+    signOutIdentityProvider: async () => true
+  };
+  context.__mocks = {
+    initializeApp: () => ({}), getApps: () => [], getApp: () => ({}),
+    initializeAuth: () => auth, browserLocalPersistence: {},
+    GoogleAuthProvider: class { setCustomParameters() {} },
+    OAuthProvider: class { constructor(id) { assert.equal(id, 'apple.com'); } credential(value) { return value; } },
+    onAuthStateChanged: (_auth, callback) => { callback(user); },
+    linkWithCredential: async (target, credential) => {
+      assert.equal(target.uid, 'shared-uid');
+      assert.equal(credential.rawNonce, 'raw-nonce');
+      user.providerData.push({providerId:'apple.com'});
+      calls.push('link');
+    },
+    reauthenticateWithCredential: async (target, credential) => {
+      assert.equal(target.uid, 'shared-uid');
+      assert.equal(credential.idToken, 'apple-token');
+      calls.push('reauth');
+    },
+    deleteUser: async (target) => { assert.equal(target.uid, 'shared-uid'); calls.push('user'); },
+    signOut: async () => {}, getRedirectResult: async () => null,
+    getFirestore: () => ({}), doc: (_db, ...parts) => parts.join('/'),
+    getDoc: async () => ({ exists: () => true, data: () => ({sections:{}}) }),
+    setDoc: async () => { calls.push('restore'); },
+    deleteDoc: async () => { calls.push('document'); }
+  };
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE), context, { filename:'cloud-sync.js' });
+  await window.KanaCloudSync.ready;
+  assert.equal(await window.KanaCloudSync.linkNativeProvider('apple.com'), true);
+  assert.equal(auth.currentUser.uid, 'shared-uid');
+  localStorage.setItem('modeAtlasOnboardingComplete', 'true');
+  assert.equal(await window.KanaCloudSync.deleteAccount(), true);
+  assert.deepEqual(calls, ['link','reauth','document','revoke:apple-code','user']);
+  assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'), null);
 });
 
 test('cloud-sync discards stale-account hydration and serializes sync bursts', async () => {
