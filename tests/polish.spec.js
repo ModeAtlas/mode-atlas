@@ -45,6 +45,10 @@ async function checkLayout(page,scope='body'){
       if(r.left < -2 || r.right > innerWidth+2)issues.push(`${name}: outside viewport (${r.left},${r.right})`);
       if(el.tagName==='BUTTON'&&(el.scrollWidth>el.clientWidth+2||el.scrollHeight>el.clientHeight+2))issues.push(`${name}: clipped text`);
     }
+    for(const tile of root.querySelectorAll('.ma-level-activity>div')){
+      const boxes=Array.from(tile.children).map(el=>el.getBoundingClientRect());
+      for(let i=1;i<boxes.length;i++)if(boxes[i].top<boxes[i-1].bottom-1)issues.push('profile activity text overlaps');
+    }
     return issues;
   },scope);
   expect(issues).toEqual([]);
@@ -72,7 +76,9 @@ for(const layout of layouts)for(const theme of ['dark','light']){
       });
       await settleDrawer(page,'#profileDrawer');
       await checkLayout(page,'#profileDrawer');
+      if(layout.name==='ios-phone')await page.screenshot({path:testInfo.outputPath(`profile-${theme}.png`)});
       await page.evaluate(()=>window.ModeAtlasProfile.close());
+      await settleDrawer(page,'#profileDrawer');
       if(route==='/reading/'){
         await page.locator('#modifiersTab').click();
         await page.locator('[data-ma-control-key="confusableKana"]').click();
