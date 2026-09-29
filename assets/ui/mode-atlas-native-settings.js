@@ -46,7 +46,7 @@
           <label class="ma-native-preference" for="maReminderEnabled"><span>Daily study reminder</span><input id="maReminderEnabled" type="checkbox" role="switch" disabled></label>
           <label class="ma-native-preference" for="maReminderTime"><span>Reminder time</span><input id="maReminderTime" type="time" value="19:00" aria-describedby="maReminderStatus" disabled></label>
           <div class="ma-action-row"><button type="button" class="ma-button" id="maNotificationSettings">Open iPhone Settings</button></div>
-          <div id="maReminderStatus" class="ma-status" role="status" aria-live="polite" hidden></div>
+          <div id="maReminderStatus" class="ma-setting-row__description" role="status" aria-live="polite" hidden></div>
         </div>
 
       </div></section>`;},
