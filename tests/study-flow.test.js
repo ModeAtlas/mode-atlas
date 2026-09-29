@@ -50,6 +50,9 @@ test('recommendation starts gently, offers the other direction and respects mean
   const balanced={readingStats:{'あ':{correct:10,wrong:0}},writingStats:{'あ':{correct:10,wrong:0}},lastMode:'writing'};
   assert.equal(plan.recommend(balanced).mode,'writing');
   assert.equal(plan.recommend({readingSettings:{hiraganaRows:['h_ka']}}).href,'/reading/?practice=10');
+  assert.equal(plan.recommend({writingSettings:{hiraganaRows:['h_ka']}}).href,'/reading/?practice=10');
+  assert.equal(plan.recommend({writingStats:{'あ':{correct:20,wrong:0}}}).href,'/reading/?practice=10');
+  assert.equal(plan.recommend({writingStats:{'カ':{correct:20,wrong:0}}}).href,'/reading/?practice=10');
 });
 
 test('summary keeps unique kana distinct from questions and retains corrected mistakes for follow-up',()=>{

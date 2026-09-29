@@ -36,7 +36,9 @@
       mode = 'writing'; title = 'Try writing'; reason = 'You have been reading kana. Try matching sounds back to characters.';
     }
     const params = new URLSearchParams({practice: '10'});
-    if (!input.readingSettings && mode === 'reading' && !reading.answered) params.set('starter', 'starter');
+    const newLearner = !input.readingSettings && !input.writingSettings
+      && !Object.keys(input.readingStats || {}).length && !Object.keys(input.writingStats || {}).length;
+    if (newLearner && mode === 'reading') params.set('starter', 'starter');
     if (focus) params.set('focusWeak', '1');
     return Object.freeze({mode, title, reason, focus, count: 10, meta: '10 questions · At your pace', href: `/${mode}/?${params}`});
   }
