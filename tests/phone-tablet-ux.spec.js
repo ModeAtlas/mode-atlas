@@ -57,9 +57,7 @@ async function seedStableState(page) {
 async function gotoApp(page, path) {
   await page.route(/https:\/\/(www\.)?gstatic\.com\/.*/, route => route.abort());
   await page.route(/https:\/\/(www\.)?googleapis\.com\/.*/, route => route.abort());
-  await page.goto(path, { waitUntil: 'commit', timeout: 5000 });
-  await page.waitForSelector('body', { timeout: 5000 });
-  await page.waitForTimeout(700);
+  await page.goto(path, { waitUntil: 'domcontentloaded', timeout: 15000 });
 }
 
 function columnCount(template) {
@@ -292,6 +290,7 @@ test.describe('Phone and Tablet study UX', () => {
   test('Achievement detail uses the dialog close control as Back before dismissing', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await gotoApp(page, '/kana/');
+    await page.waitForFunction(() => typeof window.ModeAtlasFeatures?.openAchievements === 'function');
     await page.evaluate(() => window.ModeAtlasFeatures.openAchievements());
     const dialog = page.locator('[data-ma-dialog-layer]');
     await expect(dialog).toBeVisible();
@@ -311,6 +310,7 @@ test.describe('Phone and Tablet study UX', () => {
   test('Phone Mastery Map reveals the kana grid without an initial scroll hunt', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoApp(page, '/kana/');
+    await page.waitForFunction(() => typeof window.ModeAtlasFeatures?.openMasteryMap === 'function');
     await page.evaluate(() => window.ModeAtlasFeatures.openMasteryMap());
     await expect(page.locator('[data-ma-dialog-layer]')).toBeVisible();
     await expect(page.locator('[data-ma-dialog-message]')).toBeHidden();
