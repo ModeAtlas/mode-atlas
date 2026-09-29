@@ -1,7 +1,7 @@
 ## 2.70.0 - 2026-09-29
 
 - Raised the native minimum to iOS 18 under the project configuration, inherited by app and widget targets and derived by Capacitor for its Swift package. Selected Xcode 26.3 in native CI.
-- Removed old widget date/background and notification-settings fallbacks, and replaced deprecated broad appearance observation with targeted UIKit trait registration.
+- Removed old widget date/background and notification-settings fallbacks, replaced deprecated broad appearance observation with targeted UIKit trait registration, and made the native operation queue explicitly preserve main-actor isolation across suspension.
 - Added one shared foreground OpenIntent and parameterised App Shortcut for Siri, Spotlight and Shortcuts, plus a configurable Control Centre/Lock Screen control. All native entry points reuse one consume-once navigation queue and the shared web destination map.
 - Added circular, rectangular and inline Lock Screen progress widgets using the existing snapshot, with system styling and accessible labels. Existing Home Screen widgets and themes are preserved.
 - Fixed the dock treating Daily Challenge/Review as the same destination as standard Reading. Exact-screen taps still avoid reloading.

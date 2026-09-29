@@ -96,7 +96,8 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
 
     // All mutations and reads use the same queue, including permission dialogs,
     // so a delayed enable cannot undo a newer disable/reset from another page.
-    private func enqueue(_ call: CAPPluginCall, _ action: @escaping () async throws -> [String: Any]) {
+    // The action itself stays on the main actor, including after suspension.
+    private func enqueue(_ call: CAPPluginCall, _ action: @escaping @MainActor () async throws -> [String: Any]) {
         DispatchQueue.main.async {
             let previous = self.operations
             self.operations = Task { @MainActor in
