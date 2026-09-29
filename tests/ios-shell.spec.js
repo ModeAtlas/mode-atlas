@@ -23,6 +23,14 @@ test('iOS home fits portrait phones and keeps its last action above the dock', a
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   for (const size of [{width:375,height:667}, {width:393,height:852}, {width:430,height:932}]) {
     await page.setViewportSize(size);
+    console.log('Native home geometry', await page.evaluate(() => ({
+      viewport:innerHeight, scroll:document.documentElement.scrollHeight,
+      body:document.body.getBoundingClientRect().toJSON(),
+      padding:getComputedStyle(document.body).padding,
+      main:document.querySelector('.atlas-home').getBoundingClientRect().toJSON(),
+      home:document.querySelector('.atlas-ios-home').getBoundingClientRect().toJSON(),
+      dock:document.querySelector('.ma-ios-tabs').getBoundingClientRect().toJSON()
+    })));
     await expect.poll(() => page.evaluate(() => ({
       fits: document.documentElement.scrollHeight <= innerHeight + 1,
       clear: document.querySelector('.atlas-ios-home').getBoundingClientRect().bottom
@@ -286,6 +294,8 @@ test('native safe-area insets survive phone trainer styles and keep the home abo
   await page.setViewportSize({width:393,height:852});
   await page.addInitScript(() => {
     localStorage.setItem('modeAtlasDisplayMode','desktop');
+    localStorage.setItem('maWhatsNewSeenVersion','test-seen');
+    localStorage.setItem('modeAtlasKanaSetupComplete','true');
     localStorage.setItem('modeAtlasOnboardingComplete','true');
     window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
     document.addEventListener('DOMContentLoaded',()=>document.documentElement.style.setProperty('--ma-page-inset-top','59px'));
