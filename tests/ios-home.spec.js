@@ -52,6 +52,11 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: cold launch, safe-area c
   });
   await expect(page.locator('#iosHomeCorrect')).toHaveText('6,214');
   await expectCompact(page);
+  await expect.poll(()=>page.evaluate(()=>{
+    const toast=document.querySelector('.ma-toast-wrap');
+    return !toast || toast.getBoundingClientRect().bottom<=document.querySelector('.ma-ios-tabs').getBoundingClientRect().top-12;
+  })).toBe(true);
+  await expect(page.locator('.ma-toast')).toHaveCount(0);
   await page.screenshot({path:testInfo.outputPath(`home-safe-area-${theme}.png`)});
   // WKWebView safe areas can settle without a viewport resize or body-class change.
   await device.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:21,left:0,right:0}});

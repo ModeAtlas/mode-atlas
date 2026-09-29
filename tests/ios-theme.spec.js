@@ -94,6 +94,9 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
       await expectSessionActions(page,theme);
       const key=page.locator('.ma-ios-reading-keyboard__key').first();
       await expect(key).toBeVisible();
+      await page.evaluate(()=>window.ModeAtlasToast('Practice ready','info',800));
+      await expect.poll(()=>page.evaluate(()=>document.querySelector('.ma-toast-wrap').getBoundingClientRect().bottom<=document.querySelector('.ma-ios-reading-keyboard').getBoundingClientRect().top-12)).toBe(true);
+      await expect(page.locator('.ma-toast')).toHaveCount(0);
       await page.screenshot({path:testInfo.outputPath(`keyboard-${theme}.png`)});
       await key.hover();await page.mouse.down();
       await expect(key).toHaveCSS('transform','matrix(0.97, 0, 0, 0.97, 0, 3)');

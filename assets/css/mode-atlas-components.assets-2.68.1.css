@@ -264,7 +264,7 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-button:hove
 .ma-toast-wrap{
   position:fixed;
   right:max(18px,env(safe-area-inset-right));
-  bottom:max(18px,env(safe-area-inset-bottom));
+  bottom:var(--ma-toast-inset-bottom,max(18px,env(safe-area-inset-bottom)));
   z-index:100000;
   display:grid;
   gap:10px;
