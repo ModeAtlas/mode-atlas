@@ -84,7 +84,7 @@ struct ModeAtlasStudyWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: ModeAtlasWidgetStore.kind, provider: StudyProvider()) { StudyWidgetView(entry: $0) }
             .configurationDisplayName("Mode Atlas")
-            .description("Keep Japanese practice close. Show your progress by enabling widget progress in Mode Atlas Settings.")
+            .description("Keep Japanese practice close, with learning progress and quick practice shortcuts.")
             .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

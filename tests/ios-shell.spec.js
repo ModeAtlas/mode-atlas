@@ -321,21 +321,20 @@ test('native safe-area insets survive phone trainer styles and keep the home abo
   await page.screenshot({path:testInfo.outputPath('native-home.png')});
 });
 
-test('native reminders follow OS state, explicit permission and widget consent', async ({ page }) => {
+test('compact native reminders keep notification testing in the authorised dev menu', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('maOnboardingDone','1');
     const calls=[];
-    const state={supported:true,reminder:{enabled:false,granted:false,status:'notDetermined',hour:19,minute:0},widgets:{available:true,progressSupported:true,showProgress:false}};
+    const state={supported:true,reminder:{enabled:false,granted:false,status:'notDetermined',hour:19,minute:0},widgets:{available:true,progressSupported:true}};
     window.engagementTest={calls,state};
     window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{ModeAtlasNative:{
       getNotificationStatus:async()=>state.reminder,
       getEngagementState:async()=>structuredClone(state),
       requestNotifications:async()=>{calls.push('permission');Object.assign(state.reminder,{granted:true,status:'authorized'});return state.reminder;},
       configureStudyReminder:async value=>{calls.push(['reminder',value]);Object.assign(state.reminder,value);return value;},
-      publishWidgetSnapshot:async value=>{calls.push(['snapshot',value]);return {stored:state.widgets.showProgress};},
-      setWidgetSharing:async value=>{state.widgets.showProgress=value.enabled;return value;},
-      resetEngagement:async()=>{state.reminder.enabled=false;state.widgets.showProgress=false;return {reset:true};},
-      testNotification:async()=>{calls.push('test');return {scheduled:true};},
+      publishWidgetSnapshot:async value=>{calls.push(['snapshot',value]);return {stored:state.widgets.progressSupported};},
+      resetEngagement:async()=>{state.reminder.enabled=false;return {reset:true};},
+      testNotification:async()=>{calls.push('test');return {scheduled:state.reminder.granted};},
       openNotificationSettings:async()=>({opened:true})
     }}};
   });
@@ -349,20 +348,37 @@ test('native reminders follow OS state, explicit permission and widget consent',
   await expect(enabled).toBeEnabled();
   await expect(enabled).toBeChecked();
   await expect(time).toHaveValue('08:45');
-  await page.locator('#maReminderTest').click();
-  await expect(page.locator('#maReminderStatus')).toContainText('five seconds');
-  await page.locator('#maWidgetProgress').check();
-  await expect(page.locator('#maWidgetProgress')).toBeEnabled();
-  expect(await page.evaluate(()=>window.engagementTest.state.widgets.showProgress)).toBe(true);
+  await expect(page.locator('#maReminderTest')).toHaveCount(0);
+  await expect(page.locator('#maWidgetProgress')).toHaveCount(0);
+  await expect(page.locator('#maWidgetHelp')).toHaveCount(0);
+  await expect(page.locator('#maReminderStatus')).toBeHidden();
+  await expect(page.locator('#maNotificationSettings')).toBeVisible();
+  expect(await page.evaluate(()=>!!window.ModeAtlasDevConsole)).toBe(false);
   await enabled.uncheck();
   await expect(enabled).toBeEnabled();
   expect(await page.evaluate(()=>window.engagementTest.calls.filter(x=>x==='permission').length)).toBe(1);
   await page.evaluate(()=>{Object.assign(window.engagementTest.state.reminder,{status:'denied',granted:false});return window.ModeAtlasNativeSettings.refresh();});
   await expect(page.locator('#maNotificationSettings')).toBeVisible();
-  await expect(page.locator('#maReminderTest')).toBeDisabled();
+  await page.locator('#maNotificationSettings').click();
+  await expect(page.locator('#maReminderStatus')).toBeHidden();
   await page.screenshot({path:'test-results/native-reminders-settings.png',fullPage:true});
   await page.evaluate(()=>window.ModeAtlasNativeEngagement.reset());
-  await expect(page.locator('#maWidgetProgress')).not.toBeChecked();
+  await expect(enabled).not.toBeChecked();
+  await page.evaluate(async()=>{
+    window.ModeAtlasSettings.close();
+    Object.assign(window.engagementTest.state.reminder,{granted:true,status:'authorized'});
+    window.KanaCloudSync={...window.KanaCloudSync,getUser:()=>({email:'admin@mode-atlas.com'})};
+    await window.ModeAtlasDevConsoleLoader.loadIfEligible();
+    window.ModeAtlasDevConsole.open();
+  });
+  await page.locator('[data-ma-dev-test-notification]').click();
+  await expect.poll(()=>page.evaluate(()=>window.engagementTest.calls.filter(x=>x==='test').length)).toBe(1);
+  expect(await page.evaluate(()=>window.engagementTest.calls.filter(x=>x==='permission').length)).toBe(1);
+  await page.evaluate(()=>{
+    window.KanaCloudSync.getUser=()=>null;
+    window.dispatchEvent(new CustomEvent('kanaCloudSyncStatusChanged'));
+  });
+  await expect(page.locator('#maDevMenu')).not.toHaveClass(/open/);
 });
 
 test('browser Settings do not render native engagement controls', async ({ page }) => {

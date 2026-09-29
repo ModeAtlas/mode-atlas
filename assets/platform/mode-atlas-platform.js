@@ -83,7 +83,6 @@
     getNotificationStatus: function(){ return call('getNotificationStatus', [], { granted:false, supported:false }); },
     configureStudyReminder: function(options){ return call('configureStudyReminder', [options || {}], { supported:false, enabled:false }); },
     getEngagementState: function(){ return call('getEngagementState', [], {supported:false}); },
-    setWidgetSharing: function(enabled){ return call('setWidgetSharing', [!!enabled], {enabled:false,supported:false}); },
     resetEngagement: function(){ return call('resetEngagement', [], {reset:false}); },
     testNotification: function(){ return call('testNotification', [], {scheduled:false}); },
     openNotificationSettings: function(){ return call('openNotificationSettings', [], {opened:false}); },

@@ -131,7 +131,6 @@
     resetEngagement: async function(){return hasBridge('resetEngagement') ? nativeBridge.resetEngagement() : {reset:false};},
     testNotification: async function(){return hasBridge('testNotification') ? nativeBridge.testNotification() : {scheduled:false};},
     openNotificationSettings: async function(){return hasBridge('openNotificationSettings') ? nativeBridge.openNotificationSettings() : {opened:false};},
-    setWidgetSharing: async function(enabled){return hasBridge('setWidgetSharing') ? nativeBridge.setWidgetSharing({enabled:!!enabled}) : {enabled:false,supported:false};},
     setBadge: async function(value){
       if (!hasBridge('setBadge')) return false;
       await nativeBridge.setBadge({ value:Math.max(0, Number(value || 0)) });

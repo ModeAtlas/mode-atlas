@@ -373,6 +373,10 @@
       devButton('Refresh app assets', 'maDevRefreshAssets', 'action')
     );
 
+    if(window.ModeAtlasEnv?.isNativeApp && window.AtlasPlatform?.getCapabilities?.().notifications){
+      actions.append(devButton('Test notification', 'maDevTestNotification', 'action'));
+    }
+
     const body = devEl('div');
     body.dataset.maDevBody = '';
     body.append(renderKeyValueTable(data));
@@ -410,6 +414,14 @@
       if (event.target.closest('[data-ma-dev-safe]')) {
         sessionStorage.setItem('modeAtlasSafeMode', '1');
         location.reload();
+      }
+      const notificationTest = event.target.closest('[data-ma-dev-test-notification]');
+      if(notificationTest && !notificationTest.disabled && canUseDevTools() && window.ModeAtlasEnv?.isNativeApp){
+        notificationTest.disabled=true;
+        window.AtlasPlatform.testNotification().then(result=>{
+          toast(result.scheduled ? 'Test notification scheduled in five seconds.' : 'Allow notifications in iPhone Settings before testing.', result.scheduled ? 'info' : 'warning');
+        }).catch(()=>toast('Could not schedule the test notification.', 'warning'))
+          .finally(()=>{notificationTest.disabled=false;});
       }
       if (event.target.closest('[data-ma-dev-test-sound]')) {
         window.ModeAtlasSounds?.testSound?.();

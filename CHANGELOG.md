@@ -1,3 +1,9 @@
+## 2.66.1 - 2026-09-29
+
+- Reduced native Reminders to its toggle, time picker and always-visible iPhone Settings button; routine status text and widget settings were removed at source.
+- Moved Test notification into the existing authorised developer menu, on iOS only.
+- Removed widget opt-in preferences and their bridge API. Provisioned App Group builds publish progress automatically; unprovisioned builds retain shortcuts.
+
 ## 2.66.0 - 2026-09-29
 
 - Added iOS Settings controls for opt-in daily local reminders, local-time scheduling, a test notification and denied-permission recovery.

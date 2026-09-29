@@ -4,31 +4,13 @@ import Capacitor
 import UserNotifications
 import WidgetKit
 
-private struct EngagementPreferences: Codable {
-    var showWidgetProgress = false
-    private static var file: URL {
-        get throws {
-            try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
-                appropriateFor: nil, create: true).appendingPathComponent("mode-atlas-engagement.json")
-        }
-    }
-    static func read() -> EngagementPreferences {
-        guard let url = try? file, let data = try? Data(contentsOf: url),
-              let value = try? JSONDecoder().decode(Self.self, from: data) else { return Self() }
-        return value
-    }
-    func save() throws {
-        try JSONEncoder().encode(self).write(to: Self.file, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-    }
-}
-
 @objc(ModeAtlasNativePlugin)
 public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, NotificationHandlerProtocol {
     public let identifier = "ModeAtlasNativePlugin"
     public let jsName = "ModeAtlasNative"
     public let pluginMethods: [CAPPluginMethod] = [
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
-        "configureStudyReminder", "getEngagementState", "setWidgetSharing",
+        "configureStudyReminder", "getEngagementState",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeNotificationDestination"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static var pendingDestination: String?
@@ -80,7 +62,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
             call.reject("Invalid widget snapshot"); return
         }
         enqueue(call) { [self] in
-            guard EngagementPreferences.read().showWidgetProgress, ModeAtlasWidgetStore.container != nil else {
+            guard ModeAtlasWidgetStore.container != nil else {
                 return ["stored": false, "widgetAvailable": true]
             }
             try ModeAtlasWidgetStore.write(snapshot)
@@ -105,8 +87,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
             status["hour"] = time?.hour ?? 19
             status["minute"] = time?.minute ?? 0
             return ["supported": true, "reminder": status, "widgets": [
-                "available": true, "progressSupported": ModeAtlasWidgetStore.container != nil,
-                "showProgress": EngagementPreferences.read().showWidgetProgress]]
+                "available": true, "progressSupported": ModeAtlasWidgetStore.container != nil]]
         }
     }
     @objc func configureStudyReminder(_ call: CAPPluginCall) {
@@ -144,21 +125,10 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
             return ["scheduled": true]
         }
     }
-    @objc func setWidgetSharing(_ call: CAPPluginCall) {
-        guard let enabled = call.getBool("enabled") else { call.reject("Missing widget preference"); return }
-        enqueue(call) { [self] in
-            if enabled && ModeAtlasWidgetStore.container == nil { return ["enabled": false, "supported": false] }
-            try EngagementPreferences(showWidgetProgress: enabled).save()
-            if !enabled { try ModeAtlasWidgetStore.clear() }
-            reloadWidgets(immediate: true)
-            return ["enabled": enabled, "supported": true]
-        }
-    }
     @objc func resetEngagement(_ call: CAPPluginCall) {
         enqueue(call) { [self] in
             center.removePendingNotificationRequests(withIdentifiers: [Self.reminderID, Self.testID])
             center.removeDeliveredNotifications(withIdentifiers: [Self.reminderID, Self.testID])
-            try EngagementPreferences().save()
             try ModeAtlasWidgetStore.clear()
             reloadWidgets(immediate: true)
             return ["reset": true]

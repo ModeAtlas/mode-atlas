@@ -151,9 +151,9 @@ learning calculations, account session, save format or Firestore writes.
 
 ### Reminders (2.66.0)
 
-`mode-atlas-native-settings.js` binds the existing Settings drawer. It reads the pending schedule and authorization from iOS rather than maintaining another JavaScript preference store. Enabling asks for notification permission; disabling never asks. A stable notification identifier replaces the daily schedule when the time changes. Test notifications fire after five seconds. Taps open Reading through the existing destination whitelist, including cold launches. The plugin uses Capacitor's notification router rather than replacing its global delegate.
+`mode-atlas-native-settings.js` binds the existing Settings drawer. It reads the pending schedule and authorization from iOS rather than maintaining another JavaScript preference store. Enabling asks for notification permission; disabling never asks. A stable notification identifier replaces the daily schedule when the time changes. The native-only Test notification action lives in the existing authorised developer menu and fires after five seconds without requesting permission. Settings contains only the reminder toggle, time and an always-visible iPhone Settings link; status text appears only for errors. Taps open Reading through the existing destination whitelist, including cold launches. The plugin uses Capacitor's notification router rather than replacing its global delegate.
 
-The schedule uses device-local calendar hours/minutes. Focus and iOS delivery settings still apply. There is no remote push/APNs service. Reset Data, account deletion and explicit sign-out cancel pending/delivered reminders, disable widget sharing and erase the shared snapshot. Mutations are serialized and a permission response cannot re-enable a reminder after a reset.
+The schedule uses device-local calendar hours/minutes. Focus and iOS delivery settings still apply. There is no remote push/APNs service. Reset Data, account deletion and explicit sign-out cancel pending/delivered reminders and erase the shared snapshot. Mutations are serialized and a permission response cannot re-enable a reminder after a reset.
 
 ### Widgets and signing (2.66.0)
 
@@ -166,9 +166,9 @@ python3 configure_ios_widgets.py --app-group YOUR_REGISTERED_GROUP_IDENTIFIER
 npm run ios:sync
 ```
 
-This writes ignored `ios/widget-sharing.local.xcconfig`, inherited by both targets. It selects `Shared/WidgetSharing.entitlements`; it does not register or provision an App Group. Build/run again and enable **Show progress on widgets** in Settings. Use `python3 configure_ios_widgets.py --disable` to return to shortcut-only widgets. Never commit local signing overrides.
+This writes ignored `ios/widget-sharing.local.xcconfig`, inherited by both targets. It selects `Shared/WidgetSharing.entitlements`; it does not register or provision an App Group. Build/run again; progress publication is automatic when a shared container is available. There is no user-facing widget preference. Use `python3 configure_ios_widgets.py --disable` to return to shortcut-only widgets. Never commit local signing overrides.
 
-The app writes a protected, atomic, bounded JSON projection into the configured shared container only after opt-in. WidgetKit refresh requests are coalesced; iOS owns their delivery budget, so Home Screen updates are not guaranteed to be immediate. The timeline includes a local-midnight entry and requests another read after 30 minutes. Missing/stale data renders practice shortcuts. Disabling sharing removes the snapshot and requests an immediate timeline reload.
+The app writes a protected, atomic, bounded JSON projection into the configured shared container automatically when the App Group is provisioned. WidgetKit refresh requests are coalesced; iOS owns their delivery budget, so Home Screen updates are not guaranteed to be immediate. The timeline includes a local-midnight entry and requests another read after 30 minutes. Missing/stale data renders practice shortcuts. Reset/sign-out erase the snapshot and request an immediate timeline reload. Subsequent study or navigation publishes the current local progress again; widgets never receive account identity. The removed 2.66.0 opt-in preference no longer gates publication.
 
 Research: Duolingo's unified next-step home and Headspace's Today recommendations
 informed the focused continuation card, daily action and glanceable progress.
