@@ -45,13 +45,15 @@
 .ma-button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
 .ma-button:disabled, .ma-button[aria-disabled="true"]{opacity:.48;cursor:not-allowed;transform:none;box-shadow:none;}
 .ma-button--primary{
-  --ma-button-bg:linear-gradient(180deg,color-mix(in srgb,var(--ma-writing) 30%,var(--ma-card-2)),color-mix(in srgb,var(--ma-writing) 18%,var(--ma-card-3)));
-  --ma-button-bg-hover:linear-gradient(180deg,color-mix(in srgb,var(--ma-writing) 38%,var(--ma-card-2)),color-mix(in srgb,var(--ma-writing) 24%,var(--ma-card-3)));
+  --ma-button-color:var(--ma-native-primary-text,var(--ma-control-text));
+  --ma-button-bg:var(--ma-native-primary,linear-gradient(180deg,color-mix(in srgb,var(--ma-writing) 30%,var(--ma-card-2)),color-mix(in srgb,var(--ma-writing) 18%,var(--ma-card-3))));
+  --ma-button-bg-hover:var(--ma-native-primary,linear-gradient(180deg,color-mix(in srgb,var(--ma-writing) 38%,var(--ma-card-2)),color-mix(in srgb,var(--ma-writing) 24%,var(--ma-card-3))));
   --ma-button-border:color-mix(in srgb,var(--ma-writing) 52%,var(--ma-border));
 }
 .ma-button--danger{
-  --ma-button-bg:linear-gradient(180deg,color-mix(in srgb,var(--ma-danger) 28%,var(--ma-card-2)),color-mix(in srgb,var(--ma-danger) 18%,var(--ma-card-3)));
-  --ma-button-bg-hover:linear-gradient(180deg,color-mix(in srgb,var(--ma-danger) 38%,var(--ma-card-2)),color-mix(in srgb,var(--ma-danger) 24%,var(--ma-card-3)));
+  --ma-button-color:var(--ma-native-danger,var(--ma-control-text));
+  --ma-button-bg:var(--ma-native-danger-bg,linear-gradient(180deg,color-mix(in srgb,var(--ma-danger) 28%,var(--ma-card-2)),color-mix(in srgb,var(--ma-danger) 18%,var(--ma-card-3))));
+  --ma-button-bg-hover:var(--ma-native-danger-bg,linear-gradient(180deg,color-mix(in srgb,var(--ma-danger) 38%,var(--ma-card-2)),color-mix(in srgb,var(--ma-danger) 24%,var(--ma-card-3))));
   --ma-button-border:color-mix(in srgb,var(--ma-danger) 55%,var(--ma-border));
 }
 .ma-button--ghost{background:transparent;box-shadow:none;}
@@ -366,8 +368,9 @@ html[data-ma-theme="light"] .ma-button:hover:not(:disabled):not([aria-disabled="
 
 /* Contextual primary action. Pages set --ma-accent; the component owns the control mechanics. */
 .ma-button--accent{
-  --ma-button-bg:linear-gradient(180deg,color-mix(in srgb,var(--ma-accent,var(--ma-writing)) 30%,var(--ma-card-2)),color-mix(in srgb,var(--ma-accent,var(--ma-writing)) 18%,var(--ma-card-3)));
-  --ma-button-bg-hover:linear-gradient(180deg,color-mix(in srgb,var(--ma-accent,var(--ma-writing)) 40%,var(--ma-card-2)),color-mix(in srgb,var(--ma-accent,var(--ma-writing)) 24%,var(--ma-card-3)));
+  --ma-button-color:var(--ma-native-primary-text,var(--ma-control-text));
+  --ma-button-bg:var(--ma-native-primary,linear-gradient(180deg,color-mix(in srgb,var(--ma-accent,var(--ma-writing)) 30%,var(--ma-card-2)),color-mix(in srgb,var(--ma-accent,var(--ma-writing)) 18%,var(--ma-card-3))));
+  --ma-button-bg-hover:var(--ma-native-primary,linear-gradient(180deg,color-mix(in srgb,var(--ma-accent,var(--ma-writing)) 40%,var(--ma-card-2)),color-mix(in srgb,var(--ma-accent,var(--ma-writing)) 24%,var(--ma-card-3))));
   --ma-button-border:color-mix(in srgb,var(--ma-accent,var(--ma-writing)) 58%,var(--ma-border));
 }
 
@@ -580,7 +583,7 @@ html[data-ma-theme="light"] .ma-button:hover:not(:disabled):not([aria-disabled="
   position:absolute;
   inset:0;
   transform:translateX(-100%);
-  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--ma-text) 9%,transparent),transparent);
+  background:var(--ma-native-decoration,linear-gradient(90deg,transparent,color-mix(in srgb,var(--ma-text) 9%,transparent),transparent));
   animation:maSkeletonSweep 1.35s ease-in-out infinite;
 }
 @keyframes maSkeletonSweep{to{transform:translateX(100%);}}

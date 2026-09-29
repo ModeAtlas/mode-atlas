@@ -69,6 +69,9 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Fetch website colour baseline
+        run: git fetch --no-tags --depth=1 origin "$(cat tests/fixtures/web-theme-baseline.txt)"
+
       - name: Run web and iOS polish matrix
         run: npm run test:polish -- --project=desktop-chromium
 

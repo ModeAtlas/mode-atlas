@@ -12,13 +12,15 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'Clearer instructions, more consistent menus and better layouts across phones, tablets and desktop.';
+  const WHATS_NEW_COPY = window.ModeAtlasEnv?.isNativeApp
+    ? 'A fresh look for iPhone and iPad, with clearer Light and Dark appearances.'
+    : 'This update introduces refreshed Light and Dark appearances in the iOS app.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Clearer practice instructions and results summaries.',
-    'More consistent Profile and Settings menus.',
-    'Improved text wrapping and hidden-control behaviour.'
+    'Clean white surfaces in Light mode and neutral charcoal in Dark mode on iOS.',
+    'Consistent colours for buttons, practice feedback and progress.',
+    'Appearance-aware iOS launch screen, status bar and widgets.'
   ];
 
   function storeGet(key, fallback = '') {

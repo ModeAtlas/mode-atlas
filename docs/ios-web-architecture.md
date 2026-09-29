@@ -22,6 +22,8 @@ Capacitor WebView. It does not load the live website at runtime.
 | Reading letter pad and touch feedback | `assets/platform/mode-atlas-ios-keyboard.js`, native CSS, Capacitor Haptics; shared Reading handler scores the input event | iOS |
 | Cold launch handoff | Static `LaunchScreen.storyboard`, shared early loader timing, native loading styles | iOS |
 | Native launch screen and icon | `ios/App/App/Assets.xcassets`, `LaunchScreen.storyboard` | iOS |
+| Native colour palette | `assets/css/mode-atlas-ios-theme.css`; components consume roles with existing web fallbacks | iOS |
+| Appearance preference | Shared theme controller; platform adapter mirrors the preference into UIKit | Both / iOS boundary |
 
 `build_revision_assets.py` renders shared markup and makes revisioned assets.
 `build_ios_web.py` copies that versioned runtime into `.build/ios-web`, excluding
@@ -82,8 +84,11 @@ The launch storyboard is static. The bundled loading surface shows the same
 mark at rest, then spins it once after the first document is ready on a cold
 native start. The animation completion triggers the splash fade, with a timeout
 as a fallback. It never fades or shrinks the mark at the WebView handoff.
-The splash colour belongs to that surface; normal pages use the theme's
-`--ma-app-bg`. The iOS Reading pad uses a brief inset touch state and the native
+The launch surface and normal pages consume the neutral native canvas role.
+The system launch storyboard follows device appearance; after launch, the
+WebView and UIKit frame follow the saved Dark/Light/System preference. Widgets
+follow Home Screen appearance independently. See `ios-theme-system.md` for the
+palette inventory and cross-boundary checks. The iOS Reading pad uses a brief inset touch state and the native
 Capacitor Haptics impact on keydown. It updates the existing answer input and
 emits its normal input event. It does not own scoring, save data or Kana conversion.
 

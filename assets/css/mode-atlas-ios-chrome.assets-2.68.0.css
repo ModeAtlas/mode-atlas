@@ -11,17 +11,18 @@ html[data-ma-runtime="ios"] body{
 html[data-ma-runtime="ios"] .ma-nav,
 html[data-ma-runtime="ios"] .ma-nav-spacer{display:none!important;}
 
-/* The static storyboard and the first WebView frame share this brand surface. */
-html[data-ma-runtime="ios"] .ma-loading-screen{background:#b7c8ed;backdrop-filter:none;-webkit-backdrop-filter:none;}
+/* The system launch screen follows device appearance; the web launch frame
+   follows the saved in-app preference from the first HTML paint. */
+html[data-ma-runtime="ios"] .ma-loading-screen{background:var(--ma-native-page);backdrop-filter:none;-webkit-backdrop-filter:none;}
 html[data-ma-runtime="ios"] .ma-loading-card{
-  width:auto;padding:24px;border:0;background:transparent;box-shadow:none;color:#16223a;
+  width:auto;padding:24px;border:0;background:transparent;box-shadow:none;color:var(--ma-text-strong);
 }
 html[data-ma-runtime="ios"] .ma-loading-head{flex-direction:column;text-align:center;gap:14px;margin:0;}
 html[data-ma-runtime="ios"] .ma-loading-mark{
   width:116px;height:116px;border:0;border-radius:50%;
   background:transparent url('/assets/android-chrome-512.png') center / cover no-repeat;
   color:transparent;font-size:0;
-  box-shadow:0 18px 42px rgba(0,0,0,.32);
+  box-shadow:var(--ma-native-shadow);
 }
 html[data-ma-runtime="ios"][data-ma-native-warm="false"] .ma-loading-screen.is-ready .ma-loading-mark{
   animation:ma-ios-mark-spin .68s cubic-bezier(.28,.74,.25,1) both;
@@ -32,7 +33,7 @@ html[data-ma-runtime="ios"][data-ma-native-warm="false"] .ma-loading-screen.is-r
   100%{transform:rotate(360deg) scale(1);}
 }
 html[data-ma-runtime="ios"] .ma-loading-title{font-family:var(--ma-font-display);font-size:23px;letter-spacing:-.035em;}
-html[data-ma-runtime="ios"] .ma-loading-sub{color:#405773;font-size:12px;letter-spacing:.07em;text-transform:uppercase;}
+html[data-ma-runtime="ios"] .ma-loading-sub{color:var(--ma-muted);font-size:12px;letter-spacing:.07em;text-transform:uppercase;}
 html[data-ma-runtime="ios"] .ma-loading-card .ma-skeleton{display:none;}
 html[data-ma-runtime="ios"][data-ma-native-warm="true"] .ma-loading-screen{display:none;}
 
@@ -44,7 +45,7 @@ html[data-ma-runtime="ios"] .ma-ios-tabs{
   padding:5px max(10px,env(safe-area-inset-right,0px)) calc(5px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
   border-top:1px solid var(--ma-border);
   background:var(--ma-surface-strong);
-  box-shadow:0 -10px 28px rgba(0,0,0,.19);
+  box-shadow:var(--ma-native-chrome-shadow);
   backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
 }
 html[data-ma-runtime="ios"] body.ma-reading-page .ma-ios-tabs{--ma-ios-accent:var(--ma-reading);}
@@ -124,7 +125,7 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(
   position:fixed;z-index:101;left:0;right:0;bottom:0;
   display:grid;gap:7px;padding:11px max(4px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));
   border-top:1px solid var(--ma-border);background:var(--ma-surface-strong);
-  box-shadow:0 -10px 28px rgba(0,0,0,.18);
+  box-shadow:var(--ma-native-chrome-shadow);
 }
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__row{display:flex;gap:3px;justify-content:center;}
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key{
@@ -133,15 +134,15 @@ html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key{
   background:var(--ma-control);color:var(--ma-text-strong);
   font:700 20px/1 var(--ma-font-display);text-transform:uppercase;
   touch-action:manipulation;cursor:pointer;
-  box-shadow:0 3px 0 color-mix(in srgb,var(--ma-text-strong) 22%,var(--ma-card));
+  box-shadow:var(--ma-native-key-shadow);
   transition:transform .07s ease-out,box-shadow .07s ease-out,background-color .07s ease-out;
 }
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:is(:active,.is-pressed){
   transform:translateY(3px) scale(.97);
-  box-shadow:inset 0 3px 7px rgba(0,0,0,.25);
-  background:color-mix(in srgb,var(--ma-reading) 34%,var(--ma-card));
+  box-shadow:var(--ma-native-key-pressed-shadow);
+  background:var(--ma-control-hover);
 }
-html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key--delete{flex:1.25;background:color-mix(in srgb,var(--ma-reading) 15%,var(--ma-card));}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key--delete{flex:1.25;background:var(--ma-control-hover);}
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
 html[data-ma-runtime="ios"] body:is(.profile-open,.settings-open) .ma-drawer{
   bottom:calc(var(--ma-ios-dock-height) + 8px);max-height:none;
@@ -155,7 +156,7 @@ html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-s
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .tab-row{display:none;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .drawer-content.open{
   position:absolute;bottom:0;left:0;width:100%;pointer-events:auto;
-  box-shadow:0 -8px 22px rgba(0,0,0,.18);
+  box-shadow:var(--ma-native-chrome-shadow);
 }
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .drawer-content{
   max-height:calc(100dvh - var(--ma-ios-dock-height) - env(safe-area-inset-top,0px) - 64px);
@@ -211,9 +212,9 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .ses
 /* Native preference controls live in the existing Settings drawer. */
 html[data-ma-runtime="ios"] .ma-native-preference{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;width:100%;font-weight:700;}
 html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]{appearance:none;-webkit-appearance:none;position:relative;width:48px;height:28px;margin:8px 0;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-card);flex:0 0 auto;cursor:pointer;}
-html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]::before{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--ma-text);box-shadow:0 1px 3px rgba(0,0,0,.25);}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]::before{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--ma-native-switch-thumb);box-shadow:var(--ma-native-shadow);}
 html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:checked{background:var(--ma-atlas);}
-html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:checked::before{transform:translateX(20px);background:#fff;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:checked::before{transform:translateX(20px);background:var(--ma-native-switch-thumb);}
 html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:focus-visible{outline:2px solid var(--ma-atlas);outline-offset:3px;}
 html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:disabled{opacity:.45;cursor:default;}
 html[data-ma-runtime="ios"] .ma-native-preference input[type="time"]{color-scheme:dark;width:auto;min-height:44px;max-width:140px;padding:8px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-card);color:var(--ma-text);font:inherit;}

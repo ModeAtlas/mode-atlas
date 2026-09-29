@@ -20,15 +20,17 @@ struct StudyProvider: TimelineProvider {
 }
 struct StudyWidgetView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
     let entry: StudyEntry
-    private let blue = Color(red: 0.52, green: 0.70, blue: 1)
-    private let green = Color(red: 0.43, green: 0.87, blue: 0.67)
+    // Widget appearance follows the Home Screen, independently of an in-app override.
+    private var blue: Color { colorScheme == .dark ? Color(red: 155/255, green: 192/255, blue: 1) : Color(red: 36/255, green: 95/255, blue: 206/255) }
+    private var green: Color { colorScheme == .dark ? Color(red: 115/255, green: 214/255, blue: 164/255) : Color(red: 20/255, green: 108/255, blue: 69/255) }
     private var progress: ModeAtlasWidgetSnapshot? {
         guard let value = entry.snapshot, value.isFresh(at: entry.date) else { return nil }
         return value
     }
     private var background: some View {
-        LinearGradient(colors: [Color(red: 0.10, green: 0.17, blue: 0.25), Color(red: 0.05, green: 0.07, blue: 0.12)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        Color(uiColor: .secondarySystemGroupedBackground)
     }
     private var content: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -40,7 +42,7 @@ struct StudyWidgetView: View {
             if let value = progress {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text("\(value.level)").font(.system(size: 28, weight: .bold, design: .rounded))
-                    Text("Atlas level").font(.caption).foregroundStyle(.white.opacity(0.75))
+                    Text("Atlas level").font(.caption).foregroundStyle(.secondary)
                     if family == .systemMedium {
                         Spacer()
                         Text("\(value.streak) day streak").font(.caption.weight(.semibold)).foregroundStyle(green)
@@ -48,10 +50,10 @@ struct StudyWidgetView: View {
                 }
                 ProgressView(value: value.levelProgress).tint(blue)
                 Text(value.completedToday(at: entry.date) ? "Daily challenge complete ✓" : "Your daily challenge is ready")
-                    .font(.caption2).foregroundStyle(.white.opacity(0.8)).lineLimit(2)
+                    .font(.caption2).foregroundStyle(.secondary).lineLimit(2)
             } else {
                 Text("A little Japanese,\nevery day.").font(.headline.weight(.bold)).fixedSize(horizontal: false, vertical: true)
-                Text("Jump into practice").font(.caption2).foregroundStyle(.white.opacity(0.75))
+                Text("Jump into practice").font(.caption2).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
             if family == .systemMedium {
@@ -63,7 +65,7 @@ struct StudyWidgetView: View {
                 Text("Practise kana →").font(.caption.weight(.bold)).foregroundStyle(green)
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
         .widgetURL(URL(string: "modeatlas://open/reading"))
     }
     private func practiceLink(_ title: String, symbol: String, destination: String, tint: Color) -> some View {

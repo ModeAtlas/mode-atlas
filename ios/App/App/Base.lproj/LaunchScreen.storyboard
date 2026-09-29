@@ -4,6 +4,8 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23501"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -13,7 +15,7 @@
                     <view key="view" contentMode="scaleToFill" id="snD-IY-ifK">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <viewLayoutGuide key="safeArea" id="safe-area"/>
-                        <color key="backgroundColor" red="0.717647" green="0.784314" blue="0.929412" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" name="AppCanvas"/>
                         <subviews>
                             <imageView opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="ModeAtlasLaunchMark" translatesAutoresizingMaskIntoConstraints="NO" id="brand-mark">
                                 <rect key="frame" x="138.5" y="332" width="116" height="116"/>
@@ -24,11 +26,11 @@
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Mode Atlas" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="brand-name">
                                 <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="23"/>
-                                <color key="textColor" red="0.086275" green="0.133333" blue="0.227451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="textColor" systemColor="labelColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="YOUR JAPANESE LEARNING SPACE" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="brand-subtitle">
                                 <fontDescription key="fontDescription" type="system" weight="medium" pointSize="10"/>
-                                <color key="textColor" red="0.250980" green="0.341176" blue="0.450980" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="textColor" systemColor="secondaryLabelColor"/>
                             </label>
                         </subviews>
                         <constraints>
@@ -48,5 +50,14 @@
     </scenes>
     <resources>
         <image name="ModeAtlasLaunchMark" width="512" height="512"/>
+        <namedColor name="AppCanvas">
+            <color red="0.960784" green="0.960784" blue="0.968627" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <systemColor name="labelColor">
+            <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="secondaryLabelColor">
+            <color red="0.235294" green="0.235294" blue="0.262745" alpha="0.6" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
     </resources>
 </document>

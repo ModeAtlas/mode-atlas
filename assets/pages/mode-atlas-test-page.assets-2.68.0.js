@@ -377,7 +377,7 @@ function getSelectedResult() {
 }
 
 function getHeatColor(result, record) {
-    if (!record) return "rgba(255,255,255,0.05)";
+    if (!record) return "var(--ma-native-inset,rgba(255,255,255,0.05))";
 
     if (result?.type === "average") {
         const correct = Number(record.correct || 0);
@@ -385,12 +385,12 @@ function getHeatColor(result, record) {
         const attempts = correct + wrong;
         const ratio = attempts ? (correct / attempts) : 0;
 
-        if (ratio >= 0.75) return "rgba(103,215,139,0.32)";
-        if (ratio >= 0.50) return "rgba(255,210,102,0.30)";
-        return "rgba(255,123,123,0.28)";
+        if (ratio >= 0.75) return "var(--ma-native-success-bg,rgba(103,215,139,0.32))";
+        if (ratio >= 0.50) return "var(--ma-native-warning-bg,rgba(255,210,102,0.30))";
+        return "var(--ma-native-danger-bg,rgba(255,123,123,0.28))";
     }
 
-    return (record.wrong || 0) > 0 ? "rgba(255,123,123,0.28)" : "rgba(103,215,139,0.32)";
+    return (record.wrong || 0) > 0 ? "var(--ma-native-danger-bg,rgba(255,123,123,0.28))" : "var(--ma-native-success-bg,rgba(103,215,139,0.32))";
 }
 
 function renderHero() {
@@ -865,6 +865,13 @@ function bindRowInteractions(result) {
 }
 function drawRowCharts(result, viewMode = activeRowGraphView) {
     const perf = computeRowPerformance(result, viewMode === "special" ? SPECIAL_ROW_GROUPS : REGULAR_ROW_GROUPS, viewMode === "special");
+    // Canvas cannot resolve CSS variables. Read the palette at render time;
+    // website fallbacks retain their existing chart colours.
+    const tokens = getComputedStyle(document.documentElement);
+    const colour = (role, fallback) => tokens.getPropertyValue(`--ma-native-${role}`).trim() || fallback;
+    const good = colour('reading', '#67d78b');
+    const caution = colour('gold', '#cba34a');
+    const bad = colour('danger', '#ff7b7b');
 
     const drawSet = (rows, prefix, bestRow, worstRow) => {
         rows.forEach((row, index) => {
@@ -883,17 +890,17 @@ function drawRowCharts(result, viewMode = activeRowGraphView) {
 
             ctx.beginPath();
             ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-            ctx.strokeStyle = "rgba(255,255,255,0.08)";
+            ctx.strokeStyle = colour('border', 'rgba(255,255,255,0.08)');
             ctx.lineWidth = lineWidth;
             ctx.stroke();
 
             if (!offState) {
                 ctx.beginPath();
                 ctx.arc(cx, cy, radius, -Math.PI / 2, (-Math.PI / 2) + (Math.PI * 2) * (correct / 100));
-                let stroke = correct >= 80 ? "#67d78b" : correct >= 60 ? "#cba34a" : "#ff7b7b";
-                if (bestRow && bestRow.key === row.key) stroke = "#67d78b";
+                let stroke = correct >= 80 ? good : correct >= 60 ? caution : bad;
+                if (bestRow && bestRow.key === row.key) stroke = good;
                 if (worstRow && worstRow.key === row.key) {
-                    stroke = rowNeedsErrorStyling(row) ? "#ff7b7b" : "#cba34a";
+                    stroke = rowNeedsErrorStyling(row) ? bad : caution;
                 }
                 ctx.strokeStyle = stroke;
                 ctx.lineWidth = lineWidth;
@@ -901,7 +908,7 @@ function drawRowCharts(result, viewMode = activeRowGraphView) {
                 ctx.stroke();
             }
 
-            ctx.fillStyle = offState ? "rgba(255,255,255,0.5)" : "#f3f3f3";
+            ctx.fillStyle = offState ? colour('secondary', 'rgba(255,255,255,0.5)') : colour('text', '#f3f3f3');
             ctx.font = `700 ${offState ? 11 : 12}px Arial`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
@@ -933,6 +940,12 @@ function requestResultsRender(source = "unknown") {
 }
 
 document.addEventListener("ma:results-render", () => {
+    const selected = getSelectedResult();
+    if (selected) drawRowCharts(selected, activeRowGraphView);
+});
+
+document.addEventListener("ma:theme-changed", () => {
+    if (document.documentElement.dataset.maRuntime !== 'ios') return;
     const selected = getSelectedResult();
     if (selected) drawRowCharts(selected, activeRowGraphView);
 });

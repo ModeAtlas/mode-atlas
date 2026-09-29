@@ -229,6 +229,7 @@ INTERACTIVE_CHROME_STYLES = (
 INTERACTIVE_TAIL_STYLES = (
     'assets/css/mode-atlas-achievements.css',
     'assets/css/mode-atlas-theme.css',
+    'assets/css/mode-atlas-ios-theme.css',
     'assets/css/mode-atlas-components.css',
     'assets/css/mode-atlas-navigation.css',
     'assets/css/mode-atlas-responsive.css',
@@ -246,6 +247,7 @@ TRAINER_STYLES = (
 LEGAL_STYLES = (
     'assets/css/mode-atlas-page-shared.css',
     'assets/css/mode-atlas-theme.css',
+    'assets/css/mode-atlas-ios-theme.css',
     'assets/css/mode-atlas-home-page.css',
     'assets/css/mode-atlas-components.css',
     'assets/css/mode-atlas-navigation.css',

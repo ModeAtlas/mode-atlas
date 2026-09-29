@@ -1,3 +1,11 @@
+## 2.68.0 - 2026-09-29
+
+- Added an iOS-only semantic colour palette: paper/white Light mode and neutral graphite/charcoal Dark mode, with shared geometry and unchanged website paint.
+- Connected legacy trainer/results paint to named roles at the component source; restricted the website's existing light-mode repaint rules to the web runtime.
+- Applied the palette to native home, dock, setup, keyboard, drawers, feedback and progress. Preserved meaningful chart/rank colours rather than flattening data graphics.
+- Made the system launch screen and widgets adaptive, mirrored the saved appearance into UIKit, and updated native Results canvases when appearance changes.
+- Added palette contrast/ownership checks, six-screen native theme evidence, System/manual preference tests, and computed website-paint comparisons against 2.67.0.
+
 ## 2.67.0 - 2026-09-29
 
 - Polished shared instructions, Results, Words and About; standardised practice/practise usage and removed developer-facing explanations from everyday UI.

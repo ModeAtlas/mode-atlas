@@ -4,6 +4,7 @@
   window.__modeAtlasThemeLoaded = true;
 
   var THEME_KEY = 'modeAtlasThemePreference';
+  var lastEffective = '';
 
   function systemPrefersLight(){
     try { return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches; }
@@ -48,9 +49,21 @@
     document.documentElement.dataset.maThemePreference = pref;
     try {
       var meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.content = effective === 'light' ? '#dbeaf6' : '#121a2b';
+      var nativeCanvas = getComputedStyle(document.documentElement).getPropertyValue('--ma-native-page').trim();
+      if (meta) meta.content = nativeCanvas || (effective === 'light' ? '#dbeaf6' : '#121a2b');
     } catch(e) {}
+    // The platform adapter mirrors this preference for UIKit, not another theme
+    // controller. Pass System through so a native override cannot pin the OS mode.
+    if (window.AtlasPlatform?.isNative) {
+      window.AtlasPlatform.setAppearance(pref).catch(function(error){
+        console.warn('Native appearance unavailable', error);
+      });
+    }
     updateButtons();
+    if (lastEffective !== effective) {
+      lastEffective = effective;
+      document.dispatchEvent(new CustomEvent('ma:theme-changed', {detail:{effective:effective, preference:pref}}));
+    }
   }
 
   function set(pref, opts){

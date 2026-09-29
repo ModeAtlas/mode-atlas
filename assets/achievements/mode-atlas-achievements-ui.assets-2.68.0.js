@@ -31,6 +31,8 @@ function applyAchievementVisuals(root = document) {
     });
     scope.querySelectorAll("[data-ma-ach-rank-accent]").forEach(el => {
         el.style.setProperty("--ma-ach-rank", el.dataset.maAchRankAccent || "148,163,184");
+        const rankIndex = RANK_ACCENTS.indexOf(el.dataset.maAchRankAccent);
+        el.style.setProperty("--ma-ach-native-rank", rankIndex >= 0 ? `var(--ma-native-rank-${rankIndex + 1})` : 'var(--ma-native-text)');
     });
     window.ModeAtlasUi?.applyProgressWidths?.(scope);
 }

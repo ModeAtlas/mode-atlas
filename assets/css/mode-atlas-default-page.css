@@ -2,10 +2,10 @@
    styling live in mode-atlas-study-shared.css / mode-atlas-components.css. */
 body.ma-reading-page{
   --ma-active-rgb:103,215,139;
-  --ma-active-text:#d9ffe7;
+  --ma-active-text:var(--ma-native-selected-text,#d9ffe7);
   --ma-accent:var(--ma-reading);
   --ma-trainer-accent:var(--ma-reading);
   --ma-trainer-soft:var(--ma-reading-soft);
-  --ma-trainer-active-text:#d9ffe7;
-  --ma-trainer-test-bg:#133127;
+  --ma-trainer-active-text:var(--ma-native-selected-text,#d9ffe7);
+  --ma-trainer-test-bg:var(--ma-native-page,#133127);
 }

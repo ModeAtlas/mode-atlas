@@ -56,3 +56,11 @@ npm run release:check
 ```
 
 This rebuilds revisioned assets, runs the static ownership/file-structure audit, and runs both backend and frontend regression tests.
+# Native appearance regression checks
+
+`npm run release:check` includes semantic palette contrast and ownership checks.
+`npm run test:polish` also runs native Light/Dark screenshots, System/manual theme
+switching and website-paint parity against `fixtures/web-theme-baseline.txt`.
+Fetch that commit before a local parity run, or supply an equivalent local Git
+reference with `MODE_ATLAS_WEB_THEME_BASE`. Change the baseline only when website
+appearance is intentionally changed. See `docs/ios-theme-system.md`.

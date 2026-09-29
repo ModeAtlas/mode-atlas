@@ -11,7 +11,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     public let pluginMethods: [CAPPluginMethod] = [
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState",
-        "resetEngagement", "testNotification", "openNotificationSettings", "consumeNotificationDestination"
+        "resetEngagement", "testNotification", "openNotificationSettings", "consumeNotificationDestination", "setAppearance"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static var pendingDestination: String?
     static let reminderID = "mode-atlas.daily-study"
@@ -22,6 +22,20 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     private var lastReload = Date.distantPast
 
     override public func load() { bridge?.notificationRouter.localNotificationHandler = self }
+
+    @objc func setAppearance(_ call: CAPPluginCall) {
+        guard let preference = call.getString("preference"), ["dark", "light", "system"].contains(preference) else {
+            call.reject("Unknown appearance preference")
+            return
+        }
+        DispatchQueue.main.async {
+            // Only a launch-frame mirror. Shared JavaScript owns the preference.
+            UserDefaults.standard.set(preference, forKey: ModeAtlasAppearance.preferenceKey)
+            self.bridge?.viewController?.view.window?.overrideUserInterfaceStyle = ModeAtlasAppearance.style
+            self.bridge?.viewController?.setNeedsStatusBarAppearanceUpdate()
+            call.resolve(["applied": true])
+        }
+    }
 
     // All mutations and reads use the same queue, including permission dialogs,
     // so a delayed enable cannot undo a newer disable/reset from another page.

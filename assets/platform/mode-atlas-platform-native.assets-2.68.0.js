@@ -115,6 +115,10 @@
     openDestination: async function(destination, options){
       return navigate(destination, options && options.replace === true);
     },
+    setAppearance: async function(preference){
+      if (!hasBridge('setAppearance')) return false;
+      return nativeBridge.setAppearance({preference:preference});
+    },
     requestNotifications: async function(){
       if (!hasBridge('requestNotifications')) return { granted:false, supported:false };
       return nativeBridge.requestNotifications();
