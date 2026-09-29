@@ -42,7 +42,7 @@ body.profile-open,body.settings-open{overflow:hidden;}
 .ma-achievement-summary strong{font-size:32px;line-height:1;color:var(--ma-text-strong);}
 .ma-achievement-summary span{color:var(--ma-muted);font-size:13px;font-weight:800;}
 
-.ma-progression-card{--ma-card-bg:linear-gradient(145deg,color-mix(in srgb,var(--ma-results) 8%,var(--ma-surface-soft)),var(--ma-surface-soft));}
+.ma-progression-card{--ma-card-bg:linear-gradient(145deg,color-mix(in srgb,var(--ma-results) 8%,var(--ma-card)),var(--ma-card));}
 .ma-progression-card .ma-profile-card-title span{color:var(--ma-results);}
 .ma-level-xp-line{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;margin:2px 0 9px;}
 .ma-level-xp-line strong{font-size:1.45rem;line-height:1;color:var(--ma-text-strong);}

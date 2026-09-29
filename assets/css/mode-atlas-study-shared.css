@@ -774,7 +774,7 @@ body[data-effective-display-mode="phone"] .drawer-content{max-height:min(62vh,46
   padding:7px 11px;
   border-radius:var(--ma-radius-pill);
   text-align:center;
-  background:color-mix(in srgb,var(--ma-warning) 14%,var(--ma-surface-strong));
+  background:color-mix(in srgb,var(--ma-warning) 14%,var(--ma-card));
   border:1px solid color-mix(in srgb,var(--ma-warning) 36%,var(--ma-border));
   color:color-mix(in srgb,var(--ma-warning) 76%,var(--ma-text));
   font-size:.78rem;
