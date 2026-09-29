@@ -76,7 +76,7 @@ body.mobile-mode .prompt-small{font-size:64px;}
 .bottom-shell.ma-modifiers-only #choice4Btn:not(.active):not(.btn-secondary),
 .bottom-shell.ma-modifiers-only #choice6Btn:not(.active):not(.btn-secondary),
 .bottom-shell.ma-modifiers-only #choice8Btn:not(.active):not(.btn-secondary){
-  background:rgba(255,255,255,.055);
-  border-color:rgba(255,255,255,.11);
+  background:var(--ma-control);
+  border-color:var(--ma-border);
   color:var(--ma-text);
 }

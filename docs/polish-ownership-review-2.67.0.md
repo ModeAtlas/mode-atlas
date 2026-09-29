@@ -27,6 +27,7 @@ checker, which cannot establish whether a newer signed iOS binary is available.
 | Developer access | Loader and console repeated account/host eligibility | Console delegates to loader's eligibility methods; missing owner fails closed |
 | Display | Drawer repeated preference and class mutation fallback | Drawer delegates to `ModeAtlasDisplay` |
 | Visibility | Component display rules could override hidden state | Shared semantic hidden-state rule wins over component presentation; `until-found` remains exempt |
+| Theme rendering | Hard-coded dark drawer background beat light theme; native key/dock colour mixes used a gradient where a colour is required | Drawer consumes the theme surface; native colour mixing uses the solid card token |
 | Profile/menu layout | Long counts and labels could force rigid tracks | Shared button wrapping and flexible Profile activity tracks |
 | Menu behaviour | Repeat-tap closing differed between runtimes | Shared Profile/Settings bindings toggle consistently |
 

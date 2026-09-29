@@ -91,6 +91,7 @@ for(const layout of layouts)for(const theme of ['dark','light']){
       if(route==='/writing/'){
         const reading=await page.evaluate(()=>localStorage.getItem('settings'));
         await page.locator('#modifiersTab').click();
+        if(layout.name==='ios-phone')await page.screenshot({path:testInfo.outputPath(`setup-${theme}.png`)});
         await page.locator('#keyboardModeBtn').click();
         await expect(page.locator('#keyboardModeBtn')).toHaveAttribute('aria-pressed','true');
         await page.locator('#choice4Btn').click();

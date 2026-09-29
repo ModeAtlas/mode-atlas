@@ -66,11 +66,11 @@ html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__action{
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab{
   min-height:40px;min-width:0;max-width:100%;margin-right:auto;padding:0 12px;
   border:1px solid var(--ma-border);border-radius:12px;
-  background:color-mix(in srgb,var(--ma-ios-accent) 16%,var(--ma-control));
+  background:color-mix(in srgb,var(--ma-ios-accent) 16%,var(--ma-card));
   color:var(--ma-text-strong);font-size:.81rem;white-space:nowrap;
 }
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab[aria-expanded="true"]{
-  border-color:var(--ma-ios-accent);background:color-mix(in srgb,var(--ma-ios-accent) 25%,var(--ma-control));
+  border-color:var(--ma-ios-accent);background:color-mix(in srgb,var(--ma-ios-accent) 25%,var(--ma-card));
 }
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):not(.trainer-session-active) .ma-ios-tabs__title,
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-ios-tabs__utilities #modifiersTab{display:none;}
@@ -99,7 +99,7 @@ html[data-ma-runtime="ios"] button.ma-ios-tab{
 }
 html[data-ma-runtime="ios"] .ma-ios-tab__icon{font-family:var(--ma-font-jp);font-size:20px;font-weight:800;line-height:1.2;}
 html[data-ma-runtime="ios"] .ma-ios-tab.is-active{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-ios-accent) 17%,transparent);}
-html[data-ma-runtime="ios"] .ma-ios-tab[aria-expanded="true"]{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-kana) 23%,var(--ma-control));}
+html[data-ma-runtime="ios"] .ma-ios-tab[aria-expanded="true"]{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-kana) 23%,var(--ma-card));}
 html[data-ma-runtime="ios"] .ma-ios-tab:focus-visible,
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
 
@@ -133,15 +133,15 @@ html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key{
   background:var(--ma-control);color:var(--ma-text-strong);
   font:700 20px/1 var(--ma-font-display);text-transform:uppercase;
   touch-action:manipulation;cursor:pointer;
-  box-shadow:0 3px 0 color-mix(in srgb,var(--ma-text-strong) 22%,var(--ma-control));
+  box-shadow:0 3px 0 color-mix(in srgb,var(--ma-text-strong) 22%,var(--ma-card));
   transition:transform .07s ease-out,box-shadow .07s ease-out,background-color .07s ease-out;
 }
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:is(:active,.is-pressed){
   transform:translateY(3px) scale(.97);
   box-shadow:inset 0 3px 7px rgba(0,0,0,.25);
-  background:color-mix(in srgb,var(--ma-reading) 34%,var(--ma-control));
+  background:color-mix(in srgb,var(--ma-reading) 34%,var(--ma-card));
 }
-html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key--delete{flex:1.25;background:color-mix(in srgb,var(--ma-reading) 15%,var(--ma-control));}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key--delete{flex:1.25;background:color-mix(in srgb,var(--ma-reading) 15%,var(--ma-card));}
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
 html[data-ma-runtime="ios"] body:is(.profile-open,.settings-open) .ma-drawer{
   bottom:calc(var(--ma-ios-dock-height) + 8px);max-height:none;

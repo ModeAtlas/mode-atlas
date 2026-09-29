@@ -531,11 +531,11 @@ body[data-display-mode="mobile"] .main {
 
 .bottom-shell.ma-modifiers-only .tab-button{border-right:0;min-height:54px;font-size:18px;letter-spacing:-.01em;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))}
 
-.bottom-shell.ma-modifiers-only .drawer-content{background:radial-gradient(circle at top left,rgba(255,255,255,.055),transparent 36%),linear-gradient(180deg,rgba(16,20,28,.98),rgba(9,10,14,.98));border-top:1px solid rgba(255,255,255,.07);min-height:auto;max-height:min(58vh,560px);padding:18px;}
+.bottom-shell.ma-modifiers-only .drawer-content{background:var(--ma-surface-strong);border-top:1px solid var(--ma-border);min-height:auto;max-height:min(58vh,560px);padding:18px;}
 
 .bottom-shell.ma-modifiers-only .options-stack{gap:16px;width:min(1080px,100%);}
 
-.bottom-shell.ma-modifiers-only .options-stack>div{padding:14px;border-radius:20px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.075)}
+.bottom-shell.ma-modifiers-only .options-stack>div{padding:14px;border-radius:20px;background:var(--ma-card);border:1px solid var(--ma-border)}
 
 .bottom-shell.ma-modifiers-only .section-title{margin:0 0 12px;text-align:left;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:900}
 
@@ -563,9 +563,9 @@ body[data-display-mode="mobile"] .main {
 
 .bottom-shell.ma-modifiers-only .toggle-btn,
 .bottom-shell.ma-modifiers-only .btn {
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.045);
-  color: var(--text,#f3f3f3);
+  border: 1px solid var(--ma-border);
+  background: var(--ma-control);
+  color: var(--ma-text);
   box-shadow: none;
 }
 
