@@ -443,6 +443,8 @@ test.describe('Phone and Tablet study UX', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem('modeAtlasDisplayMode', 'phone'));
     await gotoApp(page, '/results/');
+    await expect(page.locator('.results-layout')).toBeVisible();
+    await expect(page.locator('.results-layout')).toHaveCSS('display', 'grid');
     const metrics = await page.evaluate(() => {
       const layout = document.querySelector('.results-layout');
       const tests = document.querySelector('.results-list-card .tests-grid');
