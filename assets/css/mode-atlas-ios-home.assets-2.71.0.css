@@ -22,7 +22,7 @@ html[data-ma-runtime="ios"] .atlas-ios-home__continue{
 }
 html[data-ma-runtime="ios"] .atlas-ios-home__continue[data-mode="writing"]{--home-accent:var(--ma-writing);}
 html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>small{color:var(--home-accent);font-size:.73rem;font-weight:800;}
-html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>strong{display:block;margin-top:8px;font:850 clamp(1.65rem,7vw,2.2rem)/1.06 var(--ma-font-display);letter-spacing:-.04em;max-width:8ch;}
+html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>strong{display:block;margin-top:8px;font:850 clamp(1.65rem,7vw,2.2rem)/1.06 var(--ma-font-display);letter-spacing:-.04em;max-width:12ch;}
 html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy p{max-width:24ch;margin:10px 0 0;color:var(--ma-text-soft);font-size:.83rem;line-height:1.45;}
 html[data-ma-runtime="ios"] .atlas-ios-home__art{position:relative;height:100px;pointer-events:none;}
 html[data-ma-runtime="ios"] .atlas-ios-home__art>span{position:absolute;display:grid;place-items:center;width:72px;height:86px;border-radius:18px;font:800 3rem var(--ma-font-jp);border:1px solid color-mix(in srgb,var(--home-accent) 45%,var(--ma-border));background:var(--ma-card);}

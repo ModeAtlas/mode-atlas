@@ -53,6 +53,7 @@ function createBaseTrainerDefaultSettings(overrides = {}) {
         dailyChallenge: false,
         testMode: false,
         comboKana: false,
+        practiceCount: 0,
         comboMode: "random",
         hiraganaRows: Object.keys(hiraganaRows),
         katakanaRows: [],
@@ -184,24 +185,7 @@ function normalizeScoreHistory(data) {
 
 
 function rebuildCharMap() {
-    charMap = {};
-
-    for (const row of settings.hiraganaRows.filter(r => hiraganaRows[r])) {
-        Object.assign(charMap, hiraganaRows[row]);
-        if (settings.dakuten && dakutenRows[row]) Object.assign(charMap, dakutenRows[row]);
-        if (settings.yoon && yoonRows[row]) Object.assign(charMap, yoonRows[row]);
-        if (settings.yoon && settings.dakuten && yoonRows[`${row}_dakuten`]) Object.assign(charMap, yoonRows[`${row}_dakuten`]);
-        if (settings.extendedKatakana && extendedKatakanaRows[row]) Object.assign(charMap, extendedKatakanaRows[row]);
-    }
-
-    for (const row of settings.katakanaRows.filter(r => katakanaRows[r])) {
-        Object.assign(charMap, katakanaRows[row]);
-        if (settings.dakuten && dakutenRows[row]) Object.assign(charMap, dakutenRows[row]);
-        if (settings.yoon && yoonRows[row]) Object.assign(charMap, yoonRows[row]);
-        if (settings.yoon && settings.dakuten && yoonRows[`${row}_dakuten`]) Object.assign(charMap, yoonRows[`${row}_dakuten`]);
-        if (settings.extendedKatakana && extendedKatakanaRows[row]) Object.assign(charMap, extendedKatakanaRows[row]);
-    }
-
+    charMap = window.ModeAtlasKanaData.selectedKanaMap(settings);
     activeChars = Object.keys(charMap);
 }
 
@@ -613,7 +597,7 @@ function closePopup() {
 }
 
 function getEligiblePool() {
-    let pool = [...activeChars];
+    let pool = trainerController.study.pool([...activeChars]);
     if (settings.confusableKana) {
         const focused = pool.filter(ch => MODE_ATLAS_CONFUSABLE_KANA.has(ch));
         if (focused.length > 0) pool = focused;
@@ -734,7 +718,7 @@ function advanceTestModeAfterAnswer() {
 }
 
 function currentFlowModeIsContinuous() {
-    return settings.endless || settings.timeTrial || settings.speedRun || settings.testMode;
+    return settings.endless || settings.timeTrial || settings.speedRun || settings.testMode || !!sessionStats.study;
 }
 
 function average(arr) {
@@ -925,6 +909,7 @@ function prepareTrainerSessionStart(options = {}) {
     sessionStats.active = true;
     sessionStats.startTime = now;
     sessionStats.startXp = Math.max(0, Number(window.ModeAtlasProgress?.getXP?.() || 0));
+    options.study?.begin(sessionStats);
 
     const dailyActive = typeof options.isDailyChallengeSession === "function" && options.isDailyChallengeSession();
     const testActive = typeof options.isTestModeSession === "function" && options.isTestModeSession();

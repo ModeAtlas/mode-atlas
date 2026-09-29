@@ -1073,7 +1073,7 @@ test('2.33 experience restructure keeps Atlas clean and onboarding destination-a
   assert.match(home, /data-ma-home-user/);
   assert.match(home, /Start with Kana Trainer/);
   assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Study status/);
-  assert.match(homeJs, /dataset\.maHomeState=isUser\?'returning':'visitor'/);
+  assert.match(homeJs, /dataset\.maHomeState\s*=\s*isUser\s*\?\s*'returning'\s*:\s*'visitor'/);
   assert.doesNotMatch(homeJs, /dailyDone\(|homeVisitStreak|homeReadingDaily|homeWritingDaily/);
   assert.match(visit, /BRANCH_PATHS=new Set/);
   assert.match(visit, /waitForInitialHydration/);

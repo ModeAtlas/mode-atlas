@@ -118,14 +118,14 @@ html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__utilities #study
 }
 html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-ios-tabs{display:none;}
 html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing){--ma-ios-dock-height:0px;}
-html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result){
+html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open){
   --ma-ios-dock-height:0px;
   padding-bottom:calc(var(--ma-ios-custom-kb-height,210px) + 12px);
   --ma-toast-inset-bottom:calc(var(--ma-ios-custom-kb-height,210px) + 20px);
 }
-html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result) .ma-ios-tabs{display:none;}
+html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open) .ma-ios-tabs{display:none;}
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard{display:none;}
-html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result) .ma-ios-reading-keyboard{
+html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open) .ma-ios-reading-keyboard{
   position:fixed;z-index:101;left:0;right:0;bottom:0;
   display:grid;gap:7px;padding:11px max(4px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));
   border-top:1px solid var(--ma-border);background:var(--ma-surface-strong);

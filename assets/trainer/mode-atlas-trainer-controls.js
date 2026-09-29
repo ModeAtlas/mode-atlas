@@ -72,6 +72,7 @@
     try{ if(typeof renderScoreHistory==='function') renderScoreHistory(); }catch{}
     try{ if(typeof saveAll==='function') saveAll(); }catch{ writeJSON(storeKey,getSettings()); }
     markActive();
+    trainerController.study.sync();
     window.ModeAtlasLifecycle?.requestUiRefresh?.('trainer-controls-save');
   }
   function setActivePreset(id){
@@ -112,6 +113,7 @@
   function toggleMode(key){
     if(typeof isModeLocked === 'function' && isModeLocked())return;
     const s=getSettings();
+    if (['speedRun','timeTrial','endless','dailyChallenge','testMode','comboKana'].includes(key)) s.practiceCount=0;
     const wasPreset=!!inferActivePreset();
     if(key==='speedRun'){
       s.speedRun=!s.speedRun; if(s.speedRun){s.endless=false;s.timeTrial=false;s.dailyChallenge=false;s.testMode=false;s.comboKana=false;}
@@ -138,6 +140,17 @@
     setSettings(s);
     if(wasPreset) clearPresetForCustom(true);
     else if(key!=='confusableKana') setActivePreset('');
+    saveAndRefresh();
+  }
+  function applyPracticeLength(s,value){
+    s.practiceCount=window.ModeAtlasStudyPlan.lengths.includes(Number(value)) ? Number(value) : 0;
+    if(s.practiceCount) Object.assign(s,{endless:false,timeTrial:false,speedRun:false,dailyChallenge:false,testMode:false,comboKana:false});
+  }
+  function setPracticeCount(value){
+    if(typeof isModeLocked === 'function' && isModeLocked())return;
+    const s=getSettings();
+    applyPracticeLength(s,value);
+    setSettings(s);
     saveAndRefresh();
   }
   function toggleRow(rowKey,settingsKey){
@@ -194,30 +207,36 @@
     });
   }
   function bootFromHub(){
-    try{
-      const params=new URLSearchParams(location.search);
-      const confusable = params.get('confusable')==='1'||storeGet('modeAtlasConfusableMode')==='1';
-      const daily = params.get('mode')==='daily';
-      const review = params.get('mode')==='review'||params.get('focusWeak')==='1';
-      if(confusable){
-        const s=getSettings();
-        Object.assign(s,{confusableKana:true,hint:false,srs:true,focusWeak:false,endless:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,speedRun:false,dakuten:false,yoon:false,extendedKatakana:false,hiraganaRows:CONF_HIRA_ROWS.slice(),katakanaRows:CONF_KATA_ROWS.slice(),activeBottomTab:'modifiers'});
-        setSettings(s); setActivePreset(''); storeRemove('modeAtlasConfusableMode');
-        saveAndRefresh();
-      } else if(daily || review){
-        const s=getSettings();
-        Object.assign(s, {confusableKana:false,focusWeak:review,srs:true,endless:false,timeTrial:false,dailyChallenge:daily,testMode:false,comboKana:false,speedRun:false});
-        if(daily) s.hint=false;
-        setSettings(s); setActivePreset('');
-        saveAndRefresh();
-      }
-      if(params.has('confusable') || params.has('mode') || params.has('focusWeak')){
-        params.delete('confusable'); params.delete('mode'); params.delete('focusWeak');
-        if(history.replaceState) history.replaceState(null,'',location.pathname+(params.size?'?'+params.toString():'')+location.hash);
-      }
-    }catch{}
+    const params=new URLSearchParams(location.search);
+    const confusable=params.get('confusable')==='1'||storeGet('modeAtlasConfusableMode')==='1';
+    const daily=params.get('mode')==='daily';
+    const review=params.get('mode')==='review'||params.get('focusWeak')==='1';
+    const practice=Number(params.get('practice'));
+    const guided=!daily&&window.ModeAtlasStudyPlan.lengths.includes(practice);
+    // Consume navigation intent before a synchronous UI refresh can re-enter.
+    const keys=['confusable','mode','focusWeak','practice'];
+    if(keys.some(key=>params.has(key))){
+      keys.forEach(key=>params.delete(key));
+      history.replaceState(null,'',location.pathname+(params.size?'?'+params.toString():'')+location.hash);
+    }
+    if(confusable) storeRemove('modeAtlasConfusableMode');
+    if(!confusable&&!daily&&!review&&!guided) return;
+    const s=getSettings();
+    if(confusable){
+      Object.assign(s,{confusableKana:true,hint:false,srs:true,focusWeak:false,endless:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,speedRun:false,dakuten:false,yoon:false,extendedKatakana:false,hiraganaRows:CONF_HIRA_ROWS.slice(),katakanaRows:CONF_KATA_ROWS.slice(),activeBottomTab:'modifiers',practiceCount:0});
+    } else if(daily||review){
+      Object.assign(s,{confusableKana:false,focusWeak:review,srs:true,endless:false,timeTrial:false,dailyChallenge:daily,testMode:false,comboKana:false,speedRun:false,practiceCount:0});
+      if(daily) s.hint=false;
+    }
+    if(guided){
+      applyPracticeLength(s,practice);
+      s.focusWeak=review;
+      if(!confusable) s.confusableKana=false;
+    }
+    setSettings(s);
+    if(confusable||daily||review) setActivePreset('');
+    saveAndRefresh();
   }
-
 
 
   function install(){
@@ -225,12 +244,14 @@
     document.body.classList.toggle('ma-reading-page',!isWriting);
     document.body.classList.toggle('ma-writing-page',isWriting);
     bootFromHub(); markActive();
+    trainerController.study.sync();
   }
   window.ModeAtlasTrainerControls = Object.assign(window.ModeAtlasTrainerControls || {}, {
     refresh: function(){ install(); },
     applyPreset,
     toggleMode,
     toggleRow,
+    setPracticeCount,
     recordPresetCorrect,
     readPresetProgress
   });

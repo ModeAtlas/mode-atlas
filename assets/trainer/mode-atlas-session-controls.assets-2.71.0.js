@@ -61,6 +61,8 @@
   function setInputDisabled(disabled){
     try { inputEl.disabled = disabled; } catch {}
     try { choiceButtons().forEach(button => { button.disabled = disabled; }); } catch {}
+    const continueButton = document.getElementById('studyFeedbackContinue');
+    if (continueButton) continueButton.disabled = paused;
   }
   function isPhoneTrainerSession(){
     return document.body?.dataset?.effectiveDisplayMode === 'phone'
@@ -151,7 +153,7 @@
     paused = true;
     pausedAt = Date.now();
     pauseTimers();
-    if (feedback) {
+    if (feedback && !feedback.manual) {
       clearTimeout(feedback.timer);
       feedback.remaining = Math.max(0, feedback.deadline - pausedAt);
     }
@@ -180,22 +182,27 @@
     setInputDisabled(locked);
     resumeTimers();
     if (!sessionStarted) return;
-    if (feedback) scheduleFeedback();
+    if (feedback) {
+      scheduleFeedback();
+      if (feedback.manual) document.getElementById('studyFeedbackContinue')?.focus({preventScroll:true});
+    }
     else { scheduleHint(); focusInputIfNeeded(); }
   }
   function togglePause(){ paused ? resume() : pause(); }
 
   function scheduleFeedback(){
-    if (!feedback || paused) return;
+    if (!feedback || paused || feedback.manual) return;
     feedback.deadline = Date.now() + feedback.remaining;
-    feedback.timer = setTimeout(() => {
-      const complete = feedback;
-      feedback = null;
-      complete.prompt.classList.remove('flash-correct', 'flash-wrong');
-      if (!sessionStarted) return;
-      locked = false;
-      complete.onDone?.();
-    }, feedback.remaining);
+    feedback.timer = setTimeout(completeFeedback, feedback.remaining);
+  }
+  function completeFeedback(){
+    if (!feedback || paused) return;
+    const complete = feedback;
+    cancelFeedback();
+    if (!sessionStarted) return;
+    locked = false;
+    setInputDisabled(false);
+    complete.onDone?.();
   }
   function flashResult(prompt, correct, onDone){
     cancelFeedback();
@@ -203,13 +210,17 @@
     locked = true;
     prompt.classList.add(correct ? 'flash-correct' : 'flash-wrong');
     feedback = {prompt, onDone, remaining:correct ? 260 : 420, deadline:0, timer:0};
+    feedback.manual = !correct && trainerController.study.showFeedback(completeFeedback);
+    if (feedback.manual) { setInputDisabled(true); inputEl.blur(); }
     scheduleFeedback();
   }
   function cancelFeedback(){
-    if (!feedback) return;
-    clearTimeout(feedback.timer);
-    feedback.prompt.classList.remove('flash-correct', 'flash-wrong');
+    if (feedback) {
+      clearTimeout(feedback.timer);
+      feedback.prompt.classList.remove('flash-correct', 'flash-wrong');
+    }
     feedback = null;
+    trainerController.study.clearFeedback();
   }
 
   function markSkipped(){
@@ -224,6 +235,7 @@
     sessionStats.answered += 1; sessionStats.wrong += 1; sessionStats.timings.push(timeTaken);
     sessionStats.bestStreak = Math.max(sessionStats.bestStreak, streak);
     updateSessionChar(currentChar, false, timeTaken);
+    trainerController.study.recordAnswer({kana:currentChar, answer:'', correct:false, skipped:true});
     if (isDailyChallengeSession()) { dailyWrong += 1; dailyIndex += 1; }
     else if (isTestModeSession()) { testWrong += 1; testIndex += 1; }
     else if (currentFlowModeIsContinuous()) { endlessRunTotal += 1; endlessRunWrong += 1; }
@@ -231,8 +243,8 @@
     streak = 0; lastComboLength = getComboLength(); hideComboTierNotice();
     hintEl.textContent = `Answer: ${answerDisplay()}`;
     updateTopStats(); if (DEBUG_PANEL) renderDebugPanel(); renderHeatmap(); saveAll();
-    if (isTestModeSession()) flashResult(false, () => advanceTestModeAfterAnswer());
-    else flashResult(false, () => nextCharacter());
+    const prompt = document.getElementById('hiragana') || document.getElementById('prompt');
+    flashResult(prompt, false, () => isTestModeSession() ? advanceTestModeAfterAnswer() : nextCharacter());
   }
   function skipCurrentKana(){
     try { if (!sessionStarted || paused || locked || isElementVisible(gameOverEl)) return; markSkipped(); }

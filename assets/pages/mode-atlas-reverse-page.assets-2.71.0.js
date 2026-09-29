@@ -174,6 +174,8 @@ const trainerController = window.ModeAtlasTrainerController.create({
     getDebugPanel: () => DEBUG_PANEL,
     getRows: () => ({ hiraganaRows, katakanaRows }),
     hooks: {
+        startSession,
+        endSession,
         rebuildCharMap,
         ensureDataObjects,
         buildModifierButtons,
@@ -545,6 +547,7 @@ function scheduleHint() {
 }
 
 function showIdleState() {
+    trainerController.study.sync();
     clearHint();
     hideComboTierNotice();
     stopTrialTimer();
@@ -681,7 +684,7 @@ function showCurrentPrompt() {
 }
 
 function nextCharacter() {
-    if (!sessionStarted) return;
+    if (!sessionStarted || !trainerController.study.beforeQuestion()) return;
 
     clearHint();
     closePopup();
@@ -772,7 +775,7 @@ function flashResult(correct, onDone) {
     window.ModeAtlasSessionControls.flashResult(promptEl, correct, onDone);
 }
 
-function handleCorrect() {
+function handleCorrect(answer = inputEl.value) {
     recordTrainerActivity();
     const timeTaken = Date.now() - charStartTime;
 
@@ -799,6 +802,7 @@ function handleCorrect() {
     sessionStats.timings.push(timeTaken);
     sessionStats.bestStreak = Math.max(sessionStats.bestStreak, streak);
     updateSessionChar(currentChar, true, timeTaken);
+    trainerController.study.recordAnswer({kana:currentChar, answer, correct:true});
 
     if (isDailyChallengeSession()) {
         dailyCorrect += 1;
@@ -829,7 +833,7 @@ function getDisplayAnswerForCurrentChar() {
     return settings.comboKana ? currentChar.split("").join(" + ") : currentChar;
 }
 
-function handleWrong() {
+function handleWrong(answer = inputEl.value) {
     recordTrainerActivity();
     const timeTaken = Date.now() - charStartTime;
     const correctAnswer = getAcceptedAnswerDisplay();
@@ -846,6 +850,7 @@ function handleWrong() {
     sessionStats.timings.push(timeTaken);
     sessionStats.bestStreak = Math.max(sessionStats.bestStreak, streak);
     updateSessionChar(currentChar, false, timeTaken);
+    trainerController.study.recordAnswer({kana:currentChar, answer, correct:false});
 
     if (isDailyChallengeSession()) {
         dailyWrong += 1;
@@ -897,13 +902,13 @@ function handleChoiceAnswer(answer, clickedBtn) {
         for (const btn of choiceGridEl.querySelectorAll("button")) {
             if (acceptedAnswers.has(btn.textContent)) btn.classList.add("correct");
         }
-        handleCorrect();
+        handleCorrect(answer);
     } else {
         clickedBtn.classList.add("wrong");
         for (const btn of choiceGridEl.querySelectorAll("button")) {
             if (acceptedAnswers.has(btn.textContent)) btn.classList.add("correct");
         }
-        handleWrong();
+        handleWrong(answer);
     }
 }
 
@@ -952,6 +957,7 @@ inputEl.addEventListener("input", () => {
 });
 
 function startSession() {
+    if (sessionStarted) return;
     if (!isDailyChallengeSession() && !isTestModeSession() && activeChars.length === 0) {
         showIdleState();
         hintEl.textContent = "Select at least one row to begin.";
@@ -961,6 +967,7 @@ function startSession() {
     sessionStarted = true;
 
     const prepared = prepareTrainerSessionStart({
+        study: trainerController.study,
         isDailyChallengeSession,
         isTestModeSession,
         buildDailySequence,

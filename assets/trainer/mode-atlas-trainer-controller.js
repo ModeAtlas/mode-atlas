@@ -64,6 +64,11 @@
     const snapshot = () => config.getSnapshot() || {};
     const debugPanel = () => typeof config.getDebugPanel === 'function' ? config.getDebugPanel() : null;
     const rowMaps = () => typeof config.getRows === 'function' ? (config.getRows() || {}) : {};
+    const study = root.ModeAtlasStudySession.create({
+      mode, getSnapshot: snapshot,
+      finish: () => hooks.endSession(true), start: () => hooks.startSession(),
+      naturalBreak: () => root.settleTrainerProgressionBreak('guided-practice-summary')
+    });
 
     function normalizeSettingsShape(settings){
       const rows = rowMaps();
@@ -371,6 +376,7 @@
 
     function showSessionModal(autoEnded = false){
       const state = snapshot();
+      if (study.showSummary(state.sessionStats, root.getTrainerSessionXpGain(state.sessionStats))) return true;
       return root.showTrainerSessionModal({
         autoEnded,
         sessionStats: state.sessionStats,
@@ -408,6 +414,7 @@
 
     return Object.freeze({
       mode,
+      study,
       saveAll,
       buildDailySequence,
       applyDailyChallengeTheme,

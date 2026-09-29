@@ -278,6 +278,7 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-date.js',
     'assets/data/mode-atlas-kana-data.js',
     'assets/app/mode-atlas-kana-metrics.js',
+    'assets/app/mode-atlas-study-plan.js',
     'assets/platform/mode-atlas-native-engagement.js',
     'assets/achievements/mode-atlas-achievements-ui.js',
 )
@@ -335,6 +336,8 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
                 'assets/ui/mode-atlas-study-nav-hidden.js',
                 'assets/trainer/mode-atlas-trainer-core.js',
                 'assets/trainer/mode-atlas-trainer-shared.js',
+                'assets/data/mode-atlas-kana-coaching.js',
+                'assets/trainer/mode-atlas-study-session.js',
                 'assets/trainer/mode-atlas-trainer-controller.js',
                 'assets/results/mode-atlas-results-storage.js',
                 'assets/pages/mode-atlas-default-page.js',
@@ -353,6 +356,8 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
                 'assets/ui/mode-atlas-study-nav-hidden.js',
                 'assets/trainer/mode-atlas-trainer-core.js',
                 'assets/trainer/mode-atlas-trainer-shared.js',
+                'assets/data/mode-atlas-kana-coaching.js',
+                'assets/trainer/mode-atlas-study-session.js',
                 'assets/trainer/mode-atlas-trainer-controller.js',
                 'assets/results/mode-atlas-results-storage.js',
                 'assets/pages/mode-atlas-reverse-page.js',
@@ -656,6 +661,7 @@ def render_trainer_shell(config: TrainerConfig) -> str:
             <div class="subline">{html.escape(config.subline)}</div>
             <div id="dailyBadge" class="daily-badge">{html.escape(daily_badge)}</div>
             <div id="testBadge" class="daily-badge test-badge-{_attr(config.mode)}" hidden>{html.escape(config.test_badge)}</div>
+            <div class="ma-study-progress" id="studySessionProgress" hidden><span id="studyProgressLabel">0 answered</span><progress id="studyProgressBar" max="10" value="0" aria-label="Practice set progress"></progress></div>
         </header>
 
         <div class="ma-trainer-stage">
@@ -663,6 +669,7 @@ def render_trainer_shell(config: TrainerConfig) -> str:
 
 {_trainer_prompt(config)}
         </div>
+        <section id="studyFeedback" class="ma-study-feedback" aria-labelledby="studyFeedbackTitle" hidden></section>
 
         <div class="ma-trainer-session-controls">
         <div class="trial-config" id="trialConfig" hidden>
@@ -677,7 +684,10 @@ def render_trainer_shell(config: TrainerConfig) -> str:
             </div></div>
         </div>
 
-        <div class="start-wrap" id="startWrap"><button class="btn btn-start ma-button ma-button--accent ma-trainer-button" id="startBtn" type="button"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg><span>Start practice</span></button></div>
+        <div class="start-wrap" id="startWrap">
+            <div class="ma-study-setup" id="studySetSetup"><label for="studyLength">Make time for a little practice</label><select id="studyLength" class="ma-input" aria-describedby="studySetDescription"><option value="0">Free practice</option><option value="10">10 questions</option><option value="20">20 questions</option><option value="30">30 questions</option></select><p id="studySetDescription">Practise freely, or choose a short guided set.</p></div>
+            <button class="btn btn-start ma-button ma-button--accent ma-trainer-button" id="startBtn" type="button"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg><span>Start practice</span></button>
+        </div>
         <div class="session-actions" id="sessionActions" hidden>
             <button class="btn btn-secondary ma-button ma-button--ghost ma-trainer-button ma-trainer-skip" id="skipKanaBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-skip"></use></svg><span>I don’t know</span></button>
             <button class="btn btn-secondary ma-button ma-trainer-button" id="pauseSessionBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-pause"></use></svg><span data-ma-pause-label>Pause</span></button>

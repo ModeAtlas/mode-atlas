@@ -12,7 +12,8 @@ try{
   try{ if (typeof settings === "object" && settings) Object.assign(settings, current); }catch{}
   window.ModeAtlasStorage.set("modeAtlasStarterSeen", "true");
   window.ModeAtlasStorage.remove("modeAtlasStartReadingPreset");
-  if (history.replaceState && location.search) history.replaceState(null, "", location.pathname);
+  params.delete("starter");
+  if (history.replaceState && location.search) history.replaceState(null, "", location.pathname + (params.size ? "?" + params : "") + location.hash);
 }catch(err){console.warn("Mode Atlas starter preset failed",err)}
 })();;
 let settings = loadTrainerSettings("settings", DEFAULT_SETTINGS);
@@ -176,6 +177,8 @@ const trainerController = window.ModeAtlasTrainerController.create({
     getDebugPanel: () => DEBUG_PANEL,
     getRows: () => ({ hiraganaRows, katakanaRows }),
     hooks: {
+        startSession,
+        endSession,
         rebuildCharMap,
         ensureDataObjects,
         buildModifierButtons,
@@ -479,6 +482,7 @@ function scheduleHint() {
 }
 
 function showIdleState() {
+    trainerController.study.sync();
     clearHint();
     hideComboTierNotice();
     stopTrialTimer();
@@ -498,7 +502,7 @@ function showIdleState() {
 }
 
 function nextCharacter() {
-    if (!sessionStarted) return;
+    if (!sessionStarted || !trainerController.study.beforeQuestion()) return;
 
     clearHint();
     closePopup();
@@ -568,9 +572,15 @@ function nextCharacter() {
 }
 
 function startSession() {
+    if (sessionStarted) return;
+    if (!isDailyChallengeSession() && !isTestModeSession() && !activeChars.length) {
+        hintEl.textContent = "Select at least one row to begin.";
+        return;
+    }
     sessionStarted = true;
 
     const prepared = prepareTrainerSessionStart({
+        study: trainerController.study,
         isDailyChallengeSession,
         isTestModeSession,
         buildDailySequence,
@@ -645,7 +655,7 @@ function getDisplayAnswerForCurrentChar() {
     return settings.comboKana ? parts.join(" + ") : parts.join("");
 }
 
-function handleCorrect() {
+function handleCorrect(answer = inputEl.value) {
     recordTrainerActivity();
     const timeTaken = Date.now() - charStartTime;
 
@@ -671,6 +681,7 @@ function handleCorrect() {
     sessionStats.timings.push(timeTaken);
     sessionStats.bestStreak = Math.max(sessionStats.bestStreak, streak);
     updateSessionChar(currentChar, true, timeTaken);
+    trainerController.study.recordAnswer({kana:currentChar, answer, correct:true});
 
     if (isDailyChallengeSession()) {
         dailyCorrect += 1;
@@ -694,7 +705,7 @@ function handleCorrect() {
     flashResult(true, () => nextCharacter());
 }
 
-function handleWrong() {
+function handleWrong(answer = inputEl.value) {
     recordTrainerActivity();
     const timeTaken = Date.now() - charStartTime;
     const correctAnswer = getDisplayAnswerForCurrentChar();
@@ -711,6 +722,7 @@ function handleWrong() {
     sessionStats.timings.push(timeTaken);
     sessionStats.bestStreak = Math.max(sessionStats.bestStreak, streak);
     updateSessionChar(currentChar, false, timeTaken);
+    trainerController.study.recordAnswer({kana:currentChar, answer, correct:false});
 
     if (isDailyChallengeSession()) {
         dailyWrong += 1;

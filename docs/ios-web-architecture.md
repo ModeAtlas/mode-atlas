@@ -362,3 +362,10 @@ assistance can be a later optional iOS 26+ feature using Foundation Models
 availability checks; device model alone must never gate core learning. An
 unavailable model, disabled Apple Intelligence or unsupported hardware must
 leave deterministic practice usable. No AI dependency is added in this release.
+
+## Guided practice (2.71.0)
+
+The shared learning loop, state owners, persistent settings contract and future
+tutorial plan are documented in [guided-practice-2.71.0.md](guided-practice-2.71.0.md).
+Native presentation continues to consume shared session state; it does not own
+a separate scorer, save format or recommendation policy.

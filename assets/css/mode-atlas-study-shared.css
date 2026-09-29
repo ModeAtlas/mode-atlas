@@ -202,6 +202,48 @@ input[type="text"]:disabled,
 
 .start-wrap[hidden] { display: none; }
 
+/* Guided-set surfaces use the same roles on web and native. SessionControls
+   owns feedback/pause state; the platform keyboard consumes that state. */
+.ma-study-setup{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px 12px;flex-basis:100%;text-align:left;max-width:430px;padding:14px;border:1px solid var(--ma-border);border-radius:var(--ma-radius-md);background:var(--ma-surface-inset);}
+.ma-study-setup label{font-weight:750;font-size:.86rem;color:var(--ma-text-strong);}
+.ma-study-setup select{width:auto;min-height:44px;max-width:100%;font-size:.85rem;padding:8px;}
+.ma-study-setup p{grid-column:1/-1;margin:0;font-size:.78rem;line-height:1.45;color:var(--ma-muted);}
+.ma-study-progress{display:grid;gap:6px;min-width:180px;max-width:100%;margin:10px 0 4px;color:var(--ma-text-soft);font-size:.75rem;}
+.ma-study-progress progress{appearance:none;width:100%;height:5px;border:0;border-radius:8px;overflow:hidden;background:var(--ma-border);}
+.ma-study-progress progress::-webkit-progress-bar{background:var(--ma-border);}
+.ma-study-progress progress::-webkit-progress-value{background:var(--ma-trainer-accent);border-radius:8px;}
+.ma-study-progress progress::-moz-progress-bar{background:var(--ma-trainer-accent);}
+body.ma-study-feedback-open .ma-trainer-stage{display:none;}
+body.ma-study-feedback-open .ma-trainer-skip{display:none;}
+.ma-study-feedback{width:100%;display:grid;gap:14px;margin:14px 0;text-align:center;}
+.ma-study-feedback__title{font:800 1.1rem/1.3 var(--ma-font-display);color:var(--ma-text-strong);margin:0;}
+.ma-study-feedback__correction{display:grid;gap:5px;margin:0;font-size:.85rem;line-height:1.5;overflow-wrap:anywhere;color:var(--ma-muted);}
+.ma-study-feedback__correction strong{color:var(--ma-text-strong);}
+.ma-study-contrast{display:flex;justify-content:center;gap:12px;}
+.ma-study-contrast__item{display:grid;gap:5px;place-items:center;flex:1;max-width:9.5rem;padding:12px;border:1px solid var(--ma-border);border-radius:var(--ma-radius-md);background:var(--ma-surface-inset);}
+.ma-study-contrast__item strong{font:650 clamp(2.4rem,10vw,3.5rem)/1.3 var(--ma-font-jp);color:var(--ma-text-strong);}
+.ma-study-contrast__item span{font-size:.9rem;color:var(--ma-text-soft);}
+.ma-study-contrast__item.is-target{border-color:var(--ma-trainer-accent);}
+.ma-study-feedback__note{max-width:44ch;margin:0 auto;font-size:.88rem;line-height:1.5;color:var(--ma-text-soft);}
+.ma-study-feedback>.ma-button{justify-self:stretch;min-height:48px;}
+.ma-study-summary{display:grid;gap:16px;overflow-wrap:anywhere;}
+.ma-study-summary p,.ma-study-summary h3{margin:0;}
+.ma-study-summary__intro{color:var(--ma-text-soft);line-height:1.5;}
+.ma-study-summary__stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.ma-study-summary__stats>div{display:grid;gap:5px;padding:14px 6px;text-align:center;background:var(--ma-surface-inset);border:1px solid var(--ma-border);border-radius:var(--ma-radius-md);}
+.ma-study-summary__stats strong{color:var(--ma-text-strong);font-size:1.35rem;font-weight:850;}
+.ma-study-summary__stats span,.ma-study-summary__meta,.ma-study-summary__note{font-size:.8rem;line-height:1.5;color:var(--ma-muted);}
+.ma-study-summary h3{font-size:.95rem;color:var(--ma-text-strong);}
+.ma-study-summary__kana{display:flex;flex-wrap:wrap;gap:8px;}
+.ma-study-summary__kana>span{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-surface-inset);}
+.ma-study-summary__kana strong{font:700 1.3rem var(--ma-font-jp);}
+.ma-study-summary__kana span>span{color:var(--ma-text-soft);font-size:.85rem;}
+.ma-study-summary__actions{display:flex;flex-wrap:wrap;gap:10px;}
+.ma-study-summary__actions>.ma-button{flex:1;min-height:48px;}
+@media(max-width:380px){.ma-study-setup{grid-template-columns:minmax(0,1fr);}.ma-study-setup select{width:100%;}}
+html[data-ma-large-text] .ma-study-setup{grid-template-columns:minmax(0,1fr);}
+html[data-ma-large-text] .ma-study-summary__stats{grid-template-columns:minmax(0,1fr);}
+
 .session-actions {
         margin-top: 14px;
         display: none;

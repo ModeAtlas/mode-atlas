@@ -1,3 +1,11 @@
+## 2.71.0 - 2026-09-29
+
+- Added shared 10/20/30-question guided Reading and Writing sets, with explicit progress and a useful completion summary. Existing free, timed, daily and test modes retain their rules.
+- Added learner-paced mistake explanations and seven kana contrast pairs, plus targeted practice from a completed set's mistakes. Answers continue through the existing scoring and save owners.
+- Made Atlas suggest a short activity with a reason based on selected kana and recorded practice, using one canonical row map shared with both trainers.
+- Integrated teaching with the existing pause/feedback lifecycle and iOS keyboard layout. Fixed the existing skip-feedback argument mismatch.
+- Added functional study-flow regressions and documented the later skippable, replayable tutorial and long-term review work.
+
 ## 2.70.0 - 2026-09-29
 
 - Raised the native minimum to iOS 18 under the project configuration, inherited by app and widget targets and derived by Capacitor for its Swift package. Selected Xcode 26.3 in native CI.

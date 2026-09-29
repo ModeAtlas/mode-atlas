@@ -139,7 +139,10 @@ test('System theme follows the device; manual choice persists; canvas charts red
 async function paintSnapshot(page){
   return page.evaluate(()=>{
     const properties=['color','backgroundColor','backgroundImage','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','boxShadow','textShadow','outlineColor','fill','stroke','webkitTextFillColor'];
-    return [...document.body.querySelectorAll('*'),document.body].filter(el=>el.getClientRects().length && getComputedStyle(el).visibility!=='hidden')
+    // Guided-set components were introduced on both platforms in 2.71.0 and
+    // have no 2.67.0 paint baseline. Their theme/layout checks live in study-flow.
+    const newStudyComponent = el => el.closest('#studySetSetup,#studySessionProgress,#studyFeedback');
+    return [...document.body.querySelectorAll('*'),document.body].filter(el=>!newStudyComponent(el) && el.getClientRects().length && getComputedStyle(el).visibility!=='hidden')
       .map(el=>[el.tagName,el.id,el.className?.baseVal ?? el.className,...['','::before','::after'].map(pseudo=>{
         const style=getComputedStyle(el,pseudo||null);return properties.map(name=>style[name]);
       })]);

@@ -56,7 +56,7 @@
     new ResizeObserver(measure).observe(keyboard, {box:'border-box'});
     root.requestAnimationFrame(measure);
     new MutationObserver(function(){
-      if (document.body.classList.contains('ma-session-paused') || document.body.classList.contains('trainer-session-result')) input.blur();
+      if (document.body.classList.contains('ma-session-paused') || document.body.classList.contains('trainer-session-result') || document.body.classList.contains('ma-study-feedback-open')) input.blur();
       root.requestAnimationFrame(measure);
     }).observe(document.body, {attributes:true, attributeFilter:['class']});
 

@@ -112,6 +112,23 @@ function flattenKanaRows(rows) {
     return Object.assign({}, ...Object.values(rows));
 }
 
+// The home recommendation and both trainers use exactly the same selection.
+function selectedKanaMap(settings = {}) {
+    settings ||= {};
+    const map = {};
+    for (const [selection, rows] of [[settings.hiraganaRows ?? Object.keys(hiraganaRows), hiraganaRows], [settings.katakanaRows ?? [], katakanaRows]]) {
+        for (const row of Array.isArray(selection) ? selection : []) {
+            if (!Object.hasOwn(rows, row)) continue;
+            Object.assign(map, rows[row]);
+            if (settings.dakuten) Object.assign(map, dakutenRows[row]);
+            if (settings.yoon) Object.assign(map, yoonRows[row]);
+            if (settings.yoon && settings.dakuten) Object.assign(map, yoonRows[`${row}_dakuten`]);
+            if (settings.extendedKatakana) Object.assign(map, extendedKatakanaRows[row]);
+        }
+    }
+    return map;
+}
+
 const hiraganaMap = flattenKanaRows(hiraganaRows);
 const katakanaMap = flattenKanaRows(katakanaRows);
 const dakutenMap = flattenKanaRows(dakutenRows);
@@ -134,6 +151,7 @@ const kanaCollections = Object.freeze({
 });
 
 window.ModeAtlasKanaData = {
+    selectedKanaMap,
     hiraganaRows,
     katakanaRows,
     dakutenRows,
