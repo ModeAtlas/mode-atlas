@@ -11,6 +11,9 @@
   var nativeBridge = plugins.ModeAtlasNative || null;
   var firebaseAuth = plugins.FirebaseAuthentication || null;
   var app = plugins.App || null;
+  // Disabled during Personal Team testing. Enabling Apple also requires the
+  // Xcode entitlement and FirebaseAuthentication provider configuration.
+  var appleSignInEnabled = false;
 
   function hasBridge(method){ return !!(nativeBridge && typeof nativeBridge[method] === 'function'); }
   function hasFirebaseAuth(method){ return !!(firebaseAuth && typeof firebaseAuth[method] === 'function'); }
@@ -71,7 +74,7 @@
     getCapabilities: function(){
       var providers = [];
       if (hasFirebaseAuth('signInWithGoogle')) providers.push('google.com');
-      if (hasFirebaseAuth('signInWithApple')) providers.push('apple.com');
+      if (appleSignInEnabled && hasFirebaseAuth('signInWithApple')) providers.push('apple.com');
       return {
         notifications: hasBridge('requestNotifications'),
         appBadge: hasBridge('setBadge'),
@@ -118,6 +121,7 @@
       if (providerId !== 'google.com' && providerId !== 'apple.com') {
         return { handled:false, providerId:providerId };
       }
+      if (providerId === 'apple.com' && !appleSignInEnabled) return { handled:false, providerId:providerId };
       var method = providerId === 'apple.com' ? 'signInWithApple' : 'signInWithGoogle';
       if (!hasFirebaseAuth(method)) {
         var unavailable = new Error('Native ' + providerId + ' authentication is unavailable in this build.');

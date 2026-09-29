@@ -86,3 +86,12 @@ The splash colour belongs to that surface; normal pages use the theme's
 `--ma-app-bg`. The iOS Reading pad uses a brief inset touch state and the native
 Capacitor Haptics impact on keydown. It updates the existing answer input and
 emits its normal input event. It does not own scoring, save data or Kana conversion.
+
+## Personal Team testing (2.63.1)
+
+Apple sign-in and linking are disabled in the native adapter, and the Capacitor
+provider list contains only Google. The Xcode target does not request the Apple
+sign-in entitlement or capability, allowing free Personal Team device builds.
+The Apple integration and unused entitlement file remain available for later
+activation. Enable all three together after paid membership and Firebase setup.
+The compact home, Google sign-in and account deletion remain available.

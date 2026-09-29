@@ -6,8 +6,7 @@
     "FirebaseAuthentication": {
       "skipNativeAuth": true,
       "providers": [
-        "google.com",
-        "apple.com"
+        "google.com"
       ]
     }
   },

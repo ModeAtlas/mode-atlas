@@ -39,6 +39,23 @@ test('platform facade forwards Apple revocation code to its native adapter', asy
   assert.deepEqual(calls, ['fresh-code']);
 });
 
+test('Personal Team build hides and rejects Apple sign-in even when its plugin method exists', async () => {
+  let appleCalls = 0;
+  const window = {
+    ModeAtlasEnv: { isNativeApp:true },
+    Capacitor: { Plugins: { FirebaseAuthentication: {
+      signInWithGoogle: async () => ({}),
+      signInWithApple: async () => { appleCalls += 1; }
+    } } }
+  };
+  const context = vm.createContext({ window, URL, Promise });
+  vm.runInContext(read('assets/platform/mode-atlas-platform.js'), context);
+  vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'), context);
+  assert.deepEqual(Array.from(window.AtlasPlatform.getCapabilities().authProviders), ['google.com']);
+  assert.equal((await window.AtlasPlatform.authenticate('apple.com')).handled, false);
+  assert.equal(appleCalls, 0);
+});
+
 test('native runtime disables browser-only update and install ownership', () => {
   const head = read('assets/app/mode-atlas-head-bootstrap.js');
   const versions = read('assets/app/mode-atlas-version-check.js');
@@ -106,14 +123,15 @@ test('native auth transport keeps Firebase JS as the single session and Firestor
   assert.equal(pkg.dependencies['@capacitor/app'], '8.0.1');
   assert.equal(pkg.dependencies.firebase, '12.12.1');
   assert.equal(config.plugins.FirebaseAuthentication.skipNativeAuth, true);
-  assert.deepEqual(config.plugins.FirebaseAuthentication.providers, ['google.com', 'apple.com']);
+  assert.deepEqual(config.plugins.FirebaseAuthentication.providers, ['google.com']);
   assert.deepEqual(config.experimental.ios.spm.packageTraits['@capacitor-firebase/authentication'], ['Google']);
   assert.match(cloud, /signInWithCredential/);
   assert.match(cloud, /AtlasPlatform\?\.authenticate\?\.\(providerId\)/);
   assert.match(cloud, /GoogleAuthProvider\.credential/);
   assert.match(cloud, /new OAuthProvider\('apple\.com'\)\.credential/);
   assert.match(cloud, /linkWithCredential\(user, credential\)/);
-  assert.match(read('ios/App/App/App.entitlements'), /com\.apple\.developer\.applesignin/);
+  assert.doesNotMatch(read('ios/App/App.xcodeproj/project.pbxproj'), /CODE_SIGN_ENTITLEMENTS|com\.apple\.SignInWithApple/);
+  assert.match(read('assets/platform/mode-atlas-platform-native.js'), /var appleSignInEnabled = false/);
   assert.match(read('assets/platform/mode-atlas-platform-native.js'), /JS Auth session owns UID/);
   assert.doesNotMatch(cloud, /FirebaseAuthentication\.signInWithGoogle/);
 });
