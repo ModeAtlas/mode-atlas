@@ -144,7 +144,9 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
                 return ["stored": false, "widgetAvailable": true]
             }
             try ModeAtlasWidgetStore.write(snapshot)
-            reloadWidgets()
+            // A delayed work item can be suspended with the app. Ask WidgetKit
+            // to read the final snapshot now when leaving the foreground.
+            reloadWidgets(immediate: UIApplication.shared.applicationState != .active)
             return ["stored": true, "widgetAvailable": true]
         }
     }
