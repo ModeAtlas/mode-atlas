@@ -16,9 +16,12 @@ struct StudyProvider: TimelineProvider {
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<StudyEntry>) -> Void) {
         let now = Date()
-        let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now))!
         let snapshot = ModeAtlasWidgetStore.read()
-        let entries = [StudyEntry(date: now, snapshot: snapshot), StudyEntry(date: nextDay, snapshot: snapshot)]
+        let usesLiveText: Bool
+        if #available(iOS 18.0, *) { usesLiveText = true }
+        else { usesLiveText = false }
+        let entries = WidgetActivity.timelineDates(since: snapshot?.activityDate, at: now, usesLiveText: usesLiveText)
+            .map { StudyEntry(date: $0, snapshot: snapshot) }
         completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(1800))))
     }
 }
@@ -65,11 +68,26 @@ struct StudyWidgetView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title + ": " + (value?.formatted() ?? "Not available"))
     }
+    private func activityText(since date: Date) -> Text {
+        if WidgetActivity.isRecent(since: date, at: entry.date) {
+            return Text(WidgetActivity.recentText)
+        }
+        if #available(iOS 18.0, *) {
+            // System-defined formats can be decoded by WidgetKit's renderer.
+            // Excluding seconds lets iOS update the text at minute precision
+            // without waking the app or requesting another data snapshot.
+            let elapsed = Text(.currentDate, format: .offset(to: date,
+                allowedFields: [.day, .hour, .minute], maxFieldCount: 2, sign: .never))
+            return Text("\(elapsed) ago")
+        }
+        return Text(WidgetActivity.text(since: date, at: entry.date))
+    }
     private func activity(_ value: ModeAtlasWidgetSnapshot) -> some View {
         HStack(spacing: 4) {
             Image(systemName: "clock").accessibilityHidden(true)
             if let date = value.activityDate {
-                Text("\(date, style: .relative) ago")
+                activityText(since: date)
+                    .multilineTextAlignment(.leading)
                     .accessibilityLabel("Last study activity \(date.formatted(date: .abbreviated, time: .shortened))")
             } else { Text("No activity recorded") }
         }.font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)

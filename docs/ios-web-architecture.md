@@ -250,7 +250,16 @@ zeros. The first v2 write migrates the legacy file name; reset clears both names
 
 WidgetKit owns refresh timing. The app publishes after study/Word Bank changes,
 cloud hydration, navigation and backgrounding; it coalesces timeline reloads.
-Relative activity dates remain dynamic in the rendered widget. Daily completion
+Activity recency uses “Less than a minute ago” for the first 60 seconds, then
+at most two units from days/hours/minutes. `WidgetActivity.swift` owns the
+first-minute transition and legacy labels/timeline dates, only in the extension.
+On iOS 18+, SwiftUI's system `DateOffset` format excludes seconds and updates
+the archived text without app timers or data reloads. Custom live format types
+are avoided because the system renderer must decode them outside the extension.
+On iOS 15–17, precomputed labels update every five minutes for the first hour
+of a timeline, then hourly for up to a day if the normal refresh is deferred.
+The existing 30-minute reload request remains unchanged; iOS controls actual
+delivery timing. One extra entry ends the first-minute message. Daily completion
 and streak are interpreted for the displayed local day, while lifetime totals
 remain visible even after weeks of inactivity. Empty/unprovisioned builds show
 an unavailable state instead of practice buttons or fictional sample statistics.

@@ -1,3 +1,9 @@
+## 2.69.1 - 2026-09-29
+
+- Removed ticking seconds from widget activity recency. The first minute reads “Less than a minute ago”; later activity uses minutes, hours and days, with at most two units.
+- Used system-managed live date formatting on iOS 18+ and bounded precomputed labels on iOS 15–17. The first-minute transition and local-midnight rollover are scheduled without app timers, polling or extra snapshot reloads.
+- Kept the widget data contract, all three sizes, both colour themes and website behaviour unchanged.
+
 ## 2.69.0 - 2026-09-29
 
 - Consolidated pause/resume and answer feedback under the existing session owner. Native inactivity pauses practice, including Speed Run; answer, daily/test and session timing exclude paused intervals. Resume is explicit.
