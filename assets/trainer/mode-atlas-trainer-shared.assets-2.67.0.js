@@ -449,10 +449,21 @@ function buildOptionButtons() { /* Options menu removed; SRS now lives in Modifi
 function buildRows(containerId, sourceRows, selectedRowsKey, displayPrefix) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    container.replaceChildren();
     const lockedModes = isModeLocked();
-
-    for (const row of Object.keys(sourceRows)) {
+    const rows = Object.keys(sourceRows);
+    const existing = Array.from(container.children);
+    // Updating state must preserve the focused button and keyboard navigation.
+    if (existing.length === rows.length && existing.every((button, index) => button.dataset.rowKey === rows[index])) {
+        existing.forEach(button => {
+            const active = Array.isArray(settings[selectedRowsKey]) && settings[selectedRowsKey].includes(button.dataset.rowKey);
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', String(active));
+            button.disabled = lockedModes;
+        });
+        return;
+    }
+    container.replaceChildren();
+    for (const row of rows) {
         const label = row.replace(displayPrefix, "");
         const isSelected = Array.isArray(settings[selectedRowsKey]) && settings[selectedRowsKey].includes(row);
         const btn = makeToggleButton(label, isSelected, () => {

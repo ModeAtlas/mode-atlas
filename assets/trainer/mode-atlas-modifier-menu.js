@@ -82,6 +82,17 @@
 
     const s=trainerSettings();
     const activePreset = activePresetId();
+    const controls=Array.from(mod.querySelectorAll('[data-ma-control-key]'));
+    if(controls.length){
+      const locked=typeof isModeLocked === 'function' && isModeLocked();
+      controls.forEach(button=>{
+        const active=button.dataset.preset ? activePreset===button.dataset.preset : !!s[button.dataset.maControlKey];
+        button.classList.toggle('active',active);
+        button.setAttribute('aria-pressed',String(active));
+        button.disabled=locked;
+      });
+      return;
+    }
     const groups=[
       ['Study presets', presetList().map(p => Object.assign({ type:'preset' }, p))],
       ['Question flow', [
