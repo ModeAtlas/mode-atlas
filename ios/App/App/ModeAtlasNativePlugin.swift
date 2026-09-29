@@ -179,8 +179,10 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     public func didReceive(response: UNNotificationResponse) {
         guard [Self.reminderID, Self.testID].contains(response.notification.request.identifier),
               response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
-        Self.pendingDestination = "reading"
-        notifyListeners("notificationAction", data: [:], retainUntilConsumed: true)
+        DispatchQueue.main.async {
+            Self.pendingDestination = "reading"
+            self.notifyListeners("notificationAction", data: [:], retainUntilConsumed: true)
+        }
     }
     @objc func consumeNotificationDestination(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
