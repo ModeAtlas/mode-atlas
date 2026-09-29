@@ -3,7 +3,6 @@
   if (window.__modeAtlasDevConsoleLoaded) return;
   window.__modeAtlasDevConsoleLoaded = true;
 
-  const DEV_EMAIL = 'admin@mode-atlas.com';
   const $ = (sel, root = document) => root.querySelector(sel);
   const toast = (message, type = 'info', ms = 2800) => {
     try { return window.ModeAtlas?.toast?.(message, type, ms); } catch { return null; }
@@ -21,23 +20,9 @@
     return raw ? JSON.parse(raw) : fallback;
   }
 
-  function currentUserEmail(){
-    try {
-      const user = window.KanaCloudSync?.getUser?.() || window.currentUser || null;
-      return String(user?.email || '').trim().toLowerCase();
-    } catch { return ''; }
-  }
-
-  function isLocalDevHost(){
-    try {
-      if (window.ModeAtlasEnv?.isNativeApp) return false;
-      return !!window.ModeAtlasEnv?.isLocalhost || /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(location.hostname || '');
-    } catch { return false; }
-  }
-
-  function canUseDevTools(){
-    return isLocalDevHost() || currentUserEmail() === DEV_EMAIL;
-  }
+  const currentUserEmail = () => window.ModeAtlasDevConsoleLoader?.currentUserEmail?.() || '';
+  const isLocalDevHost = () => !!window.ModeAtlasDevConsoleLoader?.isLocalDevHost?.();
+  const canUseDevTools = () => !!window.ModeAtlasDevConsoleLoader?.isEligible?.();
 
   function pageName(){
     try { if (window.ModeAtlasPageName) return String(window.ModeAtlasPageName()).toLowerCase(); } catch {}

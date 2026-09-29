@@ -469,7 +469,7 @@ function renderGuidance(result) {
     }
 
     RESULTS_PRACTICE_ACTION.href = `/${mode}/?focusWeak=1`;
-    RESULTS_PRACTICE_ACTION.querySelector("span").textContent = `Practice recommended ${mode === "reading" ? "Reading" : "Writing"} kana`;
+    RESULTS_PRACTICE_ACTION.querySelector("span").textContent = `Practise recommended ${mode === "reading" ? "Reading" : "Writing"} kana`;
 }
 
 function renderTrend(result) {

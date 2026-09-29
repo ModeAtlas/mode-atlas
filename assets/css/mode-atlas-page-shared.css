@@ -111,7 +111,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 }
 
 /* Shared visibility and small layout utilities used by static HTML and JS. */
-.ma-hidden,[hidden]{display:none;}
+/* Hidden is a state contract, independent of component layout. */
+.ma-hidden,[hidden]:not([hidden="until-found"]){display:none!important;}
 .ma-actions-row{margin-top:var(--ma-space-4);display:flex;flex-wrap:wrap;gap:10px;}
 .ma-muted-copy{margin-top:0;color:var(--ma-muted);}
 .ma-file-input{display:none;}

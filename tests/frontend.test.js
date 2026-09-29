@@ -282,8 +282,11 @@ test('sound mode owner persists On/Loud/Off without relying on an out-of-scope s
   assert.equal(events.at(-1).detail.mode, 'off');
   assert.doesNotMatch(source, /MutationObserver/, 'sound feedback should not scan the whole document for DOM changes');
   assert.doesNotMatch(source, /ModeAtlasUI/, 'unused legacy sound API alias should remain removed');
-  assert.match(source, /safeWrapGlobal\('flashResult'/, 'answer feedback should use the explicit trainer result boundary');
-  assert.match(source, /window\.ModeAtlas\.toast = function/, 'notification feedback should use the shared toast boundary');
+  assert.doesNotMatch(source, /safeWrapGlobal|__maStandardSoundWrapped/, 'sound must not replace trainer or toast functions');
+  for(const file of ['assets/pages/mode-atlas-default-page.js','assets/pages/mode-atlas-reverse-page.js']){
+    assert.match(read(file), /function flashResult\(correct, onDone\) \{\s*window.ModeAtlasSounds\?\.play/, 'answer feedback belongs at its explicit result boundary');
+  }
+  assert.match(read('assets/app/mode-atlas-toast.js'), /ModeAtlasSounds\?\.notify/, 'notification feedback should be called by the shared toast owner');
   assert.match(source, /event\.isComposing \|\| event\.keyCode === 229/);
   assert.match(source, /const textEntry = event\.target\.closest/);
 });

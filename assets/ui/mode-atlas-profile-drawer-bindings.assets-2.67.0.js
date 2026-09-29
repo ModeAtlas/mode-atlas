@@ -11,11 +11,6 @@
     return store?.get?.(key, fallback) ?? localStorage.getItem(key) ?? fallback;
   }
 
-  function storageSet(key, value) {
-    const store = window.ModeAtlasStorage;
-    return store?.set?.(key, value) ?? localStorage.setItem(key, String(value));
-  }
-
   function readJson(key, fallback){
     try {
       const raw = storageGet(key, null);
@@ -233,7 +228,7 @@
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        if (window.ModeAtlasEnv?.isNativeApp && activeDrawerName === 'profile') closeProfile();
+        if (activeDrawerName === 'profile') closeProfile();
         else openProfile(button);
       }, true);
     });
@@ -243,7 +238,7 @@
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        if (window.ModeAtlasEnv?.isNativeApp && activeDrawerName === 'settings') closeSettings();
+        if (activeDrawerName === 'settings') closeSettings();
         else openSettings(button);
       }, true);
     });
@@ -261,29 +256,10 @@
 
   function bindSettings(){
     const display = window.ModeAtlasDisplay;
-    const normalize = (value) => display?.normalizeMode ? display.normalizeMode(value) : String(value || 'auto').toLowerCase();
-    const currentMode = () => display?.getMode ? display.getMode() : normalize(storageGet('modeAtlasDisplayMode', 'auto') || 'auto');
-    const apply = () => {
-      if (display?.applyMode) display.applyMode();
-      else {
-        const mode = currentMode();
-        document.body.dataset.displayMode = mode;
-        document.querySelectorAll('.ma-display-option').forEach((button) => button.classList.toggle('active', normalize(button.dataset.display) === mode));
-      }
-    };
     document.querySelectorAll('.ma-display-option').forEach((button) => {
       if (button.dataset.displayBound === 'shared') return;
       button.dataset.displayBound = 'shared';
-      button.addEventListener('click', () => {
-        const nextMode = normalize(button.dataset.display || 'auto');
-        if (display?.setMode) display.setMode(nextMode);
-        else {
-          storageSet('modeAtlasDisplayMode', nextMode);
-          window.dispatchEvent(new CustomEvent('modeAtlasDisplayModeChanged', { detail: { mode: nextMode } }));
-        }
-        apply();
-        try { window.ModeAtlasTheme?.updateButtons?.(); } catch {}
-      });
+      button.addEventListener('click', () => display?.setMode(button.dataset.display || 'auto'));
     });
     document.querySelectorAll('[data-ma-check-updates]').forEach((button) => {
       if (button.dataset.updateBound === 'shared') return;
@@ -296,7 +272,7 @@
     });
     refreshUpdateLabels();
 
-    apply();
+    display?.applyMode();
     try { window.ModeAtlasTheme?.updateButtons?.(); } catch {}
   }
 

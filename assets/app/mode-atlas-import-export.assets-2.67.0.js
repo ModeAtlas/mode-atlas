@@ -218,7 +218,7 @@
     return window.ModeAtlasFeedback?.confirm?.({
       kicker: 'Save import',
       title: 'Review imported save',
-      message: 'Backup sections containing real data will replace the matching local section. Empty backup sections will keep the useful data already on this device.',
+      message: 'Importing replaces the matching data on this device. Empty sections in the backup leave your existing data unchanged.',
       contentNode: content,
       confirmLabel: 'Continue import',
       cancelLabel: 'Cancel',

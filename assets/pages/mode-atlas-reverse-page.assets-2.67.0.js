@@ -139,11 +139,6 @@ const dailyTodayAttemptsEl = document.getElementById("dailyTodayAttempts");
 const dailyHistoryListEl = document.getElementById("dailyHistoryList");
 const timeTrialTop3El = document.getElementById("timeTrialTop3");
 const speedRunTop3El = document.getElementById("speedRunTop3");
-const buttonsModeBtn = document.getElementById("buttonsModeBtn");
-const keyboardModeBtn = document.getElementById("keyboardModeBtn");
-const choice4Btn = document.getElementById("choice4Btn");
-const choice6Btn = document.getElementById("choice6Btn");
-const choice8Btn = document.getElementById("choice8Btn");
 
 const trainerController = window.ModeAtlasTrainerController.create({
     mode: "writing",
@@ -290,59 +285,7 @@ function updateDailyChallengePills() { return trainerController.updateDailyChall
 
 function applyPanelStates() {
     trainerController.applyBasePanelStates();
-
-    const testModeForcesSixChoices = isTestModeSession();
-    const effectiveKeyboardMode = settings.keyboardMode;
-
-    setElementVisible(keyboardWrapEl, effectiveKeyboardMode);
-    setElementHidden(choiceGridEl, effectiveKeyboardMode);
-
-    buttonsModeBtn.classList.toggle("btn-secondary", !effectiveKeyboardMode);
-    keyboardModeBtn.classList.toggle("btn-secondary", effectiveKeyboardMode);
-    buttonsModeBtn.disabled = sessionStarted;
-    keyboardModeBtn.disabled = sessionStarted;
-
-    if (effectiveKeyboardMode) {
-        choice4Btn.textContent = "Romaji Keyboard";
-        choice6Btn.textContent = "Kana Keyboard";
-        setElementHidden(choice8Btn, true);
-
-        choice4Btn.classList.toggle("btn-secondary", settings.keyboardInputType === "romaji");
-        choice6Btn.classList.toggle("btn-secondary", settings.keyboardInputType !== "romaji");
-        choice8Btn.classList.remove("btn-secondary");
-
-        choice4Btn.disabled = sessionStarted;
-        choice6Btn.disabled = sessionStarted;
-        choice8Btn.disabled = true;
-
-        inputEl.placeholder = settings.keyboardInputType === "romaji"
-            ? "Type with romaji keyboard, then press Enter"
-            : "Type kana...";
-
-        if (keyboardNoteEl) {
-            keyboardNoteEl.textContent = settings.keyboardInputType === "romaji"
-                ? "Romaji Keyboard: the question shows kana. Type with a romaji keyboard, let it convert to kana, then press Enter to check."
-                : "Kana Keyboard: the question shows romaji. Type the kana directly and it will check as you type.";
-        }
-    } else {
-        choice4Btn.textContent = "4 Choices";
-        choice6Btn.textContent = testModeForcesSixChoices ? "6 Choices" : "6 Choices";
-        choice8Btn.textContent = "8 Choices";
-        setElementVisible(choice8Btn, true);
-
-        choice4Btn.classList.toggle("btn-secondary", settings.choiceCount === 4 && !testModeForcesSixChoices);
-        choice6Btn.classList.toggle("btn-secondary", settings.choiceCount === 6 || testModeForcesSixChoices);
-        choice8Btn.classList.toggle("btn-secondary", settings.choiceCount === 8 && !testModeForcesSixChoices);
-
-        choice4Btn.disabled = sessionStarted || testModeForcesSixChoices;
-        choice6Btn.disabled = sessionStarted || testModeForcesSixChoices;
-        choice8Btn.disabled = sessionStarted || testModeForcesSixChoices;
-
-        inputEl.placeholder = "Type kana...";
-        if (keyboardNoteEl) {
-            keyboardNoteEl.textContent = "Keyboard mode is optional. Buttons are the default writing practice input method.";
-        }
-    }
+    window.ModeAtlasWritingInputControls?.sync();
 }
 
 
@@ -826,6 +769,7 @@ function nextCharacter() {
 }
 
 function flashResult(correct, onDone) {
+    window.ModeAtlasSounds?.play(correct ? 'correct' : 'wrong', {cooldown:130});
     locked = true;
     promptEl.classList.remove("flash-correct", "flash-wrong");
     promptEl.classList.add(correct ? "flash-correct" : "flash-wrong");
@@ -1120,6 +1064,7 @@ function saveTestModeResult() {
 
 
 function endTestMode() {
+    window.ModeAtlasSounds?.play('finish', {cooldown:130});
     window.KanaCloudSync?.setSessionCloudPause?.(false);
     window.KanaCloudSync?.flushDeferredSessionSync?.(650);
     const durationMs = Math.max(0, Date.now() - testStartTime);
@@ -1179,6 +1124,7 @@ function updateBestScores() { return trainerController.updateBestScores(); }
 function showSessionModal(autoEnded = false) { return trainerController.showSessionModal(autoEnded); }
 
 function endDailyChallenge() {
+    window.ModeAtlasSounds?.play('finish', {cooldown:130});
     window.KanaCloudSync?.setSessionCloudPause?.(false);
     window.KanaCloudSync?.flushDeferredSessionSync?.(650);
     const dateKey = getTodayKey();
@@ -1237,6 +1183,7 @@ function endDailyChallenge() {
 
 function endSession(autoEnded = false) {
     if (!sessionStarted) return;
+    window.ModeAtlasSounds?.play('finish', {cooldown:130});
     beginTrainerSessionEnd();
 
     if (isDailyChallengeSession()) {
@@ -1368,48 +1315,6 @@ comboRandomBtn.addEventListener("click", () => {
     updateTrialConfigVisibility();
     saveAll();
 });
-
-buttonsModeBtn.addEventListener("click", () => {
-    if (sessionStarted) return;
-    settings.keyboardMode = false;
-    onSettingsChanged();
-});
-
-keyboardModeBtn.addEventListener("click", () => {
-    if (sessionStarted) return;
-    settings.keyboardMode = true;
-    if (!["romaji", "kana"].includes(settings.keyboardInputType)) {
-        settings.keyboardInputType = "kana";
-    }
-    onSettingsChanged();
-});
-
-choice4Btn.addEventListener("click", () => {
-    if (sessionStarted) return;
-    if (settings.keyboardMode) {
-        settings.keyboardInputType = "romaji";
-    } else {
-        settings.choiceCount = 4;
-    }
-    onSettingsChanged();
-});
-
-choice6Btn.addEventListener("click", () => {
-    if (sessionStarted) return;
-    if (settings.keyboardMode) {
-        settings.keyboardInputType = "kana";
-    } else {
-        settings.choiceCount = 6;
-    }
-    onSettingsChanged();
-});
-
-choice8Btn.addEventListener("click", () => {
-    if (sessionStarted || settings.keyboardMode) return;
-    settings.choiceCount = 8;
-    onSettingsChanged();
-});
-
 
 if (modifiersContentEl && !modifiersContentEl.dataset.maClickGuard) {
     modifiersContentEl.dataset.maClickGuard = "true";

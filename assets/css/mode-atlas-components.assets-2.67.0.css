@@ -8,6 +8,7 @@
   --ma-button-border:var(--ma-border-strong);
   --ma-button-color:var(--ma-control-text);
   appearance:none;
+  min-width:0;max-width:100%;overflow-wrap:anywhere;white-space:normal;
   display:inline-flex;
   align-items:center;
   justify-content:center;

@@ -417,7 +417,7 @@ function setBottomTab(tabName) {
     settings.activeBottomTab = settings.activeBottomTab === tabName ? null : tabName;
     applyPanelStates();
     // Drawer open/close is UI-only; do not mark cloud data updated or save over hydrated stats.
-    window.ModeAtlasStorage.writeModeJSON("reading", "settings", settings);
+    window.ModeAtlasStorage.writeModeJSON(trainerController.mode, "settings", settings);
 }
 
 function isModeLocked() { return sessionStarted; }

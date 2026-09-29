@@ -64,7 +64,7 @@
 
           <details class="ma-settings-disclosure" open>
             <summary>
-              <span><span class="ma-menu-kicker">Secondary tools</span><strong>Data and app</strong></span>
+              <span><span class="ma-menu-kicker">More options</span><strong>Data and app</strong></span>
               ${icon(href,'chevron')}
             </summary>
             <div class="ma-setting-list ma-settings-data-list">
@@ -86,20 +86,20 @@
               <div class="ma-setting-row ma-setting-row--stack ma-tools-panel">
                 <div class="ma-setting-row__copy">
                   <div class="ma-setting-row__label">Application</div>
-                  <div class="ma-setting-row__description">Version <span data-ma-current-version></span>${native ? '' : ' · installation and update tools.'}</div>
+                  <div class="ma-setting-row__description">Version <span data-ma-current-version></span></div>
                 </div>
                 <div class="ma-setting-row__control ma-action-row ma-settings-inline-actions">
                   <button class="ma-button" type="button" data-ma-about-open>${icon(href,'info')}<span>About</span></button>
                   ${native ? '' : '<button class="ma-button" type="button" data-ma-install>Install app</button>'}
-                  <button class="ma-button ma-button--primary" id="maCheckUpdatesBtn" type="button" data-ma-check-updates>${icon(href,'refresh')}<span data-ma-update-label>Check for updates</span></button>
+                  ${native ? '' : `<button class="ma-button ma-button--primary" id="maCheckUpdatesBtn" type="button" data-ma-check-updates>${icon(href,'refresh')}<span data-ma-update-label>Check for updates</span></button>`}
                 </div>
-                <div class="ma-status ma-settings-status" id="maUpdateStatus">Current version: <span data-ma-current-version></span></div>
+                ${native ? '' : '<div class="ma-status ma-settings-status" id="maUpdateStatus" role="status" aria-live="polite"></div>'}
               </div>
 
               <div class="ma-setting-row ma-setting-row--stack ma-setting-row--danger">
                 <div class="ma-setting-row__copy">
                   <div class="ma-setting-row__label">Data and account</div>
-                  <div class="ma-setting-row__description">Reset clears study data but keeps your account. Delete removes both. Each asks for confirmation.</div>
+                  <div class="ma-setting-row__description">Reset clears study data but keeps your account. Delete removes both.</div>
                 </div>
                 <div class="ma-setting-row__control ma-action-row"><button class="ma-button ma-button--danger" type="button" data-ma-unified-reset>${icon(href,'delete')}<span>Reset data</span></button><button class="ma-button ma-button--danger" id="settingsDeleteAccountBtn" type="button" hidden>Delete account &amp; data</button></div>
               </div>

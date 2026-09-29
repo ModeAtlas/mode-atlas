@@ -30,6 +30,7 @@
   function toast(message, type, ms){
     if (!message) return null;
     const tone = normalizeTone(type);
+    window.ModeAtlasSounds?.notify?.(message, tone);
     const wrap = ensureWrap();
     const node = document.createElement('div');
     node.className = 'ma-toast ma-toast--' + tone;

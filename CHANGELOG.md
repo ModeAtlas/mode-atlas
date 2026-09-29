@@ -1,3 +1,12 @@
+## 2.67.0 - 2026-09-29
+
+- Polished shared instructions, Results, Words and About; standardised practice/practise usage and removed developer-facing explanations from everyday UI.
+- Improved long button/profile text wrapping and made semantic hidden state reliable across component layouts.
+- Made Profile/Settings repeat-tap closing consistent and removed the misleading web update checker from native Settings.
+- Fixed Writing setup persisting into Reading settings; removed competing Writing handlers and runtime sound/input function wrappers.
+- Consolidated mastery, sync status, developer eligibility and display preferences under their existing owners.
+- Added a web/native layout matrix and documented ownership findings and remaining architectural limits.
+
 ## 2.66.1 - 2026-09-29
 
 - Reduced native Reminders to its toggle, time picker and always-visible iPhone Settings button; routine status text and widget settings were removed at source.

@@ -12,14 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'Mode Atlas has a new polish update focused on cleaner menus, safer save handling, and clearer account information.';
+  const WHATS_NEW_COPY = 'Clearer instructions, more consistent menus and better layouts across phones, tablets and desktop.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Cleaner menus and shared Profile / Settings controls.',
-    'Improved save import summaries and safer backup handling.',
-    'More reliable update handling after new releases.',
-    'Light Mode contrast and layout polish.'
+    'Clearer practice instructions and results summaries.',
+    'More consistent Profile and Settings menus.',
+    'Improved text wrapping and hidden-control behaviour.'
   ];
 
   function storeGet(key, fallback = '') {
@@ -81,17 +80,14 @@
     return best;
   }
   function getCloudStatus(){
-    const user = window.KanaCloudSync?.getUser?.() || window.currentUser || null;
-    const signedIn = !!user;
-    const online = navigator.onLine !== false;
-    const lastSync = signedIn ? latestTimestamp([
-      'modeAtlasLastCloudSyncAt','cloudReadingUpdatedAt','cloudWritingUpdatedAt','testModeResultsUpdatedAt','readingTestModeResultsUpdatedAt','writingTestModeResultsUpdatedAt','kanaWordBankUpdatedAt'
-    ]) : 0;
-    let mode = 'Local only';
-    let status = 'Local saving active';
-    if (signedIn && online){ mode = 'Cloud + local'; status = 'Cloud available'; }
-    else if (signedIn && !online){ mode = 'Cloud account offline'; status = 'No cloud access'; }
-    return { signedIn, online, mode, status, lastSync };
+    const sync = window.KanaCloudSync?.getSyncStatus?.();
+    const signedIn = !!sync?.user;
+    return {
+      signedIn, online:navigator.onLine !== false,
+      mode:signedIn ? 'Account and device' : 'This device',
+      status:sync?.text || 'Checking save status…',
+      lastSync:Number(sync?.lastSync || 0)
+    };
   }
   function getAppInfo(){
     const cloud = getCloudStatus();
@@ -222,7 +218,7 @@
     const introCopy = document.createElement('div');
     introCopy.append(
       aboutEl('div', 'ma-about-kicker', 'Mode Atlas'),
-      aboutEl('p', '', 'Japanese study tools for kana recognition, recall, review, and connected learning branches.')
+      aboutEl('p', '', 'Practise kana, track your progress and build your Japanese vocabulary.')
     );
     intro.append(aboutEl('div', 'ma-about-mark', 'かな'), introCopy);
 
@@ -237,30 +233,28 @@
     const overview = aboutEl('div', 'ma-about-panel'); overview.dataset.maAboutPanel='overview';
     const grid = aboutEl('div', 'ma-about-grid');
     grid.append(
-      aboutCard('App version','version','Current app release installed in this build.'),
-      aboutCard('Save version','saveSchema','Helps keep backups compatible across app updates.'),
-      aboutCard('Build','build','','buildDate'),
-      aboutCard('Install support','installSupport','Add Mode Atlas to your device for quicker access.')
+      aboutCard('Version','version',''),
+      aboutCard('Updated','buildDate','')
     );
     const saveSection=aboutEl('div','ma-about-section'); saveSection.append(aboutEl('h3','','Account & save status'));
     const table=aboutEl('div','ma-about-table');
-    [['Save mode','saveMode'],['Sync status','cloudStatus'],['Signed in','signedIn'],['Connection','online'],['Last cloud sync','lastCloudSync'],['Local save updated','localSaveUpdated'],['Storage access','storage'],['Theme preference','theme']].forEach(([label,key])=>table.append(infoRow(label,key)));
+    [['Saved to','saveMode'],['Sync status','cloudStatus'],['Last cloud sync','lastCloudSync'],['Last saved on this device','localSaveUpdated']].forEach(([label,key])=>table.append(infoRow(label,key)));
     saveSection.append(table);
     const credit=aboutEl('div','ma-about-section ma-about-credit');
     const created=document.createElement('p'); created.append(aboutEl('strong','',`Created by ${DEVELOPER}`));
     const support=document.createElement('p'); support.append(document.createTextNode('Support: '),aboutLink(SUPPORT_EMAIL,`mailto:${SUPPORT_EMAIL}`),document.createTextNode(' · '),aboutLink(OFFICIAL_SITE,`https://${OFFICIAL_SITE}/`,{target:'_blank',rel:'noopener'}));
-    credit.append(aboutEl('h3','','Developer'),created,aboutEl('p','','Designed and built as a focused Japanese study ecosystem.'),support,aboutEl('p','ma-about-muted',`© 2026 ${DEVELOPER}. All rights reserved.`));
+    credit.append(aboutEl('h3','','Developer'),created,aboutEl('p','','Made for focused, everyday Japanese study.'),support,aboutEl('p','ma-about-muted',`© 2026 ${DEVELOPER}. All rights reserved.`));
     overview.append(grid,saveSection,credit);
 
     const whatsNew=aboutEl('div','ma-about-panel'); whatsNew.dataset.maAboutPanel='whatsnew';
     const whatsSection=aboutEl('div','ma-about-section'); const whatsList=aboutEl('ul','ma-about-list');
     whatsNewItems.forEach(item=>whatsList.append(aboutEl('li','',item)));
-    whatsSection.append(aboutEl('h3','','What’s new in this build'),aboutEl('p','ma-about-muted','Recent improvements that affect everyday use.'),whatsList); whatsNew.append(whatsSection);
+    whatsSection.append(aboutEl('h3','','What’s new'),aboutEl('p','ma-about-muted','Recent improvements that affect everyday use.'),whatsList); whatsNew.append(whatsSection);
 
     const legal=aboutEl('div','ma-about-panel'); legal.dataset.maAboutPanel='legal';
     const privacy=aboutEl('div','ma-about-section'); const legalLinks=document.createElement('p');
     legalLinks.append(aboutLink('Open Privacy Policy',aboutAppUrl('privacy/'),{target:'_blank',rel:'noopener'}),document.createTextNode(' · '),aboutLink('Open Terms of Use',aboutAppUrl('terms/'),{target:'_blank',rel:'noopener'}));
-    privacy.append(aboutEl('h3','','Privacy & data'),aboutEl('p','','Mode Atlas saves learning progress on this device. Signing in lets supported progress follow you across devices.'),aboutEl('p','','Local backups are user-controlled exports. Manual imports prioritise the selected backup for sections it contains, while empty backup sections do not wipe useful current data.'),legalLinks);
+    privacy.append(aboutEl('h3','','Privacy & data'),aboutEl('p','','Mode Atlas saves learning progress on this device. Signing in lets supported progress follow you across devices.'),aboutEl('p','','Export a backup to keep a copy of your progress. Before importing, review which data the backup will replace.'),legalLinks);
     const disclaimer=aboutEl('div','ma-about-section'); disclaimer.append(aboutEl('h3','','Disclaimer'),aboutEl('p','','Mode Atlas is a study aid. It is not an official language certification tool and does not guarantee language proficiency outcomes.'));
     const ownership=aboutEl('div','ma-about-section'); ownership.append(aboutEl('h3','','Credits & ownership'),aboutEl('p','',`Mode Atlas, its app structure, and learning interface are developed by ${DEVELOPER}. Japanese kana characters are part of the Japanese writing system and are not proprietary.`));
     legal.append(privacy,disclaimer,ownership);

@@ -121,14 +121,7 @@
         return { today, entries, best };
     }
 
-    function collectKanaSnapshot() {
-        return {
-            readingStats: Store.readModeJSON('reading', 'charStats', {}),
-            writingStats: Store.readModeJSON('writing', 'charStats', {}),
-            readingTimes: Store.readModeJSON('reading', 'charTimes', {}),
-            writingTimes: Store.readModeJSON('writing', 'charTimes', {})
-        };
-    }
+    function collectKanaSnapshot() { return M().createSnapshot(); }
 
     function collectSummaries(snapshot) {
         snapshot = snapshot || collectKanaSnapshot();
@@ -162,37 +155,14 @@
         return Array.isArray(M()?.ALL) ? M().ALL : [];
     }
 
-    function timingAverage(value) {
-        let n = 0;
-        if (typeof value === 'number') n = Number(value);
-        else if (value && typeof value === 'object') n = Number(value.avg || value.average || value.time || 0);
-        return n ? (n < 30 ? n * 1000 : n) : 0;
-    }
-
-    function combinedKanaStats(ch, snapshot) {
-        const reading = snapshot?.readingStats?.[ch] || {};
-        const writing = snapshot?.writingStats?.[ch] || {};
-        const correct = Number(reading.correct || reading.right || 0) + Number(writing.correct || writing.right || 0);
-        const wrong = Number(reading.wrong || reading.incorrect || 0) + Number(writing.wrong || writing.incorrect || 0);
-        const times = [timingAverage(snapshot?.readingTimes?.[ch]), timingAverage(snapshot?.writingTimes?.[ch])].filter(Boolean);
-        const avg = times.length ? times.reduce((sum, value) => sum + value, 0) / times.length : 0;
-        return { correct, wrong, avg };
-    }
-
     function masteryFor(ch, snapshot) {
-        const stats = combinedKanaStats(ch, snapshot);
-        const correct = stats.correct;
-        const wrong = stats.wrong;
+        const correct = M().charCorrect(ch, snapshot);
+        const wrong = M().charWrong(ch, snapshot);
         const attempts = correct + wrong;
         const accuracy = attempts ? (correct / attempts) * 100 : 0;
         const displayAccuracy = Math.round(accuracy);
-        const avg = stats.avg;
-        let stage = 'New';
-        if (attempts > 0) {
-            if (correct >= 50 && accuracy >= 95 && avg > 0 && avg <= 1000) stage = 'Mastered';
-            else if (correct >= 10 && accuracy >= 85 && (!avg || avg <= 2500)) stage = 'Reviewing';
-            else stage = 'Learning';
-        }
+        const avg = M().charAvg(ch, snapshot);
+        const stage = M().masteryLabel(ch, snapshot);
         const priority = attempts
             ? (stage === 'Learning' ? 4 : stage === 'Reviewing' ? 3 : stage === 'Mastered' ? 1 : 5)
                 + (wrong * 0.18)

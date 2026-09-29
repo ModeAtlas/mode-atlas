@@ -572,8 +572,8 @@ def _trainer_prompt(config: TrainerConfig) -> str:
         <div id="choiceGrid" class="choice-grid cols-2"></div>
 
         <div class="keyboard-wrap ma-trainer-answer-wrap" id="keyboardWrap" hidden>
-            <input class="ma-input ma-trainer-input" id="input" type="text" placeholder="Type kana..." aria-label="Type the kana answer" autocomplete="off" spellcheck="false" disabled />
-            <div class="keyboard-note">Keyboard mode is optional. Buttons are the default writing practice input method.</div>
+            <input class="ma-input ma-trainer-input" id="input" type="text" placeholder="Type kana…" aria-label="Type the kana answer" autocomplete="off" spellcheck="false" disabled />
+            <div class="keyboard-note">Choose the matching kana, or switch to Keyboard in Practice setup.</div>
         </div>'''
 
 
@@ -630,7 +630,7 @@ def _trainer_modifier_shell(config: TrainerConfig) -> str:
 <div class="bottom-shell ma-modifiers-only" data-ma-trainer-modifiers="shared">
     <div class="tab-row"><button class="tab-button" id="modifiersTab" type="button" aria-expanded="false" aria-controls="modifiersContent">Practice setup ▼</button></div>
     <div class="drawer-content" id="modifiersContent">
-        <div class="ma-practice-setup-head"><div><span class="ma-kicker">Before you start</span><h2>Practice setup</h2><p>Choose a preset or customise the question flow, input and kana included in this session.</p></div></div>
+        <div class="ma-practice-setup-head"><div><span class="ma-kicker">Before you start</span><h2>Practice setup</h2><p>Choose a preset, study mode and kana to practise.</p></div></div>
         <div class="options-stack">
             <div class="ma-settings-section"><div id="modifierOptions" class="button-grid"></div></div>{input_controls}
             <div class="ma-kana-selection"><div><div class="section-title">Hiragana rows</div><div id="rowOptions" class="rows-grid"></div></div>

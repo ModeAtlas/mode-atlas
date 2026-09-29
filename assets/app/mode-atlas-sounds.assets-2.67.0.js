@@ -418,44 +418,12 @@
     return 'tap';
   }
 
-  function safeWrapGlobal(name, soundOrFactory){
-    try{
-      const original = window[name];
-      if(typeof original !== 'function' || original.__maStandardSoundWrapped) return;
-      const wrapped = function(){
-        try{
-          const sound = typeof soundOrFactory === 'function' ? soundOrFactory.apply(this, arguments) : soundOrFactory;
-          if(sound) play(sound, { cooldown: 130 });
-        }catch(err){}
-        return original.apply(this, arguments);
-      };
-      wrapped.__maStandardSoundWrapped = true;
-      window[name] = wrapped;
-    }catch(err){}
-  }
-
-  function wrapKnownFunctions(){
-    safeWrapGlobal('flashResult', function(correct){ return correct ? 'correct' : 'wrong'; });
-    safeWrapGlobal('endSession', 'finish');
-    safeWrapGlobal('endDailyChallenge', 'finish');
-    safeWrapGlobal('endTestMode', 'finish');
-    safeWrapGlobal('showEnhancedEndScreen', 'finish');
-    safeWrapGlobal('skipCurrentKana', 'skip');
-    safeWrapGlobal('markSkipped', 'skip');
-
-    window.ModeAtlas = window.ModeAtlas || {};
-    if(typeof window.ModeAtlas.toast === 'function' && !window.ModeAtlas.toast.__maStandardSoundWrapped){
-      const oldToast = window.ModeAtlas.toast;
-      window.ModeAtlas.toast = function(message, type, ms){
-        const text = String(message || '');
-        if(/achievement unlocked/i.test(text)) play('achievement', { cooldown: 250 });
-        else if(type === 'err' || type === 'error' || /failed|error/i.test(text)) play('error');
-        else if(type === 'warn' || type === 'warning' || /warning/i.test(text)) play('warning');
-        else play('notify');
-        return oldToast.apply(this, arguments);
-      };
-      window.ModeAtlas.toast.__maStandardSoundWrapped = true;
-    }
+  function notify(message, type){
+    const text=String(message || '');
+    if(/achievement unlocked/i.test(text)) play('achievement', {cooldown:250});
+    else if(type==='err' || type==='error' || /failed|error/i.test(text)) play('error');
+    else if(type==='warn' || type==='warning' || /warning/i.test(text)) play('warning');
+    else play('notify');
   }
 
   function bindEvents(){
@@ -569,6 +537,7 @@
   function init(){
     window.ModeAtlasSounds = {
       play,
+      notify,
       setSound: setMode,
       setMode,
       getSoundMode: getMode,
@@ -580,7 +549,6 @@
 
     bindSoundControls();
     bindEvents();
-    wrapKnownFunctions();
   }
 
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -69,6 +69,18 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Run web and iOS polish matrix
+        run: npm run test:polish -- --project=desktop-chromium
+
+      - name: Upload polish layout evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polish-layout-${{ github.sha }}
+          path: test-results/**/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Run desktop and mobile browser smoke tests
         run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
 

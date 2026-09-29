@@ -182,3 +182,14 @@ The dashboard uses actual Mode Atlas progress rather than invented recommendatio
 Validation includes source/generated asset parity, shared web regressions,
 phone safe-area geometry and native simulator compilation. A passing simulator
 build does not establish signed physical-device notification behavior.
+
+## Source polish and explicit ownership (2.67.0)
+
+The [polish review](polish-ownership-review-2.67.0.md) records the reviewed owners,
+confirmed defects and remaining limits. Writing input controls now expose an
+explicit sync method instead of replacing page functions; trainer/toast sound
+events call the sound owner directly. The shared trainer persists to its actual
+mode. Kana hub mastery, About sync, developer access and Display preferences
+delegate to their existing authorities. Shared semantic visibility is independent
+of component display style. No additional runtime dependency or native signing
+capability is introduced.

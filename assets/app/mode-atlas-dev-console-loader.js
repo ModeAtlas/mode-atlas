@@ -66,7 +66,7 @@
     return loadPromise;
   }
 
-  root.ModeAtlasDevConsoleLoader = Object.freeze({ isEligible, loadIfEligible });
+  root.ModeAtlasDevConsoleLoader = Object.freeze({ isEligible, isLocalDevHost, currentUserEmail, loadIfEligible });
 
   if (isLocalDevHost()) void loadIfEligible();
   root.addEventListener('kanaCloudSyncStatusChanged', () => { if (isEligible()) void loadIfEligible(); });

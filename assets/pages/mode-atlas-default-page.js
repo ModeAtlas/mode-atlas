@@ -208,6 +208,7 @@ function applyDailyChallengeTheme() { return trainerController.applyDailyChallen
 function updateDailyChallengePills() { return trainerController.updateDailyChallengePills(); }
 
 function endDailyChallenge() {
+    window.ModeAtlasSounds?.play('finish', {cooldown:130});
     window.KanaCloudSync?.setSessionCloudPause?.(false);
     window.KanaCloudSync?.flushDeferredSessionSync?.(650);
     const dateKey = getTodayKey();
@@ -630,6 +631,7 @@ function startSession() {
 function updateSrsCorrect(char) { return trainerController.updateSrsCorrect(char); }
 
 function flashResult(correct, onDone) {
+    window.ModeAtlasSounds?.play(correct ? 'correct' : 'wrong', {cooldown:130});
     locked = true;
     hiraganaEl.classList.remove("flash-correct", "flash-wrong");
     hiraganaEl.classList.add(correct ? "flash-correct" : "flash-wrong");
@@ -841,6 +843,7 @@ function saveTestModeResult() {
 
 
 function endTestMode() {
+    window.ModeAtlasSounds?.play('finish', {cooldown:130});
     window.KanaCloudSync?.setSessionCloudPause?.(false);
     window.KanaCloudSync?.flushDeferredSessionSync?.(650);
     const durationMs = Math.max(0, Date.now() - testStartTime);
@@ -896,6 +899,7 @@ function showSessionModal(autoEnded = false) { return trainerController.showSess
 
 function endSession(autoEnded = false) {
     if (!sessionStarted) return;
+    window.ModeAtlasSounds?.play('finish', {cooldown:130});
     beginTrainerSessionEnd();
 
     if (isDailyChallengeSession()) {
