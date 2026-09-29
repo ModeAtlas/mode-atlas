@@ -57,6 +57,7 @@ struct ModeAtlasWidgetSnapshot: Codable {
 
 enum ModeAtlasWidgetStore {
     static let kind = "ModeAtlasStudyWidget"
+    static let launchURL = URL(string: "modeatlas://open/kana")!
     static var container: URL? {
         guard let group = Bundle.main.object(forInfoDictionaryKey: "ModeAtlasAppGroup") as? String,
               group.hasPrefix("group."), !group.contains("$(") else { return nil }

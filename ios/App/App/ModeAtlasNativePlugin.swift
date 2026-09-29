@@ -14,13 +14,6 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
         "exportBackup", "getAccessibilityPreferences"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
-    private static var pendingDestination: String?
-    private static let destinationEvent = Notification.Name("ModeAtlasDestination")
-    static func queueDestination(_ destination: String) {
-        guard ["atlas", "kana", "reading", "writing", "daily", "results", "wordBank"].contains(destination) else { return }
-        pendingDestination = destination
-        NotificationCenter.default.post(name: destinationEvent, object: nil)
-    }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
     private let center = UNUserNotificationCenter.current()
@@ -32,7 +25,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
 
     override public func load() {
         bridge?.notificationRouter.localNotificationHandler = self
-        observers.append(NotificationCenter.default.addObserver(forName: Self.destinationEvent, object: nil, queue: .main) { [weak self] _ in
+        observers.append(NotificationCenter.default.addObserver(forName: ModeAtlasNavigation.event, object: nil, queue: .main) { [weak self] _ in
             self?.notifyListeners("destinationAction", data: [:], retainUntilConsumed: true)
         })
         observers.append(NotificationCenter.default.addObserver(forName: UIContentSizeCategory.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
@@ -216,10 +209,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     }
     @objc func openNotificationSettings(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
-            let path: String
-            if #available(iOS 16.0, *) { path = UIApplication.openNotificationSettingsURLString }
-            else { path = UIApplication.openSettingsURLString }
-            guard let url = URL(string: path) else { call.resolve(["opened": false]); return }
+            guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { call.resolve(["opened": false]); return }
             UIApplication.shared.open(url, options: [:]) { call.resolve(["opened": $0]) }
         }
     }
@@ -230,13 +220,12 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         guard [Self.reminderID, Self.testID].contains(response.notification.request.identifier),
               response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
         DispatchQueue.main.async {
-            Self.queueDestination("reading")
+            ModeAtlasNavigation.queue(.reading)
         }
     }
     @objc func consumeDestination(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
-            let destination = Self.pendingDestination ?? ""
-            Self.pendingDestination = nil
+            let destination = ModeAtlasNavigation.consume()?.rawValue ?? ""
             call.resolve(["destination": destination])
         }
     }

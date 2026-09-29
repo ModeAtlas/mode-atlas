@@ -166,7 +166,8 @@
   document.addEventListener('click', function(event){
     var link = event.target.closest?.('.ma-ios-tab[href]:not([aria-controls])');
     if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (new URL(link.href, location.href).pathname === location.pathname) {
+    var target = new URL(link.href, location.href);
+    if (target.pathname === location.pathname && target.search === location.search) {
       event.preventDefault();
       root.scrollTo({top:0, behavior:root.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
     }

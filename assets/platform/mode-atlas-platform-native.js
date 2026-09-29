@@ -71,7 +71,7 @@
     }
   }
 
-  // Notifications and Home Screen actions share one consume-once destination queue.
+  // Notifications, quick actions, App Shortcuts and controls share one destination queue.
   function consumeAction(){
     if (!hasBridge('consumeDestination')) return;
     nativeBridge.consumeDestination().then(function(result){
@@ -112,7 +112,7 @@
         widgets: hasBridge('getEngagementState'),
         widgetSnapshots: hasBridge('publishWidgetSnapshot'),
         backupSharing: hasBridge('exportBackup'),
-        appIntents: false,
+        appIntents: hasBridge('consumeDestination'),
         authentication: providers.length > 0,
         authProviders: providers
       };

@@ -13,16 +13,15 @@
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
   const WHATS_NEW_COPY = window.ModeAtlasEnv?.isNativeApp
-    ? 'Your progress at a glance, with smoother everyday practice.'
+    ? 'More ways to reach your practice and see your progress.'
     : 'More reliable practice controls and activity tracking.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = window.ModeAtlasEnv?.isNativeApp ? [
-    'Practice pauses when you leave the app. Resume when you are ready.',
-    'Export your save to Files or share it with another app.',
-    'Text follows your iPhone’s text-size setting, and fonts work offline.',
-    'Small, medium and large widgets show your learning progress.',
-    'Touch and hold the app icon to jump into practice.'
+    'See your level and learning totals on the Lock Screen.',
+    'Add a Mode Atlas control to Control Centre and choose the screen it opens.',
+    'Open Reading, Writing, Daily Challenge or Words with Siri and Shortcuts.',
+    'Switch from Daily Challenge back to Reading using the dock.'
   ] : [
     'Pausing preserves answer feedback and time remaining.',
     'Recent activity reflects successful study and Word Bank actions.'

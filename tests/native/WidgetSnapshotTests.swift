@@ -45,24 +45,13 @@ struct WidgetSnapshotTests {
         assert(!incomplete.isValid, "A v2 snapshot must contain all statistics")
         assert(ModeAtlasWidgetStore.read() == nil, "Unprovisioned builds must not read another container")
         testActivityTiming()
-        print("Widget bounds, v1 migration, retained totals, activity labels/boundaries, bounded timelines, calendar rollover and round-trip passed")
+        print("Widget bounds, v1 migration, retained totals, first-minute boundaries, minimal timelines, calendar rollover and round-trip passed")
     }
 
     static func testActivityTiming() {
         let activity = Date(timeIntervalSince1970: 1_790_726_390.125)
-        let cases: [(Double, String)] = [
-            (-30, "Less than a minute ago"), (0, "Less than a minute ago"),
-            (59.999, "Less than a minute ago"), (60, "1 min ago"),
-            (119.999, "1 min ago"), (120, "2 min ago"),
-            (3599.999, "59 min ago"), (3600, "1 hr ago"),
-            (3 * 3600 + 5 * 60 + 59, "3 hrs 5 min ago"),
-            (86399.999, "23 hrs 59 min ago"), (86400, "1 day ago"),
-            (2 * 86400 + 3 * 3600 + 59, "2 days 3 hrs ago")
-        ]
-        for (elapsed, expected) in cases {
-            let date = activity.addingTimeInterval(elapsed)
-            assert(WidgetActivity.text(since: activity, at: date) == expected, "Activity label at \(elapsed) seconds")
-            assert(WidgetActivity.isRecent(since: activity, at: date) == (elapsed < 60))
+        for elapsed in [-30.0, 0, 59.999, 60, 120, 3600, 86400] {
+            assert(WidgetActivity.isRecent(since: activity, at: activity.addingTimeInterval(elapsed)) == (elapsed < 60))
         }
 
         var calendar = Calendar(identifier: .gregorian)
@@ -71,26 +60,20 @@ struct WidgetSnapshotTests {
         let now = midnight.addingTimeInterval(-10)
         let recent = now.addingTimeInterval(-30)
         let firstMinute = recent.addingTimeInterval(60)
-        let live = WidgetActivity.timelineDates(since: recent, at: now, usesLiveText: true, calendar: calendar)
+        let live = WidgetActivity.timelineDates(since: recent, at: now, calendar: calendar)
         assert(live == [now, midnight, firstMinute], "The first-minute transition must survive an intervening midnight")
         assert(!WidgetActivity.isRecent(since: recent, at: live.last!))
 
         let older = now.addingTimeInterval(-185 * 60)
-        let normal = WidgetActivity.timelineDates(since: older, at: now, usesLiveText: true, calendar: calendar)
+        let normal = WidgetActivity.timelineDates(since: older, at: now, calendar: calendar)
         assert(normal == [now, midnight], "Live text needs no repeating timeline entries")
-        assert(WidgetActivity.timelineDates(since: nil, at: now, usesLiveText: false, calendar: calendar) == normal)
-        let exactBoundary = WidgetActivity.timelineDates(since: now.addingTimeInterval(-60), at: now, usesLiveText: true, calendar: calendar)
+        assert(WidgetActivity.timelineDates(since: nil, at: now, calendar: calendar) == normal)
+        let exactBoundary = WidgetActivity.timelineDates(since: now.addingTimeInterval(-60), at: now, calendar: calendar)
         assert(exactBoundary == normal, "Do not duplicate the current entry at 60 seconds")
-
-        let legacy = WidgetActivity.timelineDates(since: recent, at: now, usesLiveText: false, calendar: calendar)
-        assert(legacy.first == now && legacy.last == now.addingTimeInterval(86400))
-        assert(legacy.contains(midnight) && legacy.contains(firstMinute))
-        assert(legacy.contains(now.addingTimeInterval(300)))
-        assert(legacy.count <= 38 && legacy == Array(Set(legacy)).sorted(), "Legacy timelines must remain bounded, ordered and unique")
 
         calendar.timeZone = TimeZone(identifier: "Australia/Melbourne")!
         let beforeDST = calendar.date(from: DateComponents(year: 2026, month: 10, day: 4))!
-        let dstDates = WidgetActivity.timelineDates(since: nil, at: beforeDST, usesLiveText: true, calendar: calendar)
+        let dstDates = WidgetActivity.timelineDates(since: nil, at: beforeDST, calendar: calendar)
         assert(dstDates.last!.timeIntervalSince(beforeDST) == 23 * 3600, "Daily rollover must follow local midnight across daylight saving")
     }
 }

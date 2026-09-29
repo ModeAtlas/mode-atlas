@@ -252,12 +252,10 @@ WidgetKit owns refresh timing. The app publishes after study/Word Bank changes,
 cloud hydration, navigation and backgrounding; it coalesces timeline reloads.
 Activity recency uses “Less than a minute ago” for the first 60 seconds, then
 at most two units from days/hours/minutes. `WidgetActivity.swift` owns the
-first-minute transition and legacy labels/timeline dates, only in the extension.
-On iOS 18+, SwiftUI's system `DateOffset` format excludes seconds and updates
+first-minute transition and local-midnight timeline dates, only in the extension.
+On the iOS 18 minimum, SwiftUI's system `DateOffset` format excludes seconds and updates
 the archived text without app timers or data reloads. Custom live format types
 are avoided because the system renderer must decode them outside the extension.
-On iOS 15–17, precomputed labels update every five minutes for the first hour
-of a timeline, then hourly for up to a day if the normal refresh is deferred.
 The existing 30-minute reload request remains unchanged; iOS controls actual
 delivery timing. One extra entry ends the first-minute message. Daily completion
 and streak are interpreted for the displayed local day, while lifetime totals
@@ -282,3 +280,85 @@ an unavailable state instead of practice buttons or fictional sample statistics.
 Automated browser simulation and unsigned simulator builds cannot establish that
 this Personal Team has provisioned a real shared container. The default build
 continues to use local-only entitlements until that device setup is complete.
+
+
+## iOS 18 platform baseline (2.70.0)
+
+The project Debug/Release configurations own the minimum deployment target of
+18.0. App and ModeAtlasWidgets inherit it; neither target overrides it.
+Capacitor reads that project value when generating CapApp-SPM/Package.swift,
+so `ios:sync` retains the minimum without rewriting CLI or dependency files.
+The release gate explicitly selects Xcode 26.3 / SDK 26.2 and verifies both
+built products' MinimumOSVersion and extracted App Intents metadata.
+The SDK version and minimum OS are separate: the same binary runs on iOS 18+.
+
+Removed compatibility paths: pre-iOS-18 widget labels/refresh entries,
+pre-iOS-17 widget backgrounds, and pre-iOS-16 notification-settings URLs.
+The native controller observes appearance traits directly instead of using
+the deprecated broad traitCollectionDidChange callback. There is no save-data
+migration, entitlement change, new service or additional product dependency.
+
+### System navigation ownership
+
+`Shared/ModeAtlasDestination.swift` owns typed native destination IDs and the
+main-actor consume-once queue previously inside ModeAtlasNativePlugin. The
+queue stays in the foreground app process; it is not persisted to a shared
+container. Cold-launch requests survive until the bridge loads. Latest wins;
+foreground and bridge events cannot replay a consumed request.
+
+`Shared/ModeAtlasStudyIntent.swift` is compiled into both app and extension.
+Its OpenIntent asks the OS to foreground the app and sends a destination through
+that queue. There are no custom-URL control workarounds or Associated Domains.
+The bridge, local notification and Home Screen quick actions use the same queue.
+JS still resolves the existing AtlasPlatform destination paths. No intent,
+control or widget starts a session or owns practice scoring/data.
+
+The app target's single AppShortcutsProvider exposes a parameterised Open screen
+action for Siri/Spotlight/Shortcuts. Examples: “Open Reading in Mode Atlas”,
+“Open Daily Challenge in Mode Atlas”, and “Open Words in Mode Atlas”. Users can
+save a destination in Shortcuts and assign it to an available Action button.
+This uses App Intents, not a SiriKit extension or Siri entitlement.
+
+The extension's WidgetBundle retains the existing Study progress kind, adds
+circular/rectangular/inline Lock Screen families, and registers one configurable
+Open Mode Atlas control. The control can target any existing native destination,
+defaulting to Reading. It needs no shared stats container. Lock Screen progress
+uses exactly the same bounded snapshot and timeline as Home Screen widgets:
+
+| Lock Screen family | Content |
+| --- | --- |
+| Circular | Atlas level and progress ring |
+| Rectangular | Level, correct count, words banked and daily completion |
+| Inline | Level and correct count |
+
+Missing progress has an honest empty state. Accessory layouts use system styling
+and privacy-sensitive presentation for locked-device redaction. Existing Home
+Screen themes, snapshot format and widget IDs remain stable.
+
+The dock's current-screen test now includes the query string, allowing a tap on
+Reading to leave Daily Challenge/Review. Exact-screen taps still scroll without
+reloading. Existing Dynamic Type, reduced-motion and focus handling remain in
+the canonical native owners; no synthetic page router was introduced.
+
+### Device validation
+
+- On iOS 18+ add Open Mode Atlas from Control Centre's gallery, edit its Open
+  destination, and launch Reading, Writing, Daily Challenge and Words with the
+  app closed and already running. Add a Lock Screen control if desired.
+- In Shortcuts find Mode Atlas → Open screen, choose a screen and run it. Test
+  the matching Siri phrase. Discovery/indexing remains system-managed.
+- Add each Lock Screen progress layout after publishing real progress. Compare
+  it with the app; check Always-On/locked appearance, midnight and reset.
+- Check Reading → Daily Challenge → Reading, both colour appearances, larger
+  system text and VoiceOver on device. Automated browser simulation and an
+  unsigned build do not replace those physical-device checks.
+
+### Further native work
+
+Useful next candidates are native Japanese pronunciation/replay, camera text
+capture into the shared Word Bank, and a layered Icon Composer asset. These
+should each reuse the current learning/data owners. On-device language-model
+assistance can be a later optional iOS 26+ feature using Foundation Models
+availability checks; device model alone must never gate core learning. An
+unavailable model, disabled Apple Intelligence or unsupported hardware must
+leave deterministic practice usable. No AI dependency is added in this release.

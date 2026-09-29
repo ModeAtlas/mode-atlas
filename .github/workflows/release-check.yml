@@ -132,10 +132,17 @@ jobs:
     needs: release-check
     runs-on: macos-15
     timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Verify selected Xcode and SDK
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -157,6 +164,11 @@ jobs:
           swiftc ios/App/Shared/ModeAtlasWidgetData.swift ios/App/ModeAtlasWidgets/WidgetActivity.swift tests/native/WidgetSnapshotTests.swift -o "${RUNNER_TEMP}/widget-model-tests"
           "${RUNNER_TEMP}/widget-model-tests"
 
+      - name: Test intent navigation before and after bridge loading
+        run: |
+          swiftc ios/App/Shared/ModeAtlasDestination.swift ios/App/Shared/ModeAtlasStudyIntent.swift tests/native/NavigationIntentTests.swift -o "${RUNNER_TEMP}/navigation-intent-tests"
+          "${RUNNER_TEMP}/navigation-intent-tests"
+
       - name: Build iPhone/iPad simulator target
         run: |
           xcodebuild -project ios/App/App.xcodeproj \
@@ -177,12 +189,16 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")" = "app.modeatlas"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "$expected_version"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "$expected_build"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$app_path/Info.plist")" = "18.0"
+          test -d "$app_path/Metadata.appintents"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "modeatlas"
           widget_path="$app_path/PlugIns/ModeAtlasWidgets.appex"
           test -d "$widget_path"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$widget_path/Info.plist")" = "app.modeatlas.widgets"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$widget_path/Info.plist")" = "$expected_version"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$widget_path/Info.plist")" = "$expected_build"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$widget_path/Info.plist")" = "18.0"
+          test -d "$widget_path/Metadata.appintents"
           test -f "$app_path/GoogleService-Info.plist"
           test -f "$app_path/public/kana/index.html"
           test -f "$app_path/public/assets/css/mode-atlas-page-shared.assets-${expected_version}.css"

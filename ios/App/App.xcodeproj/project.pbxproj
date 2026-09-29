@@ -23,6 +23,13 @@
 		E08668E0C4CB93947F17B0CA = {isa = PBXBuildFile; fileRef = 1803230A3093F15837F56DE0; };
 		44CF3F2A58C25B8C40017453 = {isa = PBXBuildFile; fileRef = D4B604B59E210717F1306C5C; };
 		45FBCD0A02F25BE723087E40 = {isa = PBXBuildFile; fileRef = 55A1EC58D8818D8910DCB4F8; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		FAA66FBC608E83F1A6B57411 /* ModeAtlasDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AABF49794811E21EA1A85A0 /* ModeAtlasDestination.swift */; };
+		D4B205A2B7ED0B04DDEEEA29 /* ModeAtlasDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AABF49794811E21EA1A85A0 /* ModeAtlasDestination.swift */; };
+		9056EF99FEF24ECFC550582A /* ModeAtlasStudyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676944F0EBD4EF9E4B363FC6 /* ModeAtlasStudyIntent.swift */; };
+		C1EBD311EF2F12652096A6E2 /* ModeAtlasStudyIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676944F0EBD4EF9E4B363FC6 /* ModeAtlasStudyIntent.swift */; };
+		03BBF6327B3872DFE1D66971 /* ModeAtlasShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E53F29F622E73144BB19B4 /* ModeAtlasShortcuts.swift */; };
+		DC5CBB535E30347566368E7C /* ModeAtlasStudyControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E05D3E1DF32F28BFA3EF47 /* ModeAtlasStudyControl.swift */; };
+		7B1AAEADEA7E20CD33136934 /* StudyAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1990D4A5BD9E4ABE98AEE73D /* StudyAccessoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +54,11 @@
 		61F160D3F5EB024BF9CA7EE4 /* WidgetSharing.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WidgetSharing.entitlements; sourceTree = "<group>"; };
 		8B790A624420B9C7FD6BDF20 /* engagement.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = engagement.xcconfig; path = ../engagement.xcconfig; sourceTree = SOURCE_ROOT; };
 		55A1EC58D8818D8910DCB4F8 /* ModeAtlasWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ModeAtlasWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4AABF49794811E21EA1A85A0 /* ModeAtlasDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasDestination.swift; sourceTree = "<group>"; };
+		676944F0EBD4EF9E4B363FC6 /* ModeAtlasStudyIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasStudyIntent.swift; sourceTree = "<group>"; };
+		63E53F29F622E73144BB19B4 /* ModeAtlasShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasShortcuts.swift; sourceTree = "<group>"; };
+		28E05D3E1DF32F28BFA3EF47 /* ModeAtlasStudyControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasStudyControl.swift; sourceTree = "<group>"; };
+		1990D4A5BD9E4ABE98AEE73D /* StudyAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyAccessoryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +99,7 @@
 		504EC3061FED79650016851F /* App */ = {
 			isa = PBXGroup;
 			children = (
+				63E53F29F622E73144BB19B4,
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
 				265000000000000000000002 /* ModeAtlasNativePlugin.swift */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
@@ -102,8 +115,8 @@
 			path = App;
 			sourceTree = "<group>";
 		};
-		F2B31C9786B4BF0A9A4AAF84 = {isa = PBXGroup; children = (1803230A3093F15837F56DE0, 7FFB534204306E4FDF256A2B, 61F160D3F5EB024BF9CA7EE4, ); path = Shared; sourceTree = "<group>"; };
-		C7700313516F038757BAEF16 = {isa = PBXGroup; children = (D4B604B59E210717F1306C5C, 269100000000000000000002, 11DCDACF74B33BC245135679, ); path = ModeAtlasWidgets; sourceTree = "<group>"; };
+		F2B31C9786B4BF0A9A4AAF84 = {isa = PBXGroup; children = (4AABF49794811E21EA1A85A0, 676944F0EBD4EF9E4B363FC6, 1803230A3093F15837F56DE0, 7FFB534204306E4FDF256A2B, 61F160D3F5EB024BF9CA7EE4, ); path = Shared; sourceTree = "<group>"; };
+		C7700313516F038757BAEF16 = {isa = PBXGroup; children = (28E05D3E1DF32F28BFA3EF47, 1990D4A5BD9E4ABE98AEE73D, D4B604B59E210717F1306C5C, 269100000000000000000002, 11DCDACF74B33BC245135679, ); path = ModeAtlasWidgets; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -206,11 +219,14 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 				265000000000000000000001 /* ModeAtlasNativePlugin.swift in Sources */,
+				FAA66FBC608E83F1A6B57411,
+				9056EF99FEF24ECFC550582A,
+				03BBF6327B3872DFE1D66971,
 				F291D0B0592B66D3ADDAE019,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		745764688D705D4EF7062BCF = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (44CF3F2A58C25B8C40017453, E08668E0C4CB93947F17B0CA, 269100000000000000000001, ); runOnlyForDeploymentPostprocessing = 0; };
+		745764688D705D4EF7062BCF = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (D4B205A2B7ED0B04DDEEEA29, C1EBD311EF2F12652096A6E2, DC5CBB535E30347566368E7C, 7B1AAEADEA7E20CD33136934, 44CF3F2A58C25B8C40017453, E08668E0C4CB93947F17B0CA, 269100000000000000000001, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
@@ -282,7 +298,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -334,7 +350,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -350,15 +366,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2069001;
+				CURRENT_PROJECT_VERSION = 2070000;
 				GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.323625667322-aldb8bps765pbau4d33p1dat54k7lib0;
 				INFOPLIST_FILE = App/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.69.1;
+				MARKETING_VERSION = 2.70.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -374,15 +389,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2069001;
+				CURRENT_PROJECT_VERSION = 2070000;
 				GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.323625667322-aldb8bps765pbau4d33p1dat54k7lib0;
 				INFOPLIST_FILE = App/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.69.1;
+				MARKETING_VERSION = 2.70.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -397,11 +411,10 @@
                 APPLICATION_EXTENSION_API_ONLY = YES;
                 CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
                 CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 2069001;
+                CURRENT_PROJECT_VERSION = 2070000;
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
-                IPHONEOS_DEPLOYMENT_TARGET = 15.0;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.69.1;
+                MARKETING_VERSION = 2.70.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;
@@ -416,11 +429,10 @@
                 APPLICATION_EXTENSION_API_ONLY = YES;
                 CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
                 CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 2069001;
+                CURRENT_PROJECT_VERSION = 2070000;
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
-                IPHONEOS_DEPLOYMENT_TARGET = 15.0;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.69.1;
+                MARKETING_VERSION = 2.70.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;

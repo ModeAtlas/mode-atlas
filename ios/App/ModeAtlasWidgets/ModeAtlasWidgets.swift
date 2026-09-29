@@ -17,10 +17,7 @@ struct StudyProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<StudyEntry>) -> Void) {
         let now = Date()
         let snapshot = ModeAtlasWidgetStore.read()
-        let usesLiveText: Bool
-        if #available(iOS 18.0, *) { usesLiveText = true }
-        else { usesLiveText = false }
-        let entries = WidgetActivity.timelineDates(since: snapshot?.activityDate, at: now, usesLiveText: usesLiveText)
+        let entries = WidgetActivity.timelineDates(since: snapshot?.activityDate, at: now)
             .map { StudyEntry(date: $0, snapshot: snapshot) }
         completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(1800))))
     }
@@ -72,15 +69,10 @@ struct StudyWidgetView: View {
         if WidgetActivity.isRecent(since: date, at: entry.date) {
             return Text(WidgetActivity.recentText)
         }
-        if #available(iOS 18.0, *) {
-            // System-defined formats can be decoded by WidgetKit's renderer.
-            // Excluding seconds lets iOS update the text at minute precision
-            // without waking the app or requesting another data snapshot.
-            let elapsed = Text(.currentDate, format: .offset(to: date,
-                allowedFields: [.day, .hour, .minute], maxFieldCount: 2, sign: .never))
-            return Text("\(elapsed) ago")
-        }
-        return Text(WidgetActivity.text(since: date, at: entry.date))
+        // System formatting updates at minute precision without waking the app.
+        let elapsed = Text(.currentDate, format: .offset(to: date,
+            allowedFields: [.day, .hour, .minute], maxFieldCount: 2, sign: .never))
+        return Text("\(elapsed) ago")
     }
     private func activity(_ value: ModeAtlasWidgetSnapshot) -> some View {
         HStack(spacing: 4) {
@@ -177,19 +169,23 @@ struct StudyWidgetView: View {
             } else { empty }
         }
         .foregroundStyle(.primary)
-        .widgetURL(URL(string: "modeatlas://open/kana"))
+        .widgetURL(ModeAtlasWidgetStore.launchURL)
     }
     var body: some View {
-        if #available(iOS 17.0, *) { content.containerBackground(for: .widget) { background } }
-        else { content.padding(14).background(background) }
+        switch family {
+        case .accessoryCircular, .accessoryRectangular, .accessoryInline:
+            StudyAccessoryView(entry: entry)
+        default:
+            content.containerBackground(for: .widget) { background }
+        }
     }
 }
-@main
 struct ModeAtlasStudyWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: ModeAtlasWidgetStore.kind, provider: StudyProvider()) { StudyWidgetView(entry: $0) }
             .configurationDisplayName("Study progress")
             .description("Your level, kana totals, words banked and recent activity at a glance.")
-            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+            .supportedFamilies([.systemSmall, .systemMedium, .systemLarge,
+                                .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }

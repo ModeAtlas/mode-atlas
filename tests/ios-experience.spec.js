@@ -33,6 +33,19 @@ async function open(page,path){
   await page.evaluate(()=>document.fonts.ready);
 }
 
+test('Reading dock link leaves Daily Challenge and avoids reloading the exact same mode',async({page})=>{
+  await prepare(page);await open(page,'/reading/?mode=daily');
+  await page.evaluate(()=>sessionStorage.setItem('modeAtlasOpenKanaMenu','1'));
+  await open(page,'/reading/?mode=daily');
+  await page.locator('.ma-ios-kana-menu a[href="/reading/"]').click();
+  await expect(page).toHaveURL(/\/reading\/$/);
+  await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  // Re-selecting the exact screen scrolls to the top without reinitialising it.
+  await page.evaluate(()=>{window.sameScreenMarker='preserved';});
+  await page.locator('.ma-ios-kana-menu a[href="/reading/"]').click();
+  expect(await page.evaluate(()=>window.sameScreenMarker)).toBe('preserved');
+});
+
 for(const mode of ['reading','writing']){
   test(mode+': inactive Speed Run stays paused, preserves time and resumes once',async({page})=>{
     await prepare(page);await open(page,'/'+mode+'/');

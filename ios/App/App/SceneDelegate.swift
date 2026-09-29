@@ -40,9 +40,11 @@ private final class ModeAtlasBridgeViewController: CAPBridgeViewController {
         traitCollection.userInterfaceStyle == .dark ? .lightContent : .darkContent
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        setNeedsStatusBarAppearanceUpdate()
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (controller: ModeAtlasBridgeViewController, _: UITraitCollection) in
+            controller.setNeedsStatusBarAppearanceUpdate()
+        }
     }
 
     override func capacitorDidLoad() {
@@ -74,7 +76,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let response = connectionOptions.notificationResponse,
            [ModeAtlasNativePlugin.reminderID, ModeAtlasNativePlugin.testID].contains(response.notification.request.identifier),
            response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-            ModeAtlasNativePlugin.queueDestination("reading")
+            ModeAtlasNavigation.queue(.reading)
         }
         if let shortcut = connectionOptions.shortcutItem { _ = handleShortcut(shortcut) }
 
@@ -93,9 +95,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func handleShortcut(_ shortcut: UIApplicationShortcutItem) -> Bool {
-        let destinations = ["app.modeatlas.reading": "reading", "app.modeatlas.writing": "writing", "app.modeatlas.daily": "daily"]
+        let destinations: [String: ModeAtlasDestination] = ["app.modeatlas.reading": .reading, "app.modeatlas.writing": .writing, "app.modeatlas.daily": .daily]
         guard let destination = destinations[shortcut.type] else { return false }
-        ModeAtlasNativePlugin.queueDestination(destination)
+        ModeAtlasNavigation.queue(destination)
         return true
     }
 

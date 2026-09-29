@@ -96,6 +96,10 @@ test('Capacitor iOS shell is repository-owned and versioned from Mode Atlas rele
   assert.equal(config.appName, 'Mode Atlas');
   assert.equal(config.webDir, '.build/ios-web');
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.modeatlas;/);
+  // Both app/extension configurations inherit the same project floor; the CLI
+  // derives the generated Swift package minimum from that setting.
+  assert.deepEqual([...project.matchAll(/IPHONEOS_DEPLOYMENT_TARGET = ([^;]+);/g)].map(match=>match[1]), ['18.0','18.0']);
+  assert.match(read('ios/App/CapApp-SPM/Package.swift'), /platforms: \[\.iOS\(\.v18\)\]/);
   const version = JSON.parse(read('package.json')).version;
   const [major, minor, patch] = version.split('.').map(Number);
   assert.ok(project.includes(`MARKETING_VERSION = ${version};`));
