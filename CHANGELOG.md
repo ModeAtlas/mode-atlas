@@ -1,6 +1,7 @@
 ## 2.69.0 - 2026-09-29
 
 - Consolidated pause/resume and answer feedback under the existing session owner. Native inactivity pauses practice, including Speed Run; answer, daily/test and session timing exclude paused intervals. Resume is explicit.
+- Corrected shared retry visibility so idle and ended sessions cannot expose an unrelated End session action.
 - Added iOS backup export through the Share Sheet, with protected temporary files, iPad presentation support and accurate cancellation handling. The web adapter retains browser downloads.
 - Bundled licensed Inter, Sora and Noto Sans JP variable fonts for offline iOS use. One font loader selects the existing web transport or pinned local fonts; no new runtime dependency.
 - Connected UIKit Dynamic Type to native layout reflow, enlarged dock utility targets, corrected Kana-menu focus transfer, labelled Japanese content and retained accessible keyboard focus.

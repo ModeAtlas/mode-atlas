@@ -306,9 +306,10 @@ test('native safe-area insets survive phone trainer styles and keep the home abo
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode','phone');
     await expect(page.locator('.ma-ios-tabs')).toBeVisible();
     await expect.poll(()=>page.evaluate(()=>parseFloat(getComputedStyle(document.body).paddingTop))).toBe(59);
-    const top=await page.locator('.ma-trainer-card').evaluate(el=>el.getBoundingClientRect().top);
-    expect(top).toBeGreaterThanOrEqual(59);
     await expect(page.locator('#maLoadingScreen')).toBeHidden();
+    await page.evaluate(()=>document.fonts.ready);
+    await expect(page.locator('#endSessionBtn')).toBeHidden();
+    await expect.poll(()=>page.locator('.ma-trainer-card').evaluate(el=>el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(59);
     await page.screenshot({path:testInfo.outputPath(path.includes('reading')?'native-reading.png':'native-writing.png')});
   }
   await page.goto('/');

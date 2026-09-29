@@ -93,6 +93,10 @@ function createTrainerUiVisibilityControls(elements = {}) {
     const gameOverEl = elements.gameOverEl || null;
     const retryBtn = elements.retryBtn || null;
 
+    function syncRetryState() {
+        document.body.classList.toggle("trainer-session-retry", isElementVisible(gameOverEl) && isElementVisible(retryBtn));
+    }
+
     function setSessionActionsVisible(visible = true) {
         if (!sessionActionsEl) return;
         setElementVisible(sessionActionsEl, !!visible);
@@ -107,13 +111,14 @@ function createTrainerUiVisibilityControls(elements = {}) {
         gameOverEl.classList.toggle("is-active", next);
         document.body.classList.toggle("trainer-session-result", next);
         if (!next) setRetryButtonVisible(false);
+        syncRetryState();
     }
 
     function setRetryButtonVisible(visible = true) {
         if (!retryBtn) return;
         setElementVisible(retryBtn, !!visible);
         retryBtn.classList.toggle("is-active", !!visible);
-        document.body.classList.toggle("trainer-session-retry", !!visible);
+        syncRetryState();
     }
 
     return {

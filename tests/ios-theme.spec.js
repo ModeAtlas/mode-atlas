@@ -154,8 +154,10 @@ for(const theme of ['dark','light'])test(`website ${theme}: computed paint match
     const current=await paintSnapshot(page);
     const links=await page.locator('link[rel="stylesheet"]').evaluateAll(links=>links.filter(link=>new URL(link.href).origin===location.origin).map(link=>({href:link.href,path:new URL(link.href).pathname.slice(1).replace(/\.assets-\d+\.\d+\.\d+(?=\.css$)/,'')})));
     for(const link of links){
-      // The new native palette did not exist in 2.67.0 and must do nothing on web.
-      link.css=link.path==='assets/css/mode-atlas-ios-theme.css'?'':execFileSync('git',['show',`${baseline}:${link.path}`],{encoding:'utf8'});
+      // These sheets postdate 2.67.0. Its shared sheet restores the original
+      // web font import; the native palette must still do nothing on web.
+      const addedSheet=['assets/css/mode-atlas-ios-theme.css','assets/css/mode-atlas-fonts-web.css'].includes(link.path);
+      link.css=addedSheet?'':execFileSync('git',['show',`${baseline}:${link.path}`],{encoding:'utf8'});
     }
     await page.evaluate(links=>{
       for(const entry of links){

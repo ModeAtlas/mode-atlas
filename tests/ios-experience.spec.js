@@ -113,6 +113,7 @@ test('widget words and activity reflect a successful save and survive page reloa
   await prepare(page);await open(page,'/wordbank/');
   const initial=await page.evaluate(()=>window.ModeAtlasNativeEngagement.snapshot());
   expect(initial.lastActivityAt).toBe(0);
+  await page.locator('#wordBankAddJumpBtn').click();
   await page.locator('#kanaInput').fill('ねこ');
   await page.locator('#addWordBtn').click();
   await expect.poll(()=>page.evaluate(()=>window.ModeAtlasNativeEngagement.snapshot().words)).toBe(initial.words+1);
