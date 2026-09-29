@@ -55,8 +55,8 @@ async function seedStableState(page) {
 }
 
 async function gotoApp(page, path) {
-  await page.route(/https:\/\/(www\.)?gstatic\.com\/.*/, route => route.abort());
-  await page.route(/https:\/\/(www\.)?googleapis\.com\/.*/, route => route.abort());
+  await page.route(/https:\/\/([\w-]+\.)?gstatic\.com\/.*/, route => route.abort());
+  await page.route(/https:\/\/([\w-]+\.)?googleapis\.com\/.*/, route => route.abort());
   await page.goto(path, { waitUntil: 'domcontentloaded', timeout: 15000 });
 }
 

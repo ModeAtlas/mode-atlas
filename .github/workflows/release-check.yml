@@ -57,11 +57,11 @@ jobs:
       - name: Verify generated release assets are committed
         run: git diff --exit-code
 
-      - name: Run desktop and mobile browser smoke tests
-        run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
-
       - name: Run simulated iOS shell smoke test
         run: npm run test:ios-shell -- --project=mobile-chromium
+
+      - name: Run desktop and mobile browser smoke tests
+        run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
 
       - name: Upload native layout evidence
         if: always()

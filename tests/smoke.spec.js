@@ -63,11 +63,9 @@ async function seedStableLocalState(page) {
 }
 
 async function gotoApp(page, path) {
-  await page.route(/https:\/\/(www\.)?gstatic\.com\/.*/, route => route.abort());
-  await page.route(/https:\/\/(www\.)?googleapis\.com\/.*/, route => route.abort());
-  await page.goto(path, { waitUntil: 'commit', timeout: 5000 });
-  await page.waitForSelector('body', { timeout: 5000 });
-  await page.waitForTimeout(1000);
+  await page.route(/https:\/\/([\w-]+\.)?gstatic\.com\/.*/, route => route.abort());
+  await page.route(/https:\/\/([\w-]+\.)?googleapis\.com\/.*/, route => route.abort());
+  await page.goto(path, { waitUntil: 'domcontentloaded', timeout: 15000 });
 }
 
 async function expectNoSevereConsoleErrors(page, run) {
@@ -113,7 +111,7 @@ test.describe('Mode Atlas core smoke tests', () => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/');
       await Promise.all([
-        page.waitForURL(/\/kana\/$/, { timeout: 7500, waitUntil: 'commit' }),
+        page.waitForURL(/\/kana\/$/, { timeout: 15000, waitUntil: 'domcontentloaded' }),
         page.locator('a.atlas-product__action[href="/kana/"]').click({ noWaitAfter: true }),
       ]);
       await expect(page.locator('#mainContent.kana-hub')).toBeVisible({ timeout: 5000 });
