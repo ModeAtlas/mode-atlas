@@ -307,6 +307,7 @@ test('native safe-area insets survive phone trainer styles and keep the home abo
     await expect.poll(()=>page.evaluate(()=>parseFloat(getComputedStyle(document.body).paddingTop))).toBe(59);
     const top=await page.locator('.ma-trainer-card').evaluate(el=>el.getBoundingClientRect().top);
     expect(top).toBeGreaterThanOrEqual(59);
+    await expect(page.locator('#maLoadingScreen')).toBeHidden();
     await page.screenshot({path:testInfo.outputPath(path.includes('reading')?'native-reading.png':'native-writing.png')});
   }
   await page.goto('/');
@@ -316,5 +317,6 @@ test('native safe-area insets survive phone trainer styles and keep the home abo
     const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
     return home.bottom<=dock.top && dock.top-home.bottom<32 && document.documentElement.scrollHeight<=innerHeight+1;
   })).toBe(true);
+  await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.screenshot({path:testInfo.outputPath('native-home.png')});
 });

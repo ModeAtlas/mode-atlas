@@ -60,9 +60,6 @@ jobs:
       - name: Run simulated iOS shell smoke test
         run: npm run test:ios-shell -- --project=mobile-chromium
 
-      - name: Run desktop and mobile browser smoke tests
-        run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
-
       - name: Upload native layout evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,6 +68,9 @@ jobs:
           path: test-results/**/*.png
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Run desktop and mobile browser smoke tests
+        run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
 
       - name: Build deterministic iOS web payload
         run: npm run build:ios-web
