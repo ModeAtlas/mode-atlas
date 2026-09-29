@@ -20,6 +20,7 @@ checker, which cannot establish whether a newer signed iOS binary is available.
 | --- | --- | --- |
 | Trainer persistence | Writing's shared setup tab wrote Reading's settings | Shared controller writes through its mode-specific storage API |
 | Writing input controls | Page handlers and a document capture handler competed; the module replaced `applyPanelStates` at runtime | One input-controls module binds the five controls; the page calls its explicit `sync` entry point |
+| Modifier controls | Shared and structured renderers competed; window capture suppressed local handlers and a wrapper replaced heatmap filtering | One explicit menu renderer, direct button calls into one control owner, shared confusable-kana set; preset definitions come from the preset owner |
 | Sound | Runtime wrappers replaced trainer functions and toast | Trainer results/session endings and toast call the sound owner directly |
 | Kana mastery | Hub repeated mastery thresholds and snapshot assembly | Hub consumes `ModeAtlasKanaMetrics` like other progress surfaces |
 | About sync | About inferred cloud status from local timestamps | About presents `KanaCloudSync.getSyncStatus()` and separates local save time from last cloud sync |

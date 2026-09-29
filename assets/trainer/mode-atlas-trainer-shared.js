@@ -1,4 +1,5 @@
 /* Shared trainer helpers used by Reading and Writing practice. */
+const MODE_ATLAS_CONFUSABLE_KANA = new Set(["シ","ツ","ソ","ン","ぬ","め","れ","わ","ね","ク","ケ","タ","ナ","メ"]);
 
 function createEmptySessionStats() {
     return {
@@ -434,98 +435,13 @@ function makeToggleButton(label, active, onClick, disabled = false) {
         event.stopPropagation();
         if (button.disabled) return;
         onClick();
-        requestAnimationFrame(() => {
-          document.querySelectorAll(".bottom-shell.ma-modifiers-only .toggle-btn[aria-pressed=\"true\"], .bottom-shell.ma-modifiers-only .btn.active").forEach(el => el.classList.add("active"));
-        });
+
     };
     return button;
 }
 
 function buildModifierButtons() {
-    const modes = [
-        ["hint", "Hint Mode"],
-        ["srs", "SRS Mode"],
-        ["endless", "Endless Mode"],
-        ["timeTrial", "Time Trial Mode"],
-        ["speedRun", "Speed Run"],
-        ["dailyChallenge", "Daily Challenge"],
-        ["testMode", "Test Mode"],
-        ["comboKana", "Combo Kana Mode"],
-        ["focusWeak", "Focus Weak"],
-        ["dakuten", "Dakuten"],
-        ["yoon", "Yōon"],
-        ["extendedKatakana", "Extended Katakana"],
-        ["confusableKana", "Confusable Kana"]
-    ];
-
-    const container = document.getElementById("modifierOptions");
-    container.replaceChildren();
-    const lockedModes = isModeLocked();
-
-    for (const [key, label] of modes) {
-        const btn = makeToggleButton(label, settings[key], () => {
-            if (key === "timeTrial") {
-                settings.timeTrial = !settings.timeTrial;
-                if (settings.timeTrial) {
-                    settings.endless = false;
-                    settings.speedRun = false;
-                    settings.dailyChallenge = false;
-                    settings.testMode = false;
-                }
-            } else if (key === "speedRun") {
-                settings.speedRun = !settings.speedRun;
-                if (settings.speedRun) {
-                    settings.endless = false;
-                    settings.timeTrial = false;
-                    settings.dailyChallenge = false;
-                    settings.testMode = false;
-                    settings.comboKana = false;
-                }
-            } else if (key === "endless") {
-                settings.endless = !settings.endless;
-                if (settings.endless) {
-                    settings.timeTrial = false;
-                    settings.speedRun = false;
-                    settings.dailyChallenge = false;
-                    settings.testMode = false;
-                }
-            } else if (key === "dailyChallenge") {
-                settings.dailyChallenge = !settings.dailyChallenge;
-                if (settings.dailyChallenge) {
-                    settings.timeTrial = false;
-                    settings.endless = false;
-                    settings.speedRun = false;
-                    settings.testMode = false;
-                    settings.comboKana = false;
-                    settings.hint = false;
-                }
-            } else if (key === "testMode") {
-                settings.testMode = !settings.testMode;
-                if (settings.testMode) {
-                    settings.timeTrial = false;
-                    settings.endless = false;
-                    settings.speedRun = false;
-                    settings.dailyChallenge = false;
-                    settings.comboKana = false;
-                    settings.hint = false;
-                }
-            } else if (key === "comboKana") {
-                settings.comboKana = !settings.comboKana;
-                if (settings.comboKana) {
-                    settings.dailyChallenge = false;
-                    settings.testMode = false;
-                    settings.speedRun = false;
-                }
-            } else {
-                settings[key] = !settings[key];
-            }
-            updateTrialConfigVisibility();
-            updateTopStats();
-    if (DEBUG_PANEL) renderDebugPanel();
-            onSettingsChanged();
-        }, lockedModes);
-        container.appendChild(btn);
-    }
+    window.ModeAtlasModifierMenu?.render();
 }
 
 function buildOptionButtons() { /* Options menu removed; SRS now lives in Modifiers. */ }
@@ -540,13 +456,7 @@ function buildRows(containerId, sourceRows, selectedRowsKey, displayPrefix) {
         const label = row.replace(displayPrefix, "");
         const isSelected = Array.isArray(settings[selectedRowsKey]) && settings[selectedRowsKey].includes(row);
         const btn = makeToggleButton(label, isSelected, () => {
-            const arr = Array.isArray(settings[selectedRowsKey]) ? settings[selectedRowsKey] : [];
-            if (arr.includes(row)) {
-                settings[selectedRowsKey] = arr.filter(r => r !== row);
-            } else {
-                settings[selectedRowsKey] = [...arr, row];
-            }
-            onSettingsChanged();
+            window.ModeAtlasTrainerControls.toggleRow(row, selectedRowsKey);
         }, lockedModes);
         btn.dataset.rowKey = row;
         btn.dataset.rowGroup = selectedRowsKey;
@@ -597,7 +507,7 @@ function showPopupForChar(ch, e) {
 }
 
 function getHeatmapCharsForDisplay() {
-    // Old behaviour restored: the Stats heatmap only shows currently selected rows.
+    // The Stats heatmap shows only currently selected rows.
     // Saved stats/times are used for those visible kana, but they do not make hidden rows appear.
     const out = [];
     const addMap = (map) => {
@@ -625,7 +535,7 @@ function getHeatmapCharsForDisplay() {
         if (settings.extendedKatakana) addMap(extendedKatakanaRows[row]);
     }
 
-    return out;
+    return settings.confusableKana ? out.filter(ch => MODE_ATLAS_CONFUSABLE_KANA.has(ch)) : out;
 }
 
 function renderHeatmap() {
@@ -689,8 +599,7 @@ function closePopup() {
 function getEligiblePool() {
     let pool = [...activeChars];
     if (settings.confusableKana) {
-        const confusableSet = new Set(["シ","ツ","ソ","ン","ぬ","め","れ","わ","ね","ク","ケ","タ","ナ","メ"]);
-        const focused = pool.filter(ch => confusableSet.has(ch));
+        const focused = pool.filter(ch => MODE_ATLAS_CONFUSABLE_KANA.has(ch));
         if (focused.length > 0) pool = focused;
     }
     if (pool.length === 0) return [];

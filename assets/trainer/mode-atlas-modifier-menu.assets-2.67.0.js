@@ -43,7 +43,10 @@
     b.textContent=label;
     if (key) b.dataset.maControlKey = key;
     b.setAttribute('aria-pressed', active?'true':'false');
-    b.disabled=!!disabled;
+    b.disabled=!!disabled || (typeof isModeLocked === 'function' && isModeLocked());
+    if(key && key!=='preset')b.addEventListener('click',()=>{
+      if(!b.disabled)window.ModeAtlasTrainerControls.toggleMode(key);
+    });
     return b;
   }
 
@@ -59,20 +62,15 @@
     }
   }
   function presetList(){
-    const list = window.ModeAtlasPresets?.list;
-    if(Array.isArray(list) && list.length) return list;
-    return [
-      {id:'starter', label:'Starter', desc:'A-row with hints'},
-      {id:'intermediate', label:'Intermediate', desc:'All Hiragana, no hints'},
-      {id:'advanced', label:'Advanced', desc:'Hiragana + Katakana + Dakuten'},
-      {id:'pro', label:'Pro', desc:'Everything enabled'}
-    ];
+    return window.ModeAtlasPresets.list;
   }
+
   function makePresetBtn(preset, active){
     const id = normalisePresetId(preset && preset.id);
     const b = makeBtn('', active, 'preset');
     b.classList.add('ma-preset-toggle');
     b.dataset.preset = id;
+    b.addEventListener('click',()=>{if(!b.disabled)window.ModeAtlasTrainerControls.applyPreset(id);});
     b.replaceChildren(mmEl('span','',String(preset?.label || id)), mmEl('small','',String(preset?.desc || '')));
     return b;
   }
@@ -81,65 +79,43 @@
     if(!IS_TRAINER) return;
     const content=$('#modifiersContent'); const stack=$('.options-stack', content); const mod=$('#modifierOptions');
     if(!content || !stack || !mod) return;
-    const old=window.buildModifierButtons || (typeof buildModifierButtons === 'function' ? buildModifierButtons : null);
 
-    window.buildModifierButtons = buildModifierButtons = function(){
-      const s=trainerSettings();
-      const activePreset = activePresetId();
-      const groups=[
-        ['Study presets', presetList().map(p => Object.assign({ type:'preset' }, p))],
-        ['Question flow', [
-          ['srs','SRS'], ['endless','Endless'], ['timeTrial','Time Trial'], ['speedRun','Speed Run'], ['dailyChallenge','Daily Challenge'], ['testMode','Test Mode']
-        ]],
-        ['Practice focus', [
-          ['hint','Hint Mode'], ['comboKana','Combo Kana'], ['focusWeak','Focus Weak'], ['confusableKana','Confusable Kana']
-        ]],
-        ['Content modifiers', [
-          ['dakuten','Dakuten'], ['yoon','Yōon'], ['extendedKatakana','Extended Katakana']
-        ]]
-      ];
-      mod.replaceChildren();
-      mod.classList.remove('button-grid');
-      mod.classList.add('ma-structured-modifiers');
-      groups.forEach(([title,items])=>{
-        const section=document.createElement('div');
-        section.className='ma-modifier-group';
-        const head=document.createElement('div');
-        head.className='ma-modifier-group-title';
-        head.textContent=title;
-        const grid=document.createElement('div');
-        grid.className='ma-modifier-group-grid';
-        items.forEach(item=>{
-          if(item && item.type === 'preset') grid.appendChild(makePresetBtn(item, activePreset === normalisePresetId(item.id)));
-          else { const [key,label] = item; grid.appendChild(makeBtn(label, !!s[key], key)); }
-        });
-        section.append(head,grid);
-        mod.appendChild(section);
+    const s=trainerSettings();
+    const activePreset = activePresetId();
+    const groups=[
+      ['Study presets', presetList().map(p => Object.assign({ type:'preset' }, p))],
+      ['Question flow', [
+        ['srs','SRS'], ['endless','Endless'], ['timeTrial','Time Trial'], ['speedRun','Speed Run'], ['dailyChallenge','Daily Challenge'], ['testMode','Test Mode']
+      ]],
+      ['Practice focus', [
+        ['hint','Hint Mode'], ['comboKana','Combo Kana'], ['focusWeak','Focus Weak'], ['confusableKana','Confusable Kana']
+      ]],
+      ['Content modifiers', [
+        ['dakuten','Dakuten'], ['yoon','Yōon'], ['extendedKatakana','Extended Katakana']
+      ]]
+    ];
+    mod.replaceChildren();
+    mod.classList.remove('button-grid');
+    mod.classList.add('ma-structured-modifiers');
+    groups.forEach(([title,items])=>{
+      const section=document.createElement('div');
+      section.className='ma-modifier-group';
+      const head=document.createElement('div');
+      head.className='ma-modifier-group-title';
+      head.textContent=title;
+      const grid=document.createElement('div');
+      grid.className='ma-modifier-group-grid';
+      items.forEach(item=>{
+        if(item && item.type === 'preset') grid.appendChild(makePresetBtn(item, activePreset === normalisePresetId(item.id)));
+        else { const [key,label] = item; grid.appendChild(makeBtn(label, !!s[key], key)); }
       });
-      try{ window.ModeAtlas?.refreshTrainerControls?.(); }catch{}
-    };
-
-    try{ buildModifierButtons(); }catch{ if(old) old(); }
-    keepModifierMenuOpen(content);
-  }
-
-  function keepModifierMenuOpen(drawer){
-    const tab = $('#modifiersTab');
-    if (!drawer || drawer.dataset.maModifierMenuOwned === 'true') return;
-    drawer.dataset.maModifierMenuOwned = 'true';
-    ['click','pointerdown','touchstart','mousedown'].forEach(type => {
-      drawer.addEventListener(type, event => { event.stopPropagation(); }, true);
+      section.append(head,grid);
+      mod.appendChild(section);
     });
-    drawer.addEventListener('click', () => {
-      try { settings.activeBottomTab = 'modifiers'; } catch {}
-      drawer.classList.add('open');
-      if (tab) { tab.classList.add('active'); tab.textContent = 'Practice setup ▲'; }
-    }, true);
+    try{ window.ModeAtlas?.refreshTrainerControls?.(); }catch{}
   }
 
-  function installSessionUpgrades(){
-    // Trainer session lifecycle is owned by the page controller and mode-atlas-session-controls.js.
-  }
+  window.ModeAtlasModifierMenu = Object.freeze({render:installStructuredModifierMenu});
 
   function saveKeyStatsForPreset(){
     // Preset achievements are tracked by the trainer controls only while that exact preset is active.
@@ -159,18 +135,13 @@
       anchor.parentNode.insertBefore(panel, anchor.nextSibling);
     }
     const progress=saveKeyStatsForPreset();
-    const defs=[
-      ['starter','Starter','A-row with hints'],
-      ['intermediate','Intermediate','All Hiragana, no hints'],
-      ['advanced','Advanced','Hiragana + Katakana + Dakuten'],
-      ['pro','Pro','Everything enabled']
-    ];
+    const defs=window.ModeAtlasPresets.list.map(({id,label,desc})=>[id,label,desc]);
 
     const head=mmEl('div','ma-kana-pro-head');
     const copy=document.createElement('div');
     copy.append(
       mmEl('h2','ma-kana-pro-title','Preset achievements'),
-      mmEl('div','ma-kana-pro-sub','Get 100 correct answers over time in each preset. Nothing is locked — this is just a progress tracker.')
+      mmEl('div','ma-kana-pro-sub','Answer 100 questions correctly in each preset to complete its achievement.')
     );
     head.append(copy);
 
@@ -235,7 +206,6 @@
   function boot(){
     installStructuredModifierMenu();
     try{ window.ModeAtlasTrainerControls?.refresh?.(); }catch{}
-    installSessionUpgrades();
     installPresetChecklist();
     installNoDataStates();
   }

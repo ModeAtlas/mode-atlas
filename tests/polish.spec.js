@@ -12,12 +12,12 @@ async function prepare(page,layout,theme){
   await page.setViewportSize(layout);
   await page.route(/https:\/\/([\w-]+\.)?(gstatic|googleapis)\.com\/.*/,route=>route.abort());
   await page.addInitScript(({native,theme})=>{
-    window.__MODE_ATLAS_DISABLE_WHATS_NEW_AUTO=true;
+    localStorage.setItem('maWhatsNewSeen','polish');
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
     localStorage.setItem('modeAtlasThemePreference',theme);
     localStorage.setItem('modeAtlasSound','off');
     localStorage.setItem('settings',JSON.stringify({hiraganaRows:['h_a'],katakanaRows:[],hint:true,activeBottomTab:null}));
-    localStorage.setItem('reverseSettings',JSON.stringify({hiraganaRows:['h_k'],katakanaRows:[],hint:false,keyboardMode:false,choiceCount:4,activeBottomTab:null}));
+    localStorage.setItem('reverseSettings',JSON.stringify({hiraganaRows:['h_ka'],katakanaRows:[],hint:false,keyboardMode:false,choiceCount:4,activeBottomTab:null}));
     localStorage.setItem('kanaWordBank',JSON.stringify([{id:'layout-word',kana:'あいうえお'.repeat(10),romaji:'aiueo'.repeat(10),english:'A long meaning to check wrapping inside a saved vocabulary entry.',notes:'Useful study notes.',createdAt:1,updatedAt:1}]));
     if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{ModeAtlasNative:{
       getNotificationStatus:async()=>({granted:false,status:'notDetermined'}),
@@ -73,6 +73,21 @@ for(const layout of layouts)for(const theme of ['dark','light']){
       await settleDrawer(page,'#profileDrawer');
       await checkLayout(page,'#profileDrawer');
       await page.evaluate(()=>window.ModeAtlasProfile.close());
+      if(route==='/reading/'){
+        await page.locator('#modifiersTab').click();
+        await page.locator('[data-ma-control-key="confusableKana"]').click();
+        const chars=await page.evaluate(()=>getHeatmapCharsForDisplay());
+        expect(chars.length).toBeGreaterThan(0);
+        expect(chars.every(char=>'シツソンぬめれわねクケタナメ'.includes(char))).toBe(true);
+        await page.locator('[data-ma-control-key="confusableKana"]').click();
+        const row=page.locator('#rowOptions [data-row-key="h_a"]');
+        await row.focus();
+        await page.keyboard.press('Space');
+        await expect(row).toHaveAttribute('aria-pressed','true');
+        await page.keyboard.press('Space');
+        await expect(row).toHaveAttribute('aria-pressed','false');
+        await page.locator('#modifiersTab').click();
+      }
       if(route==='/writing/'){
         const reading=await page.evaluate(()=>localStorage.getItem('settings'));
         await page.locator('#modifiersTab').click();
