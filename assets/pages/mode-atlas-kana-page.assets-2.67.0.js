@@ -488,7 +488,7 @@
     function presetProgress(snapshot) {
         const metrics = M();
         return (metrics?.PRESET_TRACKERS || []).map(item => {
-            const value = Math.min(100, item.chars.reduce((sum, ch) => sum + combinedKanaStats(ch, snapshot).correct, 0));
+            const value = Math.min(100, item.chars.reduce((sum, ch) => sum + M().charCorrect(ch, snapshot), 0));
             return { ...item, value, done: value >= 100, remaining: Math.max(0, 100 - value) };
         });
     }
