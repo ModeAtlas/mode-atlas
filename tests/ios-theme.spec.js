@@ -11,6 +11,7 @@ async function prepare(page,theme,native=true){
   await page.addInitScript(({theme,native})=>{
     if(!localStorage.getItem('modeAtlasThemePreference'))localStorage.setItem('modeAtlasThemePreference',theme);
     localStorage.setItem('modeAtlasSound','off');
+    localStorage.setItem('maWhatsNewSeen','theme-tests');
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
     localStorage.setItem('settings',JSON.stringify({hiraganaRows:['h_a'],katakanaRows:[],hint:true,activeBottomTab:null}));
     localStorage.setItem('reverseSettings',JSON.stringify({hiraganaRows:['h_a'],katakanaRows:[],hint:false,keyboardMode:false,choiceCount:4,activeBottomTab:null}));
@@ -50,12 +51,16 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
     await expect(page.locator('html')).toHaveAttribute('data-ma-runtime','ios');
     await expect(page.locator('body')).toHaveCSS('background-color',canvas);
     await expect(page.locator('body')).toHaveCSS('background-image','none');
+    if(route==='/')expect(await page.locator('body').evaluate(el=>getComputedStyle(el,'::before').backgroundImage)).toBe('none');
     const noNativeLeak=await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--ma-native-page').trim());
     expect(noNativeLeak).toBe(theme==='light'?'#f5f5f7':'#101011');
     await page.screenshot({path:testInfo.outputPath(`${route.split('/')[1]||'atlas'}-${theme}.png`),fullPage:true});
     if(route==='/'){
       await page.evaluate(()=>window.ModeAtlasSettings.open());
       await expect(page.locator('#settingsDrawer')).toHaveAttribute('aria-hidden','false');
+      await expect(page.locator(`#settingsDrawer [data-ma-theme-choice="${theme}"]`)).toHaveCSS('background-color',theme==='light'?'rgb(225, 235, 255)':'rgb(38, 59, 91)');
+      await page.locator(`#settingsDrawer [data-ma-theme-choice="${theme}"]`).hover();
+      await expect(page.locator(`#settingsDrawer [data-ma-theme-choice="${theme}"]`)).toHaveCSS('background-color',theme==='light'?'rgb(225, 235, 255)':'rgb(38, 59, 91)');
       await page.screenshot({path:testInfo.outputPath(`settings-${theme}.png`)});
       await page.evaluate(()=>{window.ModeAtlasSettings.close();window.ModeAtlasProfile.open();});
       await page.screenshot({path:testInfo.outputPath(`profile-${theme}.png`)});

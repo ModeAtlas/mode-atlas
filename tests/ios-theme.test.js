@@ -31,6 +31,10 @@ test('native palette has one scoped colour authority and no component/layout ove
   const legacy = read('assets/css/mode-atlas-theme.css').split('/* Light mode readability:')[1];
   assert.ok(legacy);
   assert.doesNotMatch(legacy,/html\[data-ma-theme="light"\](?!:where\(:not\(\[data-ma-runtime="ios"\]\)\))/);
+  for(const file of ['assets/css/mode-atlas-components.css','assets/css/mode-atlas-navigation.css']) {
+    assert.doesNotMatch(read(file),/html\[data-ma-theme="light"\](?!:where\(:not\(\[data-ma-runtime="ios"\]\)\))/,
+      'Legacy web light corrections must not defeat native selected states');
+  }
   const manifest=read('frontend_components.py');
   assert.ok(manifest.indexOf('assets/css/mode-atlas-ios-theme.css') > manifest.indexOf('assets/css/mode-atlas-theme.css'));
 });

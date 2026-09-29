@@ -17,8 +17,8 @@ body.ma-atlas-page::before{
   z-index:0;
   pointer-events:none;
   background:
-    radial-gradient(circle at 74% 16%,color-mix(in srgb,var(--ma-atlas) 10%,transparent),transparent 30%),
-    radial-gradient(circle at 18% 38%,color-mix(in srgb,var(--ma-kana) 5%,transparent),transparent 26%);
+    var(--ma-native-decoration,radial-gradient(circle at 74% 16%,color-mix(in srgb,var(--ma-atlas) 10%,transparent),transparent 30%),
+    radial-gradient(circle at 18% 38%,color-mix(in srgb,var(--ma-kana) 5%,transparent),transparent 26%));
 }
 body.ma-atlas-page::after{
   content:"学";

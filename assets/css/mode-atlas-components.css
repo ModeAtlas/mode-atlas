@@ -37,7 +37,7 @@
     opacity var(--ma-motion-fast) ease;
 }
 .ma-button:hover:not(:disabled):not([aria-disabled="true"]){
-  background:var(--ma-button-bg-hover);
+  background:var(--ma-button-selected-hover,var(--ma-button-bg-hover));
   border-color:var(--ma-button-border-hover,var(--ma-control-active-border));
   transform:var(--ma-button-hover-transform,translateY(-1px));
 }
@@ -60,6 +60,7 @@
 .ma-button--small{--ma-button-min-height:var(--ma-control-height-sm);--ma-button-padding:0 var(--ma-space-3);font-size:.82rem;}
 .ma-button--wide{width:100%;}
 .ma-button.is-active, .ma-button.active, .ma-button[data-active="true"]{
+  --ma-button-selected-hover:var(--ma-native-selected);
   background:var(--ma-control-active);
   border-color:var(--ma-control-active-border);
   box-shadow:0 0 0 3px var(--ma-focus-ring),inset 0 1px 0 color-mix(in srgb,var(--ma-text) 10%,transparent);
@@ -250,13 +251,13 @@
 }
 .ma-pill--small{min-height:26px;padding:0 10px;font-size:.74rem;}
 
-html[data-ma-theme="light"] .ma-button{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-button{
   background:var(--ma-button-bg);
   color:var(--ma-button-color);
   -webkit-text-fill-color:var(--ma-button-color);
   border-color:var(--ma-button-border);
 }
-html[data-ma-theme="light"] .ma-button:hover:not(:disabled):not([aria-disabled="true"]){background:var(--ma-button-bg-hover);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-button:hover:not(:disabled):not([aria-disabled="true"]){background:var(--ma-button-bg-hover);}
 
 
 /* Transient notifications. Legacy tone names are normalized in mode-atlas-toast.js. */
