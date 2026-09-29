@@ -1357,7 +1357,8 @@ async function deleteAccount() {
       if (snapshot.exists()) await setDoc(ref, snapshot.data());
       throw error;
     }
-    clearLocalAppData();
+    try { clearLocalAppData(); }
+    catch (error) { console.error('Account deleted but local save cleanup failed.', error); }
     hydratedForUserId = null;
     deferredSessionSync = false;
     window.ModeAtlasDeferredCloudSync = false;
