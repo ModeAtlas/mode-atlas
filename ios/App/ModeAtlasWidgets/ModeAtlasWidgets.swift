@@ -31,7 +31,7 @@ struct StudyWidgetView: View {
         LinearGradient(colors: [Color(red: 0.10, green: 0.17, blue: 0.25), Color(red: 0.05, green: 0.07, blue: 0.12)], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
     private var content: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("あア").foregroundStyle(blue).font(.headline).accessibilityHidden(true)
                 Text("Mode Atlas").font(.caption.weight(.bold))
@@ -39,7 +39,7 @@ struct StudyWidgetView: View {
             }
             if let value = progress {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(value.level)").font(.system(size: 32, weight: .bold, design: .rounded))
+                    Text("\(value.level)").font(.system(size: 28, weight: .bold, design: .rounded))
                     Text("Atlas level").font(.caption).foregroundStyle(.white.opacity(0.75))
                     if family == .systemMedium {
                         Spacer()

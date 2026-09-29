@@ -210,5 +210,11 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .ses
 }
 /* Native preference controls live in the existing Settings drawer. */
 html[data-ma-runtime="ios"] .ma-native-preference{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;width:100%;font-weight:700;}
-html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]{appearance:auto;width:24px;height:24px;margin:10px 2px;accent-color:var(--ma-atlas);flex:0 0 auto;}
-html[data-ma-runtime="ios"] .ma-native-preference input[type="time"]{width:auto;min-height:44px;max-width:140px;padding:8px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-card);color:var(--ma-text);font:inherit;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]{appearance:none;-webkit-appearance:none;position:relative;width:48px;height:28px;margin:8px 0;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-card);flex:0 0 auto;cursor:pointer;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]::before{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--ma-text);box-shadow:0 1px 3px rgba(0,0,0,.25);}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:checked{background:var(--ma-atlas);}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:checked::before{transform:translateX(20px);background:#fff;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:focus-visible{outline:2px solid var(--ma-atlas);outline-offset:3px;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:disabled{opacity:.45;cursor:default;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="time"]{color-scheme:dark;width:auto;min-height:44px;max-width:140px;padding:8px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-card);color:var(--ma-text);font:inherit;}
+html[data-ma-runtime="ios"][data-ma-theme="light"] .ma-native-preference input[type="time"]{color-scheme:light;}

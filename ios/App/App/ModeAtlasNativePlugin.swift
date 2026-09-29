@@ -167,7 +167,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     @objc func openNotificationSettings(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             let path: String
-            if #available(iOS 15.4, *) { path = UIApplication.openNotificationSettingsURLString }
+            if #available(iOS 16.0, *) { path = UIApplication.openNotificationSettingsURLString }
             else { path = UIApplication.openSettingsURLString }
             guard let url = URL(string: path) else { call.resolve(["opened": false]); return }
             UIApplication.shared.open(url, options: [:]) { call.resolve(["opened": $0]) }
