@@ -83,6 +83,7 @@
     setBadge: function(value){ return call('setBadge', [value], false); },
     publishWidgetSnapshot: function(snapshot){ return call('publishWidgetSnapshot', [snapshot], false); },
     authenticate: function(provider){ return call('authenticate', [String(provider || '')], { handled:false }); },
+    revokeAppleAuthorization: function(authorizationCode){ return call('revokeAppleAuthorization', [String(authorizationCode || '')], false); },
     signOutIdentityProvider: function(){ return call('signOutIdentityProvider', [], false); }
   };
 

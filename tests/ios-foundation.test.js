@@ -12,7 +12,7 @@ test('iOS foundation has one platform facade with web and native adapters', () =
   const facade = read('assets/platform/mode-atlas-platform.js');
   const web = read('assets/platform/mode-atlas-platform-web.js');
   const native = read('assets/platform/mode-atlas-platform-native.js');
-  for (const method of ['getAppVersion', 'openExternalLink', 'openDestination', 'requestNotifications', 'setBadge', 'publishWidgetSnapshot', 'authenticate', 'signOutIdentityProvider']) {
+  for (const method of ['getAppVersion', 'openExternalLink', 'openDestination', 'requestNotifications', 'setBadge', 'publishWidgetSnapshot', 'authenticate', 'revokeAppleAuthorization', 'signOutIdentityProvider']) {
     assert.match(facade, new RegExp(method));
   }
   assert.match(web, /registerAdapter\('web'/);
@@ -24,7 +24,19 @@ test('iOS foundation has one platform facade with web and native adapters', () =
   assert.match(native, /getLaunchUrl/);
   assert.match(native, /firebaseAuth\[method\]\(\{ skipNativeAuth:true \}\)/);
   assert.match(native, /providerId === 'apple\.com' \? 'signInWithApple' : 'signInWithGoogle'/);
+  assert.match(native, /firebaseAuth\.revokeAccessToken\(\{ token:authorizationCode \}\)/);
   assert.doesNotMatch(native, /question selection|mastery calculation/i);
+});
+
+test('platform facade forwards Apple revocation code to its native adapter', async () => {
+  const calls = [];
+  const window = {};
+  vm.runInNewContext(read('assets/platform/mode-atlas-platform.js'), { window, URL, Promise });
+  window.AtlasPlatform.registerAdapter('ios', {
+    revokeAppleAuthorization: async (code) => { calls.push(code); return true; }
+  });
+  assert.equal(await window.AtlasPlatform.revokeAppleAuthorization('fresh-code'), true);
+  assert.deepEqual(calls, ['fresh-code']);
 });
 
 test('native runtime disables browser-only update and install ownership', () => {
