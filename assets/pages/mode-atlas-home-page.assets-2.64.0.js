@@ -22,7 +22,7 @@
     set('#iosHomeStreak',Math.max(0,Number(kana.streak)||0));
     set('#iosHomeLevel',Math.max(1,Number(summary.level)||1));
     set('#iosHomeCorrect',Math.max(0,Number(summary.lifetimeCorrect)||0).toLocaleString());
-    set('#iosHomeDailyStatus',kana.dailyDone?'Daily practice complete. Come back tomorrow or keep going.':'A short session is enough to get started.');
+    set('#iosHomeDailyStatus',kana.dailyDone?'Daily practice complete. Nicely done.':'Ready for a short practice?');
   }
   render();document.addEventListener('ma:ui-refresh',render);document.addEventListener('ma:onboarding-complete',render);window.addEventListener('modeAtlasCloudDataChanged',render);window.addEventListener('modeAtlasProgressChanged',render);window.addEventListener('pageshow',event=>{if(event.persisted)render()});
 })();

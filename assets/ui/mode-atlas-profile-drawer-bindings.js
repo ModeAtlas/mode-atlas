@@ -308,6 +308,8 @@
     try {
       profileCloudBinding = sync.bindUi({
         authBtn: document.getElementById('profileAuthBtn'),
+        onSignIn: window.ModeAtlasEnv?.isNativeApp ? openAccountMethods : null,
+        signInLabel: window.ModeAtlasEnv?.isNativeApp ? 'Sign in' : '',
         statusEl: null,
         nameEl: document.getElementById('profileName'),
         emailEl: document.getElementById('profileEmail'),
@@ -321,13 +323,64 @@
     }
   }
 
+  let accountMethodsOpen = false;
+  let accountActionBusy = false;
+  async function openAccountMethods(){
+    if (accountMethodsOpen || accountActionBusy || !window.ModeAtlasDialog?.feature) return;
+    const sync = window.KanaCloudSync;
+    const user = sync?.getUser?.();
+    const uid = user?.uid || null;
+    const available = window.AtlasPlatform?.getCapabilities?.().authProviders || [];
+    const linked = user?.providerData?.map((item) => item.providerId) || [];
+    const content = document.createElement('div');
+    content.className = 'ma-account-methods';
+    const providers = [...new Set([...available, ...linked])].filter((id) => ['google.com','apple.com'].includes(id));
+    providers.forEach((id) => {
+      const name = id === 'apple.com' ? 'Apple' : 'Google';
+      const connected = linked.includes(id);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ma-button ma-button--wide';
+      button.dataset.maAccountProvider = id;
+      button.textContent = connected ? name + ' · Connected' : (user ? 'Link ' : 'Continue with ') + name;
+      button.disabled = connected || !available.includes(id);
+      button.addEventListener('click', async () => {
+        if (accountActionBusy || (sync?.getUser?.()?.uid || null) !== uid) return;
+        accountActionBusy = true;
+        content.querySelectorAll('button').forEach((el) => { el.disabled = true; });
+        window.ModeAtlasDialog.close();
+        try {
+          if (user) await sync.linkNativeProvider(id);
+          else if (id === 'apple.com') await sync.signInWithApple();
+          else await sync.signInWithGoogle();
+        } finally { accountActionBusy = false; updateSyncStatus(); }
+      });
+      content.appendChild(button);
+    });
+    closeAll();
+    accountMethodsOpen = true;
+    try {
+      await window.ModeAtlasDialog.feature({
+        kicker:'Mode Atlas account', title:user ? 'Sign-in methods' : 'Sign in',
+        message:user
+          ? 'Connected methods open this same account and progress. Link another method here before using it to sign in.'
+          : 'Continue to sign in or create an account. Already have progress in an account? Use your usual sign-in method first.',
+        contentNode:content
+      });
+    } finally { accountMethodsOpen = false; }
+  }
+
   function bindAccountActions(){
-    const apple = document.getElementById('profileAppleBtn');
     const link = document.getElementById('profileLinkBtn');
-    const remove = document.getElementById('profileDeleteAccountBtn');
-    apple?.addEventListener('click', () => { void window.KanaCloudSync?.signInWithApple?.(); });
-    link?.addEventListener('click', () => { void window.KanaCloudSync?.linkNativeProvider?.(link.dataset.provider); });
-    remove?.addEventListener('click', () => { void window.KanaCloudSync?.deleteAccount?.(); });
+    const remove = document.getElementById('settingsDeleteAccountBtn');
+    link?.addEventListener('click', openAccountMethods);
+    remove?.addEventListener('click', async () => {
+      if (accountActionBusy) return;
+      accountActionBusy = true;
+      closeAll();
+      try { await window.KanaCloudSync?.deleteAccount?.(); }
+      finally { accountActionBusy = false; updateSyncStatus(); }
+    });
   }
 
   function updateProfileDot(){
@@ -393,21 +446,10 @@
       chip.textContent = status.user ? (normalizedTone === 'success' ? 'Synced' : status.state || 'Cloud') : 'Local only';
     }
     const native = window.ModeAtlasEnv?.isNativeApp === true;
-    const providers = status.user?.providerData?.map((item) => item.providerId) || [];
-    const available = window.AtlasPlatform?.getCapabilities?.().authProviders || [];
-    const apple = document.getElementById('profileAppleBtn');
     const link = document.getElementById('profileLinkBtn');
-    if (apple) apple.hidden = !native || !!status.user || !available.includes('apple.com');
-    const missing = ['apple.com','google.com'].find((id) => available.includes(id) && !providers.includes(id));
-    if (link) {
-      link.hidden = !native || !status.user || !missing;
-      if (missing) {
-        link.dataset.provider = missing;
-        link.textContent = 'Link ' + (missing === 'apple.com' ? 'Apple' : 'Google') + ' to this account';
-      }
-    }
-    const management = document.getElementById('profileAccountManagement');
-    if (management) management.hidden = !status.user;
+    if (link) link.hidden = !native || !status.user;
+    const remove = document.getElementById('settingsDeleteAccountBtn');
+    if (remove) remove.hidden = !status.user;
     updateProfileDot();
     updateProgressStatus();
     const ach = document.getElementById('profileAchievementCount');

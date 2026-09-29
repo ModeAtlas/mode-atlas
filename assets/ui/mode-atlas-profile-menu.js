@@ -29,8 +29,7 @@
               <button class="ma-button ma-button--primary ma-button--wide" id="profileAuthBtn" data-profile-auth type="button">
                 <span data-profile-auth-label>Sign in with Google</span>
               </button>
-              <button class="ma-button ma-button--ghost ma-button--wide" id="profileAppleBtn" type="button" hidden>Sign in with Apple</button>
-              <button class="ma-button ma-button--ghost ma-button--wide" id="profileLinkBtn" type="button" hidden>Link Apple to this account</button>
+              <button class="ma-button ma-button--ghost ma-button--wide" id="profileLinkBtn" type="button" hidden>Sign-in methods</button>
             </div>
           </section>
 
@@ -73,9 +72,6 @@
               <div class="ma-achievement-summary"><strong id="profileAchievementCount">0</strong><span>achievements</span></div>
               <button class="ma-button ma-button--ghost ma-button--small" type="button" data-ma-achievements-open>${icon(href,'achievement')}<span>Achievements</span></button>
             </div>
-          </section>
-          <section class="ma-profile-account-management" id="profileAccountManagement" aria-label="Account management" hidden>
-            <button class="ma-button ma-button--ghost ma-button--small" id="profileDeleteAccountBtn" type="button">Delete account and data</button>
           </section>
         </aside>`;
     }

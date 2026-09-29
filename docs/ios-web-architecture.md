@@ -95,3 +95,31 @@ sign-in entitlement or capability, allowing free Personal Team device builds.
 The Apple integration and unused entitlement file remain available for later
 activation. Enable all three together after paid membership and Firebase setup.
 The compact home, Google sign-in and account deletion remain available.
+
+## Ownership review through 2.64.0
+
+Reviewed the native changes since 2.57.0 in the platform facade/adapters, native
+chrome and keyboard, boot loader, shared account drawers, trainer session hooks,
+Firebase Auth and release generators. The dock reuses existing controls; it does
+not create a second Profile, Settings or practice controller. The Reading pad
+emits the shared input event; it owns no scoring or save state. Firebase JS owns
+the user session and cloud data while Capacitor provides provider UI.
+
+The review found duplicate dock clearance in the Atlas page and iOS body. The
+body now owns that space once. Repeated native trainer body/keyboard layout
+rules were consolidated in the native stylesheet. Atlas now presents a compact
+header, Continue action, progress, daily status and Reading/Writing shortcuts.
+Word Bank remains in the dock. Normal phone sizes fit without forced clipping;
+large text and short landscape windows can still scroll for accessibility.
+
+Profile uses one native Sign in entry point and the shared dialog for provider
+choices. Signed-in users have Sign-in methods; linking asks for explicit consent
+and retains the current UID. Unavailable providers are not offered. Shared cloud
+account operations serialize sign-in, link, sign-out and deletion so repeated
+taps cannot create competing flows. Settings owns the Delete account and data
+control beside Reset data. The deletion owner retains its confirmation and
+reauthentication; cancellation performs no account or data mutation.
+
+This remains a multi-document Capacitor app. Navigation can reload document
+controllers; smoothing the transition does not turn it into a native screen
+stack. Real-device testing remains required for provider UI and signed builds.

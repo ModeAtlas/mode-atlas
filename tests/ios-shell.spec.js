@@ -15,6 +15,56 @@ test('Atlas home is compact on iOS and retains the website layout in the browser
   await expect(page.locator('.atlas-ios-home__choices a')).toHaveCount(2);
 });
 
+test('iOS home fits portrait phones and keeps its last action above the dock', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
+  });
+  await page.goto('/');
+  await expect(page.locator('.ma-ios-tabs')).toBeVisible();
+  for (const size of [{width:375,height:667}, {width:393,height:852}, {width:430,height:932}]) {
+    await page.setViewportSize(size);
+    await expect.poll(() => page.evaluate(() => ({
+      fits: document.documentElement.scrollHeight <= innerHeight + 1,
+      clear: document.querySelector('.atlas-ios-home').getBoundingClientRect().bottom
+        <= document.querySelector('.ma-ios-tabs').getBoundingClientRect().top,
+      width: document.documentElement.scrollWidth <= innerWidth
+    }))).toEqual({fits:true,clear:true,width:true});
+  }
+});
+
+test('native account chooser uses enabled methods and Settings owns account deletion', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {
+      FirebaseAuthentication: { signInWithGoogle: async () => ({}), signInWithApple: async () => ({}) }
+    } };
+  });
+  await page.goto('/');
+  await expect(page.locator('#profileAuthBtn')).toHaveText('Sign in');
+  await page.evaluate(() => window.ModeAtlasProfile.open());
+  await page.locator('#profileAuthBtn').click();
+  await expect(page.locator('[data-ma-account-provider="google.com"]')).toHaveText('Continue with Google');
+  await expect(page.locator('[data-ma-account-provider="apple.com"]')).toHaveCount(0);
+  await expect(page.locator('#profileDrawer')).toHaveAttribute('aria-hidden','true');
+  await page.locator('.ma-dialog__close').click();
+  await page.evaluate(() => {
+    const user = { uid:'test-user', providerData:[{providerId:'google.com'}] };
+    window.KanaCloudSync = { ...window.KanaCloudSync,
+      getUser: () => user,
+      getSyncStatus: () => ({user,state:'synced',tone:'success',text:'Synced'})
+    };
+    window.ModeAtlasProfile.refresh();
+    window.ModeAtlasProfile.open();
+  });
+  await page.locator('#profileLinkBtn').click();
+  await expect(page.locator('[data-ma-account-provider="google.com"]')).toHaveText('Google · Connected');
+  await expect(page.locator('[data-ma-account-provider="google.com"]')).toBeDisabled();
+  await page.locator('.ma-dialog__close').click();
+  await expect(page.locator('#profileDrawer #settingsDeleteAccountBtn')).toHaveCount(0);
+  await expect(page.locator('#settingsDrawer #settingsDeleteAccountBtn')).toHaveCount(1);
+  await expect(page.locator('#settingsDeleteAccountBtn')).not.toHaveAttribute('hidden','');
+  await expect(page.locator('#settingsDeleteAccountBtn').locator('..').locator('[data-ma-unified-reset]')).toHaveCount(1);
+});
+
 test('bundled iOS runtime uses native lifecycle without web update or PWA ownership', async ({ page }) => {
   const versionChecks = [];
   page.on('request', request => {

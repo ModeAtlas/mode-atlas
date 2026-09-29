@@ -102,10 +102,10 @@
 
               <div class="ma-setting-row ma-setting-row--stack ma-setting-row--danger">
                 <div class="ma-setting-row__copy">
-                  <div class="ma-setting-row__label">Reset Mode Atlas</div>
-                  <div class="ma-setting-row__description">Permanently clears local and synced study data after confirmation.</div>
+                  <div class="ma-setting-row__label">Data and account</div>
+                  <div class="ma-setting-row__description">Reset clears study data but keeps your account. Delete removes both. Each asks for confirmation.</div>
                 </div>
-                <div class="ma-setting-row__control"><button class="ma-button ma-button--danger" type="button" data-ma-unified-reset>${icon(href,'delete')}<span>Reset data</span></button></div>
+                <div class="ma-setting-row__control ma-action-row"><button class="ma-button ma-button--danger" type="button" data-ma-unified-reset>${icon(href,'delete')}<span>Reset data</span></button><button class="ma-button ma-button--danger" id="settingsDeleteAccountBtn" type="button" hidden>Delete account &amp; data</button></div>
               </div>
             </div>
           </details>

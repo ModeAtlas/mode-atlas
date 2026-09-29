@@ -278,7 +278,8 @@ test('Apple links to the current Firebase UID and revokes authorization on accou
   const { context, window, localStorage } = createBaseContext({ configured: true });
   window.ModeAtlasEnv.isNativeApp = true;
   window.ModeAtlasStorage = { clearAppData: () => localStorage.clear() };
-  window.ModeAtlasFeedback = { confirm: async () => true, alert: async () => {}, toast: () => {} };
+  let approve = false;
+  window.ModeAtlasFeedback = { confirm: async () => approve, alert: async () => {}, toast: () => {} };
   const user = { uid: 'shared-uid', providerData: [{ providerId:'google.com' }] };
   const auth = { currentUser: user };
   const calls = [];
@@ -316,10 +317,16 @@ test('Apple links to the current Firebase UID and revokes authorization on accou
   };
   vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE), context, { filename:'cloud-sync.js' });
   await window.KanaCloudSync.ready;
+  assert.equal(await window.KanaCloudSync.linkNativeProvider('apple.com'), false);
+  assert.equal(await window.KanaCloudSync.deleteAccount(), false);
+  assert.deepEqual(calls, [], 'Cancelling must not contact the provider or delete data');
+  approve = true;
   assert.equal(await window.KanaCloudSync.linkNativeProvider('apple.com'), true);
   assert.equal(auth.currentUser.uid, 'shared-uid');
   localStorage.setItem('modeAtlasOnboardingComplete', 'true');
-  assert.equal(await window.KanaCloudSync.deleteAccount(), true);
+  const deletion = window.KanaCloudSync.deleteAccount();
+  assert.equal(await window.KanaCloudSync.deleteAccount(), false, 'Repeated tap must not queue a second deletion');
+  assert.equal(await deletion, true);
   assert.deepEqual(calls, ['link','reauth','document','revoke:apple-code','user']);
   assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'), null);
 });

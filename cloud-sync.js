@@ -916,7 +916,7 @@ function updateUiBinding(binding) {
   if (binding.photoEl) {
     if (user?.photoURL) {
       binding.photoEl.src = user.photoURL;
-      binding.photoEl.alt = user.displayName || 'Google profile';
+      binding.photoEl.alt = user.displayName || 'Mode Atlas profile';
       setCloudElementVisible(binding.photoEl, true);
     } else {
       binding.photoEl.removeAttribute('src');
@@ -928,7 +928,7 @@ function updateUiBinding(binding) {
   if (binding.signOutBtn) setCloudElementVisible(binding.signOutBtn, !!user);
   if (binding.authBtn) {
     const label = binding.authBtn.querySelector('[data-profile-auth-label]');
-    const text = user ? 'Sign out' : 'Sign in with Google';
+    const text = user ? 'Sign out' : (binding.signInLabel || 'Sign in with Google');
     if (label) label.textContent = text;
     else binding.authBtn.textContent = text;
     binding.authBtn.classList.toggle('ma-button--primary', !user);
@@ -966,6 +966,8 @@ function bindUi(options = {}) {
     existing.signedOutEls = options.signedOutEls || existing.signedOutEls || null;
     existing.hidePhotoIfNoUser = options.hidePhotoIfNoUser !== false;
     existing.customStatus = options.customStatus || '';
+    existing.onSignIn = options.onSignIn || null;
+    existing.signInLabel = options.signInLabel || '';
     updateUiBinding(existing);
     return existing;
   }
@@ -981,7 +983,9 @@ function bindUi(options = {}) {
     signedInEls: options.signedInEls || null,
     signedOutEls: options.signedOutEls || null,
     hidePhotoIfNoUser: options.hidePhotoIfNoUser !== false,
-    customStatus: options.customStatus || ''
+    customStatus: options.customStatus || '',
+    onSignIn: options.onSignIn || null,
+    signInLabel: options.signInLabel || ''
   };
   if (binding.signInBtn && !boundSignInButtons.has(binding.signInBtn)) {
     boundSignInButtons.add(binding.signInBtn);
@@ -995,6 +999,7 @@ function bindUi(options = {}) {
     boundAuthButtons.add(binding.authBtn);
     binding.authBtn.addEventListener('click', () => {
       if (currentUser) void signOutUser();
+      else if (binding.onSignIn) binding.onSignIn();
       else void signInWithGoogle();
     });
   }
@@ -1206,7 +1211,18 @@ async function nativeProviderCredential(providerId) {
   return credentialFromNativeResult(providerId, await window.AtlasPlatform?.authenticate?.(providerId));
 }
 
-async function signInWithProvider(providerId = 'google.com') {
+// One account mutation at a time: repeated taps cannot start competing provider
+// choosers, link a different user mid-operation, or queue deletion confirmations.
+let accountActionPromise = null;
+function runAccountAction(action) {
+  if (accountActionPromise) return Promise.resolve(false);
+  accountActionPromise = Promise.resolve().then(action).finally(() => { accountActionPromise = null; });
+  return accountActionPromise;
+}
+function signInWithProvider(providerId = 'google.com') {
+  return runAccountAction(() => performProviderSignIn(providerId));
+}
+async function performProviderSignIn(providerId) {
   const isApple = providerId === 'apple.com';
   const providerName = isApple ? 'Apple' : 'Google';
   await setupFirebase();
@@ -1284,11 +1300,21 @@ async function signInWithProvider(providerId = 'google.com') {
 const signInWithGoogle = () => signInWithProvider('google.com');
 const signInWithApple = () => signInWithProvider('apple.com');
 
-async function linkNativeProvider(providerId) {
+function linkNativeProvider(providerId) {
+  return runAccountAction(() => performProviderLink(providerId));
+}
+async function performProviderLink(providerId) {
   await authReady;
   const user = currentUser;
   if (!window.ModeAtlasEnv?.isNativeApp || !user || !['apple.com','google.com'].includes(providerId)) return false;
   if (user.providerData?.some((item) => item.providerId === providerId)) return true;
+  const providerName = providerId === 'apple.com' ? 'Apple' : 'Google';
+  const approved = await window.ModeAtlasFeedback?.confirm?.({
+    kicker:'Sign-in methods', title:'Link ' + providerName + ' to this account?',
+    message:'This connects your ' + providerName + ' identity to your current Mode Atlas account, including its profile and progress. Both sign-in methods will open the same account.',
+    confirmLabel:'Link ' + providerName, cancelLabel:'Cancel'
+  });
+  if (!approved || currentUser?.uid !== user.uid) return false;
   try {
     const credential = await nativeProviderCredential(providerId);
     await linkWithCredential(user, credential);
@@ -1309,7 +1335,10 @@ async function linkNativeProvider(providerId) {
   }
 }
 
-async function deleteAccount() {
+function deleteAccount() {
+  return runAccountAction(performAccountDeletion);
+}
+async function performAccountDeletion() {
   await authReady;
   const user = currentUser;
   if (!user || !auth || !CONFIG_READY) return false;
@@ -1320,7 +1349,7 @@ async function deleteAccount() {
   const approved = await window.ModeAtlasFeedback?.confirm?.({
     kicker:'Account', title:'Delete your Mode Atlas account?',
     message:'This permanently deletes your account, cloud learning progress and this device’s Mode Atlas save. This cannot be undone.',
-    tone:'error', confirmLabel:'Delete account', cancelLabel:'Keep account'
+    tone:'danger', confirmLabel:'Delete account', cancelLabel:'Keep account'
   });
   if (!approved) return false;
   const hasApple = user.providerData?.some((item) => item.providerId === 'apple.com');
@@ -1378,7 +1407,10 @@ async function deleteAccount() {
   } finally { setSessionCloudPause(false); }
 }
 
-async function signOutUser() {
+function signOutUser() {
+  return runAccountAction(performSignOut);
+}
+async function performSignOut() {
   if (!auth) return;
   await signOut(auth);
   hydratedForUserId = null;

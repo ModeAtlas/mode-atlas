@@ -138,3 +138,7 @@ body[data-effective-display-mode="phone"] .ma-drawer{
   .ma-settings-inline-actions{grid-template-columns:1fr;}
 }
 @media(prefers-reduced-motion:reduce){.ma-drawer,.ma-settings-disclosure>summary .ma-icon{transition:none;}}
+
+/* Provider choice uses the shared dialog; account state stays in cloud-sync. */
+.ma-account-methods{display:grid;gap:12px;}
+.ma-account-methods .ma-button{min-height:48px;}
