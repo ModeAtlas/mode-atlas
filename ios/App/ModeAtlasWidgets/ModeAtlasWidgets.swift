@@ -41,7 +41,7 @@ struct StudyWidgetView: View {
     private func level(_ value: ModeAtlasWidgetSnapshot, compact: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text("\(value.level)").font(.system(compact ? .title2 : .largeTitle, design: .rounded, weight: .bold))
+                Text("\(value.level)").font(.system(compact ? .title2 : .largeTitle, design: .rounded).weight(.bold))
                 Text("Level").font(.caption).foregroundStyle(.secondary)
             }.accessibilityElement(children: .ignore).accessibilityLabel("Atlas level \(value.level)")
             ProgressView(value: value.levelProgress).tint(blue)
@@ -57,7 +57,7 @@ struct StudyWidgetView: View {
         VStack(alignment: .leading, spacing: 2) {
             if let value = value {
                 Text(value, format: .number.notation(.compactName))
-                    .font(.system(.title3, design: .rounded, weight: .bold)).foregroundStyle(tint)
+                    .font(.system(.title3, design: .rounded).weight(.bold)).foregroundStyle(tint)
             } else { Text("—").font(.title3.weight(.bold)).foregroundStyle(.secondary) }
             Text(title).font(.caption2).foregroundStyle(.secondary)
         }
