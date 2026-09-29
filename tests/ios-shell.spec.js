@@ -11,8 +11,16 @@ test('Atlas home is compact on iOS and retains the website layout in the browser
   await expect(page.locator('html')).toHaveAttribute('data-ma-runtime', 'ios');
   await expect(page.locator('.atlas-ios-home')).toBeVisible();
   await expect(page.locator('.atlas-hero')).toBeHidden();
-  await expect(page.locator('#iosHomeContinue')).toHaveAttribute('href', '/reading/');
+  await expect(page.locator('#iosHomeContinue')).toHaveAttribute('href', '/reading/?practice=10&starter=starter');
   await expect(page.locator('.atlas-ios-home__choices a')).toHaveCount(2);
+  await page.evaluate(() => {
+    for (const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted']) localStorage.setItem(key, 'true');
+    localStorage.setItem('maWhatsNewSeen', 'guided-study');
+  });
+  await page.locator('#iosHomeContinue').click();
+  await expect(page).toHaveURL(/\/reading\/$/);
+  await expect(page.locator('#studyLength')).toHaveValue('10');
+  expect(await page.evaluate(() => settings.hiraganaRows)).toEqual(['h_a']);
 });
 
 test('iOS home fits portrait phones and keeps its last action above the dock', async ({ page }) => {
