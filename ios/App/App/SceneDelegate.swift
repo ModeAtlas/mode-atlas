@@ -2,6 +2,7 @@ import UIKit
 import WebKit
 import Capacitor
 import GoogleSignIn
+import UserNotifications
 
 // Capacitor's default router serves index.html for every extensionless URL.
 // Mode Atlas has real documents at these clean paths, so resolve them before
@@ -46,6 +47,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window?.backgroundColor = UIColor(red: 18/255, green: 26/255, blue: 43/255, alpha: 1)
         window?.rootViewController = ModeAtlasBridgeViewController()
         window?.makeKeyAndVisible()
+        if let response = connectionOptions.notificationResponse,
+           [ModeAtlasNativePlugin.reminderID, ModeAtlasNativePlugin.testID].contains(response.notification.request.identifier),
+           response.actionIdentifier == UNNotificationDefaultActionIdentifier {
+            ModeAtlasNativePlugin.pendingDestination = "reading"
+        }
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }

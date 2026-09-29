@@ -147,25 +147,28 @@ non-identifying snapshot: level, correct count, streak, level progress, daily
 completion, timestamp and a whitelisted destination. It refreshes after progress,
 cloud hydration, data clearing and returning to the foreground. It owns no
 learning calculations, account session, save format or Firestore writes.
-`ModeAtlasNativePlugin.swift` validates and atomically stores this projection in
-protected app-local Application Support. `widgetSnapshots` is supported;
-`widgets` remains false. A real widget is **not yet shipped**.
+`ModeAtlasNativePlugin.swift` owns native preferences, local notifications and widget writes. The shared Foundation model in `ios/App/Shared/ModeAtlasWidgetData.swift` is compiled into the app and WidgetKit extension. It validates bounded snapshots, expires them after 24 hours and rolls daily completion over by local date. The extension has no Firebase/Capacitor dependency or account credentials.
 
-The same native plugin exposes notification status, explicit permission requests,
-and daily local reminder scheduling/cancellation using one stable identifier.
-Initialization never asks for permission or schedules a notification. A future
-reminder Settings control must call `configureReminder` only after the user's
-explicit choice, handle denial, and reconcile against OS settings. The current
-release contains no reminder UI, remote push registration, or marketing payloads.
-No new entitlements or dependencies are required for this foundation. Apple
-sign-in remains disabled for Personal Team device testing.
+### Reminders (2.66.0)
 
-Next widget work: add a signed WidgetKit extension and App Group; move the single
-snapshot store to the shared container; add timeline freshness/placeholder and
-reset/sign-out privacy behavior; use existing modeatlas://open destinations;
-reload timelines on accepted snapshots. Do not share Firebase credentials with
-the extension. Device tests must cover notification permission denial/revocation,
-rescheduling, local-time changes and tapping a notification before exposing UI.
+`mode-atlas-native-settings.js` binds the existing Settings drawer. It reads the pending schedule and authorization from iOS rather than maintaining another JavaScript preference store. Enabling asks for notification permission; disabling never asks. A stable notification identifier replaces the daily schedule when the time changes. Test notifications fire after five seconds. Taps open Reading through the existing destination whitelist, including cold launches. The plugin uses Capacitor's notification router rather than replacing its global delegate.
+
+The schedule uses device-local calendar hours/minutes. Focus and iOS delivery settings still apply. There is no remote push/APNs service. Reset Data, account deletion and explicit sign-out cancel pending/delivered reminders, disable widget sharing and erase the shared snapshot. Mutations are serialized and a permission response cannot re-enable a reminder after a reset.
+
+### Widgets and signing (2.66.0)
+
+The App target embeds `ModeAtlasWidgets.appex`. Small widgets open Reading; medium widgets offer Reading and Writing. The default `ios/engagement.xcconfig` uses empty `Shared/LocalOnly.entitlements`, so shortcut widgets do not require App Groups. Apple sign-in remains disabled. Both targets must use the same signing team on a physical device.
+
+For live progress, register an App Group with an eligible Apple Developer team and add it to the provisioning for both bundle IDs (`app.modeatlas` and `app.modeatlas.widgets`). Then run:
+
+```bash
+python3 configure_ios_widgets.py --app-group YOUR_REGISTERED_GROUP_IDENTIFIER
+npm run ios:sync
+```
+
+This writes ignored `ios/widget-sharing.local.xcconfig`, inherited by both targets. It selects `Shared/WidgetSharing.entitlements`; it does not register or provision an App Group. Build/run again and enable **Show progress on widgets** in Settings. Use `python3 configure_ios_widgets.py --disable` to return to shortcut-only widgets. Never commit local signing overrides.
+
+The app writes a protected, atomic, bounded JSON projection into the configured shared container only after opt-in. WidgetKit refresh requests are coalesced; iOS owns their delivery budget, so Home Screen updates are not guaranteed to be immediate. The timeline includes a local-midnight entry and requests another read after 30 minutes. Missing/stale data renders practice shortcuts. Disabling sharing removes the snapshot and requests an immediate timeline reload.
 
 Research: Duolingo's unified next-step home and Headspace's Today recommendations
 informed the focused continuation card, daily action and glanceable progress.

@@ -58,6 +58,18 @@
     }
   }
 
+  // Native actions are consumed once, so cold-launch and resume cannot navigate twice.
+  if (hasBridge('consumeNotificationDestination')) {
+    var consumeAction = function(){
+      nativeBridge.consumeNotificationDestination().then(function(result){
+        if (result?.destination === 'reading') navigate('reading', false);
+      }).catch(function(error){console.warn('Notification action unavailable',error);});
+    };
+    if(typeof nativeBridge.addListener === 'function') nativeBridge.addListener('notificationAction',consumeAction);
+    if(typeof app?.addListener === 'function') app.addListener('appStateChange',function(state){if(state.isActive)consumeAction();});
+    consumeAction();
+  }
+
   function normalizeCredential(result){
     var credential = result && result.credential ? result.credential : null;
     if (!credential) return null;
@@ -78,7 +90,7 @@
       return {
         notifications: hasBridge('requestNotifications'),
         appBadge: hasBridge('setBadge'),
-        widgets: false, // No WidgetKit extension or App Group is enabled yet.
+        widgets: hasBridge('getEngagementState'),
         widgetSnapshots: hasBridge('publishWidgetSnapshot'),
         appIntents: false,
         authentication: providers.length > 0,
@@ -115,6 +127,11 @@
       if (!hasBridge('configureStudyReminder')) return {supported:false, enabled:false};
       return nativeBridge.configureStudyReminder(options);
     },
+    getEngagementState: async function(){return hasBridge('getEngagementState') ? nativeBridge.getEngagementState() : {supported:false};},
+    resetEngagement: async function(){return hasBridge('resetEngagement') ? nativeBridge.resetEngagement() : {reset:false};},
+    testNotification: async function(){return hasBridge('testNotification') ? nativeBridge.testNotification() : {scheduled:false};},
+    openNotificationSettings: async function(){return hasBridge('openNotificationSettings') ? nativeBridge.openNotificationSettings() : {opened:false};},
+    setWidgetSharing: async function(enabled){return hasBridge('setWidgetSharing') ? nativeBridge.setWidgetSharing({enabled:!!enabled}) : {enabled:false,supported:false};},
     setBadge: async function(value){
       if (!hasBridge('setBadge')) return false;
       await nativeBridge.setBadge({ value:Math.max(0, Number(value || 0)) });

@@ -137,6 +137,11 @@ jobs:
       - name: Verify native generation is source-clean
         run: git diff --exit-code -- . ':(exclude)ios/App/App/public' ':(exclude)ios/App/App/capacitor.config.json' ':(exclude)ios/App/App/config.xml'
 
+      - name: Test widget snapshot model
+        run: |
+          swiftc ios/App/Shared/ModeAtlasWidgetData.swift tests/native/WidgetSnapshotTests.swift -o "${RUNNER_TEMP}/widget-model-tests"
+          "${RUNNER_TEMP}/widget-model-tests"
+
       - name: Build iPhone/iPad simulator target
         run: |
           xcodebuild -project ios/App/App.xcodeproj \
@@ -158,6 +163,11 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "$expected_version"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "$expected_build"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "modeatlas"
+          widget_path="$app_path/PlugIns/ModeAtlasWidgets.appex"
+          test -d "$widget_path"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$widget_path/Info.plist")" = "app.modeatlas.widgets"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$widget_path/Info.plist")" = "$expected_version"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$widget_path/Info.plist")" = "$expected_build"
           test -f "$app_path/GoogleService-Info.plist"
           test -f "$app_path/public/kana/index.html"
           test -f "$app_path/public/assets/css/mode-atlas-page-shared.assets-${expected_version}.css"

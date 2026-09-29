@@ -283,6 +283,7 @@ ACCOUNT_SCRIPTS = (
     'cloud-sync.js',
     'assets/ui/mode-atlas-profile-menu.js',
     'assets/ui/mode-atlas-settings-menu.js',
+    'assets/ui/mode-atlas-native-settings.js',
     'assets/ui/mode-atlas-profile-drawer-bindings.js',
 )
 LEGAL_BODY_SCRIPTS = (

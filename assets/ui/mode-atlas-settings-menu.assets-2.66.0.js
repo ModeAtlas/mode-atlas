@@ -60,6 +60,8 @@
             </div>
           </section>
 
+          ${native ? (window.ModeAtlasNativeSettings?.markup?.() || '') : ''}
+
           <details class="ma-settings-disclosure" open>
             <summary>
               <span><span class="ma-menu-kicker">Secondary tools</span><strong>Data and app</strong></span>

@@ -1,3 +1,11 @@
+## 2.66.0 - 2026-09-29
+
+- Added iOS Settings controls for opt-in daily local reminders, local-time scheduling, a test notification and denied-permission recovery.
+- Added an embedded WidgetKit extension with small and medium practice shortcuts. Optional App Group provisioning enables an opt-in level, streak and daily-progress display.
+- Kept the existing progress/account owners and native platform facade; widget snapshots contain no identity or Firebase credentials. Reset, account deletion and sign-out clear shared progress and cancel reminders.
+- Added reminder UI regression coverage, widget snapshot calendar/freshness checks and release-gate verification of the embedded widget product.
+- Default signing remains free of App Group, push and Apple sign-in capabilities; shared progress requires a separately provisioned App Group.
+
 ## 2.65.0 - 2026-09-29
 
 - Rebuilt the iOS home around a contextual continuation card, real level progress and a daily challenge, with responsive height and native-only styling.

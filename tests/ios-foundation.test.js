@@ -130,7 +130,9 @@ test('native auth transport keeps Firebase JS as the single session and Firestor
   assert.match(cloud, /GoogleAuthProvider\.credential/);
   assert.match(cloud, /new OAuthProvider\('apple\.com'\)\.credential/);
   assert.match(cloud, /linkWithCredential\(user, credential\)/);
-  assert.doesNotMatch(read('ios/App/App.xcodeproj/project.pbxproj'), /CODE_SIGN_ENTITLEMENTS|com\.apple\.SignInWithApple/);
+  assert.doesNotMatch(read('ios/App/App.xcodeproj/project.pbxproj'), /com\.apple\.SignInWithApple/);
+  assert.match(read('ios/engagement.xcconfig'), /MODE_ATLAS_ENTITLEMENTS = Shared\/LocalOnly.entitlements/);
+  assert.doesNotMatch(read('ios/App/Shared/LocalOnly.entitlements'), /<key>/);
   assert.match(read('assets/platform/mode-atlas-platform-native.js'), /var appleSignInEnabled = false/);
   assert.match(read('assets/platform/mode-atlas-platform-native.js'), /JS Auth session owns UID/);
   assert.doesNotMatch(cloud, /FirebaseAuthentication\.signInWithGoogle/);
@@ -246,4 +248,33 @@ test('native Settings omit browser display/install controls and keep repair with
     assert.match(html,/data-ma-unified-import[\s\S]*?data-ma-repair-data[\s\S]*?<\/div>\s*<input type="file"/);
     assert.doesNotMatch(html,/>Repair save data<\/div>/);
   }
+});
+
+test('reset cancels a reminder waiting on notification permission', async () => {
+  let answer;
+  const calls=[];
+  const window={ModeAtlasEnv:{isNativeApp:true}, addEventListener:()=>{}, dispatchEvent:()=>{},
+    AtlasPlatform:{getCapabilities:()=>({notifications:true}),
+      requestNotifications:()=>new Promise(resolve=>{answer=resolve;}),
+      configureStudyReminder:async()=>calls.push('scheduled'),resetEngagement:async()=>calls.push('reset')}};
+  vm.runInNewContext(read('assets/platform/mode-atlas-native-engagement.js'),{
+    window,document:{addEventListener:()=>{}},console,setTimeout:()=>1,clearTimeout:()=>{},
+    CustomEvent:class{constructor(type){this.type=type;}}
+  });
+  const pending=window.ModeAtlasNativeEngagement.configureReminder({enabled:true,hour:9,minute:15});
+  await window.ModeAtlasNativeEngagement.reset();
+  answer({granted:true});
+  assert.equal((await pending).cancelled,true);
+  assert.deepEqual(calls,['reset']);
+});
+
+test('widget signing is opt-in and the extension is embedded in the app', () => {
+  const project=read('ios/App/App.xcodeproj/project.pbxproj');
+  assert.match(project,/com.apple.product-type.app-extension/);
+  assert.match(project,/Embed App Extensions/);
+  assert.match(project,/PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets/);
+  assert.match(read('ios/engagement.xcconfig'),/MODE_ATLAS_APP_GROUP =\s*\n/);
+  assert.match(read('ios/App/Shared/WidgetSharing.entitlements'),/com.apple.security.application-groups/);
+  assert.doesNotMatch(read('ios/App/Shared/LocalOnly.entitlements'),/<key>/);
+  assert.match(read('ios/.gitignore'),/widget-sharing.local.xcconfig/);
 });

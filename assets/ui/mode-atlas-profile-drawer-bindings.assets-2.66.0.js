@@ -188,6 +188,7 @@
     drawerReturnFocus = trigger || document.activeElement || drawerReturnFocus;
     activeDrawerName = name;
     setDrawerOpen(name, true);
+    if (name === 'settings') window.ModeAtlasNativeSettings?.refresh?.();
   }
 
   function closeDrawer(name, restoreFocus = true){
@@ -467,6 +468,7 @@
     document.body.insertAdjacentHTML('afterbegin', profileMarkup + settingsMarkup);
     bindOpenClose();
     bindSettings();
+    window.ModeAtlasNativeSettings?.bind?.();
     try { window.ModeAtlasTheme?.updateButtons?.(); } catch {}
     bindCloudUi();
     bindAccountActions();

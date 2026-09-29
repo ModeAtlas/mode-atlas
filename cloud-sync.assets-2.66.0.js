@@ -1413,6 +1413,7 @@ function signOutUser() {
 async function performSignOut() {
   if (!auth) return;
   await signOut(auth);
+  window.dispatchEvent(new CustomEvent('modeAtlasAccountSignedOut'));
   hydratedForUserId = null;
   if (window.ModeAtlasEnv?.isNativeApp) {
     try { await window.AtlasPlatform?.signOutIdentityProvider?.(); } catch {}

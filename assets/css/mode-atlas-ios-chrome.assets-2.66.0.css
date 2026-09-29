@@ -208,3 +208,7 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .ses
   html[data-ma-runtime="ios"] .ma-loading-sub{animation:none!important;}
   html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key{transition:none;}
 }
+/* Native preference controls live in the existing Settings drawer. */
+html[data-ma-runtime="ios"] .ma-native-preference{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;width:100%;font-weight:700;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]{appearance:auto;width:24px;height:24px;margin:10px 2px;accent-color:var(--ma-atlas);flex:0 0 auto;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="time"]{width:auto;min-height:44px;max-width:140px;padding:8px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-card);color:var(--ma-text);font:inherit;}
