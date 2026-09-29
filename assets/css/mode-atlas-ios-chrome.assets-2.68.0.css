@@ -211,7 +211,7 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .ses
 }
 /* Native preference controls live in the existing Settings drawer. */
 html[data-ma-runtime="ios"] .ma-native-preference{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;width:100%;font-weight:700;}
-html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]{appearance:none;-webkit-appearance:none;position:relative;width:48px;height:28px;margin:8px 0;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-card);flex:0 0 auto;cursor:pointer;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]{appearance:none;-webkit-appearance:none;position:relative;width:48px;height:28px;margin:8px 0;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-control);flex:0 0 auto;cursor:pointer;}
 html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]::before{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--ma-native-switch-thumb);box-shadow:var(--ma-native-shadow);}
 html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:checked{background:var(--ma-atlas);}
 html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:checked::before{transform:translateX(20px);background:var(--ma-native-switch-thumb);}

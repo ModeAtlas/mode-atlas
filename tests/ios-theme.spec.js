@@ -58,6 +58,14 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
     if(route==='/'){
       await page.evaluate(()=>window.ModeAtlasSettings.open());
       await expect(page.locator('#settingsDrawer')).toHaveAttribute('aria-hidden','false');
+      const reminder=page.locator('#maReminderEnabled');
+      await expect(reminder).toBeEnabled();
+      await expect(reminder).not.toBeChecked();
+      await expect(reminder).toHaveCSS('background-color',theme==='light'?'rgb(237, 237, 240)':'rgb(48, 48, 51)');
+      // Exercise both visual states without requesting real notification permission.
+      await reminder.evaluate(el=>{el.checked=true;});
+      await expect(reminder).toHaveCSS('background-color',theme==='light'?'rgb(36, 95, 206)':'rgb(155, 192, 255)');
+      await reminder.evaluate(el=>{el.checked=false;});
       await expect(page.locator(`#settingsDrawer [data-ma-theme-choice="${theme}"]`)).toHaveCSS('background-color',theme==='light'?'rgb(225, 235, 255)':'rgb(38, 59, 91)');
       await page.locator(`#settingsDrawer [data-ma-theme-choice="${theme}"]`).hover();
       await expect(page.locator(`#settingsDrawer [data-ma-theme-choice="${theme}"]`)).toHaveCSS('background-color',theme==='light'?'rgb(225, 235, 255)':'rgb(38, 59, 91)');
