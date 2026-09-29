@@ -48,8 +48,18 @@
   function streak(){const t=studyDate(),l=storeGet(K.lastVisit);let s=Number(storeGet(K.streak,'0')||0);if(l!==t){s=(l&&diff(l,t)===1)?s+1:1;storeSet(K.lastVisit,t);storeSet(K.streak,String(s))}return s||1}
   function ago(ts){ts=Number(ts||0);if(!ts)return'No study recorded yet';const m=Math.floor(Math.max(0,Date.now()-ts)/60000);if(m<1)return'Just now';if(m<60)return`${m}m ago`;const h=Math.floor(m/60);if(h<24)return`${h}h ago`;return`${Math.floor(h/24)}d ago`}
   function mode(kind){const s=j(kind==='writing'?'reverseSettings':'settings',{});if(s.testMode)return'Test Mode';if(s.dailyChallenge)return'Daily Challenge';if(s.comboKana)return'Combo Kana Mode';if(s.timeTrial)return'Time Trial Mode';if(s.endless)return'Endless Mode';if(s.focusWeak)return'Focus Weak';return'Standard Mode'}
-  function record(kind){const obj=kind==='writing'?{branch:'Kana Trainer',page:'Writing Practice',href:'reverse.html',mode:mode('writing')}:{branch:'Kana Trainer',page:'Reading Practice',href:'default.html',mode:mode('reading')};storeSet(K.lastStudied,String(Date.now()));storeSetJSON(K.lastMode,obj)}
-  function track(){const p=page();if(p==='default.html'||p==='reverse.html'){const kind=p==='reverse.html'?'writing':'reading';document.addEventListener('click',e=>{if(e.target.closest('#startBtn,#endSessionBtn,#retryBtn,.choice-btn,#choiceGrid,.btn'))record(kind)},{passive:true});document.addEventListener('keydown',e=>{if(e.key==='Enter')record(kind)},{passive:true})}else if(p==='wordbank.html'){document.addEventListener('click',e=>{if(e.target.closest('#addWordBtn,[data-action="save"],[data-action="favorite"]')){storeSet(K.lastStudied,String(Date.now()));storeSetJSON(K.lastMode,{branch:'Word Bank',page:'Word Bank',href:'wordbank.html',mode:'Vocabulary Review'})}},{passive:true})}}
+  // Activity is recorded by successful study/word-bank actions, never inferred
+  // from a click, document load or background snapshot refresh.
+  function recordActivity(kind){
+    if(!['reading','writing','wordBank'].includes(kind))return;
+    const obj=kind==='wordBank'
+      ? {branch:'Word Bank',page:'Word Bank',href:'wordbank.html',mode:'Vocabulary Review'}
+      : {branch:'Kana Trainer',page:kind==='writing'?'Writing Practice':'Reading Practice',href:kind==='writing'?'reverse.html':'default.html',mode:mode(kind)};
+    storeSet(K.lastStudied,String(Date.now()));
+    storeSetJSON(K.lastMode,obj);
+    window.dispatchEvent(new CustomEvent('modeAtlasActivityChanged'));
+  }
+  window.ModeAtlasVisitFlows=Object.freeze({recordActivity});
   const ROWS=[['あ row','あいうえお'],['か row','かきくけこ'],['さ row','さしすせそ'],['た row','たちつてと'],['な row','なにぬねの'],['は row','はひふへほ'],['ま row','まみむめも'],['や row','やゆよ'],['ら row','らりるれろ'],['わ row','わをん'],['ア row','アイウエオ'],['カ row','カキクケコ'],['サ row','サシスセソ'],['タ row','タチツテト'],['ナ row','ナニヌネノ']];
   function suggestions(){const st=j('charStats',{}),tm=j('charTimes',{});const a=ROWS.map(([name,chars])=>{let c=0,w=0,ms=0,n=0;[...chars].forEach(ch=>{c+=Number(st[ch]?.correct||0);w+=Number(st[ch]?.wrong||0);if(tm[ch]?.avg&&tm[ch]?.count){ms+=tm[ch].avg*tm[ch].count;n+=tm[ch].count}});const total=c+w,acc=total?c/total:1;return{name,total,score:w*4+(1-acc)*50+Math.min((n?ms/n:0)/500,12)+(total?0:-100)}}).filter(r=>r.total>0).sort((a,b)=>b.score-a.score).slice(0,3);return a.length?a:[{name:'あ row'},{name:'か row'},{name:'さ row'}]}
   function name(){const u=window.KanaCloudSync?.getUser?.();const n=(u?.displayName||u?.email||'').trim();if(n)return n.split(/\s+/)[0].split('@')[0];for(const id of ['profileName','drawerName','studyProfileName','identityName']){const e=document.getElementById(id),t=(e?.textContent||'').trim();if(t&&!/guest/i.test(t))return t.split(/\s+/)[0]}return'there'}
@@ -295,5 +305,5 @@
     visitDecisionMade=true;
     first(target);
   }
-  function init(){track();document.addEventListener('click',gateLink);maybe();window.addEventListener('kanaCloudSyncStatusChanged',maybe);document.addEventListener('ma:ui-refresh',maybe)} if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  function init(){document.addEventListener('click',gateLink);maybe();window.addEventListener('kanaCloudSyncStatusChanged',maybe);document.addEventListener('ma:ui-refresh',maybe)} if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

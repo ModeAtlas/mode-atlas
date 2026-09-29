@@ -9,9 +9,15 @@
   function snapshot(){
     const progress = root.ModeAtlasProgress?.getSummary?.() || {};
     const kana = root.ModeAtlasKanaMetrics?.kanaStats?.() || {};
+    const store = root.ModeAtlasStorage;
+    const words = store?.json?.(store.KEYS.wordBank, []) || [];
     return {
-      schemaVersion:1, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
+      schemaVersion:2, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
       level:Math.max(1,count(progress.level)), correct:count(progress.lifetimeCorrect),
+      readingCorrect:count(progress.readingCorrect), writingCorrect:count(progress.writingCorrect),
+      words:Array.isArray(words) ? words.length : 0,
+      lastActivityAt:count(store?.number?.('modeAtlasLastStudiedAt', 0)),
+      levelXp:count(progress.levelXp), levelRequirement:Math.max(1,count(progress.levelRequirement)),
       streak:count(kana.streak), dailyComplete:!!kana.dailyDone,
       levelProgress:Math.min(1, Math.max(0, Number(progress.progress) || 0)),
       destination:kana.dailyDone ? 'kana' : 'daily'
@@ -34,12 +40,14 @@
     return platform.configureStudyReminder({enabled, hour, minute});
   }
   let timer;
+  function publish(){
+    clearTimeout(timer);
+    if (!platform?.getCapabilities?.().widgetSnapshots) return;
+    return platform.publishWidgetSnapshot(snapshot()).catch(error => console.warn('Mode Atlas snapshot unavailable', error));
+  }
   function refresh(){
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (!platform?.getCapabilities?.().widgetSnapshots) return;
-      platform.publishWidgetSnapshot(snapshot()).catch(error => console.warn('Mode Atlas snapshot unavailable', error));
-    }, 350);
+    timer = setTimeout(publish, 350);
   }
   async function reset(){
     preferenceRevision += 1;
@@ -50,6 +58,7 @@
   root.ModeAtlasNativeEngagement = Object.freeze({snapshot, configureReminder, refresh, reset});
   root.addEventListener('modeAtlasProgressChanged', refresh);
   root.addEventListener('modeAtlasCloudDataChanged', refresh);
+  root.addEventListener('modeAtlasActivityChanged', refresh);
   root.addEventListener('storage', refresh);
   const resetPreferences = () => reset().catch(error=>console.warn('Could not clear native preferences',error));
   root.addEventListener('modeAtlasDataCleared', resetPreferences);
@@ -57,5 +66,6 @@
   root.addEventListener('pageshow', refresh);
   document.addEventListener('ma:ui-refresh', refresh);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  root.addEventListener('modeAtlasAppStateChanged', event => { event.detail.isActive ? refresh() : publish(); });
   refresh();
 })(window);

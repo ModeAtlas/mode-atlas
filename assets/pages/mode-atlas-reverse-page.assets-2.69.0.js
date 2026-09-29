@@ -769,19 +769,11 @@ function nextCharacter() {
 }
 
 function flashResult(correct, onDone) {
-    window.ModeAtlasSounds?.play(correct ? 'correct' : 'wrong', {cooldown:130});
-    locked = true;
-    promptEl.classList.remove("flash-correct", "flash-wrong");
-    promptEl.classList.add(correct ? "flash-correct" : "flash-wrong");
-
-    setTimeout(() => {
-        promptEl.classList.remove("flash-correct", "flash-wrong");
-        locked = false;
-        if (onDone) onDone();
-    }, correct ? 260 : 420);
+    window.ModeAtlasSessionControls.flashResult(promptEl, correct, onDone);
 }
 
 function handleCorrect() {
+    recordTrainerActivity();
     const timeTaken = Date.now() - charStartTime;
 
     for (const ch of currentChar.split("")) {
@@ -838,6 +830,7 @@ function getDisplayAnswerForCurrentChar() {
 }
 
 function handleWrong() {
+    recordTrainerActivity();
     const timeTaken = Date.now() - charStartTime;
     const correctAnswer = getAcceptedAnswerDisplay();
 

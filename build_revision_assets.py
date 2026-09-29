@@ -5,8 +5,10 @@ import json
 from datetime import date
 from urllib.parse import urljoin, urlsplit, urlunsplit, parse_qsl, urlencode
 from frontend_components import apply_navigation, apply_trainer_shell, apply_frontend_assets, apply_loading_screen, apply_legacy_redirects
+from build_ios_fonts import build_fonts
 
 ROOT = Path(__file__).resolve().parent
+build_fonts(ROOT)
 VERSION_FILE = ROOT / 'assets/app/mode-atlas-version.js'
 version_text = VERSION_FILE.read_text(encoding='utf-8')
 VERSION = (re.search(r'var\s+VERSION\s*=\s*[\'"]([^\'"]+)[\'"]', version_text) or [None, ''])[1]
@@ -69,9 +71,12 @@ CRITICAL = {
     'mode-atlas-legacy-sw-retirement.js',
     'mode-atlas-version-check.js',
     'mode-atlas-head-bootstrap.js',
+    'mode-atlas-fonts.js',
     'mode-atlas-early-loader.js',
 }
 LAZY_ASSETS = (
+    'assets/css/mode-atlas-fonts-web.css',
+    'assets/css/mode-atlas-fonts-native.css',
     'assets/app/mode-atlas-dev-console.js',
     'assets/css/mode-atlas-dev-console.css',
 )

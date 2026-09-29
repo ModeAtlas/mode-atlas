@@ -1,3 +1,13 @@
+## 2.69.0 - 2026-09-29
+
+- Consolidated pause/resume and answer feedback under the existing session owner. Native inactivity pauses practice, including Speed Run; answer, daily/test and session timing exclude paused intervals. Resume is explicit.
+- Added iOS backup export through the Share Sheet, with protected temporary files, iPad presentation support and accurate cancellation handling. The web adapter retains browser downloads.
+- Bundled licensed Inter, Sora and Noto Sans JP variable fonts for offline iOS use. One font loader selects the existing web transport or pinned local fonts; no new runtime dependency.
+- Connected UIKit Dynamic Type to native layout reflow, enlarged dock utility targets, corrected Kana-menu focus transfer, labelled Japanese content and retained accessible keyboard focus.
+- Added Reading, Writing and Daily Challenge Home Screen quick actions through the existing native destination queue.
+- Replaced shortcut-focused widgets with small, medium and large progress views. A bounded v2 projection adds word count, mode totals, level XP and last study activity while keeping v1 snapshots readable. Older totals remain available; daily status rolls over separately.
+- Replaced inferred click tracking with explicit successful study/Word Bank activity calls. Widget publication never changes the last-activity timestamp or owns Firebase data.
+
 ## 2.68.1 - 2026-09-29
 
 - Reserved the iPhone home-indicator inset before dock measurement and replaced body-mutation sampling with observation of the dock's actual size, including restored pages.

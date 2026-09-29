@@ -1,6 +1,6 @@
 {
   "name": "mode-atlas",
-  "version": "2.68.1",
+  "version": "2.69.0",
   "private": true,
   "description": "Mode Atlas static web app smoke tests",
   "scripts": {
@@ -21,10 +21,13 @@
     "ios:open": "npx cap open ios",
     "ios:check-version": "python3 sync_ios_project.py",
     "ios:check-firebase": "python3 validate_ios_firebase_config.py",
-    "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js"
+    "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js tests/ios-experience.spec.js"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.2",
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/noto-sans-jp": "5.3.0",
+    "@fontsource-variable/sora": "5.3.0",
     "@playwright/test": "^1.49.0"
   },
   "dependencies": {

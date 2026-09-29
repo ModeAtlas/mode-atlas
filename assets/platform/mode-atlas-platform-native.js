@@ -18,6 +18,19 @@
   function hasBridge(method){ return !!(nativeBridge && typeof nativeBridge[method] === 'function'); }
   function hasFirebaseAuth(method){ return !!(firebaseAuth && typeof firebaseAuth[method] === 'function'); }
 
+  // UIKit supplies the system text preference; the native stylesheet owns reflow.
+  if (hasBridge('getAccessibilityPreferences')) {
+    function applyAccessibility(preferences){
+      const scale = Number(preferences?.textScale);
+      if (!Number.isFinite(scale) || scale <= 0) return;
+      document.documentElement.style.setProperty('--ma-ios-text-scale', String(scale));
+      document.documentElement.toggleAttribute('data-ma-large-text', scale >= 1.35);
+      root.dispatchEvent(new Event('modeAtlasTextSizeChanged'));
+    }
+    nativeBridge.addListener?.('accessibilityChanged', applyAccessibility);
+    nativeBridge.getAccessibilityPreferences().then(applyAccessibility).catch(error => console.warn('Text size unavailable', error));
+  }
+
   function navigate(destination, replace){
     var path = platform.destinationPath(destination);
     if (!path) return false;
@@ -58,16 +71,22 @@
     }
   }
 
-  // Native actions are consumed once, so cold-launch and resume cannot navigate twice.
-  if (hasBridge('consumeNotificationDestination')) {
-    var consumeAction = function(){
-      nativeBridge.consumeNotificationDestination().then(function(result){
-        if (result?.destination === 'reading') navigate('reading', false);
-      }).catch(function(error){console.warn('Notification action unavailable',error);});
-    };
-    if(typeof nativeBridge.addListener === 'function') nativeBridge.addListener('notificationAction',consumeAction);
-    if(typeof app?.addListener === 'function') app.addListener('appStateChange',function(state){if(state.isActive)consumeAction();});
+  // Notifications and Home Screen actions share one consume-once destination queue.
+  function consumeAction(){
+    if (!hasBridge('consumeDestination')) return;
+    nativeBridge.consumeDestination().then(function(result){
+      if (platform.destinationPath(result?.destination)) navigate(result.destination, false);
+    }).catch(function(error){console.warn('Native destination unavailable',error);});
+  }
+  if (hasBridge('consumeDestination')) {
+    if(typeof nativeBridge.addListener === 'function') nativeBridge.addListener('destinationAction',consumeAction);
     consumeAction();
+  }
+  if(typeof app?.addListener === 'function') {
+    app.addListener('appStateChange',function(state){
+      root.dispatchEvent(new CustomEvent('modeAtlasAppStateChanged',{detail:{isActive:state.isActive === true}}));
+      if(state.isActive) consumeAction();
+    });
   }
 
   function normalizeCredential(result){
@@ -92,6 +111,7 @@
         appBadge: hasBridge('setBadge'),
         widgets: hasBridge('getEngagementState'),
         widgetSnapshots: hasBridge('publishWidgetSnapshot'),
+        backupSharing: hasBridge('exportBackup'),
         appIntents: false,
         authentication: providers.length > 0,
         authProviders: providers
@@ -119,6 +139,10 @@
       if (!hasBridge('setAppearance')) return false;
       return nativeBridge.setAppearance({preference:preference});
     },
+    exportBackup: async function(file){
+      if (!hasBridge('exportBackup')) throw new Error('Backup sharing is unavailable in this build.');
+      return nativeBridge.exportBackup(file);
+    },
     requestNotifications: async function(){
       if (!hasBridge('requestNotifications')) return { granted:false, supported:false };
       return nativeBridge.requestNotifications();
@@ -142,8 +166,7 @@
     },
     publishWidgetSnapshot: async function(snapshot){
       if (!hasBridge('publishWidgetSnapshot')) return false;
-      await nativeBridge.publishWidgetSnapshot({ snapshot:JSON.stringify(snapshot || {}) });
-      return true;
+      return nativeBridge.publishWidgetSnapshot({ snapshot:JSON.stringify(snapshot || {}) });
     },
     authenticate: async function(provider){
       var providerId = String(provider || '');

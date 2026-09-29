@@ -74,8 +74,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let response = connectionOptions.notificationResponse,
            [ModeAtlasNativePlugin.reminderID, ModeAtlasNativePlugin.testID].contains(response.notification.request.identifier),
            response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-            ModeAtlasNativePlugin.pendingDestination = "reading"
+            ModeAtlasNativePlugin.queueDestination("reading")
         }
+        if let shortcut = connectionOptions.shortcutItem { _ = handleShortcut(shortcut) }
 
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }
@@ -89,5 +90,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
         SceneDelegateProxy.shared.scene(scene, continue: userActivity)
+    }
+
+    private func handleShortcut(_ shortcut: UIApplicationShortcutItem) -> Bool {
+        let destinations = ["app.modeatlas.reading": "reading", "app.modeatlas.writing": "writing", "app.modeatlas.daily": "daily"]
+        guard let destination = destinations[shortcut.type] else { return false }
+        ModeAtlasNativePlugin.queueDestination(destination)
+        return true
+    }
+
+    func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem,
+                     completionHandler: @escaping (Bool) -> Void) {
+        completionHandler(handleShortcut(shortcutItem))
     }
 }

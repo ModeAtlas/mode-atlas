@@ -152,7 +152,7 @@ non-identifying snapshot: level, correct count, streak, level progress, daily
 completion, timestamp and a whitelisted destination. It refreshes after progress,
 cloud hydration, data clearing and returning to the foreground. It owns no
 learning calculations, account session, save format or Firestore writes.
-`ModeAtlasNativePlugin.swift` owns native preferences, local notifications and widget writes. The shared Foundation model in `ios/App/Shared/ModeAtlasWidgetData.swift` is compiled into the app and WidgetKit extension. It validates bounded snapshots, expires them after 24 hours and rolls daily completion over by local date. The extension has no Firebase/Capacitor dependency or account credentials.
+`ModeAtlasNativePlugin.swift` owns native preferences, local notifications and widget writes. The shared Foundation model in `ios/App/Shared/ModeAtlasWidgetData.swift` is compiled into the app and WidgetKit extension. It validates bounded snapshots, retains last-known totals and rolls daily completion over by local date. Snapshots older than 24 hours can be identified as older totals without hiding the statistics. The extension has no Firebase/Capacitor dependency or account credentials.
 
 ### Reminders (2.66.0)
 
@@ -162,7 +162,7 @@ The schedule uses device-local calendar hours/minutes. Focus and iOS delivery se
 
 ### Widgets and signing (2.66.0)
 
-The App target embeds `ModeAtlasWidgets.appex`. Small widgets open Reading; medium widgets offer Reading and Writing. The default `ios/engagement.xcconfig` uses empty `Shared/LocalOnly.entitlements`, so shortcut widgets do not require App Groups. Apple sign-in remains disabled. Both targets must use the same signing team on a physical device.
+The App target embeds `ModeAtlasWidgets.appex`. Small, medium and large widgets present statistics. Tapping a widget opens the Kana dashboard for more detail. The default `ios/engagement.xcconfig` uses empty `Shared/LocalOnly.entitlements`, so the app and extension compile without App Groups. Statistics remain unavailable until sharing is provisioned. Apple sign-in remains disabled. Both targets must use the same signing team on a physical device.
 
 For live progress, configure an App Group in Xcode and add it to the provisioning for both bundle IDs (`app.modeatlas` and `app.modeatlas.widgets`). Apple's [current iOS capability table](https://developer.apple.com/help/account/reference/supported-capabilities-ios/) lists App Groups for free Apple Developer accounts as well as paid teams (checked 2026-09-29). Do not treat paid membership as an automatic prerequisite for widget progress. Actual Personal Team provisioning and shared-container access must still be confirmed on the device; the default build keeps optional sharing disabled until configured. Then run:
 
@@ -171,9 +171,9 @@ python3 configure_ios_widgets.py --app-group YOUR_REGISTERED_GROUP_IDENTIFIER
 npm run ios:sync
 ```
 
-This writes ignored `ios/widget-sharing.local.xcconfig`, inherited by both targets. It selects `Shared/WidgetSharing.entitlements`; it does not register or provision an App Group. Build/run again; progress publication is automatic when a shared container is available. There is no user-facing widget preference. Use `python3 configure_ios_widgets.py --disable` to return to shortcut-only widgets. Never commit local signing overrides.
+This writes ignored `ios/widget-sharing.local.xcconfig`, inherited by both targets. It selects `Shared/WidgetSharing.entitlements`; it does not register or provision an App Group. Build/run again; progress publication is automatic when a shared container is available. There is no user-facing widget preference. Use `python3 configure_ios_widgets.py --disable` to disable shared progress. The widget then shows an unavailable state. Never commit local signing overrides.
 
-The app writes a protected, atomic, bounded JSON projection into the configured shared container automatically when the App Group is provisioned. WidgetKit refresh requests are coalesced; iOS owns their delivery budget, so Home Screen updates are not guaranteed to be immediate. The timeline includes a local-midnight entry and requests another read after 30 minutes. Missing/stale data renders practice shortcuts. Reset/sign-out erase the snapshot and request an immediate timeline reload. Subsequent study or navigation publishes the current local progress again; widgets never receive account identity. The removed 2.66.0 opt-in preference no longer gates publication.
+The app writes a protected, atomic, bounded JSON projection into the configured shared container automatically when the App Group is provisioned. WidgetKit refresh requests are coalesced; iOS owns their delivery budget, so Home Screen updates are not guaranteed to be immediate. The timeline includes a local-midnight entry and requests another read after 30 minutes. Missing data renders an honest empty state. Old but valid data retains its totals; last activity and last update are distinct timestamps. Reset/sign-out erase the snapshot and request an immediate timeline reload. Subsequent study or navigation publishes the current local progress again; widgets never receive account identity. The removed 2.66.0 opt-in preference no longer gates publication.
 
 Research: Duolingo's unified next-step home and Headspace's Today recommendations
 informed the focused continuation card, daily action and glanceable progress.
@@ -198,3 +198,78 @@ mode. Kana hub mastery, About sync, developer access and Display preferences
 delegate to their existing authorities. Shared semantic visibility is independent
 of component display style. No additional runtime dependency or native signing
 capability is introduced.
+
+
+## Native daily use and progress widgets (2.69.0)
+
+- The existing session-controls owner now owns pause state and answer-feedback
+  scheduling for both trainers. It reuses the shared timed-mode tick and adjusts
+  question/session/daily/test clocks by the paused duration. The native adapter
+  forwards Capacitor app state; only iOS automatically pauses on inactivity.
+  Returning never resumes without the learner choosing Resume. Ending a session
+  cancels pending feedback so it cannot advance a new session.
+- Backup generation/import/reset remain in the shared save owner. Only export
+  transport moved behind `AtlasPlatform.exportBackup`: web uses a Blob download;
+  iOS presents `UIActivityViewController`, protects and removes its temporary
+  JSON, anchors the iPad popover, and returns completion/cancellation accurately.
+- The font loader chooses one transport per document. Website font requests stay
+  in their web stylesheet. iOS loads bundled, licensed Inter/Sora/Noto Sans JP
+  subsets from `assets/fonts`; `build_ios_fonts.py` prepares them from the exact Fontsource build dependencies
+  verified by npm ci. Release/native builds themselves perform no font download;
+  generated binaries stay out of Git. See the font README.
+- UIKit Dynamic Type is projected as a native root text scale on document load
+  and preference changes. Native CSS owns reflow, including the dock, home and
+  settings. Larger layouts can scroll. Japanese prompts/choices declare their
+  language; Kana navigation transfers focus out of the hidden rail, and custom
+  keyboard accessibility activation retains key focus. VoiceOver on a physical
+  device is still a required manual check.
+- Static Home Screen quick actions open Reading, Writing and Daily Challenge.
+  SceneDelegate and notification taps feed one whitelisted, consume-once queue;
+  the existing JS platform destination map owns navigation paths. This does not
+  require Siri or App Intents entitlements.
+- Visit flows remain the owner of the last-study timestamp and continuation
+  destination. Successful trainer/Word Bank actions call that owner explicitly.
+  Opening pages, exporting, cloud hydration and widget refreshes do not pretend
+  that a learner has studied. Last activity is local to this installation; cloud
+  learning totals use the existing shared progress and storage authorities.
+
+### Statistics widget contract
+
+The v2 projection contains level, level XP/requirement, total/Reading/Writing
+correct counts, current Word Bank count, daily streak/completion and last study
+activity. It includes no UID, email, vocabulary contents, credentials or Firebase
+SDK. The extension reads only the bounded shared file. v1 snapshots remain
+readable until replaced; unknown fields show unavailable values, not invented
+zeros. The first v2 write migrates the legacy file name; reset clears both names.
+
+| Size | Content |
+| --- | --- |
+| Small | Level and level progress, total correct, words banked, activity recency |
+| Medium | Level/progress, total correct, words banked, daily status, activity recency |
+| Large | All medium statistics plus Reading/Writing totals, daily streak, XP detail and older-snapshot update date |
+
+WidgetKit owns refresh timing. The app publishes after study/Word Bank changes,
+cloud hydration, navigation and backgrounding; it coalesces timeline reloads.
+Relative activity dates remain dynamic in the rendered widget. Daily completion
+and streak are interpreted for the displayed local day, while lifetime totals
+remain visible even after weeks of inactivity. Empty/unprovisioned builds show
+an unavailable state instead of practice buttons or fictional sample statistics.
+
+### Device checks before enabling sharing in a release
+
+1. Use the same signing team for App (`app.modeatlas`) and ModeAtlasWidgets
+   (`app.modeatlas.widgets`). Register/provision one App Group for both targets
+   in Xcode, then run `configure_ios_widgets.py --app-group` with that real ID.
+2. Build/run, complete an answer and add a word. Add each Home Screen widget size
+   and compare level, mode totals and word count with Atlas/Kana/Word Bank.
+3. Leave the app. Confirm the relative activity time advances without reopening;
+   opening Atlas alone must not reset that timestamp. WidgetKit may defer totals
+   refreshes; this is not a continuously running extension.
+4. Check both appearances, large text, device lock/relaunch, midnight rollover,
+   sign-out and Reset Data. Reset must remove the previous account's projection.
+5. Exercise the native Share Sheet (Save to Files, cancel, failure), Home Screen
+   actions on cold/warm launch, and practice interruption during answer feedback.
+
+Automated browser simulation and unsigned simulator builds cannot establish that
+this Personal Team has provisioned a real shared container. The default build
+continues to use local-only entitlements until that device setup is complete.

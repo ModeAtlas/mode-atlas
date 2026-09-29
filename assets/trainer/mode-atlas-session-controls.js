@@ -2,7 +2,8 @@
   if (window.__modeAtlasSessionControlsInstalled) return;
   window.__modeAtlasSessionControlsInstalled = true;
 
-  let paused = false, pauseRemaining = 0;
+  let paused = false, pauseRemaining = null, pausedAt = 0;
+  let feedback = null;
   let phoneFrameTimer = 0;
 
   const choiceButtons = () => {
@@ -36,6 +37,7 @@
     if (card && !card.querySelector('.ma-pause-overlay')) {
       card.classList.add('ma-pause-host');
       const overlay = Object.assign(document.createElement('div'), { className:'ma-pause-overlay', textContent:'Paused' });
+      overlay.setAttribute('role', 'status');
       card.appendChild(overlay);
     }
   }
@@ -50,14 +52,10 @@
   }
   function resumeTimers(){
     try {
-      if (!settings.timeTrial || pauseRemaining <= 0) return;
-      trialEndTime = Date.now() + pauseRemaining;
-      const tick = () => {
-        const remaining = Math.max(0, trialEndTime - Date.now());
-        trialTimerEl.textContent = formatCountdown(remaining);
-        if (remaining <= 0) { stopTrialTimer(); endSession(true); }
-      };
-      tick(); trialTimerId = setInterval(tick, 100); pauseRemaining = 0;
+      if (pauseRemaining === null) return;
+      const remaining = pauseRemaining;
+      pauseRemaining = null;
+      resumeTimedModeTimer(remaining);
     } catch {}
   }
   function setInputDisabled(disabled){
@@ -148,18 +146,74 @@
       use.setAttribute('href', `${base}#icon-${isPaused ? 'play' : 'pause'}`);
     }
   }
-  function togglePause(){
-    try {
+  function pause(){
+    if (!sessionStarted || paused || isElementVisible(gameOverEl)) return;
+    paused = true;
+    pausedAt = Date.now();
+    pauseTimers();
+    if (feedback) {
+      clearTimeout(feedback.timer);
+      feedback.remaining = Math.max(0, feedback.deadline - pausedAt);
+    }
+    clearTimeout(hintTimeout);
+    locked = true;
+    setInputDisabled(true);
+    document.body.classList.add('ma-session-paused');
+    setPauseButtonState(true);
+  }
+  function accountForPause(){
+    if (!pausedAt) return;
+    const elapsed = Math.max(0, Date.now() - pausedAt);
+    if (charStartTime) charStartTime += elapsed;
+    if (dailyStartTime) dailyStartTime += elapsed;
+    if (testStartTime) testStartTime += elapsed;
+    if (sessionStats.startTime) sessionStats.startTime += elapsed;
+    pausedAt = 0;
+  }
+  function resume(){
+    if (!sessionStarted || !paused) return;
+    accountForPause();
+    paused = false;
+    document.body.classList.remove('ma-session-paused');
+    setPauseButtonState(false);
+    locked = !!feedback;
+    setInputDisabled(locked);
+    resumeTimers();
+    if (!sessionStarted) return;
+    if (feedback) scheduleFeedback();
+    else { scheduleHint(); focusInputIfNeeded(); }
+  }
+  function togglePause(){ paused ? resume() : pause(); }
+
+  function scheduleFeedback(){
+    if (!feedback || paused) return;
+    feedback.deadline = Date.now() + feedback.remaining;
+    feedback.timer = setTimeout(() => {
+      const complete = feedback;
+      feedback = null;
+      complete.prompt.classList.remove('flash-correct', 'flash-wrong');
       if (!sessionStarted) return;
-      paused = !paused;
-      document.body.classList.toggle('ma-session-paused', paused);
-      setPauseButtonState(paused);
-      if (paused) { pauseTimers(); locked = true; setInputDisabled(true); }
-      else { locked = false; setInputDisabled(false); resumeTimers(); focusInputIfNeeded(); }
-    } catch (e) { console.warn('Pause toggle failed', e); }
+      locked = false;
+      complete.onDone?.();
+    }, feedback.remaining);
+  }
+  function flashResult(prompt, correct, onDone){
+    cancelFeedback();
+    window.ModeAtlasSounds?.play(correct ? 'correct' : 'wrong', {cooldown:130});
+    locked = true;
+    prompt.classList.add(correct ? 'flash-correct' : 'flash-wrong');
+    feedback = {prompt, onDone, remaining:correct ? 260 : 420, deadline:0, timer:0};
+    scheduleFeedback();
+  }
+  function cancelFeedback(){
+    if (!feedback) return;
+    clearTimeout(feedback.timer);
+    feedback.prompt.classList.remove('flash-correct', 'flash-wrong');
+    feedback = null;
   }
 
   function markSkipped(){
+    recordTrainerActivity();
     const timeTaken = Math.max(0, Date.now() - charStartTime);
     for (const ch of currentChar.split('')) {
       if (!stats[ch]) stats[ch] = { correct: 0, wrong: 0 };
@@ -185,8 +239,10 @@
     catch (e) { console.warn('Skip failed', e); }
   }
   function resetPauseUi(){
+    accountForPause();
+    cancelFeedback();
     paused = false;
-    pauseRemaining = 0;
+    pauseRemaining = null;
     document.body.classList.remove('ma-session-paused');
     setPauseButtonState(false);
   }
@@ -207,14 +263,14 @@
     window.setTimeout(syncPhoneKeyboardState, 80);
   });
 
-  document.addEventListener('click', (event) => {
-    if (event.target.closest('#startBtn') || event.target.closest('#retryBtn') || event.target.closest('#endSessionBtn')) {
-      resetPauseUi();
-      if (event.target.closest('#endSessionBtn')) {
-        document.body.classList.remove('ma-phone-keyboard-open');
-      }
-    }
-  });
+  window.ModeAtlasSessionControls = Object.freeze({pause, resume, reset:resetPauseUi, flashResult, get paused(){return paused;}});
+  // Native lifecycle is forwarded once by the platform adapter. The visibility
+  // event also catches WebView suspension before an asynchronous bridge callback.
+  if (window.ModeAtlasEnv?.isNativeApp) {
+    window.addEventListener('modeAtlasAppStateChanged', event => { if (!event.detail.isActive) pause(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+    window.addEventListener('pagehide', pause);
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureButtons); else ensureButtons();
   document.addEventListener('ma:ui-refresh', ensureButtons);
   document.addEventListener('ma:trainer-ready', ensureButtons);

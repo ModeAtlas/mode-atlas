@@ -15,6 +15,11 @@
     input.setAttribute('inputmode', 'none');
     input.setAttribute('autocapitalize', 'off');
     input.setAttribute('autocorrect', 'off');
+    const status = document.createElement('span');
+    status.className = 'ma-ios-accessibility-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    card.appendChild(status);
     document.body.classList.add('ma-ios-custom-input');
 
     var keyboard = document.createElement('div');
@@ -48,6 +53,7 @@
       document.documentElement.style.setProperty('--ma-ios-custom-kb-height', keyboard.getBoundingClientRect().height + 'px');
     }
     root.addEventListener('resize', measure);
+    new ResizeObserver(measure).observe(keyboard, {box:'border-box'});
     root.requestAnimationFrame(measure);
     new MutationObserver(function(){
       if (document.body.classList.contains('ma-session-paused') || document.body.classList.contains('trainer-session-result')) input.blur();
@@ -90,9 +96,11 @@
         input.value = input.value.slice(0, start) + key.dataset.key + input.value.slice(end);
         start += 1;
       }
-      input.focus({preventScroll:true});
+      // VoiceOver and hardware-key activation retain focus on the key.
+      if (event.detail !== 0) input.focus({preventScroll:true});
       input.setSelectionRange(start, start);
       input.dispatchEvent(new Event('input', {bubbles:true}));
+      if (event.detail === 0) status.textContent = input.value ? 'Answer: ' + input.value : 'Answer cleared';
     });
   }
 

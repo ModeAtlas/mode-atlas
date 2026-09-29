@@ -1260,7 +1260,7 @@ body.ma-writing-page.test-mode-active{
   .ma-trainer-card{width:min(760px,calc(100vw - 32px));}
 }
 @media (max-width:760px){
-  .ma-pause-overlay{display:none!important;}
+  html:not([data-ma-runtime="ios"]) .ma-pause-overlay{display:none;}
   .session-actions .ma-button{min-width:130px;padding-inline:14px;}
   body.ma-reading-page,
   body.ma-writing-page{display:block;padding:var(--ma-page-inset-top,max(6px,env(safe-area-inset-top,0px))) 6px var(--ma-page-inset-bottom,max(14px,env(safe-area-inset-bottom,0px)));min-height:100svh;overflow-x:hidden;}

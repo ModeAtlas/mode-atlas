@@ -7,3 +7,4 @@ ios/App/App/public/
 
 __pycache__/
 *.pyc
+/assets/fonts/*.woff2

@@ -174,7 +174,7 @@ test('native destination router accepts only product links and consumes a launch
   context.window = {
     ModeAtlasEnv: { isNativeApp: true },
     Capacitor: { Plugins: { App: {
-      addListener: (_event, callback) => { openUrl = callback; },
+      addListener: (event, callback) => { if (event === 'appUrlOpen') openUrl = callback; },
       getLaunchUrl: async () => { launchCount++; return { url:'modeatlas://open/reading?mode=daily' }; }
     } } }
   };
@@ -197,7 +197,8 @@ test('native engagement snapshot excludes identity and permission requires an ex
   let granted = true;
   const window = {
     ModeAtlasEnv:{isNativeApp:true},
-    ModeAtlasProgress:{getSummary:() => ({level:4,lifetimeCorrect:73,progress:.5,uid:'private',email:'private@example.com'})},
+    ModeAtlasProgress:{getSummary:() => ({level:4,lifetimeCorrect:73,readingCorrect:50,writingCorrect:23,levelXp:125,levelRequirement:250,progress:.5,uid:'private',email:'private@example.com'})},
+    ModeAtlasStorage:{KEYS:{wordBank:'kanaWordBank'},json:()=>[{kana:'private word'},{kana:'second private word'}],number:()=>123456789},
     ModeAtlasKanaMetrics:{kanaStats:() => ({streak:3,dailyDone:true})},
     AtlasPlatform:{
       getCapabilities:() => ({notifications:true,widgetSnapshots:true}),
@@ -215,6 +216,11 @@ test('native engagement snapshot excludes identity and permission requires an ex
   await refresh();
   assert.equal(calls[0][0],'snapshot');
   assert.equal(calls[0][1].correct,73);
+  assert.equal(calls[0][1].schemaVersion,2);
+  assert.equal(calls[0][1].words,2);
+  assert.equal(calls[0][1].readingCorrect,50);
+  assert.equal(calls[0][1].writingCorrect,23);
+  assert.equal(calls[0][1].lastActivityAt,123456789);
   assert.equal(calls[0][1].destination,'kana');
   assert.equal(JSON.stringify(calls).includes('private'),false);
   calls.length=0;
@@ -231,6 +237,34 @@ test('native engagement snapshot excludes identity and permission requires an ex
   await window.ModeAtlasNativeEngagement.configureReminder({enabled:true,hour:18,minute:30});
   assert.equal(calls.at(-1)[1].hour,18);
   assert.equal(calls.at(-1)[1].minute,30);
+});
+
+test('native quick actions and notification actions consume one destination and reject unknown pages', async () => {
+  const events = {}, navigations = [];
+  let pending = 'daily';
+  const window = {
+    ModeAtlasEnv:{isNativeApp:true},
+    dispatchEvent:()=>{},
+    Capacitor:{Plugins:{
+      App:{addListener:(name,callback)=>{events[name]=callback;}},
+      ModeAtlasNative:{addListener:(name,callback)=>{events[name]=callback;},
+        consumeDestination:async()=>{const destination=pending;pending='';return {destination};}}
+    }}
+  };
+  const context = vm.createContext({window,URL,Promise,console,
+    CustomEvent:class {constructor(type,options){this.type=type;this.detail=options.detail;}},
+    location:{pathname:'/',search:'',assign:value=>navigations.push(value),replace:value=>navigations.push(value)}});
+  vm.runInContext(read('assets/platform/mode-atlas-platform.js'),context);
+  vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'),context);
+  const settle=()=>new Promise(resolve=>setImmediate(resolve));
+  await settle();
+  assert.deepEqual(navigations,['/reading/?mode=daily']);
+  events.destinationAction();events.appStateChange({isActive:true});await settle();
+  assert.equal(navigations.length,1);
+  pending='writing';events.destinationAction();await settle();
+  assert.equal(navigations.at(-1),'/writing/');
+  pending='https://unknown.example/';events.destinationAction();await settle();
+  assert.equal(navigations.length,2);
 });
 
 test('native Settings omit browser display/install controls and keep repair with save actions', () => {

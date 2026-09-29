@@ -106,11 +106,12 @@
     document.body.appendChild(dock);
 
     var kanaTab = links.querySelector('[aria-controls="maIosKanaMenu"]');
-    function setKanaMenu(open){
+    function setKanaMenu(open, moveFocus){
       rail.classList.toggle('is-kana-open', open);
       kanaTab.setAttribute('aria-expanded', String(open));
       links.inert = open;
       kanaMenu.inert = !open;
+      if (moveFocus) (open ? back : kanaTab).focus();
     }
     setKanaMenu(false);
     back.addEventListener('click', function(){ setKanaMenu(false); kanaTab.focus(); });
@@ -121,7 +122,7 @@
         return;
       }
       event.preventDefault();
-      setKanaMenu(!rail.classList.contains('is-kana-open'));
+      setKanaMenu(!rail.classList.contains('is-kana-open'), true);
     });
     try {
       if (sessionStorage.getItem('modeAtlasOpenKanaMenu') === '1') setKanaMenu(true);

@@ -53,6 +53,13 @@ html[data-ma-runtime="ios"] .atlas-ios-home__choices strong{font-size:.9rem;}
 html[data-ma-runtime="ios"] .atlas-ios-home__choices small{grid-column:2;font-size:.67rem;color:var(--ma-muted);}
 html[data-ma-runtime="ios"] .atlas-ios-home a:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
 html[data-ma-runtime="ios"] .atlas-ios-home__continue:active,html[data-ma-runtime="ios"] .atlas-ios-home__choices a:active{filter:brightness(.9);}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__continue{grid-template-columns:minmax(0,1fr);}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__art{display:none;}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__hero-footer{flex-wrap:wrap;}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__choices{grid-template-columns:minmax(0,1fr);}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__stats{gap:8px;}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__stats strong{font-size:1.3rem;overflow-wrap:anywhere;}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__today{flex-wrap:wrap;}
 @media(max-height:740px){
   html[data-ma-runtime="ios"] .atlas-ios-home{gap:8px;}
   html[data-ma-runtime="ios"] .atlas-ios-home__continue{padding:14px 18px;gap:8px;}

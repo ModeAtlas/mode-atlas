@@ -1,7 +1,8 @@
 /* Native iOS composition. Every selector is gated by the Capacitor runtime. */
 html[data-ma-runtime="ios"]{
+  font-size:calc(16px * var(--ma-ios-text-scale,1));
   /* Reserve the full dock before JavaScript measures it, including the home indicator. */
-  --ma-ios-dock-height:calc(105px + env(safe-area-inset-bottom,0px));
+  --ma-ios-dock-height:calc(113px + env(safe-area-inset-bottom,0px));
   --ma-page-inset-top:max(12px,env(safe-area-inset-top,0px));
   --ma-page-inset-bottom:calc(var(--ma-ios-dock-height) + 20px);
   --ma-toast-inset-bottom:var(--ma-page-inset-bottom);
@@ -55,7 +56,7 @@ html[data-ma-runtime="ios"] body.ma-writing-page .ma-ios-tabs{--ma-ios-accent:va
 html[data-ma-runtime="ios"] body.ma-wordbank-page .ma-ios-tabs{--ma-ios-accent:var(--ma-words);}
 html[data-ma-runtime="ios"] body:is(.ma-kana-page,.ma-results-page) .ma-ios-tabs{--ma-ios-accent:var(--ma-kana);}
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities{
-  display:flex;align-items:center;gap:8px;min-height:40px;
+  display:flex;align-items:center;gap:8px;min-height:48px;
   padding:0 5px 4px;border-bottom:1px solid var(--ma-border);
 }
 html[data-ma-runtime="ios"] .ma-ios-tabs__title{
@@ -63,11 +64,11 @@ html[data-ma-runtime="ios"] .ma-ios-tabs__title{
   color:var(--ma-text-strong);font-family:var(--ma-font-display);font-size:.83rem;font-weight:850;
 }
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__action{
-  display:inline-flex;min-width:38px;min-height:38px;padding:0 7px;
+  display:inline-flex;min-width:44px;min-height:44px;padding:0 7px;
   border-radius:12px;background:var(--ma-control);border-color:var(--ma-border);
 }
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab{
-  min-height:40px;min-width:0;max-width:100%;margin-right:auto;padding:0 12px;
+  min-height:44px;min-width:0;max-width:100%;margin-right:auto;padding:0 12px;
   border:1px solid var(--ma-border);border-radius:12px;
   background:color-mix(in srgb,var(--ma-ios-accent) 16%,var(--ma-card));
   color:var(--ma-text-strong);font-size:.81rem;white-space:nowrap;
@@ -82,7 +83,7 @@ html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__settings .ma-nav__a
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__focus .ma-nav__action-label{display:none;}
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__avatar{width:28px;height:28px;min-width:28px;}
 html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav-handle{display:none;}
-html[data-ma-runtime="ios"] .ma-ios-tabs__rail{height:49px;overflow:hidden;position:relative;}
+html[data-ma-runtime="ios"] .ma-ios-tabs__rail{height:max(49px,3.0625rem);overflow:hidden;position:relative;}
 html[data-ma-runtime="ios"] .ma-ios-tabs__links,
 html[data-ma-runtime="ios"] .ma-ios-kana-menu{
   position:absolute;inset:0;display:flex;gap:2px;justify-content:space-around;
@@ -95,12 +96,12 @@ html[data-ma-runtime="ios"] .ma-ios-tab{
   flex:1 1 0;min-width:0;min-height:49px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   border-radius:12px;color:var(--ma-muted);text-decoration:none;
-  font-size:10px;font-weight:750;line-height:1.2;text-align:center;touch-action:manipulation;
+  font-size:.625rem;font-weight:750;line-height:1.2;text-align:center;touch-action:manipulation;overflow-wrap:anywhere;
 }
 html[data-ma-runtime="ios"] button.ma-ios-tab{
   border:0;background:transparent;cursor:pointer;font-family:inherit;
 }
-html[data-ma-runtime="ios"] .ma-ios-tab__icon{font-family:var(--ma-font-jp);font-size:20px;font-weight:800;line-height:1.2;}
+html[data-ma-runtime="ios"] .ma-ios-tab__icon{font-family:var(--ma-font-jp);font-size:1.25rem;font-weight:800;line-height:1.2;}
 html[data-ma-runtime="ios"] .ma-ios-tab.is-active{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-ios-accent) 17%,transparent);}
 html[data-ma-runtime="ios"] .ma-ios-tab[aria-expanded="true"]{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-kana) 23%,var(--ma-card));}
 html[data-ma-runtime="ios"] .ma-ios-tab:focus-visible,
@@ -135,7 +136,7 @@ html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key{
   flex:1 1 0;min-width:0;height:60px;padding:0;
   border:1px solid var(--ma-border);border-radius:10px;
   background:var(--ma-control);color:var(--ma-text-strong);
-  font:700 20px/1 var(--ma-font-display);text-transform:uppercase;
+  font:700 clamp(20px,1.25rem,26px)/1 var(--ma-font-display);text-transform:uppercase;
   touch-action:manipulation;cursor:pointer;
   box-shadow:var(--ma-native-key-shadow);
   transition:transform .07s ease-out,box-shadow .07s ease-out,background-color .07s ease-out;
@@ -201,7 +202,12 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .hir
 html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .ma-trainer-session-controls{
   margin-top:8px;padding-top:8px;
 }
-html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .session-actions .ma-button{min-height:42px;}
+html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .session-actions .ma-button{min-height:44px;}
+/* At large system text sizes, reflow the existing surfaces instead of cropping. */
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-tabs__utilities{flex-wrap:wrap;}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-tabs__utilities #modifiersTab{white-space:normal;}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-drawer-header{flex-wrap:wrap;}
+html[data-ma-runtime="ios"] .ma-ios-accessibility-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 @media (prefers-reduced-motion:reduce){
   html[data-ma-runtime="ios"] .ma-ios-tabs,
   html[data-ma-runtime="ios"] .ma-ios-tabs__links,

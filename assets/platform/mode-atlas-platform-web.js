@@ -32,6 +32,17 @@
       root.open(url, '_blank', 'noopener,noreferrer');
       return true;
     },
+    exportBackup: function(file){
+      const url = URL.createObjectURL(new Blob([file.contents], {type:'application/json'}));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return {completed:true, supported:true};
+    },
     openDestination: function(destination, options){
       var url = destinationUrl(destination);
       if (!url) return false;

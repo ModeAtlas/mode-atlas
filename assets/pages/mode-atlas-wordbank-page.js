@@ -108,6 +108,7 @@ function refreshProfileShell() {
       if (window.KanaCloudSync?.markSectionUpdated) window.KanaCloudSync.markSectionUpdated('wordBank');
       else store.now?.('kanaWordBankUpdatedAt');
       window.KanaCloudSync?.scheduleSync?.();
+      window.ModeAtlasVisitFlows?.recordActivity('wordBank');
       return true;
     }
 

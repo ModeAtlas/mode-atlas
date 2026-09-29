@@ -11,17 +11,81 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     public let pluginMethods: [CAPPluginMethod] = [
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState",
-        "resetEngagement", "testNotification", "openNotificationSettings", "consumeNotificationDestination", "setAppearance"
+        "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
+        "exportBackup", "getAccessibilityPreferences"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
-    static var pendingDestination: String?
+    private static var pendingDestination: String?
+    private static let destinationEvent = Notification.Name("ModeAtlasDestination")
+    static func queueDestination(_ destination: String) {
+        guard ["atlas", "kana", "reading", "writing", "daily", "results", "wordBank"].contains(destination) else { return }
+        pendingDestination = destination
+        NotificationCenter.default.post(name: destinationEvent, object: nil)
+    }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
     private let center = UNUserNotificationCenter.current()
     private var operations: Task<Void, Never>?
     private var reloadWork: DispatchWorkItem?
     private var lastReload = Date.distantPast
+    private var observers: [NSObjectProtocol] = []
+    private var sharingBackup = false
 
-    override public func load() { bridge?.notificationRouter.localNotificationHandler = self }
+    override public func load() {
+        bridge?.notificationRouter.localNotificationHandler = self
+        observers.append(NotificationCenter.default.addObserver(forName: Self.destinationEvent, object: nil, queue: .main) { [weak self] _ in
+            self?.notifyListeners("destinationAction", data: [:], retainUntilConsumed: true)
+        })
+        observers.append(NotificationCenter.default.addObserver(forName: UIContentSizeCategory.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            self.notifyListeners("accessibilityChanged", data: self.accessibilityPreferences())
+        })
+    }
+    deinit { observers.forEach { NotificationCenter.default.removeObserver($0) } }
+
+    private func accessibilityPreferences() -> [String: Any] {
+        ["textScale": UIFontMetrics(forTextStyle: .body).scaledValue(for: 16) / 16]
+    }
+    @objc func getAccessibilityPreferences(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { call.resolve(self.accessibilityPreferences()) }
+    }
+
+    @objc func exportBackup(_ call: CAPPluginCall) {
+        guard let filename = call.getString("filename"),
+              filename.range(of: "^mode-atlas-save-[0-9]{4}-[0-9]{2}-[0-9]{2}\\.json$", options: .regularExpression) != nil,
+              let contents = call.getString("contents"), let data = contents.data(using: .utf8), data.count <= 16 * 1024 * 1024,
+              let backup = try? JSONSerialization.jsonObject(with: data) as? [String: Any], backup["app"] as? String == "Mode Atlas" else {
+            call.reject("Invalid Mode Atlas backup"); return
+        }
+        DispatchQueue.main.async {
+            guard !self.sharingBackup, let controller = self.bridge?.viewController,
+                  controller.presentedViewController == nil else {
+                call.reject("Close the current sheet before exporting your save"); return
+            }
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("ModeAtlasExport-" + UUID().uuidString)
+            do {
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                let file = directory.appendingPathComponent(filename)
+                try data.write(to: file, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                let sheet = UIActivityViewController(activityItems: [file], applicationActivities: nil)
+                sheet.completionWithItemsHandler = { _, completed, _, error in
+                    self.sharingBackup = false
+                    try? FileManager.default.removeItem(at: directory)
+                    if let error = error { call.reject("Could not share your save", nil, error) }
+                    else { call.resolve(["supported": true, "completed": completed]) }
+                }
+                if let popover = sheet.popoverPresentationController {
+                    popover.sourceView = controller.view
+                    popover.sourceRect = CGRect(x: controller.view.bounds.midX, y: controller.view.bounds.midY, width: 1, height: 1)
+                    popover.permittedArrowDirections = []
+                }
+                self.sharingBackup = true
+                controller.present(sheet, animated: true)
+            } catch {
+                try? FileManager.default.removeItem(at: directory)
+                call.reject("Could not prepare your save", nil, error)
+            }
+        }
+    }
 
     @objc func setAppearance(_ call: CAPPluginCall) {
         guard let preference = call.getString("preference"), ["dark", "light", "system"].contains(preference) else {
@@ -164,11 +228,10 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         guard [Self.reminderID, Self.testID].contains(response.notification.request.identifier),
               response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
         DispatchQueue.main.async {
-            Self.pendingDestination = "reading"
-            self.notifyListeners("notificationAction", data: [:], retainUntilConsumed: true)
+            Self.queueDestination("reading")
         }
     }
-    @objc func consumeNotificationDestination(_ call: CAPPluginCall) {
+    @objc func consumeDestination(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             let destination = Self.pendingDestination ?? ""
             Self.pendingDestination = nil

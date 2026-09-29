@@ -663,8 +663,12 @@ function showComboTierNotice(length) {
 }
 
 function startTimedModeTimer(durationMinutes) {
+    resumeTimedModeTimer(durationMinutes * 60 * 1000);
+}
+
+function resumeTimedModeTimer(remainingMs) {
     stopTrialTimer();
-    trialEndTime = Date.now() + durationMinutes * 60 * 1000;
+    trialEndTime = Date.now() + remainingMs;
     setElementVisible(trialTimerPill, true);
 
     const tick = () => {
@@ -677,7 +681,7 @@ function startTimedModeTimer(durationMinutes) {
     };
 
     tick();
-    trialTimerId = setInterval(tick, 100);
+    if (sessionStarted) trialTimerId = setInterval(tick, 100);
 }
 
 const startTrialTimer = startTimedModeTimer;
@@ -832,6 +836,7 @@ function renderSessionList(container, title, items) {
 
 
 function beginTrainerSessionEnd() {
+    window.ModeAtlasSessionControls?.reset();
     hideComboTierNotice();
     window.KanaCloudSync?.setSessionCloudPause?.(false);
     window.KanaCloudSync?.flushDeferredSessionSync?.(650);
@@ -907,6 +912,8 @@ function applyTrainerDailyStopUi(options = {}) {
 
 
 function prepareTrainerSessionStart(options = {}) {
+    window.ModeAtlasSessionControls?.reset();
+    recordTrainerActivity();
     window.KanaCloudSync?.setSessionCloudPause?.(true);
     const now = Date.now();
     const sessionStats = createEmptySessionStats();
@@ -938,6 +945,10 @@ function prepareTrainerSessionStart(options = {}) {
             startTime: now
         } : null
     };
+}
+
+function recordTrainerActivity() {
+    window.ModeAtlasVisitFlows?.recordActivity(document.body.classList.contains('ma-writing-page') ? 'writing' : 'reading');
 }
 
 function applyTrainerSessionStartUi(options = {}) {

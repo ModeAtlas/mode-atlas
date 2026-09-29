@@ -13,14 +13,19 @@
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
   const WHATS_NEW_COPY = window.ModeAtlasEnv?.isNativeApp
-    ? 'A tidier home screen and calmer practice controls.'
-    : 'This update refines the iOS home screen and practice controls.';
+    ? 'Your progress at a glance, with smoother everyday practice.'
+    : 'More reliable practice controls and activity tracking.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
-  const whatsNewItems = [
-    'Atlas fits above the iPhone dock from launch.',
-    'Neutral Pause and End session buttons in both appearances.',
-    'Larger text stays readable, with scrolling when needed.'
+  const whatsNewItems = window.ModeAtlasEnv?.isNativeApp ? [
+    'Practice pauses when you leave the app. Resume when you are ready.',
+    'Export your save to Files or share it with another app.',
+    'Text follows your iPhone’s text-size setting, and fonts work offline.',
+    'Small, medium and large widgets show your learning progress.',
+    'Touch and hold the app icon to jump into practice.'
+  ] : [
+    'Pausing preserves answer feedback and time remaining.',
+    'Recent activity reflects successful study and Word Bank actions.'
   ];
 
   function storeGet(key, fallback = '') {

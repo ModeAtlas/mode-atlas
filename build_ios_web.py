@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from build_ios_fonts import build_fonts
 
 ROOT = Path(__file__).resolve().parent
 VERSION_FILE = ROOT / "assets/app/mode-atlas-version.js"
@@ -59,6 +60,7 @@ def copy_tree_runtime(source: Path, destination: Path, revision: str) -> None:
 
 
 def build(output: Path) -> dict[str, str]:
+    build_fonts(ROOT)
     version, revision, build_date = release_metadata()
     if revision != f"assets-{version}":
         raise SystemExit(f"Revision {revision!r} does not match version {version!r}.")

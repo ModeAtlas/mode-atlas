@@ -43,6 +43,24 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemType</key><string>app.modeatlas.reading</string>
+			<key>UIApplicationShortcutItemTitle</key><string>Reading practice</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key><string>textformat.abc</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key><string>app.modeatlas.writing</string>
+			<key>UIApplicationShortcutItemTitle</key><string>Writing practice</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key><string>pencil.tip</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key><string>app.modeatlas.daily</string>
+			<key>UIApplicationShortcutItemTitle</key><string>Daily challenge</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key><string>calendar</string>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

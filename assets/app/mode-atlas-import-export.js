@@ -45,21 +45,28 @@
     } catch {}
   }
 
-  function downloadBackup(){
-    const backup = getBackup();
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'mode-atlas-save-' + new Date().toISOString().slice(0,10) + '.json';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    markBackupExported();
-    clearStatus();
-    notify('Save exported.', 'success');
-    refreshSyncPills();
+  let exporting = false;
+  async function downloadBackup(){
+    if (exporting) return;
+    exporting = true;
+    try {
+      const result = await window.AtlasPlatform.exportBackup({
+        contents: JSON.stringify(getBackup(), null, 2),
+        filename: 'mode-atlas-save-' + new Date().toISOString().slice(0,10) + '.json'
+      });
+      if (result.supported === false) throw new Error('Backup export is unavailable.');
+      clearStatus();
+      if (result.completed) {
+        markBackupExported();
+        notify('Save exported.', 'success');
+        refreshSyncPills();
+      }
+    } catch (error) {
+      console.warn('Save export failed.', error);
+      setStatus('Could not export your save. Please try again.', 'error');
+    } finally {
+      exporting = false;
+    }
   }
 
   async function copyBackup(){
@@ -70,7 +77,7 @@
       clearStatus();
       notify('Save copied.', 'success');
     } catch {
-      downloadBackup();
+      await downloadBackup();
     }
     refreshSyncPills();
   }

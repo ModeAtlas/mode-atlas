@@ -213,6 +213,7 @@ HEAD_SCRIPTS = (
     'assets/app/mode-atlas-legacy-sw-retirement.js',
     'assets/app/mode-atlas-version-check.js',
     'assets/app/mode-atlas-head-bootstrap.js',
+    'assets/app/mode-atlas-fonts.js',
     'assets/platform/mode-atlas-platform.js',
     'assets/platform/mode-atlas-platform-web.js',
     'assets/platform/mode-atlas-platform-native.js',
@@ -557,8 +558,8 @@ def _trainer_scoreline() -> str:
 def _trainer_prompt(config: TrainerConfig) -> str:
     if config.prompt_kind == 'reading':
         return '''        <div class="hiragana-wrap ma-trainer-prompt-wrap">
-            <div id="hiragana" class="hiragana">—</div>
-            <div id="hint" class="hint"></div>
+            <div id="hiragana" class="hiragana" lang="ja" aria-live="polite" aria-atomic="true">—</div>
+            <div id="hint" class="hint" aria-live="polite"></div>
             <div id="comboTierNotice" class="combo-tier-notice"></div>
         </div>
 
@@ -566,12 +567,12 @@ def _trainer_prompt(config: TrainerConfig) -> str:
             <input class="ma-input ma-trainer-input" id="input" type="text" placeholder="Type romaji…" aria-label="Type the romaji answer" autocomplete="off" spellcheck="false" disabled />
         </div>'''
     return '''        <div class="prompt-wrap ma-trainer-prompt-wrap">
-            <div id="prompt" class="prompt">—</div>
-            <div id="hint" class="hint"></div>
+            <div id="prompt" class="prompt" aria-live="polite" aria-atomic="true">—</div>
+            <div id="hint" class="hint" aria-live="polite"></div>
             <div id="comboTierNotice" class="combo-tier-notice"></div>
         </div>
 
-        <div id="choiceGrid" class="choice-grid cols-2"></div>
+        <div id="choiceGrid" class="choice-grid cols-2" role="group" lang="ja" aria-label="Kana answers"></div>
 
         <div class="keyboard-wrap ma-trainer-answer-wrap" id="keyboardWrap" hidden>
             <input class="ma-input ma-trainer-input" id="input" type="text" placeholder="Type kana…" aria-label="Type the kana answer" autocomplete="off" spellcheck="false" disabled />
