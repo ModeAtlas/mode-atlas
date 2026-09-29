@@ -136,7 +136,7 @@ test('native launch links reach shared practice setup and ignore foreign callbac
       getPlatform: () => 'ios',
       Plugins: {
         App: {
-          addListener: (_name, callback) => { window.modeAtlasOpenUrl = callback; },
+          addListener: (name, callback) => { if (name === 'appUrlOpen') window.modeAtlasOpenUrl = callback; },
           getLaunchUrl: async () => ({ url: 'modeatlas://open/reading?mode=daily' })
         }
       }
