@@ -499,7 +499,7 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-button:hove
   background:transparent;
   border-radius:var(--ma-radius-control);
 }
-.ma-segmented .ma-button:hover:not(:disabled){background:var(--ma-control-hover);transform:none;}
+.ma-segmented .ma-button:hover:not(:disabled){background:var(--ma-button-selected-hover,var(--ma-control-hover));transform:none;}
 .ma-segmented .ma-button.active,
 .ma-segmented .ma-button[aria-pressed="true"]{
   background:var(--ma-control-active);
