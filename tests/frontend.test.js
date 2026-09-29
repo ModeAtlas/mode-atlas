@@ -656,8 +656,8 @@ test('major feature popups use one shared dialog shell', () => {
 
   assert.doesNotMatch(reading + writing, /sessionModalBackdrop|closeSessionModalBtn/);
   assert.doesNotMatch(readingPage + writingPage, /sessionModalBackdrop|closeSessionModalBtn/);
-  assert.match(trainerShared, /ModeAtlasDialog\.feature\(/);
-  assert.match(trainerShared, /ma-session-dialog-content/);
+  assert.match(read('assets/trainer/mode-atlas-study-session.js'), /ModeAtlasDialog\.feature\(/);
+  assert.match(read('assets/trainer/mode-atlas-study-session.js'), /ma-study-summary/);
 
   assert.doesNotMatch(results, /kanaModalBackdrop|kanaModalClose/);
   assert.doesNotMatch(resultsPage, /KANA_MODAL_BACKDROP|KANA_MODAL_CLOSE|closeKanaModal/);
@@ -741,7 +741,7 @@ test('post-consolidation frontend ownership keeps pause, dynamic controls, and p
 
   assert.match(trainerShared, /document\.createElement\("button"\)/);
   assert.match(trainerShared, /toggle-btn ma-button ma-trainer-button/);
-  assert.match(modifier, /toggle-btn ma-button ma-trainer-button ma-structured-toggle/);
+  assert.match(modifier, /ma-button ma-trainer-button ma-structured-toggle/);
   assert.match(modifier, /ma-card ma-card--soft ma-no-data-card/);
   assert.match(modifier, /mmLink\('ma-button'/);
   assert.match(devConsole, /ma-button ma-button--small ma-dev-btn/);
@@ -888,8 +888,8 @@ test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and c
   assert.match(kana, /ma-skeleton-block/);
 
   for (const trainer of [reading, writing]) {
-    assert.match(trainer, /Practice setup ▼/);
-    assert.match(trainer, /id="sessionProgressBar"/);
+    assert.match(trainer, /Practice setup/);
+    assert.match(trainer, /id="studySessionProgress"/);
     assert.match(trainer, />Focus<|Focus<\/span>/);
     assert.match(trainer, /Exit focus mode/);
     assert.doesNotMatch(trainer, />Hide nav<|>Show navigation<|>Modifiers ▼</);
@@ -1058,7 +1058,7 @@ test('2.32 CSS consolidation keeps Settings and Profile ownership canonical', ()
   assert.match(profile, /--ma-setting-row-columns:minmax\(96px,120px\) minmax\(0,1fr\)/);
   assert.doesNotMatch(profile, /data-profile-sign-in|data-profile-sign-out/);
   assert.doesNotMatch(profile, /\.ma-shared-settings-drawer \.ma-settings-section \.ma-setting-row\{grid-template-columns:/);
-  assert.match(modifiers, /bottom-shell\.ma-modifiers-only/);
+  assert.match(modifiers, /\.ma-practice-sheet\[open\]/);
   assert.ok(!trainer.includes('max-height:min(72vh,720px)'), 'modifier drawer max-height must remain owned by modifier-menu.css');
 });
 
@@ -1427,8 +1427,7 @@ test('2.41 Atlas Level uses one mergeable semantic progression owner and Profile
 
   assert.match(reading, /ModeAtlasProgress\?\.award\?\.\('kana\.reading\.correct'/);
   assert.match(writing, /ModeAtlasProgress\?\.award\?\.\('kana\.writing\.correct'/);
-  assert.match(reading, /awardOnce\?\.\('kana\.reading\.dailyComplete', dateKey\)/);
-  assert.match(writing, /awardOnce\?\.\('kana\.writing\.dailyComplete', dateKey\)/);
+  assert.match(read('assets/trainer/mode-atlas-trainer-shared.js'), /awardOnce\?\.\(`kana\.\$\{trainerController.mode\}\.dailyComplete`,dateKey\)/);
   assert.match(trainerCore, /awardOnce\?\.\(`kana\.\$\{mode\}\.testComplete`, result\.id\)/);
 
   assert.match(profile, /Atlas Level <span id="profileAtlasLevel">1<\/span>/);
@@ -1473,13 +1472,12 @@ test('2.42 contextual install and progression feedback stay under shared owners'
 
   assert.match(shared, /startXp/);
   assert.match(shared, /function getTrainerSessionXpGain/);
-  assert.match(shared, /\["XP gained", `\+\$\{xpGain\} XP`\]/);
+  const study = read('assets/trainer/mode-atlas-study-session.js');
+  assert.match(study, /\$\{xpGain\} XP/);
   assert.match(shared, /settleTrainerProgressionBreak/);
-  for (const page of [reading, writing]) {
-    assert.match(page, /\["XP gained", `\+\$\{getTrainerSessionXpGain\(sessionStats\)\} XP`\]/);
-    assert.match(page, /gameOverAnswerEl\.textContent \+= ` · \+\$\{sessionXp\} XP`/);
-    assert.match(page, /formal-test-summary/);
-  }
+  assert.match(shared, /trainerController.showSessionModal\(completed\)/);
+  for (const page of [reading, writing]) assert.match(page, /finishTrainerSession\(autoEnded/);
+
 
   assert.match(pwa, /AUTO_INSTALL_CORRECT_THRESHOLD = 100/);
   assert.match(pwa, /ModeAtlasProgress\?\.getLifetimeCorrect/);
@@ -1659,7 +1657,7 @@ test('2.45 responsive and accessibility QA keeps landmarks, keyboard controls, f
   assert.match(frontend, /<main id=\"mainContent\" class=\"app-shell ma-trainer-shell\"/);
   assert.match(frontend, /<button class=\"panel-header\" id=\"scoresHeader\" type=\"button\" aria-expanded=\"true\" aria-controls=\"scoresContent\"/);
   assert.match(frontend, /<button class=\"panel-header\" id=\"statsHeader\" type=\"button\" aria-expanded=\"true\" aria-controls=\"statsContent\"/);
-  assert.match(frontend, /<button class=\"tab-button\" id=\"modifiersTab\" type=\"button\" aria-expanded=\"false\" aria-controls=\"modifiersContent\"/);
+  assert.match(frontend, /<button class=\"tab-button\" id=\"modifiersTab\" type=\"button\" aria-expanded=\"false\" aria-controls=\"practiceSetupDialog\"/);
 
   for (const page of ['index.html','kana/index.html','reading/index.html','writing/index.html','results/index.html','wordbank/index.html','privacy/index.html','terms/index.html']) {
     const html = read(page);
@@ -1677,7 +1675,7 @@ test('2.45 responsive and accessibility QA keeps landmarks, keyboard controls, f
   assert.match(dialog, /message\.id = 'maDialogMessage'/);
   assert.match(dialog, /el\.getClientRects\(\)\.length > 0/);
   assert.match(dialog, /panel\.setAttribute\('aria-describedby', message\.id\)/);
-  assert.match(controller, /modifiersTabEl\?\.setAttribute\('aria-expanded', String\(modifiersOpen\)\)/);
+  assert.match(read('assets/trainer/mode-atlas-practice-setup.js'), /trigger.setAttribute\('aria-expanded',String\(open\)\)/);
   assert.match(controller, /byId\('statsHeader'\)\?\.setAttribute\('aria-expanded'/);
   assert.match(controller, /byId\('scoresHeader'\)\?\.setAttribute\('aria-expanded'/);
   assert.match(sharedTrainer, /document\.createElement\(\"button\"\)[\s\S]*View mastery details/);

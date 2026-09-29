@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 function load(){
   const context = vm.createContext({window:{},URLSearchParams});
-  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-study-plan','data/mode-atlas-kana-coaching']){
+  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-study-plan','data/mode-atlas-kana-coaching','trainer/mode-atlas-practice-modes']){
     vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',file+'.js'),'utf8'),context);
   }
   return context.window;
@@ -68,4 +68,23 @@ test('every contrast uses canonical readings and combination coaching does not s
   assert.deepEqual(plain(coach.explain('きゃ').chars),['きゃ']);
   assert.match(coach.explain('きゃ').note,/one unit/);
   assert.equal(coach.reading('<script>'),'');
+});
+
+
+test('mode transitions and legacy conflicting flags always resolve to one session',()=>{
+  const {ModeAtlasPracticeModes:modes}=load();
+  for(const first of modes.list)for(const second of modes.list){
+    const settings={comboKana:true,practiceCount:30};modes.select(settings,first.id);modes.select(settings,second.id);
+    assert.equal(modes.selected(settings),second.id);
+    assert.ok(['endless','timeTrial','speedRun','dailyChallenge','testMode'].filter(key=>settings[key]).length<=1);
+  }
+  const legacy={dailyChallenge:true,testMode:true,timeTrial:true,endless:true,practiceCount:10,hint:true};
+  modes.normalize(legacy);assert.equal(modes.selected(legacy),'testMode');assert.equal(legacy.hint,false);
+});
+test('timed settings are finite and bounded; kana segmentation retains joined sounds',()=>{
+  const {ModeAtlasPracticeModes:modes,ModeAtlasKanaData:data}=load();
+  assert.deepEqual(plain(modes.trial(Infinity,NaN)),{minutes:.5,target:20});
+  assert.deepEqual(plain(modes.trial(-2,10001)),{minutes:.1,target:1000});
+  assert.deepEqual(plain(data.splitKana('きゃファあ')),['きゃ','ファ','あ']);
+  for(const [kana,row] of [['が','ka'],['ぎゃ','ka'],['キャ','ka'],['ファ','ha']])assert.equal(data.kanaRow(kana),row);
 });

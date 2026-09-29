@@ -115,36 +115,37 @@
     const s=getSettings();
     if (['speedRun','timeTrial','endless','dailyChallenge','testMode','comboKana'].includes(key)) s.practiceCount=0;
     const wasPreset=!!inferActivePreset();
-    if(key==='speedRun'){
-      s.speedRun=!s.speedRun; if(s.speedRun){s.endless=false;s.timeTrial=false;s.dailyChallenge=false;s.testMode=false;s.comboKana=false;}
-    } else if(key==='timeTrial'){
-      s.timeTrial=!s.timeTrial; if(s.timeTrial){s.endless=false;s.dailyChallenge=false;s.testMode=false;s.speedRun=false;}
-    } else if(key==='endless'){
-      s.endless=!s.endless; if(s.endless){s.timeTrial=false;s.dailyChallenge=false;s.testMode=false;s.speedRun=false;}
-    } else if(key==='dailyChallenge'){
-      s.dailyChallenge=!s.dailyChallenge; if(s.dailyChallenge){s.timeTrial=false;s.endless=false;s.testMode=false;s.comboKana=false;s.speedRun=false;s.hint=false;}
-    } else if(key==='testMode'){
-      s.testMode=!s.testMode; if(s.testMode){s.timeTrial=false;s.endless=false;s.dailyChallenge=false;s.comboKana=false;s.speedRun=false;s.hint=false;}
+    if (window.ModeAtlasPracticeModes.list.some(mode=>mode.id===key)) {
+      window.ModeAtlasPracticeModes.select(s, s[key] ? 'free' : key);
     } else if(key==='comboKana'){
-      s.comboKana=!s.comboKana; if(s.comboKana){s.dailyChallenge=false;s.testMode=false;s.speedRun=false;}
+      s.comboKana=!s.comboKana;
+      if(s.comboKana){ window.ModeAtlasPracticeModes.select(s,'free'); s.comboKana=true; }
     } else if(key==='confusableKana'){
       s.confusableKana=!s.confusableKana;
       if(s.confusableKana){
         s.hiraganaRows=CONF_HIRA_ROWS.slice(); s.katakanaRows=CONF_KATA_ROWS.slice();
         s.dakuten=false; s.yoon=false; s.extendedKatakana=false;
-        s.dailyChallenge=false; s.testMode=false; s.comboKana=false; s.speedRun=false; s.focusWeak=false;
+        s.comboKana=false; s.focusWeak=false;
+        if(window.ModeAtlasPracticeModes.fixedPool(s)) window.ModeAtlasPracticeModes.select(s,'free');
       }
     } else {
       s[key]=!s[key];
+      if(key==='focusWeak' && s.focusWeak)s.confusableKana=false;
     }
     setSettings(s);
     if(wasPreset) clearPresetForCustom(true);
     else if(key!=='confusableKana') setActivePreset('');
     saveAndRefresh();
   }
+  function selectMode(id){
+    if(typeof isModeLocked === 'function' && isModeLocked())return;
+    const s=getSettings();
+    window.ModeAtlasPracticeModes.select(s,id);
+    setSettings(s); saveAndRefresh();
+  }
   function applyPracticeLength(s,value){
+    window.ModeAtlasPracticeModes.select(s,window.ModeAtlasStudyPlan.lengths.includes(Number(value)) ? 'guided' : 'free');
     s.practiceCount=window.ModeAtlasStudyPlan.lengths.includes(Number(value)) ? Number(value) : 0;
-    if(s.practiceCount) Object.assign(s,{endless:false,timeTrial:false,speedRun:false,dailyChallenge:false,testMode:false,comboKana:false});
   }
   function setPracticeCount(value){
     if(typeof isModeLocked === 'function' && isModeLocked())return;
@@ -153,6 +154,12 @@
     setSettings(s);
     saveAndRefresh();
   }
+  function setTrial(){
+    if(typeof isModeLocked === 'function' && isModeLocked())return;
+    const trial=window.ModeAtlasPracticeModes.trial(document.getElementById('trialTime').value,document.getElementById('trialTarget').value);
+    setSettings({trialMinutes:trial.minutes,trialTarget:trial.target});saveAndRefresh();
+  }
+  for(const id of ['trialTime','trialTarget'])document.getElementById(id)?.addEventListener('change',setTrial);
   function toggleRow(rowKey,settingsKey){
     if(typeof isModeLocked === 'function' && isModeLocked())return;
     const s=getSettings(); const wasPreset=!!inferActivePreset();
@@ -252,6 +259,7 @@
     toggleMode,
     toggleRow,
     setPracticeCount,
+    selectMode,
     recordPresetCorrect,
     readPresetProgress
   });

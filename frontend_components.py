@@ -242,9 +242,9 @@ INTERACTIVE_STYLES = (
 TRAINER_STYLES = (
     'assets/css/mode-atlas-page-shared.css',
     'assets/css/mode-atlas-study-shared.css',
-) + INTERACTIVE_CHROME_STYLES + (
+) + INTERACTIVE_CHROME_STYLES + INTERACTIVE_TAIL_STYLES + (
     'assets/css/mode-atlas-modifier-menu.css',
-) + INTERACTIVE_TAIL_STYLES
+)
 LEGAL_STYLES = (
     'assets/css/mode-atlas-page-shared.css',
     'assets/css/mode-atlas-theme.css',
@@ -334,6 +334,8 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
             include_presets=True,
             page_scripts=(
                 'assets/ui/mode-atlas-study-nav-hidden.js',
+                'assets/trainer/mode-atlas-practice-modes.js',
+                'assets/trainer/mode-atlas-practice-setup.js',
                 'assets/trainer/mode-atlas-trainer-core.js',
                 'assets/trainer/mode-atlas-trainer-shared.js',
                 'assets/data/mode-atlas-kana-coaching.js',
@@ -354,6 +356,8 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
             include_presets=True,
             page_scripts=(
                 'assets/ui/mode-atlas-study-nav-hidden.js',
+                'assets/trainer/mode-atlas-practice-modes.js',
+                'assets/trainer/mode-atlas-practice-setup.js',
                 'assets/trainer/mode-atlas-trainer-core.js',
                 'assets/trainer/mode-atlas-trainer-shared.js',
                 'assets/data/mode-atlas-kana-coaching.js',
@@ -553,10 +557,6 @@ def _trainer_scoreline() -> str:
                 <div class="score-pill ma-pill ma-trainer-score" id="testCorrectPill" hidden>Correct <strong id="testCorrect">0</strong></div>
                 <div class="score-pill ma-pill ma-trainer-score" id="testWrongPill" hidden>Incorrect <strong id="testWrong">0</strong></div>
             </div>
-            <div class="ma-session-progress" id="sessionProgressBar" hidden aria-live="polite">
-                <div class="ma-session-progress__meta"><span id="sessionProgressLabel">Session progress</span><strong id="sessionProgressValue">0 / 0</strong></div>
-                <div class="ma-progress"><span class="ma-progress__fill" id="sessionProgressFill"></span></div>
-            </div>
         </div>'''
 
 
@@ -636,16 +636,19 @@ def _trainer_modifier_shell(config: TrainerConfig) -> str:
     return f'''<div id="popup" class="popup" hidden></div>
 
 <div class="bottom-shell ma-modifiers-only" data-ma-trainer-modifiers="shared">
-    <div class="tab-row"><button class="tab-button" id="modifiersTab" type="button" aria-expanded="false" aria-controls="modifiersContent">Practice setup ▼</button></div>
-    <div class="drawer-content" id="modifiersContent">
-        <div class="ma-practice-setup-head"><div><span class="ma-kicker">Before you start</span><h2>Practice setup</h2><p>Choose a preset, study mode and kana to practise.</p></div></div>
+    <div class="tab-row"><button class="tab-button" id="modifiersTab" type="button" aria-expanded="false" aria-controls="practiceSetupDialog" aria-haspopup="dialog">Practice setup</button></div>
+</div>
+<dialog id="practiceSetupDialog" class="ma-practice-sheet" aria-labelledby="practiceSetupTitle">
+    <div class="ma-practice-sheet__handle" id="practiceSetupHandle" aria-hidden="true"><span></span></div>
+    <header class="ma-practice-sheet__header"><div><span class="ma-kicker">Make it your session</span><h2 id="practiceSetupTitle">Practice setup</h2></div><button type="button" class="ma-button ma-button--ghost" id="practiceSetupDone" autofocus>Done</button></header>
+    <div class="ma-practice-content" id="modifiersContent">
         <div class="options-stack">
             <div class="ma-settings-section"><div id="modifierOptions" class="button-grid"></div></div>{input_controls}
             <div class="ma-kana-selection"><div><div class="section-title">Hiragana rows</div><div id="rowOptions" class="rows-grid"></div></div>
             <div><div class="section-title">Katakana rows</div><div id="katakanaRowOptions" class="rows-grid"></div></div></div>
         </div>
     </div>
-</div>'''
+</dialog>'''
 
 
 def render_trainer_shell(config: TrainerConfig) -> str:
@@ -669,12 +672,13 @@ def render_trainer_shell(config: TrainerConfig) -> str:
 
 {_trainer_prompt(config)}
         </div>
+        <div id="answerFeedback" class="ma-answer-feedback" role="status" aria-live="polite" aria-atomic="true"></div>
         <section id="studyFeedback" class="ma-study-feedback" aria-labelledby="studyFeedbackTitle" hidden></section>
 
         <div class="ma-trainer-session-controls">
         <div class="trial-config" id="trialConfig" hidden>
-            <div class="trial-box"><label for="trialTime">Time (mins)</label><input class="ma-input ma-trainer-input ma-trainer-input--number" id="trialTime" type="number" min="0.1" step="0.1" value="0.5" /></div>
-            <div class="trial-box"><label for="trialTarget">Target</label><input class="ma-input ma-trainer-input ma-trainer-input--number" id="trialTarget" type="number" min="1" step="1" value="20" /></div>
+            <div class="trial-box"><label for="trialTime">Minutes</label><input class="ma-input ma-trainer-input ma-trainer-input--number" id="trialTime" type="number" min="0.1" max="60" step="0.1" value="0.5" /></div>
+            <div class="trial-box"><label for="trialTarget">Correct-answer target</label><input class="ma-input ma-trainer-input ma-trainer-input--number" id="trialTarget" type="number" min="1" max="1000" step="1" value="20" /></div>
         </div>
 
         <div class="trial-config" id="comboConfig" hidden>

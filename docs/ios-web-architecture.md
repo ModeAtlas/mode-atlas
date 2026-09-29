@@ -369,3 +369,8 @@ The shared learning loop, state owners, persistent settings contract and future
 tutorial plan are documented in [guided-practice-2.71.0.md](guided-practice-2.71.0.md).
 Native presentation continues to consume shared session state; it does not own
 a separate scorer, save format or recommendation policy.
+
+
+### Trainer modes (2.72.0)
+
+[Trainer review and source ownership](trainer-review-2.72.0.md) documents the shared mode rules, unified completion/summary flow, atomic kana handling and accessible Practice Setup sheet. iOS presentation remains separate from shared learning and saving.

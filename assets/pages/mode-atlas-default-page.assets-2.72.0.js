@@ -210,58 +210,7 @@ function applyDailyChallengeTheme() { return trainerController.applyDailyChallen
 
 function updateDailyChallengePills() { return trainerController.updateDailyChallengePills(); }
 
-function endDailyChallenge() {
-    window.ModeAtlasSounds?.play('finish', {cooldown:130});
-    window.KanaCloudSync?.setSessionCloudPause?.(false);
-    window.KanaCloudSync?.flushDeferredSessionSync?.(650);
-    const dateKey = getTodayKey();
-    const total = dailySequence.length || 20;
-    const timeMs = Math.max(0, Date.now() - dailyStartTime);
-    const existing = dailyChallengeHistory[dateKey];
-
-    sessionStarted = false;
-    sessionStats.active = false;
-    inputEl.disabled = true;
-    setSessionActionsVisible(false);
-    setElementVisible(startWrap, true);
-    clearHint();
-    hideComboTierNotice();
-    currentChar = "";
-    hiraganaEl.textContent = "—";
-
-    if (!existing) {
-        window.ModeAtlasProgress?.awardOnce?.('kana.reading.dailyComplete', dateKey);
-        dailyChallengeHistory[dateKey] = {
-            sequence: [...dailySequence],
-            officialScore: dailyCorrect,
-            total,
-            timeMs,
-            attempts: 1
-        };
-        gameOverTitleEl.textContent = "Reading Daily Challenge Complete";
-        gameOverAnswerEl.textContent = `Official score recorded: ${dailyCorrect}/${total}`;
-    } else {
-        existing.attempts = (existing.attempts || 1) + 1;
-        if (!existing.sequence) existing.sequence = [...dailySequence];
-        gameOverTitleEl.textContent = "Practice Replay Complete";
-        gameOverAnswerEl.textContent = `Practice replay complete. ${dailyCorrect}/${total} vs Official score ${existing.officialScore}/${existing.total}`;
-    }
-
-    const sessionXp = getTrainerSessionXpGain(sessionStats);
-    gameOverAnswerEl.textContent += ` · +${sessionXp} XP`;
-
-    setGameOverVisible(true);
-    buildModifierButtons();
-    buildRows("rowOptions", hiraganaRows, "hiraganaRows", "h_");
-    buildRows("katakanaRowOptions", katakanaRows, "katakanaRows", "k_");
-    updateTrialConfigVisibility();
-    updateTopStats();
-    if (DEBUG_PANEL) renderDebugPanel();
-    renderScoreHistory();
-    applyDailyChallengeTheme();
-    saveAll();
-    void settleTrainerProgressionBreak('daily-challenge-complete');
-}
+function endDailyChallenge() { endSession(true); }
 
 function validRomajiSet() {
     const sourceMap = getAnswerMapForCurrentMode();
@@ -434,16 +383,6 @@ function weightedPick(pool) {
     return weighted[Math.floor(Math.random() * weighted.length)];
 }
 
-function getRowKeyForChar(char) {
-    for (const [rowKey, mapping] of Object.entries(hiraganaRows)) {
-        if (char in mapping) return rowKey.replace(/^h_/, "");
-    }
-    for (const [rowKey, mapping] of Object.entries(katakanaRows)) {
-        if (char in mapping) return rowKey.replace(/^k_/, "");
-    }
-    return null;
-}
-
 function buildComboCharacters(pool, firstPick) {
     const comboLength = getComboLength();
     const chars = [firstPick];
@@ -471,7 +410,7 @@ function scheduleHint() {
     clearHint();
     if (!settings.hint || !currentChar || !sessionStarted) return;
 
-    const avg = currentChar.split("").reduce((sum, ch) => sum + getAverageTime(ch), 0) / Math.max(1, currentChar.length);
+    const avg = getCurrentKanaUnits().reduce((sum, ch) => sum + getAverageTime(ch), 0) / Math.max(1, getCurrentKanaUnits().length);
     const delay = Math.max(600, Math.round(avg * 1.2));
 
     hintTimeout = setTimeout(() => {
@@ -573,7 +512,7 @@ function nextCharacter() {
 
 function startSession() {
     if (sessionStarted) return;
-    if (!isDailyChallengeSession() && !isTestModeSession() && !activeChars.length) {
+    if (!isDailyChallengeSession() && !isTestModeSession() && !activeChars.length && !trainerController.study.hasPendingReview()) {
         hintEl.textContent = "Select at least one row to begin.";
         return;
     }
@@ -646,23 +585,24 @@ function flashResult(correct, onDone) {
 
 function getAnswerForCurrentChar() {
     const sourceMap = getAnswerMapForCurrentMode();
-    return currentChar.split("").map(ch => sourceMap[ch] || "").join("");
+    return getCurrentKanaUnits().map(ch => sourceMap[ch] || "").join("");
 }
 
 function getDisplayAnswerForCurrentChar() {
     const sourceMap = getAnswerMapForCurrentMode();
-    const parts = currentChar.split("").map(ch => sourceMap[ch] || "");
+    const parts = getCurrentKanaUnits().map(ch => sourceMap[ch] || "");
     return settings.comboKana ? parts.join(" + ") : parts.join("");
 }
 
 function handleCorrect(answer = inputEl.value) {
+    if (!window.ModeAtlasSessionControls.canAnswer()) return;
     recordTrainerActivity();
     const timeTaken = Date.now() - charStartTime;
 
-    for (const ch of currentChar.split("")) {
+    for (const ch of getCurrentKanaUnits()) {
         if (!stats[ch]) stats[ch] = { correct: 0, wrong: 0 };
         stats[ch].correct += 1;
-        updateAverageTime(ch, timeTaken / Math.max(1, currentChar.length));
+        updateAverageTime(ch, timeTaken / Math.max(1, getCurrentKanaUnits().length));
         updateSrsCorrect(ch);
     }
 
@@ -677,7 +617,7 @@ function handleCorrect(answer = inputEl.value) {
     sessionStats.answered += 1;
     sessionStats.correct += 1;
     window.ModeAtlasTrainerControls?.recordPresetCorrect?.(1);
-    window.ModeAtlasProgress?.award?.('kana.reading.correct', Math.max(1, currentChar.length));
+    window.ModeAtlasProgress?.award?.('kana.reading.correct', Math.max(1, getCurrentKanaUnits().length));
     sessionStats.timings.push(timeTaken);
     sessionStats.bestStreak = Math.max(sessionStats.bestStreak, streak);
     updateSessionChar(currentChar, true, timeTaken);
@@ -706,14 +646,14 @@ function handleCorrect(answer = inputEl.value) {
 }
 
 function handleWrong(answer = inputEl.value) {
+    if (!window.ModeAtlasSessionControls.canAnswer()) return;
     recordTrainerActivity();
     const timeTaken = Date.now() - charStartTime;
-    const correctAnswer = getDisplayAnswerForCurrentChar();
 
-    for (const ch of currentChar.split("")) {
+    for (const ch of getCurrentKanaUnits()) {
         if (!stats[ch]) stats[ch] = { correct: 0, wrong: 0 };
         stats[ch].wrong += 1;
-        updateAverageTime(ch, timeTaken / Math.max(1, currentChar.length));
+        updateAverageTime(ch, timeTaken / Math.max(1, getCurrentKanaUnits().length));
         updateSrsWrong(ch);
     }
 
@@ -743,23 +683,7 @@ function handleWrong(answer = inputEl.value) {
     renderHeatmap();
     saveAll();
 
-    if (isDailyChallengeSession()) {
-        hintEl.textContent = `Answer: ${correctAnswer}`;
-        flashResult(false, () => nextCharacter());
-    } else if (isTestModeSession()) {
-        hintEl.textContent = `Answer: ${correctAnswer}`;
-        flashResult(false, () => advanceTestModeAfterAnswer());
-    } else if (currentFlowModeIsContinuous()) {
-        hintEl.textContent = `Answer: ${correctAnswer}`;
-        flashResult(false, () => nextCharacter());
-    } else {
-        gameOverAnswerEl.textContent = `Correct answer: ${correctAnswer}`;
-        flashResult(false, () => {
-            setGameOverVisible(true);
-            setRetryButtonVisible(true);
-            inputEl.disabled = true;
-        });
-    }
+    flashResult(false, () => isTestModeSession() ? advanceTestModeAfterAnswer() : nextCharacter());
 }
 
 inputEl.addEventListener("input", () => {
@@ -847,104 +771,14 @@ function saveTestModeResult() {
 }
 
 
-function endTestMode() {
-    window.ModeAtlasSounds?.play('finish', {cooldown:130});
-    window.KanaCloudSync?.setSessionCloudPause?.(false);
-    window.KanaCloudSync?.flushDeferredSessionSync?.(650);
-    const durationMs = Math.max(0, Date.now() - testStartTime);
-    const totalAnswered = testCorrect + testWrong;
-    const scorePct = totalAnswered ? Math.round((testCorrect / totalAnswered) * 100) : 0;
+function endTestMode() { endSession(true); }
 
-    saveTestModeResult();
-
-    sessionStarted = false;
-    sessionStats.active = false;
-    locked = false;
-    stopTrialTimer();
-    inputEl.disabled = true;
-    setGameOverVisible(false);
-    setRetryButtonVisible(true);
-    setSessionActionsVisible(false);
-    setElementVisible(startWrap, true);
-    clearHint();
-    hiraganaEl.textContent = "—";
-    currentChar = "";
-
-    const testDialogContent = document.createElement("div");
-    testDialogContent.className = "ma-session-dialog-content";
-    const testDialogGrid = document.createElement("div");
-    testDialogGrid.className = "modal-grid ma-session-dialog-grid";
-    window.ModeAtlasTrainerCore.renderStatCardsInto(testDialogGrid, [
-        ["Score", `${scorePct}%`],
-        ["Correct", testCorrect],
-        ["Wrong", testWrong],
-        ["Questions", testSequence.length || totalAnswered || 0],
-        ["Avg Time", formatDuration(sessionStats.timings.length ? average(sessionStats.timings) : 0)],
-        ["Test Time", formatDuration(durationMs)],
-        ["XP gained", `+${getTrainerSessionXpGain(sessionStats)} XP`]
-    ]);
-    testDialogContent.append(testDialogGrid);
-    const testDialogPromise = window.ModeAtlasDialog?.feature?.({
-        kicker: "Formal test",
-        title: "Reading Test Complete",
-        contentNode: testDialogContent,
-        size: "wide"
-    });
-    Promise.resolve(testDialogPromise).then(() => settleTrainerProgressionBreak('formal-test-summary'));
-
-    updateTopStats();
-    if (DEBUG_PANEL) renderDebugPanel();
-    renderScoreHistory();
-    saveAll();
-    onSettingsChanged();
-}
-function updateBestScores() { return trainerController.updateBestScores(); }
+function updateBestScores(completed = false) { return trainerController.updateBestScores(completed); }
 
 function showSessionModal(autoEnded = false) { return trainerController.showSessionModal(autoEnded); }
 
 function endSession(autoEnded = false) {
-    if (!sessionStarted) return;
-    window.ModeAtlasSounds?.play('finish', {cooldown:130});
-    beginTrainerSessionEnd();
-
-    if (isDailyChallengeSession()) {
-        sessionStarted = false;
-        sessionStats.active = false;
-        applyTrainerDailyStopUi({
-            inputEl,
-            startWrap,
-            promptEl: hiraganaEl,
-            stopTrialTimer,
-            setGameOverVisible,
-            setSessionActionsVisible,
-            updateTopStats,
-            renderDebugPanel,
-            debugPanel: DEBUG_PANEL,
-            afterPromptReset: () => { currentChar = ""; }
-        });
-        onSettingsChanged();
-        void settleTrainerProgressionBreak('daily-session-ended');
-        return;
-    }
-
-    sessionStarted = false;
-    applyTrainerStandardSessionEnd({
-        sessionStats,
-        inputEl,
-        startWrap,
-        promptEl: hiraganaEl,
-        showSessionModal,
-        stopTrialTimer,
-        updateBestScores,
-        setGameOverVisible,
-        setSessionActionsVisible,
-        updateTopStats,
-        renderDebugPanel,
-        debugPanel: DEBUG_PANEL,
-        autoEnded,
-        afterPromptReset: () => { currentChar = ""; }
-    });
-    onSettingsChanged();
+    finishTrainerSession(autoEnded, () => { hiraganaEl.textContent = "—"; currentChar = ""; });
 }
 
 endSessionBtn.addEventListener("click", () => endSession(false));

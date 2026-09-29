@@ -149,7 +149,15 @@
   }
 
 
+  function speedScore(session) {
+    const answered = Number(session.answered || 0), correct = Number(session.correct || 0), wrong = Number(session.wrong || 0);
+    const times = session.timings || [];
+    const avgMs = times.length ? Math.round(times.reduce((sum,ms)=>sum+ms,0)/times.length) : 0;
+    return Math.max(0,Math.round(correct*100+(answered?correct/answered:0)*250-wrong*50-avgMs/20));
+  }
+
   window.ModeAtlasTrainerCore = Object.assign(window.ModeAtlasTrainerCore || {}, {
+    speedScore,
     saveTrainerState,
     buildDailySequence,
     normalizeTestResults,

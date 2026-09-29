@@ -1,3 +1,11 @@
+## 2.72.0 - 2026-09-29
+
+- Explicit Incorrect/Skipped feedback, neutral kana examples and consistent session summaries across Reading and Writing.
+- Seven clear mode choices in Practice Setup, grouped options and an accessible iOS bottom sheet.
+- Guided follow-up sets for mistakes from any mode, including kana outside the regular selection.
+- Correct early-stop handling for Daily/Test; full timers required for timed records; accurate six-choice Test metadata.
+- Joined-kana answer/statistics fixes, bounded Writing choice generation, and saved Time Trial settings.
+- Consolidated session completion and summary ownership; removed superseded drawer styling. See `docs/trainer-review-2.72.0.md`.
 ## 2.71.0 - 2026-09-29
 
 - Added shared 10/20/30-question guided Reading and Writing sets, with explicit progress and a useful completion summary. Existing free, timed, daily and test modes retain their rules.

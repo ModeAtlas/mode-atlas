@@ -150,8 +150,31 @@ const kanaCollections = Object.freeze({
     ])])
 });
 
+function kanaRow(kana) {
+    for (const rows of [hiraganaRows,katakanaRows,dakutenRows,yoonRows,extendedKatakanaRows]) {
+        for (const [key,map] of Object.entries(rows)) {
+            if (Object.hasOwn(map,kana)) return key.replace(/^[hk]_/, '').replace(/_dakuten$/, '');
+        }
+    }
+    return null;
+}
+
+function splitKana(value, map = {...hiraganaMap,...katakanaMap,...dakutenMap,...yoonMap,...extendedKatakanaMap}) {
+    const keys = Object.keys(map).sort((a,b) => b.length - a.length);
+    const units = [];
+    let rest = String(value || '');
+    while (rest) {
+        const unit = keys.find(key => rest.startsWith(key)) || Array.from(rest)[0];
+        units.push(unit);
+        rest = rest.slice(unit.length);
+    }
+    return units;
+}
+
 window.ModeAtlasKanaData = {
     selectedKanaMap,
+    splitKana,
+    kanaRow,
     hiraganaRows,
     katakanaRows,
     dakutenRows,

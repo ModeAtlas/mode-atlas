@@ -863,7 +863,7 @@ def main() -> int:
     if 'id="kanaContinueAction"' not in kana_markup or 'ma-skeleton-block' not in kana_markup:
         fail(errors, 'Kana hub recommendation/loading hierarchy drifted')
     trainer_ui_markup = text(ROOT / 'reading/index.html') + text(ROOT / 'writing/index.html')
-    for marker in ('Practice setup ▼', 'id="sessionProgressBar"', 'Focus mode', 'Exit focus mode'):
+    for marker in ('Practice setup', 'id="studySessionProgress"', 'Focus mode', 'Exit focus mode'):
         if marker not in trainer_ui_markup:
             fail(errors, f'trainer standardisation marker missing: {marker}')
     for marker in ('>Hide nav<', '>Show navigation<', '>Modifiers ▼<'):

@@ -39,7 +39,7 @@
   function makeBtn(label, active, key='', disabled=false){
     const b=document.createElement('button');
     b.type='button';
-    b.className='toggle-btn ma-button ma-trainer-button ma-structured-toggle' + (active?' active':'');
+    b.className='ma-button ma-trainer-button ma-structured-toggle' + (active?' active':'');
     b.textContent=label;
     if (key) b.dataset.maControlKey = key;
     b.setAttribute('aria-pressed', active?'true':'false');
@@ -82,24 +82,24 @@
 
     const s=trainerSettings();
     const activePreset = activePresetId();
-    const controls=Array.from(mod.querySelectorAll('[data-ma-control-key]'));
+    const controls=Array.from(mod.querySelectorAll('[data-ma-control-key],[data-ma-mode]'));
     if(controls.length){
       const locked=typeof isModeLocked === 'function' && isModeLocked();
       controls.forEach(button=>{
-        const active=button.dataset.preset ? activePreset===button.dataset.preset : !!s[button.dataset.maControlKey];
+        const active=button.dataset.maMode ? window.ModeAtlasPracticeModes.selected(s)===button.dataset.maMode : button.dataset.preset ? activePreset===button.dataset.preset : !!s[button.dataset.maControlKey];
         button.classList.toggle('active',active);
         button.setAttribute('aria-pressed',String(active));
-        button.disabled=locked;
+        const key=button.dataset.maControlKey;
+        const fixed=window.ModeAtlasPracticeModes.fixedPool(s);
+        button.disabled=locked || (fixed && ['hint','srs','focusWeak','confusableKana','comboKana'].includes(key)) || (s.dailyChallenge && ['dakuten','yoon','extendedKatakana'].includes(key));
       });
       return;
     }
     const groups=[
+      ['Session', window.ModeAtlasPracticeModes.list.map(mode=>({type:'mode',...mode}))],
       ['Study presets', presetList().map(p => Object.assign({ type:'preset' }, p))],
-      ['Question flow', [
-        ['srs','SRS'], ['endless','Endless'], ['timeTrial','Time Trial'], ['speedRun','Speed Run'], ['dailyChallenge','Daily Challenge'], ['testMode','Test Mode']
-      ]],
-      ['Practice focus', [
-        ['hint','Hint Mode'], ['comboKana','Combo Kana'], ['focusWeak','Focus Weak'], ['confusableKana','Confusable Kana']
+      ['Learning options', [
+        ['hint','Hints'], ['srs','Smart repetition'], ['comboKana','Combo Kana'], ['focusWeak','Focus Weak'], ['confusableKana','Confusable Kana']
       ]],
       ['Content modifiers', [
         ['dakuten','Dakuten'], ['yoon','Yōon'], ['extendedKatakana','Extended Katakana']
@@ -109,20 +109,29 @@
     mod.classList.remove('button-grid');
     mod.classList.add('ma-structured-modifiers');
     groups.forEach(([title,items])=>{
-      const section=document.createElement('div');
+      const section=document.createElement(title==='Session'?'section':'details');
       section.className='ma-modifier-group';
-      const head=document.createElement('div');
+      if(title==='Session')section.classList.add('ma-mode-group');
+      const head=document.createElement(title==='Session'?'h3':'summary');
       head.className='ma-modifier-group-title';
       head.textContent=title;
       const grid=document.createElement('div');
       grid.className='ma-modifier-group-grid';
       items.forEach(item=>{
-        if(item && item.type === 'preset') grid.appendChild(makePresetBtn(item, activePreset === normalisePresetId(item.id)));
+        if(item && item.type === 'mode') {
+          const button=makeBtn('',window.ModeAtlasPracticeModes.selected(s)===item.id);
+          button.dataset.maMode=item.id;
+          button.classList.add('ma-mode-choice');
+          button.append(mmEl('strong','',item.label),mmEl('span','',item.detail));
+          button.addEventListener('click',()=>window.ModeAtlasTrainerControls.selectMode(item.id));
+          grid.appendChild(button);
+        } else if(item && item.type === 'preset') grid.appendChild(makePresetBtn(item, activePreset === normalisePresetId(item.id)));
         else { const [key,label] = item; grid.appendChild(makeBtn(label, !!s[key], key)); }
       });
       section.append(head,grid);
       mod.appendChild(section);
     });
+    installStructuredModifierMenu();
     try{ window.ModeAtlas?.refreshTrainerControls?.(); }catch{}
   }
 

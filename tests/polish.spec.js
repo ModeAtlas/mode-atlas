@@ -81,6 +81,7 @@ for(const layout of layouts)for(const theme of ['dark','light']){
       await settleDrawer(page,'#profileDrawer');
       if(route==='/reading/'){
         await page.locator('#modifiersTab').click();
+        await page.locator('summary').filter({hasText:'Learning options'}).click();
         await page.locator('[data-ma-control-key="confusableKana"]').click();
         const chars=await page.evaluate(()=>getHeatmapCharsForDisplay());
         expect(chars.length).toBeGreaterThan(0);
@@ -92,7 +93,7 @@ for(const layout of layouts)for(const theme of ['dark','light']){
         await expect(row).toHaveAttribute('aria-pressed','true');
         await page.keyboard.press('Space');
         await expect(row).toHaveAttribute('aria-pressed','false');
-        await page.locator('#modifiersTab').click();
+        await page.locator('#practiceSetupDone').click();
       }
       if(route==='/writing/'){
         const reading=await page.evaluate(()=>localStorage.getItem('settings'));
@@ -106,7 +107,7 @@ for(const layout of layouts)for(const theme of ['dark','light']){
         await checkLayout(page);
         await page.locator('#buttonsModeBtn').click();
         await expect(page.locator('#choice8Btn')).toBeVisible();
-        await page.locator('#modifiersTab').click();
+        await page.locator('#practiceSetupDone').click();
       }
       if(route==='/' && layout.name==='ios-phone')await page.screenshot({path:testInfo.outputPath(`home-${theme}.png`)});
       if(route==='/wordbank/' && layout.width===320)await page.screenshot({path:testInfo.outputPath(`words-${theme}.png`)});

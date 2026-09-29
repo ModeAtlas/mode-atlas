@@ -85,7 +85,7 @@ test('guided skip is taught once; stopping feedback cannot advance a later sessi
   expect(await page.evaluate(()=>({answered:sessionStats.answered,locked}))).toEqual({answered:0,locked:false});
 });
 
-test('longer sets finish at their own goal; free practice retains its original wrong-answer result',async({page})=>{
+test('longer sets finish at their own goal; free practice also teaches mistakes',async({page})=>{
   await prepare(page);await open(page,'/reading/');
   for(const length of [20,30]){
     await page.locator('#studyLength').selectOption(String(length));
@@ -105,22 +105,22 @@ test('longer sets finish at their own goal; free practice retains its original w
   await page.locator('#startBtn').click();
   await page.evaluate(()=>handleWrong('wrong'));
   await page.clock.runFor(500);
-  await expect(page.locator('#gameOver')).toBeVisible();
-  await expect(page.locator('#studyFeedback')).toBeHidden();
+  await expect(page.locator('#gameOver')).toBeHidden();
+  await expect(page.locator('#studyFeedbackTitle')).toHaveText('✕ Incorrect');
 });
 
 test('guided settings cannot take over Daily Challenge and Test Mode',async({page})=>{
   await prepare(page);await open(page,'/reading/?mode=daily&practice=10');
   await expect(page.locator('#studySetSetup')).toBeHidden();
   await page.locator('#startBtn').click();
-  expect(await page.evaluate(()=>sessionStats.study)).toBeNull();
+  expect(await page.evaluate(()=>sessionStats.study.count)).toBe(0);
   await page.evaluate(()=>handleWrong('wrong'));
   await expect.poll(()=>page.evaluate(()=>!locked)).toBe(true);
   await expect(page.locator('#studyFeedback')).toBeHidden();
   await open(page,'/writing/?practice=10');
   await page.evaluate(()=>{Object.assign(settings,{testMode:true});onSettingsChanged();});
   await page.locator('#startBtn').click();
-  expect(await page.evaluate(()=>sessionStats.study)).toBeNull();
+  expect(await page.evaluate(()=>sessionStats.study.count)).toBe(0);
 });
 
 for(const theme of ['light','dark'])test(`iOS ${theme}: recommendation reflects saved difficulties and guides the selected activity`,async({page},testInfo)=>{

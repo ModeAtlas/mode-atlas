@@ -67,7 +67,7 @@
     const study = root.ModeAtlasStudySession.create({
       mode, getSnapshot: snapshot,
       finish: () => hooks.endSession(true), start: () => hooks.startSession(),
-      naturalBreak: () => root.settleTrainerProgressionBreak('guided-practice-summary')
+      naturalBreak: () => root.settleTrainerProgressionBreak('trainer-session-summary')
     });
 
     function normalizeSettingsShape(settings){
@@ -75,7 +75,7 @@
       if (!Array.isArray(settings.hiraganaRows)) settings.hiraganaRows = Object.keys(rows.hiraganaRows || {});
       if (!Array.isArray(settings.katakanaRows)) settings.katakanaRows = [];
       if (!['same_row', 'random'].includes(settings.comboMode)) settings.comboMode = 'random';
-      return settings;
+      return root.ModeAtlasPracticeModes.normalize(settings);
     }
 
     function saveAll(){
@@ -116,16 +116,11 @@
       if (testBadgeEl) root.setElementVisible?.(testBadgeEl, testActive);
 
       if (!titleEl || !sublineEl) return;
-      if (dailyActive) {
-        titleEl.textContent = labels.dailyTitle;
-        sublineEl.textContent = labels.dailySubline;
-      } else if (testActive) {
-        titleEl.textContent = labels.testTitle;
-        sublineEl.textContent = labels.testSubline;
-      } else {
-        titleEl.textContent = labels.practiceTitle;
-        sublineEl.textContent = labels.practiceSubline;
-      }
+      const state = snapshot(), descriptor = root.ModeAtlasPracticeModes.describe(state.settings);
+      titleEl.textContent = `${mode === 'writing' ? 'Writing' : 'Reading'} · ${descriptor.label}`;
+      sublineEl.textContent = dailyActive ? labels.dailySubline : testActive ? labels.testSubline : descriptor.detail;
+      const start = byId('startBtn')?.querySelector('span');
+      if (start) start.textContent = descriptor.action;
     }
 
     function updateDailyChallengePills(){
@@ -174,31 +169,19 @@
         if (testWrongEl) testWrongEl.textContent = state.testWrong || 0;
       }
 
-      if (testActive) root.updateSessionProgressBar?.(Math.min(Number(state.testIndex || 0) + 1, testTotal || 0), testTotal || 0, 'Test progress', true);
-      else if (dailyActive) root.updateSessionProgressBar?.(Math.min(Number(state.dailyIndex || 0) + 1, 20), 20, 'Daily challenge', true);
-      else root.updateSessionProgressBar?.(0, 0, 'Session progress', false);
+      study.sync();
     }
 
     function applyBasePanelStates(){
       const settings = snapshot().settings || {};
       if (settings.activeBottomTab === 'options') settings.activeBottomTab = null;
-      const modifiersContentEl = byId('modifiersContent');
-      const optionsContentEl = byId('optionsContent');
-      const modifiersTabEl = byId('modifiersTab');
-      const optionsTabEl = byId('optionsTab');
       const statsContentEl = byId('statsContent');
       const statsChevronEl = byId('statsChevron');
       const scoresContentEl = byId('scoresContent');
       const scoresChevronEl = byId('scoresChevron');
 
       const modifiersOpen = settings.activeBottomTab === 'modifiers';
-      modifiersContentEl?.classList.toggle('open', modifiersOpen);
-      optionsContentEl?.classList.toggle('open', false);
-      modifiersTabEl?.classList.toggle('active', modifiersOpen);
-      modifiersTabEl?.setAttribute('aria-expanded', String(modifiersOpen));
-      optionsTabEl?.classList.toggle('active', false);
-      if (modifiersTabEl) modifiersTabEl.textContent = settings.activeBottomTab === 'modifiers' ? 'Practice setup ▲' : 'Practice setup ▼';
-      if (optionsTabEl) optionsTabEl.textContent = 'Options ▼';
+      root.ModeAtlasPracticeSetup.setOpen(modifiersOpen);
       statsContentEl?.classList.toggle('hidden', !settings.statsVisible);
       byId('statsHeader')?.setAttribute('aria-expanded', String(!!settings.statsVisible));
       if (statsChevronEl) statsChevronEl.textContent = settings.statsVisible ? '▼' : '▲';
@@ -232,6 +215,7 @@
 
     function refreshSaveBackedStateFromCloud(){
       const current = snapshot();
+      if (current.sessionStarted) return; // Never replace a running session’s settings or counters.
       const preservedBottomTab = ((current.settings && current.settings.activeBottomTab === 'modifiers') || byId('modifiersContent')?.classList.contains('open')) ? 'modifiers' : null;
       const settings = { ...defaults, ...root.ModeAtlasStorage.readModeJSON(mode, 'settings', defaults) };
       settings.activeBottomTab = preservedBottomTab;
@@ -295,7 +279,7 @@
       return history;
     }
 
-    function updateBestScores(){
+    function updateBestScores(completed = false){
       const state = snapshot();
       const settings = state.settings || {};
       const sessionStats = state.sessionStats || {};
@@ -313,7 +297,7 @@
         }
       }
 
-      if (settings.speedRun) {
+      if (settings.speedRun && completed && sessionStats.answered) {
         const correct = Math.max(0, Number(state.endlessRunTotal || 0) - Number(state.endlessRunWrong || 0));
         const answered = Math.max(0, Number(state.endlessRunTotal || 0));
         const wrong = Math.max(0, Number(state.endlessRunWrong || 0));
@@ -321,7 +305,7 @@
         const timings = Array.isArray(sessionStats.timings) ? sessionStats.timings : [];
         const avgMs = timings.length ? Math.round(root.average(timings)) : 0;
         const accuracy = answered ? correct / answered : 0;
-        const score = Math.max(0, Math.round((correct * 100) + (accuracy * 250) - (wrong * 50) - (avgMs / 20)));
+        const score = root.ModeAtlasTrainerCore.speedScore(sessionStats);
         history.speedRunTop3.push({
           durationSeconds: Math.round(durationMs / 1000), answered, correct, wrong,
           accuracy: Math.round(accuracy * 100), avgMs, score
@@ -335,7 +319,7 @@
         history.speedRunTop3 = history.speedRunTop3.slice(0, 3);
       }
 
-      if (settings.timeTrial) {
+      if (settings.timeTrial && completed && sessionStats.answered) {
         const timeVal = Number(byId('trialTime')?.value) || 0.5;
         const target = Number(state.trialTarget || 0) || Math.max(1, Number(byId('trialTarget')?.value) || 20);
         const entry = {
@@ -376,15 +360,7 @@
 
     function showSessionModal(autoEnded = false){
       const state = snapshot();
-      if (study.showSummary(state.sessionStats, root.getTrainerSessionXpGain(state.sessionStats))) return true;
-      return root.showTrainerSessionModal({
-        autoEnded,
-        sessionStats: state.sessionStats,
-        settings: state.settings,
-        endlessRunTotal: state.endlessRunTotal,
-        endlessRunWrong: state.endlessRunWrong,
-        trialTarget: state.trialTarget
-      });
+      return study.showSummary(state.sessionStats, root.getTrainerSessionXpGain(state.sessionStats), {completed:autoEnded});
     }
 
     function requestRefresh(source = 'unknown'){

@@ -89,7 +89,7 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
     if(route==='/reading/'){
       await page.locator('#modifiersTab').click();
       await page.screenshot({path:testInfo.outputPath(`setup-${theme}.png`)});
-      await page.locator('#modifiersTab').click();
+      await page.locator('#practiceSetupDone').click();
       await page.locator('#startBtn').click();
       await expectSessionActions(page,theme);
       const key=page.locator('.ma-ios-reading-keyboard__key').first();
@@ -139,9 +139,9 @@ test('System theme follows the device; manual choice persists; canvas charts red
 async function paintSnapshot(page){
   return page.evaluate(()=>{
     const properties=['color','backgroundColor','backgroundImage','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','boxShadow','textShadow','outlineColor','fill','stroke','webkitTextFillColor'];
-    // Guided-set components were introduced on both platforms in 2.71.0 and
+    // Guided and labelled-feedback components were introduced on both platforms in 2.71–2.72 and
     // have no 2.67.0 paint baseline. Their theme/layout checks live in study-flow.
-    const newStudyComponent = el => el.closest('#studySetSetup,#studySessionProgress,#studyFeedback');
+    const newStudyComponent = el => el.closest('#studySetSetup,#studySessionProgress,#studyFeedback,#answerFeedback');
     return [...document.body.querySelectorAll('*'),document.body].filter(el=>!newStudyComponent(el) && el.getClientRects().length && getComputedStyle(el).visibility!=='hidden')
       .map(el=>[el.tagName,el.id,el.className?.baseVal ?? el.className,...['','::before','::after'].map(pseudo=>{
         const style=getComputedStyle(el,pseudo||null);return properties.map(name=>style[name]);

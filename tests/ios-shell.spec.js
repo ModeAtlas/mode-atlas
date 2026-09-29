@@ -235,14 +235,14 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await page.locator('.ma-ios-tabs #modifiersTab').click();
   await expect(page.locator('#modifiersContent')).toBeVisible();
   await expect(page.locator('.ma-ios-tabs #modifiersTab')).toHaveAttribute('aria-expanded', 'true');
-  await page.locator('.ma-ios-tabs #modifiersTab').click();
+  await page.locator('#practiceSetupDone').click();
   await expect(page.locator('#modifiersContent')).toBeHidden();
+  await expect(page.locator('.ma-ios-tabs__rail')).not.toHaveClass(/is-kana-open/);
 
   await page.evaluate(() => document.getElementById('studyNavHideBtn').click());
   await expect(page.locator('.ma-ios-tabs #studyNavShowBtn')).toBeVisible();
   await expect(page.locator('.ma-ios-tabs__links')).toBeHidden();
   await page.locator('.ma-ios-tabs #studyNavShowBtn').click();
-  await page.locator('.ma-ios-kana-back').click();
   await page.locator('.ma-ios-tabs__links .ma-ios-tab[href="/"]').click();
   await expect(page.locator('.ma-ios-tabs__title')).toHaveText('Mode Atlas');
 });

@@ -169,7 +169,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('#heatmap .cell').first()).toBeVisible();
       await page.locator('#modifiersTab').click();
       await expect(page.locator('#modifiersContent')).toHaveClass(/open/);
-      await page.locator('#modifiersTab').click();
+      await page.locator('#practiceSetupDone').click();
       await expect(page.locator('#modifiersContent')).not.toHaveClass(/open/);
       await page.locator('#startBtn').click();
 
@@ -187,10 +187,10 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('body')).not.toHaveClass(/ma-session-paused/);
 
       await page.locator('#skipKanaBtn').click();
-      await expect(page.locator('#hint')).toContainText('Answer:', { timeout: 3000 });
+      await expect(page.locator('#studyFeedback')).toContainText('Correct answer:', { timeout: 3000 });
 
       await page.locator('#endSessionBtn').click();
-      await expect(page.locator('.ma-dialog-layer.is-open .ma-session-dialog-content')).toBeVisible();
+      await expect(page.locator('.ma-dialog-layer.is-open .ma-study-summary')).toBeVisible();
     });
   });
 
@@ -205,10 +205,10 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('#choiceGrid button')).toHaveCount(4);
 
       await page.locator('#choiceGrid button').first().click();
-      await expect(page.locator('#choiceGrid')).toBeVisible();
+      await expect.poll(()=>page.locator('#choiceGrid').isVisible().then(async visible=>visible||await page.locator('#studyFeedback').isVisible())).toBe(true);
 
       await page.locator('#endSessionBtn').click();
-      await expect(page.locator('.ma-dialog-layer.is-open .ma-session-dialog-content')).toBeVisible();
+      await expect(page.locator('.ma-dialog-layer.is-open .ma-study-summary')).toBeVisible();
     });
   });
 

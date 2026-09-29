@@ -152,20 +152,15 @@ html[data-ma-runtime="ios"] body:is(.profile-open,.settings-open) .ma-drawer{
   bottom:calc(var(--ma-ios-dock-height) + 8px);max-height:none;
 }
 
-/* The native setup trigger lives in the dock; its existing drawer opens above it. */
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only{
-  bottom:var(--ma-ios-dock-height);z-index:99;height:0;
-  overflow:visible;pointer-events:none;border:0;background:transparent;box-shadow:none;
+/* The dock trigger opens the same accessible dialog as the web trainer. */
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only{display:none;}
+html[data-ma-runtime="ios"] .ma-practice-sheet{
+  width:min(760px,100%);margin:auto auto 0;max-height:calc(100dvh - env(safe-area-inset-top,0px) - 12px);
+  border-radius:28px 28px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);
 }
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .tab-row{display:none;}
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .drawer-content.open{
-  position:absolute;bottom:0;left:0;width:100%;pointer-events:auto;
-  box-shadow:var(--ma-native-chrome-shadow);
-}
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only .drawer-content{
-  max-height:calc(100dvh - var(--ma-ios-dock-height) - env(safe-area-inset-top,0px) - 64px);
-  overscroll-behavior:contain;
-}
+html[data-ma-runtime="ios"] .ma-practice-sheet__handle{display:grid;place-items:center;flex:none;height:24px;touch-action:none;}
+html[data-ma-runtime="ios"] .ma-practice-sheet__handle span{height:5px;width:36px;border-radius:5px;background:var(--ma-border-strong,var(--ma-muted));opacity:.6;}
+html[data-ma-runtime="ios"] .ma-practice-sheet__header{padding-top:2px;}
 
 /* Keep a session centered in the visible area, and compact it for the keyboard. */
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-shell{display:block;min-height:0;}

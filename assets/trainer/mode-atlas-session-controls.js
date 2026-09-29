@@ -210,7 +210,7 @@
     locked = true;
     prompt.classList.add(correct ? 'flash-correct' : 'flash-wrong');
     feedback = {prompt, onDone, remaining:correct ? 260 : 420, deadline:0, timer:0};
-    feedback.manual = !correct && trainerController.study.showFeedback(completeFeedback);
+    feedback.manual = trainerController.study.showFeedback(completeFeedback);
     if (feedback.manual) { setInputDisabled(true); inputEl.blur(); }
     scheduleFeedback();
   }
@@ -226,10 +226,10 @@
   function markSkipped(){
     recordTrainerActivity();
     const timeTaken = Math.max(0, Date.now() - charStartTime);
-    for (const ch of currentChar.split('')) {
+    for (const ch of getCurrentKanaUnits()) {
       if (!stats[ch]) stats[ch] = { correct: 0, wrong: 0 };
       stats[ch].wrong += 1;
-      updateAverageTime(ch, timeTaken / Math.max(1, currentChar.length));
+      updateAverageTime(ch, timeTaken / Math.max(1, getCurrentKanaUnits().length));
       updateSrsWrong(ch);
     }
     sessionStats.answered += 1; sessionStats.wrong += 1; sessionStats.timings.push(timeTaken);
@@ -246,8 +246,13 @@
     const prompt = document.getElementById('hiragana') || document.getElementById('prompt');
     flashResult(prompt, false, () => isTestModeSession() ? advanceTestModeAfterAnswer() : nextCharacter());
   }
+  function canAnswer(){
+    if (!sessionStarted || paused || locked) return false;
+    if (window.ModeAtlasPracticeModes.timed(settings) && trialEndTime && Date.now() >= trialEndTime) { endSession(true); return false; }
+    return true;
+  }
   function skipCurrentKana(){
-    try { if (!sessionStarted || paused || locked || isElementVisible(gameOverEl)) return; markSkipped(); }
+    try { if (!canAnswer() || isElementVisible(gameOverEl)) return; markSkipped(); }
     catch (e) { console.warn('Skip failed', e); }
   }
   function resetPauseUi(){
@@ -275,7 +280,7 @@
     window.setTimeout(syncPhoneKeyboardState, 80);
   });
 
-  window.ModeAtlasSessionControls = Object.freeze({pause, resume, reset:resetPauseUi, flashResult, get paused(){return paused;}});
+  window.ModeAtlasSessionControls = Object.freeze({pause, resume, canAnswer, reset:resetPauseUi, flashResult, get paused(){return paused;}});
   // Native lifecycle is forwarded once by the platform adapter. The visibility
   // event also catches WebView suspension before an asynchronous bridge callback.
   if (window.ModeAtlasEnv?.isNativeApp) {

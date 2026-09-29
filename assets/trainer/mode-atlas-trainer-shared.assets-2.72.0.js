@@ -54,6 +54,8 @@ function createBaseTrainerDefaultSettings(overrides = {}) {
         testMode: false,
         comboKana: false,
         practiceCount: 0,
+        trialMinutes: 0.5,
+        trialTarget: 20,
         comboMode: "random",
         hiraganaRows: Object.keys(hiraganaRows),
         katakanaRows: [],
@@ -66,7 +68,7 @@ function createBaseTrainerDefaultSettings(overrides = {}) {
 
 function loadTrainerSettings(storageKey, defaults) {
     const loaded = loadJSON(storageKey, defaults);
-    return { ...defaults, ...loaded, activeBottomTab: null };
+    return window.ModeAtlasPracticeModes.normalize({ ...defaults, ...loaded, activeBottomTab: null });
 }
 
 function setElementHidden(el, hidden = true) {
@@ -277,10 +279,19 @@ function buildTestSequence() {
     return pool;
 }
 
+function getRowKeyForChar(kana) {
+    return window.ModeAtlasKanaData.kanaRow(kana);
+}
+
+function getCurrentKanaUnits(value = currentChar) {
+    return window.ModeAtlasKanaData.splitKana(value, getAnswerMapForCurrentMode());
+}
+
 function getAnswerMapForCurrentMode() {
     if (isDailyChallengeSession()) return DAILY_CHALLENGE_CHAR_MAP;
     if (isTestModeSession()) return getTestModePoolMap();
-    return charMap;
+    const focused = sessionStarted ? sessionStats.study?.focusChars || [] : [];
+    return focused.length ? {...charMap, ...Object.fromEntries(focused.map(kana => [kana, window.ModeAtlasKanaCoaching.reading(kana)]))} : charMap;
 }
 
 function formatDailyHistoryTime(ms) {
@@ -330,23 +341,6 @@ function renderDailyChallengeSummary() {
     renderDailyChallengeHistory();
 }
 
-function updateSessionProgressBar(current, total, label, visible = true) {
-    const root = document.getElementById("sessionProgressBar");
-    const fill = document.getElementById("sessionProgressFill");
-    const labelEl = document.getElementById("sessionProgressLabel");
-    const valueEl = document.getElementById("sessionProgressValue");
-    if (!root || !fill || !labelEl || !valueEl) return;
-    const safeTotal = Math.max(0, Number(total || 0));
-    const safeCurrent = Math.max(0, Math.min(safeTotal || Number(current || 0), Number(current || 0)));
-    const show = !!visible && safeTotal > 0;
-    setElementVisible(root, show);
-    if (!show) { fill.style.setProperty('--ma-progress', '0%'); return; }
-    const percent = Math.max(0, Math.min(100, (safeCurrent / safeTotal) * 100));
-    labelEl.textContent = label || 'Session progress';
-    valueEl.textContent = `${safeCurrent} / ${safeTotal}`;
-    fill.style.setProperty('--ma-progress', `${percent}%`);
-}
-
 function updateTopStats() {
     streakEl.textContent = streak;
     highScoreEl.textContent = highScore;
@@ -393,12 +387,19 @@ function renderScoreHistory() {
 }
 
 function updateTrialConfigVisibility() {
-    setElementVisible(trialConfigEl, settings.timeTrial && !settings.speedRun && !settings.dailyChallenge && !settings.testMode);
-    setElementVisible(comboConfigEl, settings.comboKana && !settings.dailyChallenge && !settings.testMode);
+    setElementVisible(trialConfigEl, !sessionStarted && settings.timeTrial && !settings.speedRun && !settings.dailyChallenge && !settings.testMode);
+    setElementVisible(comboConfigEl, !sessionStarted && settings.comboKana && !settings.dailyChallenge && !settings.testMode);
     comboSameRowBtn.classList.toggle("active", settings.comboMode === "same_row");
     comboRandomBtn.classList.toggle("active", settings.comboMode === "random");
     comboSameRowBtn.classList.remove("btn-secondary");
     comboRandomBtn.classList.remove("btn-secondary");
+    if (!sessionStarted) {
+        const trial = window.ModeAtlasPracticeModes.trial(settings.trialMinutes, settings.trialTarget);
+        if (document.activeElement !== trialTimeEl) trialTimeEl.value = String(trial.minutes);
+        if (document.activeElement !== trialTargetEl) trialTargetEl.value = String(trial.target);
+    }
+    trialTimeEl.disabled = sessionStarted;
+    trialTargetEl.disabled = sessionStarted;
     comboSameRowBtn.disabled = sessionStarted;
     comboRandomBtn.disabled = sessionStarted;
 }
@@ -718,7 +719,7 @@ function advanceTestModeAfterAnswer() {
 }
 
 function currentFlowModeIsContinuous() {
-    return settings.endless || settings.timeTrial || settings.speedRun || settings.testMode || !!sessionStats.study;
+    return !isDailyChallengeSession() && !isTestModeSession();
 }
 
 function average(arr) {
@@ -770,138 +771,57 @@ function buildTestModeKanaResults() {
     return out;
 }
 
-function getSessionDifficultyLists() {
-    const entries = Object.entries(sessionStats.perChar).map(([char, data]) => {
-        const attempts = data.correct + data.wrong;
-        const accuracy = attempts ? (data.correct / attempts) : 0;
-        return {
-            char,
-            correct: data.correct,
-            wrong: data.wrong,
-            attempts,
-            accuracy,
-            avgTime: average(data.times)
-        };
-    });
-
-    const hardest = [...entries]
-        .sort((a, b) => {
-            if (a.accuracy !== b.accuracy) return a.accuracy - b.accuracy;
-            return b.wrong - a.wrong;
-        })
-        .slice(0, 5);
-
-    const easiest = [...entries]
-        .sort((a, b) => {
-            if (a.accuracy !== b.accuracy) return b.accuracy - a.accuracy;
-            return a.avgTime - b.avgTime;
-        })
-        .slice(0, 5);
-
-    return { hardest, easiest };
-}
-
-function renderSessionList(container, title, items) {
-    if (!items.length) {
-        setElementHidden(container, true);
-        container.replaceChildren();
-        return;
-    }
-
-    setElementVisible(container, true);
-    const heading = createTrainerEl("h3", "", title);
-    const rows = items.map(item => {
-        const row = createTrainerEl("div", "session-list-item");
-        row.append(
-            createTrainerEl("span", "", item.char),
-            createTrainerEl("span", "", `${item.correct}✓ / ${item.wrong}✗`)
-        );
-        return row;
-    });
-    container.replaceChildren(heading, ...rows);
-}
-
-
-
-
 function beginTrainerSessionEnd() {
-    window.ModeAtlasSessionControls?.reset();
+    window.ModeAtlasSessionControls.reset();
     hideComboTierNotice();
     window.KanaCloudSync?.setSessionCloudPause?.(false);
     window.KanaCloudSync?.flushDeferredSessionSync?.(650);
 }
 
-function applyTrainerStandardSessionEnd(options = {}) {
-    const {
-        sessionStats,
-        inputEl = null,
-        startWrap = null,
-        promptEl = null,
-        showSessionModal,
-        stopTrialTimer,
-        updateBestScores,
-        setGameOverVisible,
-        setSessionActionsVisible,
-        updateTopStats,
-        renderDebugPanel,
-        debugPanel = null,
-        autoEnded = false,
-        afterPromptReset
-    } = options;
-
-    if (sessionStats) {
-        sessionStats.active = false;
-        sessionStats.endTime = Date.now();
+function finishTrainerSession(autoEnded, resetPrompt) {
+    if (!sessionStarted) return;
+    beginTrainerSessionEnd();
+    sessionStarted = false;
+    sessionStats.active = false;
+    sessionStats.endTime = Date.now();
+    let completed = autoEnded;
+    if (isDailyChallengeSession()) {
+        completed = dailySequence.length > 0 && dailyIndex >= dailySequence.length;
+        if (completed) {
+            const dateKey = sessionStats.study.dateKey;
+            const existing = dailyChallengeHistory[dateKey];
+            if (existing) existing.attempts = (existing.attempts || 1) + 1;
+            else {
+                dailyChallengeHistory[dateKey] = {sequence:[...dailySequence],officialScore:dailyCorrect,total:dailySequence.length,timeMs:Math.max(0,Date.now()-dailyStartTime),attempts:1};
+                window.ModeAtlasProgress?.awardOnce?.(`kana.${trainerController.mode}.dailyComplete`,dateKey);
+            }
+        }
+    } else if (isTestModeSession()) {
+        completed = testSequence.length > 0 && testIndex >= testSequence.length;
+        if (completed) saveTestModeResult();
+    } else {
+        const timed = window.ModeAtlasPracticeModes.timed(settings);
+        if (timed) completed = autoEnded && Date.now() >= trialEndTime;
+        updateBestScores(completed);
     }
-
-    if (typeof stopTrialTimer === "function") stopTrialTimer();
-    if (typeof updateBestScores === "function") updateBestScores();
-
-    if (inputEl) inputEl.disabled = true;
-    if (typeof setGameOverVisible === "function") setGameOverVisible(false);
-    if (typeof setSessionActionsVisible === "function") setSessionActionsVisible(false);
-    setElementVisible(startWrap, true);
+    stopTrialTimer();
+    inputEl.disabled = true;
+    inputEl.value = '';
+    setGameOverVisible(false);
+    setSessionActionsVisible(false);
+    setElementVisible(startWrap,true);
     clearHint();
-
-    if (promptEl) promptEl.textContent = "—";
-    if (typeof afterPromptReset === "function") afterPromptReset();
-
-    if (typeof showSessionModal === "function") showSessionModal(autoEnded);
-    if (typeof updateTopStats === "function") updateTopStats();
-    if (debugPanel && typeof renderDebugPanel === "function") renderDebugPanel();
+    resetPrompt();
+    locked = false;
+    onSettingsChanged();
+    saveAll();
+    window.ModeAtlasSounds?.play('finish',{cooldown:130});
+    trainerController.showSessionModal(completed);
 }
-
-function applyTrainerDailyStopUi(options = {}) {
-    const {
-        inputEl = null,
-        startWrap = null,
-        promptEl = null,
-        stopTrialTimer,
-        setGameOverVisible,
-        setSessionActionsVisible,
-        updateTopStats,
-        renderDebugPanel,
-        debugPanel = null,
-        afterPromptReset
-    } = options;
-
-    if (typeof stopTrialTimer === "function") stopTrialTimer();
-    if (inputEl) inputEl.disabled = true;
-    if (typeof setGameOverVisible === "function") setGameOverVisible(false);
-    if (typeof setSessionActionsVisible === "function") setSessionActionsVisible(false);
-    setElementVisible(startWrap, true);
-    clearHint();
-
-    if (promptEl) promptEl.textContent = "—";
-    if (typeof afterPromptReset === "function") afterPromptReset();
-
-    if (typeof updateTopStats === "function") updateTopStats();
-    if (debugPanel && typeof renderDebugPanel === "function") renderDebugPanel();
-}
-
 
 function prepareTrainerSessionStart(options = {}) {
     window.ModeAtlasSessionControls?.reset();
+    window.ModeAtlasPracticeSetup.close();
     recordTrainerActivity();
     window.KanaCloudSync?.setSessionCloudPause?.(true);
     const now = Date.now();
@@ -984,8 +904,9 @@ function startTrainerTimedSession(options = {}) {
 
     const dailyActive = typeof isDailyChallengeSession === "function" && isDailyChallengeSession();
     if (settings.timeTrial && !dailyActive) {
-        const timeMinutes = Math.max(0.1, Number(trialTimeEl?.value) || 0.5);
-        const trialTarget = Math.max(1, Number(trialTargetEl?.value) || 20);
+        const trial = window.ModeAtlasPracticeModes.trial(trialTimeEl?.value,trialTargetEl?.value);
+        const timeMinutes = trial.minutes, trialTarget = trial.target;
+        trialTimeEl.value = String(timeMinutes); trialTargetEl.value = String(trialTarget);
         if (typeof startTimedModeTimer === "function") startTimedModeTimer(timeMinutes);
         return trialTarget;
     }
@@ -1013,69 +934,4 @@ function settleTrainerProgressionBreak(reason = 'trainer-session-end') {
             try { return window.ModeAtlasInstall?.naturalBreak?.(reason) || false; }
             catch { return false; }
         });
-}
-
-function showTrainerSessionModal(options = {}) {
-    const {
-        autoEnded = false,
-        sessionStats,
-        settings,
-        endlessRunTotal = 0,
-        endlessRunWrong = 0,
-        trialTarget = 0
-    } = options;
-
-    if (!sessionStats || !window.ModeAtlasDialog?.feature) return false;
-
-    sessionStats.endTime = Date.now();
-    const total = sessionStats.answered;
-    const accuracy = total ? ((sessionStats.correct / total) * 100) : 0;
-    const timings = Array.isArray(sessionStats.timings) ? sessionStats.timings : [];
-    const avgTime = timings.length ? average(timings) : 0;
-    const fastest = timings.length ? Math.min(...timings) : 0;
-    const slowest = timings.length ? Math.max(...timings) : 0;
-    const durationMs = sessionStats.startTime ? (sessionStats.endTime - sessionStats.startTime) : 0;
-    const xpGain = getTrainerSessionXpGain(sessionStats);
-
-    const cards = [
-        ["Answered", total], ["Right", sessionStats.correct], ["Wrong", sessionStats.wrong],
-        ["Accuracy", `${accuracy.toFixed(1)}%`], ["Best Streak", sessionStats.bestStreak],
-        ["XP gained", `+${xpGain} XP`],
-        ["Avg Time", formatDuration(avgTime)], ["Fastest", formatDuration(fastest)],
-        ["Slowest", formatDuration(slowest)], ["Session Time", formatDuration(durationMs)]
-    ];
-
-    if (settings?.speedRun) {
-        const correct = Math.max(0, endlessRunTotal - endlessRunWrong);
-        const answered = Math.max(0, endlessRunTotal);
-        const wrong = Math.max(0, endlessRunWrong);
-        const avgMs = timings.length ? Math.round(average(timings)) : 0;
-        const speedAccuracy = answered ? Math.round((correct / answered) * 100) : 0;
-        const speedScore = Math.max(0, Math.round((correct * 100) + ((speedAccuracy / 100) * 250) - (wrong * 50) - (avgMs / 20)));
-        cards.push(["Speed Score", speedScore], ["Speed Accuracy", `${speedAccuracy}%`], ["Avg Speed", avgMs ? formatDuration(avgMs) : "—"]);
-    } else if (settings?.timeTrial) {
-        cards.push(["Target", trialTarget], ["Final Score", sessionStats.correct]);
-    }
-
-    const content = document.createElement('div');
-    content.className = 'ma-session-dialog-content';
-    const sessionStatsGrid = document.createElement('div');
-    sessionStatsGrid.className = 'modal-grid ma-session-dialog-grid';
-    sessionStatsGrid.replaceChildren(...cards.map(([label, value]) => createStatCard(label, value)));
-
-    const sessionHardList = document.createElement('div');
-    sessionHardList.className = 'session-list';
-    sessionHardList.hidden = true;
-    const sessionEasyList = document.createElement('div');
-    sessionEasyList.className = 'session-list';
-    sessionEasyList.hidden = true;
-    const { hardest, easiest } = getSessionDifficultyLists();
-    renderSessionList(sessionHardList, "Hardest This Session", hardest);
-    renderSessionList(sessionEasyList, "Strongest This Session", easiest);
-    content.append(sessionStatsGrid, sessionHardList, sessionEasyList);
-
-    const title = autoEnded ? (settings?.speedRun ? "Speed Run Complete" : "Time Trial Complete") : "Session Stats";
-    const dialogPromise = window.ModeAtlasDialog.feature({ kicker:'Session complete', title, contentNode:content, size:'wide' });
-    Promise.resolve(dialogPromise).then(() => settleTrainerProgressionBreak('trainer-session-summary'));
-    return true;
 }
