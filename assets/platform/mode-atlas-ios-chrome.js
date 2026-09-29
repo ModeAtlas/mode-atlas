@@ -134,14 +134,26 @@
       if (event.key === 'Escape' && rail.classList.contains('is-kana-open')) { setKanaMenu(false); kanaTab.focus(); }
     });
 
+    var dockHeight = -1, visibleHeight = -1;
     function measure(){
-      document.documentElement.style.setProperty('--ma-ios-dock-height', dock.getBoundingClientRect().height + 'px');
-      document.documentElement.style.setProperty('--ma-ios-visible-height', (root.visualViewport?.height || root.innerHeight) + 'px');
+      var nextDockHeight = dock.getBoundingClientRect().height;
+      var nextVisibleHeight = root.visualViewport?.height || root.innerHeight;
+      if (nextDockHeight !== dockHeight) {
+        dockHeight = nextDockHeight;
+        document.documentElement.style.setProperty('--ma-ios-dock-height', dockHeight + 'px');
+      }
+      if (nextVisibleHeight !== visibleHeight) {
+        visibleHeight = nextVisibleHeight;
+        document.documentElement.style.setProperty('--ma-ios-visible-height', visibleHeight + 'px');
+      }
     }
-    new MutationObserver(measure).observe(document.body, {attributes:true, attributeFilter:['class']});
+    // Safe-area and font/layout changes need not mutate the body or resize the
+    // viewport. Observe the actual dock, including when editing/focus hides it.
+    new ResizeObserver(measure).observe(dock);
     root.visualViewport?.addEventListener('resize', measure);
     root.addEventListener('resize', measure);
-    root.requestAnimationFrame(measure);
+    root.addEventListener('pageshow', measure);
+    measure();
     try { sessionStorage.setItem('modeAtlasNativeBooted', '1'); } catch (_) {}
   }
 

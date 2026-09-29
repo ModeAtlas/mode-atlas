@@ -164,7 +164,7 @@ The schedule uses device-local calendar hours/minutes. Focus and iOS delivery se
 
 The App target embeds `ModeAtlasWidgets.appex`. Small widgets open Reading; medium widgets offer Reading and Writing. The default `ios/engagement.xcconfig` uses empty `Shared/LocalOnly.entitlements`, so shortcut widgets do not require App Groups. Apple sign-in remains disabled. Both targets must use the same signing team on a physical device.
 
-For live progress, register an App Group with an eligible Apple Developer team and add it to the provisioning for both bundle IDs (`app.modeatlas` and `app.modeatlas.widgets`). Then run:
+For live progress, configure an App Group in Xcode and add it to the provisioning for both bundle IDs (`app.modeatlas` and `app.modeatlas.widgets`). Apple's [current iOS capability table](https://developer.apple.com/help/account/reference/supported-capabilities-ios/) lists App Groups for free Apple Developer accounts as well as paid teams (checked 2026-09-29). Do not treat paid membership as an automatic prerequisite for widget progress. Actual Personal Team provisioning and shared-container access must still be confirmed on the device; the default build keeps optional sharing disabled until configured. Then run:
 
 ```bash
 python3 configure_ios_widgets.py --app-group YOUR_REGISTERED_GROUP_IDENTIFIER

@@ -1,6 +1,7 @@
 /* Native iOS composition. Every selector is gated by the Capacitor runtime. */
 html[data-ma-runtime="ios"]{
-  --ma-ios-dock-height:108px;
+  /* Reserve the full dock before JavaScript measures it, including the home indicator. */
+  --ma-ios-dock-height:calc(105px + env(safe-area-inset-bottom,0px));
   --ma-page-inset-top:max(12px,env(safe-area-inset-top,0px));
   --ma-page-inset-bottom:calc(var(--ma-ios-dock-height) + 20px);
 }

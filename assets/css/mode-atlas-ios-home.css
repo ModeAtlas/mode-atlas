@@ -5,7 +5,7 @@ html[data-ma-runtime="ios"] .atlas-home > :not(.atlas-ios-home){display:none;}
 html[data-ma-runtime="ios"] .atlas-home{width:100%;max-width:680px;padding:12px 18px 0;}
 html[data-ma-runtime="ios"] body.ma-atlas-page::after{display:none;}
 html[data-ma-runtime="ios"] .atlas-ios-home{
-  display:grid;grid-template-rows:auto minmax(min-content,1fr) auto auto;gap:16px;
+  display:grid;grid-template-rows:auto minmax(min-content,1fr) auto auto;gap:12px;
   min-height:calc(100svh - var(--ma-page-inset-top) - var(--ma-page-inset-bottom) - 12px);
   position:relative;z-index:1;
 }
@@ -16,7 +16,7 @@ html[data-ma-runtime="ios"] .atlas-ios-home__brand{display:grid;place-items:cent
 html[data-ma-runtime="ios"] .atlas-ios-home__continue{
   --home-accent:var(--ma-reading);
   display:grid;grid-template-columns:minmax(0,1fr) 96px;grid-template-rows:1fr auto;align-items:center;gap:16px 8px;
-  padding:22px;border-radius:26px;text-decoration:none;color:var(--ma-text-strong);
+  padding:18px;border-radius:26px;text-decoration:none;color:var(--ma-text-strong);
   background:var(--ma-surface);
   border:1px solid var(--ma-border);
 }
@@ -34,7 +34,7 @@ html[data-ma-runtime="ios"] .atlas-ios-home__cta{display:flex;align-items:center
 html[data-ma-runtime="ios"] .atlas-ios-home h2{margin:0;font:800 1rem/1.25 var(--ma-font-display);}
 html[data-ma-runtime="ios"] .atlas-ios-home__section-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 html[data-ma-runtime="ios"] .atlas-ios-home__section-heading>a{display:flex;align-items:center;min-height:32px;text-decoration:none;color:var(--ma-muted);font-size:.72rem;}
-html[data-ma-runtime="ios"] .atlas-ios-home__stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:12px 0;}
+html[data-ma-runtime="ios"] .atlas-ios-home__stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:8px 0;}
 html[data-ma-runtime="ios"] .atlas-ios-home__stats>div{display:grid;gap:4px;text-align:center;border-right:1px solid var(--ma-border);}
 html[data-ma-runtime="ios"] .atlas-ios-home__stats>div:last-child{border:0;}
 html[data-ma-runtime="ios"] .atlas-ios-home__stats strong{font:850 1.7rem/1.1 var(--ma-font-display);color:var(--ma-text-strong);}

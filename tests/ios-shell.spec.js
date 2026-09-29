@@ -292,13 +292,14 @@ test('native trainer page background follows the app theme after the splash', as
 
 test('native safe-area insets survive phone trainer styles and keep the home above the dock', async ({page}, testInfo) => {
   await page.setViewportSize({width:393,height:852});
+  const device=await page.context().newCDPSession(page);
+  await device.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}});
   await page.addInitScript(() => {
     localStorage.setItem('modeAtlasDisplayMode','desktop');
     localStorage.setItem('maWhatsNewSeenVersion','test-seen');
     localStorage.setItem('modeAtlasKanaSetupComplete','true');
     localStorage.setItem('modeAtlasOnboardingComplete','true');
     window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
-    document.addEventListener('DOMContentLoaded',()=>document.documentElement.style.setProperty('--ma-page-inset-top','59px'));
   });
   for(const path of ['/reading/','/writing/']){
     await page.goto(path);

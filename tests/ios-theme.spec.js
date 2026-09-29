@@ -78,6 +78,7 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
       await page.screenshot({path:testInfo.outputPath(`setup-${theme}.png`)});
       await page.locator('#modifiersTab').click();
       await page.locator('#startBtn').click();
+      for(const id of ['pauseSessionBtn','endSessionBtn'])await expect(page.locator(`#${id}`)).toHaveCSS('background-color',theme==='light'?'rgb(237, 237, 240)':'rgb(48, 48, 51)');
       const key=page.locator('.ma-ios-reading-keyboard__key').first();
       await expect(key).toBeVisible();
       await page.screenshot({path:testInfo.outputPath(`keyboard-${theme}.png`)});
@@ -87,6 +88,7 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
     }
     if(route==='/writing/'){
       await page.locator('#startBtn').click();
+      for(const id of ['pauseSessionBtn','endSessionBtn'])await expect(page.locator(`#${id}`)).toHaveCSS('background-color',theme==='light'?'rgb(237, 237, 240)':'rgb(48, 48, 51)');
       const choices=page.locator('.choice-btn');await expect(choices.first()).toBeVisible();
       // Explicit visual states, without relying on a randomly selected question.
       await choices.first().evaluate(el=>el.classList.add('correct'));

@@ -1,3 +1,10 @@
+## 2.68.1 - 2026-09-29
+
+- Reserved the iPhone home-indicator inset before dock measurement and replaced body-mutation sampling with observation of the dock's actual size, including restored pages.
+- Tightened native Atlas spacing to fit its header, continuation, progress and final actions above the dock, while preserving intrinsic scrolling for larger text and short screens.
+- Separated secondary trainer actions from selected options at their shared source; iOS Pause/End session now use neutral control surfaces with original website colours retained.
+- Added real top/bottom safe-area emulation, cold/return navigation, delayed progress, safe-area changes and large-text reachability coverage.
+
 ## 2.68.0 - 2026-09-29
 
 - Added an iOS-only semantic colour palette: paper/white Light mode and neutral graphite/charcoal Dark mode, with shared geometry and unchanged website paint.

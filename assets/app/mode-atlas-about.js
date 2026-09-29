@@ -13,14 +13,14 @@
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
   const WHATS_NEW_COPY = window.ModeAtlasEnv?.isNativeApp
-    ? 'A fresh look for iPhone and iPad, with clearer Light and Dark appearances.'
-    : 'This update introduces refreshed Light and Dark appearances in the iOS app.';
+    ? 'A tidier home screen and calmer practice controls.'
+    : 'This update refines the iOS home screen and practice controls.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Clean white surfaces in Light mode and neutral charcoal in Dark mode on iOS.',
-    'Consistent colours for buttons, practice feedback and progress.',
-    'Appearance-aware iOS launch screen, status bar and widgets.'
+    'Atlas fits above the iPhone dock from launch.',
+    'Neutral Pause and End session buttons in both appearances.',
+    'Larger text stays readable, with scrolling when needed.'
   ];
 
   function storeGet(key, fallback = '') {

@@ -1101,11 +1101,16 @@ body.ma-writing-page{
 .ma-trainer-input:focus{border-color:color-mix(in srgb,var(--ma-trainer-accent) 55%,var(--ma-border));box-shadow:0 0 0 3px color-mix(in srgb,var(--ma-trainer-accent) 15%,transparent);}
 .ma-trainer-button:hover:not(:disabled){border-color:color-mix(in srgb,var(--ma-trainer-accent) 58%,var(--ma-border));box-shadow:0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 24%,transparent);}
 .ma-trainer-button.active,
-.ma-trainer-button[aria-pressed="true"],
-.ma-trainer-button.btn-secondary:not(.ma-trainer-skip){
+.ma-trainer-button[aria-pressed="true"]{
   background:var(--ma-native-selected,linear-gradient(180deg,color-mix(in srgb,var(--ma-trainer-accent) 24%,var(--ma-card-2)),color-mix(in srgb,var(--ma-trainer-accent) 12%,var(--ma-card-3))));
   border-color:color-mix(in srgb,var(--ma-trainer-accent) 58%,var(--ma-border));
   color:var(--ma-trainer-active-text);
+}
+/* Session actions are ordinary controls, not selected practice options. */
+.ma-trainer-button.btn-secondary:not(.ma-trainer-skip){
+  background:var(--ma-native-control,linear-gradient(180deg,color-mix(in srgb,var(--ma-trainer-accent) 24%,var(--ma-card-2)),color-mix(in srgb,var(--ma-trainer-accent) 12%,var(--ma-card-3))));
+  border-color:var(--ma-native-border,color-mix(in srgb,var(--ma-trainer-accent) 58%,var(--ma-border)));
+  color:var(--ma-native-text,var(--ma-trainer-active-text));
 }
 
 /* Side panels deliberately clear the sticky shared navigation on desktop. */
