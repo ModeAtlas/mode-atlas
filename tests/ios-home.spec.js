@@ -47,7 +47,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: cold launch, safe-area c
   await expectCompact(page);
   // Simulate cloud progress arriving after the first document paint.
   await page.evaluate(()=>{
-    window.ModeAtlasProgress.getSummary=()=>({level:15,lifetimeCorrect:6214,levelXp:264,levelRequirement:800,progress:.33});
+    window.ModeAtlasProgress={...window.ModeAtlasProgress,getSummary:()=>({level:15,lifetimeCorrect:6214,levelXp:264,levelRequirement:800,progress:.33})};
     window.dispatchEvent(new Event('modeAtlasProgressChanged'));
   });
   await expect(page.locator('#iosHomeCorrect')).toHaveText('6,214');
