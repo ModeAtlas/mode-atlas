@@ -149,7 +149,7 @@
     }
     // Safe-area and font/layout changes need not mutate the body or resize the
     // viewport. Observe the actual dock, including when editing/focus hides it.
-    new ResizeObserver(measure).observe(dock);
+    new ResizeObserver(measure).observe(dock, {box:'border-box'});
     root.visualViewport?.addEventListener('resize', measure);
     root.addEventListener('resize', measure);
     root.addEventListener('pageshow', measure);

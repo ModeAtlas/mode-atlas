@@ -41,6 +41,19 @@ async function settle(page){
   });
 }
 
+async function expectSessionActions(page,theme){
+  // Starting practice replaces the button under the mouse with Pause. Check
+  // the resting and hover states separately, without retaining that hover.
+  await page.mouse.move(0,0);
+  for(const id of ['pauseSessionBtn','endSessionBtn']){
+    const button=page.locator(`#${id}`);
+    await expect(button).toHaveCSS('background-color',theme==='light'?'rgb(237, 237, 240)':'rgb(48, 48, 51)');
+    await button.hover();
+    await expect(button).toHaveCSS('background-color',theme==='light'?'rgb(225, 225, 230)':'rgb(58, 58, 63)');
+    await page.mouse.move(0,0);
+  }
+}
+
 for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers, feedback and keyboard`,async({page},testInfo)=>{
   test.setTimeout(120000);
   await prepare(page,theme);
@@ -78,7 +91,7 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
       await page.screenshot({path:testInfo.outputPath(`setup-${theme}.png`)});
       await page.locator('#modifiersTab').click();
       await page.locator('#startBtn').click();
-      for(const id of ['pauseSessionBtn','endSessionBtn'])await expect(page.locator(`#${id}`)).toHaveCSS('background-color',theme==='light'?'rgb(237, 237, 240)':'rgb(48, 48, 51)');
+      await expectSessionActions(page,theme);
       const key=page.locator('.ma-ios-reading-keyboard__key').first();
       await expect(key).toBeVisible();
       await page.screenshot({path:testInfo.outputPath(`keyboard-${theme}.png`)});
@@ -88,7 +101,7 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
     }
     if(route==='/writing/'){
       await page.locator('#startBtn').click();
-      for(const id of ['pauseSessionBtn','endSessionBtn'])await expect(page.locator(`#${id}`)).toHaveCSS('background-color',theme==='light'?'rgb(237, 237, 240)':'rgb(48, 48, 51)');
+      await expectSessionActions(page,theme);
       const choices=page.locator('.choice-btn');await expect(choices.first()).toBeVisible();
       // Explicit visual states, without relying on a randomly selected question.
       await choices.first().evaluate(el=>el.classList.add('correct'));
