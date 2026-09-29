@@ -6,6 +6,7 @@
 
   window.ModeAtlasSettingsMenu = {
     markup({ href }){
+      const native = !!window.ModeAtlasEnv?.isNativeApp;
       return `
         <div class="ma-drawer-backdrop ma-settings-backdrop" id="settingsBackdrop" data-ma-drawer-close="settings"></div>
         <aside class="ma-drawer ma-shared-settings-drawer" id="settingsDrawer" data-ma-shared-drawer="settings" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settingsDrawerTitle">
@@ -23,7 +24,7 @@
               <div class="ma-settings-section-title" id="maPreferencesTitle">Study environment</div>
             </div>
             <div class="ma-setting-list">
-              <div class="ma-setting-row ma-display-panel">
+              ${native ? '' : `<div class="ma-setting-row ma-display-panel">
                 <div class="ma-setting-row__copy">
                   <div class="ma-setting-row__label">Display</div>
                                   </div>
@@ -33,7 +34,7 @@
                   <button class="ma-button ma-display-option" data-display="tablet" type="button">Tablet</button>
                   <button class="ma-button ma-display-option" data-display="phone" type="button">Phone</button>
                 </div>
-              </div>
+              </div>`}
 
               <div class="ma-setting-row ma-sound-panel">
                 <div class="ma-setting-row__copy">
@@ -74,6 +75,7 @@
                   <button class="ma-button ma-button--primary" type="button" data-ma-unified-export>${icon(href,'download')}<span>Export</span></button>
                   <button class="ma-button" type="button" data-ma-unified-copy>Copy</button>
                   <button class="ma-button" type="button" data-ma-unified-import>${icon(href,'upload')}<span>Import</span></button>
+                  <button class="ma-button" type="button" data-ma-repair-data>Repair save</button>
                 </div>
                 <input type="file" accept=".json,application/json" data-ma-unified-file class="ma-file-input" hidden />
                 <div class="ma-status ma-settings-status" data-ma-save-status role="status" aria-live="polite"></div>
@@ -82,22 +84,14 @@
               <div class="ma-setting-row ma-setting-row--stack ma-tools-panel">
                 <div class="ma-setting-row__copy">
                   <div class="ma-setting-row__label">Application</div>
-                  <div class="ma-setting-row__description">Version <span data-ma-current-version></span> · installation and update tools.</div>
+                  <div class="ma-setting-row__description">Version <span data-ma-current-version></span>${native ? '' : ' · installation and update tools.'}</div>
                 </div>
                 <div class="ma-setting-row__control ma-action-row ma-settings-inline-actions">
                   <button class="ma-button" type="button" data-ma-about-open>${icon(href,'info')}<span>About</span></button>
-                  <button class="ma-button" type="button" data-ma-install>Install app</button>
+                  ${native ? '' : '<button class="ma-button" type="button" data-ma-install>Install app</button>'}
                   <button class="ma-button ma-button--primary" id="maCheckUpdatesBtn" type="button" data-ma-check-updates>${icon(href,'refresh')}<span data-ma-update-label>Check for updates</span></button>
                 </div>
                 <div class="ma-status ma-settings-status" id="maUpdateStatus">Current version: <span data-ma-current-version></span></div>
-              </div>
-
-              <div class="ma-setting-row ma-setting-row--stack">
-                <div class="ma-setting-row__copy">
-                  <div class="ma-setting-row__label">Repair save data</div>
-                  <div class="ma-setting-row__description">Use only if saved progress looks incomplete or inconsistent.</div>
-                </div>
-                <div class="ma-setting-row__control"><button class="ma-button" type="button" data-ma-repair-data>Repair save data</button></div>
               </div>
 
               <div class="ma-setting-row ma-setting-row--stack ma-setting-row--danger">

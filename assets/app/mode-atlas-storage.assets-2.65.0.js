@@ -204,10 +204,12 @@
     return keys;
   }
   function clearAppData() {
-    return {
+    const result = {
       local: clearOwnedStorage(localStorage, isAppLocalKey),
       session: clearOwnedStorage(sessionStorage, isAppSessionKey),
     };
+    window.dispatchEvent(new CustomEvent('modeAtlasDataCleared'));
+    return result;
   }
 
 

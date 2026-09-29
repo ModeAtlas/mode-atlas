@@ -275,6 +275,7 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-date.js',
     'assets/data/mode-atlas-kana-data.js',
     'assets/app/mode-atlas-kana-metrics.js',
+    'assets/platform/mode-atlas-native-engagement.js',
     'assets/achievements/mode-atlas-achievements-ui.js',
 )
 ACCOUNT_SCRIPTS = (
@@ -312,7 +313,7 @@ def _interactive_scripts(
 
 PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
     'index.html': FrontendAssetConfig(
-        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-home-page.css',),
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-home-page.css', 'assets/css/mode-atlas-ios-home.css'),
         body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-home-page.js',)),
     ),
     'kana/index.html': FrontendAssetConfig(

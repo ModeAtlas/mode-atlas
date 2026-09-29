@@ -215,7 +215,7 @@ test('shared shell regression guards keep nav spacing, sound controls, and train
 
   assert.match(kanaCss, /padding:\s*0 24px 24px;/, 'Kana top frame padding must not stack above shared nav');
   assert.match(resultsCss, /padding:\s*0 22px 22px;/, 'Results top frame padding must not stack above shared nav');
-  assert.match(studyCss, /body\.ma-reading-page,[\s\S]*?body\.ma-writing-page\{[\s\S]*?padding:0 24px 24px;/,
+  assert.match(studyCss, /body\.ma-reading-page,[\s\S]*?body\.ma-writing-page\{[\s\S]*?padding:var\(--ma-page-inset-top,0px\) 24px var\(--ma-page-inset-bottom,24px\);/,
     'Reading/Writing top frame padding must be owned by the shared trainer stylesheet');
   assert.match(read('wordbank/index.html'), /class="wrap ma-page-frame"/, 'Word Bank must use the shared page frame');
   assert.match(wordbankCss, /\.ma-wordbank-page \.wrap\s*\{[\s\S]*?margin-bottom:\s*56px;/, 'Word Bank wrapper may own bottom rhythm only');

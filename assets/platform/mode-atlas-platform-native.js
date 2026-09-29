@@ -78,7 +78,8 @@
       return {
         notifications: hasBridge('requestNotifications'),
         appBadge: hasBridge('setBadge'),
-        widgets: hasBridge('publishWidgetSnapshot'),
+        widgets: false, // No WidgetKit extension or App Group is enabled yet.
+        widgetSnapshots: hasBridge('publishWidgetSnapshot'),
         appIntents: false,
         authentication: providers.length > 0,
         authProviders: providers
@@ -105,6 +106,14 @@
     requestNotifications: async function(){
       if (!hasBridge('requestNotifications')) return { granted:false, supported:false };
       return nativeBridge.requestNotifications();
+    },
+    getNotificationStatus: async function(){
+      if (!hasBridge('getNotificationStatus')) return {granted:false, supported:false};
+      return nativeBridge.getNotificationStatus();
+    },
+    configureStudyReminder: async function(options){
+      if (!hasBridge('configureStudyReminder')) return {supported:false, enabled:false};
+      return nativeBridge.configureStudyReminder(options);
     },
     setBadge: async function(value){
       if (!hasBridge('setBadge')) return false;

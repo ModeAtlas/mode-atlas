@@ -1,3 +1,10 @@
+## 2.65.0 - 2026-09-29
+
+- Rebuilt the iOS home around a contextual continuation card, real level progress and a daily challenge, with responsive height and native-only styling.
+- Fixed Reading/Writing top clipping by making shared trainer spacing consume the native safe-area insets; automatic device sizing ignores saved browser scaling.
+- Removed native Display/Install settings and moved Repair save alongside the shared save actions.
+- Added an entitlement-free native engagement foundation: protected progress snapshot storage and explicit local reminder permission/schedule/cancel APIs. Widget extension and reminder settings UI remain future work.
+
 ## 2.59.0 - 2026-09-28
 
 - Rebuilt the iOS dock as the only native navigation surface, moving the existing Profile, Settings and Focus controls into it without duplicating their behavior.

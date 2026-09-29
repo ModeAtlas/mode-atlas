@@ -281,3 +281,30 @@ test('native trainer page background follows the app theme after the splash', as
     expect(colors.document).toBe(colors.theme);
   }
 });
+
+test('native safe-area insets survive phone trainer styles and keep the home above the dock', async ({page}, testInfo) => {
+  await page.setViewportSize({width:393,height:852});
+  await page.addInitScript(() => {
+    localStorage.setItem('modeAtlasDisplayMode','desktop');
+    localStorage.setItem('modeAtlasOnboardingComplete','true');
+    window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
+    document.addEventListener('DOMContentLoaded',()=>document.documentElement.style.setProperty('--ma-page-inset-top','59px'));
+  });
+  for(const path of ['/reading/','/writing/']){
+    await page.goto(path);
+    await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode','phone');
+    await expect(page.locator('.ma-ios-tabs')).toBeVisible();
+    await expect.poll(()=>page.evaluate(()=>parseFloat(getComputedStyle(document.body).paddingTop))).toBe(59);
+    const top=await page.locator('.ma-trainer-card').evaluate(el=>el.getBoundingClientRect().top);
+    expect(top).toBeGreaterThanOrEqual(59);
+    await page.screenshot({path:testInfo.outputPath(path.includes('reading')?'native-reading.png':'native-writing.png')});
+  }
+  await page.goto('/');
+  await expect(page.locator('.atlas-ios-home')).toBeVisible();
+  await expect.poll(()=>page.evaluate(()=>{
+    const home=document.querySelector('.atlas-ios-home').getBoundingClientRect();
+    const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
+    return home.bottom<=dock.top && dock.top-home.bottom<32 && document.documentElement.scrollHeight<=innerHeight+1;
+  })).toBe(true);
+  await page.screenshot({path:testInfo.outputPath('native-home.png')});
+});

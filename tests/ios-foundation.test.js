@@ -188,3 +188,62 @@ test('native destination router accepts only product links and consumes a launch
   vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'), context);
   assert.equal(launchCount, 1);
 });
+
+test('native engagement snapshot excludes identity and permission requires an explicit action', async () => {
+  const calls = [];
+  let refresh;
+  let granted = true;
+  const window = {
+    ModeAtlasEnv:{isNativeApp:true},
+    ModeAtlasProgress:{getSummary:() => ({level:4,lifetimeCorrect:73,progress:.5,uid:'private',email:'private@example.com'})},
+    ModeAtlasKanaMetrics:{kanaStats:() => ({streak:3,dailyDone:true})},
+    AtlasPlatform:{
+      getCapabilities:() => ({notifications:true,widgetSnapshots:true}),
+      publishWidgetSnapshot:async value => calls.push(['snapshot',value]),
+      requestNotifications:async () => { calls.push(['permission']); return {granted,status:'denied'}; },
+      configureStudyReminder:async value => { calls.push(['reminder',value]); return value; }
+    },
+    addEventListener:() => {}
+  };
+  vm.runInNewContext(read('assets/platform/mode-atlas-native-engagement.js'), {
+    window, document:{addEventListener:() => {}}, console,
+    setTimeout:fn => {refresh=fn;return 1;},clearTimeout:() => {},Date
+  });
+  assert.equal(calls.length,0);
+  await refresh();
+  assert.equal(calls[0][0],'snapshot');
+  assert.equal(calls[0][1].correct,73);
+  assert.equal(calls[0][1].destination,'kana');
+  assert.equal(JSON.stringify(calls).includes('private'),false);
+  calls.length=0;
+  await window.ModeAtlasNativeEngagement.configureReminder({enabled:false});
+  assert.equal(calls.length,1);
+  assert.equal(calls[0][0],'reminder');
+  await assert.rejects(window.ModeAtlasNativeEngagement.configureReminder({enabled:true,hour:25}));
+  assert.equal(calls.length,1);
+  granted=false;
+  const result=await window.ModeAtlasNativeEngagement.configureReminder({enabled:true,hour:18,minute:30});
+  assert.equal(result.enabled,false);
+  assert.equal(calls.length,2);
+  granted=true;
+  await window.ModeAtlasNativeEngagement.configureReminder({enabled:true,hour:18,minute:30});
+  assert.equal(calls.at(-1)[1].hour,18);
+  assert.equal(calls.at(-1)[1].minute,30);
+});
+
+test('native Settings omit browser display/install controls and keep repair with save actions', () => {
+  function markup(native){
+    const window={ModeAtlasEnv:{isNativeApp:native}};
+    vm.runInNewContext(read('assets/ui/mode-atlas-settings-menu.js'),{window});
+    return window.ModeAtlasSettingsMenu.markup({href:value=>value});
+  }
+  const native=markup(true), web=markup(false);
+  assert.doesNotMatch(native,/ma-display-panel|data-ma-install/);
+  assert.match(web,/ma-display-panel/);
+  assert.match(web,/data-ma-install/);
+  for(const html of [native,web]){
+    assert.equal((html.match(/data-ma-repair-data/g)||[]).length,1);
+    assert.match(html,/data-ma-unified-import[\s\S]*?data-ma-repair-data[\s\S]*?<\/div>\s*<input type="file"/);
+    assert.doesNotMatch(html,/>Repair save data<\/div>/);
+  }
+});

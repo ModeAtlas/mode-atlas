@@ -1,10 +1,12 @@
 /* Native iOS composition. Every selector is gated by the Capacitor runtime. */
 html[data-ma-runtime="ios"]{
   --ma-ios-dock-height:108px;
+  --ma-page-inset-top:max(12px,env(safe-area-inset-top,0px));
+  --ma-page-inset-bottom:calc(var(--ma-ios-dock-height) + 20px);
 }
 html[data-ma-runtime="ios"] body{
-  padding-top:max(12px,env(safe-area-inset-top,0px));
-  padding-bottom:calc(var(--ma-ios-dock-height) + 20px);
+  padding-top:var(--ma-page-inset-top);
+  padding-bottom:var(--ma-page-inset-bottom);
 }
 html[data-ma-runtime="ios"] .ma-nav,
 html[data-ma-runtime="ios"] .ma-nav-spacer{display:none!important;}

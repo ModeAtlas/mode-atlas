@@ -100,15 +100,22 @@
     const viewportHeight = Number(viewport?.height || window.innerHeight || 0);
     if (!viewportHeight) return;
 
-    const inset = 12;
-    const available = Math.max(0, viewportHeight - inset * 2);
+    const inset = nativeIOS ? Math.max(12, parseFloat(getComputedStyle(document.body).paddingTop) || 0) : 12;
+    let viewportBottom = viewportTop + viewportHeight - 12;
+    if (nativeIOS) {
+      for (const selector of ['.ma-ios-tabs', '.ma-ios-reading-keyboard']) {
+        const element = document.querySelector(selector);
+        if (element && element.getClientRects().length) viewportBottom = Math.min(viewportBottom, element.getBoundingClientRect().top - 12);
+      }
+    }
+    const available = Math.max(0, viewportBottom - viewportTop - inset);
     const regionHeight = Math.max(0, inputRect.bottom - frameRect.top);
     let targetTop = viewportTop + inset;
 
     if (regionHeight < available) {
       targetTop += nativeIOS ? Math.max(0, (available - regionHeight) / 2) : Math.max(0, Math.min(36, (available - regionHeight) * 0.35));
     } else {
-      targetTop = Math.max(viewportTop + 6, viewportTop + viewportHeight - inset - regionHeight);
+      targetTop = nativeIOS ? viewportTop + inset : Math.max(viewportTop + 6, viewportTop + viewportHeight - inset - regionHeight);
     }
 
     const delta = frameRect.top - targetTop;

@@ -21,6 +21,10 @@ private struct ModeAtlasRouter: Router {
 }
 
 private final class ModeAtlasBridgeViewController: CAPBridgeViewController {
+    override func capacitorDidLoad() {
+        bridge?.registerPluginInstance(ModeAtlasNativePlugin())
+    }
+
     override func router() -> Router { ModeAtlasRouter() }
 
     override func webView(with frame: CGRect, configuration: WKWebViewConfiguration) -> WKWebView {

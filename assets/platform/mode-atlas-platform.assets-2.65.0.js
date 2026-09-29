@@ -80,6 +80,8 @@
     openExternalLink: function(url){ return call('openExternalLink', [String(url || '')], false); },
     openDestination: function(destination, options){ return call('openDestination', [destination, options || {}], false); },
     requestNotifications: function(){ return call('requestNotifications', [], { granted:false, supported:false }); },
+    getNotificationStatus: function(){ return call('getNotificationStatus', [], { granted:false, supported:false }); },
+    configureStudyReminder: function(options){ return call('configureStudyReminder', [options || {}], { supported:false, enabled:false }); },
     setBadge: function(value){ return call('setBadge', [value], false); },
     publishWidgetSnapshot: function(snapshot){ return call('publishWidgetSnapshot', [snapshot], false); },
     authenticate: function(provider){ return call('authenticate', [String(provider || '')], { handled:false }); },

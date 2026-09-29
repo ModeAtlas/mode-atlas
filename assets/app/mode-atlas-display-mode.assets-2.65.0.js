@@ -32,7 +32,7 @@
     storeSet(STORAGE_KEY, mode);
   }
 
-  function getMode() { return readStoredMode(); }
+  function getMode() { return window.ModeAtlasEnv?.isNativeApp ? 'auto' : readStoredMode(); }
 
   function resolveAutoMode() {
     const width = Math.min(window.innerWidth || 1200, document.documentElement?.clientWidth || window.innerWidth || 1200);
@@ -42,7 +42,7 @@
   }
 
   function getEffectiveMode(mode = getMode()) {
-    const normalized = normalizeMode(mode);
+    const normalized = window.ModeAtlasEnv?.isNativeApp ? 'auto' : normalizeMode(mode);
     return normalized === 'auto' ? resolveAutoMode() : normalized;
   }
 

@@ -15,14 +15,22 @@
     const kana=window.ModeAtlasKanaMetrics?.kanaStats?.()||{};
     const link=$('#iosHomeContinue');
     if(link)link.href=isUser?normalizeHref(last?.href):'/reading/';
-    set('#iosHomeGreeting',isUser?'Ready for another step?':'Start with a few minutes of kana.');
+    set('#iosHomeGreeting',isUser?'Pick up your rhythm. A little practice goes a long way.':'Build confidence, one kana at a time.');
+    const writing = link?.getAttribute('href') === '/writing/';
+    if(link)link.dataset.mode = writing ? 'writing' : 'reading';
+    set('#iosHomeContinueSymbol',writing?'書':'あ');
     set('#iosHomeContinueKicker',isUser?'Continue studying':'Your first step');
     set('#iosHomeContinueTitle',isUser?normalizeTitle(last):'Start Reading');
     set('#iosHomeContinueMeta',isUser?relativeTime(read('modeAtlasLastStudiedAt','0')):'Begin with kana');
     set('#iosHomeStreak',Math.max(0,Number(kana.streak)||0));
     set('#iosHomeLevel',Math.max(1,Number(summary.level)||1));
     set('#iosHomeCorrect',Math.max(0,Number(summary.lifetimeCorrect)||0).toLocaleString());
-    set('#iosHomeDailyStatus',kana.dailyDone?'Daily practice complete. Nicely done.':'Ready for a short practice?');
+    set('#iosHomeDailyStatus',kana.dailyDone?'✓ Daily challenge complete':'Try today’s daily challenge');
+    const daily = $('.atlas-ios-home__today');
+    if(daily)daily.href = kana.dailyDone ? '/kana/' : '/reading/?mode=daily';
+    set('#iosHomeLevelMeta',`${Math.max(0,Number(summary.levelXp)||0)} / ${Math.max(1,Number(summary.levelRequirement)||1)} XP to level ${Math.max(1,Number(summary.level)||1)+1}`);
+    const progress = $('#iosHomeLevelProgress');
+    if(progress)progress.value = Math.min(100,Math.max(0,Number(summary.progress)||0)*100);
   }
   render();document.addEventListener('ma:ui-refresh',render);document.addEventListener('ma:onboarding-complete',render);window.addEventListener('modeAtlasCloudDataChanged',render);window.addEventListener('modeAtlasProgressChanged',render);window.addEventListener('pageshow',event=>{if(event.persisted)render()});
 })();

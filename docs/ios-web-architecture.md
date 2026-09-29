@@ -123,3 +123,59 @@ reauthentication; cancellation performs no account or data mutation.
 This remains a multi-document Capacitor app. Navigation can reload document
 controllers; smoothing the transition does not turn it into a native screen
 stack. Real-device testing remains required for provider UI and signed builds.
+
+
+## Ownership review and engagement foundation (2.65.0)
+
+The 2.64 trainer consolidation exposed an existing specificity conflict: the
+shared phone body rule set padding-top to zero, beating the native body rule.
+The shared trainer now consumes `--ma-page-inset-top/bottom` with the original
+web fallbacks. Native chrome supplies these values once, including the measured
+dock height. Keyboard framing also respects that top inset and visible dock/pad.
+This fixes the competing layout inputs instead of adding another high-specificity
+body override. Native display mode ignores the saved browser preference and
+responds to the device width (including tablets and rotation).
+
+Native home composition is isolated in `mode-atlas-ios-home.css`; web composition
+stays in `mode-atlas-home-page.css`. Both use the same progress and Kana metrics.
+Settings conditionally renders Display/Install controls only for web. Repair
+save has one control in the existing Save data row on both platforms. The shared
+repair, reset, import/export and account deletion handlers have not been copied.
+
+`ModeAtlasNativeEngagement` projects the existing summary/metrics into a versioned
+non-identifying snapshot: level, correct count, streak, level progress, daily
+completion, timestamp and a whitelisted destination. It refreshes after progress,
+cloud hydration, data clearing and returning to the foreground. It owns no
+learning calculations, account session, save format or Firestore writes.
+`ModeAtlasNativePlugin.swift` validates and atomically stores this projection in
+protected app-local Application Support. `widgetSnapshots` is supported;
+`widgets` remains false. A real widget is **not yet shipped**.
+
+The same native plugin exposes notification status, explicit permission requests,
+and daily local reminder scheduling/cancellation using one stable identifier.
+Initialization never asks for permission or schedules a notification. A future
+reminder Settings control must call `configureReminder` only after the user's
+explicit choice, handle denial, and reconcile against OS settings. The current
+release contains no reminder UI, remote push registration, or marketing payloads.
+No new entitlements or dependencies are required for this foundation. Apple
+sign-in remains disabled for Personal Team device testing.
+
+Next widget work: add a signed WidgetKit extension and App Group; move the single
+snapshot store to the shared container; add timeline freshness/placeholder and
+reset/sign-out privacy behavior; use existing modeatlas://open destinations;
+reload timelines on accepted snapshots. Do not share Firebase credentials with
+the extension. Device tests must cover notification permission denial/revocation,
+rescheduling, local-time changes and tapping a notification before exposing UI.
+
+Research: Duolingo's unified next-step home and Headspace's Today recommendations
+informed the focused continuation card, daily action and glanceable progress.
+The dashboard uses actual Mode Atlas progress rather than invented recommendations.
+- https://blog.duolingo.com/new-duolingo-home-screen-design/
+- https://www.headspace.com/integrations/apple
+- https://developer.apple.com/design/human-interface-guidelines/widgets
+- https://developer.apple.com/documentation/usernotifications/scheduling-a-notification-locally-from-your-app
+- https://developer.apple.com/documentation/xcode/configuring-app-groups
+
+Validation includes source/generated asset parity, shared web regressions,
+phone safe-area geometry and native simulator compilation. A passing simulator
+build does not establish signed physical-device notification behavior.
