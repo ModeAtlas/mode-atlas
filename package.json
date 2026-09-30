@@ -10,7 +10,7 @@
     "test:report": "playwright show-report",
     "build:revision": "python3 build_revision_assets.py",
     "audit": "python3 audit_project.py",
-    "release:check": "python3 build_revision_assets.py && python3 build_social_backend.py && python3 sync_ios_project.py && python3 validate_ios_firebase_config.py --require && python3 audit_project.py && python3 build_ios_web.py --check && node --test tests/backend.test.js tests/frontend.test.js tests/ios-foundation.test.js tests/ios-theme.test.js tests/study-flow.test.js tests/progression.test.js tests/social.test.js",
+    "release:check": "python3 build_revision_assets.py && python3 build_social_backend.py && python3 sync_ios_project.py && python3 validate_ios_firebase_config.py --require && python3 audit_project.py && python3 -m unittest discover -s tests -p 'test_web_publish.py' -v && python3 build_ios_web.py --check && node --test tests/backend.test.js tests/frontend.test.js tests/ios-foundation.test.js tests/ios-theme.test.js tests/study-flow.test.js tests/progression.test.js tests/social.test.js",
     "test:backend": "node --test tests/backend.test.js",
     "test:frontend": "node --test tests/frontend.test.js",
     "build:ios-web": "python3 build_ios_web.py",

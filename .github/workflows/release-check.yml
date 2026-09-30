@@ -25,6 +25,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Package the committed public website
+        run: python3 build_web.py --output "$RUNNER_TEMP/mode-atlas-web"
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -85,6 +88,8 @@ jobs:
           retention-days: 7
 
       - name: Run desktop and mobile browser smoke tests
+        env:
+          MODE_ATLAS_WEB_ROOT: ${{ runner.temp }}/mode-atlas-web
         run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
 
       - name: Build deterministic iOS web payload
