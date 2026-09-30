@@ -58,7 +58,8 @@ for(const layout of [
 });
 test('account navigation keeps focus and settings context across a cancelled destructive action',async({page})=>{
   await prepare(page);
-  await page.locator('[data-settings-open]').click();
+  await page.locator('#profileOpenBtn').click();
+  await page.getByRole('tab',{name:'Settings',exact:true}).click();
   const settings=page.locator('#maAccount-settings');
   await settings.getByRole('button',{name:'Reset data',exact:true}).click();
   await expect(page.locator('.ma-dialog__title')).toHaveText('Reset all Mode Atlas data?');
@@ -69,7 +70,7 @@ test('account navigation keeps focus and settings context across a cancelled des
   await expect(settings.getByRole('button',{name:'Reset data',exact:true})).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.locator('.ma-account-layer')).toBeHidden();
-  await expect(page.locator('[data-settings-open]')).toBeFocused();
+  await expect(page.locator('#profileOpenBtn')).toBeFocused();
 });
 test('account section keys and repeated dock taps keep one navigation owner',async({page})=>{
   await prepare(page);
@@ -80,7 +81,7 @@ test('account section keys and repeated dock taps keep one navigation owner',asy
   await expect(nav.getByRole('tab',{name:'Your Atlas',exact:true})).toBeFocused();
   await page.keyboard.press('End');
   await expect(nav.getByRole('tab',{name:'Settings',exact:true})).toBeFocused();
-  await page.locator('[data-settings-open]').click();
+  await page.locator('#profileOpenBtn').click();
   await expect(page.locator('.ma-account-layer')).toBeHidden();
   await page.locator('#profileOpenBtn').click();
   await nav.getByRole('tab',{name:'Your Atlas',exact:true}).click();

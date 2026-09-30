@@ -2,7 +2,7 @@
 html[data-ma-runtime="ios"]{
   font-size:calc(16px * var(--ma-ios-text-scale,1));
   /* Reserve the full dock before JavaScript measures it, including the home indicator. */
-  --ma-ios-dock-height:calc(113px + env(safe-area-inset-bottom,0px));
+  --ma-ios-dock-height:calc(60px + env(safe-area-inset-bottom,0px));
   --ma-page-inset-top:max(12px,env(safe-area-inset-top,0px));
   --ma-page-inset-bottom:calc(var(--ma-ios-dock-height) + 20px);
   --ma-toast-inset-bottom:var(--ma-page-inset-bottom);
@@ -40,11 +40,11 @@ html[data-ma-runtime="ios"] .ma-loading-sub{color:var(--ma-muted);font-size:12px
 html[data-ma-runtime="ios"] .ma-loading-card .ma-skeleton{display:none;}
 html[data-ma-runtime="ios"][data-ma-native-warm="true"] .ma-loading-screen{display:none;}
 
-/* The existing account and focus controls are moved here by the native owner. */
+/* A single dock row; the profile destination stays available beside the Kana rail. */
 html[data-ma-runtime="ios"] .ma-ios-tabs{
   --ma-ios-accent:var(--ma-atlas);
   position:fixed;z-index:100;left:0;right:0;bottom:0;
-  display:grid;gap:2px;
+  display:grid;grid-template-columns:minmax(0,3fr) minmax(60px,1fr);gap:2px;
   padding:5px max(10px,env(safe-area-inset-right,0px)) calc(5px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
   border-top:1px solid var(--ma-border);
   background:var(--ma-surface-strong);
@@ -55,34 +55,17 @@ html[data-ma-runtime="ios"] body.ma-reading-page .ma-ios-tabs{--ma-ios-accent:va
 html[data-ma-runtime="ios"] body.ma-writing-page .ma-ios-tabs{--ma-ios-accent:var(--ma-writing);}
 html[data-ma-runtime="ios"] body.ma-wordbank-page .ma-ios-tabs{--ma-ios-accent:var(--ma-words);}
 html[data-ma-runtime="ios"] body:is(.ma-kana-page,.ma-results-page) .ma-ios-tabs{--ma-ios-accent:var(--ma-kana);}
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities{
-  display:flex;align-items:center;gap:8px;min-height:48px;
-  padding:0 5px 4px;border-bottom:1px solid var(--ma-border);
+html[data-ma-runtime="ios"] .ma-ios-profile{--ma-nav-accent:var(--ma-ios-accent);}
+html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__avatar{width:28px;height:28px;min-width:28px;font-size:1rem;}
+html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__action-label{display:block;font-size:.625rem;line-height:1.2;}
+html[data-ma-runtime="ios"] .ma-ios-practice-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;margin-bottom:10px;}
+html[data-ma-runtime="ios"] .ma-ios-practice-actions :is(#modifiersTab,#studyNavHideBtn){
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:44px;padding:8px 12px;
+  border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-control);color:var(--ma-text-strong);font:750 .81rem/1.3 var(--ma-font-ui);
 }
-html[data-ma-runtime="ios"] .ma-ios-tabs__title{
-  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  color:var(--ma-text-strong);font-family:var(--ma-font-display);font-size:.83rem;font-weight:850;
-}
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__action{
-  display:inline-flex;min-width:44px;min-height:44px;padding:0 7px;
-  border-radius:12px;background:var(--ma-control);border-color:var(--ma-border);
-}
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab{
-  min-height:44px;min-width:0;max-width:100%;margin-right:auto;padding:0 12px;
-  border:1px solid var(--ma-border);border-radius:12px;
-  background:color-mix(in srgb,var(--ma-ios-accent) 16%,var(--ma-card));
-  color:var(--ma-text-strong);font-size:.81rem;white-space:nowrap;
-}
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities #modifiersTab[aria-expanded="true"]{
-  border-color:var(--ma-ios-accent);background:color-mix(in srgb,var(--ma-ios-accent) 25%,var(--ma-card));
-}
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):not(.trainer-session-active) .ma-ios-tabs__title,
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-ios-tabs__utilities #modifiersTab{display:none;}
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__profile .ma-nav__action-label,
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__settings .ma-nav__action-label,
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__focus .ma-nav__action-label{display:none;}
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav__avatar{width:28px;height:28px;min-width:28px;}
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities .ma-nav-handle{display:none;}
+html[data-ma-runtime="ios"] .ma-ios-practice-actions #modifiersTab[aria-expanded="true"]{border-color:var(--ma-atlas);}
+html[data-ma-runtime="ios"] body.trainer-session-active .ma-ios-practice-actions,
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-practice-actions{display:none;}
 html[data-ma-runtime="ios"] .ma-ios-tabs__rail{height:max(49px,3.0625rem);overflow:hidden;position:relative;}
 html[data-ma-runtime="ios"] .ma-ios-tabs__links,
 html[data-ma-runtime="ios"] .ma-ios-kana-menu{
@@ -105,15 +88,15 @@ html[data-ma-runtime="ios"] .ma-ios-tab__icon{font-family:var(--ma-font-jp);font
 html[data-ma-runtime="ios"] .ma-ios-tab.is-active{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-ios-accent) 17%,transparent);}
 html[data-ma-runtime="ios"] .ma-ios-tab[aria-expanded="true"]{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-kana) 23%,var(--ma-card));}
 html[data-ma-runtime="ios"] .ma-ios-tab:focus-visible,
-html[data-ma-runtime="ios"] .ma-ios-tabs__utilities button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
+html[data-ma-runtime="ios"] .ma-ios-practice-actions button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
 
-/* A focused session retains one clear exit control in the same dock slot. */
+/* Focus uses the same exit control; practice owns entry and session state. */
+html[data-ma-runtime="ios"] .ma-ios-tabs>.ma-nav-handle{display:none;}
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs{grid-template-columns:1fr;}
 html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__rail,
-html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__title,
-html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__utilities > :not(#studyNavShowBtn){display:none;}
-html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__utilities{justify-content:center;border-bottom:0;}
-html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__utilities #studyNavShowBtn{
-  display:inline-flex;position:static;min-height:44px;width:auto;padding:0 20px;
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-profile{display:none;}
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs #studyNavShowBtn{
+  display:inline-flex;position:static;justify-self:center;min-height:44px;width:auto;padding:0 20px;
   border-radius:var(--ma-radius-pill);font-size:.86rem;
 }
 html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-ios-tabs{display:none;}
@@ -196,8 +179,7 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .ma-
 }
 html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .session-actions .ma-button{min-height:44px;}
 /* At large system text sizes, reflow the existing surfaces instead of cropping. */
-html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-tabs__utilities{flex-wrap:wrap;}
-html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-tabs__utilities #modifiersTab{white-space:normal;}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-practice-actions{flex-wrap:wrap;}
 html[data-ma-runtime="ios"] .ma-ios-accessibility-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 @media (prefers-reduced-motion:reduce){
   html[data-ma-runtime="ios"] .ma-ios-tabs,

@@ -13,7 +13,7 @@
     sheet.inert=dialogOpen||!current;
     sheet.setAttribute('aria-hidden',String(dialogOpen||!current));
     for(const [name,panel]of panels)panel.setAttribute('aria-hidden',String(name!==current||dialogOpen));
-    document.querySelectorAll('[data-profile-open]').forEach(button=>button.setAttribute('aria-expanded',String(!!current&&current!=='settings')));
+    document.querySelectorAll('[data-profile-open]').forEach(button=>button.setAttribute('aria-expanded',String(!!current&&(root.ModeAtlasEnv?.isNativeApp||current!=='settings'))));
     document.querySelectorAll('[data-settings-open]').forEach(button=>button.setAttribute('aria-expanded',String(current==='settings')));
   }
   function releaseView(){if(disposeView){disposeView();disposeView=null;}}
@@ -87,7 +87,7 @@
     layer.querySelectorAll('[data-ma-account-close]').forEach(node=>node.addEventListener('click',close));
     document.querySelectorAll('[data-profile-open]').forEach(button=>button.addEventListener('click',event=>{
       event.preventDefault();event.stopPropagation();
-      if(current&&current!=='settings')close();else open('profile',button);
+      if(current&&(root.ModeAtlasEnv?.isNativeApp||current!=='settings'))close();else open('profile',button);
     }));
     document.querySelectorAll('[data-settings-open]').forEach(button=>button.addEventListener('click',event=>{
       event.preventDefault();event.stopPropagation();

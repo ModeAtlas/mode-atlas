@@ -212,18 +212,19 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   await expect(page.locator('.ma-nav')).toBeHidden();
   await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveCount(1);
-  await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveAttribute('aria-label', /^Open profile/);
-  await expect(page.locator('.ma-ios-tabs [data-settings-open]')).toHaveCount(1);
+  await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveAttribute('aria-label', 'Profile');
+  await expect(page.locator('.ma-ios-tabs [data-settings-open]')).toHaveCount(0);
   await page.locator('.ma-ios-tabs #profileOpenBtn').click();
   await expect(page.locator('#maAccount-profile')).toHaveClass(/is-active/);
   await page.locator('.ma-ios-tabs #profileOpenBtn').click();
   await expect(page.locator('#maAccount-profile')).not.toHaveClass(/is-active/);
-  await page.locator('.ma-ios-tabs [data-settings-open]').click();
+  await page.locator('.ma-ios-tabs #profileOpenBtn').click();
+  await page.getByRole('tab',{name:'Settings',exact:true}).click();
   await expect(page.locator('#maAccount-settings')).toHaveClass(/is-active/);
-  await page.locator('.ma-ios-tabs [data-settings-open]').click();
+  await page.locator('.ma-ios-tabs #profileOpenBtn').click();
   await expect(page.locator('#maAccount-settings')).not.toHaveClass(/is-active/);
-  await expect(page.locator('.ma-ios-tabs #modifiersTab')).toBeVisible();
-  await expect(page.locator('.ma-ios-tabs #modifiersTab')).toContainText('Practice setup');
+  await expect(page.locator('.ma-ios-practice-actions #modifiersTab')).toBeVisible();
+  await expect(page.locator('.ma-ios-practice-actions #modifiersTab')).toContainText('Practice setup');
   await expect(page.locator('.bottom-shell.ma-modifiers-only .tab-row')).toBeHidden();
   await expect(page.locator('html')).toHaveAttribute('data-ma-native-warm', 'true');
 
@@ -233,9 +234,9 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
     return { setupBottom:setup.bottom, dockTop:dock.top };
   });
   expect(layout.setupBottom).toBeLessThanOrEqual(layout.dockTop + 1);
-  await page.locator('.ma-ios-tabs #modifiersTab').click();
+  await page.locator('.ma-ios-practice-actions #modifiersTab').click();
   await expect(page.locator('#modifiersContent')).toBeVisible();
-  await expect(page.locator('.ma-ios-tabs #modifiersTab')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('.ma-ios-practice-actions #modifiersTab')).toHaveAttribute('aria-expanded', 'true');
   await page.locator('#practiceSetupDone').click();
   await expect(page.locator('#modifiersContent')).toBeHidden();
   await expect(page.locator('.ma-ios-tabs__rail')).not.toHaveClass(/is-kana-open/);
@@ -245,7 +246,8 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-ios-tabs__links')).toBeHidden();
   await page.locator('.ma-ios-tabs #studyNavShowBtn').click();
   await page.locator('.ma-ios-tabs__links .ma-ios-tab[href="/"]').click();
-  await expect(page.locator('.ma-ios-tabs__title')).toHaveText('Mode Atlas');
+  await expect(page.locator('.ma-ios-tabs__utilities')).toHaveCount(0);
+  await expect(page.locator('.ma-ios-profile')).toBeVisible();
 });
 
 test('native Reading uses a compact answer keyboard while the website keeps text entry', async ({ page }) => {

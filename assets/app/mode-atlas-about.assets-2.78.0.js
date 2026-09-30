@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'Your profile, progress and friends, all within easy reach.';
+  const WHATS_NEW_COPY = 'More room to practise, and a clearer way to connect.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Switch between Profile, Your Atlas, Friends and Settings in one place.',
-    'Reach Friends directly from your account menu.',
-    'Keep your place when viewing achievements or confirming an account action.'
+    'Open your profile from the compact iOS dock.',
+    'Hear consistent button sounds and clearer practice feedback.',
+    'Spot pending friend requests and choose an emoji or account-photo avatar.'
   ];
 
   function storeGet(key, fallback = '') {

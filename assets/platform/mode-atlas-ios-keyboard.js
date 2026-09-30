@@ -24,6 +24,7 @@
 
     var keyboard = document.createElement('div');
     keyboard.className = 'ma-ios-reading-keyboard';
+    keyboard.dataset.maClickSound = 'none';
     keyboard.setAttribute('role', 'group');
     keyboard.setAttribute('aria-label', 'Reading romaji keyboard');
     ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'].forEach(function(row, rowIndex){

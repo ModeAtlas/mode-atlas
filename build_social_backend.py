@@ -5,6 +5,7 @@ import shutil
 ROOT = Path(__file__).resolve().parent
 SOURCES = (
     "assets/app/mode-atlas-social-config.js",
+    "assets/app/mode-atlas-social-identity.js",
     "assets/app/mode-atlas-date.js",
     "assets/app/mode-atlas-progress.js",
     "assets/app/mode-atlas-review.js",

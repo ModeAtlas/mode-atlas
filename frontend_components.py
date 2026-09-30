@@ -292,6 +292,7 @@ ACCOUNT_SCRIPTS = (
     'firebase-config.js',
     'cloud-sync.js',
     'assets/app/mode-atlas-social-config.js',
+    'assets/app/mode-atlas-social-identity.js',
     'assets/app/mode-atlas-social.js',
     'assets/ui/mode-atlas-social-ui.js',
     'assets/ui/mode-atlas-profile-menu.js',
@@ -589,7 +590,7 @@ def _trainer_prompt(config: TrainerConfig) -> str:
             <div id="comboTierNotice" class="combo-tier-notice"></div>
         </div>
 
-        <div id="choiceGrid" class="choice-grid cols-2" role="group" lang="ja" aria-label="Kana answers"></div>
+        <div id="choiceGrid" data-ma-click-sound="none" class="choice-grid cols-2" role="group" lang="ja" aria-label="Kana answers"></div>
 
         <div class="keyboard-wrap ma-trainer-answer-wrap" id="keyboardWrap" hidden>
             <input class="ma-input ma-trainer-input" id="input" type="text" placeholder="Type kana…" aria-label="Type the kana answer" autocomplete="off" spellcheck="false" disabled />
@@ -705,9 +706,9 @@ def render_trainer_shell(config: TrainerConfig) -> str:
             <button class="btn btn-start ma-button ma-button--accent ma-trainer-button" id="startBtn" type="button"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg><span>Start practice</span></button>
         </div>
         <div class="session-actions" id="sessionActions" hidden>
-            <button class="btn btn-secondary ma-button ma-button--ghost ma-trainer-button ma-trainer-skip" id="skipKanaBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-skip"></use></svg><span>I don’t know</span></button>
+            <button class="btn btn-secondary ma-button ma-button--ghost ma-trainer-button ma-trainer-skip" id="skipKanaBtn" data-ma-click-sound="none" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-skip"></use></svg><span>I don’t know</span></button>
             <button class="btn btn-secondary ma-button ma-trainer-button" id="pauseSessionBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-pause"></use></svg><span data-ma-pause-label>Pause</span></button>
-            <button class="btn btn-secondary ma-button ma-trainer-button" id="endSessionBtn" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-stop"></use></svg><span>End session</span></button>
+            <button class="btn btn-secondary ma-button ma-trainer-button" id="endSessionBtn" data-ma-click-sound="none" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-stop"></use></svg><span>End session</span></button>
         </div>
         <div id="gameOver" class="game-over" hidden><div class="game-over-title">Incorrect</div><div id="gameOverAnswer" class="game-over-answer"></div><button class="btn ma-button ma-trainer-button" id="retryBtn" type="button" hidden>Try again</button></div>
         </div>

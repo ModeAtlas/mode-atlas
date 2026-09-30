@@ -2,16 +2,17 @@
 .ma-social,.ma-social-body,.ma-social-form,.ma-social-list{display:grid;gap:16px;min-width:0;}
 .ma-social h3,.ma-social p{margin:0;}
 .ma-social-self{display:flex;align-items:center;gap:14px;min-width:0;padding:16px;border:1px solid var(--ma-border);border-radius:20px;background:var(--ma-surface-strong);}
-.ma-social-avatar{flex:0 0 42px;width:42px;height:42px;font-family:var(--ma-font-jp);}
+.ma-social-avatar{flex:0 0 42px;width:42px;height:42px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",var(--ma-font-jp);}
 .ma-social-identity{display:grid;gap:4px;min-width:0;flex:1;text-align:left;overflow-wrap:anywhere;}
 .ma-social-identity strong{color:var(--ma-text);font-size:.96rem;line-height:1.4;}
 .ma-social-identity small,.ma-social-note{color:var(--ma-muted);font-size:.83rem;line-height:1.6;}
 .ma-social-tools,.ma-social-row-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
-.ma-social-tools>.ma-button{flex:0 1 auto;}
-.ma-social-toolbar{justify-content:space-between;}
+.ma-social-tools>.ma-button{flex:1 1 auto;}
+.ma-social-tools>.ma-social-filter{flex-basis:100%;}
+
 .ma-social-filter{display:flex;flex:1;align-items:center;gap:8px;min-width:160px;color:var(--ma-muted);font-size:.8rem;}
 .ma-social select,.ma-social input:not([type="checkbox"]){box-sizing:border-box;min-height:44px;min-width:0;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-control-bg);color:var(--ma-text);padding:10px 12px;font:inherit;}
-.ma-social select{width:100%;}
+.ma-social select{width:100%;min-width:0;flex:1;}
 .ma-social-field{display:grid;gap:8px;color:var(--ma-text);font-weight:700;}
 .ma-social-field input{width:100%;font-weight:400;}
 .ma-social .ma-button{min-height:44px;white-space:normal;overflow-wrap:anywhere;}
@@ -29,8 +30,14 @@ button.ma-social-person{cursor:pointer;}
 .ma-social-score{font-size:.8rem;line-height:1.4;max-width:110px;text-align:right;color:var(--ma-text);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
 .ma-social-row-actions{flex-basis:100%;justify-content:flex-end;}
 .ma-social-avatar-choices{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;border:0;padding:0;min-width:0;margin:0;}
-.ma-social-avatar-choices legend{margin-bottom:10px;font-weight:700;}
-.ma-social-avatar-choice{font-family:var(--ma-font-jp);font-size:1.25rem;padding:8px;}
+.ma-social-avatar-picker{border:0;padding:0;margin:0;min-width:0;}
+.ma-social-avatar-picker legend{margin-bottom:10px;font-weight:700;}
+.ma-social-avatar-options{display:grid;gap:12px;min-width:0;margin-top:12px;}
+.ma-social-avatar-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+.ma-social-avatar-modes .ma-button{padding:8px;font-size:.8rem;}
+.ma-social-avatar-modes [aria-pressed="true"]{border-color:var(--ma-atlas);background:var(--ma-control-active);}
+.ma-social-photo-choice{display:flex;align-items:center;gap:14px;}
+.ma-social-avatar-choice{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",var(--ma-font-jp);font-size:1.25rem;padding:8px;}
 .ma-social-avatar-choice[aria-pressed="true"]{border-color:var(--ma-atlas);box-shadow:inset 0 0 0 1px var(--ma-atlas);}
 .ma-social-consent{display:flex;gap:10px;align-items:center;font-size:.86rem;line-height:1.6;}
 .ma-social-consent input{width:22px;height:22px;flex-shrink:0;}
@@ -42,3 +49,9 @@ button.ma-social-person{cursor:pointer;}
 .ma-social-stats strong{font-size:1.1rem;color:var(--ma-text);overflow-wrap:anywhere;}
 html[data-ma-large-text] .ma-social-avatar-choices{grid-template-columns:repeat(3,minmax(0,1fr));}
 @media(max-width:380px){.ma-social-avatar-choices{grid-template-columns:repeat(3,minmax(0,1fr));}.ma-social-self{padding:12px;gap:10px;}.ma-social-row{gap:8px;}.ma-social-score{flex-basis:100%;max-width:none;text-align:left;padding-left:8px;}}
+
+.ma-social-request-badge,.ma-social-badge{border:1px solid var(--ma-atlas);border-radius:12px;background:var(--ma-control-active);color:var(--ma-text-strong);font:750 .75rem/1.3 var(--ma-font-ui);}
+.ma-social-request-badge{min-height:44px;padding:8px 10px;flex:none;cursor:pointer;}
+.ma-social-badge{padding:2px 7px;margin-left:6px;}
+.ma-social-filter[data-pending="true"] select{border-color:var(--ma-atlas);}
+.ma-social-name-notice{display:grid;gap:10px;border:1px solid var(--ma-warning);border-radius:14px;padding:12px;color:var(--ma-text);font-size:.85rem;}

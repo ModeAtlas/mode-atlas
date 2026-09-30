@@ -321,7 +321,7 @@ function applyAchievementVisuals(root = document) {
     try { achStoreSetJSON('modeAtlasSeenAchievementUnlocks', [...set]); } catch(e){}
   }
   function achievementToast(message){
-    window.ModeAtlasFeedback?.toast?.(message, 'success', 4200);
+    window.ModeAtlasFeedback?.toast?.(message, 'success', 4200, {sound:'achievement'});
   }
   function checkAchievementUnlocks({silent=false}={}){
     const unlocked=currentUnlockedAchievements();

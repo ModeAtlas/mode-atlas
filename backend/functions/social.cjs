@@ -1,7 +1,9 @@
 'use strict';
 const {randomBytes,randomUUID,createHash}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
-const {AVATARS,projectSave,publicProfile,rankProfiles}=require('./projection.cjs');
+const {projectSave,publicProfile,rankProfiles}=require('./projection.cjs');
+const identity=require('./shared/mode-atlas-social-identity.js');
+const {createIdentityStore,mayUseName,accountPhoto}=require('./identity.cjs');
 const LIMITS=Object.freeze({friends:100,requests:50,blocks:100,page:20});
 const fail=(code,message)=>{throw new HttpsError(code,message);};
 const hash=value=>createHash('sha256').update(value).digest('hex');
@@ -16,16 +18,20 @@ function codeValue(value){
   if(!/^[A-F0-9]{20}$/.test(code))fail('invalid-argument','Enter the full friend code.');
   return code;
 }
-function validateProfile(data){
+function validateProfile(data,user){
   fields(data,['displayName','avatar','timeZone']);
-  const displayName=String(data.displayName||'').normalize('NFKC').trim().replace(/\s+/g,' ');
-  if([...displayName].length<2 || [...displayName].length>24 || !/^[\p{L}\p{N} ._'’-]+$/u.test(displayName))
+  const displayName=identity.cleanName(data.displayName);
+  if(!identity.validName(displayName))
     fail('invalid-argument','Use 2–24 letters or numbers for your name.');
-  if(!Object.hasOwn(AVATARS,data.avatar))fail('invalid-argument','Choose an Atlas avatar.');
+  if(!mayUseName(displayName,user))fail('invalid-argument','That name is reserved. Choose another display name.');
+  const avatar=identity.avatar(data.avatar);
+  if(!avatar)fail('invalid-argument','Choose an avatar or a single emoji.');
+  const avatarURL=avatar==='account'?accountPhoto(user):null;
+  if(avatar==='account'&&!avatarURL)fail('failed-precondition','Your linked Google account has no available photo. Choose an emoji or an Atlas avatar.');
   const timeZone=String(data.timeZone||'');
   if(timeZone.length>64)fail('invalid-argument','Choose a valid time zone.');
   try{new Intl.DateTimeFormat('en',{timeZone}).format();}catch{fail('invalid-argument','Choose a valid time zone.');}
-  return {displayName,avatar:data.avatar,timeZone};
+  return {displayName,nameKey:identity.nameKey(displayName),avatar,timeZone,...(avatarURL?{avatarURL}:{})};
 }
 function emptyAccount(){return {active:false,profile:null,code:null,friends:{},incoming:{},outgoing:{},blockedCount:0};}
 function requireActive(account){
@@ -44,6 +50,7 @@ function slicePage(items,cursor){
 }
 
 function createSocial({db,auth,now=Date.now}){
+  const identities=createIdentityStore({db,auth,now});
   const accounts=db.collection('socialAccounts'),codes=db.collection('socialCodes'),blocks=db.collection('socialBlocks'),limits=db.collection('socialLimits'),deleted=db.collection('socialDeleted');
   const accountRef=uid=>accounts.doc(uid);
   const saveRef=uid=>db.doc(`users/${uid}/appData/kanaTrainer`);
@@ -63,8 +70,8 @@ function createSocial({db,auth,now=Date.now}){
       tx.set(ref,{...data,[bucket]:{at:row.at,count:row.count+1}});
     });
   }
-  async function updateProfile(uid,data,createdAt){
-    const profile=validateProfile(data),candidate=randomBytes(10).toString('hex').toUpperCase();
+  async function updateProfile(uid,data,createdAt,user){
+    const profile=validateProfile(data,user),candidate=randomBytes(10).toString('hex').toUpperCase();
     return db.runTransaction(async tx=>{
       const ref=accountRef(uid),[self,save,marker]=await tx.getAll(ref,saveRef(uid),deletionRef(uid));
       rejectDeleted(marker,createdAt);
@@ -72,7 +79,9 @@ function createSocial({db,auth,now=Date.now}){
       if(account.deleting)requireActive(account);
       const code=account.code||candidate,lookup=codes.doc(hash(code)),existing=await tx.get(lookup);
       if(existing.exists && existing.data().uid!==uid)fail('aborted','Please try creating your code again.');
+      const commitName=await identities.claim(tx,uid,profile,account.profile);
       const summary=projectSave(save.data(),profile.timeZone,save.updateTime?.toMillis()||0);
+      commitName();
       tx.set(ref,{...account,active:true,profile,code,summary,updatedAt:now()});
       tx.set(lookup,{uid});
       return {ok:true};
@@ -155,11 +164,11 @@ function createSocial({db,auth,now=Date.now}){
       tx.set(accountRef(uid),a);tx.set(accountRef(target),b);return {ok:true};
     });
   }
-  async function state(uid){
+  async function state(uid,user){
     const doc=await accountRef(uid).get(),a=doc.data();
     if(a?.deleting)return {active:false,deleting:true};
-    if(!a?.active)return {active:false};
-    return {active:true,profile:publicProfile(uid,a,now()),preferences:a.profile,code:a.code,
+    if(!a?.active)return {active:false,accountPhoto:accountPhoto(user)};
+    return {active:true,profile:publicProfile(uid,a,now()),preferences:a.profile,accountPhoto:accountPhoto(user),code:a.code,
       counts:{friends:keys(a.friends).length,incoming:keys(a.incoming).length,outgoing:keys(a.outgoing).length,blocked:a.blockedCount}};
   }
   async function list(uid,data){
@@ -178,7 +187,10 @@ function createSocial({db,auth,now=Date.now}){
       const docs=ids.length?await tx.getAll(...ids.map(accountRef)):[];
       let profiles=docs.flatMap(doc=>{
         const b=doc.data();
-        if(kind==='blocked')return [{uid:doc.id,displayName:b?.active&&!b.deleting?b.profile.displayName:'Unavailable profile',avatar:b?.active&&!b.deleting?b.profile.avatar:'kana',frame:'plain'}];
+        if(kind==='blocked'){
+          const view=publicProfile(doc.id,b,now(),false);
+          return [view?{uid:doc.id,displayName:view.displayName,avatar:view.avatar,...(view.avatarURL?{avatarURL:view.avatarURL}:{}),frame:'plain'}:{uid:doc.id,displayName:'Unavailable profile',avatar:'kana',frame:'plain'}];
+        }
         if((kind==='rankings' || kind==='friends') && doc.id!==uid && !has(b?.friends,uid))return [];
         const view=publicProfile(doc.id,b,now(),kind==='friends'||kind==='rankings');return view?[view]:[];
       });
@@ -213,6 +225,8 @@ function createSocial({db,auth,now=Date.now}){
       if(!a)return null;
       if(a.deleting)return a.deletionId;
       const deletionId=randomUUID();
+      const releaseName=await identities.release(tx,uid,a.profile);
+      releaseName();
       if(a.code)tx.delete(codes.doc(hash(a.code)));
       tx.update(ref,{active:false,profile:null,summary:null,code:null,deleting:true,deletionId});
       return deletionId;
@@ -270,8 +284,9 @@ function createSocial({db,auth,now=Date.now}){
     if(['state','rotateCode','leave'].includes(action))fields(data,[]);
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
-    if(action==='state'){await refreshSummary(uid);return state(uid);}
-    if(action==='updateProfile')return updateProfile(uid,data,createdAt);
+    if(action!=='leave')await identities.ensureReady();
+    if(action==='state'){await refreshSummary(uid);return state(uid,user);}
+    if(action==='updateProfile')return updateProfile(uid,data,createdAt,user);
     if(action==='rotateCode')return rotateCode(uid);
     if(action==='lookup')return lookup(uid,data);
     if(action==='sendRequest')return sendRequest(uid,data);

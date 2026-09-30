@@ -2,7 +2,7 @@
 (function ModeAtlasSocialUI(root){
   'use strict';
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=text;return node;};
-  const avatars={kana:['あ','Hiragana'],katakana:['ア','Katakana'],book:['本','Book'],sakura:['桜','Cherry blossom'],mountain:['山','Mountain'],moon:['月','Moon']};
+  const identityPolicy=root.ModeAtlasSocialIdentity,avatars=identityPolicy.avatars;
   const number=value=>Number(value||0).toLocaleString();
   let host=null,body=null,notice=null,state=null,owner=null,generation=0,tab='friends',kind='friends',metric='xp';
   const alive=ticket=>!!host?.isConnected && ticket===generation && owner===root.KanaCloudSync?.getUser?.()?.uid;
@@ -10,7 +10,13 @@
     const node=el('button',cls,label);node.type='button';if(action)node.addEventListener('click',action);return node;
   }
   function status(message,tone='info'){if(notice){notice.textContent=message;notice.dataset.tone=tone;notice.hidden=!message;}}
-  function avatar(profile){const node=el('span','ma-atlas-avatar ma-social-avatar',avatars[profile.avatar]?.[0]||'あ');node.dataset.maFrame=profile.frame||'plain';node.setAttribute('aria-hidden','true');return node;}
+  function avatar(profile){
+    const value=identityPolicy.avatar(profile.avatar),symbol=value?.startsWith('emoji:')?value.slice(6):avatars[value]?.[0]||'あ';
+    const node=el('span','ma-atlas-avatar ma-social-avatar',symbol);node.dataset.maFrame=profile.frame||'plain';node.setAttribute('aria-hidden','true');
+    const url=value==='account'?identityPolicy.photoURL(profile.avatarURL):null;
+    if(url){const image=el('img');image.src=url;image.alt='';image.referrerPolicy='no-referrer';image.addEventListener('error',()=>{node.textContent='あ';},{once:true});node.replaceChildren(image);}
+    return node;
+  }
   function identity(profile){const copy=el('span','ma-social-identity');copy.append(el('strong','',profile.displayName+(profile.uid===owner?' · You':'')),el('small','',`Level ${number(profile.level)} · ${profile.title}`));return copy;}
   async function run(action,onSuccess){
     if(!host || host.getAttribute('aria-busy')==='true')return;
@@ -35,15 +41,17 @@
       const result=await root.ModeAtlasSocial.call('state');if(!alive(ticket))return;state=result;
       if(result.deleting){screen();empty('Removing your friends profile','Please try again shortly.');return;}
       if(!result.active)editProfile();else home();
-    }catch(error){if(alive(ticket)){screen();empty('Friends is unavailable',root.ModeAtlasSocial.message(error));}}
+    }catch(error){if(alive(ticket)){screen();empty('Friends is unavailable',root.ModeAtlasSocial.message(error)).append(button('Try again',load));}}
   }
   function home(){
     if(!state?.active)return void load();
     screen();
     const self=el('div','ma-social-self');self.append(avatar(state.profile),identity(state.profile),button('Edit',()=>editProfile()));body.append(self);
+    if(state.preferences?.requiresNameChange){const note=el('div','ma-social-name-notice');note.append(el('p','','Your previous name is unavailable. Choose a new display name.'),button('Choose name',()=>editProfile()));body.append(note);}
     const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Friends and rankings');
     for(const value of ['friends','rankings']){
       const node=button(value==='friends'?`Friends · ${state.counts.friends}`:'Rankings',()=>{tab=value;home();});
+      if(value==='friends'&&state.counts.incoming&&tab!=='friends'){const badge=el('span','ma-social-badge',String(state.counts.incoming));badge.setAttribute('aria-label',`${state.counts.incoming} pending requests`);node.append(badge);}
       node.setAttribute('role','tab');node.setAttribute('aria-selected',String(tab===value));node.tabIndex=tab===value?0:-1;
       node.id='maSocialTab-'+value;node.setAttribute('aria-controls','maSocialList');tabs.append(node);
     }
@@ -53,16 +61,21 @@
     });body.append(tabs);
     const tools=el('div','ma-social-tools');
     if(tab==='friends'){
-      const label=el('label','ma-social-filter','Show'),select=el('select');select.setAttribute('aria-label','Friends list');
+      const label=el('div','ma-social-filter','Show'),select=el('select');select.setAttribute('aria-label','Friends list');
       for(const [value,title] of [['friends','Friends'],['incoming','Requests'],['outgoing','Sent'],['blocked','Blocked']]){
-        const option=el('option','',`${title} · ${state.counts[value]||0}`);option.value=value;select.append(option);
+        const option=el('option','',`${title} · ${state.counts[value]||0}${value==='incoming'&&state.counts.incoming?' pending':''}`);option.value=value;select.append(option);
       }
-      select.value=kind;select.addEventListener('change',()=>{kind=select.value;home();});label.append(select);tools.append(label,
-        button('Add friend',()=>addFriend(),'ma-button ma-button--primary'),button('My code',myCode));
+      select.value=kind;select.addEventListener('change',()=>{kind=select.value;home();});label.append(select);
+      if(state.counts.incoming&&kind!=='incoming'){
+        label.dataset.pending='true';
+        const pending=button(`${state.counts.incoming} ${state.counts.incoming===1?'request':'requests'}`,()=>{kind='incoming';home();},'ma-social-request-badge');
+        pending.setAttribute('aria-label',`Review ${state.counts.incoming} pending friend ${state.counts.incoming===1?'request':'requests'}`);label.append(pending);
+      }
+      tools.append(label,button('Add friend',()=>addFriend(),'ma-button ma-button--primary'),button('My code',myCode),button('Refresh',load));
     }else{
-      const label=el('label','ma-social-filter','Compare'),select=el('select');select.setAttribute('aria-label','Ranking');
+      const label=el('div','ma-social-filter','Compare'),select=el('select');select.setAttribute('aria-label','Ranking');
       for(const [value,title]of [['xp','Level & XP'],['streak','Study streak'],['mastery','Mastery · Both'],['reading','Mastery · Reading'],['writing','Mastery · Writing'],['correct','Total correct']]){const option=el('option','',title);option.value=value;select.append(option);}
-      select.value=metric;select.addEventListener('change',()=>{metric=select.value;home();});label.append(select);tools.append(label);
+      select.value=metric;select.addEventListener('change',()=>{metric=select.value;home();});label.append(select);tools.append(label,button('Refresh',load));
     }
     body.append(tools);
     if(tab==='rankings')body.append(el('p','ma-social-note','Rankings use each friend’s latest synced learning progress.'));
@@ -110,13 +123,42 @@
     screen();const editing=state?.active;if(editing)back('Friends',home);
     body.append(el('h3','',editing?'Your friends profile':'Create your friends profile'),el('p','ma-social-note','People with your code can see your name, avatar, level and title. Accepted friends can also see your study streak, mastery and learning totals.'));
     const form=el('form','ma-social-form'),label=el('label','ma-social-field','Display name'),input=el('input');input.name='displayName';input.autocomplete='nickname';input.maxLength=48;input.required=true;input.value=state?.preferences?.displayName||'';input.placeholder='Choose a name';label.append(input);form.append(label);
-    const choices=el('fieldset','ma-social-avatar-choices');choices.append(el('legend','','Avatar'));let selected=state?.preferences?.avatar||'kana';
-    for(const [id,[symbol,name]]of Object.entries(avatars)){
-      const choice=button(symbol,()=>{selected=id;choices.querySelectorAll('button').forEach(node=>node.setAttribute('aria-pressed',String(node.dataset.avatar===id)));},'ma-button ma-social-avatar-choice');choice.dataset.avatar=id;choice.setAttribute('aria-label',name);choice.setAttribute('aria-pressed',String(id===selected));choices.append(choice);
-    }form.append(choices);
+    const hint=el('p','ma-social-note','2–24 characters. Display names are unique.');hint.id='maSocialNameHelp';input.setAttribute('aria-describedby',hint.id);form.append(hint);
+    const choices=el('fieldset','ma-social-avatar-picker');choices.append(el('legend','','Avatar'));
+    const modes=el('div','ma-social-avatar-modes'),options=el('div','ma-social-avatar-options');
+    let selected=state?.preferences?.avatar||'kana',avatarMode=selected==='account'?'account':selected.startsWith('emoji:')?'emoji':'atlas';
+    let selectedAtlas=Object.hasOwn(avatars,selected)?selected:'kana',selectedEmoji=selected.startsWith('emoji:')?selected.slice(6):'🌸';
+    let emojiInput=null;
+    const photo=identityPolicy.photoURL(state?.accountPhoto);
+    const controls=[];
+    function renderAvatars(){
+      for(const control of controls)control.setAttribute('aria-pressed',String(control.dataset.avatarMode===avatarMode));
+      options.replaceChildren();emojiInput=null;
+      if(avatarMode==='account'){
+        selected='account';const preview=el('div','ma-social-photo-choice');preview.append(avatar({avatar:'account',avatarURL:photo,frame:state?.profile?.frame}),el('p','ma-social-note','Use your linked Google account photo in Friends.'));options.append(preview);return;
+      }
+      const grid=el('div','ma-social-avatar-choices');
+      if(avatarMode==='atlas'){
+        selected=selectedAtlas;
+        for(const [id,[symbol,name]]of Object.entries(avatars)){
+          const choice=button(symbol,()=>{selectedAtlas=id;renderAvatars();options.querySelector(`[data-avatar="${id}"]`).focus();},'ma-button ma-social-avatar-choice');choice.dataset.avatar=id;choice.setAttribute('aria-label',name);choice.setAttribute('aria-pressed',String(id===selected));grid.append(choice);
+        }
+      }else{
+        selected='emoji:'+selectedEmoji;
+        const label=el('label','ma-social-field','Your emoji');emojiInput=el('input');emojiInput.name='emoji';emojiInput.autocomplete='off';emojiInput.maxLength=40;emojiInput.value=selectedEmoji;emojiInput.setAttribute('aria-describedby','maSocialEmojiHelp');
+        emojiInput.addEventListener('input',()=>{emojiInput.setCustomValidity('');selectedEmoji=emojiInput.value;selected='emoji:'+selectedEmoji;grid.querySelectorAll('button').forEach(node=>node.setAttribute('aria-pressed',String(node.textContent===selectedEmoji)));});label.append(emojiInput);options.append(label);
+        for(const symbol of identityPolicy.emojis){const choice=button(symbol,()=>{selectedEmoji=symbol;selected='emoji:'+symbol;emojiInput.value=symbol;emojiInput.setCustomValidity('');grid.querySelectorAll('button').forEach(node=>node.setAttribute('aria-pressed',String(node.textContent===symbol)));},'ma-button ma-social-avatar-choice');choice.setAttribute('aria-label','Use '+symbol);choice.setAttribute('aria-pressed',String(symbol===selectedEmoji));grid.append(choice);}
+        const help=el('p','ma-social-note','Choose one below or enter one using your emoji keyboard.');help.id='maSocialEmojiHelp';options.append(help);
+      }
+      options.append(grid);
+    }
+    for(const [mode,title]of [['atlas','Atlas'],['emoji','Emoji'],['account','Account photo']]){
+      const control=button(title,()=>{avatarMode=mode;renderAvatars();},'ma-button ma-button--ghost');control.dataset.avatarMode=mode;control.disabled=mode==='account'&&!photo;controls.push(control);modes.append(control);
+    }
+    choices.append(modes,options);form.append(choices);renderAvatars();
     if(!editing){const consent=el('label','ma-social-consent'),check=el('input');check.type='checkbox';check.required=true;check.name='consent';consent.append(check,el('span','','Share my profile through Friends'));form.append(consent);}
     const submit=button(editing?'Save profile':'Create profile',null,'ma-button ma-button--primary');submit.type='submit';form.append(submit);
-    form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;const uid=owner;run(async()=>{
+    form.addEventListener('submit',event=>{event.preventDefault();if(emojiInput){const symbol=identityPolicy.emoji(emojiInput.value);emojiInput.setCustomValidity(symbol?'':'Choose a single emoji.');if(symbol)selected='emoji:'+symbol;}if(!form.reportValidity())return;const uid=owner;run(async()=>{
       await root.KanaCloudSync?.syncNow?.();
       if(root.KanaCloudSync?.getUser?.()?.uid!==uid)throw Object.assign(new Error('The account changed.'),{code:'account-changed'});
       return root.ModeAtlasSocial.call('updateProfile',{displayName:input.value,avatar:selected,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'});
@@ -161,9 +203,8 @@
     if(!root.ModeAtlasSocial.isEnabled())return;
     owner=root.KanaCloudSync?.getUser?.()?.uid;state=null;tab='friends';kind='friends';
     const container=el('div','ma-social');host=container;
-    const top=el('div','ma-social-tools ma-social-toolbar');top.append(el('span','ma-social-note','Your circle'),button('Refresh',load));
     notice=el('p','ma-social-status');notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.hidden=true;
-    body=el('div','ma-social-body');host.append(top,notice,body);
+    body=el('div','ma-social-body');host.append(notice,body);
     parent.replaceChildren(container);
     queueMicrotask(()=>{if(host===container)void load();});
     return ()=>{

@@ -289,7 +289,7 @@ test('sound mode owner persists On/Loud/Off without relying on an out-of-scope s
   assert.match(read('assets/trainer/mode-atlas-session-controls.js'), /ModeAtlasSounds\?\.play\(correct \? 'correct' : 'wrong'/);
   assert.match(read('assets/app/mode-atlas-toast.js'), /ModeAtlasSounds\?\.notify/, 'notification feedback should be called by the shared toast owner');
   assert.match(source, /event\.isComposing \|\| event\.keyCode === 229/);
-  assert.match(source, /const textEntry = event\.target\.closest/);
+  assert.doesNotMatch(source, /inferButtonSound|elementVariant|hashText/, 'button sounds must not depend on labels or styling');
 });
 
 

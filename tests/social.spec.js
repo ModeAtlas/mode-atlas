@@ -26,7 +26,7 @@ async function prepare(page,{active=true,...layout}={}){
     window.ModeAtlasSocial={...original,isEnabled:()=>true,call:async(action,input={})=>{
       window.socialCalls.push({action,input});
       if(window.socialOffline)throw Object.assign(new Error('Connect to the internet to use Friends.'),{code:'offline'});
-      if(action==='state')return window.socialUser==='self'?{active:data.active,profile:data.self,preferences:{displayName:data.self.displayName,avatar:data.self.avatar},code:'ABCDEF0123456789ABCD',counts:{friends:data.friends.length,incoming:data.incoming.length,outgoing:data.outgoing.length,blocked:data.blocked.length}}:{active:false};
+      if(action==='state')return window.socialUser==='self'?{active:data.active,profile:data.self,preferences:{displayName:data.self.displayName,avatar:data.self.avatar},accountPhoto:'https://lh3.googleusercontent.com/a/fixture',code:'ABCDEF0123456789ABCD',counts:{friends:data.friends.length,incoming:data.incoming.length,outgoing:data.outgoing.length,blocked:data.blocked.length}}:{active:false};
       if(action==='list'){
         const rows=input.kind==='rankings'?[{...data.friend,rank:1,score:9000},{...data.self,rank:2,score:4321}]:data[input.kind];
         const response={rows:structuredClone(rows),total:rows.length,nextCursor:null};
@@ -128,7 +128,7 @@ test('sign-out clears friends immediately and a delayed result cannot restore th
 test('offline failure offers refresh without a fabricated empty friends list',async({page})=>{
   await prepare(page);await page.evaluate(()=>{socialOffline=true;});await page.getByRole('button',{name:'Refresh',exact:true}).click();
   await expect(page.getByText('Connect to the internet to use Friends.',{exact:true})).toBeVisible();await expect(page.locator('.ma-social-row')).toHaveCount(0);
-  await page.evaluate(()=>{socialOffline=false;});await page.getByRole('button',{name:'Refresh',exact:true}).click();await expect(page.locator('.ma-social-row')).toHaveCount(1);
+  await page.evaluate(()=>{socialOffline=false;});await page.getByRole('button',{name:'Try again',exact:true}).click();await expect(page.locator('.ma-social-row')).toHaveCount(1);
 });
 test('leaving Friends discards a delayed response without changing the next account section',async({page})=>{
   await prepare(page);await page.evaluate(()=>{socialDelayList=true;});
@@ -141,4 +141,27 @@ test('leaving Friends discards a delayed response without changing the next acco
   await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
   await page.getByRole('tab',{name:'Friends',exact:true}).click();
   await expect(page.getByText('Jack · You',{exact:true})).toBeVisible();
+});
+
+
+test('pending requests stay visible outside their list and Refresh shares the My code row',async({page})=>{
+  await prepare(page);
+  const badge=page.getByRole('button',{name:'Review 1 pending friend request',exact:true});await expect(badge).toBeVisible();
+  await expect(page.getByText('Your circle',{exact:true})).toHaveCount(0);
+  const tools=page.locator('.ma-social-tools').filter({has:page.getByRole('button',{name:'My code',exact:true})});await expect(tools.getByRole('button',{name:'Refresh',exact:true})).toBeVisible();
+  await badge.click();await expect(page.getByRole('combobox',{name:'Friends list'})).toHaveValue('incoming');await expect(badge).toHaveCount(0);
+  await page.getByRole('button',{name:'Accept',exact:true}).click();await expect(page.locator('.ma-social-request-badge')).toHaveCount(0);
+});
+test('Friends avatar picker supports single emojis and an explicit account-photo choice',async({page},info)=>{
+  await prepare(page);await page.getByRole('button',{name:'Edit',exact:true}).click();
+  await page.getByRole('button',{name:'Emoji',exact:true}).click();await page.getByRole('textbox',{name:'Your emoji',exact:true}).fill('👩🏽‍🚀');
+  await expect(page.getByRole('button',{name:'Emoji',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('[data-avatar-mode="atlas"]')).toHaveAttribute('aria-pressed','false');
+  await page.screenshot({path:info.outputPath('emoji-picker.png'),animations:'disabled'});
+  await page.getByRole('button',{name:'Save profile',exact:true}).click();
+  expect(await page.evaluate(()=>socialCalls.filter(item=>item.action==='updateProfile').at(-1).input.avatar)).toBe('emoji:👩🏽‍🚀');
+  await page.getByRole('button',{name:'Edit',exact:true}).click();await page.getByRole('button',{name:'Account photo',exact:true}).click();
+  await expect(page.getByText('Use your linked Google account photo in Friends.',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Save profile',exact:true}).click();
+  const data=await page.evaluate(()=>socialCalls.filter(item=>item.action==='updateProfile').at(-1).input);expect(data.avatar).toBe('account');expect(data.avatarURL).toBeUndefined();
 });

@@ -35,26 +35,17 @@
     dock.className = 'ma-ios-tabs';
     dock.setAttribute('aria-label', 'Mode Atlas iOS navigation');
 
-    var utilities = document.createElement('div');
-    utilities.className = 'ma-ios-tabs__utilities';
-    var title = document.createElement('span');
-    title.className = 'ma-ios-tabs__title';
-    title.textContent = current === 'atlas' ? 'Mode Atlas' : (document.querySelector('.ma-nav__title')?.textContent || 'Mode Atlas');
-    utilities.appendChild(title);
     var setup = document.getElementById('modifiersTab');
-    if (setup) utilities.appendChild(setup);
     var profile = document.getElementById('profileOpenBtn');
-    var settings = document.querySelector('.ma-nav__settings');
-    if (profile) {
-      profile.setAttribute('aria-label', 'Open profile');
-      utilities.appendChild(profile);
-    }
-    if (settings) utilities.appendChild(settings);
     var focus = document.getElementById('studyNavHideBtn');
-    if (focus) utilities.appendChild(focus);
     var exit = document.getElementById('studyNavShowBtn');
-    if (exit) utilities.appendChild(exit);
-    dock.appendChild(utilities);
+    var header = document.querySelector('.ma-trainer-header');
+    if (header && setup && focus) {
+      var practiceActions = document.createElement('div');
+      practiceActions.className = 'ma-ios-practice-actions';
+      practiceActions.append(setup, focus);
+      header.prepend(practiceActions);
+    }
 
     var rail = document.createElement('div');
     rail.className = 'ma-ios-tabs__rail';
@@ -103,6 +94,12 @@
     });
     rail.append(links, kanaMenu);
     dock.appendChild(rail);
+    if (profile) {
+      profile.className = 'ma-ios-tab ma-ios-profile';
+      profile.setAttribute('aria-label', 'Profile');
+      dock.appendChild(profile);
+    }
+    if (exit) dock.appendChild(exit);
     document.body.appendChild(dock);
 
     var kanaTab = links.querySelector('[aria-controls="maIosKanaMenu"]');

@@ -7,7 +7,7 @@ const rewards = require('./shared/mode-atlas-reward-rules.js');
 const kana = require('./shared/mode-atlas-kana-data.js');
 const progress = createProgress({ModeAtlasDates: dates, ModeAtlasRewardRules: rewards});
 const review = createReview({ModeAtlasDates: dates});
-const AVATARS = Object.freeze({kana:'あ',katakana:'ア',book:'本',sakura:'桜',mountain:'山',moon:'月'});
+const identity = require('./shared/mode-atlas-social-identity.js');
 
 function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0) {
   const sections = save.sections || {};
@@ -46,6 +46,9 @@ function publicProfile(uid, account, now = Date.now(), full = true) {
   const landmark=rewards.landmarks.find(item=>item.id===summary.landmark && item.level<=summary.level) || rewards.landmarks[0];
   const out={uid,displayName:account.profile.displayName,avatar:account.profile.avatar,
     frame:landmark.frame,title:landmark.title,level:summary.level};
+  if(out.avatar==='account'){
+    const url=identity.photoURL(account.profile.avatarURL);if(url)out.avatarURL=url;else out.avatar='kana';
+  }
   if(full)out.stats={xp:summary.xp,totalCorrect:summary.totalCorrect,
     streak:progress.studyStreak(summary.studyDays,dates.dateKeyInTimeZone(now,account.profile.timeZone)),
     readingMastered:summary.readingMastered,writingMastered:summary.writingMastered,
@@ -62,4 +65,4 @@ function rankProfiles(profiles,metric) {
   let rank=0,previous;
   return rows.map((row,index)=>{if(row.score!==previous)rank=index+1;previous=row.score;return {...row,rank};});
 }
-module.exports={AVATARS,projectSave,publicProfile,rankProfiles};
+module.exports={projectSave,publicProfile,rankProfiles};

@@ -54,10 +54,27 @@ test('rules preserve owner-only profile/app-data access and deny every direct so
     await assertFails(getDoc(doc(mine,path)));
     await assertFails(setDoc(doc(mine,path),{}));
   }
-  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted']){
+  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));
   }
+});
+test('identity migration claims legacy names, resolves collisions and protects the verified admin',async()=>{
+  const {createIdentityStore}=require('../functions/identity.cjs');
+  const records=[['legacy-a','Legacy Name'],['legacy-b','Légacy.Name'],['legacy-c','Staff'],['legacy-admin','admin']];
+  for(const [uid,name]of records){
+    await auth.createUser({uid,email:uid==='legacy-admin'?'admin@mode-atlas.com':uid+'@example.test',emailVerified:true});
+    await db.doc(`socialAccounts/${uid}`).set({active:true,profile:{displayName:name,avatar:'kana',timeZone:'UTC'},friends:{'old-friend':1},incoming:{},outgoing:{},blockedCount:0,code:'keep-code'});
+  }
+  const store=createIdentityStore({db,auth});await store.ensureReady();await store.ensureReady();
+  const migrated=await db.getAll(...records.map(([uid])=>db.doc(`socialAccounts/${uid}`)));
+  const profiles=migrated.map(doc=>doc.data().profile);
+  assert.equal(new Set(profiles.map(profile=>profile.nameKey)).size,4);
+  assert.equal(profiles[0].displayName,'Legacy Name');assert.equal(profiles[3].displayName,'admin');
+  for(const index of [1,2]){assert.equal(profiles[index].requiresNameChange,true);assert.match(profiles[index].displayName,/^Learner /);}
+  for(const doc of migrated){assert.deepEqual(doc.data().friends,{'old-friend':1});assert.equal(doc.data().code,'keep-code');}
+  assert.equal((await db.doc('socialMigrations/identity-v1').get()).data().complete,true);
+  const claims=await db.collection('socialNames').get();assert.equal(claims.size,4);
 });
 test('profiles are opt-in, projected from the save and never expose private fields',async()=>{
   const a=await learner('Alice'),b=await learner('Bob');
@@ -203,4 +220,39 @@ test('malformed scalar fields and null mastery records cannot crash a save proje
   snapshot.sections.reading.data.times={'あ':null,'い':bad};
   snapshot.sections.reading.data.srs={'う':{reviewVersion:1,level:bad,days:[bad,null],recent:[{id:'bad',at:bad,quality:2}]}};
   const result=projectSave(snapshot);assert.equal(result.xp,0);assert.equal(result.readingMastered,0);assert.equal(result.level,1);
+});
+
+
+test('name claims are case/accent/separator insensitive, atomic and released on rename or opt-out',async()=>{
+  const a=await learner('Unique First'),b=await learner('Unique Second');
+  const update=(person,displayName)=>person.call('updateProfile',{displayName,avatar:'kana',timeZone:'UTC'});
+  const results=await Promise.allSettled([update(a,'Shared.Name'),update(b,'Sháred name')]);
+  assert.equal(results.filter(result=>result.status==='fulfilled').length,1);
+  assert.equal(results.find(result=>result.status==='rejected').reason.code,'ALREADY_EXISTS');
+  const winner=results[0].status==='fulfilled'?a:b,loser=winner===a?b:a;
+  await update(winner,'Moved On');await update(loser,'SHARED-NAME');
+  await loser.call('leave');await update(winner,'shared name');
+});
+test('official names require the actual verified admin record, not client token claims',async()=>{
+  const a=await learner('Ordinary Learner');
+  for(const name of ['Owner','STAFF','Admіn','Admin 1','Mode Atlas Support'])await assert.rejects(a.call('updateProfile',{displayName:name,avatar:'kana',timeZone:'UTC'}),{code:'INVALID_ARGUMENT'});
+  const payload={action:'updateProfile',expectedUid:a.uid,data:{displayName:'admin',avatar:'kana',timeZone:'UTC'}};
+  await assert.rejects(service.call({auth:{uid:a.uid,token:{email:'admin@mode-atlas.com',email_verified:true}},data:payload}),/reserved/);
+  await service.call({auth:{uid:'legacy-admin'},data:{...payload,expectedUid:'legacy-admin'}});
+  await assert.rejects(service.call({auth:{uid:'legacy-admin'},data:{...payload,expectedUid:'legacy-admin',data:{...payload.data,displayName:'Owner'}}}),/reserved/);
+});
+test('emoji avatars round trip and account photos come only from the linked provider',async()=>{
+  const a=await learner('Avatar Learner'),b=await learner('Avatar Friend');
+  await a.call('updateProfile',{displayName:'Avatar Learner',avatar:'emoji:👩🏽‍🚀',timeZone:'UTC'});
+  assert.equal((await b.call('lookup',{code:a.code})).profile.avatar,'emoji:👩🏽‍🚀');
+  await assert.rejects(a.call('updateProfile',{displayName:'Avatar Learner',avatar:'emoji:🌸🌙',timeZone:'UTC'}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('updateProfile',{displayName:'Avatar Learner',avatar:'account',avatarURL:'https://evil.test/photo',timeZone:'UTC'}),{code:'INVALID_ARGUMENT'});
+  const {accountPhoto}=require('../functions/identity.cjs');
+  assert.equal(accountPhoto({photoURL:'https://lh3.googleusercontent.com/client-edited',providerData:[]}),null);
+  await auth.updateUser(a.uid,{providerToLink:{providerId:'google.com',uid:'avatar-google',photoUrl:'https://lh3.googleusercontent.com/a/verified'}});
+  await a.call('updateProfile',{displayName:'Avatar Learner',avatar:'account',timeZone:'UTC'});
+  const shown=(await b.call('lookup',{code:a.code})).profile;
+  assert.equal(shown.avatarURL,'https://lh3.googleusercontent.com/a/verified');assert.equal(shown.email,undefined);
+  await a.call('updateProfile',{displayName:'Avatar Learner',avatar:'moon',timeZone:'UTC'});
+  assert.equal((await b.call('lookup',{code:a.code})).profile.avatarURL,undefined);
 });

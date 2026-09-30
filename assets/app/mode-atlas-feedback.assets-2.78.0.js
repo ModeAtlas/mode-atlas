@@ -11,10 +11,10 @@
 
   function tone(value){ return TONES[String(value || 'info').toLowerCase()] || 'info'; }
 
-  function toast(message, value = 'info', duration = 2800){
+  function toast(message, value = 'info', duration = 2800, options = {}){
     const normalized = tone(value);
-    if (typeof root.ModeAtlas?.toast === 'function') return root.ModeAtlas.toast(message, normalized, duration);
-    if (typeof root.ModeAtlasToast === 'function') return root.ModeAtlasToast(message, normalized, duration);
+    if (typeof root.ModeAtlas?.toast === 'function') return root.ModeAtlas.toast(message, normalized, duration, options);
+    if (typeof root.ModeAtlasToast === 'function') return root.ModeAtlasToast(message, normalized, duration, options);
     console.info('[Mode Atlas]', message);
     return null;
   }

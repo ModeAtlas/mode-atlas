@@ -21,3 +21,18 @@ test('account deletion waits for social cleanup and propagates failure instead o
   const disabled=createSocial({enabled:()=>false,user:()=>({uid:'first'}),online:()=>false,transport:()=>{throw new Error('must not run');}});
   await disabled.prepareAccountDeletion();
 });
+
+const identity=require('../assets/app/mode-atlas-social-identity.js');
+test('identity policy normalises equivalent names and reserves official-looking names',()=>{
+  assert.equal(identity.nameKey('  Ｊáck.Wright '),identity.nameKey('JACK wright'));
+  for(const name of ['Owner',' STAFF ','Ａｄｍｉｎ','Admіn','a.d.m.i.n','Admin 1','Mode Atlas Support','Staff-42','0wner123','Administrator'])assert.equal(identity.reservedName(name),true,name);
+  for(const name of ['Jack','桜の道','Stafford','Hana'])assert.equal(identity.reservedName(name),false,name);
+  for(const name of ['', '..', 'a', '<script>', 'x'.repeat(25),{toString:5},null,123])assert.equal(identity.validName(name),false);
+});
+test('avatar policy accepts one emoji grapheme and restricts provider photo URLs',()=>{
+  for(const symbol of ['🐶','👩🏽‍🚀','🇦🇺','1️⃣'])assert.equal(identity.avatar('emoji:'+symbol),'emoji:'+symbol);
+  for(const symbol of ['hi','🌸🌙','<img src=x>','\u200D'])assert.equal(identity.avatar('emoji:'+symbol),null);
+  assert.equal(identity.avatar('account'),'account');assert.equal(identity.avatar('moon'),'moon');assert.equal(identity.avatar({toString:5}),null);
+  assert.equal(identity.photoURL('https://lh3.googleusercontent.com/a/photo'),'https://lh3.googleusercontent.com/a/photo');
+  for(const url of ['http://lh3.googleusercontent.com/a','https://lh3.googleusercontent.com.evil.test/a','https://user@lh3.googleusercontent.com/a','javascript:alert(1)'])assert.equal(identity.photoURL(url),null);
+});
