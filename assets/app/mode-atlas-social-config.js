@@ -3,5 +3,7 @@
   if(typeof module === 'object' && module.exports) module.exports = factory();
   else root.ModeAtlasSocialConfig = factory();
 })(typeof window !== 'undefined' ? window : globalThis, function(){
-  return Object.freeze({enabled: false, region: 'us-central1'});
+  // Sydney supports the callable/Firestore functions and the v1 Auth trigger.
+  // The existing default Firestore database is in Melbourne.
+  return Object.freeze({enabled: false, region: 'australia-southeast1'});
 });

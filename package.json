@@ -1,6 +1,6 @@
 {
   "name": "mode-atlas",
-  "version": "2.76.0",
+  "version": "2.76.1",
   "private": true,
   "description": "Mode Atlas static web app smoke tests",
   "scripts": {
@@ -23,7 +23,11 @@
     "ios:check-firebase": "python3 validate_ios_firebase_config.py",
     "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js tests/ios-experience.spec.js tests/study-flow.spec.js tests/trainer-modes.spec.js tests/progression.spec.js tests/dev-backups.spec.js tests/social.spec.js",
     "build:social": "python3 build_social_backend.py",
-    "test:social": "npm run build:social && npm --prefix backend test"
+    "test:social": "npm run build:social && npm --prefix backend test",
+    "social:install": "npm --prefix backend ci && npm --prefix backend/functions ci",
+    "social:login": "backend/node_modules/.bin/firebase login",
+    "social:status": "backend/node_modules/.bin/firebase firestore:databases:get --project mode-atlus && backend/node_modules/.bin/firebase functions:list --project mode-atlus",
+    "social:deploy": "backend/node_modules/.bin/firebase deploy --project mode-atlus --only firestore:rules,functions:mode-atlas-social"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.2",

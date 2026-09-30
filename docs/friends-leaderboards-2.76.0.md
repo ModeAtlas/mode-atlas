@@ -4,6 +4,10 @@ Status: implemented behind `ModeAtlasSocialConfig.enabled = false`. No productio
 Firebase deployment, billing change, public directory or competitive weekly XP
 is part of this release. The normal app remains usable while activation is pending.
 
+The live project was inspected for the 2.76.1 deployment preparation. See
+[Firebase activation record](firebase-activation-2.76.1.md) for the confirmed
+region, preserved access rules, deployment commands and remaining activation step.
+
 ## Experience
 
 After activation, open **Profile → Your Atlas → Friends & rankings** on web or
@@ -53,7 +57,8 @@ before; friends use the existing Firebase UID, irrespective of linked provider.
 
 ## Data, trust and access
 
-The existing `users/{uid}/appData/kanaTrainer` save remains private to its owner.
+The existing `users/{uid}` profile and `users/{uid}/appData/{docId}` documents
+remain private to their owner. The progress projection reads only `kanaTrainer`.
 All social collections deny direct client reads/writes; authenticated callables
 use the Admin SDK and enforce authorization themselves:
 
@@ -145,17 +150,17 @@ The existing project ID in the checked-in Firebase config is **`mode-atlus`**.
 Do not create another project or replace the working Google iOS configuration.
 Do not run deployment commands until the following review is complete:
 
-1. Inspect the project's current billing plan, default Firestore database location,
-   deployed rules and existing Functions. Cloud Functions deployment needs Blaze;
-   this is separate from paid Apple Developer membership. Agree the billing
-   change and budget alerts before enabling billing. Alerts are not a hard cap.
-2. Set `region` in the canonical social config to a supported Functions region
-   appropriate for that database. `us-central1` is a provisional default, not a
-   claim about this project's location. The client and backend share this value.
-3. Compare deployed Firestore rules with `backend/firestore.rules`. The checked-in
-   policy supports the observed private-save path and denies all other client
-   paths. Preserve any separately required existing access after review; never
-   paste a broad authenticated-user allow rule over the social collections.
+1. Review the activation record against the live project before deployment. Blaze,
+   the Melbourne database and the owner-only access rules were confirmed on
+   2026-09-30. Cloud Functions billing is separate from paid Apple Developer
+   membership. Budget alerts are not a hard cap.
+2. The canonical social config now uses `australia-southeast1` (Sydney), the nearby
+   region that supports both the v2 functions and the v1 Auth-deletion trigger.
+   The client and backend share this value; the database remains in Melbourne.
+3. `backend/firestore.rules` preserves the two observed owner-only document paths
+   and denies all other client access. Review any subsequent console rule changes
+   before deploying; never paste a broad authenticated-user allow rule over the
+   social collections.
    No composite indexes are required. Do not deploy the empty indexes file over
    unrelated existing indexes.
 4. Replace the existing placeholder privacy/terms pages with reviewed production

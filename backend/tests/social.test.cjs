@@ -40,10 +40,20 @@ function save(correct){return {sections:{progress:{data:{state:{version:3,legacy
 async function friend(a,b){await a.call('sendRequest',{code:b.code});await b.call('accept',{uid:a.uid});}
 async function until(check){for(let i=0;i<200;i++){if(await check())return;await new Promise(resolve=>setTimeout(resolve,100));}assert.fail('Expected emulator trigger did not finish');}
 
-test('rules isolate private saves and deny every direct social read/write',async()=>{
+test('rules preserve owner-only profile/app-data access and deny every direct social read/write',async()=>{
   const mine=rules.authenticatedContext('rules-owner').firestore(),other=rules.authenticatedContext('rules-other').firestore(),anon=rules.unauthenticatedContext().firestore();
-  const path='users/rules-owner/appData/kanaTrainer';await assertSucceeds(setDoc(doc(mine,path),save(5)));
-  await assertFails(getDoc(doc(other,path)));await assertFails(getDoc(doc(anon,path)));
+  for(const path of ['users/rules-owner','users/rules-owner/appData/kanaTrainer','users/rules-owner/appData/otherSave']){
+    await assertSucceeds(setDoc(doc(mine,path),save(5)));
+    await assertSucceeds(getDoc(doc(mine,path)));
+    for(const stranger of [other,anon]){
+      await assertFails(getDoc(doc(stranger,path)));
+      await assertFails(setDoc(doc(stranger,path),save(999)));
+    }
+  }
+  for(const path of ['users/rules-owner/private/noAccess','users/rules-owner/appData/kanaTrainer/nested/noAccess']){
+    await assertFails(getDoc(doc(mine,path)));
+    await assertFails(setDoc(doc(mine,path),{}));
+  }
   for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));

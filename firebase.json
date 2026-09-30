@@ -3,7 +3,7 @@
     "source": "backend/functions",
     "codebase": "mode-atlas-social",
     "predeploy": ["python3 build_social_backend.py"],
-    "ignore": ["node_modules", "*.log", ".env.local"]
+    "ignore": ["node_modules", ".git", ".runtimeconfig.json", "*.log", ".env.local"]
   }],
   "firestore": {
     "rules": "backend/firestore.rules",
