@@ -143,7 +143,11 @@ test('account deletion cleans profiles, codes, blocks and relationships; deleted
   const a=await learner('Owen'),b=await learner('Pia'),c=await learner('Quinn');await friend(a,b);await c.call('block',{uid:a.uid});
   await auth.deleteUser(a.uid);
   if(directService)await service.erase(a.uid,true);
-  await until(async()=>!(await db.doc(`socialAccounts/${a.uid}`).get()).exists);
+  await until(async()=>{
+    const documents=await db.getAll(db.doc(`socialAccounts/${a.uid}`),db.doc(`socialLimits/${a.uid}`));
+    return documents.every(doc=>!doc.exists);
+  });
+  await assert.rejects(b.call('lookup',{code:a.code}),{code:'NOT_FOUND'});
   assert.equal((await b.call('state')).counts.friends,0);assert.equal((await c.call('state')).counts.blocked,0);
   await assert.rejects(a.call('updateProfile',{displayName:'Gone',avatar:'kana',timeZone:'UTC'}),{code:'UNAUTHENTICATED'});
   assert.equal((await db.doc(`socialLimits/${a.uid}`).get()).exists,false);
