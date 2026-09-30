@@ -16,6 +16,11 @@
     const compact=nameKey(folded),withoutSuffix=nameKey(fold(normalized.replace(/[0-9]+$/,''))),reserved=['admin','administrator','owner','staff','moderator','support','official','founder','developer','helpdesk','system','modeatlas','modteam','devteam'];
     return reserved.some(word=>compact===word||withoutSuffix===word||folded.split(/[ ._'’\-]+/).includes(word))||/^(admin|moderator|modeatlas)/.test(compact);
   }
+  function objectionableName(value){
+    const folded=cleanName(value).normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/./gu,char=>confusables[char]||char);
+    const words=new Set(['fuck','fucker','fucking','shit','asshole','bitch','cunt','nigger','nigga','faggot']);
+    return words.has(nameKey(folded))||folded.split(/[^\p{L}]+/u).some(word=>words.has(word));
+  }
   function emoji(value){
     if(typeof value!=='string'||value.length>40||typeof Intl.Segmenter!=='function')return null;
     const clean=value.trim().normalize('NFC');
@@ -31,5 +36,5 @@
   function photoURL(value){
     try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&/^(?:[a-z0-9-]+\.)*googleusercontent\.com$/i.test(url.hostname)&&url.href.length<=2048?url.href:null;}catch{return null;}
   }
-  return Object.freeze({avatars,emojis,cleanName,nameKey,validName,reservedName,emoji,avatar,photoURL});
+  return Object.freeze({avatars,emojis,cleanName,nameKey,validName,reservedName,objectionableName,emoji,avatar,photoURL});
 });

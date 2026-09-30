@@ -770,6 +770,24 @@ function beginTrainerSessionEnd() {
     window.KanaCloudSync?.flushDeferredSessionSync?.(650);
 }
 
+// Identity changes suspend a run before cloud sync replaces the local save.
+// Already-earned answers/checkpoints stay with the old owner; no completion
+// result or reward is manufactured by changing accounts.
+function suspendTrainerForAccountChange() {
+    if (!sessionStarted) return;
+    window.ModeAtlasSessionControls?.pause();
+    trainerController.captureSession();
+    window.ModeAtlasSessionControls?.reset();
+    sessionStarted = false;
+    sessionStats.active = false;
+    window.ModeAtlasStudyFocus?.end();
+    stopTrialTimer();
+    clearHint();
+    locked = false;
+    showIdleState();
+    window.KanaCloudSync?.setSessionCloudPause?.(false);
+}
+
 function finishTrainerSession(autoEnded, resetPrompt) {
     return window.ModeAtlasStorage.transaction(()=>{
         if (!sessionStarted) return;

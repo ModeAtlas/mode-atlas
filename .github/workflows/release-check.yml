@@ -216,6 +216,17 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Build unsigned Release archive for iPhone and iPad
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj \
+            -scheme App \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            -archivePath "${RUNNER_TEMP}/ModeAtlas.xcarchive" \
+            -derivedDataPath "${RUNNER_TEMP}/ModeAtlasReleaseData" \
+            CODE_SIGNING_ALLOWED=NO archive
+          python3 validate_ios_archive.py "${RUNNER_TEMP}/ModeAtlas.xcarchive/Products/Applications/App.app"
+
       - name: Verify native product metadata
         shell: bash
         run: |

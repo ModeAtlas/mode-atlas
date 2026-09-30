@@ -1,13 +1,17 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function ownsActiveAccount(uid) {
+      return request.auth != null && request.auth.uid == uid
+        && !exists(/databases/$(database)/documents/accountDeletions/$(uid));
+    }
     // Preserve the live project's owner-only profile and app-data access.
     // These are two exact document depths, not a recursive users wildcard.
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if ownsActiveAccount(uid);
     }
     match /users/{uid}/appData/{docId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if ownsActiveAccount(uid);
     }
     // Social collections are accessed only through authenticated callables.
     // Admin SDK operations enforce their own ownership and relationship checks.

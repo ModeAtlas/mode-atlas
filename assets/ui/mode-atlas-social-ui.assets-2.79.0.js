@@ -21,13 +21,14 @@
   async function run(action,onSuccess){
     if(!host || host.getAttribute('aria-busy')==='true')return;
     const ticket=generation;status('');host.setAttribute('aria-busy','true');
-    const controls=[...host.querySelectorAll('button,input,select')];controls.forEach(node=>{node.dataset.wasDisabled=String(node.disabled);node.disabled=true;});
+    const controls=[...host.querySelectorAll('button,input,select,textarea')];controls.forEach(node=>{node.dataset.wasDisabled=String(node.disabled);node.disabled=true;});
     try{const result=await action();if(alive(ticket))await onSuccess?.(result);}
     catch(error){if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
     finally{if(alive(ticket))host.removeAttribute('aria-busy');controls.forEach(node=>{node.disabled=node.dataset.wasDisabled==='true';delete node.dataset.wasDisabled;});}
   }
   function screen(){generation++;status('');body.replaceChildren();host.removeAttribute('aria-busy');return generation;}
   function empty(title,description){const card=el('div','ma-social-empty');card.append(el('h3','',title),el('p','',description));body.append(card);return card;}
+  function focusTitle(){const title=body.querySelector('h3');if(title){title.tabIndex=-1;title.focus({preventScroll:true});}}
   function back(label,action){body.append(button('← '+label,action,'ma-button ma-button--ghost ma-social-back'));}
   async function load(){
     if(!host?.isConnected)return;
@@ -39,6 +40,7 @@
     empty('Loading your circle…','');
     try{
       const result=await root.ModeAtlasSocial.call('state');if(!alive(ticket))return;state=result;
+      if(result.restricted){screen();empty('Friends access is restricted','Contact support@mode-atlas.com if you think this is a mistake. Your learning progress is still available.');return;}
       if(result.deleting){screen();empty('Removing your friends profile','Please try again shortly.');return;}
       if(!result.active)editProfile();else home();
     }catch(error){if(alive(ticket)){screen();empty('Friends is unavailable',root.ModeAtlasSocial.message(error)).append(button('Try again',load));}}
@@ -78,6 +80,7 @@
       select.value=metric;select.addEventListener('change',()=>{metric=select.value;home();});label.append(select);tools.append(label,button('Refresh',load));
     }
     body.append(tools);
+    if(state.canModerate)body.append(button('Review reports',()=>reviewReports()));
     if(tab==='rankings')body.append(el('p','ma-social-note','Rankings use each friend’s latest synced learning progress.'));
     const list=el('div','ma-social-list');list.id='maSocialList';list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby','maSocialTab-'+tab);body.append(list);
     void loadPage(list,null);
@@ -104,6 +107,7 @@
           button('Block',()=>confirmAction('Block '+profile.displayName+'?','You will not see each other’s profiles or receive requests from each other.','Block','block',{uid:profile.uid},home)));
       }else if(kind==='outgoing')actions.append(button('Cancel request',()=>run(()=>root.ModeAtlasSocial.call('cancel',{uid:profile.uid}),load)));
       else actions.append(button('Unblock',()=>confirmAction('Unblock '+profile.displayName+'?','You can exchange requests again. This does not restore your previous friendship.','Unblock','unblock',{uid:profile.uid},home)));
+      actions.append(button('Report',()=>reportProfile(profile)));
       card.append(actions);
     }
     return card;
@@ -180,6 +184,7 @@
       if(result.relationship==='none')preview.append(button('Send request',()=>run(()=>root.ModeAtlasSocial.call('sendRequest',{code}),()=>{kind='outgoing';load();}),'ma-button ma-button--primary'));
       else if(result.relationship==='incoming')preview.append(button('Review request',()=>{kind='incoming';load();}));
       else preview.append(el('p','ma-social-note',result.relationship==='friend'?'You’re already friends.':'Your request is waiting for a reply.'));
+      preview.append(button('Report',()=>reportProfile(result.profile,code)));
     });});body.append(form,preview);
   }
   async function showProfile(uid){
@@ -191,13 +196,47 @@
       for(const [label,value]of [['Atlas level',number(profile.level)],['Total XP',number(stats.xp)],['Study streak',`${number(stats.streak)} days`],['Total correct',number(stats.totalCorrect)],['Reading mastery',`${stats.readingMastered} / ${stats.kanaCount}`],['Writing mastery',`${stats.writingMastered} / ${stats.kanaCount}`]]){const tile=el('div');tile.append(el('span','',label),el('strong','',value));grid.append(tile);}body.append(grid);
       body.append(el('p','ma-social-note',stats.syncedAt?`Progress synced ${new Date(stats.syncedAt).toLocaleString()}.`:'Progress will appear after the next sync.'));
       if(uid!==owner){const actions=el('div','ma-social-tools');actions.append(
+        button('Report',()=>reportProfile(profile)),
         button('Remove friend',()=>confirmAction('Remove '+profile.displayName+'?','You will stop appearing in each other’s friends list and rankings.','Remove friend','remove',{uid},()=>showProfile(uid))),
         button('Block',()=>confirmAction('Block '+profile.displayName+'?','You will not see each other’s profiles or receive requests from each other.','Block','block',{uid},()=>showProfile(uid)),'ma-button ma-button--danger'));body.append(actions);}
     }catch(error){if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
   }
+  function reportProfile(profile,code){
+    screen();back('Friends',home);body.append(el('h3','','Report '+profile.displayName),el('p','ma-social-note','Reports are reviewed by the Mode Atlas team. Your identity is not shared with the person you report.'));
+    const form=el('form','ma-social-form'),label=el('label','ma-social-field','Reason'),reason=el('select');reason.name='reason';reason.setAttribute('aria-label','Reason');
+    for(const [value,text]of [['name','Inappropriate name'],['avatar','Inappropriate avatar'],['harassment','Harassment or spam'],['other','Something else']]){const option=el('option','',text);option.value=value;reason.append(option);}label.append(reason);
+    const details=el('label','ma-social-field','Details (optional)'),note=el('textarea');note.name='note';note.rows=3;note.maxLength=500;details.append(note);
+    const submit=button('Send report',null,'ma-button ma-button--primary');submit.type='submit';form.append(label,details,submit);
+    form.addEventListener('submit',event=>{event.preventDefault();run(()=>root.ModeAtlasSocial.call('reportProfile',{uid:profile.uid,reason:reason.value,note:note.value,...(code?{code}:{})}),()=>{
+      screen();body.append(el('h3','','Report sent'),el('p','ma-social-note','Thank you for helping keep Friends welcoming. You can also block this profile to stop requests and hide each other’s profiles.'));
+      const actions=el('div','ma-social-tools');actions.append(button('Done',load,'ma-button ma-button--primary'),button('Block profile',()=>confirmAction('Block '+profile.displayName+'?','You will not see each other’s profiles or receive requests from each other.','Block','block',{uid:profile.uid},load),'ma-button ma-button--danger'));body.append(actions);focusTitle();
+    });});body.append(form);reason.focus();
+  }
+  async function reviewReports(cursor=null,restricted=false){
+    const ticket=screen();back('Friends',home);body.append(el('h3','',restricted?'Restricted profiles':'Reports to review'),button(restricted?'Review reports':'Restricted profiles',()=>reviewReports(null,!restricted)));
+    try{
+      const result=await root.ModeAtlasSocial.call(restricted?'listRestrictions':'listReports',cursor?{cursor}:{});if(!alive(ticket))return;
+      if(!result.rows.length)body.append(el('p','ma-social-empty',restricted?'No restricted profiles.':'No reports waiting for review.'));
+      for(const report of result.rows){
+        const card=el('article','ma-social-report'),actions=el('div','ma-social-tools');
+        if(restricted){
+          card.append(el('h4','',report.displayName));
+          actions.append(button('Restore Friends access',()=>confirmAction('Restore Friends access?','This account can use Friends again.','Restore access','restoreProfile',{uid:report.uid},()=>reviewReports(null,true))));
+        }else{
+          const preview=el('div','ma-social-self');preview.append(avatar(report.snapshot),el('strong','',report.snapshot.displayName));card.append(preview,el('p','ma-social-note',report.reason+' · '+new Date(report.createdAt).toLocaleDateString()),el('p','',report.note||'No additional details.'));
+          if(report.current?.displayName!==report.snapshot.displayName)card.append(el('p','ma-social-note','Current name: '+(report.current?.displayName||'Profile removed')));
+          for(const [decision,label,message]of [['dismiss','Dismiss','Close this report without changing the profile.'],['reset','Reset name and avatar','Replace the current name and avatar with a neutral profile. Learning progress is kept.'],['restrict','Restrict Friends access','Hide this profile and prevent it using Friends. Learning progress is kept.']]){
+            actions.append(button(label,()=>confirmAction(label+'?',message,label,'reviewReport',{id:report.id,decision},()=>reviewReports())));
+          }
+        }
+        card.append(actions);body.append(card);
+      }
+      if(result.nextCursor)body.append(button('Next reports',()=>reviewReports(result.nextCursor,restricted)));
+    }catch(error){if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
+  }
   function confirmAction(title,message,label,action,data,cancel){
     screen();body.append(el('h3','',title),el('p','ma-social-note',message));const actions=el('div','ma-social-tools');
-    actions.append(button('Cancel',cancel),button(label,()=>run(()=>root.ModeAtlasSocial.call(action,data),load),'ma-button ma-button--danger'));body.append(actions);
+    actions.append(button('Cancel',cancel),button(label,()=>run(()=>root.ModeAtlasSocial.call(action,data),load),'ma-button ma-button--danger'));body.append(actions);focusTitle();
   }
   function mount(parent){
     if(!root.ModeAtlasSocial.isEnabled())return;

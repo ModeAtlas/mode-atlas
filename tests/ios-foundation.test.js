@@ -317,3 +317,21 @@ test('widget signing is opt-in and the extension is embedded in the app', () => 
   assert.doesNotMatch(read('ios/App/Shared/LocalOnly.entitlements'),/<key>/);
   assert.match(read('ios/.gitignore'),/widget-sharing.local.xcconfig/);
 });
+
+
+test('app and widget package their own privacy manifests and project synchronization preserves signing',()=>{
+  const project=require('xcode').project(path.join(ROOT,'ios/App/App.xcodeproj/project.pbxproj'));project.parseSync();
+  const objects=project.hash.project.objects,targets=objects.PBXNativeTarget;
+  for(const name of ['App','ModeAtlasWidgets']){
+    const target=Object.values(targets).find(value=>value&&typeof value==='object'&&value.name===name);assert.ok(target,name);
+    const phase=target.buildPhases.map(item=>objects.PBXResourcesBuildPhase[typeof item==='string'?item:item.value]).find(Boolean);assert.ok(phase,name+' resources');
+    const manifests=phase.files.map(item=>objects.PBXBuildFile[item.value]).map(file=>objects.PBXFileReference[file.fileRef]).filter(file=>file?.path==='PrivacyInfo.xcprivacy');
+    assert.equal(manifests.length,1,name+' has exactly one owned manifest');
+  }
+  const check=spawnSync('python3',['-c',`from sync_ios_project import sync_privacy_resources, PBXPROJ
+source=PBXPROJ.read_text().replace('MARKETING_VERSION =', 'DEVELOPMENT_TEAM = LOCALTEAM; MARKETING_VERSION =')
+assert sync_privacy_resources(source)==source
+assert 'DEVELOPMENT_TEAM = LOCALTEAM;' in sync_privacy_resources(source)
+`],{cwd:ROOT,encoding:'utf8'});
+  assert.equal(check.status,0,check.stderr);
+});

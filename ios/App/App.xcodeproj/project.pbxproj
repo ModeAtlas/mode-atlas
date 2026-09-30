@@ -30,6 +30,8 @@
 		03BBF6327B3872DFE1D66971 /* ModeAtlasShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E53F29F622E73144BB19B4 /* ModeAtlasShortcuts.swift */; };
 		DC5CBB535E30347566368E7C /* ModeAtlasStudyControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28E05D3E1DF32F28BFA3EF47 /* ModeAtlasStudyControl.swift */; };
 		7B1AAEADEA7E20CD33136934 /* StudyAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1990D4A5BD9E4ABE98AEE73D /* StudyAccessoryView.swift */; };
+		279000000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 279000000000000000000001 /* PrivacyInfo.xcprivacy */; };
+		279000000000000000000004 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 279000000000000000000003 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -59,6 +61,8 @@
 		63E53F29F622E73144BB19B4 /* ModeAtlasShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasShortcuts.swift; sourceTree = "<group>"; };
 		28E05D3E1DF32F28BFA3EF47 /* ModeAtlasStudyControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasStudyControl.swift; sourceTree = "<group>"; };
 		1990D4A5BD9E4ABE98AEE73D /* StudyAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyAccessoryView.swift; sourceTree = "<group>"; };
+		279000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		279000000000000000000003 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,12 +115,15 @@
 				2FAD9764203C412B000D30F8 /* GoogleService-Info.plist */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
+				279000000000000000000001 /* PrivacyInfo.xcprivacy */,
 			);
 			path = App;
 			sourceTree = "<group>";
 		};
 		F2B31C9786B4BF0A9A4AAF84 = {isa = PBXGroup; children = (4AABF49794811E21EA1A85A0, 676944F0EBD4EF9E4B363FC6, 1803230A3093F15837F56DE0, 7FFB534204306E4FDF256A2B, 61F160D3F5EB024BF9CA7EE4, ); path = Shared; sourceTree = "<group>"; };
-		C7700313516F038757BAEF16 = {isa = PBXGroup; children = (28E05D3E1DF32F28BFA3EF47, 1990D4A5BD9E4ABE98AEE73D, D4B604B59E210717F1306C5C, 269100000000000000000002, 11DCDACF74B33BC245135679, ); path = ModeAtlasWidgets; sourceTree = "<group>"; };
+		C7700313516F038757BAEF16 = {isa = PBXGroup; children = (28E05D3E1DF32F28BFA3EF47, 1990D4A5BD9E4ABE98AEE73D, D4B604B59E210717F1306C5C, 269100000000000000000002, 11DCDACF74B33BC245135679,
+				279000000000000000000003 /* PrivacyInfo.xcprivacy */,
+			); path = ModeAtlasWidgets; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -205,10 +212,13 @@
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
 				2FAD9765203C412B000D30F8 /* GoogleService-Info.plist in Resources */,
+				279000000000000000000002 /* PrivacyInfo.xcprivacy */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		3FE72E556019EC3F3A1FF736 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		3FE72E556019EC3F3A1FF736 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (
+				279000000000000000000004 /* PrivacyInfo.xcprivacy */,
+			); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -367,14 +377,14 @@
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Grove Summit Horizon";
 				CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2078000;
+				CURRENT_PROJECT_VERSION = 2079000;
 				GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.323625667322-aldb8bps765pbau4d33p1dat54k7lib0;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.78.0;
+				MARKETING_VERSION = 2.79.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -391,14 +401,14 @@
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Grove Summit Horizon";
 				CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2078000;
+				CURRENT_PROJECT_VERSION = 2079000;
 				GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.323625667322-aldb8bps765pbau4d33p1dat54k7lib0;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.78.0;
+				MARKETING_VERSION = 2.79.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -413,10 +423,10 @@
                 APPLICATION_EXTENSION_API_ONLY = YES;
                 CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
                 CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 2078000;
+                CURRENT_PROJECT_VERSION = 2079000;
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.78.0;
+                MARKETING_VERSION = 2.79.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;
@@ -431,10 +441,10 @@
                 APPLICATION_EXTENSION_API_ONLY = YES;
                 CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
                 CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 2078000;
+                CURRENT_PROJECT_VERSION = 2079000;
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.78.0;
+                MARKETING_VERSION = 2.79.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;

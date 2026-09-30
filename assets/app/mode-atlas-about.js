@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'More room to practise, and a clearer way to connect.';
+  const WHATS_NEW_COPY = 'Smoother sounds and a safer place to learn together.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Open your profile from the compact iOS dock.',
-    'Hear consistent button sounds and clearer practice feedback.',
-    'Spot pending friend requests and choose an emoji or account-photo avatar.'
+    'Smoother iOS sounds when moving quickly between screens.',
+    'Report unwanted profiles in Friends and manage your account more reliably.',
+    'Replay the quick tour or send feedback from Settings.'
   ];
 
   function storeGet(key, fallback = '') {
@@ -176,11 +176,12 @@
 
     if (pending && !onboardingOpen()) {
       try { sessionStorage.removeItem('modeAtlasShowWhatsNewAfterOnboarding'); } catch {}
-      showWhatsNew({ auto: true });
+      markWhatsNewSeen();
       return;
     }
 
     if (pending && onboardingOpen()) return;
+    if (sessionStorage.getItem('modeAtlasTourPending') === '1') { markWhatsNewSeen(); return; }
 
     if (shouldAutoShowWhatsNew() && onboardingComplete() && !onboardingOpen() && ['index.html','kana.html'].includes(PAGE)) {
       showWhatsNew();
@@ -285,10 +286,23 @@
     }
   }, true);
 
+  document.addEventListener('click',async event=>{
+    if(!event.target.closest?.('[data-ma-support]'))return;
+    event.preventDefault();
+    const environment=window.ModeAtlasEnv?.isNativeApp?'iOS':'website';
+    const body=`Mode Atlas ${APP_VERSION} · ${environment}\nScreen: ${PAGE}\n\nWhat happened?\n\nWhat did you expect?\n`;
+    const url=`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Mode Atlas feedback · '+APP_VERSION)}&body=${encodeURIComponent(body)}`;
+    try{if(await window.AtlasPlatform?.openExternalLink?.(url))return;}catch{}
+    if(window.ModeAtlasEnv?.isNativeApp){
+      await window.ModeAtlasFeedback?.alert?.({title:'Email is unavailable',message:'You can send feedback to '+SUPPORT_EMAIL+' from any email app. Include Mode Atlas '+APP_VERSION+' and a description of what happened.',confirmLabel:'OK'});
+    }else location.href=url;
+  });
+
   window.ModeAtlas = window.ModeAtlas || {};
   window.ModeAtlas.openAbout = openAbout;
   window.ModeAtlas.appInfo = getAppInfo;
   window.ModeAtlas.showWhatsNew = showWhatsNew;
+  window.ModeAtlas.markWhatsNewSeen = markWhatsNewSeen;
 
   document.addEventListener('ma:visit-flow-closed', runWhatsNewCheck);
   document.addEventListener('ma:ui-refresh', runWhatsNewCheck);

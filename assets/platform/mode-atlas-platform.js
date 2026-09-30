@@ -78,6 +78,8 @@
       });
     },
     openExternalLink: function(url){ return call('openExternalLink', [String(url || '')], false); },
+    playSound: function(cue,volume){ return call('playSound', [cue,volume], false); },
+    stopSounds: function(){ return call('stopSounds', [], false); },
     setAppIcon: function(name){ return call('setAppIcon', [name], false); },
     setAppearance: function(preference){ return call('setAppearance', [preference], false); },
     exportBackup: function(file){ return call('exportBackup', [file], {completed:false, supported:false}); },

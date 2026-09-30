@@ -36,6 +36,30 @@ def ios_build_number(version: str) -> int:
     return major * 1_000_000 + minor * 1_000 + patch
 
 
+def sync_privacy_resources(source: str) -> str:
+    """Deterministic resources also update locally retained signing projects."""
+    targets = (
+        ("279000000000000000000001", "279000000000000000000002", "504EC3061FED79650016851F", "504EC3021FED79650016851F"),
+        ("279000000000000000000003", "279000000000000000000004", "C7700313516F038757BAEF16", "3FE72E556019EC3F3A1FF736"),
+    )
+    for ref, build, group, phase in targets:
+        if not re.search(rf"{ref}[^\n]*= ", source):
+            source = source.replace("/* End PBXFileReference section */", f'\t\t{ref} /* PrivacyInfo.xcprivacy */ = {{isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; }};\n/* End PBXFileReference section */')
+        if not re.search(rf"{build}[^\n]*= ", source):
+            source = source.replace("/* End PBXBuildFile section */", f'\t\t{build} /* PrivacyInfo.xcprivacy in Resources */ = {{isa = PBXBuildFile; fileRef = {ref} /* PrivacyInfo.xcprivacy */; }};\n/* End PBXBuildFile section */')
+        for owner, field, item in ((group, 'children', ref), (phase, 'files', build)):
+            pattern = rf'(^[ \t]*{owner}(?: /\*[^\n]*?\*/)? = \{{[^{{}}]*?{field} = \()([^)]*)(\))'
+            def include(match):
+                entries = match.group(2)
+                if item not in entries:
+                    entries = entries.rstrip() + f'\n\t\t\t\t{item} /* PrivacyInfo.xcprivacy */,\n\t\t\t'
+                return match.group(1) + entries + match.group(3)
+            source, count = re.subn(pattern, include, source, count=1, flags=re.S | re.M)
+            if count != 1:
+                raise SystemExit(f"Could not locate iOS resource owner {owner}; project left unchanged.")
+    return source
+
+
 def sync() -> tuple[str, int, bool]:
     version = release_version()
     build = ios_build_number(version)
@@ -73,6 +97,7 @@ def sync() -> tuple[str, int, bool]:
     if updated.count(f"GOOGLE_REVERSED_CLIENT_ID = {reversed_client_id};") != 2:
         raise SystemExit("Could not synchronize the Firebase callback scheme in both Xcode configurations.")
 
+    updated = sync_privacy_resources(updated)
     changed = updated != source
     if changed:
         PBXPROJ.write_text(updated, encoding="utf-8")

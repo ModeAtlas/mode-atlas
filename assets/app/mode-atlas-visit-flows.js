@@ -40,7 +40,7 @@
   function requiresKanaSetup(raw){return KANA_SETUP_PATHS.has(destinationPath(raw))}
   function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/writing/'))return'Kana Writing';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Reading';return'Kana Trainer'}
   function needsSetup(raw){return !onboardingComplete()||(requiresKanaSetup(raw)&&!kanaSetupComplete())}
-  function vEl(tag, className='', text=''){const el=document.createElement(tag);if(className)el.className=className;if(text!=='')el.textContent=String(text);return el}
+  function vEl(tag, className='', text=''){const el=document.createElement(tag);if(className)el.className=className;if(className==='ma-visit-title')el.id='maVisitTitle';if(text!=='')el.textContent=String(text);return el}
   function vBtn(className='', text=''){const btn=vEl('button',className,text);btn.type='button';return btn}
   function vLink(className='', text='', href=''){const a=vEl('a',className,text);a.href=href;return a}
   function hasData(){return hasObj('charStats')||hasObj('reverseCharStats')||hasObj('scoreHistory')||hasObj('reverseScoreHistory')||hasArr('kanaWordBank')||hasArr('testModeResults')||hasArr('writingTestModeResults')||Number(storeGet('highScore','0')||0)>0||Number(storeGet('reverseHighScore','0')||0)>0}
@@ -59,7 +59,7 @@
     storeSetJSON(K.lastMode,obj);
     window.dispatchEvent(new CustomEvent('modeAtlasActivityChanged'));
   }
-  window.ModeAtlasVisitFlows=Object.freeze({recordActivity});
+  window.ModeAtlasVisitFlows=Object.freeze({recordActivity,showTour});
   const ROWS=[['あ row','あいうえお'],['か row','かきくけこ'],['さ row','さしすせそ'],['た row','たちつてと'],['な row','なにぬねの'],['は row','はひふへほ'],['ま row','まみむめも'],['や row','やゆよ'],['ら row','らりるれろ'],['わ row','わをん'],['ア row','アイウエオ'],['カ row','カキクケコ'],['サ row','サシスセソ'],['タ row','タチツテト'],['ナ row','ナニヌネノ']];
   function suggestions(){const st=j('charStats',{}),tm=j('charTimes',{});const a=ROWS.map(([name,chars])=>{let c=0,w=0,ms=0,n=0;[...chars].forEach(ch=>{c+=Number(st[ch]?.correct||0);w+=Number(st[ch]?.wrong||0);if(tm[ch]?.avg&&tm[ch]?.count){ms+=tm[ch].avg*tm[ch].count;n+=tm[ch].count}});const total=c+w,acc=total?c/total:1;return{name,total,score:w*4+(1-acc)*50+Math.min((n?ms/n:0)/500,12)+(total?0:-100)}}).filter(r=>r.total>0).sort((a,b)=>b.score-a.score).slice(0,3);return a.length?a:[{name:'あ row'},{name:'か row'},{name:'さ row'}]}
   function name(){const u=window.KanaCloudSync?.getUser?.();const n=(u?.displayName||u?.email||'').trim();if(n)return n.split(/\s+/)[0].split('@')[0];for(const id of ['profileName','drawerName','studyProfileName','identityName']){const e=document.getElementById(id),t=(e?.textContent||'').trim();if(t&&!/guest/i.test(t))return t.split(/\s+/)[0]}return'there'}
@@ -89,22 +89,31 @@
     m.className='ma-visit-backdrop';
     const card=vEl('div','ma-card ma-visit-card');
     card.setAttribute('role','dialog');
-    card.setAttribute('aria-modal','true');
+    card.setAttribute('aria-modal','true');card.setAttribute('aria-labelledby','maVisitTitle');card.tabIndex=-1;
     const content=document.createElement('div');
     content.id='maVisitContent';
     card.append(content);
     m.append(card);
     document.body.appendChild(m);
     m.addEventListener('click',e=>{if(e.target===m)closeModal()});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()})
+    document.addEventListener('keydown',e=>{
+      if(!m.classList.contains('open'))return;
+      if(e.key==='Escape'){e.preventDefault();closeModal();return;}
+      if(e.key!=='Tab')return;
+      const items=[...card.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled)')].filter(el=>el.getClientRects().length);
+      const first=items[0]||card,last=items.at(-1)||card;
+      if(e.shiftKey&&(document.activeElement===first||!card.contains(document.activeElement))){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&(document.activeElement===last||!card.contains(document.activeElement))){e.preventDefault();first.focus();}
+    })
   }
-  function openModal(locked=false){const modal=document.getElementById('maVisitModal');if(!modal)return;modal.dataset.locked=locked?'true':'false';modal.classList.add('open');try{document.dispatchEvent(new CustomEvent('ma:visit-flow-opened'))}catch{}}
-  function closeModal(force,resumeInstall=true){const modal=document.getElementById('maVisitModal'); if(!modal)return; if(modal.dataset.locked==='true' && force!==true)return; modal.classList.remove('open'); modal.dataset.locked='false'; try{document.dispatchEvent(new CustomEvent('ma:visit-flow-closed',{detail:{resumeInstall}}))}catch{}}
+  let visitFocus=null;
+  function openModal(locked=false){visitFocus=document.activeElement;const modal=document.getElementById('maVisitModal');if(!modal)return;modal.dataset.locked=locked?'true':'false';modal.classList.add('open');requestAnimationFrame(()=>modal.querySelector('[role=dialog]')?.focus());try{document.dispatchEvent(new CustomEvent('ma:visit-flow-opened'))}catch{}}
+  function closeModal(force,resumeInstall=true){const modal=document.getElementById('maVisitModal'); if(!modal)return; if(modal.dataset.locked==='true' && force!==true)return; modal.classList.remove('open'); modal.dataset.locked='false';visitFocus?.focus?.({preventScroll:true}); try{document.dispatchEvent(new CustomEvent('ma:visit-flow-closed',{detail:{resumeInstall}}))}catch{}}
   function markLegalComplete(){
     storeSet(K.complete,'true');
     storeSet('modeAtlasLegalAccepted','true');
     storeSet('modeAtlasLegalAcceptedAt',String(Date.now()));
-    storeSet('modeAtlasLegalVersion','2026-05');
+    storeSet('modeAtlasLegalVersion','2026-09-30');
   }
   function markKanaSetupComplete(){
     storeSet(K.kanaSetup,'true');
@@ -211,7 +220,7 @@
       }
       if(requireLegal)markLegalComplete();
       storeSet(K.return,studyDate());
-      if(requireLegal)sessionStorage.setItem('modeAtlasShowWhatsNewAfterOnboarding','1');
+      if(requireLegal){sessionStorage.setItem('modeAtlasTourPending','1');window.ModeAtlas?.markWhatsNewSeen?.();}
       const next=branchDestination(storeGet(K.pending))||target;
       storeRemove(K.pending);
       closeModal(true,false);
@@ -305,5 +314,28 @@
     visitDecisionMade=true;
     first(target);
   }
+  let tourOpen=false;
+  function showTour(){
+    if(tourOpen||!window.ModeAtlasDialog?.feature)return;
+    tourOpen=true;window.ModeAtlasAccountNavigation?.close?.();
+    sessionStorage.removeItem('modeAtlasTourPending');
+    const native=window.ModeAtlasEnv?.isNativeApp;
+    const steps=[
+      ['Your daily starting point',native?'Use the dock to move between Atlas, Kana and Words. Tap your avatar for your profile, Friends and Settings. Tap Kana again to switch between Reading, Writing and Results.':'Atlas brings your goals and next practice together. Use the navigation to explore Kana and Words, or open your profile for Friends and account settings.'],
+      ['Make practice yours','Start with a short guided set. Reading asks for the sound of a kana; Writing asks you to choose the matching kana. Open Practice setup to change the mode and the characters you practise.'],
+      ['Keep your progress','Practice saves automatically on this device. Sign in to sync your progress between the app and website. Friends is optional, and joining it lets you choose what name and avatar other learners see.']
+    ];
+    let index=0;
+    const content=vEl('div','ma-visit-tour'),count=vEl('p','ma-visit-kicker'),title=vEl('h3'),copy=vEl('p','ma-visit-copy'),actions=vEl('div','ma-visit-actions');
+    const back=vBtn('ma-button','Back'),next=vBtn('ma-button ma-button--primary','Next');title.tabIndex=-1;actions.append(back,next);content.append(count,title,copy,actions);
+    function render(focus=false){count.textContent=`${index+1} of ${steps.length}`;title.textContent=steps[index][0];copy.textContent=steps[index][1];back.hidden=index===0;next.textContent=index===steps.length-1?'Start exploring':'Next';if(focus)title.focus();}
+    back.addEventListener('click',()=>{index--;render(true);});
+    next.addEventListener('click',()=>{if(index===steps.length-1)window.ModeAtlasDialog.close();else{index++;render(true);}});
+    render();
+    window.ModeAtlasDialog.feature({kicker:'Welcome',title:'A quick look around',contentNode:content,closeLabel:'Skip tour',closeAriaLabel:'Skip tour'}).finally(()=>{tourOpen=false;storeSet('modeAtlasTourSeen','1');});
+  }
+  function maybeTour(){if(sessionStorage.getItem('modeAtlasTourPending')==='1'&&!document.querySelector('#maVisitModal.open'))showTour();}
+  document.addEventListener('click',event=>{if(event.target.closest?.('[data-ma-tour]')){event.preventDefault();showTour();}});
+  document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(maybeTour),{once:true});
   function init(){document.addEventListener('click',gateLink);maybe();window.addEventListener('kanaCloudSyncStatusChanged',maybe);document.addEventListener('ma:ui-refresh',maybe)} if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

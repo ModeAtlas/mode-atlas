@@ -165,3 +165,31 @@ test('Friends avatar picker supports single emojis and an explicit account-photo
   await page.getByRole('button',{name:'Save profile',exact:true}).click();
   const data=await page.evaluate(()=>socialCalls.filter(item=>item.action==='updateProfile').at(-1).input);expect(data.avatar).toBe('account');expect(data.avatarURL).toBeUndefined();
 });
+
+
+test('reporting fits a small phone and moderation actions require confirmation',async({page},info)=>{
+  await prepare(page,{native:true,width:320,theme:'light'});
+  await expect(page.getByRole('button',{name:'Review reports',exact:true})).toHaveCount(0);
+  await page.locator('.ma-social-person').first().click();await page.getByRole('button',{name:'Report',exact:true}).click();
+  await page.getByLabel('Reason',{exact:true}).selectOption('harassment');
+  await page.getByLabel('Details (optional)',{exact:true}).fill('Repeated unwanted requests.');await fits(page);
+  await page.screenshot({path:info.outputPath('report-phone.png'),animations:'disabled'});
+  await page.getByRole('button',{name:'Send report',exact:true}).click();await expect(page.getByRole('heading',{name:'Report sent',exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>socialCalls.find(row=>row.action==='reportProfile').input)).toEqual({uid:'friend',reason:'harassment',note:'Repeated unwanted requests.'});
+  expect(await page.evaluate(()=>socialCalls.some(row=>row.action==='block'))).toBe(false);
+  await page.evaluate(()=>{
+    const original=ModeAtlasSocial.call;window.reviewed=false;
+    ModeAtlasSocial.call=async(action,data)=>{
+      if(action==='state')return {...await original(action,data),canModerate:true};
+      if(action==='listReports')return {rows:[{id:'a'.repeat(64),target:'friend',reason:'name',note:'<img src=x onerror=alert(1)>',snapshot:{displayName:'Reported name',avatar:'kana'},current:{displayName:'Reported name'},createdAt:Date.now()}],nextCursor:null};
+      if(action==='reviewReport'){socialCalls.push({action,input:data});window.reviewed=true;return {ok:true};}
+      return original(action,data);
+    };
+  });
+  await page.getByRole('button',{name:'Done',exact:true}).click();await page.getByRole('button',{name:'Review reports',exact:true}).click();
+  await expect(page.getByText('<img src=x onerror=alert(1)>',{exact:true})).toBeVisible();await fits(page);
+  await page.getByRole('button',{name:'Restrict Friends access',exact:true}).click();await expect(page.getByRole('heading',{name:'Restrict Friends access?',exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>reviewed)).toBe(false);
+  await page.getByRole('button',{name:'Restrict Friends access',exact:true}).click();
+  expect(await page.evaluate(()=>socialCalls.find(row=>row.action==='reviewReport').input)).toEqual({id:'a'.repeat(64),decision:'restrict'});
+});

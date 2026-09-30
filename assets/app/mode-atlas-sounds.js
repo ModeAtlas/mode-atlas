@@ -5,17 +5,10 @@
   const KEY='modeAtlasSound',LEGACY_KEYS=['maSoundMode','modeAtlasSoundMode','soundMode'];
   let ctx=null,master=null,resumePromise=null;
   const lastPlay=Object.create(null),boundSoundControls = new WeakSet();
-  // Frequency, duration, waveform, gain, onset and optional destination frequency.
-  const cues=Object.freeze({
-    tap:[[620,.045,'sine',.10,0,440]],
-    correct:[[660,.085,'sine',.13,0],[880,.115,'sine',.10,.045]],
-    wrong:[[220,.14,'triangle',.10,0,175]],
-    finish:[[523,.10,'sine',.11,0],[659,.11,'sine',.11,.08],[784,.16,'sine',.10,.17]],
-    achievement:[[523,.09,'sine',.11,0],[659,.10,'sine',.11,.07],[784,.11,'sine',.10,.15],[1046,.17,'sine',.08,.24]],
-    success:[[600,.08,'sine',.09,0],[750,.10,'sine',.07,.055]],
-    warning:[[330,.10,'sine',.09,0],[330,.10,'sine',.07,.11]],
-    error:[[260,.12,'triangle',.09,0,195]]
-  });
+  const {cues,envelope}=window.ModeAtlasSoundCues;
+  const voices=new Set(),testTimers=new Set();
+  let quietUntil=0;
+  const nativeSounds=()=>window.AtlasPlatform?.getCapabilities?.().sounds===true;
   const aliases={incorrect:'wrong',complete:'finish',session:'finish',notify:'success',notification:'success'};
   function normaliseMode(value){
     if(value===false||value==='false')return 'off';
@@ -31,7 +24,7 @@
     return normaliseMode(value);
   }
   function ensureAudio(){
-    if(getMode()==='off')return null;
+    if(getMode()==='off'||nativeSounds())return null;
     try{
       const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return null;
       if(!ctx){
@@ -43,24 +36,41 @@
       return ctx;
     }catch{return null;}
   }
+  function stopSounds(){
+    testTimers.forEach(clearTimeout);testTimers.clear();
+    if(nativeSounds()){window.AtlasPlatform.stopSounds().catch(()=>{});return;}
+    if(!ctx)return;
+    const at=ctx.currentTime;
+    for(const voice of voices){
+      voice.gain.gain.cancelAndHoldAtTime(at);
+      voice.gain.gain.linearRampToValueAtTime(0,at+.018);
+      voice.osc.stop(at+.02);
+    }
+  }
   function play(name,options={}){
-    if(getMode()==='off')return;
+    if(getMode()==='off'||document.hidden)return;
     const cue=Object.hasOwn(cues,name)?name:(Object.hasOwn(aliases,name)?aliases[name]:'tap'),at=Date.now();
-    if(lastPlay[cue]&&at-lastPlay[cue]<(options.cooldown??(cue==='tap'?35:110)))return;
-    const audio=ensureAudio();if(!audio)return;
-    // Do not replay stale interactions after an interrupted/background audio session.
-    if(audio.state!=='running')return;
-    lastPlay[cue]=at;
+    if(cue==='tap'&&at<quietUntil)return;
+    if(lastPlay[cue]&&at-lastPlay[cue]<(options.cooldown??(cue==='tap'?80:140)))return;
     const volume=getMode()==='loud'?1:.58;
+    if(nativeSounds()){
+      lastPlay[cue]=at;
+      window.AtlasPlatform.playSound(cue,volume).catch(()=>{});
+      return;
+    }
+    const audio=ensureAudio();if(!audio||audio.state!=='running'||voices.size>=8)return;
+    // Background/resume never queues interaction sounds for later playback.
+    lastPlay[cue]=at;
+    if(cue!=='tap')quietUntil=at+Math.max(...cues[cue].map(note=>note[1]+note[4]))*1000;
     for(const [frequency,duration,type,level,delay,slide]of cues[cue]){
       const start=audio.currentTime+.002+delay,end=start+duration,gain=audio.createGain(),osc=audio.createOscillator();
       osc.type=type;osc.frequency.setValueAtTime(frequency,start);
       if(slide)osc.frequency.exponentialRampToValueAtTime(slide,end);
-      gain.gain.setValueAtTime(.0001,start);
-      gain.gain.exponentialRampToValueAtTime(level*volume,start+.005);
-      gain.gain.exponentialRampToValueAtTime(.0001,end);
+      const curve=Float32Array.from({length:128},(_,i)=>envelope(i*duration/127,duration)*level*volume);
+      gain.gain.setValueCurveAtTime(curve,start,duration);
       osc.connect(gain);gain.connect(master);
-      osc.onended=()=>{osc.disconnect();gain.disconnect();};osc.start(start);osc.stop(end+.005);
+      const voice={osc,gain};voices.add(voice);
+      osc.onended=()=>{voices.delete(voice);osc.disconnect();gain.disconnect();};osc.start(start);osc.stop(end+.005);
     }
   }
   function writeModeValue(key,value){
@@ -70,7 +80,7 @@
   function setMode(value){
     const mode=normaliseMode(value);writeModeValue(KEY,mode);refreshSoundControls();
     window.dispatchEvent(new CustomEvent('modeAtlasSoundChanged',{detail:{mode}}));
-    if(mode!=='off')play('tap',{cooldown:0});return mode;
+    if(mode==='off')stopSounds();else play('tap',{cooldown:0});return mode;
   }
   function refreshSoundControls(){
     const mode=getMode();
@@ -87,7 +97,10 @@
     });refreshSoundControls();
   }
   function testSound(){
-    ['tap','correct','wrong','finish','achievement'].forEach((name,index)=>setTimeout(()=>play(name,{cooldown:0}),index*450));
+    stopSounds();
+    ['tap','correct','wrong','finish','achievement'].forEach((name,index)=>{
+      const timer=setTimeout(()=>{testTimers.delete(timer);play(name,{cooldown:0});},index*500);testTimers.add(timer);
+    });
   }
   function notify(message,type,explicit){
     if(explicit==='none')return;
@@ -118,6 +131,8 @@
   function init(){
     window.ModeAtlasSounds=Object.freeze({play,notify,setSound:setMode,setMode,getSoundMode:getMode,getMode,refresh:refreshSoundControls,testSound,version:VERSION});
     bindSoundControls();bindEvents();
+    window.addEventListener('pagehide',()=>{testTimers.forEach(clearTimeout);testTimers.clear();if(!nativeSounds())stopSounds();});
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){testTimers.forEach(clearTimeout);testTimers.clear();if(!nativeSounds())stopSounds();}});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
   window.addEventListener('modeAtlasSettingsMenuReady',()=>bindSoundControls());

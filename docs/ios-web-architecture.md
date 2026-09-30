@@ -30,7 +30,7 @@ Capacitor WebView. It does not load the live website at runtime.
 the website's Service Worker and manifest. `npm run ios:sync` copies the payload
 into the native project. The generated `ios/App/App/public` is never edited or
 committed. The GitHub release gate checks the generated output, browser behavior,
-native-web behavior, and an unsigned iPhone/iPad simulator build.
+native-web behavior, an unsigned iPhone/iPad simulator build, and an unsigned device Release archive.
 
 ## Adding a feature
 
@@ -457,3 +457,19 @@ review. No normal-user entry or extra social requests appear before activation.
 See `friends-leaderboards-2.76.0.md` for ownership, test gates, score-integrity
 limits and exact activation steps. Friends ranks represent synced progress;
 competitive weekly XP remains a separate future feature.
+
+
+### TestFlight preparation (2.79.0)
+
+Native SDK transport and sound playback now live outside individual page loads.
+`build_native_runtime.mjs` bundles Firebase with a shared registry and renders
+native WAVs from the shared cue score; the web retains its own Web Audio renderer.
+The native player persists across document navigation through the existing
+platform bridge. Auth and progress still have one shared JavaScript owner.
+
+Account deletion commits on the server before removing private/social data and
+uses the Auth deletion trigger for retry recovery. Local saves are tagged by UID
+and cached separately when switching accounts. Friends reporting/moderation is
+server-owned, with access rules, limits and expiry policies. See
+[testflight-readiness-2.79.0.md](testflight-readiness-2.79.0.md) for ownership,
+deployment, validation and the remaining Apple/account operations.

@@ -1,6 +1,6 @@
 let initializeApp, getApps, getApp;
-let getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, linkWithCredential, reauthenticateWithPopup, reauthenticateWithCredential, deleteUser, signOut, onAuthStateChanged;
-let getFirestore, doc, getDoc, setDoc, deleteDoc;
+let getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, linkWithCredential, reauthenticateWithPopup, reauthenticateWithCredential, signOut, onAuthStateChanged;
+let getFirestore, doc, getDoc, setDoc;
 let firebaseModulesPromise = null;
 let firebaseModulesLoaded = false;
 let firestoreModulePromise = null;
@@ -24,13 +24,12 @@ async function loadFirestoreModule() {
   }
   if (firestoreModulePromise) return firestoreModulePromise;
 
-  const attempt = import('https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js')
+  const attempt = window.ModeAtlasFirebase.load('firestore')
     .then((firestoreMod) => {
       getFirestore = firestoreMod.getFirestore;
       doc = firestoreMod.doc;
       getDoc = firestoreMod.getDoc;
       setDoc = firestoreMod.setDoc;
-      deleteDoc = firestoreMod.deleteDoc;
       return true;
     })
     .catch((error) => {
@@ -68,8 +67,8 @@ async function loadFirebaseModules() {
   if (firebaseModulesPromise) return firebaseModulesPromise;
 
   const attempt = Promise.all([
-    import('https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js'),
-    import('https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js')
+    window.ModeAtlasFirebase.load('app'),
+    window.ModeAtlasFirebase.load('auth')
   ]).then(([appMod, authMod]) => {
     initializeApp = appMod.initializeApp;
     getApps = appMod.getApps;
@@ -86,7 +85,6 @@ async function loadFirebaseModules() {
     linkWithCredential = authMod.linkWithCredential;
     reauthenticateWithCredential = authMod.reauthenticateWithCredential;
     reauthenticateWithPopup = authMod.reauthenticateWithPopup;
-    deleteUser = authMod.deleteUser;
     signOut = authMod.signOut;
     onAuthStateChanged = authMod.onAuthStateChanged;
     return true;
@@ -648,6 +646,41 @@ function buildEmptySnapshot() {
   return { version: 'cloud-v' + CLOUD_SNAPSHOT_VERSION + '-reset', updatedAt: now, sections };
 }
 
+// Each signed-in save has one local owner. Preserve offline changes in a
+// per-account cache before switching; never merge a previous account into a new UID.
+const LOCAL_SAVE_OWNER='modeAtlasLocalSaveOwner';
+const ACCOUNT_SAVE_PREFIX='modeAtlasAccountSave:';
+const ACCOUNT_ACTIVITY_KEYS=['modeAtlasLastStudiedAt','modeAtlasLastMode','modeAtlasPracticeCheckpoint:reading','modeAtlasPracticeCheckpoint:writing'];
+let accountSaveReady=true;
+function activateAccountSave(uid){
+  if(!uid)return true; // Signing out keeps the local save, with its owner intact.
+  // A failed journal replay must finish on reopen before any save can sync.
+  if(storeGet('modeAtlasPracticeTransaction'))return false;
+  const owner=storeGet(LOCAL_SAVE_OWNER)||storeGet('modeAtlasLastUserId','guest');
+  if(owner===uid)return true;
+  if(owner&&owner!=='guest'){
+    const cached={snapshot:buildLocalSnapshot(),activity:Object.fromEntries(ACCOUNT_ACTIVITY_KEYS.map(key=>[key,storeGet(key)]))};
+    if(storeSetJSON(ACCOUNT_SAVE_PREFIX+owner,cached)===false)return false;
+    const incoming=storeJSON(ACCOUNT_SAVE_PREFIX+uid,null);
+    const restore=()=>{
+      for(const def of Object.values(SECTION_DEFS)){
+        for(const key of [...Object.values(def.scalar),...Object.values(def.json),def.updatedAtKey])storeRemove(key);
+      }
+      for(const key of [...Object.values(SECTION_TIMESTAMP_KEYS),...Object.values(SECTION_EXTRA_TIMESTAMP_KEYS).flat(),...ACCOUNT_ACTIVITY_KEYS,'modeAtlasSectionTimestamps','modeAtlasLastCloudSyncAt','modeAtlasCloudAccessState','modeAtlasLocalImportGuardUntil'])storeRemove(key);
+      if(incoming?.snapshot?.sections)for(const name of Object.keys(SECTION_DEFS)){
+        const section=incoming.snapshot.sections[name];if(section)writeSectionToLocal(name,section.data,section.updatedAt);
+      }
+      if(incoming?.activity)for(const key of ACCOUNT_ACTIVITY_KEYS)if(incoming.activity[key])storeSet(key,incoming.activity[key]);
+      if(storeSet(LOCAL_SAVE_OWNER,uid)===false)throw new Error('Local save ownership could not be stored.');
+    };
+    try{window.ModeAtlasStorage?.transaction?window.ModeAtlasStorage.transaction(restore):restore();}
+    catch{return false;}
+    emitCloudDataChanged('account-switch',Object.keys(SECTION_DEFS));
+    return true;
+  }
+  return storeSet(LOCAL_SAVE_OWNER,uid)!==false;
+}
+
 function clearLocalAppData() {
   const store = window.ModeAtlasStorage;
   if (!store?.clearAppData) throw new Error('Mode Atlas storage boundary is unavailable');
@@ -879,9 +912,11 @@ function getSyncStatus() {
   if (!user) {
     return { state: 'local', tone: 'neutral', text: 'Progress saves on this device · sign in to sync', lastSync, user };
   }
-  if (!online || state === 'offline') {
-    return { state: 'offline', tone: 'warning', text: 'Offline · changes will sync later', lastSync, user };
-  }
+  if (!accountSaveReady) return {state:'paused',tone:'warning',text:'Account switch paused · free device storage and reopen the app',lastSync,user};
+  if (!online) return {state:'offline',tone:'warning',text:'Offline · saved on this device',lastSync,user};
+  if (state === 'offline') return {state:'paused',tone:'warning',text:'Sync paused · saved on this device',lastSync,user};
+  if (hydratedForUserId !== user.uid) return {state:'pending',tone:'neutral',text:'Loading your cloud save…',lastSync,user};
+  if (cloudSyncPromise || deferredSessionSync) return {state:'pending',tone:'neutral',text:'Saved on this device · sync pending',lastSync,user};
   return { state: 'cloud', tone: 'ok', text: 'Synced across devices', lastSync, user };
 }
 
@@ -1061,11 +1096,14 @@ async function setupFirebase() {
     if (!authListenerInstalled && auth && onAuthStateChanged) {
       onAuthStateChanged(auth, (user) => {
         const previousUid = currentUser?.uid || null;
-        currentUser = user;
-        const accountId=user?.uid||'guest';
-        if(storeGet('modeAtlasLastUserId','guest')!==accountId){
-          storeRemove('modeAtlasPracticeCheckpoint:reading');storeRemove('modeAtlasPracticeCheckpoint:writing');
+        const localOwner=storeGet(LOCAL_SAVE_OWNER);
+        if((authResolved&&previousUid!==(user?.uid||null))||(user&&localOwner&&localOwner!=='guest'&&localOwner!==user.uid)){
+          window.dispatchEvent(new CustomEvent('modeAtlasAccountWillChange'));
         }
+        currentUser = user;
+        accountSaveReady=activateAccountSave(user?.uid);
+        if(!accountSaveReady)setCloudState(false,'There is not enough device storage to switch saves. Free some space and reopen the app.');
+        const accountId=user?.uid||'guest';
         storeSet('modeAtlasLastUserId',accountId);
         if (!user || user.uid !== previousUid) hydratedForUserId = null;
         authResolved = true;
@@ -1112,7 +1150,7 @@ async function hydrateFromCloud(force = false) {
     Object.keys(SECTION_DEFS).map((name) => [name, normalizeTimestamp(storeGet(SECTION_DEFS[name].updatedAtKey, '0'))])
   );
   await authReady;
-  if (!CONFIG_READY || !currentUser) return false;
+  if (!CONFIG_READY || !currentUser || !accountSaveReady) return false;
   if (!await ensureFirestore()) return false;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     setCloudState(false, 'Browser is offline');
@@ -1153,7 +1191,7 @@ async function hydrateFromCloud(force = false) {
       return true;
     } catch (error) {
       console.warn('Cloud save hydrate failed.', error);
-      setCloudState(false, error?.message || 'Cloud hydrate failed');
+      if(currentUser?.uid===uid)setCloudState(false, error?.message || 'Cloud hydrate failed');
       return false;
     }
   })();
@@ -1381,27 +1419,30 @@ async function performAccountDeletion() {
       await reauthenticateWithPopup(user, provider);
     }
     if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
-    await window.ModeAtlasSocial?.prepareAccountDeletion?.();
-    if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
-    if (!await ensureFirestore() || typeof deleteDoc !== 'function') throw new Error('Cloud data is unavailable. Please try again online.');
-    const ref = getDocRef(user.uid);
+    if (!window.ModeAtlasSocial?.deleteAccount) throw new Error('Account deletion is unavailable in this build.');
     setSessionCloudPause(true);
     clearTimeout(syncTimeout);
     if (cloudSyncPromise) await cloudSyncPromise;
     if (cloudHydrationPromise) await cloudHydrationPromise;
-    const snapshot = await getDoc(ref);
-    await deleteDoc(ref);
-    try {
-      if (providerId === 'apple.com') {
-        if (!appleAuthorizationCode || !await window.AtlasPlatform?.revokeAppleAuthorization?.(appleAuthorizationCode)) {
-          throw new Error('Apple authorization could not be revoked. Please try again.');
-        }
+    if (providerId === 'apple.com') {
+      if (!appleAuthorizationCode || !await window.AtlasPlatform?.revokeAppleAuthorization?.(appleAuthorizationCode)) {
+        throw new Error('Apple authorization could not be revoked. Please try again.');
       }
-      await deleteUser(user);
-    } catch (error) {
-      if (snapshot.exists()) await setDoc(ref, snapshot.data());
-      throw error;
     }
+    let result;
+    try { result = await window.ModeAtlasSocial.deleteAccount(); }
+    catch (error) {
+      // A response can be lost after the server commits deletion. Check the
+      // receipt before presenting a failure or leaving the device save intact.
+      try { result = await window.ModeAtlasSocial.accountDeletionStatus(); } catch {}
+      if (!result?.deleted) throw error;
+    }
+    if (!result?.deleted) throw new Error('Account deletion is still being confirmed. Please try again.');
+    if (auth.currentUser && auth.currentUser.uid !== user.uid) throw new Error('The signed-in account changed.');
+    try { await signOut(auth); } catch (error) { console.warn('Account deleted; local authentication cleanup will retry on launch.',error); }
+    currentUser = null;
+    emitStatus();
+    window.dispatchEvent(new CustomEvent('modeAtlasAccountSignedOut'));
     try { clearLocalAppData(); }
     catch (error) { console.error('Account deleted but local save cleanup failed.', error); }
     hydratedForUserId = null;
@@ -1410,13 +1451,13 @@ async function performAccountDeletion() {
     if (window.ModeAtlasEnv?.isNativeApp) {
       try { await window.AtlasPlatform?.signOutIdentityProvider?.(); } catch {}
     }
-    window.ModeAtlasFeedback?.toast?.('Your account and learning data were deleted.', 'success');
+    window.ModeAtlasFeedback?.toast?.(result.cleanupPending ? 'Your account was deleted. Cloud data removal is finishing automatically.' : 'Your account and learning data were deleted.', 'success');
     return true;
   } catch (error) {
     console.error('Account deletion failed.', error);
     await window.ModeAtlasFeedback?.alert?.({
-      kicker:'Account', title:'Account was not deleted',
-      message:'Your account could not be deleted. Check your connection and try again.' + (error?.code ? ` (${error.code})` : ''),
+      kicker:'Account', title:'Could not confirm account deletion',
+      message:'Check your connection and try again. If deletion has already started, your remaining cloud data will be removed automatically.' + (error?.code ? ` (${error.code})` : ''),
       tone:'error', confirmLabel:'OK'
     });
     return false;
@@ -1472,7 +1513,7 @@ async function performSyncOnce() {
     return false;
   }
   await authReady;
-  if (!CONFIG_READY || !currentUser) return false;
+  if (!CONFIG_READY || !currentUser || !accountSaveReady) return false;
   if (!await ensureFirestore()) return false;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     setCloudState(false, 'Browser is offline');
@@ -1563,6 +1604,7 @@ function syncNow() {
 
   cloudSyncPromise = run.finally(() => {
     cloudSyncPromise = null;
+    emitStatus();
   });
   return cloudSyncPromise;
 }

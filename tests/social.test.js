@@ -15,11 +15,11 @@ test('social responses cannot cross accounts; server receives the original accou
   const request=client.call('accept',{uid:'friend'});uid='second';resolve({ok:true});
   await assert.rejects(request,{code:'account-changed'});assert.deepEqual(seen,{action:'accept',data:{uid:'friend'},owner:'first'});
 });
-test('account deletion waits for social cleanup and propagates failure instead of silently dropping it',async()=>{
-  const client=createSocial({enabled:()=>true,user:()=>({uid:'first'}),online:()=>true,transport:async(action)=>{assert.equal(action,'leave');throw new Error('backend unavailable');}});
-  await assert.rejects(client.prepareAccountDeletion(),/backend unavailable/);
-  const disabled=createSocial({enabled:()=>false,user:()=>({uid:'first'}),online:()=>false,transport:()=>{throw new Error('must not run');}});
-  await disabled.prepareAccountDeletion();
+test('account deletion remains available with Friends disabled and preserves failure details',async()=>{
+  const client=createSocial({enabled:()=>false,user:()=>({uid:'first'}),online:()=>true,transport:async(action)=>{assert.equal(action,'deleteAccount');throw new Error('backend unavailable');}});
+  await assert.rejects(client.deleteAccount(),/backend unavailable/);
+  const offline=createSocial({enabled:()=>false,user:()=>({uid:'first'}),online:()=>false,transport:()=>{throw new Error('must not run');}});
+  await assert.rejects(offline.deleteAccount(),{code:'offline'});
 });
 
 const identity=require('../assets/app/mode-atlas-social-identity.js');
@@ -35,4 +35,9 @@ test('avatar policy accepts one emoji grapheme and restricts provider photo URLs
   assert.equal(identity.avatar('account'),'account');assert.equal(identity.avatar('moon'),'moon');assert.equal(identity.avatar({toString:5}),null);
   assert.equal(identity.photoURL('https://lh3.googleusercontent.com/a/photo'),'https://lh3.googleusercontent.com/a/photo');
   for(const url of ['http://lh3.googleusercontent.com/a','https://lh3.googleusercontent.com.evil.test/a','https://user@lh3.googleusercontent.com/a','javascript:alert(1)'])assert.equal(identity.photoURL(url),null);
+});
+
+test('obvious abusive names are filtered without rejecting harmless substrings',()=>{
+  for(const name of ['fuck','f.u.c.k','Shit','f4ggot'])assert.equal(identity.objectionableName(name),true,name);
+  for(const name of ['Scunthorpe','Classroom','Stafford','桜の道'])assert.equal(identity.objectionableName(name),false,name);
 });

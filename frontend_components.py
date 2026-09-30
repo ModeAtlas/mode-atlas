@@ -248,6 +248,7 @@ TRAINER_STYLES = (
     'assets/css/mode-atlas-modifier-menu.css',
 )
 LEGAL_STYLES = (
+    'assets/css/mode-atlas-legal.css',
     'assets/css/mode-atlas-page-shared.css',
     'assets/css/mode-atlas-theme.css',
     'assets/css/mode-atlas-ios-theme.css',
@@ -289,6 +290,7 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/achievements/mode-atlas-achievements-ui.js',
 )
 ACCOUNT_SCRIPTS = (
+    'assets/platform/mode-atlas-firebase-loader.js',
     'firebase-config.js',
     'cloud-sync.js',
     'assets/app/mode-atlas-social-config.js',
@@ -323,7 +325,7 @@ def _interactive_scripts(
         + preset
         + ACCOUNT_SCRIPTS
         + page_scripts
-        + ('assets/app/mode-atlas-sounds.js',)
+        + ('assets/app/mode-atlas-sound-cues.js', 'assets/app/mode-atlas-sounds.js',)
     )
 
 

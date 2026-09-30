@@ -3,7 +3,8 @@ const {randomBytes,randomUUID,createHash}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
 const {projectSave,publicProfile,rankProfiles}=require('./projection.cjs');
 const identity=require('./shared/mode-atlas-social-identity.js');
-const {createIdentityStore,mayUseName,accountPhoto}=require('./identity.cjs');
+const {createIdentityStore,mayUseName,accountPhoto,isAdmin}=require('./identity.cjs');
+const {createModeration}=require('./moderation.cjs');
 const LIMITS=Object.freeze({friends:100,requests:50,blocks:100,page:20});
 const fail=(code,message)=>{throw new HttpsError(code,message);};
 const hash=value=>createHash('sha256').update(value).digest('hex');
@@ -23,6 +24,7 @@ function validateProfile(data,user){
   const displayName=identity.cleanName(data.displayName);
   if(!identity.validName(displayName))
     fail('invalid-argument','Use 2–24 letters or numbers for your name.');
+  if(identity.objectionableName(displayName))fail('invalid-argument','Choose a display name without abusive or offensive language.');
   if(!mayUseName(displayName,user))fail('invalid-argument','That name is reserved. Choose another display name.');
   const avatar=identity.avatar(data.avatar);
   if(!avatar)fail('invalid-argument','Choose an avatar or a single emoji.');
@@ -35,6 +37,7 @@ function validateProfile(data,user){
 }
 function emptyAccount(){return {active:false,profile:null,code:null,friends:{},incoming:{},outgoing:{},blockedCount:0};}
 function requireActive(account){
+  if(account?.restricted)fail('permission-denied','Friends access is restricted. Contact support@mode-atlas.com to appeal.');
   if(account?.deleting)fail('failed-precondition','Your friends profile is being removed. Try again shortly.');
   if(!account?.active)fail('failed-precondition','Create your friends profile first.');
 }
@@ -51,6 +54,7 @@ function slicePage(items,cursor){
 
 function createSocial({db,auth,now=Date.now}){
   const identities=createIdentityStore({db,auth,now});
+  const moderation=createModeration({db,identities,now});
   const accounts=db.collection('socialAccounts'),codes=db.collection('socialCodes'),blocks=db.collection('socialBlocks'),limits=db.collection('socialLimits'),deleted=db.collection('socialDeleted');
   const accountRef=uid=>accounts.doc(uid);
   const saveRef=uid=>db.doc(`users/${uid}/appData/kanaTrainer`);
@@ -73,7 +77,8 @@ function createSocial({db,auth,now=Date.now}){
   async function updateProfile(uid,data,createdAt,user){
     const profile=validateProfile(data,user),candidate=randomBytes(10).toString('hex').toUpperCase();
     return db.runTransaction(async tx=>{
-      const ref=accountRef(uid),[self,save,marker]=await tx.getAll(ref,saveRef(uid),deletionRef(uid));
+      const ref=accountRef(uid),[self,save,marker,restriction]=await tx.getAll(ref,saveRef(uid),deletionRef(uid),db.doc('socialRestrictions/'+uid));
+      if(restriction.exists)fail('permission-denied','Friends access is restricted. Contact support@mode-atlas.com to appeal.');
       rejectDeleted(marker,createdAt);
       const account=self.data()||emptyAccount();
       if(account.deleting)requireActive(account);
@@ -103,7 +108,7 @@ function createSocial({db,auth,now=Date.now}){
     const target=lookup.data().uid;
     const [self,other,block]=await tx.getAll(accountRef(uid),accountRef(target),blockRef(uid,target));
     const a=self.data(),b=other.data();requireActive(a);
-    if(!b?.active || b.deleting || b.code!==code || block.exists)fail('not-found','No available profile matches that code.');
+    if(!b?.active || b.deleting || b.restricted || b.code!==code || block.exists)fail('not-found','No available profile matches that code.');
     if(uid===target)fail('invalid-argument','That is your own friend code.');
     return {target,a,b};
   }
@@ -165,10 +170,11 @@ function createSocial({db,auth,now=Date.now}){
     });
   }
   async function state(uid,user){
-    const doc=await accountRef(uid).get(),a=doc.data();
+    const doc=await accountRef(uid).get(),a=doc.data(),canModerate=isAdmin(user);
+    if(await moderation.restriction(uid))return {active:false,restricted:true,canModerate};
     if(a?.deleting)return {active:false,deleting:true};
-    if(!a?.active)return {active:false,accountPhoto:accountPhoto(user)};
-    return {active:true,profile:publicProfile(uid,a,now()),preferences:a.profile,accountPhoto:accountPhoto(user),code:a.code,
+    if(!a?.active)return {active:false,accountPhoto:accountPhoto(user),canModerate};
+    return {active:true,canModerate,profile:publicProfile(uid,a,now()),preferences:a.profile,accountPhoto:accountPhoto(user),code:a.code,
       counts:{friends:keys(a.friends).length,incoming:keys(a.incoming).length,outgoing:keys(a.outgoing).length,blocked:a.blockedCount}};
   }
   async function list(uid,data){
@@ -264,10 +270,16 @@ function createSocial({db,auth,now=Date.now}){
   async function erase(uid,deletedAccount=false){
     // A non-profile deletion receipt prevents an already-authorized request from
     // recreating social data after Auth deletion. It stores no raw UID or scores.
-    if(deletedAccount && validUid(uid))await deletionRef(uid).set({at:now()});
+    if(deletedAccount && validUid(uid))await deletionRef(uid).set({at:now(),expiresAt:new Date(now()+7*86400000)});
     const id=await beginErase(uid);await cleanup(uid,id);
     // Opting out must not reset rate limits. Auth deletion removes them too.
-    if(deletedAccount && validUid(uid))await limits.doc(uid).delete();
+    if(deletedAccount && validUid(uid)){
+      await Promise.all([limits.doc(uid).delete(),db.doc('socialRestrictions/'+uid).delete(),db.doc('socialReportLimits/'+uid).delete()]);
+      for(const field of ['target','reporter'])while(true){
+        const found=await db.collection('socialReports').where(field,'==',uid).limit(100).get();if(found.empty)break;
+        const batch=db.batch();found.docs.forEach(doc=>batch.delete(doc.ref));await batch.commit();
+      }
+    }
     return {ok:true};
   }
   async function call(request){
@@ -279,12 +291,18 @@ function createSocial({db,auth,now=Date.now}){
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['state','list','profile','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave'];
+    const actions=['state','list','profile','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
     if(['state','rotateCode','leave'].includes(action))fields(data,[]);
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
+    if(!['state','leave','listReports','reviewReport','listRestrictions','restoreProfile'].includes(action)&&await moderation.restriction(uid))fail('permission-denied','Friends access is restricted. Contact support@mode-atlas.com to appeal.');
     if(action!=='leave')await identities.ensureReady();
+    if(action==='listRestrictions')return moderation.restricted(user,data);
+    if(action==='restoreProfile')return moderation.restore(user,data);
+    if(action==='reportProfile')return moderation.report(uid,data);
+    if(action==='listReports')return moderation.list(user,data);
+    if(action==='reviewReport')return moderation.review(user,data);
     if(action==='state'){await refreshSummary(uid);return state(uid,user);}
     if(action==='updateProfile')return updateProfile(uid,data,createdAt,user);
     if(action==='rotateCode')return rotateCode(uid);

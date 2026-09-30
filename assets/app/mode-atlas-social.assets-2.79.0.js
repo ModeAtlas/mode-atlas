@@ -4,8 +4,8 @@
   let clientPromise;
   function client(){
     if(!clientPromise)clientPromise=(async()=>{
-      const [app,sdk]=await Promise.all([root.KanaCloudSync.getFirebaseApp(),import('https://www.gstatic.com/firebasejs/12.12.1/firebase-functions.js')]);
-      return sdk.httpsCallable(sdk.getFunctions(app,root.ModeAtlasSocialConfig.region),'modeAtlasSocial',{timeout:20000});
+      const [app,sdk]=await Promise.all([root.KanaCloudSync.getFirebaseApp(),root.ModeAtlasFirebase.load('functions')]);
+      return sdk.httpsCallable(sdk.getFunctions(app,root.ModeAtlasSocialConfig.region),'modeAtlasSocial',{timeout:65000});
     })().catch(error=>{clientPromise=null;throw error;});
     return clientPromise;
   }
@@ -24,12 +24,13 @@
   const {enabled,user,online,transport}=dependencies;
   const error=(code,message)=>Object.assign(new Error(message),{code});
   async function call(action,data={}){
-    if(!enabled())throw error('unavailable','Friends is not available yet.');
+    const accountAction=['deleteAccount','accountDeletionStatus'].includes(action);
+    if(!enabled()&&!accountAction)throw error('unavailable','Friends is not available yet.');
     const uid=user()?.uid;
     if(!uid)throw error('unauthenticated','Sign in to use Friends.');
     if(!online())throw error('offline','Connect to the internet to use Friends.');
     const result=await transport(action,data,uid);
-    if(user()?.uid!==uid)throw error('account-changed','The signed-in account changed. Try again.');
+    if(user()?.uid!==uid&&!(accountAction&&!user()&&result.deleted))throw error('account-changed','The signed-in account changed. Try again.');
     return result;
   }
   function message(error){
@@ -39,5 +40,5 @@
     return 'Friends could not be reached. Check your connection and try again.';
   }
   return Object.freeze({call,message,isEnabled:enabled,
-    prepareAccountDeletion:async()=>{if(enabled())await call('leave');}});
+    deleteAccount:()=>call('deleteAccount'),accountDeletionStatus:()=>call('accountDeletionStatus')});
 });

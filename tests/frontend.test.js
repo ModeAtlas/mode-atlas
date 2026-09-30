@@ -268,6 +268,7 @@ test('sound mode owner persists On/Loud/Off without relying on an out-of-scope s
     URL, setTimeout() { return 1; }, clearTimeout() {}, console,
   };
   vm.createContext(context);
+  vm.runInContext(read('assets/app/mode-atlas-sound-cues.js'), context);
   vm.runInContext(source, context, { filename: 'mode-atlas-sounds.js' });
 
   values.set('modeAtlasSoundMode', 'loud');

@@ -368,6 +368,7 @@
     function bindRefreshEvents(){
       if (refreshEventsBound) return;
       refreshEventsBound = true;
+      root.addEventListener('modeAtlasAccountWillChange',()=>root.suspendTrainerForAccountChange());
       root.addEventListener('modeAtlasCloudDataChanged', (event) => {
         const sections = Array.isArray(event.detail?.sections) ? event.detail.sections : [];
         if (!sections.length || sections.includes(mode)) requestRefresh('cloud-data');

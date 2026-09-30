@@ -6,6 +6,8 @@
   const platform = root.AtlasPlatform;
   const count = value => Number.isFinite(Number(value)) ? Math.max(0, Math.floor(Number(value))) : 0;
   let preferenceRevision = 0;
+  const suspendedKey='modeAtlasWidgetSuspended';
+  const suspended=()=>root.ModeAtlasStorage?.get?.(suspendedKey)==='true';
   function snapshot(){
     const progress = root.ModeAtlasProgress?.getSummary?.() || {};
     const kana = root.ModeAtlasKanaMetrics?.kanaStats?.() || {};
@@ -42,7 +44,7 @@
   let timer;
   function publish(){
     clearTimeout(timer);
-    if (!platform?.getCapabilities?.().widgetSnapshots) return;
+    if (suspended()||!platform?.getCapabilities?.().widgetSnapshots) return;
     return platform.publishWidgetSnapshot(snapshot()).catch(error => console.warn('Mode Atlas snapshot unavailable', error));
   }
   function refresh(){
@@ -62,7 +64,8 @@
   root.addEventListener('storage', refresh);
   const resetPreferences = () => reset().catch(error=>console.warn('Could not clear native preferences',error));
   root.addEventListener('modeAtlasDataCleared', resetPreferences);
-  root.addEventListener('modeAtlasAccountSignedOut', resetPreferences);
+  root.addEventListener('modeAtlasAccountSignedOut',()=>{root.ModeAtlasStorage?.set?.(suspendedKey,'true');resetPreferences();});
+  root.addEventListener('kanaCloudSyncStatusChanged',()=>{if(root.KanaCloudSync?.getUser?.()&&suspended()){root.ModeAtlasStorage?.remove?.(suspendedKey);refresh();}});
   root.addEventListener('pageshow', refresh);
   document.addEventListener('ma:ui-refresh', refresh);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });

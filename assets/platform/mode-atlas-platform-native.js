@@ -107,6 +107,7 @@
       if (hasFirebaseAuth('signInWithGoogle')) providers.push('google.com');
       if (appleSignInEnabled && hasFirebaseAuth('signInWithApple')) providers.push('apple.com');
       return {
+        sounds: hasBridge('playSound'),
         alternateIcons: hasBridge('setAppIcon'),
         notifications: hasBridge('requestNotifications'),
         appBadge: hasBridge('setBadge'),
@@ -128,14 +129,16 @@
     },
     openExternalLink: async function(url){
       if (hasBridge('openExternalLink')) {
-        await nativeBridge.openExternalLink({ url:String(url || '') });
-        return true;
+        const result=await nativeBridge.openExternalLink({ url:String(url || '') });
+        return result?.opened!==false;
       }
       return false;
     },
     openDestination: async function(destination, options){
       return navigate(destination, options && options.replace === true);
     },
+    playSound: async function(cue,volume){return hasBridge('playSound') ? nativeBridge.playSound({cue:cue,volume:volume}) : false;},
+    stopSounds: async function(){return hasBridge('stopSounds') ? nativeBridge.stopSounds() : false;},
     setAppIcon: async function(name){
       if(!hasBridge('setAppIcon'))return false;
       return nativeBridge.setAppIcon({name:name||null});

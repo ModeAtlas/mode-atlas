@@ -11,10 +11,10 @@
 .ma-social-tools>.ma-social-filter{flex-basis:100%;}
 
 .ma-social-filter{display:flex;flex:1;align-items:center;gap:8px;min-width:160px;color:var(--ma-muted);font-size:.8rem;}
-.ma-social select,.ma-social input:not([type="checkbox"]){box-sizing:border-box;min-height:44px;min-width:0;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-control-bg);color:var(--ma-text);padding:10px 12px;font:inherit;}
+.ma-social select,.ma-social textarea,.ma-social input:not([type="checkbox"]){box-sizing:border-box;min-height:44px;min-width:0;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-control-bg);color:var(--ma-text);padding:10px 12px;font:inherit;}
 .ma-social select{width:100%;min-width:0;flex:1;}
 .ma-social-field{display:grid;gap:8px;color:var(--ma-text);font-weight:700;}
-.ma-social-field input{width:100%;font-weight:400;}
+.ma-social-field input,.ma-social-field select,.ma-social-field textarea{width:100%;font-weight:400;}
 .ma-social .ma-button{min-height:44px;white-space:normal;overflow-wrap:anywhere;}
 .ma-social-status{padding:12px 14px;border-radius:12px;background:var(--ma-surface-strong);color:var(--ma-text);font-size:.85rem;line-height:1.5;}
 .ma-social-status[data-tone="error"]{border:1px solid var(--ma-danger);}
@@ -25,7 +25,7 @@
 .ma-social-row[data-self="true"]{border-color:var(--ma-atlas);}
 .ma-social-person{display:flex;flex:1;gap:12px;align-items:center;min-width:120px;border:0;background:none;padding:4px;color:inherit;font:inherit;text-align:left;}
 button.ma-social-person{cursor:pointer;}
-.ma-social-person:focus-visible,.ma-social :is(input,select):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
+.ma-social-person:focus-visible,.ma-social :is(input,select,textarea):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
 .ma-social-rank{width:24px;text-align:center;font-size:.94rem;color:var(--ma-muted);font-variant-numeric:tabular-nums;}
 .ma-social-score{font-size:.8rem;line-height:1.4;max-width:110px;text-align:right;color:var(--ma-text);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
 .ma-social-row-actions{flex-basis:100%;justify-content:flex-end;}
@@ -55,3 +55,6 @@ html[data-ma-large-text] .ma-social-avatar-choices{grid-template-columns:repeat(
 .ma-social-badge{padding:2px 7px;margin-left:6px;}
 .ma-social-filter[data-pending="true"] select{border-color:var(--ma-atlas);}
 .ma-social-name-notice{display:grid;gap:10px;border:1px solid var(--ma-warning);border-radius:14px;padding:12px;color:var(--ma-text);font-size:.85rem;}
+
+.ma-social-report{display:grid;gap:12px;padding:16px;border:1px solid var(--ma-border);border-radius:16px;overflow-wrap:anywhere;}
+.ma-social-field textarea{resize:vertical;min-height:96px;}

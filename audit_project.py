@@ -562,11 +562,15 @@ def main() -> int:
     ):
         if marker not in cloud:
             fail(errors, f"Firebase setup is missing retry/recovery marker: {marker}")
+    sdk_loader = text(ROOT / 'assets/platform/mode-atlas-firebase-loader.js')
+    sdk_version = re.search(r'/firebasejs/([^/]+)/', sdk_loader)
+    if not sdk_version or sdk_version.group(1) != json.loads(text(ROOT / 'package.json'))['dependencies']['firebase']:
+        fail(errors, 'Web and bundled iOS Firebase versions must match the pinned npm dependency')
     core_loader = re.search(r"async function loadFirebaseModules\(\) \{(?P<body>.*?)\n\}", cloud, re.S)
     firestore_loader = re.search(r"async function loadFirestoreModule\(\) \{(?P<body>.*?)\n\}", cloud, re.S)
-    if not core_loader or 'firebase-firestore.js' in core_loader.group('body'):
+    if not core_loader or "ModeAtlasFirebase.load('firestore')" in core_loader.group('body'):
         fail(errors, 'Firebase core startup still eagerly imports Firestore')
-    if not firestore_loader or 'firebase-firestore.js' not in firestore_loader.group('body'):
+    if not firestore_loader or "ModeAtlasFirebase.load('firestore')" not in firestore_loader.group('body'):
         fail(errors, 'Firestore no longer has a dedicated lazy module owner')
     setup_firebase = re.search(r"async function setupFirebase\(\) \{(?P<body>.*?)\n\}\n\nfunction getDocRef", cloud, re.S)
     if setup_firebase and 'db = getFirestore(app)' in setup_firebase.group('body'):

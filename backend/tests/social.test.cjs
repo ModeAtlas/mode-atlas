@@ -9,11 +9,13 @@ const {getAuth}=functionsRequire('firebase-admin/auth');
 const {initializeTestEnvironment,assertFails,assertSucceeds}=require('@firebase/rules-unit-testing');
 const {doc,getDoc,setDoc}=require('firebase/firestore');
 const {createSocial}=require('../functions/social.cjs');
+const {createService}=require('../functions/service.cjs');
+const {createAccounts}=require('../functions/accounts.cjs');
 const {projectSave,publicProfile}=require('../functions/projection.cjs');
 const config=require('../functions/shared/mode-atlas-social-config.js');
 const projectId='demo-mode-atlas';
 if(!process.env.FIRESTORE_EMULATOR_HOST || !process.env.FIREBASE_AUTH_EMULATOR_HOST)throw new Error('These tests require Firebase emulators.');
-const app=initializeApp({projectId}),db=getFirestore(app),auth=getAuth(app),service=createSocial({db,auth});
+const app=initializeApp({projectId}),db=getFirestore(app),auth=getAuth(app),service=createService({db,auth});
 const directService=process.env.MODE_ATLAS_DIRECT_SOCIAL==='1';
 let rules,serial=0;
 console.log(directService?'Validation: direct service + Auth/Firestore/rules (no function transport or triggers)':'Validation: callable transport + Auth/Firestore/rules + function triggers');
@@ -26,7 +28,7 @@ async function learner(label,correct=20){
   assert.ok(login.idToken,JSON.stringify(login));
   const call=async(action,data={},expectedUid=uid)=>{
     if(directService){
-      try{return await service.call({auth:{uid},data:{action,data,expectedUid}});}
+      try{return await service.call({auth:{uid,token:{auth_time:Math.floor(Date.now()/1000)}},data:{action,data,expectedUid}});}
       catch(error){error.code=String(error.code).replaceAll('-','_').toUpperCase();throw error;}
     }
     const response=await fetch(`http://127.0.0.1:5001/${projectId}/${config.region}/modeAtlasSocial`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',Authorization:`Bearer ${login.idToken}`},body:JSON.stringify({data:{action,data,expectedUid}})});
@@ -34,7 +36,7 @@ async function learner(label,correct=20){
   };
   await db.doc(`users/${uid}/appData/kanaTrainer`).set(save(correct));
   await call('updateProfile',{displayName:label,avatar:'kana',timeZone:'Australia/Melbourne'});
-  return {uid,email,call,code:(await call('state')).code};
+  return {uid,email,call,token:login.idToken,code:(await call('state')).code};
 }
 function save(correct){return {sections:{progress:{data:{state:{version:3,legacySeeded:true,sources:{device:{'kana.reading.correct':correct}},appearance:{landmark:'horizon',at:1}}}},reading:{data:{stats:{'あ':{correct:60,wrong:0}},times:{'あ':800},srs:{}}},wordBank:{data:{items:[{english:'private word'}]}}}};}
 async function friend(a,b){await a.call('sendRequest',{code:b.code});await b.call('accept',{uid:a.uid});}
@@ -54,7 +56,7 @@ test('rules preserve owner-only profile/app-data access and deny every direct so
     await assertFails(getDoc(doc(mine,path)));
     await assertFails(setDoc(doc(mine,path),{}));
   }
-  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations']){
+  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','accountDeletions']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));
   }
@@ -73,7 +75,7 @@ test('identity migration claims legacy names, resolves collisions and protects t
   assert.equal(profiles[0].displayName,'Legacy Name');assert.equal(profiles[3].displayName,'admin');
   for(const index of [1,2]){assert.equal(profiles[index].requiresNameChange,true);assert.match(profiles[index].displayName,/^Learner /);}
   for(const doc of migrated){assert.deepEqual(doc.data().friends,{'old-friend':1});assert.equal(doc.data().code,'keep-code');}
-  assert.equal((await db.doc('socialMigrations/identity-v1').get()).data().complete,true);
+  assert.equal((await db.doc('socialMigrations/identity-v2').get()).data().complete,true);
   const claims=await db.collection('socialNames').get();assert.equal(claims.size,4);
 });
 test('profiles are opt-in, projected from the save and never expose private fields',async()=>{
@@ -255,4 +257,68 @@ test('emoji avatars round trip and account photos come only from the linked prov
   assert.equal(shown.avatarURL,'https://lh3.googleusercontent.com/a/verified');assert.equal(shown.email,undefined);
   await a.call('updateProfile',{displayName:'Avatar Learner',avatar:'moon',timeZone:'UTC'});
   assert.equal((await b.call('lookup',{code:a.code})).profile.avatarURL,undefined);
+});
+
+
+test('deletion commits Auth first, removes every private document and blocks stale tokens',async()=>{
+  const a=await learner('DeleteOwner'),b=await learner('DeleteFriend');await friend(a,b);
+  await db.doc(`users/${a.uid}`).set({private:'profile'});
+  await db.doc(`users/${a.uid}/appData/otherSave`).set({private:'other'});
+  await db.doc(`users/${a.uid}/appData/kanaTrainer/private/nested`).set({private:'nested'});
+  const mine=rules.authenticatedContext(a.uid).firestore();
+  const result=await a.call('deleteAccount');assert.equal(result.deleted,true);
+  if(!directService)await until(async()=>!(await db.doc(`socialAccounts/${a.uid}`).get()).exists);
+  assert.equal((await db.doc(`users/${a.uid}`).get()).exists,false);
+  assert.equal((await db.doc(`users/${a.uid}/appData/otherSave`).get()).exists,false);
+  assert.equal((await db.doc(`users/${a.uid}/appData/kanaTrainer/private/nested`).get()).exists,false);
+  assert.equal((await b.call('state')).counts.friends,0);
+  await assertFails(setDoc(doc(mine,`users/${a.uid}/appData/kanaTrainer`),save(999)));
+  assert.equal((await a.call('accountDeletionStatus')).deleted,true);
+  assert.equal((await a.call('deleteAccount')).deleted,true,'retries are idempotent');
+});
+test('failed Auth deletion leaves private saves and Friends untouched; cleanup failure is resumable',async()=>{
+  const a=await learner('DeletionFailure'),b=await learner('StillFriend');await friend(a,b);
+  const request={auth:{uid:a.uid,token:{auth_time:Math.floor(Date.now()/1000)}},data:{action:'deleteAccount',data:{},expectedUid:a.uid}};
+  const denied=createAccounts({db,auth:{getUser:uid=>auth.getUser(uid),deleteUser:async()=>{throw Object.assign(new Error('Unavailable'),{code:'auth/internal-error'});}},social:service});
+  await assert.rejects(denied.call(request),{code:'unavailable'});
+  assert.ok((await db.doc(`users/${a.uid}/appData/kanaTrainer`).get()).exists);
+  assert.equal((await a.call('state')).counts.friends,1);
+  assert.equal((await db.doc('accountDeletions/'+a.uid).get()).exists,false);
+  const stale={...request,auth:{uid:a.uid,token:{auth_time:1}}};await assert.rejects(denied.call(stale),{code:'failed-precondition'});
+  const interrupted=createAccounts({db,auth,social:{erase:async()=>{throw new Error('Transient cleanup failure');}}});
+  const result=await interrupted.call(request);assert.deepEqual(result,{deleted:true,cleanupPending:true});
+  await service.cleanupAccount(a.uid);assert.equal((await db.doc(`socialAccounts/${a.uid}`).get()).exists,false);
+  await service.cleanupAccount(a.uid);assert.equal((await b.call('state')).counts.friends,0);
+});
+test('reporting is scoped, deduplicated and private; only the verified admin can moderate',async()=>{
+  const a=await learner('ReportSender'),b=await learner('ReportTarget'),stranger=await learner('ReportStranger');await friend(a,b);
+  await assert.rejects(stranger.call('reportProfile',{uid:b.uid,reason:'name'}),{code:'PERMISSION_DENIED'});
+  await a.call('reportProfile',{uid:b.uid,reason:'name',note:'Please review this display name.'});
+  await a.call('reportProfile',{uid:b.uid,reason:'avatar',note:'Duplicate'});
+  let records=await db.collection('socialReports').where('target','==',b.uid).get();assert.equal(records.size,1);
+  await assert.rejects(a.call('listReports'),{code:'PERMISSION_DENIED'});
+  const adminUser=await auth.getUser('legacy-admin');
+  const adminCall=async(action,data={})=>{
+    if(directService)return service.call({auth:{uid:adminUser.uid},data:{action,data,expectedUid:adminUser.uid}});
+    const custom=await auth.createCustomToken(adminUser.uid);
+    const login=await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:custom,returnSecureToken:true})}).then(r=>r.json());
+    const response=await fetch(`http://127.0.0.1:5001/${projectId}/${config.region}/modeAtlasSocial`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${login.idToken}`},body:JSON.stringify({data:{action,data,expectedUid:adminUser.uid}})}).then(r=>r.json());
+    if(response.error)throw new Error(JSON.stringify(response.error));return response.result;
+  };
+  const list=await adminCall('listReports');assert.ok(list.rows.some(row=>row.id===records.docs[0].id));
+  assert.ok(!JSON.stringify(await b.call('state')).includes('ReportSender'));
+  await assert.rejects(a.call('reviewReport',{id:records.docs[0].id,decision:'restrict'}),{code:'PERMISSION_DENIED'});
+  await adminCall('reviewReport',{id:records.docs[0].id,decision:'restrict'});
+  assert.equal((await b.call('state')).restricted,true);
+  assert.equal((await a.call('list')).rows.length,0,'restricted profiles disappear from friends and rankings');
+  await b.call('leave');await assert.rejects(b.call('updateProfile',{displayName:'Back Again',avatar:'kana',timeZone:'UTC'}),{code:'PERMISSION_DENIED'});
+  const restricted=await adminCall('listRestrictions');assert.ok(restricted.rows.some(row=>row.uid===b.uid));
+  await adminCall('restoreProfile',{uid:b.uid});await b.call('updateProfile',{displayName:'Back Again',avatar:'kana',timeZone:'UTC'});
+  await assert.rejects(b.call('updateProfile',{displayName:'f.u.c.k',avatar:'kana',timeZone:'UTC'}),{code:'INVALID_ARGUMENT'});
+  const lookup=await stranger.call('lookup',{code:(await b.call('state')).code});assert.equal(lookup.profile.uid,b.uid);
+  await stranger.call('reportProfile',{uid:b.uid,reason:'other',code:(await b.call('state')).code});
+  records=await db.collection('socialReports').where('target','==',b.uid).where('state','==','open').get();
+  await adminCall('reviewReport',{id:records.docs[0].id,decision:'reset'});
+  const changed=await b.call('state');assert.match(changed.profile.displayName,/^Learner /);assert.equal(changed.preferences.requiresNameChange,true);
+  assert.equal((await db.doc(`users/${b.uid}/appData/kanaTrainer`).get()).data().sections.progress.data.state.sources.device['kana.reading.correct'],20);
 });

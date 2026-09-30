@@ -83,6 +83,8 @@ def build(output: Path) -> dict[str, str]:
             raise SystemExit(f"Missing revisioned native runtime dependency: {src.name}")
         shutil.copy2(src, output / src.name)
 
+    subprocess.run(["node", "build_native_runtime.mjs", str(output), revision], cwd=ROOT, check=True)
+
     manifest = {
         "version": version,
         "revision": revision,

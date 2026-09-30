@@ -92,11 +92,12 @@
     'soundMode',
     'maSoundMode'
   ].filter((value, index, list) => value && list.indexOf(value) === index));
-  const APP_LOCAL_PREFIXES = Object.freeze(['modeAtlasVersionFileCheckedResetDay:', 'modeAtlasVersionFileAttemptedResetDay:']);
+  const APP_LOCAL_PREFIXES = Object.freeze(['modeAtlasVersionFileCheckedResetDay:', 'modeAtlasVersionFileAttemptedResetDay:', 'modeAtlasAccountSave:']);
   const APP_SESSION_EXACT = Object.freeze([
     'modeAtlasForceFirstVisit',
     'modeAtlasForceDailyReturn',
     'modeAtlasShowWhatsNewAfterOnboarding',
+    'modeAtlasTourPending',
     'modeAtlasSafeMode',
     'modeAtlasLegacyServiceWorkerRetirementReloaded:v1'
   ]);
@@ -143,6 +144,9 @@
     'modeAtlasLastCloudErrorMessage',
     'modeAtlasLastCloudSyncAt',
     'modeAtlasLastUserId',
+    'modeAtlasLocalSaveOwner',
+    'modeAtlasWidgetSuspended',
+    'modeAtlasTourSeen',
     'modeAtlasLegacyServiceWorkerRetirement',
     'modeAtlasLocalImportGuardUntil',
     'modeAtlasPendingDestination',

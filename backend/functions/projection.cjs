@@ -41,7 +41,7 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0) {
 }
 
 function publicProfile(uid, account, now = Date.now(), full = true) {
-  if(!account?.active || account.deleting || !account.profile)return null;
+  if(!account?.active || account.deleting || account.restricted || !account.profile)return null;
   const summary=account.summary || projectSave();
   const landmark=rewards.landmarks.find(item=>item.id===summary.landmark && item.level<=summary.level) || rewards.landmarks[0];
   const out={uid,displayName:account.profile.displayName,avatar:account.profile.avatar,

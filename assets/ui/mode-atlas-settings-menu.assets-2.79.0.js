@@ -79,6 +79,8 @@
                 </div>
                 <div class="ma-setting-row__control ma-action-row ma-settings-inline-actions">
                   <button class="ma-button" type="button" data-ma-about-open>${icon(href,'info')}<span>About</span></button>
+                  <button class="ma-button" type="button" data-ma-tour>Quick tour</button>
+                  <button class="ma-button" type="button" data-ma-support>Send feedback</button>
                   ${native ? '' : '<button class="ma-button" type="button" data-ma-install>Install app</button>'}
                   ${native ? '' : `<button class="ma-button ma-button--primary" id="maCheckUpdatesBtn" type="button" data-ma-check-updates>${icon(href,'refresh')}<span data-ma-update-label>Check for updates</span></button>`}
                 </div>

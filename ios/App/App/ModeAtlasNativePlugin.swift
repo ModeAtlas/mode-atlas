@@ -3,6 +3,7 @@ import UIKit
 import Capacitor
 import UserNotifications
 import WidgetKit
+import AVFAudio
 
 @objc(ModeAtlasNativePlugin)
 public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, NotificationHandlerProtocol {
@@ -12,7 +13,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
-        "exportBackup", "getAccessibilityPreferences", "setAppIcon"
+        "exportBackup", "getAccessibilityPreferences", "setAppIcon", "playSound", "stopSounds", "openExternalLink"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
@@ -23,6 +24,25 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     private var observers: [NSObjectProtocol] = []
     private var sharingBackup = false
     private var changingIcon = false
+    private let sounds = ModeAtlasSoundPlayer()
+
+    @objc func playSound(_ call: CAPPluginCall) {
+        guard let cue = call.getString("cue"), let volume = call.getDouble("volume"), volume.isFinite,
+              volume >= 0, volume <= 1 else { call.reject("Invalid sound"); return }
+        DispatchQueue.main.async { call.resolve(["played": self.sounds.play(cue, volume: Float(volume))]) }
+    }
+    @objc func stopSounds(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { self.sounds.fadeOut(); call.resolve() }
+    }
+    @objc func openExternalLink(_ call: CAPPluginCall) {
+        guard let value = call.getString("url"), let url = URL(string: value),
+              ["https", "mailto"].contains(url.scheme?.lowercased() ?? "") else {
+            call.reject("Unsupported link"); return
+        }
+        DispatchQueue.main.async {
+            UIApplication.shared.open(url) { opened in call.resolve(["opened": opened]) }
+        }
+    }
 
     @objc func setAppIcon(_ call: CAPPluginCall) {
         let name = call.getString("name")
@@ -250,5 +270,58 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
             let destination = ModeAtlasNavigation.consume()?.rawValue ?? ""
             call.resolve(["destination": destination])
         }
+    }
+}
+
+// Native audio outlives individual bundled pages. PCM scores are generated from
+// mode-atlas-sound-cues.js; no second set of pitch/envelope definitions lives here.
+private final class ModeAtlasSoundPlayer: NSObject, AVAudioPlayerDelegate {
+    private let names: Set<String> = ["tap", "correct", "wrong", "finish", "achievement", "success", "warning", "error"]
+    private var players: [AVAudioPlayer] = []
+    private var observers: [NSObjectProtocol] = []
+    private var lastPlay: [String: TimeInterval] = [:]
+    private var quietUntil: TimeInterval = 0
+    private var sessionReady = false
+    override init() {
+        super.init()
+        for name in [UIApplication.willResignActiveNotification, AVAudioSession.interruptionNotification] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.fadeOut()
+            })
+        }
+    }
+    deinit { observers.forEach { NotificationCenter.default.removeObserver($0) } }
+    func play(_ name: String, volume: Float) -> Bool {
+        guard names.contains(name), UIApplication.shared.applicationState == .active else { return false }
+        let now = Date.timeIntervalSinceReferenceDate
+        players.removeAll { !$0.isPlaying }
+        guard players.count < 4, now - (lastPlay[name] ?? -1) >= (name == "tap" ? 0.08 : 0.14),
+              name != "tap" || now >= quietUntil,
+              let url = Bundle.main.url(forResource: name, withExtension: "wav", subdirectory: "public/assets/audio") else { return false }
+        do {
+            if !sessionReady {
+                // Ambient respects the Ring/Silent switch and allows other audio.
+                try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
+                sessionReady = true
+            }
+            try AVAudioSession.sharedInstance().setActive(true)
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.volume = volume; player.delegate = self
+            guard player.play() else { return false }
+            players.append(player); lastPlay[name] = now
+            if name != "tap" { quietUntil = now + player.duration }
+            return true
+        } catch { return false }
+    }
+    func fadeOut() {
+        let fading = players
+        fading.forEach { $0.setVolume(0, fadeDuration: 0.018) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) { [weak self] in
+            fading.forEach { $0.stop() }
+            self?.players.removeAll { player in fading.contains { $0 === player } }
+        }
+    }
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        players.removeAll { $0 === player }
     }
 }
