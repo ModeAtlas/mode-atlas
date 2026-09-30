@@ -843,18 +843,18 @@ function prepareTrainerSessionStart(options = {}) {
         endlessRunWrong: 0,
         lastComboLength: typeof options.getComboLength === "function" ? options.getComboLength() : 2,
         daily: dailyActive ? {
-            sequence: typeof options.buildDailySequence === "function" ? options.buildDailySequence() : [],
-            index: 0,
-            correct: 0,
-            wrong: 0,
-            startTime: now
+            sequence: recovered?.sequence || (typeof options.buildDailySequence === "function" ? options.buildDailySequence() : []),
+            index: recovered ? sessionStats.answered : 0,
+            correct: recovered ? sessionStats.correct : 0,
+            wrong: recovered ? sessionStats.wrong : 0,
+            startTime: sessionStats.startTime
         } : null,
         test: testActive ? {
-            sequence: typeof options.buildTestSequence === "function" ? options.buildTestSequence() : [],
-            index: 0,
-            correct: 0,
-            wrong: 0,
-            startTime: now
+            sequence: recovered?.sequence || (typeof options.buildTestSequence === "function" ? options.buildTestSequence() : []),
+            index: recovered ? sessionStats.answered : 0,
+            correct: recovered ? sessionStats.correct : 0,
+            wrong: recovered ? sessionStats.wrong : 0,
+            startTime: sessionStats.startTime
         } : null
     };
 }

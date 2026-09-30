@@ -37,6 +37,7 @@
       const current=sessionStats.study;
       current.runId=root.crypto?.randomUUID?.()||`set-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       current.owner=root.ModeAtlasSessionRecovery.accountId();
+      current.startedAt=Date.now();
       current.startLevel=root.ModeAtlasProgress.getSummary().level;
       current.xpParts={};current.milestones=[];current.retryQueue=[];current.assisted=0;current.questionAnswered=false;
       root.ModeAtlasProgress.startRun(current.runId);

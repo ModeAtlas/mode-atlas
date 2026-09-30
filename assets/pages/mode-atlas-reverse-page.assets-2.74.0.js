@@ -158,7 +158,7 @@ const trainerController = window.ModeAtlasTrainerController.create({
         settings, stats, times, srs, scoreHistory, dailyChallengeHistory, highScore,
         sessionStarted, sessionStats, streak, endlessRunTotal, endlessRunWrong,
         dailyIndex, dailyCorrect, dailyWrong, testIndex, testCorrect, testWrong,
-        testSequence, trialTarget, activeChars, locked, currentChar
+        dailySequence, testSequence, trialTarget, activeChars, locked, currentChar, charStartTime
     }),
     applySaveBackedState: (next) => {
         settings = next.settings;
@@ -991,6 +991,8 @@ function startSession(recovery = null) {
     });
 
     onSettingsChanged();
+    if(recovery?.pendingKana && recovery.pendingKana===currentChar) charStartTime-=recovery.questionElapsed||0;
+    trainerController.captureSession();
 }
 
 

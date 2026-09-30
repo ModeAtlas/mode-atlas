@@ -35,6 +35,7 @@
     if (window.ModeAtlasEnv?.isNativeApp) renderNative(next);
   }
   function renderNative(next){
+    window.ModeAtlasRewardsUI.renderGoals(find('#iosHomeGoals'), {compact:true});
     const progress = window.ModeAtlasProgress.getSummary();
     const kana = window.ModeAtlasKanaMetrics.kanaStats();
     const link = find('#iosHomeContinue');

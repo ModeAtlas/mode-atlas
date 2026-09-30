@@ -12,19 +12,16 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = window.ModeAtlasEnv?.isNativeApp
-    ? 'More ways to reach your practice and see your progress.'
-    : 'More reliable practice controls and activity tracking.';
+  const WHATS_NEW_COPY = 'Make your progress your own, and pick up where you left off.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
-  const whatsNewItems = window.ModeAtlasEnv?.isNativeApp ? [
-    'See your level and learning totals on the Lock Screen.',
-    'Add a Mode Atlas control to Control Centre and choose the screen it opens.',
-    'Open Reading, Writing, Daily Challenge or Words with Siri and Shortcuts.',
-    'Switch from Daily Challenge back to Reading using the dock.'
-  ] : [
-    'Pausing preserves answer feedback and time remaining.',
-    'Recent activity reflects successful study and Word Bank actions.'
+  const whatsNewItems = [
+    'Explore daily goals, titles and profile frames in Your Atlas.',
+    'Resume interrupted guided sets, today’s Daily Challenge and formal tests.',
+    ...(window.ModeAtlasEnv?.isNativeApp ? [
+      'Track daily goals from the Atlas home screen.',
+      'Show your chosen frame on the profile icon above the dock.'
+    ] : [])
   ];
 
   function storeGet(key, fallback = '') {

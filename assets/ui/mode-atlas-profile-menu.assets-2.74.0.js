@@ -34,22 +34,6 @@
             </div>
           </section>
 
-          <section class="ma-card ma-card--soft ma-profile-card ma-sync-card" aria-label="Sync status">
-            <div class="ma-profile-card-head">
-              <div>
-                <div class="ma-menu-kicker">Save status</div>
-                <div class="ma-profile-card-title">Cloud sync</div>
-              </div>
-              <span class="ma-status-chip ma-status-chip--info" id="profileSyncChip">Checking</span>
-            </div>
-            <div class="ma-sync-status-line">
-              <span class="ma-sync-dot" id="profileSyncDot" aria-hidden="true"></span>
-              <strong id="profileSyncSummary">Checking sync status…</strong>
-            </div>
-            <div class="ma-sync-detail" id="profileSyncDetail">Your current save status will appear here.</div>
-            <div class="ma-sync-meta" id="profileSyncMeta">Last cloud sync: Never synced</div>
-          </section>
-
           <section class="ma-card ma-card--soft ma-profile-card ma-progression-card" aria-label="Atlas Level and learning activity">
             <div class="ma-profile-card-head">
               <div>
@@ -69,11 +53,29 @@
               <div><span>Reading</span><strong id="profileReadingCorrect">0</strong><small>correct kana</small></div>
               <div><span>Writing</span><strong id="profileWritingCorrect">0</strong><small>correct kana</small></div>
             </div>
-            <button class="ma-button ma-button--ghost ma-button--wide" type="button" data-ma-rewards-open>Your Atlas · Goals & rewards</button>
+            <button class="ma-button ma-button--ghost ma-profile-atlas-link" type="button" data-ma-rewards-open>
+              ${icon(href,'achievement')}<span><strong>Your Atlas</strong><small>Goals &amp; rewards</small></span>${icon(href,'arrow')}
+            </button>
             <div class="ma-progression-footer">
               <div class="ma-achievement-summary"><strong id="profileAchievementCount">0</strong><span>achievements</span></div>
               <button class="ma-button ma-button--ghost ma-button--small" type="button" data-ma-achievements-open>${icon(href,'achievement')}<span>Achievements</span></button>
             </div>
+          </section>
+
+          <section class="ma-card ma-card--soft ma-profile-card ma-sync-card" aria-label="Sync status">
+            <div class="ma-profile-card-head">
+              <div>
+                <div class="ma-menu-kicker">Save status</div>
+                <div class="ma-profile-card-title">Cloud sync</div>
+              </div>
+              <span class="ma-status-chip ma-status-chip--info" id="profileSyncChip">Checking</span>
+            </div>
+            <div class="ma-sync-status-line">
+              <span class="ma-sync-dot" id="profileSyncDot" aria-hidden="true"></span>
+              <strong id="profileSyncSummary">Checking sync status…</strong>
+            </div>
+            <div class="ma-sync-detail" id="profileSyncDetail">Your current save status will appear here.</div>
+            <div class="ma-sync-meta" id="profileSyncMeta">Last cloud sync: Never synced</div>
           </section>
         </aside>`;
     }

@@ -277,14 +277,14 @@
     window.setTimeout(syncPhoneKeyboardState, 80);
   });
 
-  window.ModeAtlasSessionControls = Object.freeze({pause, resume, canAnswer, reset:resetPauseUi, flashResult, get paused(){return paused;}, activeElapsed(){return Math.max(0,(pausedAt||Date.now())-sessionStats.startTime);}});
+  window.ModeAtlasSessionControls = Object.freeze({pause, resume, canAnswer, reset:resetPauseUi, flashResult, get paused(){return paused;}, activeElapsed(){return Math.max(0,(pausedAt||Date.now())-sessionStats.startTime);}, questionElapsed(){return Math.max(0,(pausedAt||Date.now())-charStartTime);}});
   // Native lifecycle is forwarded once by the platform adapter. The visibility
   // event also catches WebView suspension before an asynchronous bridge callback.
   if (window.ModeAtlasEnv?.isNativeApp) {
     window.addEventListener('modeAtlasAppStateChanged', event => { if (!event.detail.isActive) pause(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
-    window.addEventListener('pagehide', pause);
   }
+  window.addEventListener('pagehide', pause);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensureButtons); else ensureButtons();
   document.addEventListener('ma:ui-refresh', ensureButtons);
   document.addEventListener('ma:trainer-ready', ensureButtons);

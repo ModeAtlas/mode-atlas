@@ -374,3 +374,46 @@ a separate scorer, save format or recommendation policy.
 ### Trainer modes (2.72.0)
 
 [Trainer review and source ownership](trainer-review-2.72.0.md) documents the shared mode rules, unified completion/summary flow, atomic kana handling and accessible Practice Setup sheet. iOS presentation remains separate from shared learning and saving.
+
+## Your Atlas and finite-session recovery (2.74.0)
+
+The iOS home replaces its duplicate Reading/Writing shortcuts with compact daily
+progress from `ModeAtlasRewardsUI.renderGoals`. That renderer also presents the
+full goals in Your Atlas; `ModeAtlasProgress.routine` remains the data owner.
+Profile progression precedes sync status. Reward selection applies the same
+frame to the account avatar and the navigation avatar, which iOS moves into the
+dock. Achievement rank colours are defined once in the shared theme, with the
+existing native light/dark rank tokens resolving their iOS appearance.
+
+Your Atlas separates Goals and Rewards in keyboard-accessible tabs. Its header
+and tabs stay visible while each panel scrolls. Titles/frames are selectable
+rows with avatar previews; UIKit app icon selection is a separate device action.
+There is no duplicate progression state or alternative rewards controller.
+
+Checkpoint version 2 extends the existing recovery owner to Reading and Writing
+Daily Challenge and Test Mode. It saves the original sequence and current
+unanswered question, active session time and active question time. Scores and
+sequence position are derived from the saved session counters, not maintained
+as a second checkpoint tally. The existing write-ahead journal commits each
+answer and checkpoint together; finalization commits its result, XP receipt and
+checkpoint removal together. Legacy version 1 guided checkpoints still resume.
+
+| Mode | Recovery window | Completion rule |
+| --- | --- | --- |
+| Guided set | Seven days | Original question goal |
+| Daily Challenge | Original local calendar day | Original 20-question sequence, including legitimate repeats |
+| Test Mode | Seven days | Original shuffled sequence; one formal result after completion |
+| Speed Run / Time Trial | No persisted resume | Existing in-session pause only |
+| Free practice / Endless | No persisted resume | Individual answers are already saved |
+
+Recovery is local to the installation/browser and account, not a cloud session
+handoff. Starting a new run in that direction replaces its pending checkpoint.
+Discarding a checkpoint keeps already earned answer progress but creates no
+completion result or completion XP. Browser page navigation now captures the
+same pause/checkpoint boundary as native app suspension. Idle time while the
+app/page is closed does not increase active time or average answer timing.
+
+Tests exercise both directions, partial and final-answer interruptions, exact
+question order, pause time exclusion, single-result finalization, account/day
+validation, discard and browser navigation, alongside home safe-area geometry,
+large text, tab keyboard navigation and frame persistence.

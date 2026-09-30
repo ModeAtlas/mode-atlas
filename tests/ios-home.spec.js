@@ -85,7 +85,7 @@ test('iOS Atlas keeps the final actions reachable with larger text and a short v
   await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollHeight>innerHeight)).toBe(true);
   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
   await expect.poll(()=>page.evaluate(()=>{
-    const last=document.querySelector('.atlas-ios-home__choices').getBoundingClientRect();
+    const last=document.querySelector('.atlas-ios-home__routine').getBoundingClientRect();
     const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
     return last.top>=0 && last.bottom<=dock.top-12 && scrollY>0;
   })).toBe(true);

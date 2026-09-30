@@ -143,7 +143,7 @@ function applyAchievementVisuals(root = document) {
     Object.freeze({title:'Reading Comprehension',icon:'読',copy:'Reading Comprehension achievements will appear here when that branch launches.'})
   ]);
 
-  const RANK_ACCENTS = Object.freeze(['184,92,62','148,163,184','248,196,70','167,139,250','103,232,249']);
+  const RANK_ACCENTS = Object.freeze([1,2,3,4,5].map(rank => `var(--ma-rank-${rank}-rgb)`));
 
   const ACHIEVEMENT_TRACKS = Object.freeze({
     modeAtlas:Object.freeze([

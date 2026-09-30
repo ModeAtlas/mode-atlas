@@ -1540,7 +1540,8 @@ test('2.43.1 achievement tiles breathe and detail navigation has distinct destin
   const dialog = read('assets/app/mode-atlas-dialog.js');
   const components = read('assets/css/mode-atlas-components.css');
 
-  assert.match(achievements, /const RANK_ACCENTS = Object\.freeze\(\['184,92,62','148,163,184','248,196,70'/);
+  assert.match(achievements, /const RANK_ACCENTS = Object\.freeze\(\[1,2,3,4,5\]\.map/);
+  assert.match(read('assets/css/mode-atlas-theme.css'), /--ma-rank-1-rgb:184,92,62/);
   assert.match(achievements, /const copy=achEl\('div','ma-ach-copy'\)/);
   assert.match(achievementCss, /\.ma-achievement-tile\{[^}]*display:flex;flex-direction:column[^}]*min-height:190px/);
   assert.match(achievementCss, /\.ma-ach-copy\{[^}]*margin-bottom:18px/);

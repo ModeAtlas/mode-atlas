@@ -141,7 +141,7 @@ async function paintSnapshot(page){
     const properties=['color','backgroundColor','backgroundImage','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','boxShadow','textShadow','outlineColor','fill','stroke','webkitTextFillColor'];
     // New shared study/reward components have no 2.67.0 paint baseline.
     // Their theme/layout checks live in study-flow and progression.
-    const newStudyComponent = el => el.closest('#studySetSetup,#studySessionProgress,#studyFeedback,#answerFeedback,.ma-profile-title,.ma-practice-recovery,.ma-atlas-rewards,.ma-session-rewards');
+    const newStudyComponent = el => el.closest('#studySetSetup,#studySessionProgress,#studyFeedback,#answerFeedback,.ma-profile-title,.ma-profile-atlas-link,.ma-practice-recovery,.ma-atlas-rewards,.ma-session-rewards');
     return [...document.body.querySelectorAll('*'),document.body].filter(el=>!newStudyComponent(el) && el.getClientRects().length && getComputedStyle(el).visibility!=='hidden')
       .map(el=>[el.tagName,el.id,el.className?.baseVal ?? el.className,...['','::before','::after'].map(pseudo=>{
         const style=getComputedStyle(el,pseudo||null);return properties.map(name=>style[name]);

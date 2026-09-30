@@ -120,7 +120,7 @@
     const total = Number(sessionStats.answered || (correct + wrong));
     const result = buildTestResult({
       mode,
-      startTime: cfg.testStartTime,
+      startTime: sessionStats.study?.startedAt || cfg.testStartTime,
       correct,
       wrong,
       total,

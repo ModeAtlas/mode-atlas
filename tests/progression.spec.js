@@ -85,16 +85,17 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: collection, title, frame
   await prepare(page,{theme,xp:700});await open(page,'/');
   await page.evaluate(()=>{ModeAtlasRewardsUI.open();});
   await expect(page.locator('.ma-dialog__title')).toHaveText('Your Atlas');
-  await expect(page.locator('.ma-routine-goal')).toHaveCount(4);
+  await expect(page.locator('.ma-atlas-rewards .ma-routine-goal')).toHaveCount(4);
+  await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   const grove=page.locator('[data-landmark="grove"]');
-  await grove.getByRole('button',{name:'Use title & frame',exact:true}).click();
-  await expect(grove.getByRole('button',{name:'Selected',exact:true})).toHaveAttribute('aria-pressed','true');
-  await grove.getByRole('button',{name:'Use app icon',exact:true}).click();
+  await grove.click();
+  await expect(grove).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button',{name:'Use Grove app icon',exact:true}).click();
   expect(await page.evaluate(()=>iconCalls)).toEqual([{name:'Grove'}]);
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
   await grove.scrollIntoViewIfNeeded();
   const fits=await page.evaluate(()=>[document.documentElement,...document.querySelectorAll('.ma-atlas-landmark,.ma-routine-goal')].every(node=>node.scrollWidth<=node.clientWidth+1));expect(fits).toBe(true);
-  await page.screenshot({path:testInfo.outputPath(`ios-${theme}-collection.png`)});
+  await page.screenshot({animations:'disabled',path:testInfo.outputPath(`ios-${theme}-collection.png`)});
   await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();
   expect(await page.evaluate(()=>ModeAtlasRewardsUI.appearance().id)).toBe('grove');
   await expect(page.locator('#profileAvatar')).toHaveAttribute('data-ma-frame','grove');
@@ -138,4 +139,83 @@ test('the first slow mistake after upgrading retains previously earned mastery',
   await page.locator('#skipKanaBtn').click();
   expect(await page.evaluate(kana=>ModeAtlasStorage.readModeJSON('reading','srs',{})[kana].peak,kana)).toBe(3);
   await expect(page.locator('#studyFeedback')).toContainText('Skipped');
+});
+
+for(const mode of ['reading','writing'])for(const kind of ['dailyChallenge','testMode'])test(`${mode}: ${kind} resumes its order, timing and final answer exactly once`,async({page})=>{
+  test.setTimeout(90000);
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await prepare(page);await open(page,`/${mode}/`);
+  const noon=new Date();noon.setHours(12,0,0,0);
+  await page.clock.install({time:noon});await page.clock.pauseAt(noon);
+  await page.evaluate(kind=>ModeAtlasTrainerControls.selectMode(kind),kind);await page.locator('#startBtn').click();
+  for(let i=0;i<3;i++){await page.evaluate(()=>handleCorrect('saved answer'));await page.clock.runFor(350);}
+  await page.locator('#skipKanaBtn').click();await page.clock.runFor(600);
+  await page.clock.runFor(1500);await page.locator('#pauseSessionBtn').click();
+  const before=await page.evaluate(mode=>({checkpoint:ModeAtlasSessionRecovery.read(mode),xp:ModeAtlasProgress.getXP(),kana:currentChar}),mode);
+  expect(before.checkpoint).toBeTruthy();expect(before.checkpoint.sessionStats.answered).toBe(4);
+  await page.clock.runFor(3600000);await page.reload();await page.clock.resume();await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await expect(page.locator('#practiceRecovery')).toContainText('4 answered');
+  const action=kind==='dailyChallenge'?'Resume challenge':'Resume test';await page.getByRole('button',{name:action,exact:true}).click();
+  const resumed=await page.evaluate(()=>({id:sessionStats.study.runId,answered:sessionStats.answered,correct:sessionStats.correct,wrong:sessionStats.wrong,
+    xp:ModeAtlasProgress.getXP(),sequence:settings.testMode?testSequence:dailySequence,kana:currentChar,elapsed:ModeAtlasSessionControls.activeElapsed(),question:Date.now()-charStartTime}));
+  expect(resumed.id).toBe(before.checkpoint.sessionStats.study.runId);expect(resumed.sequence).toEqual(before.checkpoint.sequence);
+  expect(resumed.kana).toBe(before.kana);expect(resumed.answered).toBe(4);expect(resumed.correct).toBe(3);expect(resumed.wrong).toBe(1);expect(resumed.xp).toBe(before.xp);
+  expect(Math.abs(resumed.elapsed-before.checkpoint.elapsed)).toBeLessThan(1500);
+  expect(Math.abs(resumed.question-before.checkpoint.questionElapsed)).toBeLessThan(1500);
+  // Freeze after the final answer is committed, before its summary callback.
+  await page.clock.pauseAt(new Date(await page.evaluate(()=>Date.now()+1000)));
+  for(let i=4;i<resumed.sequence.length-1;i++){await page.evaluate(()=>handleCorrect('saved answer'));await page.clock.runFor(350);}
+  await page.evaluate(()=>handleCorrect('last answer'));
+  expect(await page.evaluate(()=>sessionStats.answered)).toBe(resumed.sequence.length);
+  await page.reload();await page.clock.resume();await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.getByRole('button',{name:action,exact:true}).click();
+  await expect(page.locator('.ma-dialog__title')).toHaveText(kind==='dailyChallenge'?'Daily Challenge complete':'Test Mode complete');
+  const result=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),daily:getTodayDailyRecord(),tests:loadStoredTestModeResults(),correct:ModeAtlasProgress.getLifetimeCorrect()}));
+  expect(result.correct).toBe(resumed.sequence.length-1);
+  if(kind==='dailyChallenge'){expect(result.daily.officialScore).toBe(19);expect(result.daily.attempts).toBe(1);expect(result.daily.timeMs).toBeLessThan(60000);}
+  else{expect(result.tests).toHaveLength(1);expect(result.tests[0].correct).toBe(resumed.sequence.length-1);expect(result.tests[0].wrong).toBe(1);expect(result.tests[0].durationMs).toBeLessThan(90000);}
+  await page.getByRole('button',{name:'Done',exact:true}).click();await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await expect(page.locator('#practiceRecovery')).toHaveCount(0);expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(result.xp);
+  if(kind==='testMode')expect(await page.evaluate(()=>loadStoredTestModeResults().length)).toBe(1);
+  else expect(await page.evaluate(()=>getTodayDailyRecord().attempts)).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('web test recovery survives navigation, and discard retains earned practice but no formal result',async({page})=>{
+  await prepare(page,{native:false});await open(page,'/reading/');
+  await page.evaluate(()=>ModeAtlasTrainerControls.selectMode('testMode'));await page.locator('#startBtn').click();await correct(page,'reading');
+  await page.goto('/');await open(page,'/reading/');await expect(page.getByRole('button',{name:'Resume test',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Resume test',exact:true}).click();expect(await page.evaluate(()=>testIndex)).toBe(1);
+  await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();await page.getByRole('button',{name:'Discard test',exact:true}).click();
+  expect(await page.evaluate(()=>ModeAtlasProgress.getLifetimeCorrect())).toBe(1);expect(await page.evaluate(()=>loadStoredTestModeResults().length)).toBe(0);
+  await page.reload();await expect(page.locator('#practiceRecovery')).toHaveCount(0);
+});
+
+test('recovery rejects an expired daily attempt, a changed sequence, and an account mismatch',async({page})=>{
+  await prepare(page);await open(page,'/writing/');await page.evaluate(()=>ModeAtlasTrainerControls.selectMode('dailyChallenge'));await page.locator('#startBtn').click();
+  const checks=await page.evaluate(()=>{
+    const saved=ModeAtlasSessionRecovery.read('writing'),check=change=>{const copy=structuredClone(saved);change(copy);return ModeAtlasSessionRecovery.validate(copy,'writing')===null;};
+    return [!!saved,check(v=>v.sessionStats.study.dateKey='2000-01-01'),check(v=>v.sequence[1]='invalid kana'),check(v=>v.owner='other'),check(v=>v.sessionStats.answered=2)];
+  });expect(checks).toEqual([true,true,true,true,true]);
+});
+
+for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile order and dock frame stay consistent`,async({page},info)=>{
+  await prepare(page,{theme,xp:700});await open(page,'/');
+  await expect(page.locator('#iosHomeGoals [data-goal]')).toHaveCount(3);
+  await page.locator('#profileOpenBtn').click();
+  await expect(page.locator('#profileDrawer')).toHaveCSS('transform','matrix(1, 0, 0, 1, 0, 0)');
+  const layout=await page.evaluate(()=>{
+    const progress=document.querySelector('.ma-progression-card').getBoundingClientRect(),sync=document.querySelector('.ma-sync-card').getBoundingClientRect(),activity=document.querySelector('.ma-level-activity').getBoundingClientRect(),link=document.querySelector('.ma-profile-atlas-link').getBoundingClientRect();
+    return {order:progress.bottom<sync.top,gap:link.top-activity.bottom};
+  });expect(layout.order).toBe(true);expect(layout.gap).toBeGreaterThanOrEqual(12);
+  await page.screenshot({animations:'disabled',path:info.outputPath(`profile-${theme}.png`)});
+  await page.locator('#profileDrawer [data-ma-rewards-open]').click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.locator('[data-landmark="grove"]').click();
+  await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
+  const frame=await page.locator('#topProfileDot').evaluate(node=>getComputedStyle(node).boxShadow);expect(frame).toContain(theme==='dark'?'232, 155, 128':'143, 62, 37');
+  await page.screenshot({animations:'disabled',path:info.outputPath(`rewards-${theme}.png`)});
+  await page.getByRole('tab',{name:'Rewards',exact:true}).focus();await page.keyboard.press('ArrowLeft');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toBeFocused();
+  await page.locator('.ma-dialog__close').click();await page.locator('.atlas-ios-home [data-ma-rewards-open]').click();await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
+  await page.locator('.ma-dialog__close').click();await page.locator('.ma-ios-tabs__links a[href="/kana/"]').click();await page.waitForURL('**/kana/');
+  await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
 });

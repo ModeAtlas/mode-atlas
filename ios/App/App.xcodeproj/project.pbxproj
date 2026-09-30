@@ -367,14 +367,14 @@
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Grove Summit Horizon";
 				CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2073000;
+				CURRENT_PROJECT_VERSION = 2074000;
 				GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.323625667322-aldb8bps765pbau4d33p1dat54k7lib0;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.73.0;
+				MARKETING_VERSION = 2.74.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -391,14 +391,14 @@
 				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Grove Summit Horizon";
 				CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2073000;
+				CURRENT_PROJECT_VERSION = 2074000;
 				GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.323625667322-aldb8bps765pbau4d33p1dat54k7lib0;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.73.0;
+				MARKETING_VERSION = 2.74.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -413,10 +413,10 @@
                 APPLICATION_EXTENSION_API_ONLY = YES;
                 CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
                 CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 2073000;
+                CURRENT_PROJECT_VERSION = 2074000;
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.73.0;
+                MARKETING_VERSION = 2.74.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;
@@ -431,10 +431,10 @@
                 APPLICATION_EXTENSION_API_ONLY = YES;
                 CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";
                 CODE_SIGN_STYLE = Automatic;
-                CURRENT_PROJECT_VERSION = 2073000;
+                CURRENT_PROJECT_VERSION = 2074000;
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.73.0;
+                MARKETING_VERSION = 2.74.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;

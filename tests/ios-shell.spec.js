@@ -12,7 +12,8 @@ test('Atlas home is compact on iOS and retains the website layout in the browser
   await expect(page.locator('.atlas-ios-home')).toBeVisible();
   await expect(page.locator('.atlas-hero')).toBeHidden();
   await expect(page.locator('#iosHomeContinue')).toHaveAttribute('href', '/reading/?practice=10&starter=starter');
-  await expect(page.locator('.atlas-ios-home__choices a')).toHaveCount(2);
+  await expect(page.locator('#iosHomeGoals [data-goal]')).toHaveCount(3);
+  await expect(page.locator('.atlas-ios-home [data-ma-rewards-open]')).toBeVisible();
   await page.evaluate(() => {
     for (const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted']) localStorage.setItem(key, 'true');
     localStorage.setItem('maWhatsNewSeen', 'guided-study');

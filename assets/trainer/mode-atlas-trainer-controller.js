@@ -382,6 +382,7 @@
       mode,
       study,
       saveAll,
+      captureSession: () => root.ModeAtlasSessionRecovery.capture(snapshot(),mode),
       buildDailySequence,
       applyDailyChallengeTheme,
       updateDailyChallengePills,

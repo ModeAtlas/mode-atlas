@@ -80,6 +80,16 @@
   --ma-kana-soft:rgba(201,167,255,.15);
   --ma-words:#9fc8ff;
   --ma-atlas:#8fc4ff;
+  --ma-rank-1-rgb:184,92,62;
+  --ma-rank-2-rgb:148,163,184;
+  --ma-rank-3-rgb:248,196,70;
+  --ma-rank-4-rgb:167,139,250;
+  --ma-rank-5-rgb:103,232,249;
+  --ma-rank-1:var(--ma-native-rank-1,rgb(var(--ma-rank-1-rgb)));
+  --ma-rank-2:var(--ma-native-rank-2,rgb(var(--ma-rank-2-rgb)));
+  --ma-rank-3:var(--ma-native-rank-3,rgb(var(--ma-rank-3-rgb)));
+  --ma-rank-4:var(--ma-native-rank-4,rgb(var(--ma-rank-4-rgb)));
+  --ma-rank-5:var(--ma-native-rank-5,rgb(var(--ma-rank-5-rgb)));
   --ma-rose:#ff8fbd;
   --ma-danger:#ff7d8a;
   --ma-warning:#f4c96a;

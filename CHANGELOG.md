@@ -1,3 +1,13 @@
+## 2.74.0 - 2026-09-30
+
+- Moved account progression above save status and gave Your Atlas a spaced, labelled profile entry.
+- Replaced the iOS home’s duplicate trainer shortcuts with live daily goal progress from the shared routine owner.
+- Separated Goals and Rewards, kept their tabs and close control visible, and replaced tall reward cards with avatar/frame selection rows and a separate native app-icon section.
+- Applied selected frames to the dock/navigation avatar and unified frame colours with the existing achievement rank palette in both appearances.
+- Extended journalled recovery to Reading/Writing Daily Challenge and Test Mode, preserving sequence, counters, question timing and active session time. Daily attempts resume during their original calendar day; formal tests and guided sets last seven days.
+- Preserved final-answer completion exactly once, account boundaries and existing guided checkpoints. Added browser navigation recovery without resetting earned progress or creating incomplete formal results.
+- Kept shared scoring/progression owners and native home scoping; no native entitlement or dependency changes.
+
 ## 2.73.0 - 2026-09-30
 
 - Added spaced recall across days and weeks with separate Reading/Writing confidence and one-time mastery milestones.
