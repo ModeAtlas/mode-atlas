@@ -35,7 +35,7 @@
     if(!layer||!panels.has(name)||!available(name))return;
     if(!current){
       returnFocus=trigger instanceof Element?trigger:document.activeElement;
-      layer.hidden=false;document.body.classList.add('ma-account-open');
+      layer.hidden=false;root.ModeAtlasOverlay.lock(layer);document.body.classList.add('ma-account-open');
     }
     select(name);
     root.ModeAtlasProfile?.refresh?.();
@@ -43,7 +43,8 @@
   }
   function close(){
     if(!current)return;
-    releaseView();current='';layer.hidden=true;document.body.classList.remove('ma-account-open');
+    if(layer.contains(document.activeElement))document.activeElement.blur();
+    releaseView();current='';layer.hidden=true;root.ModeAtlasOverlay.unlock(layer);document.body.classList.remove('ma-account-open');
     for(const panel of panels.values()){panel.hidden=true;panel.classList.remove('is-active');}
     syncVisibility();
     const target=returnFocus;returnFocus=null;
@@ -94,12 +95,13 @@
       if(current==='settings')close();else open('settings',button);
     }));
     document.addEventListener('keydown',event=>{
-      if(!current||event.defaultPrevented||root.ModeAtlasDialog?.isOpen())return;
+      if(!current||event.defaultPrevented||root.ModeAtlasDialog?.isOpen()||root.ModeAtlasTour?.isOpen())return;
       if(event.key==='Escape'){event.preventDefault();close();return;}
       trapFocus(event);
     });
     root.addEventListener('modeAtlasDialogStateChanged',syncVisibility);
     root.addEventListener('pagehide',close);
+    if(new URLSearchParams(location.search).get('section')==='atlas')queueMicrotask(()=>open('atlas'));
   }
   root.ModeAtlasAccountNavigation=Object.freeze({install,open,close,isOpen:()=>!!current,current:()=>current});
 })(window);

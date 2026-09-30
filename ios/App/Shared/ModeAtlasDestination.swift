@@ -3,7 +3,7 @@ import Foundation
 // Native entry points carry identifiers, never web routes or learning state.
 // AtlasPlatform.destinationPath remains the owner of the document paths.
 enum ModeAtlasDestination: String, CaseIterable, Sendable {
-    case atlas, kana, reading, writing, daily, results, wordBank
+    case atlas, yourAtlas, kana, reading, writing, daily, results, wordBank
 }
 
 @MainActor

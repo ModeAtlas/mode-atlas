@@ -193,3 +193,75 @@ test('reporting fits a small phone and moderation actions require confirmation',
   await page.getByRole('button',{name:'Restrict Friends access',exact:true}).click();
   expect(await page.evaluate(()=>socialCalls.find(row=>row.action==='reviewReport').input)).toEqual({id:'a'.repeat(64),decision:'restrict'});
 });
+
+
+test('account reporting follows both keyboard height and viewport pan and restores page scroll',async({page})=>{
+  await prepare(page);
+  await page.getByRole('button',{name:/桜の道/}).first().click();await page.getByRole('button',{name:'Report',exact:true}).click();
+  await page.getByLabel('Details (optional)').fill('Keyboard viewport regression.');
+  await page.evaluate(()=>{
+    window.fakeViewport=new EventTarget();Object.assign(fakeViewport,{height:390,width:393,offsetTop:180,offsetLeft:0});
+    ModeAtlasAccountNavigation.close();Object.defineProperty(window,'visualViewport',{configurable:true,value:fakeViewport});ModeAtlasAccountNavigation.open('friends');
+  });
+  await page.getByRole('button',{name:/桜の道/}).first().click();await page.getByRole('button',{name:'Report',exact:true}).click();await page.getByLabel('Details (optional)').focus();
+  const bounds=await page.locator('#maAccountSheet').boundingBox();expect(bounds.y).toBeGreaterThanOrEqual(180);expect(bounds.y+bounds.height).toBeLessThanOrEqual(570);
+  await page.evaluate(()=>{fakeViewport.offsetTop=90;fakeViewport.height=450;fakeViewport.dispatchEvent(new Event('scroll'));});
+  const moved=await page.locator('#maAccountSheet').boundingBox();expect(moved.y).toBeGreaterThanOrEqual(90);expect(moved.y+moved.height).toBeLessThanOrEqual(540);
+  await page.evaluate(()=>ModeAtlasAccountNavigation.close());expect(await page.evaluate(()=>document.body.style.position)).toBe('');
+});
+
+test('staff controls show role badges, warning history and an explicit warning confirmation',async({page})=>{
+  await prepare(page);
+  await page.evaluate(()=>{
+    const call=ModeAtlasSocial.call;
+    ModeAtlasSocial.call=async(action,input)=>{
+      if(action==='state')return {...await call(action,input),canModerate:true,role:'admin'};
+      if(action==='profile')return {profile:{...socialFixture.friend,role:'moderator'}};
+      if(action==='listModerators')return {rows:[{uid:'friend',displayName:'Mika'}]};
+      if(action==='staffProfile')return {uid:'friend',displayName:'Mika',role:'moderator',canAct:true,canManage:true,count:2,history:[{id:'warning',message:'An earlier warning',at:Date.now()}]};
+      return call(action,input);
+    };
+    ModeAtlasAccountNavigation.close();ModeAtlasAccountNavigation.open('friends');
+  });
+  await page.getByRole('button',{name:/桜の道/}).first().click();await expect(page.locator('.ma-social-self').getByText('✓ Moderator',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Moderation & warnings',exact:true}).click();
+  await expect(page.getByText('2 warnings · Visible only to Admin and Moderators',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Remove moderator role'})).toBeVisible();
+  await page.getByLabel('Send a warning',{exact:true}).fill('Please review the community rules.');await page.getByRole('button',{name:'Review warning',exact:true}).click();
+  expect(await page.evaluate(()=>socialCalls.some(row=>row.action==='warnProfile'))).toBe(false);
+  await page.getByRole('button',{name:'Send warning',exact:true}).click();
+  expect(await page.evaluate(()=>socialCalls.find(row=>row.action==='warnProfile').input.message)).toBe('Please review the community rules.');
+  await page.getByRole('button',{name:'Moderators',exact:true}).click();
+  await page.getByRole('button',{name:'Remove role',exact:true}).click();
+  expect(await page.evaluate(()=>socialCalls.some(row=>row.action==='assignModerator'))).toBe(false);
+  await page.getByRole('button',{name:'Remove role',exact:true}).click();
+  expect(await page.evaluate(()=>socialCalls.find(row=>row.action==='assignModerator').input)).toEqual({uid:'friend',moderator:false});
+});
+
+
+test('warnings arrive on a visit, remain until acknowledged and disappear on account change',async({page})=>{
+  await prepare(page);
+  await page.evaluate(()=>{
+    ModeAtlasAccountNavigation.close();window.notices=[{id:'warning-one',message:'Please keep your profile welcoming.',at:Date.now()}];
+    const original=ModeAtlasSocial.call;
+    ModeAtlasSocial.call=async(action,input={},expectedUid)=>{
+      if(action==='accountNotices')return {role:'member',warnings:window.socialUser==='self'?window.notices:[]};
+      if(action==='acknowledgeWarnings'){window.noticeAcknowledged={input,expectedUid};window.notices=[];return {ok:true};}
+      return original(action,input);
+    };
+    document.body.classList.add('trainer-session-active');
+    window.dispatchEvent(new CustomEvent('modeAtlasAppStateChanged',{detail:{isActive:true}}));
+  });
+  const warning=page.getByRole('dialog',{name:'A message from Mode Atlas',exact:true});
+  await expect(warning).toBeHidden();
+  await page.evaluate(()=>{document.body.classList.remove('trainer-session-active');window.dispatchEvent(new CustomEvent('modeAtlasAppStateChanged',{detail:{isActive:true}}));});
+  await expect(warning).toBeVisible();await expect(warning).toContainText('Please keep your profile welcoming.');
+  await warning.getByRole('button',{name:'Read later',exact:true}).click();
+  expect(await page.evaluate(()=>noticeAcknowledged??null).catch(()=>null)).toBe(null);
+  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('modeAtlasAppStateChanged',{detail:{isActive:true}})));
+  await expect(warning).toBeVisible();await warning.getByRole('button',{name:'I understand',exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>window.noticeAcknowledged)).toEqual({input:{ids:['warning-one']},expectedUid:'self'});
+  await page.evaluate(()=>{window.notices=[{id:'warning-two',message:'Private warning for the first account.',at:Date.now()}];window.dispatchEvent(new CustomEvent('modeAtlasAppStateChanged',{detail:{isActive:true}}));});
+  await expect(warning).toBeVisible();
+  await page.evaluate(()=>{window.socialUser='other';window.dispatchEvent(new Event('kanaCloudSyncStatusChanged'));});
+  await expect(warning).toBeHidden();expect(await page.evaluate(()=>noticeAcknowledged.input.ids)).toEqual(['warning-one']);
+});

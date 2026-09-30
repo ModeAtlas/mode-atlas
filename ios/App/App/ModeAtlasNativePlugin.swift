@@ -4,16 +4,17 @@ import Capacitor
 import UserNotifications
 import WidgetKit
 import AVFAudio
+import MessageUI
 
 @objc(ModeAtlasNativePlugin)
-public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, NotificationHandlerProtocol {
+public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, NotificationHandlerProtocol, MFMailComposeViewControllerDelegate {
     public let identifier = "ModeAtlasNativePlugin"
     public let jsName = "ModeAtlasNative"
     public let pluginMethods: [CAPPluginMethod] = [
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
-        "exportBackup", "getAccessibilityPreferences", "setAppIcon", "playSound", "stopSounds", "openExternalLink"
+        "exportBackup", "getAccessibilityPreferences", "setAppIcon", "playSound", "stopSounds", "openExternalLink", "composeFeedback"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
@@ -24,6 +25,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     private var observers: [NSObjectProtocol] = []
     private var sharingBackup = false
     private var changingIcon = false
+    private var mailCall: CAPPluginCall?
     private let sounds = ModeAtlasSoundPlayer()
 
     @objc func playSound(_ call: CAPPluginCall) {
@@ -41,6 +43,38 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         }
         DispatchQueue.main.async {
             UIApplication.shared.open(url) { opened in call.resolve(["opened": opened]) }
+        }
+    }
+
+    @objc func composeFeedback(_ call: CAPPluginCall) {
+        guard let subject = call.getString("subject"), subject.count <= 160,
+              let body = call.getString("body"), body.count <= 6000 else {
+            call.reject("Invalid feedback draft"); return
+        }
+        DispatchQueue.main.async {
+            guard self.mailCall == nil, let controller = self.bridge?.viewController,
+                  controller.presentedViewController == nil else {
+                call.reject("Close the current sheet first"); return
+            }
+            guard MFMailComposeViewController.canSendMail() else {
+                call.resolve(["status": "unavailable"]); return
+            }
+            let composer = MFMailComposeViewController()
+            composer.mailComposeDelegate = self
+            composer.setToRecipients(["support@mode-atlas.com"])
+            composer.setSubject(subject)
+            composer.setMessageBody(body, isHTML: false)
+            self.mailCall = call
+            controller.present(composer, animated: true)
+        }
+    }
+    public func mailComposeController(_ controller: MFMailComposeViewController,
+                                      didFinishWith result: MFMailComposeResult, error: Error?) {
+        let call = mailCall
+        mailCall = nil
+        controller.dismiss(animated: true) {
+            let status = error != nil ? "failed" : result == .sent ? "queued" : result == .saved ? "saved" : "cancelled"
+            call?.resolve(["status": status])
         }
     }
 

@@ -9,12 +9,16 @@
   const suspendedKey='modeAtlasWidgetSuspended';
   const suspended=()=>root.ModeAtlasStorage?.get?.(suspendedKey)==='true';
   function snapshot(){
-    const progress = root.ModeAtlasProgress?.getSummary?.() || {};
+    const owner=root.ModeAtlasProgress,state=owner?.readState?.();
+    const progress = owner?.getSummary?.(state) || {};
+    const routine=owner?.routine?.(state)||{streak:0,goals:[]};
+    const appearance=root.ModeAtlasRewardRules?.appearance(state?.appearance?.landmark,progress.level);
+    const next=root.ModeAtlasRewardRules?.landmarks.find(item=>item.level>progress.level);
     const kana = root.ModeAtlasKanaMetrics?.kanaStats?.() || {};
     const store = root.ModeAtlasStorage;
     const words = store?.json?.(store.KEYS.wordBank, []) || [];
     return {
-      schemaVersion:2, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
+      schemaVersion:3, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
       level:Math.max(1,count(progress.level)), correct:count(progress.lifetimeCorrect),
       readingCorrect:count(progress.readingCorrect), writingCorrect:count(progress.writingCorrect),
       words:Array.isArray(words) ? words.length : 0,
@@ -22,7 +26,11 @@
       levelXp:count(progress.levelXp), levelRequirement:Math.max(1,count(progress.levelRequirement)),
       streak:count(kana.streak), dailyComplete:!!kana.dailyDone,
       levelProgress:Math.min(1, Math.max(0, Number(progress.progress) || 0)),
-      destination:kana.dailyDone ? 'kana' : 'daily'
+      destination:'yourAtlas',
+      title:appearance?.title||'Trail Finder',frame:appearance?.frame||'plain',
+      nextTitle:next?.title||null,nextLevel:next?.level||null,
+      studyStreak:count(routine.streak),lastStudyDay:owner?.studyDays?.(state).sort().at(-1)||null,
+      goals:routine.goals.map(({id,label,value,target})=>({id,label,value:Math.min(count(value),count(target)),target:count(target)}))
     };
   }
   // Call only from an explicit reminder preference action. Disabling

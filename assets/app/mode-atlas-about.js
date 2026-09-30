@@ -16,9 +16,11 @@
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Smoother iOS sounds when moving quickly between screens.',
-    'Report unwanted profiles in Friends and manage your account more reliably.',
-    'Replay the quick tour or send feedback from Settings.'
+    'A guided tour now highlights real screens, practice controls, goals and rewards.',
+    'Official Admin and Moderator badges, private warning history and clearer report review.',
+    'Feedback starts in the app; Terms and Privacy open without leaving your screen.',
+    'Your Atlas widgets bring goals, study streaks and the next reward to your Home Screen.',
+    'Account panels stay within the visible screen when the keyboard opens.'
   ];
 
   function storeGet(key, fallback = '') {
@@ -181,7 +183,7 @@
     }
 
     if (pending && onboardingOpen()) return;
-    if (sessionStorage.getItem('modeAtlasTourPending') === '1') { markWhatsNewSeen(); return; }
+    if (sessionStorage.getItem('modeAtlasTourPending') === '1'||window.ModeAtlasTour?.isOpen()) { markWhatsNewSeen(); return; }
 
     if (shouldAutoShowWhatsNew() && onboardingComplete() && !onboardingOpen() && ['index.html','kana.html'].includes(PAGE)) {
       showWhatsNew();
@@ -286,17 +288,6 @@
     }
   }, true);
 
-  document.addEventListener('click',async event=>{
-    if(!event.target.closest?.('[data-ma-support]'))return;
-    event.preventDefault();
-    const environment=window.ModeAtlasEnv?.isNativeApp?'iOS':'website';
-    const body=`Mode Atlas ${APP_VERSION} · ${environment}\nScreen: ${PAGE}\n\nWhat happened?\n\nWhat did you expect?\n`;
-    const url=`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Mode Atlas feedback · '+APP_VERSION)}&body=${encodeURIComponent(body)}`;
-    try{if(await window.AtlasPlatform?.openExternalLink?.(url))return;}catch{}
-    if(window.ModeAtlasEnv?.isNativeApp){
-      await window.ModeAtlasFeedback?.alert?.({title:'Email is unavailable',message:'You can send feedback to '+SUPPORT_EMAIL+' from any email app. Include Mode Atlas '+APP_VERSION+' and a description of what happened.',confirmLabel:'OK'});
-    }else location.href=url;
-  });
 
   window.ModeAtlas = window.ModeAtlas || {};
   window.ModeAtlas.openAbout = openAbout;

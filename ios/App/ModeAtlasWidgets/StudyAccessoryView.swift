@@ -28,7 +28,7 @@ struct StudyAccessoryView: View {
                         Image(systemName: value.completedToday(at: entry.date) ? "checkmark.circle.fill" : "circle")
                             .accessibilityLabel(value.completedToday(at: entry.date) ? "Daily complete" : "Daily not completed")
                     }
-                    Text("\(value.correct.formatted(.number.notation(.compactName))) correct")
+                    Text("\(value.goals(at: entry.date).filter { $0.id != "week" && $0.value >= $0.target }.count)/3 daily goals")
                     if let words = value.words {
                         Text("\(words.formatted(.number.notation(.compactName))) words banked")
                     }

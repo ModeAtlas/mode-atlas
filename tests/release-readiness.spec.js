@@ -24,7 +24,7 @@ test('the first-use tour is skippable, keeps keyboard focus and can be replayed'
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
   await page.addInitScript(()=>{
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
-    sessionStorage.setItem('modeAtlasTourPending','1');
+    if(!localStorage.getItem('modeAtlasTourSeen')&&!sessionStorage.getItem('modeAtlasActiveTour'))sessionStorage.setItem('modeAtlasTourPending','1');
   });
   await page.goto('/');
   const dialog=page.getByRole('dialog',{name:'A quick look around'});
@@ -33,7 +33,9 @@ test('the first-use tour is skippable, keeps keyboard focus and can be replayed'
   await dialog.getByRole('button',{name:'Next',exact:true}).click();
   await expect(dialog.getByRole('heading',{name:'Make practice yours'})).toBeFocused();
   await page.keyboard.press('Escape');await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/$/);
   expect(await page.evaluate(()=>localStorage.getItem('modeAtlasTourSeen'))).toBe('1');
+  await page.waitForFunction(()=>!!window.ModeAtlasAccountNavigation);
   await page.evaluate(()=>ModeAtlasAccountNavigation.open('settings'));
   await page.getByRole('button',{name:'Quick tour',exact:true}).click();
   await expect(dialog).toBeVisible();
@@ -86,4 +88,70 @@ for(const mode of ['reading','writing'])test(`${mode}: an identity change suspen
   const checkpoint=await page.evaluate(mode=>JSON.parse(localStorage.getItem('modeAtlasPracticeCheckpoint:'+mode)),mode);
   expect(checkpoint.sessionStats.answered).toBe(before.answers);
   await page.waitForTimeout(450);expect(await page.evaluate(()=>sessionStarted)).toBe(false);
+});
+
+
+test('visual tour opens real practice setup, goals, rewards and account sections without awarding XP',async({page})=>{
+  await page.setViewportSize({width:393,height:852});
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await page.addInitScript(()=>{
+    window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
+    for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
+    localStorage.setItem('maWhatsNewSeen','visual-tour');
+  });
+  await page.goto('/');await page.evaluate(()=>ModeAtlasTour.start());
+  const tour=page.getByRole('dialog',{name:'A quick look around'});
+  await expect(tour).toBeVisible();await expect(page.locator('.ma-tour-spot')).toBeVisible();
+  await tour.getByRole('button',{name:'Next',exact:true}).click();await expect(page).toHaveURL(/\/reading\/$/);
+  await expect(page.locator('#modifiersTab')).toBeVisible();
+  const before=await page.evaluate(()=>ModeAtlasProgress.getXP());
+  await tour.getByRole('button',{name:'Next',exact:true}).click();
+  await expect(page.locator('#practiceSetupDialog')).toBeVisible();await expect(page.locator('.ma-mode-choice').first()).toBeVisible();
+  await page.screenshot({path:test.info().outputPath('tour-setup.png')});
+  await tour.getByRole('button',{name:'Next',exact:true}).click();
+  await expect(page.locator('#maAccount-atlas')).toBeVisible();await expect(page.locator('#atlasPanel0')).toBeVisible();
+  await page.screenshot({path:test.info().outputPath('tour-goals.png')});
+  await tour.getByRole('button',{name:'Next',exact:true}).click();await expect(page.locator('#atlasPanel1')).toBeVisible();
+  await tour.getByRole('button',{name:'Next',exact:true}).click();await expect(page.locator('#maAccount-friends')).toBeVisible();
+  await tour.getByRole('button',{name:'Next',exact:true}).click();await expect(page.locator('#maAccount-settings')).toBeVisible();
+  expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(before);
+  await tour.getByRole('button',{name:'Finish tour',exact:true}).click();await expect(page).toHaveURL(/\/$/);await expect(tour).toHaveCount(0);
+});
+
+test('native legal reader opens bundled policies offline and feedback stays an editable in-app draft',async({page})=>{
+  await page.setViewportSize({width:320,height:640});
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await page.addInitScript(()=>{
+    window.feedbackDrafts=[];window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{ModeAtlasNative:{composeFeedback:async draft=>{feedbackDrafts.push(draft);return {status:'cancelled'};}}}};
+    for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
+    localStorage.setItem('maWhatsNewSeen','help-test');
+  });
+  await page.goto('/');await page.evaluate(()=>ModeAtlas.openAbout('legal'));
+  await page.getByRole('link',{name:'Open Privacy Policy',exact:true}).click();
+  const policy=page.getByRole('dialog',{name:'Privacy Policy',exact:true});await expect(policy).toBeVisible();await expect(policy.getByRole('heading',{name:'Reports and safety'})).toBeVisible();
+  expect(new URL(page.url()).pathname).toBe('/');
+  await policy.getByRole('button',{name:'Close dialog',exact:true}).click();
+  await page.evaluate(()=>{void ModeAtlasHelp.legal('terms');});await expect(page.getByRole('dialog',{name:'Terms of Use',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Close dialog',exact:true}).click();
+  await page.waitForFunction(()=>!!window.ModeAtlasAccountNavigation);
+  await page.evaluate(()=>ModeAtlasAccountNavigation.open('settings'));await page.getByRole('button',{name:'Send feedback',exact:true}).click();
+  const form=page.getByRole('dialog',{name:'Send feedback',exact:true});await form.getByLabel('Message',{exact:true}).fill('A helpful, editable feedback message.');
+  await form.getByRole('button',{name:'Continue to email'}).click();
+  await expect(form.getByLabel('Message',{exact:true})).toHaveValue('A helpful, editable feedback message.');
+  await expect(form.getByRole('status')).toContainText('still here');
+  const drafts=await page.evaluate(()=>feedbackDrafts);expect(drafts).toHaveLength(1);expect(drafts[0].body).toContain('Screen: /');expect(drafts[0].body).not.toContain('uid');
+  await page.screenshot({path:test.info().outputPath('feedback-form.png')});
+});
+
+
+test('a legal reader temporarily owns focus over first-use setup and restores the setup',async({page})=>{
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await page.addInitScript(()=>{window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};});
+  await page.goto('/');await page.evaluate(()=>modeAtlasTriggerFirstVisit());
+  await expect(page.locator('#maVisitModal.open')).toBeVisible();
+  await page.locator('#maVisitModal').getByRole('link',{name:/Privacy/}).click();
+  const policy=page.getByRole('dialog',{name:'Privacy Policy',exact:true});await expect(policy).toBeVisible();await page.keyboard.press('Tab');
+  expect(await page.evaluate(()=>document.activeElement.closest('.ma-dialog')!==null)).toBe(true);
+  await page.keyboard.press('Escape');await expect(policy).toBeHidden();await expect(page.locator('#maVisitModal [role=dialog]')).not.toHaveAttribute('inert','');
+  await expect(page.locator('#maVisitModal.open')).toBeVisible();
 });

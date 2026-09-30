@@ -12,7 +12,7 @@
   // These are product destinations, shared by website navigation and native
   // entry points. Keep incoming links on known pages in the bundled app.
   var destinations = Object.freeze({
-    atlas: '/', kana: '/kana/', reading: '/reading/', writing: '/writing/',
+    atlas: '/', yourAtlas: '/?section=atlas', kana: '/kana/', reading: '/reading/', writing: '/writing/',
     daily: '/reading/?mode=daily', review: '/reading/?mode=review',
     results: '/results/', wordBank: '/wordbank/'
   });
@@ -34,6 +34,7 @@
       if (path !== '/' && !path.endsWith('/')) path += '/';
       var key = pages[path];
       if (!key) return '';
+      if (key === 'atlas' && url.searchParams.get('section') === 'atlas') return 'yourAtlas';
       if (key === 'reading' && url.searchParams.get('mode') === 'daily') return 'daily';
       if (key === 'reading' && (url.searchParams.get('mode') === 'review' || url.searchParams.get('focusWeak') === '1')) return 'review';
       return key;
@@ -77,6 +78,7 @@
         };
       });
     },
+    composeFeedback: function(draft){ return call('composeFeedback', [draft], {status:'unavailable'}); },
     openExternalLink: function(url){ return call('openExternalLink', [String(url || '')], false); },
     playSound: function(cue,volume){ return call('playSound', [cue,volume], false); },
     stopSounds: function(){ return call('stopSounds', [], false); },

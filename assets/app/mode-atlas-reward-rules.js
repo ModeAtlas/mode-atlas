@@ -24,5 +24,6 @@
     {id:'lantern',level:35,title:'Lantern Keeper',name:'Lantern passage',symbol:'✧',frame:'lantern',icon:null},
     {id:'horizon',level:50,title:'Horizon Explorer',name:'Open horizon',symbol:'◎',frame:'horizon',icon:'Horizon'}
   ].map(Object.freeze));
-  return Object.freeze({accuracy,session,landmarks});
+  function appearance(id,level){return landmarks.find(item=>item.id===id&&item.level<=level)||landmarks[0];}
+  return Object.freeze({accuracy,session,landmarks,appearance});
 });

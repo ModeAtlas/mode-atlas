@@ -326,7 +326,8 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-button:hove
   position:relative;
   z-index:1;
   width:min(520px,100%);
-  max-height:min(86vh,760px);
+  max-height:min(calc(var(--ma-overlay-height,100dvh) - 68px),760px);
+  overscroll-behavior:contain;
   overflow:auto;
   border:1px solid var(--ma-border);
   border-radius:var(--ma-radius-card);
@@ -358,7 +359,7 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-button:hove
 
 @media(max-width:560px){
   .ma-dialog-layer{align-items:end;padding:12px max(12px,env(safe-area-inset-right)) max(12px,calc(env(safe-area-inset-bottom) + 8px)) max(12px,env(safe-area-inset-left));}
-  .ma-dialog{width:100%;max-height:82vh;border-radius:24px;}
+  .ma-dialog{width:100%;max-height:calc(var(--ma-overlay-height,100dvh) - 36px - env(safe-area-inset-bottom));border-radius:24px;}
   .ma-dialog__actions{display:grid;grid-template-columns:1fr;}
   .ma-dialog__actions .ma-button{width:100%;}
 }
@@ -635,3 +636,10 @@ body[data-effective-display-mode="phone"] .ma-setting-row__control{justify-self:
   .ma-button--small{--ma-button-min-height:44px;}
   .ma-icon-button,.ma-dialog__close--icon{min-width:44px;min-height:44px;}
 }
+
+/* The overlay owner measures the visible keyboard viewport for every sheet. */
+.ma-viewport-layer{inset:auto;top:var(--ma-overlay-top,0px);left:var(--ma-overlay-left,0px);width:var(--ma-overlay-width,100vw);height:var(--ma-overlay-height,100dvh);box-sizing:border-box;}
+.ma-official-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;gap:4px;padding:3px 8px;border-radius:8px;font:750 .72rem/1.4 var(--ma-font-ui);color:var(--ma-link);background:var(--ma-control-active);border:1px solid var(--ma-control-active-border);}
+.ma-official-badge[hidden]{display:none;}
+.ma-account-notices article+article{border-top:1px solid var(--ma-border);padding-top:12px;}
+.ma-account-notices p{white-space:pre-wrap;overflow-wrap:anywhere;}

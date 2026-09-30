@@ -17,7 +17,7 @@
     if(url){const image=el('img');image.src=url;image.alt='';image.referrerPolicy='no-referrer';image.addEventListener('error',()=>{node.textContent='あ';},{once:true});node.replaceChildren(image);}
     return node;
   }
-  function identity(profile){const copy=el('span','ma-social-identity');copy.append(el('strong','',profile.displayName+(profile.uid===owner?' · You':'')),el('small','',`Level ${number(profile.level)} · ${profile.title}`));return copy;}
+  function identity(profile){const copy=el('span','ma-social-identity');copy.append(el('strong','',profile.displayName+(profile.uid===owner?' · You':'')),el('small','',`Level ${number(profile.level)} · ${profile.title}`));if(['admin','moderator'].includes(profile.role))copy.append(el('span','ma-official-badge',profile.role==='admin'?'✓ Admin':'✓ Moderator'));return copy;}
   async function run(action,onSuccess){
     if(!host || host.getAttribute('aria-busy')==='true')return;
     const ticket=generation;status('');host.setAttribute('aria-busy','true');
@@ -26,7 +26,7 @@
     catch(error){if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
     finally{if(alive(ticket))host.removeAttribute('aria-busy');controls.forEach(node=>{node.disabled=node.dataset.wasDisabled==='true';delete node.dataset.wasDisabled;});}
   }
-  function screen(){generation++;status('');body.replaceChildren();host.removeAttribute('aria-busy');return generation;}
+  function screen(){generation++;status('');if(body.contains(document.activeElement))document.activeElement.blur();body.replaceChildren();const panel=host.closest('.ma-account-view');if(panel)panel.scrollTop=0;host.removeAttribute('aria-busy');return generation;}
   function empty(title,description){const card=el('div','ma-social-empty');card.append(el('h3','',title),el('p','',description));body.append(card);return card;}
   function focusTitle(){const title=body.querySelector('h3');if(title){title.tabIndex=-1;title.focus({preventScroll:true});}}
   function back(label,action){body.append(button('← '+label,action,'ma-button ma-button--ghost ma-social-back'));}
@@ -81,6 +81,7 @@
     }
     body.append(tools);
     if(state.canModerate)body.append(button('Review reports',()=>reviewReports()));
+    if(state.role==='admin')body.append(button('Moderators',moderators));
     if(tab==='rankings')body.append(el('p','ma-social-note','Rankings use each friend’s latest synced learning progress.'));
     const list=el('div','ma-social-list');list.id='maSocialList';list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby','maSocialTab-'+tab);body.append(list);
     void loadPage(list,null);
@@ -184,7 +185,7 @@
       if(result.relationship==='none')preview.append(button('Send request',()=>run(()=>root.ModeAtlasSocial.call('sendRequest',{code}),()=>{kind='outgoing';load();}),'ma-button ma-button--primary'));
       else if(result.relationship==='incoming')preview.append(button('Review request',()=>{kind='incoming';load();}));
       else preview.append(el('p','ma-social-note',result.relationship==='friend'?'You’re already friends.':'Your request is waiting for a reply.'));
-      preview.append(button('Report',()=>reportProfile(result.profile,code)));
+      preview.append(button('Report',()=>reportProfile(result.profile,code)));if(state.canModerate)preview.append(button('Moderation',()=>staffProfile(result.profile.uid)));
     });});body.append(form,preview);
   }
   async function showProfile(uid){
@@ -192,6 +193,7 @@
     try{
       const result=await root.ModeAtlasSocial.call('profile',{uid});if(!alive(ticket))return;
       const profile=result.profile,card=el('div','ma-social-self');card.append(avatar(profile),identity(profile));body.append(card);
+      if(state.canModerate)body.append(button('Moderation & warnings',()=>staffProfile(uid)));
       const stats=profile.stats,grid=el('div','ma-social-stats');
       for(const [label,value]of [['Atlas level',number(profile.level)],['Total XP',number(stats.xp)],['Study streak',`${number(stats.streak)} days`],['Total correct',number(stats.totalCorrect)],['Reading mastery',`${stats.readingMastered} / ${stats.kanaCount}`],['Writing mastery',`${stats.writingMastered} / ${stats.kanaCount}`]]){const tile=el('div');tile.append(el('span','',label),el('strong','',value));grid.append(tile);}body.append(grid);
       body.append(el('p','ma-social-note',stats.syncedAt?`Progress synced ${new Date(stats.syncedAt).toLocaleString()}.`:'Progress will appear after the next sync.'));
@@ -210,7 +212,7 @@
     form.addEventListener('submit',event=>{event.preventDefault();run(()=>root.ModeAtlasSocial.call('reportProfile',{uid:profile.uid,reason:reason.value,note:note.value,...(code?{code}:{})}),()=>{
       screen();body.append(el('h3','','Report sent'),el('p','ma-social-note','Thank you for helping keep Friends welcoming. You can also block this profile to stop requests and hide each other’s profiles.'));
       const actions=el('div','ma-social-tools');actions.append(button('Done',load,'ma-button ma-button--primary'),button('Block profile',()=>confirmAction('Block '+profile.displayName+'?','You will not see each other’s profiles or receive requests from each other.','Block','block',{uid:profile.uid},load),'ma-button ma-button--danger'));body.append(actions);focusTitle();
-    });});body.append(form);reason.focus();
+    });});body.append(form);focusTitle();
   }
   async function reviewReports(cursor=null,restricted=false){
     const ticket=screen();back('Friends',home);body.append(el('h3','',restricted?'Restricted profiles':'Reports to review'),button(restricted?'Review reports':'Restricted profiles',()=>reviewReports(null,!restricted)));
@@ -221,17 +223,48 @@
         const card=el('article','ma-social-report'),actions=el('div','ma-social-tools');
         if(restricted){
           card.append(el('h4','',report.displayName));
-          actions.append(button('Restore Friends access',()=>confirmAction('Restore Friends access?','This account can use Friends again.','Restore access','restoreProfile',{uid:report.uid},()=>reviewReports(null,true))));
+          if(report.canAct!==false)actions.append(button('Restore Friends access',()=>confirmAction('Restore Friends access?','This account can use Friends again.','Restore access','restoreProfile',{uid:report.uid},()=>reviewReports(null,true))));
         }else{
           const preview=el('div','ma-social-self');preview.append(avatar(report.snapshot),el('strong','',report.snapshot.displayName));card.append(preview,el('p','ma-social-note',report.reason+' · '+new Date(report.createdAt).toLocaleDateString()),el('p','',report.note||'No additional details.'));
           if(report.current?.displayName!==report.snapshot.displayName)card.append(el('p','ma-social-note','Current name: '+(report.current?.displayName||'Profile removed')));
+          if(report.canAct===false)card.append(el('p','ma-social-note','Only Admin can review reports about official accounts.'));
+          actions.append(button('Moderation & warnings',()=>staffProfile(report.target)));
           for(const [decision,label,message]of [['dismiss','Dismiss','Close this report without changing the profile.'],['reset','Reset name and avatar','Replace the current name and avatar with a neutral profile. Learning progress is kept.'],['restrict','Restrict Friends access','Hide this profile and prevent it using Friends. Learning progress is kept.']]){
+            if(report.canAct===false||(report.target===owner&&decision!=='dismiss'))continue;
             actions.append(button(label,()=>confirmAction(label+'?',message,label,'reviewReport',{id:report.id,decision},()=>reviewReports())));
           }
         }
         card.append(actions);body.append(card);
       }
       if(result.nextCursor)body.append(button('Next reports',()=>reviewReports(result.nextCursor,restricted)));
+    }catch(error){if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
+  }
+  async function moderators(){
+    const ticket=screen();back('Friends',home);body.append(el('h3','','Moderators'));
+    try{
+      const result=await root.ModeAtlasSocial.call('listModerators');if(!alive(ticket))return;
+      if(!result.rows.length)body.append(el('p','ma-social-empty','No moderators yet. Open a member’s profile to assign the role.'));
+      for(const profile of result.rows){const row=el('div','ma-social-self');row.append(el('strong','ma-social-identity',profile.displayName),button('Remove role',()=>confirmAction('Remove '+profile.displayName+' as moderator?','They will no longer review reports or warn members.','Remove role','assignModerator',{uid:profile.uid,moderator:false},moderators)));body.append(row);}
+    }catch(error){if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
+  }
+  async function staffProfile(uid){
+    const ticket=screen();back('Friends',home);body.append(el('h3','','Moderation & warnings'));
+    try{
+      const profile=await root.ModeAtlasSocial.call('staffProfile',{uid});if(!alive(ticket))return;
+      body.append(el('h4','',profile.displayName),el('p','ma-social-note',`${profile.count} ${profile.count===1?'warning':'warnings'} · Visible only to Admin and Moderators`));
+      if(profile.role!=='member')body.append(el('span','ma-official-badge',profile.role==='admin'?'✓ Admin':'✓ Moderator'));
+      const assigned=profile.moderatorAssigned??profile.role==='moderator';
+      if(profile.canManage&&profile.role!=='admin'&&(assigned||profile.canAssign!==false))body.append(button(assigned?'Remove moderator role':'Make moderator',()=>confirmAction(assigned?'Remove moderator role?':'Make '+profile.displayName+' a moderator?',assigned?'This account will no longer review reports or warn members.':'Moderators can review member reports and send warnings. They cannot action official accounts or access developer tools.',assigned?'Remove role':'Make moderator','assignModerator',{uid,moderator:!assigned},()=>staffProfile(uid))));
+      if(profile.canManage&&profile.count)body.append(button('Clear warnings',()=>confirmAction('Clear all warnings?','The warning count, warning history and unread notices for this account will be removed.','Clear warnings','clearWarnings',{uid},()=>staffProfile(uid)),'ma-button ma-button--danger'));
+      if(profile.canAct){
+        const form=el('form','ma-social-form'),label=el('label','ma-social-field','Send a warning'),message=el('textarea');message.rows=3;message.maxLength=500;message.minLength=3;message.required=true;message.name='warning';label.append(message);
+        const hint=el('p','ma-social-note','Explain the concern and what needs to change. This message appears on their next visit.');
+        const submit=button('Review warning',null,'ma-button ma-button--primary');submit.type='submit';form.append(label,hint,submit);
+        form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;const text=message.value.trim();if(text.length<3)return;
+          const requestId=crypto.randomUUID();confirmAction('Send warning to '+profile.displayName+'?',text,'Send warning','warnProfile',{uid,message:text,requestId},()=>staffProfile(uid));});body.append(form);
+      }else body.append(el('p','ma-social-note','Only Admin can warn official accounts.'));
+      if(profile.history.length){const list=el('div','ma-social-list');for(const warning of profile.history){const card=el('article','ma-social-report');card.append(el('small','ma-social-note',new Date(warning.at).toLocaleString()),el('p','',warning.message));list.append(card);}body.append(list);if(profile.count>profile.history.length)body.append(el('p','ma-social-note','Showing the most recent 50 warnings. The total includes all warnings.'));}
+      focusTitle();
     }catch(error){if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
   }
   function confirmAction(title,message,label,action,data,cancel){

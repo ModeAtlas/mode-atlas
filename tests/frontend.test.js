@@ -1674,7 +1674,8 @@ test('2.45 responsive and accessibility QA keeps landmarks, keyboard controls, f
   assert.match(navigation, /\.ma-skip-link\{/);
   assert.match(navigation, /@media\(pointer:coarse\)[\s\S]*\.ma-nav__section-link[\s\S]*min-height:44px/);
   assert.match(components, /@media\(pointer:coarse\)[\s\S]*\.ma-button--small\{--ma-button-min-height:44px;\}/);
-  assert.match(profileSettings, /body\.ma-account-open\{overflow:hidden;\}/);
+  assert.match(dialog, /ModeAtlasOverlay\.lock\(layer\)/);
+  assert.match(read('assets/app/mode-atlas-overlay.js'), /visualViewport\?\.addEventListener\('scroll',measure\)/);
   assert.match(wordbankCss, /@media\(pointer:coarse\)\{\.summary-toggle\{width:44px;height:44px;\}\}/);
   assert.match(kanaCss, /@media\(pointer:coarse\)\{\.kana-ghost-action,\.kana-map-action,\.kana-inline-btn\{--ma-button-min-height:44px;\}\}/);
 

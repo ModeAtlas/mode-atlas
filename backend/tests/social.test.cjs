@@ -56,7 +56,7 @@ test('rules preserve owner-only profile/app-data access and deny every direct so
     await assertFails(getDoc(doc(mine,path)));
     await assertFails(setDoc(doc(mine,path),{}));
   }
-  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','accountDeletions']){
+  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','accountDeletions']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));
   }
@@ -321,4 +321,63 @@ test('reporting is scoped, deduplicated and private; only the verified admin can
   await adminCall('reviewReport',{id:records.docs[0].id,decision:'reset'});
   const changed=await b.call('state');assert.match(changed.profile.displayName,/^Learner /);assert.equal(changed.preferences.requiresNameChange,true);
   assert.equal((await db.doc(`users/${b.uid}/appData/kanaTrainer`).get()).data().sections.progress.data.state.sources.device['kana.reading.correct'],20);
+});
+
+
+test('Admin and Moderator permissions, official badges, warning privacy, acknowledgement and cleanup',async()=>{
+  const adminUid='legacy-admin';
+  const adminCall=async(action,data={})=>{
+    if(directService)return service.call({auth:{uid:adminUid},data:{action,data,expectedUid:adminUid}});
+    const token=await auth.createCustomToken(adminUid);
+    const login=await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,returnSecureToken:true})}).then(r=>r.json());
+    const result=await fetch(`http://127.0.0.1:5001/${projectId}/${config.region}/modeAtlasSocial`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${login.idToken}`},body:JSON.stringify({data:{action,data,expectedUid:adminUid}})}).then(r=>r.json());
+    if(result.error)throw new Error(JSON.stringify(result.error));return result.result;
+  };
+  const mod=await learner('ModFriend'),peer=await learner('OfficialPeer'),member=await learner('WarningMember'),other=await learner('WarningObserver');
+  await friend(mod,member);await friend(other,member);
+  await assert.rejects(member.call('warnProfile',{uid:'nonexistent-profile',message:'Unauthorized warning',requestId:crypto.randomUUID()}),{code:'PERMISSION_DENIED'});
+  await assert.rejects(member.call('assignModerator',{uid:member.uid,moderator:true}),{code:'PERMISSION_DENIED'});
+  await adminCall('assignModerator',{uid:mod.uid,moderator:true});await adminCall('assignModerator',{uid:peer.uid,moderator:true});
+  assert.equal((await mod.call('state')).profile.role,'moderator');assert.equal((await adminCall('state')).profile.role,'admin');
+  assert.equal((await member.call('list')).rows.find(row=>row.uid===mod.uid).role,'moderator');
+  await assert.rejects(mod.call('assignModerator',{uid:member.uid,moderator:true}),{code:'PERMISSION_DENIED'});
+  for(const uid of [adminUid,mod.uid,peer.uid]){
+    await assert.rejects(mod.call('warnProfile',{uid,message:'Please change this.',requestId:crypto.randomUUID()}),{code:'PERMISSION_DENIED'});
+    const ref=db.collection('socialReports').doc(require('node:crypto').createHash('sha256').update('staff-report-'+uid).digest('hex'));
+    await ref.set({target:uid,reporter:member.uid,state:'open',snapshot:{displayName:'Official'},createdAt:Date.now()});
+    await assert.rejects(mod.call('reviewReport',{id:ref.id,decision:'dismiss'}),{code:'PERMISSION_DENIED'});
+    if(uid===peer.uid){await auth.updateUser(uid,{disabled:true});await assert.rejects(mod.call('reviewReport',{id:ref.id,decision:'dismiss'}),{code:'PERMISSION_DENIED'});await auth.updateUser(uid,{disabled:false});}
+    await adminCall('reviewReport',{id:ref.id,decision:'dismiss'});
+    assert.equal((await ref.get()).data().state,'closed');
+  }
+  const warning={uid:member.uid,message:'Please keep your display name welcoming.',requestId:crypto.randomUUID()};
+  await db.doc('socialRestrictions/'+mod.uid).set({restricted:true});
+  await assert.rejects(mod.call('warnProfile',warning),{code:'PERMISSION_DENIED'});
+  await assert.rejects(mod.call('listReports'),{code:'PERMISSION_DENIED'});
+  await db.doc('socialRestrictions/'+mod.uid).delete();
+  await mod.call('warnProfile',warning);await mod.call('warnProfile',warning);
+  assert.equal((await mod.call('staffProfile',{uid:member.uid})).count,1,'retries must not duplicate warnings');
+  const pending=await member.call('accountNotices');assert.equal(pending.warnings[0].message,warning.message);assert.equal(pending.count,undefined);assert.equal(pending.warnings[0].by,undefined);
+  await assert.rejects(member.call('staffProfile',{uid:member.uid}),{code:'PERMISSION_DENIED'});
+  assert.equal(JSON.stringify(await other.call('profile',{uid:member.uid})).includes('warning'),false);
+  assert.equal(JSON.stringify(await other.call('list',{kind:'rankings'})).includes(warning.message),false);
+  await assert.rejects(mod.call('clearWarnings',{uid:member.uid}),{code:'PERMISSION_DENIED'});
+  await member.call('acknowledgeWarnings',{ids:[warning.requestId]});assert.deepEqual((await member.call('accountNotices')).warnings,[]);
+  assert.equal((await mod.call('staffProfile',{uid:member.uid})).count,1,'acknowledgement does not clear history');
+  await member.call('leave');assert.equal((await mod.call('staffProfile',{uid:member.uid})).count,1,'opt-out must not erase warnings');
+  await adminCall('clearWarnings',{uid:member.uid});assert.equal((await mod.call('staffProfile',{uid:member.uid})).count,0);
+  await mod.call('leave');
+  await auth.updateUser(mod.uid,{disabled:true});
+  assert.ok((await adminCall('listModerators')).rows.some(row=>row.uid===mod.uid),'Admin can find former or disabled moderators');
+  await assert.rejects(member.call('listModerators'),{code:'PERMISSION_DENIED'});
+  await adminCall('assignModerator',{uid:mod.uid,moderator:false});
+  await auth.updateUser(mod.uid,{disabled:false});
+  await mod.call('updateProfile',{displayName:'ModFriend',avatar:'kana',timeZone:'UTC'});
+  await assert.rejects(mod.call('listReports'),{code:'PERMISSION_DENIED'});
+  await assert.rejects(mod.call('warnProfile',{...warning,requestId:crypto.randomUUID()}),{code:'PERMISSION_DENIED'});
+  assert.equal((await mod.call('state')).profile.role,'member');
+  await adminCall('warnProfile',{uid:peer.uid,message:'An Admin warning.',requestId:crypto.randomUUID()});
+  await peer.call('deleteAccount');if(directService)await service.erase(peer.uid,true);
+  await until(async()=>!(await db.doc('socialWarnings/'+peer.uid).get()).exists);
+  assert.equal(Object.hasOwn((await db.doc('socialStaff/roles').get()).data().moderators,peer.uid),false);
 });

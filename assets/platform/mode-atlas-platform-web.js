@@ -27,6 +27,10 @@
         platform: 'web'
       };
     },
+    composeFeedback: function(draft){
+      location.href='mailto:support@mode-atlas.com?subject='+encodeURIComponent(draft.subject)+'&body='+encodeURIComponent(draft.body);
+      return {status:'opened'};
+    },
     openExternalLink: function(url){
       if (!url) return false;
       root.open(url, '_blank', 'noopener,noreferrer');

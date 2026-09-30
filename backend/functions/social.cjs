@@ -3,8 +3,9 @@ const {randomBytes,randomUUID,createHash}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
 const {projectSave,publicProfile,rankProfiles}=require('./projection.cjs');
 const identity=require('./shared/mode-atlas-social-identity.js');
-const {createIdentityStore,mayUseName,accountPhoto,isAdmin}=require('./identity.cjs');
+const {createIdentityStore,mayUseName,accountPhoto}=require('./identity.cjs');
 const {createModeration}=require('./moderation.cjs');
+const {createStaff}=require('./staff.cjs');
 const LIMITS=Object.freeze({friends:100,requests:50,blocks:100,page:20});
 const fail=(code,message)=>{throw new HttpsError(code,message);};
 const hash=value=>createHash('sha256').update(value).digest('hex');
@@ -54,7 +55,8 @@ function slicePage(items,cursor){
 
 function createSocial({db,auth,now=Date.now}){
   const identities=createIdentityStore({db,auth,now});
-  const moderation=createModeration({db,identities,now});
+  const staff=createStaff({db,auth,now});
+  const moderation=createModeration({db,identities,staff,now});
   const accounts=db.collection('socialAccounts'),codes=db.collection('socialCodes'),blocks=db.collection('socialBlocks'),limits=db.collection('socialLimits'),deleted=db.collection('socialDeleted');
   const accountRef=uid=>accounts.doc(uid);
   const saveRef=uid=>db.doc(`users/${uid}/appData/kanaTrainer`);
@@ -64,7 +66,7 @@ function createSocial({db,auth,now=Date.now}){
     if(marker.exists && createdAt<=marker.data().at)fail('unauthenticated','This account has been deleted.');
   }
   async function limit(uid,action,createdAt){
-    const bucket=action==='lookup' || action==='sendRequest'?'lookup':action==='state' || action==='list' || action==='profile'?'read':'write';
+    const bucket=action==='lookup' || action==='sendRequest'?'lookup':action==='state' || action==='list' || action==='profile' || action==='accountNotices' || action==='staffProfile'?'read':'write';
     const max={lookup:12,read:60,write:30}[bucket],at=now();
     await db.runTransaction(async tx=>{
       const ref=limits.doc(uid),[doc,marker]=await tx.getAll(ref,deletionRef(uid)),data=doc.data()||{};
@@ -170,11 +172,11 @@ function createSocial({db,auth,now=Date.now}){
     });
   }
   async function state(uid,user){
-    const doc=await accountRef(uid).get(),a=doc.data(),canModerate=isAdmin(user);
+    const doc=await accountRef(uid).get(),a=doc.data(),role=await staff.current(user),canModerate=role!=='member';
     if(await moderation.restriction(uid))return {active:false,restricted:true,canModerate};
     if(a?.deleting)return {active:false,deleting:true};
-    if(!a?.active)return {active:false,accountPhoto:accountPhoto(user),canModerate};
-    return {active:true,canModerate,profile:publicProfile(uid,a,now()),preferences:a.profile,accountPhoto:accountPhoto(user),code:a.code,
+    if(!a?.active)return {active:false,accountPhoto:accountPhoto(user),canModerate,role};
+    return {active:true,canModerate,role,profile:publicProfile(uid,a,now()),preferences:a.profile,accountPhoto:accountPhoto(user),code:a.code,
       counts:{friends:keys(a.friends).length,incoming:keys(a.incoming).length,outgoing:keys(a.outgoing).length,blocked:a.blockedCount}};
   }
   async function list(uid,data){
@@ -274,7 +276,7 @@ function createSocial({db,auth,now=Date.now}){
     const id=await beginErase(uid);await cleanup(uid,id);
     // Opting out must not reset rate limits. Auth deletion removes them too.
     if(deletedAccount && validUid(uid)){
-      await Promise.all([limits.doc(uid).delete(),db.doc('socialRestrictions/'+uid).delete(),db.doc('socialReportLimits/'+uid).delete()]);
+      await Promise.all([staff.erase(uid),db.doc('socialWarnings/'+uid).delete(),limits.doc(uid).delete(),db.doc('socialRestrictions/'+uid).delete(),db.doc('socialReportLimits/'+uid).delete()]);
       for(const field of ['target','reporter'])while(true){
         const found=await db.collection('socialReports').where(field,'==',uid).limit(100).get();if(found.empty)break;
         const batch=db.batch();found.docs.forEach(doc=>batch.delete(doc.ref));await batch.commit();
@@ -291,25 +293,32 @@ function createSocial({db,auth,now=Date.now}){
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['state','list','profile','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile'];
+    const actions=['state','list','profile','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
     if(['state','rotateCode','leave'].includes(action))fields(data,[]);
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
-    if(!['state','leave','listReports','reviewReport','listRestrictions','restoreProfile'].includes(action)&&await moderation.restriction(uid))fail('permission-denied','Friends access is restricted. Contact support@mode-atlas.com to appeal.');
+    if(!['state','leave','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'].includes(action)&&await moderation.restriction(uid))fail('permission-denied','Friends access is restricted. Contact support@mode-atlas.com to appeal.');
+    if(action==='accountNotices')return moderation.notices(user,data);
+    if(action==='acknowledgeWarnings')return moderation.notices(user,data,true);
+    if(action==='staffProfile')return moderation.details(user,data);
+    if(action==='listModerators')return staff.list(user,data);
+    if(action==='assignModerator')return staff.assign(user,data);
+    if(action==='warnProfile')return moderation.warn(user,data);
+    if(action==='clearWarnings')return moderation.clearWarnings(user,data);
     if(action!=='leave')await identities.ensureReady();
     if(action==='listRestrictions')return moderation.restricted(user,data);
     if(action==='restoreProfile')return moderation.restore(user,data);
     if(action==='reportProfile')return moderation.report(uid,data);
     if(action==='listReports')return moderation.list(user,data);
     if(action==='reviewReport')return moderation.review(user,data);
-    if(action==='state'){await refreshSummary(uid);return state(uid,user);}
+    if(action==='state'){await refreshSummary(uid);const result=await state(uid,user);if(result.profile)result.profile.role=result.role;return result;}
     if(action==='updateProfile')return updateProfile(uid,data,createdAt,user);
     if(action==='rotateCode')return rotateCode(uid);
-    if(action==='lookup')return lookup(uid,data);
+    if(action==='lookup'){const result=await lookup(uid,data);await staff.badges(result.rows||[result.profile]);return result;}
     if(action==='sendRequest')return sendRequest(uid,data);
-    if(action==='list')return list(uid,data);
-    if(action==='profile')return profile(uid,data);
+    if(action==='list'){const result=await list(uid,data);await staff.badges(result.rows||[result.profile]);return result;}
+    if(action==='profile'){const result=await profile(uid,data);await staff.badges(result.rows||[result.profile]);return result;}
     if(action==='leave')return erase(uid);
     return relationship(uid,action,data);
   }

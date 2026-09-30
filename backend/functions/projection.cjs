@@ -26,7 +26,7 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0) {
     ModeAtlasDates:{...dates,localDateKey:value=>dates.dateKeyInTimeZone(value,timeZone)}});
   const seeded = owner.ensureSeeded({sync:false,emit:false});
   const summary = owner.getSummary(seeded);
-  const selected = rewards.landmarks.find(item=>item.id===seeded.appearance.landmark && item.level<=summary.level) || rewards.landmarks[0];
+  const selected = rewards.appearance(seeded.appearance.landmark,summary.level);
   let readingMastered=0,writingMastered=0,combinedMastered=0;
   for (const char of kana.collections.all) {
     const reading={review:data('reading').srs?.[char],stats:data('reading').stats?.[char],time:data('reading').times?.[char]};
@@ -43,7 +43,7 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0) {
 function publicProfile(uid, account, now = Date.now(), full = true) {
   if(!account?.active || account.deleting || account.restricted || !account.profile)return null;
   const summary=account.summary || projectSave();
-  const landmark=rewards.landmarks.find(item=>item.id===summary.landmark && item.level<=summary.level) || rewards.landmarks[0];
+  const landmark=rewards.appearance(summary.landmark,summary.level);
   const out={uid,displayName:account.profile.displayName,avatar:account.profile.avatar,
     frame:landmark.frame,title:landmark.title,level:summary.level};
   if(out.avatar==='account'){

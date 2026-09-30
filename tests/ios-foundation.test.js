@@ -187,6 +187,8 @@ test('native destination router accepts only product links and consumes a launch
   vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'), context);
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(navigations, [['replace', '/reading/?mode=daily']]);
+  assert.equal(context.window.AtlasPlatform.destinationFromUrl('modeatlas://open/?section=atlas'), 'yourAtlas');
+  assert.equal(context.window.AtlasPlatform.destinationPath('yourAtlas'), '/?section=atlas');
   assert.equal(context.window.AtlasPlatform.destinationFromUrl('com.googleusercontent.apps.test:/oauth'), '');
   assert.equal(context.window.AtlasPlatform.destinationFromUrl('https://evil.example/reading/?mode=daily'), '');
   openUrl({ url:'modeatlas://open/reading?mode=review' });
@@ -201,7 +203,9 @@ test('native engagement snapshot excludes identity and permission requires an ex
   let granted = true;
   const window = {
     ModeAtlasEnv:{isNativeApp:true},
-    ModeAtlasProgress:{getSummary:() => ({level:4,lifetimeCorrect:73,readingCorrect:50,writingCorrect:23,levelXp:125,levelRequirement:250,progress:.5,uid:'private',email:'private@example.com'})},
+    ModeAtlasDates:{localDateKey:()=> '2026-09-30'},
+    ModeAtlasRewardRules:require('../assets/app/mode-atlas-reward-rules.js'),
+    ModeAtlasProgress:{readState:()=>({appearance:{landmark:'grove'}}),studyDays:()=>['2026-09-29'],routine:()=>({streak:3,goals:[{id:'recall',label:'Recall 20 kana today',value:35,target:20},{id:'balance',label:'Read 5 and write 5 today',value:6,target:10},{id:'review',label:'Recall 5 due kana today',value:2,target:5},{id:'week',label:'Practise on 4 days this week',value:3,target:4}]}),getSummary:() => ({level:4,lifetimeCorrect:73,readingCorrect:50,writingCorrect:23,levelXp:125,levelRequirement:250,progress:.5,uid:'private',email:'private@example.com'})},
     ModeAtlasStorage:{KEYS:{wordBank:'kanaWordBank'},json:()=>[{kana:'private word'},{kana:'second private word'}],number:()=>123456789},
     ModeAtlasKanaMetrics:{kanaStats:() => ({streak:3,dailyDone:true})},
     AtlasPlatform:{
@@ -220,12 +224,18 @@ test('native engagement snapshot excludes identity and permission requires an ex
   await refresh();
   assert.equal(calls[0][0],'snapshot');
   assert.equal(calls[0][1].correct,73);
-  assert.equal(calls[0][1].schemaVersion,2);
+  assert.equal(calls[0][1].schemaVersion,3);
   assert.equal(calls[0][1].words,2);
   assert.equal(calls[0][1].readingCorrect,50);
   assert.equal(calls[0][1].writingCorrect,23);
   assert.equal(calls[0][1].lastActivityAt,123456789);
-  assert.equal(calls[0][1].destination,'kana');
+  assert.equal(calls[0][1].destination,'yourAtlas');
+  assert.equal(calls[0][1].title,'Trail Finder','locked appearances never reach widgets');
+  assert.equal(calls[0][1].nextLevel,5);
+  assert.equal(calls[0][1].studyStreak,3);
+  assert.equal(calls[0][1].lastStudyDay,'2026-09-29');
+  assert.equal(calls[0][1].goals[0].value,20,'goal progress is capped without recalculating its policy');
+  assert.equal(calls[0][1].goals.length,4);
   assert.equal(JSON.stringify(calls).includes('private'),false);
   calls.length=0;
   await window.ModeAtlasNativeEngagement.configureReminder({enabled:false});
