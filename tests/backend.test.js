@@ -756,6 +756,7 @@ test('Kana metrics use one storage snapshot and local calendar dates', () => {
     vm.createContext(context);
     vm.runInContext(KANA_DATA_SOURCE, context, { filename: 'mode-atlas-kana-data.js' });
     vm.runInContext(dateSource, context, { filename: 'mode-atlas-date.js' });
+    vm.runInContext(fs.readFileSync(path.join(ROOT,'assets/app/mode-atlas-review.js'),'utf8'), context);
     vm.runInContext(metricsSource, context, { filename: 'mode-atlas-kana-metrics.js' });
 
     const collections = window.ModeAtlasKanaData.collections;
@@ -839,4 +840,48 @@ test('2.46 Firebase startup restores Auth eagerly but defers Firestore until clo
   const setup = CLOUD_SYNC_SOURCE.slice(setupStart, setupEnd);
   assert.doesNotMatch(setup, /db\s*=\s*getFirestore\(app\)/, 'Auth restoration must not instantiate Firestore for guests');
   assert.match(setup, /if \(user\) \{\s*initialHydrationPromise = hydrateFromCloud\(false\)\.catch/s);
+});
+
+test('outgoing sync merges independent rewards and recall evidence, and reset clears the entire v3 state', async () => {
+  const {context,window,localStorage}=createBaseContext({configured:true});
+  let authCallback,remote=null,latestWrite;
+  context.__mocks={
+    initializeApp:()=>({}),getApps:()=>[],getApp:()=>({}),getAuth:()=>({}),
+    GoogleAuthProvider:class{setCustomParameters(){}},getRedirectResult:async()=>null,
+    onAuthStateChanged:(_auth,callback)=>{authCallback=callback;},getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),
+    getDoc:async()=>({exists:()=>!!remote,data:()=>remote}),setDoc:async(_ref,payload)=>{latestWrite=JSON.parse(JSON.stringify(payload));}
+  };
+  for(const file of ['assets/app/mode-atlas-storage.js','assets/app/mode-atlas-date.js','assets/app/mode-atlas-reward-rules.js','assets/app/mode-atlas-progress.js','assets/app/mode-atlas-review.js'])vm.runInContext(fs.readFileSync(path.join(ROOT,file),'utf8'),context);
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);
+  for(let i=0;i<50&&!authCallback;i++)await delay(1);
+  authCallback({uid:'learner'});await window.KanaCloudSync.waitForInitialHydration();
+  const makeState=(id,count)=>({version:3,legacySeeded:true,sources:{[id]:{'kana.reading.correct':count}},credits:{[id]:{answer:count}},claims:{'v3:mastery:reading:あ:2':10}});
+  const review=window.ModeAtlasReview;
+  const first=review.answer({}, {id:'a',at:Date.now()-86400000,correct:true}).entry;
+  const second=review.answer({}, {id:'b',at:Date.now(),correct:true}).entry;
+  localStorage.setItem('modeAtlasProgress',JSON.stringify(makeState('a',2)));
+  localStorage.setItem('modeAtlasProgressUpdatedAt','100');
+  localStorage.setItem('charSrs',JSON.stringify({'あ':first}));
+  remote={sections:{progress:{updatedAt:200,data:{state:makeState('b',3)}},reading:{updatedAt:200,data:{srs:{'あ':second}}}}};
+  assert.equal(await window.KanaCloudSync.syncNow(),true);
+  assert.equal(window.ModeAtlasProgress.getXP(),20,'both devices count; the same mastery milestone is credited once');
+  assert.equal(latestWrite.sections.progress.data.state.sources.a['kana.reading.correct'],2);
+  assert.equal(latestWrite.sections.progress.data.state.sources.b['kana.reading.correct'],3);
+  assert.equal(latestWrite.sections.reading.data.srs['あ'].recent.length,2);
+  function firestoreSafe(value){
+    if(Array.isArray(value)){assert.ok(!value.some(Array.isArray),'Firestore cannot store directly nested arrays');value.forEach(firestoreSafe);}
+    else if(value&&typeof value==='object')Object.values(value).forEach(firestoreSafe);
+  }
+  firestoreSafe(latestWrite);
+  remote=latestWrite;await window.KanaCloudSync.syncNow();assert.equal(window.ModeAtlasProgress.getXP(),20);
+  // Restore a pre-v3 backup. New fields must be explicitly empty, not retained
+  // by Firestore's merge behaviour from the save being replaced.
+  const backup=window.KanaCloudSync.createBackup();
+  backup.snapshot.sections.progress.data.state={version:2,legacySeeded:true,sources:{old:{'kana.reading.correct':7}}};
+  const restored=await window.KanaCloudSync.importLocalBackup(backup);
+  assert.equal(restored.cloudSynced,true);assert.equal(window.ModeAtlasProgress.getXP(),7);
+  assert.deepEqual(latestWrite.sections.progress.data.state.credits,{});
+  assert.deepEqual(latestWrite.sections.progress.data.state.claims,{});
+  await window.KanaCloudSync.resetAllData();
+  for(const key of ['sources','events','adjustments','credits','claims','activity','runs'])assert.deepEqual(latestWrite.sections.progress.data.state[key],{});
 });

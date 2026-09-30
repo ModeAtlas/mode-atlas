@@ -139,9 +139,9 @@ test('System theme follows the device; manual choice persists; canvas charts red
 async function paintSnapshot(page){
   return page.evaluate(()=>{
     const properties=['color','backgroundColor','backgroundImage','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','boxShadow','textShadow','outlineColor','fill','stroke','webkitTextFillColor'];
-    // Guided and labelled-feedback components were introduced on both platforms in 2.71–2.72 and
-    // have no 2.67.0 paint baseline. Their theme/layout checks live in study-flow.
-    const newStudyComponent = el => el.closest('#studySetSetup,#studySessionProgress,#studyFeedback,#answerFeedback');
+    // New shared study/reward components have no 2.67.0 paint baseline.
+    // Their theme/layout checks live in study-flow and progression.
+    const newStudyComponent = el => el.closest('#studySetSetup,#studySessionProgress,#studyFeedback,#answerFeedback,.ma-profile-title,.ma-practice-recovery,.ma-atlas-rewards,.ma-session-rewards');
     return [...document.body.querySelectorAll('*'),document.body].filter(el=>!newStudyComponent(el) && el.getClientRects().length && getComputedStyle(el).visibility!=='hidden')
       .map(el=>[el.tagName,el.id,el.className?.baseVal ?? el.className,...['','::before','::after'].map(pseudo=>{
         const style=getComputedStyle(el,pseudo||null);return properties.map(name=>style[name]);
@@ -159,7 +159,7 @@ for(const theme of ['dark','light'])test(`website ${theme}: computed paint match
     for(const link of links){
       // These sheets postdate 2.67.0. Its shared sheet restores the original
       // web font import; the native palette must still do nothing on web.
-      const addedSheet=['assets/css/mode-atlas-ios-theme.css','assets/css/mode-atlas-fonts-web.css'].includes(link.path);
+      const addedSheet=['assets/css/mode-atlas-ios-theme.css','assets/css/mode-atlas-fonts-web.css','assets/css/mode-atlas-rewards.css'].includes(link.path);
       link.css=addedSheet?'':execFileSync('git',['show',`${baseline}:${link.path}`],{encoding:'utf8'});
     }
     await page.evaluate(links=>{

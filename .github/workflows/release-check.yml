@@ -190,6 +190,9 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "$expected_version"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "$expected_build"
           test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$app_path/Info.plist")" = "18.0"
+          for icon in Grove Summit Horizon; do
+            test "$(/usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundleAlternateIcons:$icon:CFBundleIconName" "$app_path/Info.plist")" = "$icon"
+          done
           test -d "$app_path/Metadata.appintents"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "modeatlas"
           widget_path="$app_path/PlugIns/ModeAtlasWidgets.appex"

@@ -1,3 +1,13 @@
+## 2.73.0 - 2026-09-30
+
+- Added spaced recall across days and weeks with separate Reading/Writing confidence and one-time mastery milestones.
+- Rebalanced new-answer XP, set completion, accuracy, streak, due-review and routine rewards. Historical XP stays unchanged; the new level curve never lowers an existing level.
+- Added daily/weekly goals and the Atlas collection with selectable profile titles/frames and three unlockable native app icons. Every practice mode remains available.
+- Added journalled guided-set recovery, delayed mistake retries, automatic iOS focus with restoration, gentle question motion and coordinated optional native haptics.
+- Unified session XP, level, mastery and unlock feedback in the completion summary. Profile, Kana and widget progress consume the same progression owner.
+- Preserved semantic progression and review evidence during outgoing cloud sync; verified legacy backup import and complete reset of the new fields.
+- Removed superseded immediate-repeat/SRS award paths. See `docs/progression-2.73.0.md` for policy, migration and source ownership.
+
 ## 2.72.0 - 2026-09-29
 
 - Explicit Incorrect/Skipped feedback, neutral kana examples and consistent session summaries across Reading and Writing.

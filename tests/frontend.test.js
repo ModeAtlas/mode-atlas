@@ -1340,7 +1340,7 @@ test('2.39 Reading and Writing share controller lifecycle while answer adapters 
   }
 
   for (const marker of [
-    'modeAtlasCloudDataChanged', 'refreshCommonUi', 'updateBestScores', 'updateSrsCorrect',
+    'modeAtlasCloudDataChanged', 'refreshCommonUi', 'updateBestScores',
     'normalizeStoredTestModeResults', 'persistStoredTestModeResults', 'debugEl'
   ]) assert.match(controller, new RegExp(marker), `shared controller missing ${marker}`);
 
@@ -1425,10 +1425,14 @@ test('2.41 Atlas Level uses one mergeable semantic progression owner and Profile
   assert.match(cloud, /ModeAtlasProgress\?\.mergeStates/);
   assert.match(cloud, /progress: 'Atlas Level'/);
 
-  assert.match(reading, /ModeAtlasProgress\?\.award\?\.\('kana\.reading\.correct'/);
-  assert.match(writing, /ModeAtlasProgress\?\.award\?\.\('kana\.writing\.correct'/);
-  assert.match(read('assets/trainer/mode-atlas-trainer-shared.js'), /awardOnce\?\.\(`kana\.\$\{trainerController.mode\}\.dailyComplete`,dateKey\)/);
-  assert.match(trainerCore, /awardOnce\?\.\(`kana\.\$\{mode\}\.testComplete`, result\.id\)/);
+  for (const page of [reading, writing]) {
+    assert.match(page, /trainerController.study.recordAnswer/);
+    assert.doesNotMatch(page, /ModeAtlasProgress\?\.award/);
+  }
+  const study = read('assets/trainer/mode-atlas-study-session.js');
+  assert.match(study, /ModeAtlasProgress.recordAnswer/);
+  assert.match(study, /ModeAtlasProgress.finishRun/);
+  assert.doesNotMatch(trainerCore, /awardOnce/);
 
   assert.match(profile, /Atlas Level <span id="profileAtlasLevel">1<\/span>/);
   assert.match(profile, /id="profileAtlasProgress"/);
@@ -1458,12 +1462,12 @@ test('2.42 contextual install and progression feedback stay under shared owners'
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress.js'") < frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'"));
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'") < frontend.indexOf("'assets/app/mode-atlas-pwa.js'"));
 
-  assert.match(progress, /const STATE_VERSION = 2/);
+  assert.match(progress, /const STATE_VERSION = 3/);
   assert.match(progress, /adjustments/);
   assert.match(progress, /function debugAdjustXP/);
   assert.match(progress, /source: 'dev\.xpAdjust'/);
   assert.match(progress, /previousLevel/);
-  assert.match(cloud, /data\.state\?\.adjustments/);
+  assert.match(cloud, /'adjustments'/);
 
   assert.match(progressUi, /modeAtlasProgressChanged/);
   assert.match(progressUi, /pendingLevelUp/);
@@ -1473,7 +1477,7 @@ test('2.42 contextual install and progression feedback stay under shared owners'
   assert.match(shared, /startXp/);
   assert.match(shared, /function getTrainerSessionXpGain/);
   const study = read('assets/trainer/mode-atlas-study-session.js');
-  assert.match(study, /\$\{xpGain\} XP/);
+  assert.match(study, /ModeAtlasProgressUI.renderSessionReward/);
   assert.match(shared, /settleTrainerProgressionBreak/);
   assert.match(shared, /trainerController.showSessionModal\(completed\)/);
   for (const page of [reading, writing]) assert.match(page, /finishTrainerSession\(autoEnded/);

@@ -12,7 +12,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
-        "exportBackup", "getAccessibilityPreferences"
+        "exportBackup", "getAccessibilityPreferences", "setAppIcon"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
@@ -22,6 +22,27 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     private var lastReload = Date.distantPast
     private var observers: [NSObjectProtocol] = []
     private var sharingBackup = false
+    private var changingIcon = false
+
+    @objc func setAppIcon(_ call: CAPPluginCall) {
+        let name = call.getString("name")
+        guard name == nil || ["Grove", "Summit", "Horizon"].contains(name!) else {
+            call.reject("Unknown app icon"); return
+        }
+        DispatchQueue.main.async {
+            guard UIApplication.shared.supportsAlternateIcons, !self.changingIcon else {
+                call.reject("App icons are unavailable right now"); return
+            }
+            self.changingIcon = true
+            UIApplication.shared.setAlternateIconName(name) { error in
+                DispatchQueue.main.async {
+                    self.changingIcon = false
+                    if let error { call.reject("Could not change the app icon", nil, error) }
+                    else { call.resolve(["changed": true]) }
+                }
+            }
+        }
+    }
 
     override public func load() {
         bridge?.notificationRouter.localNotificationHandler = self

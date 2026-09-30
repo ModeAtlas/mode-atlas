@@ -64,3 +64,13 @@ switching and website-paint parity against `fixtures/web-theme-baseline.txt`.
 Fetch that commit before a local parity run, or supply an equivalent local Git
 reference with `MODE_ATLAS_WEB_THEME_BASE`. Change the baseline only when website
 appearance is intentionally changed. See `docs/ios-theme-system.md`.
+
+## Practice progression
+
+`npm run release:check` includes `tests/progression.test.js` for XP migration,
+reward idempotency, offline merge, review intervals/mastery, streaks and recovery
+journalling. Backend checks also exercise outgoing v3 sync, legacy import and
+reset against a Firebase API stub. `npm run test:polish` includes guided-set
+recovery, goals/cosmetics, due reviews, haptic preferences and large-text layouts.
+Native CI verifies the compiled alternate-icon metadata. See
+`docs/progression-2.73.0.md` for the balance policy and physical-device checks.

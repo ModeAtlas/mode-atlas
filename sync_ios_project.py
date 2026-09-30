@@ -57,6 +57,15 @@ def sync() -> tuple[str, int, bool]:
             updated,
         )
 
+    # Alternate icon catalogues are owned here so local signing-project backups
+    # receive the same release configuration without losing personal team values.
+    updated = re.sub(r'(?m)^[ \t]*ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = [^;]+;\n', '', updated)
+    updated = re.sub(
+        r'(?m)^([ \t]*)ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;',
+        lambda match: match.group(0) + '\n' + match.group(1) + 'ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Grove Summit Horizon";',
+        updated,
+    )
+
     if updated.count(f"MARKETING_VERSION = {version};") < 2:
         raise SystemExit("Could not synchronize all Xcode marketing-version build settings.")
     if updated.count(f"CURRENT_PROJECT_VERSION = {build};") < 2:
