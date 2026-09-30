@@ -1,3 +1,10 @@
+## 2.74.1 - 2026-09-30
+
+- Fixed unnecessary iOS Atlas home scrolling with returning-user recommendations by fitting goal progress into single rows and budgeting compact spacing for notched phones.
+- Kept full recommendation text on standard notched-phone layouts, 44px primary actions and natural scrolling for larger accessibility text and short viewports.
+- Added layout regressions for every recommendation, completed goals, cloud hydration and multiple phone sizes in both appearances. The Your Atlas menu, website presentation and shared learning data owners are unchanged.
+- Recorded a friends/leaderboards design review in `docs/friends-leaderboards-plan.md`; no social feature or backend deployment is enabled in this patch.
+
 ## 2.74.0 - 2026-09-30
 
 - Moved account progression above save status and gave Your Atlas a spaced, labelled profile entry.

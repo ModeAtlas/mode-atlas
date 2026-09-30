@@ -1,6 +1,6 @@
 /* Native Atlas composition. Web home remains owned by home-page.css.
-   Flexible hero absorbs taller screens; intrinsic rows remain readable at
-   larger text sizes and can scroll on short/landscape viewports. */
+   Flexible hero absorbs taller screens. Inline goal rows leave room for every
+   recommendation; larger text and short/landscape viewports can still scroll. */
 html[data-ma-runtime="ios"] .atlas-home > :not(.atlas-ios-home){display:none;}
 html[data-ma-runtime="ios"] .atlas-home{width:100%;max-width:680px;padding:12px 18px 0;}
 html[data-ma-runtime="ios"] body.ma-atlas-page::after{display:none;}
@@ -44,8 +44,11 @@ html[data-ma-runtime="ios"] .atlas-ios-home__level progress{appearance:none;widt
 html[data-ma-runtime="ios"] .atlas-ios-home__level progress::-webkit-progress-bar{background:var(--ma-border);}
 html[data-ma-runtime="ios"] .atlas-ios-home__level progress::-webkit-progress-value{background:var(--ma-atlas);border-radius:8px;}
 html[data-ma-runtime="ios"] .atlas-ios-home__today{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;margin-top:6px;text-decoration:none;font-size:.75rem;color:var(--ma-text-soft);}
-html[data-ma-runtime="ios"] .atlas-ios-home__routine .atlas-ios-home__section-heading{margin-bottom:6px;}
+html[data-ma-runtime="ios"] .atlas-ios-home__routine .atlas-ios-home__section-heading{margin-bottom:4px;}
 html[data-ma-runtime="ios"] .atlas-ios-home__routine .ma-button{font-size:.7rem;min-height:44px;padding:6px 10px;white-space:normal;}
+html[data-ma-runtime="ios"] .atlas-ios-home .ma-routine-goal{grid-template-columns:minmax(0,1fr) 72px 4.5em;align-items:center;gap:8px;font-size:.68rem;}
+html[data-ma-runtime="ios"] .atlas-ios-home .ma-routine-goal span{grid-column:3;text-align:right;}
+html[data-ma-runtime="ios"] .atlas-ios-home .ma-routine-goal progress{grid-column:2;grid-row:1;}
 html[data-ma-runtime="ios"] .atlas-ios-home a:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
 html[data-ma-runtime="ios"] .atlas-ios-home__continue:active{filter:brightness(.9);}
 html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__continue{grid-template-columns:minmax(0,1fr);}
@@ -54,17 +57,19 @@ html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__hero-footer{fle
 html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__stats{gap:8px;}
 html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__stats strong{font-size:1.3rem;overflow-wrap:anywhere;}
 html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__today{flex-wrap:wrap;}
-@media(max-height:740px){
-  html[data-ma-runtime="ios"] .atlas-ios-home .ma-routine-goal{grid-template-columns:minmax(0,1fr) 60px 36px;align-items:center;gap:8px;}
-  html[data-ma-runtime="ios"] .atlas-ios-home .ma-routine-goal span{grid-column:3;text-align:right;}
-  html[data-ma-runtime="ios"] .atlas-ios-home .ma-routine-goal progress{grid-column:2;grid-row:1;}
-
+/* A notched phone also needs compact spacing: its usable height excludes both
+   safe areas and the dock, even when the full viewport exceeds 740px. */
+@media(max-height:860px){
   html[data-ma-runtime="ios"] .atlas-ios-home{gap:8px;}
-  html[data-ma-runtime="ios"] .atlas-ios-home__continue{padding:14px 18px;gap:8px;}
-  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy p{display:none;}
-  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>strong{font-size:1.7rem;}
-  html[data-ma-runtime="ios"] .atlas-ios-home__art{height:70px;transform:scale(.75);transform-origin:center;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__continue{padding:12px 16px;gap:8px;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>strong{margin-top:4px;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy p{margin-top:8px;line-height:1.4;}
   html[data-ma-runtime="ios"] .atlas-ios-home__hero-footer{padding-top:8px;}
   html[data-ma-runtime="ios"] .atlas-ios-home__stats{margin:4px 0;}
   html[data-ma-runtime="ios"] .atlas-ios-home__stats strong{font-size:1.5rem;}
+}
+@media(max-height:740px){
+  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy p{display:none;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>strong{font-size:1.7rem;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__art{height:70px;transform:scale(.75);transform-origin:center;}
 }
