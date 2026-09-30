@@ -1,12 +1,14 @@
 # Friends and private rankings — 2.76.0
 
-Status: implemented behind `ModeAtlasSocialConfig.enabled = false`. No production
-Firebase deployment, billing change, public directory or competitive weekly XP
-is part of this release. The normal app remains usable while activation is pending.
+Historical framework release: 2.76.0 implemented Friends behind
+`ModeAtlasSocialConfig.enabled = false`. No production Firebase deployment,
+billing change, public directory or competitive weekly XP was part of that release.
 
 The live project was inspected for the 2.76.1 deployment preparation. See
-[Firebase activation record](firebase-activation-2.76.1.md) for the confirmed
-region, preserved access rules, deployment commands and remaining activation step.
+[Firebase preparation record](firebase-activation-2.76.1.md) for the confirmed
+region and preserved access rules. All four functions were subsequently deployed;
+the [2.76.2 activation record](firebase-activation-2.76.2.md) covers enablement and
+the remaining live acceptance checks.
 
 ## Experience
 

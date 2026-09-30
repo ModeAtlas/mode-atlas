@@ -1,5 +1,6 @@
 const {test,expect}=require('@playwright/test');
-async function prepare(page,{native=true,theme='dark',active=true,width=393}={}){
+const socialConfig=require('../assets/app/mode-atlas-social-config.js');
+async function launch(page,{native=true,theme='dark',width=393}={}){
   await page.setViewportSize({width,height:852});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
   await page.addInitScript(({native,theme})=>{
@@ -8,6 +9,9 @@ async function prepare(page,{native=true,theme='dark',active=true,width=393}={})
     localStorage.setItem('maWhatsNewSeen','social-tests');localStorage.setItem('modeAtlasThemePreference',theme);
   },{native,theme});
   await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+}
+async function prepare(page,{active=true,...layout}={}){
+  await launch(page,layout);
   await page.evaluate(active=>{
     window.socialUser='self';window.socialCalls=[];window.socialOffline=false;window.socialDelayList=false;
     const stats={xp:4321,totalCorrect:1234,streak:12,readingMastered:42,writingMastered:21,combinedMastered:18,kanaCount:300,syncedAt:Date.now()};
@@ -47,6 +51,25 @@ async function prepare(page,{native=true,theme='dark',active=true,width=393}={})
   await expect(page.locator('.ma-dialog__title')).toHaveText('Friends');
   await expect(page.getByText(active?'Jack · You':'Create your friends profile',{exact:true})).toBeVisible();
 }
+for(const native of [false,true])test(`${native?'iOS':'web'}: released Friends entry directs guests to the existing sign-in screen`,async({page})=>{
+  const socialRequests=[];
+  page.on('request',request=>{
+    if(/firebase-functions\.js|cloudfunctions\.net|\.run\.app/.test(request.url()))socialRequests.push(request.url());
+  });
+  await launch(page,{native,width:native?393:1280});
+  await page.locator('#profileOpenBtn').click();
+  await page.locator('#profileDrawer').getByRole('button',{name:/Your Atlas/}).click();
+  await expect(page.locator('.ma-dialog__title')).toHaveText('Your Atlas');
+  const entry=page.getByRole('button',{name:'Friends & rankings',exact:true});
+  if(!socialConfig.enabled){await expect(entry).toHaveCount(0);return;}
+  await entry.click();
+  await expect(page.getByText('Learn alongside friends',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await expect(page.locator('#profileDrawer')).toHaveAttribute('aria-hidden','false');
+  await expect(page.locator('#profileAuthBtn')).toBeVisible();
+  await expect(page.locator('.ma-dialog-layer')).toBeHidden();
+  expect(socialRequests).toEqual([]);
+});
 async function fits(page){
   const issues=await page.locator('.ma-social').evaluate(root=>{
     const issues=[];

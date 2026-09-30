@@ -1,8 +1,10 @@
 # Firebase activation preparation — 2.76.1
 
-Status: production configuration inspected; deployment still pending. Friends
-remains disabled in the shared web/iOS configuration. This release does not
-claim that any production function or security rule has been deployed.
+Historical preparation record: 2.76.1 kept Friends disabled while deploying the
+reviewed backend. All four functions and these rules were subsequently deployed
+and verified on 2026-09-30. See the [2.76.2 activation record](firebase-activation-2.76.2.md)
+for the enablement release and remaining device verification. The observations
+below describe the initial predeployment inspection.
 
 ## Observed on 2026-09-30
 
