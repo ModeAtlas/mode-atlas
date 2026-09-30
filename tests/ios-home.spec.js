@@ -87,7 +87,8 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: returning suggestions an
   await page.screenshot({path:testInfo.outputPath(`returning-goals-${theme}.png`)});
   await page.locator('.atlas-ios-home__routine [data-ma-rewards-open]').click();
   await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
-  await page.locator('.ma-dialog__close').click();
+  await page.getByRole('button', { name: 'Close account menu', exact: true }).click();
+  await expect(page.locator('#maAccountSheet')).toBeHidden();
   await expectCompact(page);
 });
 
