@@ -40,7 +40,7 @@ jobs:
       - name: Guard public npm lockfile
         shell: bash
         run: |
-          if grep -Eiq 'internal\.api\.openai|applied-caas|artifactory/api/npm' package-lock.json; then
+          if grep -Eiq 'internal\.api\.openai|applied-caas|artifactory/api/npm' package-lock.json backend/package-lock.json backend/functions/package-lock.json; then
             echo 'package-lock.json contains a non-public package registry URL.' >&2
             exit 1
           fi
@@ -127,9 +127,46 @@ jobs:
           retention-days: 14
 
 
+  social-backend-check:
+    name: Social backend, access rules, callable functions, and deletion triggers
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            backend/functions/package-lock.json
+      - name: Set up Java for Firestore emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install backend and test dependencies
+        run: |
+          npm --prefix backend ci --ignore-scripts --registry=https://registry.npmjs.org/
+          npm --prefix backend/functions ci --ignore-scripts --registry=https://registry.npmjs.org/
+      - name: Package canonical policy and test demo Firebase project
+        run: |
+          python3 build_social_backend.py
+          npm --prefix backend test
+      - name: Upload emulator diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: social-emulator-${{ github.sha }}
+          path: backend/*-debug.log
+          if-no-files-found: ignore
+          retention-days: 7
+
   ios-native-build:
     name: Build native iOS shell
-    needs: release-check
+    needs: [release-check, social-backend-check]
     runs-on: macos-15
     timeout-minutes: 30
     env:

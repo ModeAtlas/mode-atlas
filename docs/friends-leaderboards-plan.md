@@ -1,5 +1,9 @@
 # Friends and leaderboards: proposed next stage
 
+Implementation update: see [Friends and private rankings — 2.76.0](friends-leaderboards-2.76.0.md)
+for the implemented, gated feature and its outstanding production activation.
+The original design below remains context; weekly competitive XP is deferred.
+
 Status: design review only, 2026-09-30. No social UI, collections, rules,
 functions or billing changes are enabled by the 2.74.1 home-layout fix.
 

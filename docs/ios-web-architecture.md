@@ -443,3 +443,17 @@ longer asks learners to export files; historical IDs and XP are not rewritten.
 These checks control the application's exposed tools. Client JavaScript and
 local progress are still user-controlled; leaderboard integrity requires a
 separate server-validated event path. See `friends-leaderboards-plan.md`.
+
+### Friends and private rankings (2.76.0)
+
+The shared social client/UI uses the existing Firebase account and web/iOS design
+tokens. One callable backend owns bilateral relationships and allowlisted ranking
+projections. `build_social_backend.py` packages canonical Progress/Review/Reward/
+Date/Kana modules verbatim for Node; no second progression calculator or runtime
+source evaluation is involved. Account deletion incorporates social cleanup.
+
+The feature is gated off pending Firebase rules/region/billing and deployment
+review. No normal-user entry or extra social requests appear before activation.
+See `friends-leaderboards-2.76.0.md` for ownership, test gates, score-integrity
+limits and exact activation steps. Friends ranks represent synced progress;
+competitive weekly XP remains a separate future feature.

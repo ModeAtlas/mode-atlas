@@ -171,7 +171,7 @@ function splitKana(value, map = {...hiraganaMap,...katakanaMap,...dakutenMap,...
     return units;
 }
 
-window.ModeAtlasKanaData = {
+const ModeAtlasKanaData = {
     selectedKanaMap,
     splitKana,
     kanaRow,
@@ -191,3 +191,6 @@ window.ModeAtlasKanaData = {
     }),
     collections: kanaCollections
 };
+
+if(typeof module === "object" && module.exports) module.exports = ModeAtlasKanaData;
+else window.ModeAtlasKanaData = ModeAtlasKanaData;

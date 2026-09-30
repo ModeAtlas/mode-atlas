@@ -233,6 +233,7 @@ INTERACTIVE_TAIL_STYLES = (
     'assets/css/mode-atlas-ios-theme.css',
     'assets/css/mode-atlas-components.css',
     'assets/css/mode-atlas-rewards.css',
+    'assets/css/mode-atlas-social.css',
     'assets/css/mode-atlas-navigation.css',
     'assets/css/mode-atlas-responsive.css',
     'assets/css/mode-atlas-ios-chrome.css',
@@ -290,6 +291,9 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
 ACCOUNT_SCRIPTS = (
     'firebase-config.js',
     'cloud-sync.js',
+    'assets/app/mode-atlas-social-config.js',
+    'assets/app/mode-atlas-social.js',
+    'assets/ui/mode-atlas-social-ui.js',
     'assets/ui/mode-atlas-profile-menu.js',
     'assets/ui/mode-atlas-settings-menu.js',
     'assets/ui/mode-atlas-native-settings.js',

@@ -1,6 +1,12 @@
-(function ModeAtlasProgressOwner(root){
+/* The same owner is instantiated with browser storage or read-only server data. */
+(function(root, factory){
+  if(typeof module === 'object' && module.exports) module.exports = factory;
+  else if(!root.ModeAtlasProgress){
+    root.ModeAtlasProgress = factory(root);
+    root.ModeAtlasProgress.ensureSeeded({sync:false,emit:false});
+  }
+})(typeof window !== 'undefined' ? window : globalThis, function ModeAtlasProgressOwner(root){
   'use strict';
-  if (root.ModeAtlasProgress) return;
 
   const STORAGE_KEY = 'modeAtlasProgress';
   const UPDATED_AT_KEY = 'modeAtlasProgressUpdatedAt';
@@ -20,20 +26,23 @@
   });
 
   function store(){ return root.ModeAtlasStorage; }
+  const scalar = value => ['number','string','boolean'].includes(typeof value) ? value : '';
   function finiteCount(value){
-    const number = Number(value || 0);
-    return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
+    const number = Number(scalar(value) || 0);
+    return Number.isFinite(number) && number > 0 ? Math.min(Number.MAX_SAFE_INTEGER, Math.floor(number)) : 0;
   }
   function finiteInteger(value){
-    const number = Number(value || 0);
-    return Number.isFinite(number) ? Math.trunc(number) : 0;
+    const number = Number(scalar(value) || 0);
+    return Number.isFinite(number) ? Math.max(-Number.MAX_SAFE_INTEGER, Math.min(Number.MAX_SAFE_INTEGER, Math.trunc(number))) : 0;
   }
   function object(value){ return value && typeof value === 'object' && !Array.isArray(value) ? value : {}; }
+
+  const safeKey = key => !['__proto__','prototype','constructor'].includes(key);
 
   function normalizeSource(source){
     const out = {};
     Object.entries(object(source)).forEach(([type, value]) => {
-      if (!(type in COUNTER_XP)) return;
+      if (!Object.hasOwn(COUNTER_XP, type)) return;
       const count = finiteCount(value);
       if (count) out[type] = count;
     });
@@ -42,18 +51,18 @@
 
   function normalizeEvent(event, fallbackKey = ''){
     if (!event || typeof event !== 'object' || Array.isArray(event)) return null;
-    const type = String(event.type || '');
-    if (!(type in EVENT_XP)) return null;
-    const id = String(event.id || fallbackKey.split('|').slice(1).join('|') || '');
+    const type = String(scalar(event.type) || '');
+    if (!Object.hasOwn(EVENT_XP, type)) return null;
+    const id = String(scalar(event.id) || fallbackKey.split('|').slice(1).join('|') || '');
     if (!id) return null;
     return { type, id, at: finiteCount(event.at) || Date.now() };
   }
 
   function normalizeAdjustment(adjustment, fallbackKey = ''){
     if (!adjustment || typeof adjustment !== 'object' || Array.isArray(adjustment)) return null;
-    const id = String(adjustment.id || fallbackKey || '').trim();
+    const id = String(scalar(adjustment.id) || fallbackKey || '').trim();
     const amount = finiteInteger(adjustment.amount);
-    if (!id || !amount) return null;
+    if (!id || !safeKey(id) || !amount) return null;
     return { id, amount, at: finiteCount(adjustment.at) || Date.now() };
   }
 
@@ -61,6 +70,7 @@
     const value = object(input);
     const sources = {};
     Object.entries(object(value.sources)).forEach(([sourceId, counters]) => {
+      if (!safeKey(sourceId)) return;
       const normalized = normalizeSource(counters);
       if (Object.keys(normalized).length) sources[String(sourceId)] = normalized;
     });
@@ -144,7 +154,7 @@
   // add one XP to newly earned answers without revaluing historical activity.
   const creditKinds=['answer','completion','accuracy','streak'];
   function normalizeCredits(input){
-    const out={};for(const [id,row] of Object.entries(object(input))){out[id]={};for(const key of creditKinds)out[id][key]=finiteCount(row?.[key]);}return out;
+    const out={};for(const [id,row] of Object.entries(object(input))){if(!safeKey(id))continue;out[id]={};for(const key of creditKinds)out[id][key]=finiteCount(row?.[key]);}return out;
   }
   function mergeCredits(a,b){
     const out=normalizeCredits(a);for(const [id,row]of Object.entries(normalizeCredits(b))){out[id]||={};for(const key of creditKinds)out[id][key]=Math.max(out[id][key]||0,row[key]);}return out;
@@ -155,8 +165,8 @@
   function mergeClaims(a,b){const out=normalizeClaims(a);for(const [id,n]of Object.entries(normalizeClaims(b)))out[id]=Math.max(out[id]||0,n);return out;}
   function normalizeActivity(input){
     const out={};for(const [day,row]of Object.entries(object(input))){
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(day))continue;
-      const sources={};for(const [id,counts]of Object.entries(object(row.sources)))sources[id]=[finiteCount(counts?.[0]),finiteCount(counts?.[1])];
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!row||typeof row!=='object')continue;
+      const sources={};for(const [id,counts]of Object.entries(object(row.sources)))if(safeKey(id))sources[id]=[finiteCount(counts?.[0]),finiteCount(counts?.[1])];
       const reviews={};for(const mode of ['reading','writing'])reviews[mode]=[...new Set((Array.isArray(row.reviews?.[mode])?row.reviews[mode]:[]).filter(x=>typeof x==='string'&&x.length<8))].sort().slice(0,5);
       out[day]={sources,reviews};
     }return out;
@@ -170,16 +180,16 @@
     }return out;
   }
   function normalizeRuns(input){
-    return Object.fromEntries(Object.entries(object(input)).filter(([id,row])=>id.length<100&&row&&finiteCount(row.at)).sort((a,b)=>b[1].at-a[1].at||a[0].localeCompare(b[0])).slice(0,64).map(([id,row])=>[id,{answers:finiteCount(row.answers),done:!!row.done,at:finiteCount(row.at)}]));
+    return Object.fromEntries(Object.entries(object(input)).filter(([id,row])=>safeKey(id)&&id.length<100&&row&&finiteCount(row.at)).sort((a,b)=>b[1].at-a[1].at||a[0].localeCompare(b[0])).slice(0,64).map(([id,row])=>[id,{answers:finiteCount(row.answers),done:!!row.done,at:finiteCount(row.at)}]));
   }
-  function normalizeAppearance(input={}){return {landmark:String(input?.landmark||'trail').slice(0,24),at:finiteCount(input?.at)};}
+  function normalizeAppearance(input={}){return {landmark:String(scalar(input?.landmark)||'trail').slice(0,24),at:finiteCount(input?.at)};}
   const dayKey=at=>root.ModeAtlasDates.localDateKey(new Date(at||Date.now()));
   function activityTotals(state,day){
     const row=state.activity[day]||{sources:{},reviews:{}};
     const counts=Object.values(row.sources).reduce((sum,n)=>[sum[0]+n[0],sum[1]+n[1]],[0,0]);
     return {reading:counts[0],writing:counts[1],correct:counts[0]+counts[1],reviewed:(row.reviews.reading||[]).length+(row.reviews.writing||[]).length};
   }
-  function weekKey(day){const d=new Date(day+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return dayKey(d.getTime());}
+  function weekKey(day){const d=new Date(day+'T12:00:00Z');return root.ModeAtlasDates.shiftDateKey(day,-((d.getUTCDay()+6)%7));}
   function weekDays(state,day){const first=weekKey(day);return Object.keys(state.activity).filter(key=>weekKey(key)===first&&activityTotals(state,key).correct>=5).length;}
   function claim(state,id,value){const key='v3:'+id,old=state.claims[key]||0;state.claims[key]=Math.max(old,finiteCount(value));return state.claims[key]-old;}
   function addCredit(state,kind,value){const id=getDeviceId();state.credits[id]||={answer:0,completion:0,accuracy:0,streak:0};state.credits[id][kind]+=finiteCount(value);}
@@ -217,20 +227,32 @@
     run.done=true;run.at=Date.now();persistState(state,{source:'practice.finish'});
     return {xp:Object.values(parts).reduce((a,b)=>a+b,0),parts};
   }
-  function routine(input,at=Date.now()){
-    const state=input?normalizeState(input):readState(),today=dayKey(at),total=activityTotals(state,today);
+  function legacyStudyDays(){
     const legacyDays=new Set([...Object.keys(store()?.readModeJSON?.('reading','dailyHistory',{})||{}),...Object.keys(store()?.readModeJSON?.('writing','dailyHistory',{})||{})]);
     for(const mode of ['reading','writing']){
       const results=store()?.readModeJSON?.(mode,'testResults',[]);
       for(const result of Array.isArray(results)?results:[]){
         const raw=result?.date||result?.completedAt||result?.createdAt||result?.startedAt;
-        const parsed=typeof raw==='number'?dayKey(raw):String(raw||'').slice(0,10);
+        const parsed=typeof raw==='number'?dayKey(raw):String(scalar(raw)||'').slice(0,10);
         if(/^\d{4}-\d{2}-\d{2}$/.test(parsed))legacyDays.add(parsed);
       }
     }
-    const learned=day=>activityTotals(state,day).correct>=5||legacyDays.has(day);
-    let day=today,streak=0;if(!learned(day)){const d=new Date(day+'T12:00:00');d.setDate(d.getDate()-1);day=dayKey(d.getTime());}
-    while(learned(day)){streak++;const d=new Date(day+'T12:00:00');d.setDate(d.getDate()-1);day=dayKey(d.getTime());}
+    return [...legacyDays];
+  }
+  function studyDays(input,legacy=legacyStudyDays()){
+    const state=input?normalizeState(input):readState();
+    return [...new Set([...Object.keys(state.activity).filter(day=>activityTotals(state,day).correct>=5),...legacy])]
+      .filter(day=>/^\d{4}-\d{2}-\d{2}$/.test(day)).sort();
+  }
+  function studyStreak(days,today){
+    const learned=new Set(days);
+    let day=learned.has(today)?today:root.ModeAtlasDates.shiftDateKey(today,-1),streak=0;
+    while(learned.has(day)){streak++;day=root.ModeAtlasDates.shiftDateKey(day,-1);}
+    return streak;
+  }
+  function routine(input,at=Date.now()){
+    const state=input?normalizeState(input):readState(),today=dayKey(at),total=activityTotals(state,today);
+    const streak=studyStreak(studyDays(state),today);
     return {streak,weekDays:weekDays(state,today),goals:[
       {id:'recall',label:'Recall 20 kana today',value:total.correct,target:20,xp:10},
       {id:'balance',label:'Read 5 and write 5 today',value:Math.min(5,total.reading)+Math.min(5,total.writing),target:10,xp:10},
@@ -315,7 +337,7 @@
   }
 
   function award(type, amount = 1){
-    if (!(type in COUNTER_XP)) return false;
+    if (!Object.hasOwn(COUNTER_XP, type)) return false;
     const increment = finiteCount(amount);
     if (!increment) return false;
     const state = ensureSeeded({ sync: false, emit: false });
@@ -328,7 +350,7 @@
   }
 
   function awardOnce(type, eventId){
-    if (!(type in EVENT_XP)) return false;
+    if (!Object.hasOwn(EVENT_XP, type)) return false;
     const id = String(eventId || '').trim();
     if (!id) return false;
     const state = ensureSeeded({ sync: false, emit: false });
@@ -340,12 +362,12 @@
   }
 
   function counterTotal(state, type){
-    return Object.values(normalizeState(state).sources).reduce((sum, source) => sum + finiteCount(source[type]), 0);
+    return Object.values(normalizeState(state).sources).reduce((sum, source) => Math.min(Number.MAX_SAFE_INTEGER, sum + finiteCount(source[type])), 0);
   }
 
   function getLifetimeCorrect(input){
     const state = input ? normalizeState(input) : ensureSeeded({ sync: false, emit: false });
-    return counterTotal(state, 'kana.reading.correct') + counterTotal(state, 'kana.writing.correct');
+    return Math.min(Number.MAX_SAFE_INTEGER, counterTotal(state, 'kana.reading.correct') + counterTotal(state, 'kana.writing.correct'));
   }
 
   function getXP(input){
@@ -358,7 +380,7 @@
     Object.values(state.adjustments).forEach((adjustment) => { xp += finiteInteger(adjustment.amount); });
     Object.values(state.credits).forEach(row=>{xp+=Object.values(row).reduce((n,value)=>n+value,0);});
     xp+=Object.values(state.claims).reduce((n,value)=>n+value,0);
-    return Math.max(0, Math.floor(xp));
+    return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(xp)));
   }
 
   function levelRequirement(level){
@@ -367,7 +389,7 @@
   }
 
   function getLevelFromXP(value){
-    const xp = Math.max(0, Math.floor(Number(value || 0)));
+    const xp = Math.max(0, Math.floor(Number(scalar(value) || 0)));
     let level = 1;
     let floor = 0;
     let required = levelRequirement(level);
@@ -394,7 +416,7 @@
       progress: levelInfo.required ? Math.min(1, levelInfo.intoLevel / levelInfo.required) : 0,
       readingCorrect,
       writingCorrect,
-      lifetimeCorrect: readingCorrect + writingCorrect
+      lifetimeCorrect: Math.min(Number.MAX_SAFE_INTEGER, readingCorrect + writingCorrect)
     };
   }
 
@@ -412,15 +434,12 @@
     return { requested, applied, before, after: getSummary(persisted) };
   }
 
-  root.ModeAtlasProgress = Object.freeze({
+  return Object.freeze({
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
-    award, awardOnce, debugAdjustXP, startRun, recordAnswer, finishRun, routine, selectAppearance, levelRequirement,
+    award, awardOnce, debugAdjustXP, startRun, recordAnswer, finishRun, routine, studyDays, studyStreak, selectAppearance, levelRequirement,
     getXP, getLifetimeCorrect, getLevelFromXP, getSummary
   });
 
-  // Seed locally before cloud hydration. The cloud owner will merge/push this
-  // baseline rather than progression initiating a competing startup sync.
-  ensureSeeded({ sync: false, emit: false });
-})(typeof window !== 'undefined' ? window : globalThis);
+});

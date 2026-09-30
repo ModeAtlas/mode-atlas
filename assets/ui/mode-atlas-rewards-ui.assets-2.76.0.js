@@ -105,6 +105,9 @@
     const copy=el('div','ma-atlas-identity__copy'),title=el('strong','',selected.title);title.dataset.maSelectedTitle='';
     const status=el('span');status.dataset.maAtlasSummary='';
     copy.append(title,status);identity.append(preview,copy);content.append(identity);
+    if(root.ModeAtlasSocial?.isEnabled()){
+      const friends=button('Friends & rankings');friends.addEventListener('click',()=>root.ModeAtlasSocialUI.open());content.append(friends);
+    }
     const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Your Atlas');
     const panels=[goalPanel(),rewardPanel(summary)];
     const controls=['Goals','Rewards'].map((label,index)=>{

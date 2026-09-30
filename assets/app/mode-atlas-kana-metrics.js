@@ -96,7 +96,7 @@
   }
   function charCorrect(ch,snapshot){ const data=useSnapshot(snapshot), r=data.readingStats[ch]||{}, w=data.writingStats[ch]||{}; return Number(r.correct||r.right||0)+Number(w.correct||w.right||0); }
   function charWrong(ch,snapshot){ const data=useSnapshot(snapshot), r=data.readingStats[ch]||{}, w=data.writingStats[ch]||{}; return Number(r.wrong||r.incorrect||0)+Number(w.wrong||w.incorrect||0); }
-  function timeValue(v){ let n=0; if(typeof v==='number') n=Number(v); else if(v&&typeof v==='object') n=Number(v.avg||v.average||v.time||0); return n?n<30?n*1000:n:0; }
+  function timeValue(value){ return window.ModeAtlasReview.timeMilliseconds(value); }
   function charAvg(ch,snapshot){ const data=useSnapshot(snapshot), vals=[timeValue(data.readingTimes[ch]),timeValue(data.writingTimes[ch])].filter(Boolean); return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0; }
   function masteryDirection(ch,mode,snapshot){
     const data=useSnapshot(snapshot),writing=mode==='writing';
@@ -104,13 +104,11 @@
   }
   function masteryLabel(ch,snapshot){
     const data=useSnapshot(snapshot);
-    if(data.readingReview?.[ch]?.reviewVersion!==1&&data.writingReview?.[ch]?.reviewVersion!==1){
-      return window.ModeAtlasReview.labels[window.ModeAtlasReview.legacyStage({correct:charCorrect(ch,data),wrong:charWrong(ch,data)},charAvg(ch,data))];
-    }
-    const reading=masteryDirection(ch,'reading',data),writing=masteryDirection(ch,'writing',data);
-    const combined=reading&&writing?Math.min(reading,writing):Math.min(2,Math.max(reading,writing));
-    return window.ModeAtlasReview.labels[combined];
+    return window.ModeAtlasReview.labels[window.ModeAtlasReview.combinedStage(
+      {review:data.readingReview?.[ch],stats:data.readingStats[ch],time:data.readingTimes[ch]},
+      {review:data.writingReview?.[ch],stats:data.writingStats[ch],time:data.writingTimes[ch]})];
   }
+
   function masteryClass(label){ return String(label||'').toLowerCase(); }
   function masteryCounts(chars=ALL,snapshot){ const data=useSnapshot(snapshot), out={New:0,Learning:0,Reviewing:0,Mastered:0}; chars.forEach(ch=>{ out[masteryLabel(ch,data)]++; }); return out; }
   function bestWeak(chars=ALL,snapshot){ const data=useSnapshot(snapshot), rows=[]; [...new Set(chars)].forEach(ch=>{ const c=charCorrect(ch,data), w=charWrong(ch,data), avg=charAvg(ch,data), t=c+w; if(t) rows.push({ch,c,w,t,avg,score:(c/(t||1))-(w*.05)-(avg?Math.min(avg/7000,.5):0)}); }); return rows.sort((a,b)=>a.score-b.score).slice(0,4); }

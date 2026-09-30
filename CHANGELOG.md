@@ -1,3 +1,12 @@
+## 2.76.0 - 2026-09-30
+
+- Implemented gated opt-in Friends profiles, random/rotatable codes, request acceptance/decline/cancellation, mutual friendships, removal and blocking for web and iOS.
+- Added friends-only rankings for level/XP, study streak, Reading/Writing/combined mastery and total correct, using shared reward frames/titles, equal ranks for ties and bounded pagination.
+- Built an authenticated Firebase callable backend, private rules and retryable save/deletion triggers. Server transactions own both relationship sides; profile responses exclude emails, provider photos and private saves.
+- Reused canonical progression, date, reward, review and kana owners through a read-only server adapter. Hardened progress normalization against inherited map keys and oversized counters; retained existing save and XP semantics.
+- Integrated confirmed opt-out and account deletion, including stale-account responses, delayed cleanup, rate-limit bypass attempts and in-flight deletion protection.
+- Added emulator integration and responsive browser coverage plus a dedicated GitHub backend gate. The feature remains disabled until reviewed Firebase deployment; no billing, production rules, main-branch or entitlement changes were made. Rankings are synced progress, not verified competitive XP.
+
 ## 2.75.0 - 2026-09-30
 
 - Moved Export, Copy and Import save files from web/iOS Settings into Dev Diagnostics → Save files. File UI loads only with eligible developer diagnostics.

@@ -1,0 +1,19 @@
+{
+  "functions": [{
+    "source": "backend/functions",
+    "codebase": "mode-atlas-social",
+    "predeploy": ["python3 build_social_backend.py"],
+    "ignore": ["node_modules", "*.log", ".env.local"]
+  }],
+  "firestore": {
+    "rules": "backend/firestore.rules",
+    "indexes": "backend/firestore.indexes.json"
+  },
+  "emulators": {
+    "auth": {"host": "127.0.0.1", "port": 9099},
+    "firestore": {"host": "127.0.0.1", "port": 8080},
+    "functions": {"host": "127.0.0.1", "port": 5001},
+    "ui": {"enabled": false},
+    "singleProjectMode": true
+  }
+}

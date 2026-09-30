@@ -1,5 +1,8 @@
 /* Versioned reward policy; the progression owner alone persists awards. */
-(function ModeAtlasRewardRules(root){
+(function(root, factory){
+  if(typeof module === 'object' && module.exports) module.exports = factory();
+  else root.ModeAtlasRewardRules = factory();
+})(typeof window !== 'undefined' ? window : globalThis, function ModeAtlasRewardRules(){
   'use strict';
   function accuracy(value){return value>=1?15:value>=.9?10:value>=.8?5:0;}
   function session(input){
@@ -21,5 +24,5 @@
     {id:'lantern',level:35,title:'Lantern Keeper',name:'Lantern passage',symbol:'✧',frame:'lantern',icon:null},
     {id:'horizon',level:50,title:'Horizon Explorer',name:'Open horizon',symbol:'◎',frame:'horizon',icon:'Horizon'}
   ].map(Object.freeze));
-  root.ModeAtlasRewardRules=Object.freeze({accuracy,session,landmarks});
-})(window);
+  return Object.freeze({accuracy,session,landmarks});
+});

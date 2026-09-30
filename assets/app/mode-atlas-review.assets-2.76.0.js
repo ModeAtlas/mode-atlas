@@ -1,16 +1,34 @@
 /* Canonical kana recall policy. Pure data transformations; trainers own storage. */
-(function ModeAtlasReview(root){
+(function(root, factory){
+  if(typeof module === 'object' && module.exports) module.exports = factory;
+  else root.ModeAtlasReview = factory(root);
+})(typeof window !== 'undefined' ? window : globalThis, function ModeAtlasReview(root){
   'use strict';
   const DAY = 86400000;
   const intervals = Object.freeze([60000,600000,DAY,3*DAY,7*DAY,14*DAY,30*DAY,60*DAY,90*DAY]);
   const labels = Object.freeze(['New','Learning','Reviewing','Mastered']);
-  const number = value => Math.max(0,Number.isFinite(Number(value)) ? Number(value) : 0);
+  const number = value => ['number','string'].includes(typeof value) && Number.isFinite(Number(value)) ? Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,Number(value))) : 0;
   const date = at => root.ModeAtlasDates.localDateKey(new Date(at));
   function legacyStage(stats={},time=0){
+    stats=stats&&typeof stats==='object'?stats:{};
     const c=number(stats.correct ?? stats.right), w=number(stats.wrong ?? stats.incorrect), total=c+w;
-    const avg=typeof time==='object'?number(time.avg||time.average||time.time):number(time);
+    const avg=time&&typeof time==='object'?number(time.avg||time.average||time.time):number(time);
     const ms=avg&&avg<30?avg*1000:avg;
     return !total?0:c>=50&&c/total>=.95&&ms>0&&ms<=1000?3:c>=10&&c/total>=.85&&(!ms||ms<=2500)?2:1;
+  }
+  function timeMilliseconds(value){
+    const n=typeof value==='number'?number(value):number(value?.avg||value?.average||value?.time);
+    return n&&n<30?n*1000:n;
+  }
+  function combinedStage(reading={},writing={}){
+    if(reading.review?.reviewVersion!==1&&writing.review?.reviewVersion!==1){
+      const times=[timeMilliseconds(reading.time),timeMilliseconds(writing.time)].filter(Boolean);
+      const c=[reading,writing].reduce((n,row)=>n+number(row.stats?.correct??row.stats?.right),0);
+      const w=[reading,writing].reduce((n,row)=>n+number(row.stats?.wrong??row.stats?.incorrect),0);
+      return legacyStage({correct:c,wrong:w},times.length?times.reduce((a,b)=>a+b,0)/times.length:0);
+    }
+    const a=stage(reading.review,reading.stats,reading.time),b=stage(writing.review,writing.stats,writing.time);
+    return a&&b?Math.min(a,b):Math.min(2,Math.max(a,b));
   }
   function normalize(input={},stats={},time=0){
     const value=input&&typeof input==='object'?input:{};
@@ -20,7 +38,7 @@
     const rows=[...new Map(recent.map(x=>[x.id,x])).values()].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(-12);
     return {reviewVersion:1,level:value.reviewVersion===1?Math.min(8,number(value.level)):0,
       due:number(value.due),lastSeen:number(value.lastSeen),lastWrong:number(value.lastWrong),
-      recent:rows,days:[...new Set((Array.isArray(value.days)?value.days:[]).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)))].sort().slice(-8),
+      recent:rows,days:[...new Set((Array.isArray(value.days)?value.days:[]).filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))].sort().slice(-8),
       peak:Math.min(3,value.reviewVersion===1?number(value.peak):legacyStage(stats,time)),legacy:value.reviewVersion===1?number(value.legacy):legacyStage(stats,time)};
   }
   function stage(input,stats={},time=0){
@@ -65,5 +83,5 @@
   function due(map={},chars=Object.keys(map),at=Date.now()){
     return chars.filter(kana=>map[kana]?.reviewVersion===1&&map[kana].level>=2&&map[kana].due<=at).sort((a,b)=>map[a].due-map[b].due||a.localeCompare(b));
   }
-  root.ModeAtlasReview=Object.freeze({intervals,labels,legacyStage,normalize,stage,answer,merge,mergeMaps,due});
-})(window);
+  return Object.freeze({intervals,labels,legacyStage,timeMilliseconds,combinedStage,normalize,stage,answer,merge,mergeMaps,due});
+});

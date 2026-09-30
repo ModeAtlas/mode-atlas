@@ -283,6 +283,8 @@ test('Apple links to the current Firebase UID and revokes authorization on accou
   const user = { uid: 'shared-uid', providerData: [{ providerId:'google.com' }] };
   const auth = { currentUser: user };
   const calls = [];
+  let socialFailure = true;
+  window.ModeAtlasSocial = { prepareAccountDeletion: async () => { calls.push('social'); if(socialFailure)throw new Error('Social cleanup unavailable'); } };
   window.AtlasPlatform = {
     authenticate: async (providerId) => {
       assert.equal(providerId, 'apple.com');
@@ -324,10 +326,14 @@ test('Apple links to the current Firebase UID and revokes authorization on accou
   assert.equal(await window.KanaCloudSync.linkNativeProvider('apple.com'), true);
   assert.equal(auth.currentUser.uid, 'shared-uid');
   localStorage.setItem('modeAtlasOnboardingComplete', 'true');
+  assert.equal(await window.KanaCloudSync.deleteAccount(), false, 'Social cleanup failure must retain the account and private save');
+  assert.deepEqual(calls, ['link','reauth','social']);
+  assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'), 'true');
+  calls.length=0;socialFailure=false;
   const deletion = window.KanaCloudSync.deleteAccount();
   assert.equal(await window.KanaCloudSync.deleteAccount(), false, 'Repeated tap must not queue a second deletion');
   assert.equal(await deletion, true);
-  assert.deepEqual(calls, ['link','reauth','document','revoke:apple-code','user']);
+  assert.deepEqual(calls, ['reauth','social','document','revoke:apple-code','user']);
   assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'), null);
 });
 

@@ -7,4 +7,7 @@ ios/App/App/public/
 
 __pycache__/
 *.pyc
+backend/functions/shared/
+.firebase/
+*-debug.log
 /assets/fonts/*.woff2

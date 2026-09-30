@@ -109,3 +109,13 @@ test('run recovery receipts stay bounded without trimming lifetime XP',()=>{
   const e=load();for(let i=0;i<120;i++){e.setNow(e.now()+1000);e.progress.startRun('run'+i);answer(e,'run'+i,1);}
   assert.equal(Object.keys(e.progress.readState().runs).length,64);assert.equal(e.progress.getLifetimeCorrect(),120);assert.ok(e.progress.getXP()>=240);
 });
+
+test('untrusted progress rejects prototype keys and keeps oversized counters finite',()=>{
+  const {progress:p}=load();
+  const input=JSON.parse('{"legacySeeded":true,"sources":{"__proto__":{"kana.reading.correct":100},"normal":{"constructor":99,"kana.reading.correct":1e308}},"events":{"fake":{"type":"constructor","id":"bad"}},"credits":{"__proto__":{"answer":100}},"activity":{"2026-09-30":null},"adjustments":{"bad":{"id":"__proto__","amount":5}}}');
+  const result=p.getSummary(input),normalized=p.normalizeState(input);
+  assert.equal(result.xp,Number.MAX_SAFE_INTEGER);assert.equal(result.lifetimeCorrect,Number.MAX_SAFE_INTEGER);
+  assert.deepEqual(Object.keys(normalized.sources),['normal']);assert.equal(Object.keys(normalized.events).length,0);
+  assert.equal(Object.keys(normalized.credits).length,0);assert.equal(Object.keys(normalized.adjustments).length,0);
+  assert.equal({}.answer,undefined);
+});

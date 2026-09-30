@@ -1362,7 +1362,7 @@ async function performAccountDeletion() {
   }
   const approved = await window.ModeAtlasFeedback?.confirm?.({
     kicker:'Account', title:'Delete your Mode Atlas account?',
-    message:'This permanently deletes your account, cloud learning progress and this device’s Mode Atlas save. This cannot be undone.',
+    message:'This permanently deletes your account, cloud learning progress, friends profile and connections, and this device’s Mode Atlas save. This cannot be undone.',
     tone:'danger', confirmLabel:'Delete account', cancelLabel:'Keep account'
   });
   if (!approved) return false;
@@ -1380,6 +1380,8 @@ async function performAccountDeletion() {
     } else {
       await reauthenticateWithPopup(user, provider);
     }
+    if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
+    await window.ModeAtlasSocial?.prepareAccountDeletion?.();
     if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
     if (!await ensureFirestore() || typeof deleteDoc !== 'function') throw new Error('Cloud data is unavailable. Please try again online.');
     const ref = getDocRef(user.uid);
@@ -1591,6 +1593,13 @@ function markSectionUpdated(sectionName) {
 
 function getUser() {
   return currentUser;
+}
+
+async function getFirebaseApp() {
+  if(!await setupFirebase())throw new Error('Firebase is unavailable.');
+  await authReady;
+  if(!app || !currentUser)throw new Error('Sign in to continue.');
+  return app;
 }
 
 
@@ -1881,6 +1890,7 @@ window.KanaCloudSync = {
   markSectionUpdated,
   beginLocalImport,
   getUser,
+  getFirebaseApp,
   isConfigured: () => CONFIG_READY,
   getSyncStatus,
   createBackup,
