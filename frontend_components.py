@@ -277,7 +277,7 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-pwa.js',
     'assets/app/mode-atlas-about.js',
     'assets/app/mode-atlas-visit-flows.js',
-    'assets/app/mode-atlas-import-export.js',
+    'assets/app/mode-atlas-data-controls.js',
     'assets/app/mode-atlas-date.js',
     'assets/app/mode-atlas-review.js',
     'assets/data/mode-atlas-kana-data.js',

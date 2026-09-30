@@ -121,12 +121,11 @@ function applyAchievementVisuals(root = document) {
       });
     });
     const cloud = achStoreGet('modeAtlasLastCloudSyncAt', '') ? 1 : 0;
-    const backup = achStoreGet('modeAtlasLastExportAt', '') || achStoreGet('modeAtlasLastBackupAt', '') ? 1 : 0;
     const recentSave = latestTimestamp(['settingsUpdatedAt','resultsUpdatedAt','srsUpdatedAt','dailyUpdatedAt','profileUpdatedAt','kanaWordBankUpdatedAt']);
     return {
       correct,wrong,total:correct+wrong,seen,
       new:mastery.New,mastered:mastery.Mastered,reviewing:mastery.Reviewing,learning:mastery.Learning,
-      under2,under1,speed3to2,speed2to1,speedUnder1,wordCount,resultCount,perfect:perfectSeen.size,cloud,backup,recentSave,
+      under2,under1,speed3to2,speed2to1,speedUnder1,wordCount,resultCount,perfect:perfectSeen.size,cloud,recentSave,
       atlasLevel:Number(progression.level||1),avg:avgCount?avgSum/avgCount:0,snapshot,...presetValues
     };
   }
@@ -163,9 +162,6 @@ function applyAchievementVisuals(root = document) {
       ])}),
       Object.freeze({id:'cloud-ready',name:'Cloud Ready',icon:'☁',ranks:Object.freeze([
         Object.freeze({tier:'',short:'Complete a cloud sync',detail:'Sign in and complete at least one successful cloud save so progress can follow you across devices.',target:1,key:'cloud',unlockId:'general-5'})
-      ])}),
-      Object.freeze({id:'safety-net',name:'Safety Net',icon:'⟲',ranks:Object.freeze([
-        Object.freeze({tier:'',short:'Export a backup',detail:'Export or copy a save backup at least once. Backups help protect progress before major changes.',target:1,key:'backup',unlockId:'general-6'})
       ])})
     ]),
     kana:Object.freeze([
@@ -356,7 +352,7 @@ function applyAchievementVisuals(root = document) {
 
     const checkFromEvent = () => checkAchievementUnlocks();
     window.addEventListener('storage',e=>{
-      if(e && e.key && /charStats|reverseCharStats|charTimes|testModeResults|kanaWordBank|modeAtlasProgress|modeAtlasLastCloudSyncAt|modeAtlasLastExportAt|modeAtlasLastBackupAt|modeAtlasPresetAchievementProgress/.test(e.key)) checkAchievementUnlocks();
+      if(e && e.key && /charStats|reverseCharStats|charTimes|testModeResults|kanaWordBank|modeAtlasProgress|modeAtlasLastCloudSyncAt|modeAtlasPresetAchievementProgress/.test(e.key)) checkAchievementUnlocks();
     });
     window.addEventListener('modeAtlasProgressChanged',checkFromEvent);
     document.addEventListener('ma:progress-updated',checkFromEvent);

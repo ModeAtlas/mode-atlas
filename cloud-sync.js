@@ -1600,7 +1600,15 @@ function collectExportStorage() {
   return store.snapshotBackupStorage(localStorage);
 }
 
+// This is an application access check, not a server trust boundary. Local
+// progress remains client-owned; competitive rankings must validate events.
+function requireDeveloperBackupAccess(owner = currentUser?.uid || null) {
+  if (!window.ModeAtlasDevConsoleLoader?.isEligible?.()) throw new Error('Developer access is required for save files.');
+  if (owner !== (currentUser?.uid || null)) throw new Error('The account changed. Start the file action again.');
+}
+
 function createBackup() {
+  requireDeveloperBackupAccess();
   return {
     app: 'Mode Atlas',
     version: BACKUP_FORMAT_VERSION,
@@ -1689,6 +1697,7 @@ function prepareManualImport(obj) {
 }
 
 function previewLocalBackup(obj) {
+  requireDeveloperBackupAccess();
   const prepared = prepareManualImport(obj);
   const local = buildLocalSnapshot();
   const sections = Object.keys(SECTION_DEFS).map((name) => {
@@ -1719,8 +1728,11 @@ function previewLocalBackup(obj) {
 }
 
 async function importLocalBackup(obj) {
+  const importUid = currentUser?.uid || null;
+  requireDeveloperBackupAccess(importUid);
   await waitWithTimeout(setupFirebase(), 1400, 'cloud setup');
   await waitWithTimeout(authReady, 1400, 'auth check');
+  requireDeveloperBackupAccess(importUid);
 
   const restoreCloudActivity = !isSessionCloudPaused();
   if (restoreCloudActivity) setSessionCloudPause(true);
@@ -1730,6 +1742,7 @@ async function importLocalBackup(obj) {
   }
 
   try {
+    requireDeveloperBackupAccess(importUid);
     const prepared = prepareManualImport(obj);
     const snapshot = prepared.snapshot;
     const result = {
@@ -1748,6 +1761,7 @@ async function importLocalBackup(obj) {
     if (cloudHydrationPromise) {
       try { await cloudHydrationPromise; } catch {}
     }
+    requireDeveloperBackupAccess(importUid);
 
     // Manual import should restore the file the user selected. Empty imported
     // sections are skipped so they do not wipe useful current data.
@@ -1764,11 +1778,12 @@ async function importLocalBackup(obj) {
     });
 
     let cloudStatusEmitted = false;
-    const importUid = currentUser?.uid || null;
+    const importedSnapshot = buildLocalSnapshot();
     const firestoreReady = importUid ? await ensureFirestore() : false;
+    requireDeveloperBackupAccess(importUid);
     if (CONFIG_READY && importUid && firestoreReady && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
       try {
-        await setDoc(getDocRef(importUid), buildLocalSnapshot(), { merge: true });
+        await setDoc(getDocRef(importUid), importedSnapshot, { merge: true });
         if (currentUser?.uid === importUid) {
           clearLocalImportGuard();
           hydratedForUserId = importUid;
@@ -1785,28 +1800,14 @@ async function importLocalBackup(obj) {
       }
     }
 
+    requireDeveloperBackupAccess(importUid);
     emitCloudDataChanged('import', result.updated);
     if (!cloudStatusEmitted) emitStatus();
     return result;
   } finally {
+    if ((currentUser?.uid || null) !== importUid) clearLocalImportGuard();
     if (restoreCloudActivity) setSessionCloudPause(false);
   }
-}
-
-function describeImportResult(result) {
-  const names = (list) => (list || []).map((name) => SECTION_LABELS[name] || name).join(', ');
-  const lines = ['Save import checked by newest data.'];
-  if (result.updated?.length) lines.push('Updated from backup: ' + names(result.updated) + '.');
-  if (result.keptCloud?.length) lines.push('Kept newer cloud data: ' + names(result.keptCloud) + '.');
-  if (result.keptLocal?.length) lines.push('Kept newer local data: ' + names(result.keptLocal) + '.');
-  if (result.importedTests?.reading || result.importedTests?.writing) {
-    const parts = [];
-    if (result.importedTests.reading) parts.push(result.importedTests.reading + ' reading');
-    if (result.importedTests.writing) parts.push(result.importedTests.writing + ' writing');
-    lines.push('Imported test results: ' + parts.join(', ') + '.');
-  }
-  lines.push(result.cloudSynced ? 'This is now the definitive cloud save.' : (currentUser ? 'Cloud was unavailable, so local data will sync when cloud access returns.' : 'You are using local save data. Log in to sync this to cloud.'));
-  return lines.join('\n');
 }
 
 async function resetAllData() {
@@ -1885,7 +1886,6 @@ window.KanaCloudSync = {
   createBackup,
   importLocalBackup,
   previewLocalBackup,
-  describeImportResult,
   debugLocalSnapshot: buildLocalSnapshot,
   resetAllData
 };

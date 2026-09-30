@@ -8,6 +8,7 @@
   const versionMatch = loaderUrl.match(/mode-atlas-dev-console-loader(\.assets-\d+\.\d+\.\d+)?\.js(?:[?#].*)?$/i);
   const suffix = versionMatch?.[1] || '';
   const consoleScriptUrl = new URL(`mode-atlas-dev-console${suffix}.js`, loaderUrl).href;
+  const backupScriptUrl = new URL(`mode-atlas-dev-backups${suffix}.js`, loaderUrl).href;
   const consoleStyleUrl = new URL(`../css/mode-atlas-dev-console${suffix}.css`, loaderUrl).href;
   let loadPromise = null;
 
@@ -20,7 +21,7 @@
 
   function currentUserEmail(){
     try {
-      const user = root.KanaCloudSync?.getUser?.() || root.currentUser || null;
+      const user = root.KanaCloudSync?.getUser?.() || null;
       return String(user?.email || '').trim().toLowerCase();
     } catch { return ''; }
   }
@@ -38,31 +39,36 @@
     document.head.appendChild(link);
   }
 
-  function loadIfEligible(){
-    if (root.ModeAtlasDevConsole) return Promise.resolve(true);
-    if (!isEligible()) return Promise.resolve(false);
-    if (loadPromise) return loadPromise;
-
-    ensureStyle();
-    loadPromise = new Promise((resolve) => {
-      const existing = document.querySelector('script[data-ma-dev-console-script]');
-      if (existing) {
-        existing.addEventListener('load', () => resolve(!!root.ModeAtlasDevConsole), { once:true });
-        existing.addEventListener('error', () => { loadPromise = null; resolve(false); }, { once:true });
-        return;
-      }
+  function loadScript(url, marker){
+    return new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = consoleScriptUrl;
-      script.defer = true;
-      script.dataset.maDevConsoleScript = '';
-      script.addEventListener('load', () => resolve(!!root.ModeAtlasDevConsole), { once:true });
+      script.src = url;
+      script.dataset[marker] = '';
+      script.addEventListener('load', resolve, { once:true });
       script.addEventListener('error', () => {
-        loadPromise = null;
-        console.warn('Mode Atlas developer diagnostics could not be loaded.');
-        resolve(false);
+        script.remove();
+        reject(new Error('Mode Atlas developer diagnostics could not be loaded.'));
       }, { once:true });
       document.head.appendChild(script);
     });
+  }
+
+  function loadIfEligible(){
+    if (!isEligible()) return Promise.resolve(false);
+    if (root.ModeAtlasDevConsole && root.ModeAtlasDevBackups) return Promise.resolve(true);
+    if (loadPromise) return loadPromise;
+    ensureStyle();
+    loadPromise = (async () => {
+      try {
+        if (!root.ModeAtlasDevBackups) await loadScript(backupScriptUrl, 'maDevBackupScript');
+        if (!isEligible()) return false;
+        if (!root.ModeAtlasDevConsole) await loadScript(consoleScriptUrl, 'maDevConsoleScript');
+        return isEligible() && !!root.ModeAtlasDevConsole;
+      } catch (error) {
+        console.warn(error.message);
+        return false;
+      } finally { loadPromise = null; }
+    })();
     return loadPromise;
   }
 

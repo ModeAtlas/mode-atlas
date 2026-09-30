@@ -283,7 +283,8 @@ test('native Settings omit browser display/install controls and keep repair with
   assert.match(web,/data-ma-install/);
   for(const html of [native,web]){
     assert.equal((html.match(/data-ma-repair-data/g)||[]).length,1);
-    assert.match(html,/data-ma-unified-import[\s\S]*?data-ma-repair-data[\s\S]*?<\/div>\s*<input type="file"/);
+    assert.doesNotMatch(html,/data-ma-unified-(?:export|copy|import|file)|type="file"/);
+    assert.match(html,/data-ma-repair-data[\s\S]*?data-ma-unified-reset[\s\S]*?settingsDeleteAccountBtn/);
     assert.doesNotMatch(html,/>Repair save data<\/div>/);
   }
 });

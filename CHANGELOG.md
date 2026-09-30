@@ -1,3 +1,12 @@
+## 2.75.0 - 2026-09-30
+
+- Moved Export, Copy and Import save files from web/iOS Settings into Dev Diagnostics → Save files. File UI loads only with eligible developer diagnostics.
+- Consolidated normal data controls into one Settings row with automatic-save guidance, Repair save, Reset data and account deletion. Reset and deletion retain confirmation; automatic local saves and cloud sync continue through their existing owners.
+- Replaced the eager import/export module with small public reset controls and a lazy developer file module. Removed duplicate fallback backup/preview/import code; cloud sync remains the sole backup format and import-policy owner.
+- Rechecked developer access and account identity during asynchronous file actions, including after confirmation and before cloud writes. Native localhost does not grant developer access; eligibility uses the authenticated account owner.
+- Retired the export-dependent Safety Net achievement from the active catalogue without deleting saved history or changing earned XP.
+- Added regressions for normal-user access, developer export/copy/import, cancellation, malformed files, account changes and native Share Sheet completion. This reduces exposed editing tools; it does not make client-owned progress tamper-proof or replace future server validation for leaderboards.
+
 ## 2.74.1 - 2026-09-30
 
 - Fixed unnecessary iOS Atlas home scrolling with returning-user recommendations by fitting goal progress into single rows and budgeting compact spacing for notched phones.

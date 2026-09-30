@@ -294,6 +294,39 @@
     return panel;
   }
 
+  function renderSaveFilesPanel(backdrop){
+    const panel = devEl('div', 'ma-dev-save-files');
+    panel.append(devEl('h3', '', 'Save files'), devEl('p', '', 'Developer testing only. Import replaces matching save sections and can sync test data to the signed-in account.'));
+    const actions = devEl('div', 'ma-dev-actions');
+    const input = devEl('input');
+    input.type = 'file'; input.accept = '.json,application/json'; input.hidden = true;
+    input.dataset.maDevBackupFile = '';
+    for (const [label, action] of [['Export save', 'exportFile'], ['Copy save', 'copyFile']]) {
+      const button = devButton(label, action === 'exportFile' ? 'maDevExportSave' : 'maDevCopySave', 'action');
+      button.addEventListener('click', async () => {
+        if (!canUseDevTools() || button.disabled) return;
+        button.disabled = true;
+        try { await window.ModeAtlasDevBackups[action](); }
+        finally { button.disabled = false; }
+      });
+      actions.append(button);
+    }
+    const importButton = devButton('Import save', 'maDevImportSave', 'action');
+    importButton.addEventListener('click', () => { if (canUseDevTools()) input.click(); });
+    input.addEventListener('change', () => {
+      const file = input.files?.[0]; input.value = '';
+      if (!file || !canUseDevTools()) return;
+      backdrop.classList.remove('open');
+      void window.ModeAtlasDevBackups.importFile(file);
+    });
+    actions.append(importButton);
+    const status = devEl('div', 'ma-status');
+    status.dataset.maDevBackupStatus = ''; status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    panel.append(actions, input, status);
+    return panel;
+  }
+
   function adjustDevXp(backdrop, direction){
     const input = backdrop.querySelector('[data-ma-dev-xp-amount]');
     const amount = Math.max(1, Math.floor(Number(input?.value || 0)));
@@ -345,8 +378,8 @@
       devButton('Storage keys', 'maDevStorageKeys', 'diagnostic'),
       devButton('Service worker', 'maDevServiceWorker', 'diagnostic'),
       devButton('Progress / XP', 'maDevProgress', 'diagnostic'),
+      devButton('Save files', 'maDevSaveFiles', 'diagnostic'),
       devButton('Copy diagnostics', 'maDevCopy', 'action'),
-      devButton('Copy save snapshot', 'maDevCopySnapshot', 'action'),
       devButton('Repair save data', 'maDevRepair', 'action'),
       devButton('Force sync', 'maDevSync', 'action'),
       devButton('Request UI refresh', 'maDevUiRefresh', 'action'),
@@ -371,6 +404,7 @@
     backdrop.classList.add('open');
     backdrop.onclick = event => {
       if (event.target === backdrop || event.target.closest('[data-ma-dev-close]')) backdrop.classList.remove('open');
+      if (!canUseDevTools()) { backdrop.classList.remove('open'); return; }
       if (event.target.closest('[data-ma-dev-overview]')) replaceDevBody(backdrop, [renderKeyValueTable(safeDevData())]);
       if (event.target.closest('[data-ma-dev-data-flow]')) replaceDevBody(backdrop, [renderKeyValueTable(safeDataFlow())]);
       if (event.target.closest('[data-ma-dev-storage-keys]')) replaceDevBody(backdrop, [renderJsonPanel('Storage keys', allStorageKeys())]);
@@ -379,10 +413,10 @@
         getServiceWorkerInfo().then(info => replaceDevBody(backdrop, [renderJsonPanel('Service worker', info)])).catch(error => replaceDevBody(backdrop, [renderJsonPanel('Service worker error', { error: error?.message || String(error) })]));
       }
       if (event.target.closest('[data-ma-dev-progress]')) replaceDevBody(backdrop, [renderProgressPanel()]);
+      if (event.target.closest('[data-ma-dev-save-files]')) replaceDevBody(backdrop, [renderSaveFilesPanel(backdrop)]);
       if (event.target.closest('[data-ma-dev-xp-add]')) adjustDevXp(backdrop, 1);
       if (event.target.closest('[data-ma-dev-xp-remove]')) adjustDevXp(backdrop, -1);
       if (event.target.closest('[data-ma-dev-copy]')) navigator.clipboard?.writeText(JSON.stringify({ diagnostics: safeDevData(), dataFlow: safeDataFlow() }, null, 2)).then(() => toast('Diagnostics copied.'));
-      if (event.target.closest('[data-ma-dev-copy-snapshot]')) navigator.clipboard?.writeText(JSON.stringify(window.KanaCloudSync?.debugLocalSnapshot?.() || {}, null, 2)).then(() => toast('Save snapshot copied.'));
       if (event.target.closest('[data-ma-dev-repair]')) {
         const result = window.ModeAtlas?.repairSaveData?.() || { summary: 'repair unavailable' };
         toast('Repair complete · ' + result.summary);

@@ -18,6 +18,7 @@
   const whatsNewItems = [
     'Explore daily goals, titles and profile frames in Your Atlas.',
     'Resume interrupted guided sets, today’s Daily Challenge and formal tests.',
+    'Manage your automatically saved progress from a simpler Settings menu.',
     ...(window.ModeAtlasEnv?.isNativeApp ? [
       'Track daily goals from the Atlas home screen.',
       'Show your chosen frame on the profile icon above the dock.'
@@ -257,7 +258,7 @@
     const legal=aboutEl('div','ma-about-panel'); legal.dataset.maAboutPanel='legal';
     const privacy=aboutEl('div','ma-about-section'); const legalLinks=document.createElement('p');
     legalLinks.append(aboutLink('Open Privacy Policy',aboutAppUrl('privacy/'),{target:'_blank',rel:'noopener'}),document.createTextNode(' · '),aboutLink('Open Terms of Use',aboutAppUrl('terms/'),{target:'_blank',rel:'noopener'}));
-    privacy.append(aboutEl('h3','','Privacy & data'),aboutEl('p','','Mode Atlas saves learning progress on this device. Signing in lets supported progress follow you across devices.'),aboutEl('p','','Export a backup to keep a copy of your progress. Before importing, review which data the backup will replace.'),legalLinks);
+    privacy.append(aboutEl('h3','','Privacy & data'),aboutEl('p','','Mode Atlas saves learning progress on this device. Signing in lets supported progress follow you across devices.'),aboutEl('p','','Manage saved progress and account deletion in Settings.'),legalLinks);
     const disclaimer=aboutEl('div','ma-about-section'); disclaimer.append(aboutEl('h3','','Disclaimer'),aboutEl('p','','Mode Atlas is a study aid. It is not an official language certification tool and does not guarantee language proficiency outcomes.'));
     const ownership=aboutEl('div','ma-about-section'); ownership.append(aboutEl('h3','','Credits & ownership'),aboutEl('p','',`Mode Atlas, its app structure, and learning interface are developed by ${DEVELOPER}. Japanese kana characters are part of the Japanese writing system and are not proprietary.`));
     legal.append(privacy,disclaimer,ownership);

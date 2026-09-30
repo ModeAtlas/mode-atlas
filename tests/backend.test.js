@@ -842,6 +842,24 @@ test('2.46 Firebase startup restores Auth eagerly but defers Firestore until clo
   assert.match(setup, /if \(user\) \{\s*initialHydrationPromise = hydrateFromCloud\(false\)\.catch/s);
 });
 
+test('backup entry points reject normal users and recheck access after asynchronous setup', async () => {
+  const {context,window,localStorage}=createBaseContext();
+  vm.runInContext(STORAGE_SOURCE,context);
+  vm.runInContext(CLOUD_SYNC_SOURCE,context);
+  localStorage.setItem('charStats',JSON.stringify({'あ':{correct:3,wrong:0}}));
+  const snapshot=localStorage.getItem('charStats');
+  assert.throws(()=>window.KanaCloudSync.createBackup(),/Developer access/);
+  assert.throws(()=>window.KanaCloudSync.previewLocalBackup({}),/Developer access/);
+  await assert.rejects(window.KanaCloudSync.importLocalBackup({}),/Developer access/);
+  let eligible=true;
+  window.ModeAtlasDevConsoleLoader={isEligible:()=>eligible};
+  const backup=window.KanaCloudSync.createBackup();
+  const pending=window.KanaCloudSync.importLocalBackup(backup);
+  eligible=false;
+  await assert.rejects(pending,/Developer access/);
+  assert.equal(localStorage.getItem('charStats'),snapshot);
+});
+
 test('outgoing sync merges independent rewards and recall evidence, and reset clears the entire v3 state', async () => {
   const {context,window,localStorage}=createBaseContext({configured:true});
   let authCallback,remote=null,latestWrite;
@@ -876,6 +894,7 @@ test('outgoing sync merges independent rewards and recall evidence, and reset cl
   remote=latestWrite;await window.KanaCloudSync.syncNow();assert.equal(window.ModeAtlasProgress.getXP(),20);
   // Restore a pre-v3 backup. New fields must be explicitly empty, not retained
   // by Firestore's merge behaviour from the save being replaced.
+  window.ModeAtlasDevConsoleLoader={isEligible:()=>true};
   const backup=window.KanaCloudSync.createBackup();
   backup.snapshot.sections.progress.data.state={version:2,legacySeeded:true,sources:{old:{'kana.reading.correct':7}}};
   const restored=await window.KanaCloudSync.importLocalBackup(backup);

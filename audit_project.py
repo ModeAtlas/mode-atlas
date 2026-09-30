@@ -290,12 +290,12 @@ def main() -> int:
     for page_path in main_pages:
         page_html = text(page_path)
         storage_pos = page_html.find(f'mode-atlas-storage.{revision}.js')
-        import_pos = page_html.find(f'mode-atlas-import-export.{revision}.js')
+        controls_pos = page_html.find(f'mode-atlas-data-controls.{revision}.js')
         cloud_pos = page_html.find(f'cloud-sync.{revision}.js')
         if storage_pos < 0:
             fail(errors, f'shared storage boundary missing from {page_path.relative_to(ROOT)}')
-        if import_pos >= 0 and storage_pos > import_pos:
-            fail(errors, f'storage boundary loads after import/export on {page_path.relative_to(ROOT)}')
+        if controls_pos < 0 or storage_pos > controls_pos:
+            fail(errors, f'shared data controls are missing or load before storage on {page_path.relative_to(ROOT)}')
         if cloud_pos >= 0 and storage_pos > cloud_pos:
             fail(errors, f'storage boundary loads after cloud-sync on {page_path.relative_to(ROOT)}')
         for asset_name in shared_drawer_assets:
@@ -331,9 +331,9 @@ def main() -> int:
     dev_loader = text(ROOT / 'assets/app/mode-atlas-dev-console-loader.js')
     if "'assets/app/mode-atlas-dev-console-loader.js'" not in frontend_source:
         fail(errors, 'production frontend manifest is missing the developer-console eligibility loader')
-    if "'assets/app/mode-atlas-dev-console.js'" in frontend_source or "'assets/css/mode-atlas-dev-console.css'" in frontend_source:
+    if any(f"'{asset}'" in frontend_source for asset in ('assets/app/mode-atlas-dev-console.js', 'assets/app/mode-atlas-dev-backups.js', 'assets/css/mode-atlas-dev-console.css')):
         fail(errors, 'full developer-console assets are still loaded eagerly by the production manifest')
-    for lazy_asset in ('assets/app/mode-atlas-dev-console.js', 'assets/css/mode-atlas-dev-console.css'):
+    for lazy_asset in ('assets/app/mode-atlas-dev-console.js', 'assets/app/mode-atlas-dev-backups.js', 'assets/css/mode-atlas-dev-console.css'):
         if lazy_asset not in revision_builder:
             fail(errors, f'revision builder does not own lazy developer asset: {lazy_asset}')
     for marker in ('document.currentScript', 'kanaCloudSyncStatusChanged', 'loadIfEligible', 'admin@mode-atlas.com'):
@@ -680,14 +680,22 @@ def main() -> int:
         if 'localStorage.clear(' in src or 'sessionStorage.clear(' in src:
             fail(errors, f'origin-wide storage clear found in runtime module: {path.relative_to(ROOT)}')
 
-    import_export = text(ROOT / 'assets/app/mode-atlas-import-export.js')
-    if 'BACKUP_FORMAT_VERSION' not in import_export or "version: 2" in import_export:
-        fail(errors, 'import/export backup format is still hard-coded outside release metadata')
-    for marker in ('snapshotBackupStorage', 'applyAppMap', 'clearAppData'):
-        if marker not in import_export:
-            fail(errors, f'import/export bypasses shared storage boundary: missing {marker}')
-    if 'Object.entries(data).forEach(([k,v]) => localStorage.setItem' in import_export:
-        fail(errors, 'import fallback can write arbitrary origin keys')
+    data_controls = text(ROOT / 'assets/app/mode-atlas-data-controls.js')
+    dev_backups = text(ROOT / 'assets/app/mode-atlas-dev-backups.js')
+    if 'clearAppData' not in data_controls:
+        fail(errors, 'public reset bypasses the shared storage boundary')
+    for marker in ('createBackup', 'previewLocalBackup', 'importLocalBackup', 'ModeAtlasDevConsoleLoader'):
+        if marker not in dev_backups:
+            fail(errors, f'developer save files bypass their existing owner: missing {marker}')
+    if 'localStorage.setItem' in dev_backups or 'applyAppMap' in dev_backups:
+        fail(errors, 'developer file UI duplicates the cloud import/storage owner')
+    if 'requireDeveloperBackupAccess' not in cloud:
+        fail(errors, 'backup entry points lack the shared developer eligibility check')
+    settings_markup = text(ROOT / 'assets/ui/mode-atlas-settings-menu.js')
+    if re.search(r'data-ma-unified-(?:export|copy|import|file)', settings_markup):
+        fail(errors, 'Settings still exposes developer save-file controls')
+    if (ROOT / 'assets/app/mode-atlas-import-export.js').exists():
+        fail(errors, 'superseded public file UI remains in the source tree')
 
     if 'store.clearAppData()' not in cloud:
         fail(errors, 'cloud reset bypasses shared scoped storage boundary')
@@ -789,10 +797,9 @@ def main() -> int:
         if marker not in dev_console:
             fail(errors, f'current Dev Diagnostics does not own visit-flow action: {marker}')
 
-    import_export = text(ROOT / 'assets/app/mode-atlas-import-export.js')
     for marker in ('ModeAtlasImportUi', "addEventListener('focus'", "addEventListener('pageshow'", 'visibilitychange', 'rebuildSaveSections'):
-        if marker in import_export:
-            fail(errors, f'import/export still carries obsolete global/lifecycle refresh ownership: {marker}')
+        if marker in data_controls or marker in dev_backups:
+            fail(errors, f'save management carries obsolete global/lifecycle refresh ownership: {marker}')
 
     sounds = text(ROOT / 'assets/app/mode-atlas-sounds.js')
     if 'MutationObserver' in sounds:

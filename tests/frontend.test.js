@@ -340,7 +340,7 @@ test('Reading and Writing use one build-time trainer shell and shared trainer pr
 test('feedback system owns dialogs, inline status, and destructive confirmations', () => {
   const feedback = read('assets/app/mode-atlas-feedback.js');
   const dialog = read('assets/app/mode-atlas-dialog.js');
-  const importExport = read('assets/app/mode-atlas-import-export.js');
+  const dataControls = read('assets/app/mode-atlas-data-controls.js');
   const wordbank = read('assets/pages/mode-atlas-wordbank-page.js');
   const settings = read('assets/ui/mode-atlas-settings-menu.js');
 
@@ -357,8 +357,8 @@ test('feedback system owns dialogs, inline status, and destructive confirmations
   assert.match(feedback, /root\.ModeAtlasFeedback = Object\.freeze/);
   assert.match(feedback, /function status\(target, message/);
   assert.match(settings, /data-ma-save-status/);
-  assert.match(importExport, /ModeAtlasFeedback\?\.confirm/);
-  assert.match(importExport, /title: 'Reset all Mode Atlas data\?'/);
+  assert.match(dataControls, /ModeAtlasFeedback\?\.confirm/);
+  assert.match(dataControls, /title: 'Reset all Mode Atlas data\?'/);
   assert.match(wordbank, /title: `Delete \$\{entry\.kana\}\?`/);
   assert.match(wordbank, /title: 'Clear the entire Word Bank\?'/);
 });
@@ -966,7 +966,7 @@ test('UI foundation keeps global geometry, responsive layout, themes, and page f
 test('full-project audit cleanup keeps one owner for dev visit tools, drawers, save status, and audited legacy paths', () => {
   const visit = read('assets/app/mode-atlas-visit-flows.js');
   const dev = read('assets/app/mode-atlas-dev-console.js');
-  const importExport = read('assets/app/mode-atlas-import-export.js');
+  const dataControls = read('assets/app/mode-atlas-data-controls.js');
   const pageState = read('assets/app/mode-atlas-page-state.js');
   const earlyLoader = read('assets/app/mode-atlas-early-loader.js');
   const profile = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
@@ -979,7 +979,7 @@ test('full-project audit cleanup keeps one owner for dev visit tools, drawers, s
 
   assert.doesNotMatch(visit, /MutationObserver|maDevPanel/);
   for (const marker of ['maDevFirstVisit', 'maDevDailyReturn', 'maDevResetVisit']) assert.match(dev, new RegExp(marker));
-  assert.doesNotMatch(importExport, /ModeAtlasImportUi|rebuildSaveSections|addEventListener\('focus'|addEventListener\('pageshow'|visibilitychange/);
+  assert.doesNotMatch(dataControls, /ModeAtlasImportUi|rebuildSaveSections|addEventListener\('focus'|addEventListener\('pageshow'|visibilitychange/);
   assert.doesNotMatch(pageState, /ModeAtlasPageState\s*=|cleanDecorativeTextIcons|lifecycleListeners = new Map/);
   assert.doesNotMatch(earlyLoader, /ModeAtlasHideLoader|ModeAtlasLoaderState/);
   assert.match(profile, /function trapDrawerFocus/);
@@ -1706,6 +1706,8 @@ test('2.46 production boot keeps developer diagnostics lazy and revision-build o
   assert.doesNotMatch(frontend, /['\"]assets\/css\/mode-atlas-dev-console\.css['\"]/);
   assert.match(builder, /LAZY_ASSETS/);
   assert.match(builder, /assets\/app\/mode-atlas-dev-console\.js/);
+  assert.match(builder, /assets\/app\/mode-atlas-dev-backups\.js/);
+  assert.doesNotMatch(frontend, /['\"]assets\/app\/mode-atlas-dev-backups\.js['\"]/);
   assert.match(builder, /assets\/css\/mode-atlas-dev-console\.css/);
   assert.match(loader, /document\.currentScript/);
   assert.match(loader, /kanaCloudSyncStatusChanged/);
@@ -1717,6 +1719,7 @@ test('2.46 production boot keeps developer diagnostics lazy and revision-build o
     assert.match(html, new RegExp(`mode-atlas-dev-console-loader\\.${revision}\\.js`));
     assert.doesNotMatch(html, new RegExp(`mode-atlas-dev-console\\.${revision}\\.js`));
     assert.doesNotMatch(html, new RegExp(`mode-atlas-dev-console\\.${revision}\\.css`));
+    assert.doesNotMatch(html, new RegExp(`mode-atlas-dev-backups\\.${revision}\\.js`));
   }
 });
 

@@ -145,7 +145,8 @@ Native home composition is isolated in `mode-atlas-ios-home.css`; web compositio
 stays in `mode-atlas-home-page.css`. Both use the same progress and Kana metrics.
 Settings conditionally renders Display/Install controls only for web. Repair
 save has one control in the existing Save data row on both platforms. The shared
-repair, reset, import/export and account deletion handlers have not been copied.
+repair, reset and account deletion handlers have not been copied. File import/
+export moved to developer diagnostics in 2.75.0; see the ownership notes below.
 
 `ModeAtlasNativeEngagement` projects the existing summary/metrics into a versioned
 non-identifying snapshot: level, correct count, streak, level progress, daily
@@ -417,3 +418,28 @@ Tests exercise both directions, partial and final-answer interruptions, exact
 question order, pause time exclusion, single-result finalization, account/day
 validation, discard and browser navigation, alongside home safe-area geometry,
 large text, tab keyboard navigation and frame persistence.
+
+### Developer save files (2.75.0)
+
+Normal Settings has one Data and account row containing Repair save, Reset data
+and account deletion. Automatic local persistence and Firestore sync remain
+unchanged. `mode-atlas-data-controls.js` owns the confirmed public reset action;
+`cloud-sync.js` and the scoped storage inventory still own the actual data writes.
+
+The developer-console eligibility loader loads `mode-atlas-dev-backups.js` with
+the console only for browser localhost or the signed-in admin account. Native
+localhost is deliberately excluded. The console owns its Save files panel;
+the lazy module owns export/copy/import interaction and uses the shared platform
+Share Sheet/download adapter and confirmation dialog. Cloud sync remains the
+single backup serializer, preview builder and import policy. The former eager
+import/export module and its duplicate storage fallbacks have been removed.
+
+File entry points recheck eligibility and account identity across awaits and
+confirmation. The loader reads identity only from `KanaCloudSync.getUser()`;
+stale unrelated globals cannot grant developer access. Existing backup formats
+remain readable by the developer tools. The retired Safety Net achievement no
+longer asks learners to export files; historical IDs and XP are not rewritten.
+
+These checks control the application's exposed tools. Client JavaScript and
+local progress are still user-controlled; leaderboard integrity requires a
+separate server-validated event path. See `friends-leaderboards-plan.md`.

@@ -72,16 +72,14 @@
             <div class="ma-setting-list ma-settings-data-list">
               <div class="ma-setting-row ma-setting-row--stack ma-save-section">
                 <div class="ma-setting-row__copy">
-                  <div class="ma-setting-row__label">Save data</div>
-                  <div class="ma-setting-row__description">Back up or restore your full Mode Atlas save.</div>
+                  <div class="ma-setting-row__label">Data and account</div>
+                  <div class="ma-setting-row__description">Progress saves automatically on this device. Sign in to sync across devices.</div>
                 </div>
                 <div class="ma-setting-row__control ma-action-row ma-settings-inline-actions">
-                  <button class="ma-button ma-button--primary" type="button" data-ma-unified-export>${icon(href,'download')}<span>Export</span></button>
-                  <button class="ma-button" type="button" data-ma-unified-copy>Copy</button>
-                  <button class="ma-button" type="button" data-ma-unified-import>${icon(href,'upload')}<span>Import</span></button>
                   <button class="ma-button" type="button" data-ma-repair-data>Repair save</button>
+                  <button class="ma-button ma-button--danger" type="button" data-ma-unified-reset>${icon(href,'delete')}<span>Reset data</span></button>
+                  <button class="ma-button ma-button--danger" id="settingsDeleteAccountBtn" type="button" hidden>Delete account &amp; data</button>
                 </div>
-                <input type="file" accept=".json,application/json" data-ma-unified-file class="ma-file-input" hidden />
                 <div class="ma-status ma-settings-status" data-ma-save-status role="status" aria-live="polite"></div>
               </div>
 
@@ -98,13 +96,6 @@
                 ${native ? '' : '<div class="ma-status ma-settings-status" id="maUpdateStatus" role="status" aria-live="polite"></div>'}
               </div>
 
-              <div class="ma-setting-row ma-setting-row--stack ma-setting-row--danger">
-                <div class="ma-setting-row__copy">
-                  <div class="ma-setting-row__label">Data and account</div>
-                  <div class="ma-setting-row__description">Reset clears study data but keeps your account. Delete removes both.</div>
-                </div>
-                <div class="ma-setting-row__control ma-action-row"><button class="ma-button ma-button--danger" type="button" data-ma-unified-reset>${icon(href,'delete')}<span>Reset data</span></button><button class="ma-button ma-button--danger" id="settingsDeleteAccountBtn" type="button" hidden>Delete account &amp; data</button></div>
-              </div>
             </div>
           </details>
         </aside>`;

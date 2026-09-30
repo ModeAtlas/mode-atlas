@@ -95,14 +95,19 @@ for(const mode of ['reading','writing']){
   });
 }
 
-test('native export only records completion after the Share Sheet succeeds',async({page})=>{
+test('developer native export only records completion after the Share Sheet succeeds',async({page})=>{
   await prepare(page);await open(page,'/');
-  await page.evaluate(()=>window.ModeAtlasSettings.open());
-  await page.locator('[data-ma-unified-export]').click();
+  await page.evaluate(async()=>{
+    window.KanaCloudSync.getUser=()=>({uid:'developer',email:'admin@mode-atlas.com'});
+    await window.ModeAtlasDevConsoleLoader.loadIfEligible();
+    window.ModeAtlasDevConsole.open();
+  });
+  await page.getByRole('button',{name:'Save files',exact:true}).click();
+  await page.locator('[data-ma-dev-export-save]').click();
   await expect.poll(()=>page.evaluate(()=>window.sharedBackups.length)).toBe(1);
   expect(await page.evaluate(()=>localStorage.getItem('modeAtlasLastExportAt'))).toBeNull();
   await page.evaluate(()=>{window.nextExport={supported:true,completed:true};});
-  await page.locator('[data-ma-unified-export]').click();
+  await page.locator('[data-ma-dev-export-save]').click();
   await expect.poll(()=>page.evaluate(()=>Number(localStorage.getItem('modeAtlasLastExportAt')))).toBeGreaterThan(0);
   const file=await page.evaluate(()=>window.sharedBackups[1]);
   expect(file.filename).toMatch(/^mode-atlas-save-\d{4}-\d{2}-\d{2}\.json$/);
