@@ -155,9 +155,9 @@ test('system text changes reflow Atlas, settings and practice without horizontal
     await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
     await page.screenshot({path:testInfo.outputPath('large-text-'+(path.split('/')[1]||'atlas')+'.png')});
     await page.locator('.ma-nav__settings').click();
-    await expect(page.locator('#settingsDrawer')).toBeVisible();
-    await expect(page.locator('#settingsDrawer')).toHaveAttribute('aria-hidden','false');
-    expect(await page.locator('#settingsDrawer').evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+    await expect(page.locator('#maAccount-settings')).toBeVisible();
+    await expect(page.locator('#maAccount-settings')).toHaveAttribute('aria-hidden','false');
+    expect(await page.locator('#maAccount-settings').evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
     await page.evaluate(()=>window.ModeAtlasSettings.close());
   }
 });

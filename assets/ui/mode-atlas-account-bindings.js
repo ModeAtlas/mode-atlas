@@ -1,7 +1,7 @@
-(function ModeAtlasSharedDrawers(){
+(function ModeAtlasAccountBindings(){
   'use strict';
-  if (window.__modeAtlasSharedDrawersInstalled) return;
-  window.__modeAtlasSharedDrawersInstalled = true;
+  if (window.__modeAtlasAccountBindingsInstalled) return;
+  window.__modeAtlasAccountBindingsInstalled = true;
 
   const appRoot = new URL((window.ModeAtlasEnv && window.ModeAtlasEnv.baseUrl) || '/', location.origin);
   const href = (path) => window.ModeAtlasVersionFile?.appUrl?.(path) || new URL(path, appRoot).href;
@@ -154,106 +154,6 @@
     });
   }
 
-  function removeStaticDrawers(){
-    document.querySelectorAll('#profileDrawer,#profileBackdrop,#drawerBackdrop,#studyProfileOverlay,#settingsDrawer,#settingsBackdrop').forEach((node) => node.remove());
-  }
-
-  let activeDrawerName = '';
-  let drawerReturnFocus = null;
-
-  function drawerElement(name){
-    return document.getElementById(name === 'settings' ? 'settingsDrawer' : 'profileDrawer');
-  }
-
-  function setDrawerOpen(name, open){
-    const drawer = drawerElement(name);
-    const backdrop = document.getElementById(name === 'settings' ? 'settingsBackdrop' : 'profileBackdrop');
-    if (drawer) {
-      drawer.classList.toggle('open', open);
-      drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
-    }
-    if (backdrop) backdrop.classList.toggle('open', open);
-    document.body.classList.toggle(name === 'settings' ? 'settings-open' : 'profile-open', open);
-    if (open) setTimeout(() => document.getElementById(name === 'settings' ? 'settingsCloseBtn' : 'profileCloseBtn')?.focus(), 0);
-  }
-
-  function openDrawer(name, trigger){
-    const otherName = name === 'settings' ? 'profile' : 'settings';
-    setDrawerOpen(otherName, false);
-    drawerReturnFocus = trigger || document.activeElement || drawerReturnFocus;
-    activeDrawerName = name;
-    setDrawerOpen(name, true);
-    if (name === 'settings') window.ModeAtlasNativeSettings?.refresh?.();
-  }
-
-  function closeDrawer(name, restoreFocus = true){
-    if (!name) return;
-    const wasActive = activeDrawerName === name;
-    setDrawerOpen(name, false);
-    if (wasActive) activeDrawerName = '';
-    if (restoreFocus && wasActive) {
-      const target = drawerReturnFocus;
-      drawerReturnFocus = null;
-      if (target && target.isConnected && typeof target.focus === 'function') setTimeout(() => target.focus(), 0);
-    }
-  }
-
-  function openProfile(trigger){ openDrawer('profile', trigger); }
-  function closeProfile(){ closeDrawer('profile'); }
-  function openSettings(trigger){ openDrawer('settings', trigger); }
-  function closeSettings(){ closeDrawer('settings'); }
-  function closeAll(){ if (activeDrawerName) closeDrawer(activeDrawerName); }
-
-  function trapDrawerFocus(event){
-    if (event.key !== 'Tab' || !activeDrawerName) return;
-    const drawer = drawerElement(activeDrawerName);
-    if (!drawer) return;
-    const focusable = Array.from(drawer.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
-      .filter((node) => !node.hidden && node.getAttribute('aria-hidden') !== 'true' && node.getClientRects().length > 0);
-    if (!focusable.length) { event.preventDefault(); drawer.focus?.(); return; }
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-  }
-
-  function profileTriggerButtons(){
-    return Array.from(document.querySelectorAll('[data-profile-open]'));
-  }
-
-  function bindOpenClose(){
-    profileTriggerButtons().forEach((button) => {
-      if (button.dataset.profileBound === 'shared') return;
-      button.dataset.profileBound = 'shared';
-      button.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (activeDrawerName === 'profile') closeProfile();
-        else openProfile(button);
-      }, true);
-    });
-    document.querySelectorAll('[data-settings-open]').forEach((button) => {
-      if (button.dataset.settingsBound === 'shared') return;
-      button.dataset.settingsBound = 'shared';
-      button.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (activeDrawerName === 'settings') closeSettings();
-        else openSettings(button);
-      }, true);
-    });
-    document.querySelectorAll('[data-ma-drawer-close="profile"],#profileCloseBtn').forEach((button) => {
-      if (button.dataset.profileCloseBound === 'shared') return;
-      button.dataset.profileCloseBound = 'shared';
-      button.addEventListener('click', (event) => { event.preventDefault(); closeProfile(); });
-    });
-    document.querySelectorAll('[data-ma-drawer-close="settings"],#settingsCloseBtn').forEach((button) => {
-      if (button.dataset.settingsCloseBound === 'shared') return;
-      button.dataset.settingsCloseBound = 'shared';
-      button.addEventListener('click', (event) => { event.preventDefault(); closeSettings(); });
-    });
-  }
-
   function bindSettings(){
     const display = window.ModeAtlasDisplay;
     document.querySelectorAll('.ma-display-option').forEach((button) => {
@@ -334,7 +234,6 @@
       });
       content.appendChild(button);
     });
-    closeAll();
     accountMethodsOpen = true;
     try {
       await window.ModeAtlasDialog.feature({
@@ -354,7 +253,6 @@
     remove?.addEventListener('click', async () => {
       if (accountActionBusy) return;
       accountActionBusy = true;
-      closeAll();
       try { await window.KanaCloudSync?.deleteAccount?.(); }
       finally { accountActionBusy = false; updateSyncStatus(); }
     });
@@ -435,15 +333,13 @@
   }
 
   function install(){
-    removeStaticDrawers();
     const profileMarkup = window.ModeAtlasProfileMenu?.markup?.({ href });
     const settingsMarkup = window.ModeAtlasSettingsMenu?.markup?.({ href });
     if (!profileMarkup || !settingsMarkup) {
-      console.warn('Mode Atlas profile/settings menu markup was not available.');
+      console.warn('Mode Atlas account content was not available.');
       return;
     }
-    document.body.insertAdjacentHTML('afterbegin', profileMarkup + settingsMarkup);
-    bindOpenClose();
+    window.ModeAtlasAccountNavigation.install({href,profileMarkup,settingsMarkup});
     bindSettings();
     window.ModeAtlasNativeSettings?.bind?.();
     try { window.ModeAtlasTheme?.updateButtons?.(); } catch {}
@@ -452,8 +348,8 @@
     updateSyncStatus();
     try { window.ModeAtlasSounds?.refresh?.(); } catch {}
     refreshUpdateLabels();
-    window.ModeAtlasProfile = Object.assign(window.ModeAtlasProfile || {}, { open: openProfile, close: closeProfile, refresh: updateSyncStatus });
-    window.ModeAtlasSettings = Object.assign(window.ModeAtlasSettings || {}, { open: openSettings, close: closeSettings });
+    window.ModeAtlasProfile = Object.assign(window.ModeAtlasProfile || {}, { open: trigger => window.ModeAtlasAccountNavigation.open('profile',trigger), close: () => window.ModeAtlasAccountNavigation.close(), refresh: updateSyncStatus });
+    window.ModeAtlasSettings = Object.assign(window.ModeAtlasSettings || {}, { open: trigger => window.ModeAtlasAccountNavigation.open('settings',trigger), close: () => window.ModeAtlasAccountNavigation.close() });
     try { window.dispatchEvent(new CustomEvent('modeAtlasProfileMenuReady')); } catch {}
     try { window.dispatchEvent(new CustomEvent('modeAtlasSettingsMenuReady')); } catch {}
   }
@@ -461,10 +357,6 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
   else install();
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && activeDrawerName) { event.preventDefault(); closeAll(); return; }
-    trapDrawerFocus(event);
-  });
   window.addEventListener('kanaCloudSyncStatusChanged', () => {
     if (!profileCloudBinding) bindCloudUi();
     updateSyncStatus();

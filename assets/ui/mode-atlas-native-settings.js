@@ -1,4 +1,4 @@
-/* iOS engagement controls. Existing drawer owns presentation/focus; this module
+/* iOS engagement controls. Account navigation owns presentation/focus; this module
    owns only reminder preferences and never stores a second OS schedule. */
 (function(root){
   'use strict';
@@ -40,7 +40,7 @@
   }
   root.ModeAtlasNativeSettings={
     markup(){return `<section class="ma-settings-section" aria-labelledby="maEngagementTitle">
-      <div class="ma-settings-section-head"><div class="ma-settings-section-title" id="maEngagementTitle">Reminders</div></div>
+      <div class="ma-settings-section-head"><h3 class="ma-settings-section-title" id="maEngagementTitle">Reminders</h3></div>
       <div class="ma-setting-list">
         <div class="ma-setting-row ma-setting-row--stack">
           <label class="ma-native-preference" for="maReminderEnabled"><span>Daily study reminder</span><input id="maReminderEnabled" type="checkbox" role="switch" disabled></label>

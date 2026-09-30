@@ -63,22 +63,22 @@ for(const layout of layouts)for(const theme of ['dark','light']){
       await expect(page.locator('#maLoadingScreen')).toBeHidden();
       await checkLayout(page);
       await page.evaluate(()=>window.ModeAtlasSettings.open());
-      await expect(page.locator('#settingsDrawer')).toHaveAttribute('aria-hidden','false');
+      await expect(page.locator('#maAccount-settings')).toHaveAttribute('aria-hidden','false');
       await expect(page.locator('#settingsDeleteAccountBtn')).toBeHidden();
       if(layout.native)await expect(page.locator('[data-ma-check-updates]')).toHaveCount(0);
-      await settleDrawer(page,'#settingsDrawer');
-      await checkLayout(page,'#settingsDrawer');
+      await settleDrawer(page,'#maAccount-settings');
+      await checkLayout(page,'#maAccount-settings');
       await page.evaluate(()=>{window.ModeAtlasSettings.close();window.ModeAtlasProfile.open();});
       await page.evaluate(()=>{
         document.getElementById('profileName').textContent='A very long account display name for a small screen';
         document.getElementById('profileEmail').textContent='averylongaccountaddresswithoutspaces@example.mode-atlas.com';
         for(const id of ['profileReadingCorrect','profileWritingCorrect'])document.getElementById(id).textContent='123456789';
       });
-      await settleDrawer(page,'#profileDrawer');
-      await checkLayout(page,'#profileDrawer');
+      await settleDrawer(page,'#maAccount-profile');
+      await checkLayout(page,'#maAccount-profile');
       if(layout.name==='ios-phone')await page.screenshot({path:testInfo.outputPath(`profile-${theme}.png`)});
       await page.evaluate(()=>window.ModeAtlasProfile.close());
-      await settleDrawer(page,'#profileDrawer');
+      await settleDrawer(page,'#maAccount-profile');
       if(route==='/reading/'){
         await page.locator('#modifiersTab').click();
         await page.locator('summary').filter({hasText:'Learning options'}).click();
@@ -121,9 +121,9 @@ test('About reports the cloud owner status and shared menus toggle consistently'
   await page.goto('/',{waitUntil:'domcontentloaded'});
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.locator('[data-settings-open]').click();
-  await expect(page.locator('#settingsDrawer')).toHaveAttribute('aria-hidden','false');
+  await expect(page.locator('#maAccount-settings')).toHaveAttribute('aria-hidden','false');
   await page.evaluate(()=>document.querySelector('[data-settings-open]').click());
-  await expect(page.locator('#settingsDrawer')).toHaveAttribute('aria-hidden','true');
+  await expect(page.locator('#maAccount-settings')).toHaveAttribute('aria-hidden','true');
   await page.evaluate(()=>{
     window.KanaCloudSync={...window.KanaCloudSync,getSyncStatus:()=>({user:{uid:'test'},state:'offline',text:'Offline · changes will sync later',lastSync:0})};
     window.ModeAtlas.openAbout();

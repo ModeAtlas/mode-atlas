@@ -86,7 +86,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: returning suggestions an
   await expect(page.locator('.ma-toast')).toHaveCount(0,{timeout:15000});
   await page.screenshot({path:testInfo.outputPath(`returning-goals-${theme}.png`)});
   await page.locator('.atlas-ios-home__routine [data-ma-rewards-open]').click();
-  await expect(page.locator('.ma-dialog__title')).toHaveText('Your Atlas');
+  await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
   await page.locator('.ma-dialog__close').click();
   await expectCompact(page);
 });

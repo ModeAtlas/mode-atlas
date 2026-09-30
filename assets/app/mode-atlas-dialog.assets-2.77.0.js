@@ -83,6 +83,10 @@
       .filter((el) => !el.hidden && el.getAttribute('aria-hidden') !== 'true' && el.getClientRects().length > 0);
   }
 
+  function announceState(){
+    if(root.CustomEvent)root.dispatchEvent(new root.CustomEvent('modeAtlasDialogStateChanged',{detail:{open:!!active}}));
+  }
+
   function settle(value){
     if (!active) return;
     const current = active;
@@ -94,6 +98,7 @@
     document.body.style.overflow = previousOverflow;
     const content = layer.querySelector('[data-ma-dialog-content]');
     if (content) content.replaceChildren();
+    announceState();
     try { previousFocus?.focus?.({ preventScroll: true }); } catch {}
     resolve(value);
     queueMicrotask(showNext);
@@ -184,6 +189,7 @@
     };
 
     active = { ...request, layer, previousFocus, previousOverflow, onKeydown };
+    announceState();
     document.addEventListener('keydown', onKeydown, true);
 
     layer.onclick = (event) => {

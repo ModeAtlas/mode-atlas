@@ -28,7 +28,7 @@
     const ticket=screen();state=null;
     if(!root.KanaCloudSync?.getUser?.()){
       const card=empty('Learn alongside friends','Sign in to share your progress and connect with other learners.');
-      card.append(button('Sign in',()=>{root.ModeAtlasDialog.close();root.ModeAtlasProfile.open();},'ma-button ma-button--primary'));return;
+      card.append(button('Sign in',()=>root.ModeAtlasAccountNavigation.open('profile'),'ma-button ma-button--primary'));return;
     }
     empty('Loading your circle…','');
     try{
@@ -157,21 +157,23 @@
     screen();body.append(el('h3','',title),el('p','ma-social-note',message));const actions=el('div','ma-social-tools');
     actions.append(button('Cancel',cancel),button(label,()=>run(()=>root.ModeAtlasSocial.call(action,data),load),'ma-button ma-button--danger'));body.append(actions);
   }
-  async function open(){
+  function mount(parent){
     if(!root.ModeAtlasSocial.isEnabled())return;
-    root.ModeAtlasProfile?.close?.();root.ModeAtlasDialog.close();
     owner=root.KanaCloudSync?.getUser?.()?.uid;state=null;tab='friends';kind='friends';
     const container=el('div','ma-social');host=container;
-    const top=el('div','ma-social-tools');top.append(button('← Your Atlas',()=>{root.ModeAtlasDialog.close();root.ModeAtlasRewardsUI.open();}),button('Refresh',load));
+    const top=el('div','ma-social-tools ma-social-toolbar');top.append(el('span','ma-social-note','Your circle'),button('Refresh',load));
     notice=el('p','ma-social-status');notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.hidden=true;
     body=el('div','ma-social-body');host.append(top,notice,body);
-    const closed=root.ModeAtlasDialog.feature({kicker:'Learn together',title:'Friends',contentNode:host,closeIcon:true,closeLabel:'×'});
-    queueMicrotask(load);
-    await closed;
-    if(host===container){generation++;host=body=notice=state=null;}
+    parent.replaceChildren(container);
+    queueMicrotask(()=>{if(host===container)void load();});
+    return ()=>{
+      if(host===container){generation++;host=body=notice=state=null;}
+      container.remove();
+    };
   }
+  function open(){root.ModeAtlasAccountNavigation?.open('friends');}
   root.addEventListener('kanaCloudSyncStatusChanged',()=>{
     if(host && owner!==root.KanaCloudSync?.getUser?.()?.uid){owner=root.KanaCloudSync?.getUser?.()?.uid;generation++;state=null;void load();}
   });
-  root.ModeAtlasSocialUI=Object.freeze({open});
+  root.ModeAtlasSocialUI=Object.freeze({open,mount});
 })(window);

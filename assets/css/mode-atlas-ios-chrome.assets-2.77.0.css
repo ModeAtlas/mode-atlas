@@ -148,9 +148,6 @@ html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:is(:active,.is-pressed
 }
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key--delete{flex:1.25;background:var(--ma-control-hover);}
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
-html[data-ma-runtime="ios"] body:is(.profile-open,.settings-open) .ma-drawer{
-  bottom:calc(var(--ma-ios-dock-height) + 8px);max-height:none;
-}
 
 /* The dock trigger opens the same accessible dialog as the web trainer. */
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only{display:none;}
@@ -201,7 +198,6 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .ses
 /* At large system text sizes, reflow the existing surfaces instead of cropping. */
 html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-tabs__utilities{flex-wrap:wrap;}
 html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-tabs__utilities #modifiersTab{white-space:normal;}
-html[data-ma-runtime="ios"][data-ma-large-text] .ma-drawer-header{flex-wrap:wrap;}
 html[data-ma-runtime="ios"] .ma-ios-accessibility-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 @media (prefers-reduced-motion:reduce){
   html[data-ma-runtime="ios"] .ma-ios-tabs,

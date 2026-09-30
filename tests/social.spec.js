@@ -11,6 +11,7 @@ async function launch(page,{native=true,theme='dark',width=393}={}){
   await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
 }
 async function prepare(page,{active=true,...layout}={}){
+  await page.route('**/mode-atlas-social-config.assets-*.js',route=>route.fulfill({contentType:'text/javascript',body:"window.ModeAtlasSocialConfig={enabled:true,region:'australia-southeast1'};"}));
   await launch(page,layout);
   await page.evaluate(active=>{
     window.socialUser='self';window.socialCalls=[];window.socialOffline=false;window.socialDelayList=false;
@@ -45,10 +46,10 @@ async function prepare(page,{active=true,...layout}={}){
       if(action==='unblock'){data.blocked=[];return {ok:true};}
       return {ok:true};
     }};
-    ModeAtlasRewardsUI.open();
+    ModeAtlasProfile.open();
   },active);
-  await page.getByRole('button',{name:'Friends & rankings',exact:true}).click();
-  await expect(page.locator('.ma-dialog__title')).toHaveText('Friends');
+  await page.getByRole('tab',{name:'Friends',exact:true}).click();
+  await expect(page.locator('#maAccountTitle')).toHaveText('Friends');
   await expect(page.getByText(active?'Jack · You':'Create your friends profile',{exact:true})).toBeVisible();
 }
 for(const native of [false,true])test(`${native?'iOS':'web'}: released Friends entry directs guests to the existing sign-in screen`,async({page})=>{
@@ -58,16 +59,14 @@ for(const native of [false,true])test(`${native?'iOS':'web'}: released Friends e
   });
   await launch(page,{native,width:native?393:1280});
   await page.locator('#profileOpenBtn').click();
-  await page.locator('#profileDrawer').getByRole('button',{name:/Your Atlas/}).click();
-  await expect(page.locator('.ma-dialog__title')).toHaveText('Your Atlas');
-  const entry=page.getByRole('button',{name:'Friends & rankings',exact:true});
+  const entry=page.getByRole('tab',{name:'Friends',exact:true});
   if(!socialConfig.enabled){await expect(entry).toHaveCount(0);return;}
   await entry.click();
   await expect(page.getByText('Learn alongside friends',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Sign in',exact:true}).click();
-  await expect(page.locator('#profileDrawer')).toHaveAttribute('aria-hidden','false');
+  await expect(page.locator('#maAccount-profile')).toHaveAttribute('aria-hidden','false');
   await expect(page.locator('#profileAuthBtn')).toBeVisible();
-  await expect(page.locator('.ma-dialog-layer')).toBeHidden();
+  await expect(page.locator('[data-ma-dialog-layer]:visible')).toHaveCount(0);
   expect(socialRequests).toEqual([]);
 });
 async function fits(page){
@@ -130,4 +129,16 @@ test('offline failure offers refresh without a fabricated empty friends list',as
   await prepare(page);await page.evaluate(()=>{socialOffline=true;});await page.getByRole('button',{name:'Refresh',exact:true}).click();
   await expect(page.getByText('Connect to the internet to use Friends.',{exact:true})).toBeVisible();await expect(page.locator('.ma-social-row')).toHaveCount(0);
   await page.evaluate(()=>{socialOffline=false;});await page.getByRole('button',{name:'Refresh',exact:true}).click();await expect(page.locator('.ma-social-row')).toHaveCount(1);
+});
+test('leaving Friends discards a delayed response without changing the next account section',async({page})=>{
+  await prepare(page);await page.evaluate(()=>{socialDelayList=true;});
+  await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>typeof finishSocialList)).toBe('function');
+  await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();
+  await page.evaluate(()=>{finishSocialList();socialDelayList=false;});
+  await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
+  await expect(page.locator('.ma-social')).toHaveCount(0);
+  await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
+  await page.getByRole('tab',{name:'Friends',exact:true}).click();
+  await expect(page.getByText('Jack · You',{exact:true})).toBeVisible();
 });

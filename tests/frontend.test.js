@@ -107,13 +107,13 @@ test('build-time frontend manifest owns page dependencies, loader markup, and le
 });
 
 test('Profile and Settings drawers consume shared component primitives without manufacturing nav controls', () => {
-  const binding = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const binding = read('assets/ui/mode-atlas-account-bindings.js');
   const profile = read('assets/ui/mode-atlas-profile-menu.js');
   const settings = read('assets/ui/mode-atlas-settings-menu.js');
 
   assert.doesNotMatch(binding, /ensureSettingsButtons/);
-  assert.match(binding, /\[data-profile-open\]/);
-  assert.match(binding, /\[data-settings-open\]/);
+  assert.match(read('assets/ui/mode-atlas-account-navigation.js'), /\[data-profile-open\]/);
+  assert.match(read('assets/ui/mode-atlas-account-navigation.js'), /\[data-settings-open\]/);
   assert.doesNotMatch(profile + settings, /ma-menu-action/);
   assert.match(profile, /ma-button/);
   assert.match(settings, /ma-button/);
@@ -586,10 +586,10 @@ test('shared drawer, card, and form primitives replace page-local surface owners
   for (const marker of ['.ma-card{', '.ma-field{', '.ma-input,.ma-select,.ma-textarea{', '.ma-check{']) {
     assert.ok(components.includes(marker), `missing 2.31 shared primitive ${marker}`);
   }
-  assert.match(profile, /class="ma-drawer ma-shared-profile-drawer"/);
-  assert.match(settings, /class="ma-drawer ma-shared-settings-drawer"/);
+  assert.doesNotMatch(profile, /role="dialog"/);
+  assert.doesNotMatch(settings, /role="dialog"/);
   assert.match(profile + settings, /ma-card ma-card--soft/);
-  assert.match(drawerCss, /\.ma-drawer\{/);
+  assert.match(drawerCss, /\.ma-account-sheet\{/);
   assert.doesNotMatch(drawerCss, /\.ma-shared-profile-drawer,\.ma-shared-settings-drawer\{/);
 
   assert.match(wordbankHtml, /class="ma-input" id="kanaInput"/);
@@ -879,7 +879,7 @@ test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and c
 
   assert.doesNotMatch(profile, /Branches|data-ma-nav-item|\/reading\/|\/writing\//, 'Profile must not duplicate navigation');
   assert.match(settings, /Preferences/);
-  assert.match(settings, /Data and app/);
+  assert.match(settings, /Data and account/);
   assert.match(settings, /ma-setting-row/);
 
   assert.match(atlas, /id="homeContinueCard"/);
@@ -969,7 +969,7 @@ test('full-project audit cleanup keeps one owner for dev visit tools, drawers, s
   const dataControls = read('assets/app/mode-atlas-data-controls.js');
   const pageState = read('assets/app/mode-atlas-page-state.js');
   const earlyLoader = read('assets/app/mode-atlas-early-loader.js');
-  const profile = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const profile = read('assets/ui/mode-atlas-account-bindings.js');
   const achievementsCss = read('assets/css/mode-atlas-achievements.css');
   const themeCss = read('assets/css/mode-atlas-theme.css');
   const pageCss = read('assets/css/mode-atlas-page-shared.css');
@@ -982,8 +982,8 @@ test('full-project audit cleanup keeps one owner for dev visit tools, drawers, s
   assert.doesNotMatch(dataControls, /ModeAtlasImportUi|rebuildSaveSections|addEventListener\('focus'|addEventListener\('pageshow'|visibilitychange/);
   assert.doesNotMatch(pageState, /ModeAtlasPageState\s*=|cleanDecorativeTextIcons|lifecycleListeners = new Map/);
   assert.doesNotMatch(earlyLoader, /ModeAtlasHideLoader|ModeAtlasLoaderState/);
-  assert.match(profile, /function trapDrawerFocus/);
-  assert.match(profile, /drawerReturnFocus/);
+  assert.match(read('assets/ui/mode-atlas-account-navigation.js'), /function trapFocus/);
+  assert.match(read('assets/ui/mode-atlas-account-navigation.js'), /returnFocus/);
   assert.doesNotMatch(profile, /ModeAtlasKanaProfile|ModeAtlasTestProfile|ModeAtlasWordProfile/);
   assert.doesNotMatch(achievementsCss, /ma-preset-toggle/);
   assert.doesNotMatch(themeCss, /\.ma-drawer-backdrop\s*,\s*\/\*/);
@@ -1035,7 +1035,7 @@ test('2.31.3 simplification keeps Settings concise and one backup owner for Word
 
 test('2.31.4 profile and settings polish keeps auth and drawer layout state-owned', () => {
   const profile = read('assets/ui/mode-atlas-profile-menu.js');
-  const bindings = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const bindings = read('assets/ui/mode-atlas-account-bindings.js');
   const cloud = read('cloud-sync.js');
   const css = read('assets/css/mode-atlas-profile-settings.css');
   assert.match(profile, /id="profileAuthBtn"/);
@@ -1392,7 +1392,7 @@ test('2.41 Atlas Level uses one mergeable semantic progression owner and Profile
   const progress = read('assets/app/mode-atlas-progress.js');
   const cloud = read('cloud-sync.js');
   const profile = read('assets/ui/mode-atlas-profile-menu.js');
-  const bindings = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const bindings = read('assets/ui/mode-atlas-account-bindings.js');
   const reading = read('assets/pages/mode-atlas-default-page.js');
   const writing = read('assets/pages/mode-atlas-reverse-page.js');
   const trainerCore = read('assets/trainer/mode-atlas-trainer-core.js');
@@ -1641,7 +1641,7 @@ test('2.44 app-wide UX vocabulary keeps product destinations and actions semanti
   assert.doesNotMatch(wordbankJs, /'warn'|'ok'|Save Changes|Clear search & filters/);
 
   assert.match(settings, /data-display="tablet" type="button">Tablet<\/button>/);
-  assert.match(settings, />Data and app<\/strong>/);
+  assert.match(settings, />Data and account<\/h3>/);
   assert.doesNotMatch(settings, />iPad<\/button>|>Data & app<\/strong>/);
 });
 
@@ -1673,7 +1673,7 @@ test('2.45 responsive and accessibility QA keeps landmarks, keyboard controls, f
   assert.match(navigation, /\.ma-skip-link\{/);
   assert.match(navigation, /@media\(pointer:coarse\)[\s\S]*\.ma-nav__section-link[\s\S]*min-height:44px/);
   assert.match(components, /@media\(pointer:coarse\)[\s\S]*\.ma-button--small\{--ma-button-min-height:44px;\}/);
-  assert.match(profileSettings, /body\.profile-open,body\.settings-open\{overflow:hidden;\}/);
+  assert.match(profileSettings, /body\.ma-account-open\{overflow:hidden;\}/);
   assert.match(wordbankCss, /@media\(pointer:coarse\)\{\.summary-toggle\{width:44px;height:44px;\}\}/);
   assert.match(kanaCss, /@media\(pointer:coarse\)\{\.kana-ghost-action,\.kana-map-action,\.kana-inline-btn\{--ma-button-min-height:44px;\}\}/);
 
@@ -1762,8 +1762,8 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
     'browser smoke must open Settings through the real user control');
   assert.match(smoke, /\[data-settings-open\]:visible/,
     'browser smoke must select the visible shared Settings trigger');
-  assert.match(smoke, /toHaveAttribute\('data-settings-bound', 'shared'/,
-    'browser smoke must wait for shared Settings binding readiness');
+  assert.match(smoke, /toHaveAttribute\('aria-controls', 'maAccountSheet'/,
+    'browser smoke must verify Settings targets the shared account surface');
   assert.match(smoke, /modeAtlasOnboardingComplete[\s\S]*modeAtlasKanaSetupComplete/,
     'core browser smoke must seed a completed stable-user setup rather than be blocked by onboarding');
   assert.match(smoke, /maWhatsNewSeen["'], 'smoke'/,
@@ -1790,7 +1790,7 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
 
 
 test('2.47 final responsive polish keeps explicit display modes and Atlas rank milestones aligned', () => {
-  const bindings = read('assets/ui/mode-atlas-profile-drawer-bindings.js');
+  const bindings = read('assets/ui/mode-atlas-account-bindings.js');
   const navigation = read('assets/css/mode-atlas-navigation.css');
   const drawers = read('assets/css/mode-atlas-profile-settings.css');
   const study = read('assets/css/mode-atlas-study-shared.css');
@@ -1819,7 +1819,7 @@ assert.match(kana, /body\[data-effective-display-mode="tablet"\] \.kana-hub-hero
 assert.match(kana, /body\[data-effective-display-mode="phone"\] \.kana-mastery-grid/,
   'Kana Phone mode must own compact progress density');
 
-  assert.match(drawers, /body\[data-effective-display-mode="tablet"\] \.ma-drawer\{/);
+  assert.match(drawers, /body\[data-effective-display-mode="tablet"\] \.ma-account-sheet\{/);
   assert.match(drawers, /overflow-x:hidden;overflow-y:auto/);
   assert.doesNotMatch(drawers, /@media\(max-width:1180px\)\{\s*body\[data-effective-display-mode="tablet"\]/,
     'explicit Tablet drawer geometry must not depend on physical viewport width');

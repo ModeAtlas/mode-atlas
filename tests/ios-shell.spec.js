@@ -61,7 +61,7 @@ test('native account chooser uses enabled methods and Settings owns account dele
   await page.locator('#profileAuthBtn').click();
   await expect(page.locator('[data-ma-account-provider="google.com"]')).toHaveText('Continue with Google');
   await expect(page.locator('[data-ma-account-provider="apple.com"]')).toHaveCount(0);
-  await expect(page.locator('#profileDrawer')).toHaveAttribute('aria-hidden','true');
+  await expect(page.locator('#maAccount-profile')).toHaveAttribute('aria-hidden','true');
   await page.locator('.ma-dialog__close').click();
   await page.evaluate(() => {
     const user = { uid:'test-user', providerData:[{providerId:'google.com'}] };
@@ -76,8 +76,8 @@ test('native account chooser uses enabled methods and Settings owns account dele
   await expect(page.locator('[data-ma-account-provider="google.com"]')).toHaveText('Google · Connected');
   await expect(page.locator('[data-ma-account-provider="google.com"]')).toBeDisabled();
   await page.locator('.ma-dialog__close').click();
-  await expect(page.locator('#profileDrawer #settingsDeleteAccountBtn')).toHaveCount(0);
-  await expect(page.locator('#settingsDrawer #settingsDeleteAccountBtn')).toHaveCount(1);
+  await expect(page.locator('#maAccount-profile #settingsDeleteAccountBtn')).toHaveCount(0);
+  await expect(page.locator('#maAccount-settings #settingsDeleteAccountBtn')).toHaveCount(1);
   await expect(page.locator('#settingsDeleteAccountBtn')).not.toHaveAttribute('hidden','');
   await expect(page.locator('#settingsDeleteAccountBtn').locator('..').locator('[data-ma-unified-reset]')).toHaveCount(1);
 });
@@ -215,13 +215,13 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-ios-tabs #profileOpenBtn')).toHaveAttribute('aria-label', /^Open profile/);
   await expect(page.locator('.ma-ios-tabs [data-settings-open]')).toHaveCount(1);
   await page.locator('.ma-ios-tabs #profileOpenBtn').click();
-  await expect(page.locator('#profileDrawer')).toHaveClass(/open/);
+  await expect(page.locator('#maAccount-profile')).toHaveClass(/is-active/);
   await page.locator('.ma-ios-tabs #profileOpenBtn').click();
-  await expect(page.locator('#profileDrawer')).not.toHaveClass(/open/);
+  await expect(page.locator('#maAccount-profile')).not.toHaveClass(/is-active/);
   await page.locator('.ma-ios-tabs [data-settings-open]').click();
-  await expect(page.locator('#settingsDrawer')).toHaveClass(/open/);
+  await expect(page.locator('#maAccount-settings')).toHaveClass(/is-active/);
   await page.locator('.ma-ios-tabs [data-settings-open]').click();
-  await expect(page.locator('#settingsDrawer')).not.toHaveClass(/open/);
+  await expect(page.locator('#maAccount-settings')).not.toHaveClass(/is-active/);
   await expect(page.locator('.ma-ios-tabs #modifiersTab')).toBeVisible();
   await expect(page.locator('.ma-ios-tabs #modifiersTab')).toContainText('Practice setup');
   await expect(page.locator('.bottom-shell.ma-modifiers-only .tab-row')).toBeHidden();

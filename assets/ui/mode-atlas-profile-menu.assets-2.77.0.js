@@ -7,16 +7,6 @@
   window.ModeAtlasProfileMenu = {
     markup({ href }){
       return `
-        <div class="ma-drawer-backdrop ma-profile-backdrop" id="profileBackdrop" data-ma-drawer-close="profile"></div>
-        <aside class="ma-drawer ma-shared-profile-drawer" id="profileDrawer" data-ma-shared-drawer="profile" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="profileDrawerTitle">
-          <div class="ma-drawer-head ma-profile-head">
-            <div>
-              <div class="ma-menu-kicker">Your account</div>
-              <div class="ma-drawer-title" id="profileDrawerTitle">Profile</div>
-            </div>
-            <button class="ma-button ma-button--ghost ma-icon-button ma-drawer-close" id="profileCloseBtn" type="button" data-ma-drawer-close="profile" aria-label="Close profile" title="Close profile">${icon(href,'close')}</button>
-          </div>
-
           <section class="ma-card ma-card--soft ma-profile-card ma-account-card" aria-label="Mode Atlas account">
             <div class="ma-account-user">
               <img class="ma-account-avatar" id="profileAvatar" alt="" />
@@ -37,7 +27,7 @@
           <section class="ma-card ma-card--soft ma-profile-card ma-progression-card" aria-label="Atlas Level and learning activity">
             <div class="ma-profile-card-head">
               <div>
-                <div class="ma-menu-kicker">Account progression</div>
+                <div class="ma-menu-kicker">Learning progress</div>
                 <div class="ma-profile-card-title">Atlas Level <span id="profileAtlasLevel">1</span></div>
               </div>
               ${icon(href,'achievement','ma-icon--lg')}
@@ -53,9 +43,6 @@
               <div><span>Reading</span><strong id="profileReadingCorrect">0</strong><small>correct kana</small></div>
               <div><span>Writing</span><strong id="profileWritingCorrect">0</strong><small>correct kana</small></div>
             </div>
-            <button class="ma-button ma-button--ghost ma-profile-atlas-link" type="button" data-ma-rewards-open>
-              ${icon(href,'achievement')}<span><strong>Your Atlas</strong><small>Goals &amp; rewards</small></span>${icon(href,'arrow')}
-            </button>
             <div class="ma-progression-footer">
               <div class="ma-achievement-summary"><strong id="profileAchievementCount">0</strong><span>achievements</span></div>
               <button class="ma-button ma-button--ghost ma-button--small" type="button" data-ma-achievements-open>${icon(href,'achievement')}<span>Achievements</span></button>
@@ -77,7 +64,7 @@
             <div class="ma-sync-detail" id="profileSyncDetail">Your current save status will appear here.</div>
             <div class="ma-sync-meta" id="profileSyncMeta">Last cloud sync: Never synced</div>
           </section>
-        </aside>`;
+        `;
     }
   };
 })();

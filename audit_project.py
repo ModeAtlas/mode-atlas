@@ -285,7 +285,8 @@ def main() -> int:
     shared_drawer_assets = [
         f'mode-atlas-profile-menu.{revision}.js',
         f'mode-atlas-settings-menu.{revision}.js',
-        f'mode-atlas-profile-drawer-bindings.{revision}.js',
+        f'mode-atlas-account-navigation.{revision}.js',
+        f'mode-atlas-account-bindings.{revision}.js',
     ]
     for page_path in main_pages:
         page_html = text(page_path)
@@ -406,10 +407,11 @@ def main() -> int:
         if marker_text not in frontend_component_source:
             fail(errors, f'shared frontend component source missing marker: {marker_text}')
 
-    drawer_binding = text(ROOT / 'assets/ui/mode-atlas-profile-drawer-bindings.js')
+    drawer_binding = text(ROOT / 'assets/ui/mode-atlas-account-bindings.js')
     if 'ensureSettingsButtons' in drawer_binding:
         fail(errors, 'Profile/Settings binding still manufactures Settings navigation controls at runtime')
-    if "querySelectorAll('[data-profile-open]')" not in drawer_binding:
+    account_navigation = text(ROOT / 'assets/ui/mode-atlas-account-navigation.js')
+    if "querySelectorAll('[data-profile-open]')" not in account_navigation:
         fail(errors, 'Profile binding does not use the shared navigation profile contract')
 
     settings_markup = text(ROOT / 'assets/ui/mode-atlas-settings-menu.js')
@@ -506,7 +508,7 @@ def main() -> int:
     if any(marker in page_state for marker in ('ModeAtlasPageState =', 'cleanDecorativeTextIcons', 'lifecycleListeners = new Map')):
         fail(errors, 'page-state still carries obsolete global/decorative/listener-registry compatibility work')
 
-    settings = text(ROOT / "assets/ui/mode-atlas-profile-drawer-bindings.js")
+    settings = text(ROOT / "assets/ui/mode-atlas-account-bindings.js")
     for forbidden in ("serviceWorker", "registration.update", "postMessage", "ModeAtlasUpdates"):
         if forbidden in settings:
             fail(errors, f"Settings binding contains forbidden update/SW API: {forbidden}")
@@ -572,7 +574,7 @@ def main() -> int:
     if "version: BACKUP_FORMAT_VERSION" not in cloud or "CLOUD_SNAPSHOT_VERSION" not in cloud:
         fail(errors, "cloud backup/snapshot envelopes do not use central release format metadata")
 
-    profile = text(ROOT / "assets/ui/mode-atlas-profile-drawer-bindings.js")
+    profile = text(ROOT / "assets/ui/mode-atlas-account-bindings.js")
     if "let profileCloudBinding = null;" not in profile:
         fail(errors, "profile cloud binding is not single-owner/idempotent")
     if "if (!profileCloudBinding) bindCloudUi();" not in profile:
@@ -751,8 +753,10 @@ def main() -> int:
 
     profile_menu = text(ROOT / 'assets/ui/mode-atlas-profile-menu.js')
     settings_menu = text(ROOT / 'assets/ui/mode-atlas-settings-menu.js')
-    if 'ma-drawer ma-shared-profile-drawer' not in profile_menu or 'ma-drawer ma-shared-settings-drawer' not in settings_menu:
-        fail(errors, 'Profile/Settings do not consume the shared drawer shell')
+    if 'ma-account-sheet' not in account_navigation or 'ModeAtlasAccountNavigation.install' not in drawer_binding:
+        fail(errors, 'Account sections do not consume the shared navigation shell')
+    if any(marker in profile_menu + settings_menu for marker in ('role="dialog"', 'ma-drawer-backdrop')):
+        fail(errors, 'Profile/Settings duplicate the account navigation shell')
 
     home_page = text(ROOT / 'assets/pages/mode-atlas-home-page.js')
     if not home_page or 'homeContinueAction' not in home_page:
@@ -761,7 +765,7 @@ def main() -> int:
         fail(errors, 'Atlas page controller takes over shared Profile/Settings/cloud ownership')
     if 'Branches' in profile_menu or 'data-ma-nav-item' in profile_menu:
         fail(errors, 'Profile drawer duplicates shared navigation')
-    settings_hierarchy_markers = ('ma-setting-row', 'ma-settings-disclosure', 'ma-settings-data-list', 'ma-save-section', 'ma-tools-panel')
+    settings_hierarchy_markers = ('ma-setting-row', 'ma-settings-section', 'ma-settings-data-list', 'ma-save-section', 'ma-tools-panel')
     if any(marker not in settings_menu for marker in settings_hierarchy_markers):
         fail(errors, 'Settings drawer is missing the standard preference/data hierarchy')
 
@@ -812,12 +816,12 @@ def main() -> int:
     if "soundMode: 'modeAtlasSound'" not in storage_js:
         fail(errors, 'shared storage does not identify modeAtlasSound as the canonical sound preference')
 
-    profile_bindings = text(ROOT / 'assets/ui/mode-atlas-profile-drawer-bindings.js')
+    profile_bindings = text(ROOT / 'assets/ui/mode-atlas-account-bindings.js')
     for marker in ('ModeAtlasKanaProfile', 'ModeAtlasTestProfile', 'ModeAtlasWordProfile'):
         if marker in profile_bindings:
             fail(errors, f'Profile still exports unused legacy alias: {marker}')
-    for marker in ('trapDrawerFocus', 'drawerReturnFocus', "event.key === 'Escape' && activeDrawerName"):
-        if marker not in profile_bindings:
+    for marker in ('trapFocus', 'returnFocus', "event.key==='Escape'"):
+        if marker not in account_navigation:
             fail(errors, f'shared drawers missing focus-management contract: {marker}')
 
     early_loader = text(ROOT / 'assets/app/mode-atlas-early-loader.js')

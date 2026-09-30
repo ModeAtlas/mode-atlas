@@ -149,11 +149,11 @@ def render_navigation(config: NavConfig) -> str:
             hide_action = '<button class="ma-nav__action ma-nav__action--quiet ma-nav__focus" id="studyNavHideBtn" type="button" aria-label="Enter focus mode" title="Focus mode"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span class="ma-nav__action-label">Focus</span></button>'
         action_markup = f"""
       <div class="ma-nav__actions">
-        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
+        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="maAccountSheet" aria-expanded="false">
           <span class="ma-nav__avatar" id="topProfileDot" aria-hidden="true">M</span>
           <span class="ma-nav__action-label">Profile</span>
         </button>
-        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="settingsDrawer" aria-label="Open settings" title="Settings">
+        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="maAccountSheet" aria-expanded="false" aria-label="Open settings" title="Settings">
           <svg class="ma-icon ma-nav__settings-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-settings"></use></svg>
           <span class="ma-nav__action-label">Settings</span>
         </button>
@@ -297,7 +297,8 @@ ACCOUNT_SCRIPTS = (
     'assets/ui/mode-atlas-profile-menu.js',
     'assets/ui/mode-atlas-settings-menu.js',
     'assets/ui/mode-atlas-native-settings.js',
-    'assets/ui/mode-atlas-profile-drawer-bindings.js',
+    'assets/ui/mode-atlas-account-navigation.js',
+    'assets/ui/mode-atlas-account-bindings.js',
 )
 LEGAL_BODY_SCRIPTS = (
     'assets/app/mode-atlas-toast.js',

@@ -57,7 +57,7 @@
     }
     if(!reviewActions.childElementCount)reviewActions.append(el('p','ma-atlas-rewards__note','You’re up to date with your reviews.'));
     panel.append(reviewActions);
-    const mastery=button('Open Mastery Map');mastery.addEventListener('click',()=>{root.ModeAtlasDialog.close();setTimeout(()=>root.ModeAtlasFeatures.openMasteryMap(),0);});panel.append(mastery);
+    const mastery=button('Open Mastery Map');mastery.addEventListener('click',()=>root.ModeAtlasFeatures.openMasteryMap());panel.append(mastery);
     return panel;
   }
   function rewardPanel(summary){
@@ -97,17 +97,13 @@
     }
     return panel;
   }
-  async function open(){
-    root.ModeAtlasProfile?.close?.();
+  function mount(host){
     const summary=root.ModeAtlasProgress.getSummary(),selected=appearance();
     const content=el('div','ma-atlas-rewards'),identity=el('div','ma-atlas-identity');
     const preview=avatar(selected);preview.dataset.maSelectedAvatar='';
     const copy=el('div','ma-atlas-identity__copy'),title=el('strong','',selected.title);title.dataset.maSelectedTitle='';
     const status=el('span');status.dataset.maAtlasSummary='';
     copy.append(title,status);identity.append(preview,copy);content.append(identity);
-    if(root.ModeAtlasSocial?.isEnabled()){
-      const friends=button('Friends & rankings');friends.addEventListener('click',()=>root.ModeAtlasSocialUI.open());content.append(friends);
-    }
     const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Your Atlas');
     const panels=[goalPanel(),rewardPanel(summary)];
     const controls=['Goals','Rewards'].map((label,index)=>{
@@ -122,12 +118,13 @@
       if(target>=0){event.preventDefault();selectTab(target);controls[target].focus();}
     });
     selectTab(0);content.append(tabs,...panels);
-    const result=root.ModeAtlasDialog.feature({kicker:'Your progress',title:'Your Atlas',contentNode:content,closeIcon:true,closeLabel:'×'});
-    refresh();return result;
+    host.replaceChildren(content);refresh();
+    return ()=>content.remove();
   }
+  function open(){root.ModeAtlasAccountNavigation?.open('atlas');}
   document.addEventListener('click',event=>{if(event.target.closest('[data-ma-rewards-open]'))open();});
   for(const event of ['modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady'])root.addEventListener(event,refresh);
   document.addEventListener('ma:ui-refresh',refresh);
   document.addEventListener('DOMContentLoaded',refresh);
-  root.ModeAtlasRewardsUI=Object.freeze({open,refresh,appearance,renderGoals});
+  root.ModeAtlasRewardsUI=Object.freeze({open,mount,refresh,appearance,renderGoals});
 })(window);

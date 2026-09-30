@@ -84,7 +84,7 @@ test('due review can select kana outside setup rows, and account changes invalid
 for(const theme of ['dark','light'])test(`iOS ${theme}: collection, title, frame and app icon rewards work at large text`,async({page},testInfo)=>{
   await prepare(page,{theme,xp:700});await open(page,'/');
   await page.evaluate(()=>{ModeAtlasRewardsUI.open();});
-  await expect(page.locator('.ma-dialog__title')).toHaveText('Your Atlas');
+  await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
   await expect(page.locator('.ma-atlas-rewards .ma-routine-goal')).toHaveCount(4);
   await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   const grove=page.locator('[data-landmark="grove"]');
@@ -122,7 +122,7 @@ test('a level-crossing set has one reward summary and opens the collection witho
   await expect(page.locator('.ma-session-rewards__level')).toHaveText('Level up · Atlas Level 2');
   expect(await page.evaluate(()=>ModeAtlasProgressUI.hasPendingLevelUp())).toBe(false);
   await page.getByRole('button',{name:'Your Atlas',exact:true}).click();
-  await expect(page.locator('.ma-dialog__title')).toHaveText('Your Atlas');
+  await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
   expect(await page.locator('.ma-dialog-layer').count()).toBe(1);
 });
 
@@ -203,19 +203,17 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile orde
   await prepare(page,{theme,xp:700});await open(page,'/');
   await expect(page.locator('#iosHomeGoals [data-goal]')).toHaveCount(3);
   await page.locator('#profileOpenBtn').click();
-  await expect(page.locator('#profileDrawer')).toHaveCSS('transform','matrix(1, 0, 0, 1, 0, 0)');
-  const layout=await page.evaluate(()=>{
-    const progress=document.querySelector('.ma-progression-card').getBoundingClientRect(),sync=document.querySelector('.ma-sync-card').getBoundingClientRect(),activity=document.querySelector('.ma-level-activity').getBoundingClientRect(),link=document.querySelector('.ma-profile-atlas-link').getBoundingClientRect();
-    return {order:progress.bottom<sync.top,gap:link.top-activity.bottom};
-  });expect(layout.order).toBe(true);expect(layout.gap).toBeGreaterThanOrEqual(12);
+  await expect(page.locator('#maAccount-profile')).toBeVisible();
+  const order=await page.evaluate(()=>document.querySelector('.ma-progression-card').getBoundingClientRect().bottom<document.querySelector('.ma-sync-card').getBoundingClientRect().top);
+  expect(order).toBe(true);
   await page.screenshot({animations:'disabled',path:info.outputPath(`profile-${theme}.png`)});
-  await page.locator('#profileDrawer [data-ma-rewards-open]').click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.locator('[data-landmark="grove"]').click();
   await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
   const frame=await page.locator('#topProfileDot').evaluate(node=>getComputedStyle(node).boxShadow);expect(frame).toContain(theme==='dark'?'232, 155, 128':'143, 62, 37');
   await page.screenshot({animations:'disabled',path:info.outputPath(`rewards-${theme}.png`)});
   await page.getByRole('tab',{name:'Rewards',exact:true}).focus();await page.keyboard.press('ArrowLeft');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toBeFocused();
-  await page.locator('.ma-dialog__close').click();await page.locator('.atlas-ios-home [data-ma-rewards-open]').click();await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
-  await page.locator('.ma-dialog__close').click();await page.locator('.ma-ios-tabs__links a[href="/kana/"]').click();await page.waitForURL('**/kana/');
+  await page.locator('#maAccountClose').click();await page.locator('.atlas-ios-home [data-ma-rewards-open]').click();await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
+  await page.locator('#maAccountClose').click();await page.locator('.ma-ios-tabs__links a[href="/kana/"]').click();await page.waitForURL('**/kana/');
   await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
 });

@@ -12,17 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'Make your progress your own, and pick up where you left off.';
+  const WHATS_NEW_COPY = 'Your profile, progress and friends, all within easy reach.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Explore daily goals, titles and profile frames in Your Atlas.',
-    'Resume interrupted guided sets, today’s Daily Challenge and formal tests.',
-    'Manage your automatically saved progress from a simpler Settings menu.',
-    ...(window.ModeAtlasEnv?.isNativeApp ? [
-      'Track daily goals from the Atlas home screen.',
-      'Show your chosen frame on the profile icon above the dock.'
-    ] : [])
+    'Switch between Profile, Your Atlas, Friends and Settings in one place.',
+    'Reach Friends directly from your account menu.',
+    'Keep your place when viewing achievements or confirming an account action.'
   ];
 
   function storeGet(key, fallback = '') {
