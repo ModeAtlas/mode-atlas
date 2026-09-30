@@ -259,6 +259,9 @@
   try{replayTransaction();}catch(error){console.warn('Practice recovery is waiting for available storage.',error);}
   function transaction(action){
     if(pendingWrites)return action();
+    // Preserve an interrupted commit until it can finish; a later answer must
+    // never replace its recovery journal when storage is still unavailable.
+    if(localStorage.getItem(TRANSACTION_KEY))replayTransaction();
     pendingWrites={};
     try{
       const result=action(),writes=pendingWrites;pendingWrites=null;

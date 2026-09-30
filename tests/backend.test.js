@@ -963,6 +963,9 @@ test('account switches preserve offline saves without uploading one account into
   changed({uid:'save-B'});await window.KanaCloudSync.waitForInitialHydration();
   assert.equal(window.KanaCloudSync.getSyncStatus().state,'paused');
   assert.ok(localStorage.getItem('modeAtlasPracticeTransaction'));
+  const pendingJournal=localStorage.getItem('modeAtlasPracticeTransaction');
+  assert.throws(()=>window.ModeAtlasStorage.transaction(()=>window.ModeAtlasStorage.set('modeAtlasLastMode','writing')),/Storage quota/);
+  assert.equal(localStorage.getItem('modeAtlasPracticeTransaction'),pendingJournal,'later practice must not overwrite an incomplete account restore');
   const previousWrites=writes.length;context.navigator.onLine=true;
   await window.KanaCloudSync.syncNow();assert.equal(writes.length,previousWrites);
   assert.equal(JSON.parse(localStorage.getItem('modeAtlasAccountSave:save-A')).snapshot.sections.reading.data.stats['あ'].correct,8);

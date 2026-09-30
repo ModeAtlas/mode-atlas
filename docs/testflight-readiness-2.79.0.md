@@ -100,7 +100,7 @@ Use the iPhone and iPad; keep a separate disposable account for deletion.
 - Cold-launch in airplane mode, practise, reconnect and confirm cross-device sync.
   Switch between two accounts after unsynced work; each must recover its own save.
 - Cancel deletion, then delete the disposable account. Confirm its cloud save,
-  Friends links and widget disappear. A cleanup-pending response must finish
+  Friends links and saved widget data are removed. A cleanup-pending response must finish
   without leaving a usable deleted account.
 - Send a report from the second account, review it as admin, reset/restrict/restore
   the target, and check the reporter remains undisclosed.
