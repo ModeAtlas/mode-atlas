@@ -294,13 +294,14 @@ test('Apple links to the current Firebase UID and revokes authorization on accou
   const auth = { currentUser: user };
   const calls = [];
   let socialFailure = true;
-  window.ModeAtlasSocial = { deleteAccount: async () => { calls.push('server'); if(socialFailure)throw new Error('Deletion unavailable'); return {deleted:true}; }, accountDeletionStatus: async()=>({deleted:false}) };
+  let switchDuringRevoke=false;
+  window.ModeAtlasSocial = { deleteAccount: async (uid) => { assert.equal(uid,user.uid);calls.push('server'); if(socialFailure)throw new Error('Deletion unavailable'); return {deleted:true}; }, accountDeletionStatus: async(uid)=>{assert.equal(uid,user.uid);return {deleted:false};} };
   window.AtlasPlatform = {
     authenticate: async (providerId) => {
       assert.equal(providerId, 'apple.com');
       return { handled:true, credential:{ idToken:'apple-token', nonce:'raw-nonce', authorizationCode:'apple-code' } };
     },
-    revokeAppleAuthorization: async (code) => { calls.push('revoke:' + code); return true; },
+    revokeAppleAuthorization: async (code) => { calls.push('revoke:' + code);if(switchDuringRevoke)auth.currentUser={uid:'another-account'};return true; },
     signOutIdentityProvider: async () => true
   };
   context.__mocks = {
@@ -339,6 +340,11 @@ test('Apple links to the current Firebase UID and revokes authorization on accou
   assert.equal(await window.KanaCloudSync.deleteAccount(), false, 'Server deletion failure must retain the device save');
   assert.deepEqual(calls, ['link','reauth','revoke:apple-code','server']);
   assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'), 'true');
+  calls.length=0;switchDuringRevoke=true;
+  assert.equal(await window.KanaCloudSync.deleteAccount(),false);
+  assert.deepEqual(calls,['reauth','revoke:apple-code'],'an account change during revocation must not reach server deletion');
+  assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'),'true');
+  switchDuringRevoke=false;auth.currentUser=user;
   calls.length=0;socialFailure=false;
   const deletion = window.KanaCloudSync.deleteAccount();
   assert.equal(await window.KanaCloudSync.deleteAccount(), false, 'Repeated tap must not queue a second deletion');

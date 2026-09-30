@@ -1424,17 +1424,21 @@ async function performAccountDeletion() {
     clearTimeout(syncTimeout);
     if (cloudSyncPromise) await cloudSyncPromise;
     if (cloudHydrationPromise) await cloudHydrationPromise;
+    if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
     if (providerId === 'apple.com') {
       if (!appleAuthorizationCode || !await window.AtlasPlatform?.revokeAppleAuthorization?.(appleAuthorizationCode)) {
         throw new Error('Apple authorization could not be revoked. Please try again.');
       }
     }
     let result;
-    try { result = await window.ModeAtlasSocial.deleteAccount(); }
+    try {
+      if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
+      result = await window.ModeAtlasSocial.deleteAccount(user.uid);
+    }
     catch (error) {
       // A response can be lost after the server commits deletion. Check the
       // receipt before presenting a failure or leaving the device save intact.
-      try { result = await window.ModeAtlasSocial.accountDeletionStatus(); } catch {}
+      try { result = await window.ModeAtlasSocial.accountDeletionStatus(user.uid); } catch {}
       if (!result?.deleted) throw error;
     }
     if (!result?.deleted) throw new Error('Account deletion is still being confirmed. Please try again.');

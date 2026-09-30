@@ -23,11 +23,12 @@
   'use strict';
   const {enabled,user,online,transport}=dependencies;
   const error=(code,message)=>Object.assign(new Error(message),{code});
-  async function call(action,data={}){
+  async function call(action,data={},expectedUid=user()?.uid){
     const accountAction=['deleteAccount','accountDeletionStatus'].includes(action);
     if(!enabled()&&!accountAction)throw error('unavailable','Friends is not available yet.');
     const uid=user()?.uid;
     if(!uid)throw error('unauthenticated','Sign in to use Friends.');
+    if(uid!==expectedUid)throw error('account-changed','The signed-in account changed. Try again.');
     if(!online())throw error('offline','Connect to the internet to use Friends.');
     const result=await transport(action,data,uid);
     if(user()?.uid!==uid&&!(accountAction&&!user()&&result.deleted))throw error('account-changed','The signed-in account changed. Try again.');
@@ -40,5 +41,5 @@
     return 'Friends could not be reached. Check your connection and try again.';
   }
   return Object.freeze({call,message,isEnabled:enabled,
-    deleteAccount:()=>call('deleteAccount'),accountDeletionStatus:()=>call('accountDeletionStatus')});
+    deleteAccount:uid=>call('deleteAccount',{},uid),accountDeletionStatus:uid=>call('accountDeletionStatus',{},uid)});
 });

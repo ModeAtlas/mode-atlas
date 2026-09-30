@@ -21,6 +21,15 @@ test('account deletion remains available with Friends disabled and preserves fai
   const offline=createSocial({enabled:()=>false,user:()=>({uid:'first'}),online:()=>false,transport:()=>{throw new Error('must not run');}});
   await assert.rejects(offline.deleteAccount(),{code:'offline'});
 });
+test('deletion and receipt lookup remain bound to the originally confirmed account',async()=>{
+  let uid='first',calls=0;
+  const client=createSocial({enabled:()=>true,user:()=>({uid}),online:()=>true,transport:async(action,data,owner)=>{calls++;assert.equal(owner,'first');return {deleted:true};}});
+  const confirmed=uid;uid='second';
+  await assert.rejects(client.deleteAccount(confirmed),{code:'account-changed'});
+  await assert.rejects(client.accountDeletionStatus(confirmed),{code:'account-changed'});
+  assert.equal(calls,0);
+  uid='first';assert.equal((await client.deleteAccount(confirmed)).deleted,true);
+});
 
 const identity=require('../assets/app/mode-atlas-social-identity.js');
 test('identity policy normalises equivalent names and reserves official-looking names',()=>{
