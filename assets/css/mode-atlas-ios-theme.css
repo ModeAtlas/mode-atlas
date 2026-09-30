@@ -1,0 +1,146 @@
+/* iOS colour authority. No geometry and no component repaint selectors.
+   Components consume semantic roles here; legacy web paint is their fallback.
+   Neutral canvas → card → elevated sheet; colour identifies actions and meaning. */
+html[data-ma-runtime="ios"]{
+  color-scheme:dark;
+  background:var(--ma-native-page);
+  /* Foundations: graphite, not navy. */
+  --ma-native-page:#101011;
+  --ma-native-surface:#1c1c1e;
+  --ma-native-elevated:#262628;
+  --ma-native-inset:#303033;
+  --ma-native-text:#f4f4f5;
+  --ma-native-heading:#ffffff;
+  --ma-native-secondary:#b5b5bc;
+  --ma-native-border:#45454b;
+  --ma-native-control:#303033;
+  --ma-native-hover:#3a3a3f;
+  --ma-native-selected:#263b5b;
+  --ma-native-selected-text:#c1d8ff;
+  --ma-native-primary:#9bc0ff;
+  --ma-native-primary-text:#14243e;
+  --ma-native-focus:#9bc0ff;
+  --ma-native-scrim:rgba(0,0,0,.58);
+  /* Meaning, not decoration. */
+  --ma-native-reading:#73d6a4;
+  --ma-native-writing:#9bc0ff;
+  --ma-native-kana:#c9acff;
+  --ma-native-gold:#f0c977;
+  --ma-native-danger:#ff9aa5;
+  --ma-native-rank-1:#e89b80;
+  --ma-native-rank-2:#b5b5bc;
+  --ma-native-rank-3:var(--ma-native-gold);
+  --ma-native-rank-4:var(--ma-native-kana);
+  --ma-native-rank-5:#7ee7f4;
+  --ma-native-success-bg:#183e2c;
+  --ma-native-danger-bg:#4a242d;
+  --ma-native-warning-bg:#43351a;
+  --ma-native-shadow:0 4px 16px rgba(0,0,0,.18);
+  --ma-native-chrome-shadow:0 -4px 16px rgba(0,0,0,.22);
+  --ma-native-key-shadow:0 3px 0 #45454b;
+  --ma-native-key-pressed-shadow:inset 0 3px 7px rgba(0,0,0,.32);
+  --ma-native-switch-thumb:#ffffff;
+  --ma-native-focus-shadow:0 0 0 3px var(--ma-native-focus);
+  --ma-native-text-shadow:none;
+  --ma-native-decoration:none;
+
+  /* Existing semantic interface: shared components need no native copies. */
+  --ma-app-bg:var(--ma-native-page);
+  --ma-bg:var(--ma-native-page);
+  --ma-app-bg-soft:var(--ma-native-surface);
+  --ma-page-bg:var(--ma-native-page);
+  --ma-page-bg-atlas:var(--ma-native-page);
+  --ma-page-bg-kana:var(--ma-native-page);
+  --ma-page-bg-results:var(--ma-native-page);
+  --ma-page-bg-words:var(--ma-native-page);
+  --ma-card:var(--ma-native-surface);
+  --ma-card-2:var(--ma-native-elevated);
+  --ma-card-3:var(--ma-native-inset);
+  --ma-surface:var(--ma-native-surface);
+  --ma-surface-soft:var(--ma-native-elevated);
+  --ma-surface-strong:var(--ma-native-elevated);
+  --ma-surface-inset:var(--ma-native-inset);
+  --ma-surface-elevated:var(--ma-native-elevated);
+  --ma-light-panel:var(--ma-native-surface);
+  --ma-light-panel-soft:var(--ma-native-inset);
+  --ma-light-panel-strong:var(--ma-native-elevated);
+  --ma-border:var(--ma-native-border);
+  --ma-border-strong:var(--ma-native-border);
+  --ma-text:var(--ma-native-text);
+  --ma-text-strong:var(--ma-native-heading);
+  --ma-text-soft:var(--ma-native-secondary);
+  --ma-muted:var(--ma-native-secondary);
+  --ma-control:var(--ma-native-control);
+  --ma-control-hover:var(--ma-native-hover);
+  --ma-control-active:var(--ma-native-selected);
+  --ma-control-active-border:var(--ma-native-writing);
+  --ma-control-text:var(--ma-native-text);
+  --ma-focus-ring:var(--ma-native-focus);
+  --ma-backdrop:var(--ma-native-scrim);
+  --ma-shadow:var(--ma-native-shadow);
+  --ma-shadow-soft:none;
+  --ma-shadow-control:none;
+  --ma-reading:var(--ma-native-reading);
+  --ma-writing:var(--ma-native-writing);
+  --ma-kana:var(--ma-native-kana);
+  --ma-results:var(--ma-native-gold);
+  --ma-atlas:var(--ma-native-writing);
+  --ma-words:var(--ma-native-writing);
+  --ma-rose:var(--ma-native-kana);
+  --ma-link:var(--ma-native-writing);
+  --ma-success:var(--ma-native-reading);
+  --ma-info:var(--ma-native-writing);
+  --ma-warning:var(--ma-native-gold);
+  --ma-danger:var(--ma-native-danger);
+  --ma-reading-soft:var(--ma-native-success-bg);
+  --ma-writing-soft:var(--ma-native-selected);
+  --ma-kana-soft:var(--ma-native-inset);
+  --ma-results-soft:var(--ma-native-warning-bg);
+  --ma-status-success-bg:var(--ma-native-success-bg);
+  --ma-status-warning-bg:var(--ma-native-warning-bg);
+  --ma-status-danger-bg:var(--ma-native-danger-bg);
+  --ma-status-info-bg:var(--ma-native-selected);
+  --ma-grid-line:transparent;
+  --ma-watermark:transparent;
+}
+
+html[data-ma-runtime="ios"][data-ma-theme="light"]{
+  color-scheme:light;
+  /* Paper canvas, white cards, quiet grey controls. */
+  --ma-native-page:#f5f5f7;
+  --ma-native-surface:#ffffff;
+  --ma-native-elevated:#ffffff;
+  --ma-native-inset:#ededf0;
+  --ma-native-text:#242426;
+  --ma-native-heading:#111113;
+  --ma-native-secondary:#62626a;
+  --ma-native-border:#cdcdd2;
+  --ma-native-control:#ededf0;
+  --ma-native-hover:#e1e1e6;
+  --ma-native-selected:#e1ebff;
+  --ma-native-selected-text:#174b98;
+  --ma-native-primary:#245fce;
+  --ma-native-primary-text:#ffffff;
+  --ma-native-focus:#245fce;
+  --ma-native-scrim:rgba(0,0,0,.28);
+  --ma-native-reading:#146c45;
+  --ma-native-writing:#245fce;
+  --ma-native-kana:#7041af;
+  --ma-native-gold:#805409;
+  --ma-native-danger:#b3273a;
+  --ma-native-rank-1:#8f3e25;
+  --ma-native-rank-2:#62626a;
+  --ma-native-rank-5:#066c7b;
+  --ma-native-success-bg:#e0f2e8;
+  --ma-native-danger-bg:#fce4e8;
+  --ma-native-warning-bg:#f8edcf;
+  --ma-native-shadow:0 4px 18px rgba(0,0,0,.08);
+  --ma-native-chrome-shadow:0 -2px 12px rgba(0,0,0,.06);
+  --ma-native-key-shadow:0 3px 0 #b9b9c0;
+  --ma-native-key-pressed-shadow:inset 0 3px 7px rgba(0,0,0,.15);
+}
+
+@media(prefers-contrast:more){
+  html[data-ma-runtime="ios"]{--ma-native-border:#85858e;--ma-native-secondary:#d3d3d8;}
+  html[data-ma-runtime="ios"][data-ma-theme="light"]{--ma-native-border:#777780;--ma-native-secondary:#45454d;}
+}

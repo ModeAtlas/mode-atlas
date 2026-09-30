@@ -1,0 +1,7 @@
+/* Legal documents own their readable measure; learning page layout is separate. */
+.ma-legal-document{max-width:780px;margin:24px auto;padding:clamp(20px,4vw,40px);border:1px solid var(--ma-border);border-radius:24px;background:var(--ma-surface);color:var(--ma-text);line-height:1.75;overflow-wrap:anywhere;}
+.ma-legal-document h1{font-size:clamp(2rem,5vw,3rem);line-height:1.2;letter-spacing:-.04em;margin:12px 0 24px;}
+.ma-legal-document h2{font-size:1.2rem;line-height:1.4;margin:32px 0 12px;color:var(--ma-text-strong);}
+.ma-legal-document p{margin:0 0 16px;}
+.ma-legal-document a:not(.ma-button){color:var(--ma-atlas);text-decoration:underline;text-underline-offset:3px;}
+.ma-legal-document .ma-actions-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px;}

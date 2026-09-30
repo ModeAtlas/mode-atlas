@@ -5,8 +5,10 @@ import json
 from datetime import date
 from urllib.parse import urljoin, urlsplit, urlunsplit, parse_qsl, urlencode
 from frontend_components import apply_navigation, apply_trainer_shell, apply_frontend_assets, apply_loading_screen, apply_legacy_redirects
+from build_ios_fonts import build_fonts
 
 ROOT = Path(__file__).resolve().parent
+build_fonts(ROOT)
 VERSION_FILE = ROOT / 'assets/app/mode-atlas-version.js'
 version_text = VERSION_FILE.read_text(encoding='utf-8')
 VERSION = (re.search(r'var\s+VERSION\s*=\s*[\'"]([^\'"]+)[\'"]', version_text) or [None, ''])[1]
@@ -69,10 +71,14 @@ CRITICAL = {
     'mode-atlas-legacy-sw-retirement.js',
     'mode-atlas-version-check.js',
     'mode-atlas-head-bootstrap.js',
+    'mode-atlas-fonts.js',
     'mode-atlas-early-loader.js',
 }
 LAZY_ASSETS = (
+    'assets/css/mode-atlas-fonts-web.css',
+    'assets/css/mode-atlas-fonts-native.css',
     'assets/app/mode-atlas-dev-console.js',
+    'assets/app/mode-atlas-dev-backups.js',
     'assets/css/mode-atlas-dev-console.css',
 )
 
@@ -91,14 +97,20 @@ def fingerprint_url(url):
     ext = '.js' if base.lower().endswith('.js') else '.css'
     return base[:-len(ext)] + '.' + REVISION + ext
 
-BUILD_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}
+BUILD_IGNORED_DIRS = {'node_modules', '.git', '.build', 'playwright-report', 'test-results'}
 
 def iter_project_html():
     for html_path in ROOT.rglob('*.html'):
         relative = html_path.relative_to(ROOT)
+        if relative.parts[:4] == ('ios', 'App', 'App', 'public'):
+            continue
         if any(part in BUILD_IGNORED_DIRS for part in relative.parts[:-1]):
             continue
         yield html_path
+
+def is_generated_output(path):
+    relative = path.relative_to(ROOT)
+    return '.build' in relative.parts or relative.parts[:4] == ('ios', 'App', 'App', 'public')
 
 referenced = set()
 for html_path in iter_project_html():
@@ -166,6 +178,8 @@ for html_path in iter_project_html():
 
 # Remove obsolete generated fingerprints; canonical source files are never deleted.
 for path in list(ROOT.rglob('*')):
+    if is_generated_output(path):
+        continue
     if path.is_file() and FINGERPRINT_RE.search(path.name) and ('.' + REVISION + '.') not in path.name:
         path.unlink()
 

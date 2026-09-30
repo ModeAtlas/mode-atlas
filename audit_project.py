@@ -137,6 +137,79 @@ def main() -> int:
     if legacy_changelog_workflow.exists():
         fail(errors, 'legacy GitHub release workflow still has a second owner for CHANGELOG.md')
 
+    # Native/iOS foundation ownership: the web app remains canonical while one
+    # shared platform facade exposes browser/native capabilities. Browser-only
+    # PWA/update mechanisms must not become a second lifecycle owner in iOS.
+    native_foundation_files = (
+        ROOT / 'assets/platform/mode-atlas-platform.js',
+        ROOT / 'assets/platform/mode-atlas-platform-web.js',
+        ROOT / 'assets/platform/mode-atlas-platform-native.js',
+        ROOT / 'build_ios_web.py',
+        ROOT / 'sync_ios_project.py',
+        ROOT / 'validate_ios_firebase_config.py',
+        ROOT / 'capacitor.config.json',
+        ROOT / 'ios/App/App.xcodeproj/project.pbxproj',
+    )
+    for native_file in native_foundation_files:
+        if not native_file.exists():
+            fail(errors, f'missing native foundation owner: {native_file.relative_to(ROOT)}')
+
+    head_bootstrap_source = text(ROOT / 'assets/app/mode-atlas-head-bootstrap.js')
+    version_check_source = text(ROOT / 'assets/app/mode-atlas-version-check.js')
+    pwa_source = text(ROOT / 'assets/app/mode-atlas-pwa.js')
+    frontend_source_for_native = text(ROOT / 'frontend_components.py')
+    for asset in (
+        'assets/platform/mode-atlas-platform.js',
+        'assets/platform/mode-atlas-platform-web.js',
+        'assets/platform/mode-atlas-platform-native.js',
+    ):
+        if asset not in frontend_source_for_native:
+            fail(errors, f'shared head manifest is missing native platform asset: {asset}')
+    if 'isNativeApp' not in head_bootstrap_source or 'isSupportedRuntime' not in head_bootstrap_source:
+        fail(errors, 'head bootstrap does not expose first-class native runtime state')
+    if 'isNativeRuntime' not in version_check_source or 'native-bundle' not in version_check_source:
+        fail(errors, 'version owner does not explicitly exclude native bundled runtime from web update checks')
+    if 'ModeAtlasEnv?.isNativeApp' not in pwa_source:
+        fail(errors, 'PWA install owner does not explicitly disable itself in native runtime')
+
+    capacitor_config = json.loads(text(ROOT / 'capacitor.config.json'))
+    if capacitor_config.get('appId') != 'app.modeatlas':
+        fail(errors, 'Capacitor appId drifted from app.modeatlas')
+    if capacitor_config.get('webDir') != '.build/ios-web':
+        fail(errors, 'Capacitor webDir must consume the deterministic iOS web bundle')
+    native_auth = (capacitor_config.get('plugins') or {}).get('FirebaseAuthentication') or {}
+    if native_auth.get('skipNativeAuth') is not True:
+        fail(errors, 'native Firebase provider transport must keep skipNativeAuth=true so JS Auth remains the session owner')
+    if native_auth.get('providers') != ['google.com']:
+        fail(errors, 'Personal Team testing must enable only Google')
+    package_json = json.loads(text(ROOT / 'package.json'))
+    dependencies = package_json.get('dependencies') or {}
+    if dependencies.get('@capacitor-firebase/authentication') != '8.5.2':
+        fail(errors, 'Capacitor Firebase Authentication must remain pinned to 8.5.2 for the Capacitor 8.5.2 shell')
+    if dependencies.get('firebase') != '12.12.1':
+        fail(errors, 'Firebase JS dependency must match the cloud-sync Firebase 12.12.1 runtime')
+    native_adapter_source = text(ROOT / 'assets/platform/mode-atlas-platform-native.js')
+    cloud_sync_source = text(ROOT / 'cloud-sync.js')
+    if "firebaseAuth[method]({ skipNativeAuth:true })" not in native_adapter_source or "providerId === 'apple.com' ? 'signInWithApple' : 'signInWithGoogle'" not in native_adapter_source:
+        fail(errors, 'native adapter does not enforce provider-only Google and Apple sign-in')
+    if 'AtlasPlatform?.authenticate?.(providerId)' not in cloud_sync_source or 'signInWithCredential' not in cloud_sync_source or 'linkWithCredential' not in cloud_sync_source:
+        fail(errors, 'cloud sync does not exchange and link native credentials into the shared Firebase JS session')
+    if 'FirebaseAuthentication.signInWithGoogle' in cloud_sync_source:
+        fail(errors, 'cloud-sync.js directly owns native provider implementation instead of using AtlasPlatform')
+
+    ios_project_source = text(ROOT / 'ios/App/App.xcodeproj/project.pbxproj')
+    ios_version_match = re.search(r"var\s+VERSION\s*=\s*['\"]([^'\"]+)['\"]", version_source)
+    if ios_version_match:
+        ios_version = ios_version_match.group(1)
+        major, minor, patch = (int(part) for part in ios_version.split('.'))
+        ios_build = major * 1_000_000 + minor * 1_000 + patch
+        if f'MARKETING_VERSION = {ios_version};' not in ios_project_source:
+            fail(errors, 'Xcode marketing version is not synchronized with Mode Atlas VERSION')
+        if f'CURRENT_PROJECT_VERSION = {ios_build};' not in ios_project_source:
+            fail(errors, 'Xcode build number is not synchronized with Mode Atlas VERSION')
+    if 'PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;' not in ios_project_source:
+        fail(errors, 'Xcode bundle identifier drifted from app.modeatlas')
+
     readme_path = ROOT / 'README.md'
     if readme_path.exists():
         readme_version = re.search(r'(?m)^Version:\s*(\S+)', text(readme_path))
@@ -159,10 +232,12 @@ def main() -> int:
     transport = {"build", "v", "reload", "swretired"}
 
     referenced_generated: set[Path] = set()
-    AUDIT_IGNORED_DIRS = {'node_modules', '.git', 'playwright-report', 'test-results'}
+    AUDIT_IGNORED_DIRS = {'node_modules', '.git', '.build', 'playwright-report', 'test-results'}
+    def is_native_output(path):
+        return path.relative_to(ROOT).parts[:4] == ('ios', 'App', 'App', 'public')
     html_files = sorted(
         path for path in ROOT.rglob("*.html")
-        if not any(part in AUDIT_IGNORED_DIRS for part in path.relative_to(ROOT).parts[:-1])
+        if not is_native_output(path) and not any(part in AUDIT_IGNORED_DIRS for part in path.relative_to(ROOT).parts[:-1])
     )
     for html_path in html_files:
         if "harness" in html_path.name.lower():
@@ -210,17 +285,18 @@ def main() -> int:
     shared_drawer_assets = [
         f'mode-atlas-profile-menu.{revision}.js',
         f'mode-atlas-settings-menu.{revision}.js',
-        f'mode-atlas-profile-drawer-bindings.{revision}.js',
+        f'mode-atlas-account-navigation.{revision}.js',
+        f'mode-atlas-account-bindings.{revision}.js',
     ]
     for page_path in main_pages:
         page_html = text(page_path)
         storage_pos = page_html.find(f'mode-atlas-storage.{revision}.js')
-        import_pos = page_html.find(f'mode-atlas-import-export.{revision}.js')
+        controls_pos = page_html.find(f'mode-atlas-data-controls.{revision}.js')
         cloud_pos = page_html.find(f'cloud-sync.{revision}.js')
         if storage_pos < 0:
             fail(errors, f'shared storage boundary missing from {page_path.relative_to(ROOT)}')
-        if import_pos >= 0 and storage_pos > import_pos:
-            fail(errors, f'storage boundary loads after import/export on {page_path.relative_to(ROOT)}')
+        if controls_pos < 0 or storage_pos > controls_pos:
+            fail(errors, f'shared data controls are missing or load before storage on {page_path.relative_to(ROOT)}')
         if cloud_pos >= 0 and storage_pos > cloud_pos:
             fail(errors, f'storage boundary loads after cloud-sync on {page_path.relative_to(ROOT)}')
         for asset_name in shared_drawer_assets:
@@ -256,9 +332,9 @@ def main() -> int:
     dev_loader = text(ROOT / 'assets/app/mode-atlas-dev-console-loader.js')
     if "'assets/app/mode-atlas-dev-console-loader.js'" not in frontend_source:
         fail(errors, 'production frontend manifest is missing the developer-console eligibility loader')
-    if "'assets/app/mode-atlas-dev-console.js'" in frontend_source or "'assets/css/mode-atlas-dev-console.css'" in frontend_source:
+    if any(f"'{asset}'" in frontend_source for asset in ('assets/app/mode-atlas-dev-console.js', 'assets/app/mode-atlas-dev-backups.js', 'assets/css/mode-atlas-dev-console.css')):
         fail(errors, 'full developer-console assets are still loaded eagerly by the production manifest')
-    for lazy_asset in ('assets/app/mode-atlas-dev-console.js', 'assets/css/mode-atlas-dev-console.css'):
+    for lazy_asset in ('assets/app/mode-atlas-dev-console.js', 'assets/app/mode-atlas-dev-backups.js', 'assets/css/mode-atlas-dev-console.css'):
         if lazy_asset not in revision_builder:
             fail(errors, f'revision builder does not own lazy developer asset: {lazy_asset}')
     for marker in ('document.currentScript', 'kanaCloudSyncStatusChanged', 'loadIfEligible', 'admin@mode-atlas.com'):
@@ -331,10 +407,11 @@ def main() -> int:
         if marker_text not in frontend_component_source:
             fail(errors, f'shared frontend component source missing marker: {marker_text}')
 
-    drawer_binding = text(ROOT / 'assets/ui/mode-atlas-profile-drawer-bindings.js')
+    drawer_binding = text(ROOT / 'assets/ui/mode-atlas-account-bindings.js')
     if 'ensureSettingsButtons' in drawer_binding:
         fail(errors, 'Profile/Settings binding still manufactures Settings navigation controls at runtime')
-    if "querySelectorAll('[data-profile-open]')" not in drawer_binding:
+    account_navigation = text(ROOT / 'assets/ui/mode-atlas-account-navigation.js')
+    if "querySelectorAll('[data-profile-open]')" not in account_navigation:
         fail(errors, 'Profile binding does not use the shared navigation profile contract')
 
     settings_markup = text(ROOT / 'assets/ui/mode-atlas-settings-menu.js')
@@ -384,6 +461,8 @@ def main() -> int:
     for path in ROOT.rglob("*"):
         if not path.is_file():
             continue
+        if is_native_output(path) or '.build' in path.relative_to(ROOT).parts:
+            continue
         match = fingerprint_re.search(path.name)
         if not match:
             continue
@@ -406,7 +485,7 @@ def main() -> int:
     if re.search(r"addEventListener\s*\(\s*['\"]message['\"]", sw):
         fail(errors, "sw.js contains a message handler")
 
-    runtime_files = [p for p in ROOT.rglob("*.js") if not fingerprint_re.search(p.name) and 'tests' not in p.parts and 'node_modules' not in p.parts]
+    runtime_files = [p for p in ROOT.rglob("*.js") if not fingerprint_re.search(p.name) and 'tests' not in p.parts and 'node_modules' not in p.parts and '.build' not in p.relative_to(ROOT).parts and not is_native_output(p)]
     for path in runtime_files:
         src = text(path)
         if "serviceWorker.register(" in src:
@@ -429,7 +508,7 @@ def main() -> int:
     if any(marker in page_state for marker in ('ModeAtlasPageState =', 'cleanDecorativeTextIcons', 'lifecycleListeners = new Map')):
         fail(errors, 'page-state still carries obsolete global/decorative/listener-registry compatibility work')
 
-    settings = text(ROOT / "assets/ui/mode-atlas-profile-drawer-bindings.js")
+    settings = text(ROOT / "assets/ui/mode-atlas-account-bindings.js")
     for forbidden in ("serviceWorker", "registration.update", "postMessage", "ModeAtlasUpdates"):
         if forbidden in settings:
             fail(errors, f"Settings binding contains forbidden update/SW API: {forbidden}")
@@ -483,11 +562,15 @@ def main() -> int:
     ):
         if marker not in cloud:
             fail(errors, f"Firebase setup is missing retry/recovery marker: {marker}")
+    sdk_loader = text(ROOT / 'assets/platform/mode-atlas-firebase-loader.js')
+    sdk_version = re.search(r'/firebasejs/([^/]+)/', sdk_loader)
+    if not sdk_version or sdk_version.group(1) != json.loads(text(ROOT / 'package.json'))['dependencies']['firebase']:
+        fail(errors, 'Web and bundled iOS Firebase versions must match the pinned npm dependency')
     core_loader = re.search(r"async function loadFirebaseModules\(\) \{(?P<body>.*?)\n\}", cloud, re.S)
     firestore_loader = re.search(r"async function loadFirestoreModule\(\) \{(?P<body>.*?)\n\}", cloud, re.S)
-    if not core_loader or 'firebase-firestore.js' in core_loader.group('body'):
+    if not core_loader or "ModeAtlasFirebase.load('firestore')" in core_loader.group('body'):
         fail(errors, 'Firebase core startup still eagerly imports Firestore')
-    if not firestore_loader or 'firebase-firestore.js' not in firestore_loader.group('body'):
+    if not firestore_loader or "ModeAtlasFirebase.load('firestore')" not in firestore_loader.group('body'):
         fail(errors, 'Firestore no longer has a dedicated lazy module owner')
     setup_firebase = re.search(r"async function setupFirebase\(\) \{(?P<body>.*?)\n\}\n\nfunction getDocRef", cloud, re.S)
     if setup_firebase and 'db = getFirestore(app)' in setup_firebase.group('body'):
@@ -495,7 +578,7 @@ def main() -> int:
     if "version: BACKUP_FORMAT_VERSION" not in cloud or "CLOUD_SNAPSHOT_VERSION" not in cloud:
         fail(errors, "cloud backup/snapshot envelopes do not use central release format metadata")
 
-    profile = text(ROOT / "assets/ui/mode-atlas-profile-drawer-bindings.js")
+    profile = text(ROOT / "assets/ui/mode-atlas-account-bindings.js")
     if "let profileCloudBinding = null;" not in profile:
         fail(errors, "profile cloud binding is not single-owner/idempotent")
     if "if (!profileCloudBinding) bindCloudUi();" not in profile:
@@ -603,14 +686,22 @@ def main() -> int:
         if 'localStorage.clear(' in src or 'sessionStorage.clear(' in src:
             fail(errors, f'origin-wide storage clear found in runtime module: {path.relative_to(ROOT)}')
 
-    import_export = text(ROOT / 'assets/app/mode-atlas-import-export.js')
-    if 'BACKUP_FORMAT_VERSION' not in import_export or "version: 2" in import_export:
-        fail(errors, 'import/export backup format is still hard-coded outside release metadata')
-    for marker in ('snapshotBackupStorage', 'applyAppMap', 'clearAppData'):
-        if marker not in import_export:
-            fail(errors, f'import/export bypasses shared storage boundary: missing {marker}')
-    if 'Object.entries(data).forEach(([k,v]) => localStorage.setItem' in import_export:
-        fail(errors, 'import fallback can write arbitrary origin keys')
+    data_controls = text(ROOT / 'assets/app/mode-atlas-data-controls.js')
+    dev_backups = text(ROOT / 'assets/app/mode-atlas-dev-backups.js')
+    if 'clearAppData' not in data_controls:
+        fail(errors, 'public reset bypasses the shared storage boundary')
+    for marker in ('createBackup', 'previewLocalBackup', 'importLocalBackup', 'ModeAtlasDevConsoleLoader'):
+        if marker not in dev_backups:
+            fail(errors, f'developer save files bypass their existing owner: missing {marker}')
+    if 'localStorage.setItem' in dev_backups or 'applyAppMap' in dev_backups:
+        fail(errors, 'developer file UI duplicates the cloud import/storage owner')
+    if 'requireDeveloperBackupAccess' not in cloud:
+        fail(errors, 'backup entry points lack the shared developer eligibility check')
+    settings_markup = text(ROOT / 'assets/ui/mode-atlas-settings-menu.js')
+    if re.search(r'data-ma-unified-(?:export|copy|import|file)', settings_markup):
+        fail(errors, 'Settings still exposes developer save-file controls')
+    if (ROOT / 'assets/app/mode-atlas-import-export.js').exists():
+        fail(errors, 'superseded public file UI remains in the source tree')
 
     if 'store.clearAppData()' not in cloud:
         fail(errors, 'cloud reset bypasses shared scoped storage boundary')
@@ -666,8 +757,10 @@ def main() -> int:
 
     profile_menu = text(ROOT / 'assets/ui/mode-atlas-profile-menu.js')
     settings_menu = text(ROOT / 'assets/ui/mode-atlas-settings-menu.js')
-    if 'ma-drawer ma-shared-profile-drawer' not in profile_menu or 'ma-drawer ma-shared-settings-drawer' not in settings_menu:
-        fail(errors, 'Profile/Settings do not consume the shared drawer shell')
+    if 'ma-account-sheet' not in account_navigation or 'ModeAtlasAccountNavigation.install' not in drawer_binding:
+        fail(errors, 'Account sections do not consume the shared navigation shell')
+    if any(marker in profile_menu + settings_menu for marker in ('role="dialog"', 'ma-drawer-backdrop')):
+        fail(errors, 'Profile/Settings duplicate the account navigation shell')
 
     home_page = text(ROOT / 'assets/pages/mode-atlas-home-page.js')
     if not home_page or 'homeContinueAction' not in home_page:
@@ -676,7 +769,7 @@ def main() -> int:
         fail(errors, 'Atlas page controller takes over shared Profile/Settings/cloud ownership')
     if 'Branches' in profile_menu or 'data-ma-nav-item' in profile_menu:
         fail(errors, 'Profile drawer duplicates shared navigation')
-    settings_hierarchy_markers = ('ma-setting-row', 'ma-settings-disclosure', 'ma-settings-data-list', 'ma-save-section', 'ma-tools-panel')
+    settings_hierarchy_markers = ('ma-setting-row', 'ma-settings-section', 'ma-settings-data-list', 'ma-save-section', 'ma-tools-panel')
     if any(marker not in settings_menu for marker in settings_hierarchy_markers):
         fail(errors, 'Settings drawer is missing the standard preference/data hierarchy')
 
@@ -712,10 +805,9 @@ def main() -> int:
         if marker not in dev_console:
             fail(errors, f'current Dev Diagnostics does not own visit-flow action: {marker}')
 
-    import_export = text(ROOT / 'assets/app/mode-atlas-import-export.js')
     for marker in ('ModeAtlasImportUi', "addEventListener('focus'", "addEventListener('pageshow'", 'visibilitychange', 'rebuildSaveSections'):
-        if marker in import_export:
-            fail(errors, f'import/export still carries obsolete global/lifecycle refresh ownership: {marker}')
+        if marker in data_controls or marker in dev_backups:
+            fail(errors, f'save management carries obsolete global/lifecycle refresh ownership: {marker}')
 
     sounds = text(ROOT / 'assets/app/mode-atlas-sounds.js')
     if 'MutationObserver' in sounds:
@@ -728,12 +820,12 @@ def main() -> int:
     if "soundMode: 'modeAtlasSound'" not in storage_js:
         fail(errors, 'shared storage does not identify modeAtlasSound as the canonical sound preference')
 
-    profile_bindings = text(ROOT / 'assets/ui/mode-atlas-profile-drawer-bindings.js')
+    profile_bindings = text(ROOT / 'assets/ui/mode-atlas-account-bindings.js')
     for marker in ('ModeAtlasKanaProfile', 'ModeAtlasTestProfile', 'ModeAtlasWordProfile'):
         if marker in profile_bindings:
             fail(errors, f'Profile still exports unused legacy alias: {marker}')
-    for marker in ('trapDrawerFocus', 'drawerReturnFocus', "event.key === 'Escape' && activeDrawerName"):
-        if marker not in profile_bindings:
+    for marker in ('trapFocus', 'returnFocus', "event.key==='Escape'"):
+        if marker not in account_navigation:
             fail(errors, f'shared drawers missing focus-management contract: {marker}')
 
     early_loader = text(ROOT / 'assets/app/mode-atlas-early-loader.js')
@@ -786,7 +878,7 @@ def main() -> int:
     if 'id="kanaContinueAction"' not in kana_markup or 'ma-skeleton-block' not in kana_markup:
         fail(errors, 'Kana hub recommendation/loading hierarchy drifted')
     trainer_ui_markup = text(ROOT / 'reading/index.html') + text(ROOT / 'writing/index.html')
-    for marker in ('Practice setup ▼', 'id="sessionProgressBar"', 'Focus mode', 'Exit focus mode'):
+    for marker in ('Practice setup', 'id="studySessionProgress"', 'Focus mode', 'Exit focus mode'):
         if marker not in trainer_ui_markup:
             fail(errors, f'trainer standardisation marker missing: {marker}')
     for marker in ('>Hide nav<', '>Show navigation<', '>Modifiers ▼<'):

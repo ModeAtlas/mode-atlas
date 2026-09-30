@@ -2,10 +2,14 @@
 <html lang="en">
 <head>
 <!-- MODE_ATLAS_HEAD_ASSETS_START -->
-<script src="../assets/app/mode-atlas-version.assets-2.53.3.js"></script>
-<script src="../assets/app/mode-atlas-legacy-sw-retirement.assets-2.53.3.js"></script>
-<script src="../assets/app/mode-atlas-version-check.assets-2.53.3.js"></script>
-<script src="../assets/app/mode-atlas-head-bootstrap.assets-2.53.3.js"></script>
+<script src="../assets/app/mode-atlas-version.assets-2.79.0.js"></script>
+<script src="../assets/app/mode-atlas-legacy-sw-retirement.assets-2.79.0.js"></script>
+<script src="../assets/app/mode-atlas-version-check.assets-2.79.0.js"></script>
+<script src="../assets/app/mode-atlas-head-bootstrap.assets-2.79.0.js"></script>
+<script src="../assets/app/mode-atlas-fonts.assets-2.79.0.js"></script>
+<script src="../assets/platform/mode-atlas-platform.assets-2.79.0.js" defer></script>
+<script src="../assets/platform/mode-atlas-platform-web.assets-2.79.0.js" defer></script>
+<script src="../assets/platform/mode-atlas-platform-native.assets-2.79.0.js" defer></script>
 <!-- MODE_ATLAS_HEAD_ASSETS_END -->
 
 <meta charset="UTF-8" />
@@ -30,19 +34,24 @@
   <meta property="og:image" content="https://mode-atlas.app/assets/social-preview.svg" />
 <meta name="twitter:card" content="summary" />
 <!-- MODE_ATLAS_STYLE_ASSETS_START -->
-<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.assets-2.53.3.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.assets-2.53.3.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.assets-2.53.3.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.assets-2.53.3.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-theme.assets-2.53.3.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-components.assets-2.53.3.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-navigation.assets-2.53.3.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.assets-2.53.3.css" />
-<link rel="stylesheet" href="../assets/css/mode-atlas-test-page.assets-2.53.3.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-page-shared.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-app-modals.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-profile-settings.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-achievements.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-theme.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-ios-theme.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-components.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-rewards.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-social.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-navigation.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-responsive.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-ios-chrome.assets-2.79.0.css" />
+<link rel="stylesheet" href="../assets/css/mode-atlas-test-page.assets-2.79.0.css" />
 <!-- MODE_ATLAS_STYLE_ASSETS_END -->
 </head>
 <body class="results-page ma-results-page"><!-- MODE_ATLAS_EARLY_ASSETS_START -->
-<script src="../assets/app/mode-atlas-early-loader.assets-2.53.3.js"></script>
+<script src="../assets/app/mode-atlas-early-loader.assets-2.79.0.js"></script>
+<script src="../assets/platform/mode-atlas-ios-chrome.assets-2.79.0.js" defer></script>
 <!-- MODE_ATLAS_EARLY_ASSETS_END --><!-- MODE_ATLAS_LOADER_START -->
 <div class="ma-loading-screen" id="maLoadingScreen" aria-live="polite">
   <div class="ma-loading-card">
@@ -73,11 +82,11 @@
     <div class="ma-nav__primary">
       <div class="ma-nav__links"><a class="ma-nav__link" data-ma-nav-scope="product" data-ma-nav-item="atlas" href="/">Atlas</a> <div class="ma-nav__menu" data-ma-kana-menu><button class="ma-nav__link ma-nav__menu-trigger is-active" type="button" data-ma-nav-scope="product" data-ma-nav-item="kana" data-ma-kana-menu-trigger aria-haspopup="true" aria-expanded="false" aria-controls="maKanaMenu"><span>Kana Trainer</span><span class="ma-nav__menu-chevron" aria-hidden="true"></span></button><div class="ma-nav__flyout" id="maKanaMenu" data-ma-kana-nav aria-label="Kana Trainer sections"><a class="ma-nav__section-link" data-ma-nav-scope="kana" data-ma-kana-nav-item="kana" href="/kana/">Overview</a> <a class="ma-nav__section-link" data-ma-nav-scope="kana" data-ma-kana-nav-item="reading" href="/reading/">Reading</a> <a class="ma-nav__section-link" data-ma-nav-scope="kana" data-ma-kana-nav-item="writing" href="/writing/">Writing</a> <a class="ma-nav__section-link is-active" data-ma-nav-scope="kana" data-ma-kana-nav-item="results" href="/results/" aria-current="page">Test Results</a></div></div> <a class="ma-nav__link" data-ma-nav-scope="product" data-ma-nav-item="wordbank" href="/wordbank/">Word Bank</a></div>
       <div class="ma-nav__actions">
-        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="profileDrawer">
+        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="maAccountSheet" aria-expanded="false">
           <span class="ma-nav__avatar" id="topProfileDot" aria-hidden="true">M</span>
           <span class="ma-nav__action-label">Profile</span>
         </button>
-        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="settingsDrawer" aria-label="Open settings" title="Settings">
+        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="maAccountSheet" aria-expanded="false" aria-label="Open settings" title="Settings">
           <svg class="ma-icon ma-nav__settings-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-settings"></use></svg>
           <span class="ma-nav__action-label">Settings</span>
         </button>
@@ -93,7 +102,7 @@
         <div class="hero-title-block ma-page-intro__copy">
             <div class="ma-kicker results-kicker">Formal assessment</div>
             <h1 class="hero-title ma-page-intro__title">Test Results</h1>
-            <p class="hero-short-copy ma-page-intro__description">Your assessment record for Kana Trainer Test Mode. Compare full Reading and Writing tests, inspect accuracy and speed by row and kana, and decide what to practise before the next assessment.</p>
+            <p class="hero-short-copy ma-page-intro__description">Compare Reading and Writing tests, review your accuracy and speed, and find kana to practise next.</p>
         </div>
         <div class="hero-side compact ma-page-intro__aside">
             <div class="mini-panel quick-preview ma-card ma-card--flat">
@@ -118,7 +127,7 @@
             <div class="card-head ma-section-head">
                 <div>
                     <h2 class="card-title">Selected assessment</h2>
-                    <div class="card-sub">Accuracy, timing, coverage, and row performance for the selected formal Test Mode assessment.</div>
+                    <div class="card-sub">Review accuracy and response times for this test.</div>
                 </div>
                 <div class="accent"></div>
             </div>
@@ -162,11 +171,11 @@
                 <div class="card-head ma-section-head">
                     <div>
                         <h2 class="card-title">Assessment history</h2>
-                        <div class="card-sub">Reading and Writing Test Mode averages stay pinned above the individual formal assessments.</div>
+                        <div class="card-sub">Your Reading and Writing averages appear above individual tests.</div>
                     </div>
                     <div class="accent"></div>
                 </div>
-                <div class="overall-selected-meta">Test averages appear first, followed by each completed Reading and Writing Test Mode assessment.</div>
+                <div class="overall-selected-meta">Choose a test to see its results.</div>
                 <div class="tests-grid" id="testsGrid"></div>
             </div>
 
@@ -174,7 +183,7 @@
                 <div class="card-head ma-section-head">
                     <div>
                         <h2 class="card-title">Kana-level analysis</h2>
-                        <div class="card-sub">Inspect every kana assessed in the selected test, grouped by row with fastest and slowest response markers.</div>
+                        <div class="card-sub">See your results by row, including your fastest and slowest answers.</div>
                     </div>
                     <div class="accent"></div>
                 </div>
@@ -183,7 +192,7 @@
                     <div class="detail-head">
                         <div>
                             <div class="detail-title" id="detailTitle">No assessment selected</div>
-                            <div class="detail-sub" id="detailSub">Select an assessment from the left to inspect it.</div>
+                            <div class="detail-sub" id="detailSub">Choose a test from Assessment history.</div>
                         </div>
                     </div>
 
@@ -220,7 +229,7 @@
                 <div class="ma-trend" id="resultsTrend" aria-label="Recent formal Test Mode scores">
                     <div class="ma-skeleton-block" aria-hidden="true"></div>
                 </div>
-                <p class="results-trend-note" id="resultsTrendNote">Reading tests compare with Reading tests; Writing tests compare with Writing tests.</p>
+                <p class="results-trend-note" id="resultsTrendNote">Progress is compared within each practice mode.</p>
             </article>
 
             <article class="results-guidance-card ma-card" id="resultsGuidanceCard">
@@ -228,13 +237,13 @@
                 <div class="results-guidance-copy">
                     <div class="ma-kicker">Before your next test</div>
                     <h2 id="resultsGuidanceTitle">Finding your assessment focus…</h2>
-                    <p id="resultsGuidanceText" class="ma-skeleton-block">Recommendations are derived only from formal Test Mode performance.</p>
+                    <p id="resultsGuidanceText" class="ma-skeleton-block">Based on your completed tests.</p>
                     <div class="results-focus-kana" id="resultsGuidanceKana" aria-live="polite"></div>
                 </div>
                 <div class="results-guidance-actions ma-action-row">
                     <a class="ma-button ma-button--primary" id="resultsPracticeAction" href="/reading/?focusWeak=1">
                         <svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg>
-                        <span>Practice recommended kana</span>
+                        <span>Practise recommended kana</span>
                     </a>
                     <a class="ma-button ma-button--ghost" href="/kana/">Back to Kana Trainer</a>
                 </div>
@@ -243,36 +252,49 @@
     </div>
 </main>
 <!-- MODE_ATLAS_BODY_ASSETS_START -->
-<script src="../assets/ui/mode-atlas-navigation-menu.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-toast.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-dialog.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-feedback.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-theme.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-display-mode.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-storage.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-progress.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-progress-ui.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-save-repair.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-page-state.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-dev-console-loader.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-pwa.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-about.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-visit-flows.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-import-export.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-date.assets-2.53.3.js" defer></script>
-<script src="../assets/data/mode-atlas-kana-data.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-kana-metrics.assets-2.53.3.js" defer></script>
-<script src="../assets/achievements/mode-atlas-achievements-ui.assets-2.53.3.js" defer></script>
-<script src="../firebase-config.assets-2.53.3.js" defer></script>
-<script src="../cloud-sync.assets-2.53.3.js" defer></script>
-<script src="../assets/ui/mode-atlas-profile-menu.assets-2.53.3.js" defer></script>
-<script src="../assets/ui/mode-atlas-settings-menu.assets-2.53.3.js" defer></script>
-<script src="../assets/ui/mode-atlas-profile-drawer-bindings.assets-2.53.3.js" defer></script>
-<script src="../assets/results/mode-atlas-results-storage.assets-2.53.3.js" defer></script>
-<script src="../assets/results/mode-atlas-results-engine.assets-2.53.3.js" defer></script>
-<script src="../assets/results/mode-atlas-results-ui.assets-2.53.3.js" defer></script>
-<script src="../assets/pages/mode-atlas-test-page.assets-2.53.3.js" defer></script>
-<script src="../assets/app/mode-atlas-sounds.assets-2.53.3.js" defer></script>
+<script src="../assets/ui/mode-atlas-navigation-menu.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-toast.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dialog.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-feedback.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-theme.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-display-mode.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-storage.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-reward-rules.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-progress.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-progress-ui.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-save-repair.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-page-state.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-dev-console-loader.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-pwa.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-about.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-visit-flows.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-data-controls.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-date.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-review.assets-2.79.0.js" defer></script>
+<script src="../assets/data/mode-atlas-kana-data.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-kana-metrics.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-study-plan.assets-2.79.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-rewards-ui.assets-2.79.0.js" defer></script>
+<script src="../assets/platform/mode-atlas-native-engagement.assets-2.79.0.js" defer></script>
+<script src="../assets/achievements/mode-atlas-achievements-ui.assets-2.79.0.js" defer></script>
+<script src="../assets/platform/mode-atlas-firebase-loader.assets-2.79.0.js" defer></script>
+<script src="../firebase-config.assets-2.79.0.js" defer></script>
+<script src="../cloud-sync.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-social-config.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-social-identity.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-social.assets-2.79.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-social-ui.assets-2.79.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-profile-menu.assets-2.79.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-settings-menu.assets-2.79.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-native-settings.assets-2.79.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-account-navigation.assets-2.79.0.js" defer></script>
+<script src="../assets/ui/mode-atlas-account-bindings.assets-2.79.0.js" defer></script>
+<script src="../assets/results/mode-atlas-results-storage.assets-2.79.0.js" defer></script>
+<script src="../assets/results/mode-atlas-results-engine.assets-2.79.0.js" defer></script>
+<script src="../assets/results/mode-atlas-results-ui.assets-2.79.0.js" defer></script>
+<script src="../assets/pages/mode-atlas-test-page.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-sound-cues.assets-2.79.0.js" defer></script>
+<script src="../assets/app/mode-atlas-sounds.assets-2.79.0.js" defer></script>
 <!-- MODE_ATLAS_BODY_ASSETS_END -->
 </body>
 </html>

@@ -98,7 +98,11 @@ function patchFirebaseLoader(source) {
   const replacement = `async function loadFirebaseModules() {
     const m = __mocks;
     initializeApp=m.initializeApp; getApps=m.getApps; getApp=m.getApp;
-    getAuth=m.getAuth; GoogleAuthProvider=m.GoogleAuthProvider; signInWithPopup=m.signInWithPopup;
+    getAuth=m.getAuth; initializeAuth=m.initializeAuth; browserLocalPersistence=m.browserLocalPersistence;
+    GoogleAuthProvider=m.GoogleAuthProvider; OAuthProvider=m.OAuthProvider;
+    signInWithCredential=m.signInWithCredential; linkWithCredential=m.linkWithCredential;
+    reauthenticateWithCredential=m.reauthenticateWithCredential; reauthenticateWithPopup=m.reauthenticateWithPopup;
+    signInWithPopup=m.signInWithPopup;
     signInWithRedirect=m.signInWithRedirect; getRedirectResult=m.getRedirectResult; signOut=m.signOut;
     onAuthStateChanged=m.onAuthStateChanged; getFirestore=m.getFirestore; doc=m.doc; getDoc=m.getDoc; setDoc=m.setDoc;
     return true;
@@ -115,7 +119,8 @@ function patchFirebaseLoaderWithTransientFailure(source) {
     if (__firebaseLoadAttempts.count === 1) return false;
     const m = __mocks;
     initializeApp=m.initializeApp; getApps=m.getApps; getApp=m.getApp;
-    getAuth=m.getAuth; GoogleAuthProvider=m.GoogleAuthProvider; signInWithPopup=m.signInWithPopup;
+    getAuth=m.getAuth; initializeAuth=m.initializeAuth; browserLocalPersistence=m.browserLocalPersistence;
+    GoogleAuthProvider=m.GoogleAuthProvider; signInWithCredential=m.signInWithCredential; signInWithPopup=m.signInWithPopup;
     signInWithRedirect=m.signInWithRedirect; getRedirectResult=m.getRedirectResult; signOut=m.signOut;
     onAuthStateChanged=m.onAuthStateChanged; getFirestore=m.getFirestore; doc=m.doc; getDoc=m.getDoc; setDoc=m.setDoc;
     return true;
@@ -152,10 +157,14 @@ test('Mode Atlas storage boundary protects unrelated origin data', async () => {
 
   localStorage.setItem('settings', JSON.stringify({ hiraganaRows: ['h_a'] }));
   localStorage.setItem('modeAtlasThemePreference', 'light');
+  localStorage.setItem('modeAtlasLocalSaveOwner', 'account-a');
+  localStorage.setItem('modeAtlasAccountSave:account-b', 'private cached progress');
+  localStorage.setItem('modeAtlasWidgetSuspended', '1');
   localStorage.setItem(`modeAtlasVersionFileCheckedResetDay:${APP_REVISION}`, '2026-08-13');
   localStorage.setItem('firebase:authUser:test', 'firebase-owned');
   localStorage.setItem('thirdPartyPreference', 'keep-me');
   sessionStorage.setItem('modeAtlasSafeMode', '1');
+  sessionStorage.setItem('modeAtlasTourPending', '1');
   sessionStorage.setItem('thirdPartySession', 'keep-session');
 
   const backup = store.snapshotBackupStorage(localStorage);
@@ -164,6 +173,8 @@ test('Mode Atlas storage boundary protects unrelated origin data', async () => {
   assert.equal(backup[`modeAtlasVersionFileCheckedResetDay:${APP_REVISION}`], undefined, 'runtime update flags must not enter backups');
   assert.equal(backup['firebase:authUser:test'], undefined);
   assert.equal(backup.thirdPartyPreference, undefined);
+  assert.equal(backup['modeAtlasAccountSave:account-b'], undefined, 'other account caches must not enter backups');
+  assert.equal(backup.modeAtlasLocalSaveOwner, undefined);
 
   const filtered = store.filterAppMap({
     settings: JSON.stringify({ katakanaRows: ['k_a'] }),
@@ -187,10 +198,14 @@ test('Mode Atlas storage boundary protects unrelated origin data', async () => {
   assert.ok(cleared.local.some((key) => key.startsWith('modeAtlasVersionFileCheckedResetDay:')));
   assert.equal(localStorage.getItem('settings'), null);
   assert.equal(localStorage.getItem('modeAtlasThemePreference'), null);
+  assert.equal(localStorage.getItem('modeAtlasLocalSaveOwner'), null);
+  assert.equal(localStorage.getItem('modeAtlasAccountSave:account-b'), null);
+  assert.equal(localStorage.getItem('modeAtlasWidgetSuspended'), null);
   assert.equal(localStorage.getItem(`modeAtlasVersionFileCheckedResetDay:${APP_REVISION}`), null);
   assert.equal(localStorage.getItem('firebase:authUser:test'), 'firebase-owned');
   assert.equal(localStorage.getItem('thirdPartyPreference'), 'keep-me');
   assert.equal(sessionStorage.getItem('modeAtlasSafeMode'), null);
+  assert.equal(sessionStorage.getItem('modeAtlasTourPending'), null);
   assert.equal(sessionStorage.getItem('thirdPartySession'), 'keep-session');
 
   // Cloud Reset must use the same scoped boundary rather than clearing the origin.
@@ -231,6 +246,111 @@ test('cloud-sync falls back to localStorage and bindUi is idempotent', async () 
   assert.equal(first, second);
   assert.equal(signInBtn.counts.click, 1);
   assert.equal(signOutBtn.counts.click, 1);
+});
+
+test('native Google credential creates a persistent JS session and updates Profile', async () => {
+  const { context, window } = createBaseContext({ configured: true });
+  window.ModeAtlasEnv.isNativeApp = true;
+  window.AtlasPlatform = { authenticate: async () => ({ handled: true, credential: { idToken: 'google-token' } }) };
+  let authCallback;
+  let persistence;
+  const auth = { currentUser: null };
+  const user = { uid: 'native-user', email: 'learner@example.com' };
+  context.__mocks = {
+    initializeApp: () => ({}), getApps: () => [], getApp: () => ({}),
+    getAuth: () => { throw Error('native setup must not use browser defaults'); },
+    initializeAuth: (_app, dependencies) => { persistence = dependencies.persistence; return auth; },
+    browserLocalPersistence: { type: 'LOCAL' },
+    GoogleAuthProvider: class { setCustomParameters() {} static credential(token) { return { token }; } },
+    signInWithCredential: async (_auth, credential) => {
+      assert.equal(credential.token, 'google-token');
+      auth.currentUser = user;
+      authCallback(user);
+      return { user };
+    },
+    signInWithPopup: async () => {}, signInWithRedirect: async () => {}, getRedirectResult: async () => null,
+    signOut: async () => {}, onAuthStateChanged: (_auth, callback) => { authCallback = callback; callback(null); },
+    getFirestore: () => ({}), doc: (_db, ...parts) => parts.join('/'),
+    getDoc: async () => ({ exists: () => false }), setDoc: async () => {}
+  };
+  const source = patchFirebaseLoader(CLOUD_SYNC_SOURCE);
+  vm.runInContext(source, context, { filename: 'cloud-sync.js' });
+  await window.KanaCloudSync.ready;
+  const emailEl = { textContent: '' };
+  window.KanaCloudSync.bindUi({ emailEl });
+  assert.equal(await window.KanaCloudSync.signInWithGoogle(), true);
+  assert.equal(persistence.type, 'LOCAL');
+  assert.equal(window.KanaCloudSync.getUser().uid, 'native-user');
+  assert.equal(emailEl.textContent, user.email);
+});
+
+test('Apple links to the current Firebase UID and revokes authorization on account deletion', async () => {
+  const { context, window, localStorage } = createBaseContext({ configured: true });
+  window.ModeAtlasEnv.isNativeApp = true;
+  window.ModeAtlasStorage = { clearAppData: () => localStorage.clear() };
+  let approve = false;
+  window.ModeAtlasFeedback = { confirm: async () => approve, alert: async () => {}, toast: () => {} };
+  const user = { uid: 'shared-uid', providerData: [{ providerId:'google.com' }] };
+  const auth = { currentUser: user };
+  const calls = [];
+  let socialFailure = true;
+  let switchDuringRevoke=false;
+  window.ModeAtlasSocial = { deleteAccount: async (uid) => { assert.equal(uid,user.uid);calls.push('server'); if(socialFailure)throw new Error('Deletion unavailable'); return {deleted:true}; }, accountDeletionStatus: async(uid)=>{assert.equal(uid,user.uid);return {deleted:false};} };
+  window.AtlasPlatform = {
+    authenticate: async (providerId) => {
+      assert.equal(providerId, 'apple.com');
+      return { handled:true, credential:{ idToken:'apple-token', nonce:'raw-nonce', authorizationCode:'apple-code' } };
+    },
+    revokeAppleAuthorization: async (code) => { calls.push('revoke:' + code);if(switchDuringRevoke)auth.currentUser={uid:'another-account'};return true; },
+    signOutIdentityProvider: async () => true
+  };
+  context.__mocks = {
+    initializeApp: () => ({}), getApps: () => [], getApp: () => ({}),
+    initializeAuth: () => auth, browserLocalPersistence: {},
+    GoogleAuthProvider: class { setCustomParameters() {} },
+    OAuthProvider: class { constructor(id) { assert.equal(id, 'apple.com'); } credential(value) { return value; } },
+    onAuthStateChanged: (_auth, callback) => { callback(user); },
+    linkWithCredential: async (target, credential) => {
+      assert.equal(target.uid, 'shared-uid');
+      assert.equal(credential.rawNonce, 'raw-nonce');
+      user.providerData.push({providerId:'apple.com'});
+      calls.push('link');
+    },
+    reauthenticateWithCredential: async (target, credential) => {
+      assert.equal(target.uid, 'shared-uid');
+      assert.equal(credential.idToken, 'apple-token');
+      calls.push('reauth');
+    },
+    deleteUser: async (target) => { assert.equal(target.uid, 'shared-uid'); calls.push('user'); },
+    signOut: async () => {}, getRedirectResult: async () => null,
+    getFirestore: () => ({}), doc: (_db, ...parts) => parts.join('/'),
+    getDoc: async () => ({ exists: () => true, data: () => ({sections:{}}) }),
+    setDoc: async () => { calls.push('restore'); },
+    deleteDoc: async () => { calls.push('document'); }
+  };
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE), context, { filename:'cloud-sync.js' });
+  await window.KanaCloudSync.ready;
+  assert.equal(await window.KanaCloudSync.linkNativeProvider('apple.com'), false);
+  assert.equal(await window.KanaCloudSync.deleteAccount(), false);
+  assert.deepEqual(calls, [], 'Cancelling must not contact the provider or delete data');
+  approve = true;
+  assert.equal(await window.KanaCloudSync.linkNativeProvider('apple.com'), true);
+  assert.equal(auth.currentUser.uid, 'shared-uid');
+  localStorage.setItem('modeAtlasOnboardingComplete', 'true');
+  assert.equal(await window.KanaCloudSync.deleteAccount(), false, 'Server deletion failure must retain the device save');
+  assert.deepEqual(calls, ['link','reauth','revoke:apple-code','server']);
+  assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'), 'true');
+  calls.length=0;switchDuringRevoke=true;
+  assert.equal(await window.KanaCloudSync.deleteAccount(),false);
+  assert.deepEqual(calls,['reauth','revoke:apple-code'],'an account change during revocation must not reach server deletion');
+  assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'),'true');
+  switchDuringRevoke=false;auth.currentUser=user;
+  calls.length=0;socialFailure=false;
+  const deletion = window.KanaCloudSync.deleteAccount();
+  assert.equal(await window.KanaCloudSync.deleteAccount(), false, 'Repeated tap must not queue a second deletion');
+  assert.equal(await deletion, true);
+  assert.deepEqual(calls, ['reauth','revoke:apple-code','server']);
+  assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'), null);
 });
 
 test('cloud-sync discards stale-account hydration and serializes sync bursts', async () => {
@@ -658,6 +778,7 @@ test('Kana metrics use one storage snapshot and local calendar dates', () => {
     vm.createContext(context);
     vm.runInContext(KANA_DATA_SOURCE, context, { filename: 'mode-atlas-kana-data.js' });
     vm.runInContext(dateSource, context, { filename: 'mode-atlas-date.js' });
+    vm.runInContext(fs.readFileSync(path.join(ROOT,'assets/app/mode-atlas-review.js'),'utf8'), context);
     vm.runInContext(metricsSource, context, { filename: 'mode-atlas-kana-metrics.js' });
 
     const collections = window.ModeAtlasKanaData.collections;
@@ -724,15 +845,15 @@ test('2.46 Firebase startup restores Auth eagerly but defers Firestore until clo
   const coreEnd = CLOUD_SYNC_SOURCE.indexOf('\n}\n\nconst CONFIG', coreStart) + 2;
   assert.ok(coreStart >= 0 && coreEnd > coreStart, 'core Firebase loader should remain a distinct patchable owner');
   const coreLoader = CLOUD_SYNC_SOURCE.slice(coreStart, coreEnd);
-  assert.match(coreLoader, /firebase-app\.js/);
-  assert.match(coreLoader, /firebase-auth\.js/);
-  assert.doesNotMatch(coreLoader, /firebase-firestore\.js/, 'signed-out startup must not fetch Firestore');
+  assert.match(coreLoader, /ModeAtlasFirebase\.load\('app'\)/);
+  assert.match(coreLoader, /ModeAtlasFirebase\.load\('auth'\)/);
+  assert.doesNotMatch(coreLoader, /ModeAtlasFirebase\.load\('firestore'\)/, 'signed-out startup must not fetch Firestore');
 
   const firestoreStart = CLOUD_SYNC_SOURCE.indexOf('async function loadFirestoreModule() {');
   const firestoreEnd = CLOUD_SYNC_SOURCE.indexOf('\n}\n\nasync function ensureFirestore()', firestoreStart) + 2;
   assert.ok(firestoreStart >= 0 && firestoreEnd > firestoreStart, 'Firestore should have one lazy module loader');
   const firestoreLoader = CLOUD_SYNC_SOURCE.slice(firestoreStart, firestoreEnd);
-  assert.match(firestoreLoader, /firebase-firestore\.js/);
+  assert.match(firestoreLoader, /ModeAtlasFirebase\.load\('firestore'\)/);
   assert.match(CLOUD_SYNC_SOURCE, /async function ensureFirestore\(\)/);
   assert.equal((CLOUD_SYNC_SOURCE.match(/if \(!await ensureFirestore\(\)\) return false;/g) || []).length, 2);
 
@@ -741,4 +862,117 @@ test('2.46 Firebase startup restores Auth eagerly but defers Firestore until clo
   const setup = CLOUD_SYNC_SOURCE.slice(setupStart, setupEnd);
   assert.doesNotMatch(setup, /db\s*=\s*getFirestore\(app\)/, 'Auth restoration must not instantiate Firestore for guests');
   assert.match(setup, /if \(user\) \{\s*initialHydrationPromise = hydrateFromCloud\(false\)\.catch/s);
+});
+
+test('backup entry points reject normal users and recheck access after asynchronous setup', async () => {
+  const {context,window,localStorage}=createBaseContext();
+  vm.runInContext(STORAGE_SOURCE,context);
+  vm.runInContext(CLOUD_SYNC_SOURCE,context);
+  localStorage.setItem('charStats',JSON.stringify({'あ':{correct:3,wrong:0}}));
+  const snapshot=localStorage.getItem('charStats');
+  assert.throws(()=>window.KanaCloudSync.createBackup(),/Developer access/);
+  assert.throws(()=>window.KanaCloudSync.previewLocalBackup({}),/Developer access/);
+  await assert.rejects(window.KanaCloudSync.importLocalBackup({}),/Developer access/);
+  let eligible=true;
+  window.ModeAtlasDevConsoleLoader={isEligible:()=>eligible};
+  const backup=window.KanaCloudSync.createBackup();
+  const pending=window.KanaCloudSync.importLocalBackup(backup);
+  eligible=false;
+  await assert.rejects(pending,/Developer access/);
+  assert.equal(localStorage.getItem('charStats'),snapshot);
+});
+
+test('outgoing sync merges independent rewards and recall evidence, and reset clears the entire v3 state', async () => {
+  const {context,window,localStorage}=createBaseContext({configured:true});
+  let authCallback,remote=null,latestWrite;
+  context.__mocks={
+    initializeApp:()=>({}),getApps:()=>[],getApp:()=>({}),getAuth:()=>({}),
+    GoogleAuthProvider:class{setCustomParameters(){}},getRedirectResult:async()=>null,
+    onAuthStateChanged:(_auth,callback)=>{authCallback=callback;},getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),
+    getDoc:async()=>({exists:()=>!!remote,data:()=>remote}),setDoc:async(_ref,payload)=>{latestWrite=JSON.parse(JSON.stringify(payload));}
+  };
+  for(const file of ['assets/app/mode-atlas-storage.js','assets/app/mode-atlas-date.js','assets/app/mode-atlas-reward-rules.js','assets/app/mode-atlas-progress.js','assets/app/mode-atlas-review.js'])vm.runInContext(fs.readFileSync(path.join(ROOT,file),'utf8'),context);
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);
+  for(let i=0;i<50&&!authCallback;i++)await delay(1);
+  authCallback({uid:'learner'});await window.KanaCloudSync.waitForInitialHydration();
+  const makeState=(id,count)=>({version:3,legacySeeded:true,sources:{[id]:{'kana.reading.correct':count}},credits:{[id]:{answer:count}},claims:{'v3:mastery:reading:あ:2':10}});
+  const review=window.ModeAtlasReview;
+  const first=review.answer({}, {id:'a',at:Date.now()-86400000,correct:true}).entry;
+  const second=review.answer({}, {id:'b',at:Date.now(),correct:true}).entry;
+  localStorage.setItem('modeAtlasProgress',JSON.stringify(makeState('a',2)));
+  localStorage.setItem('modeAtlasProgressUpdatedAt','100');
+  localStorage.setItem('charSrs',JSON.stringify({'あ':first}));
+  remote={sections:{progress:{updatedAt:200,data:{state:makeState('b',3)}},reading:{updatedAt:200,data:{srs:{'あ':second}}}}};
+  assert.equal(await window.KanaCloudSync.syncNow(),true);
+  assert.equal(window.ModeAtlasProgress.getXP(),20,'both devices count; the same mastery milestone is credited once');
+  assert.equal(latestWrite.sections.progress.data.state.sources.a['kana.reading.correct'],2);
+  assert.equal(latestWrite.sections.progress.data.state.sources.b['kana.reading.correct'],3);
+  assert.equal(latestWrite.sections.reading.data.srs['あ'].recent.length,2);
+  function firestoreSafe(value){
+    if(Array.isArray(value)){assert.ok(!value.some(Array.isArray),'Firestore cannot store directly nested arrays');value.forEach(firestoreSafe);}
+    else if(value&&typeof value==='object')Object.values(value).forEach(firestoreSafe);
+  }
+  firestoreSafe(latestWrite);
+  remote=latestWrite;await window.KanaCloudSync.syncNow();assert.equal(window.ModeAtlasProgress.getXP(),20);
+  // Restore a pre-v3 backup. New fields must be explicitly empty, not retained
+  // by Firestore's merge behaviour from the save being replaced.
+  window.ModeAtlasDevConsoleLoader={isEligible:()=>true};
+  const backup=window.KanaCloudSync.createBackup();
+  backup.snapshot.sections.progress.data.state={version:2,legacySeeded:true,sources:{old:{'kana.reading.correct':7}}};
+  const restored=await window.KanaCloudSync.importLocalBackup(backup);
+  assert.equal(restored.cloudSynced,true);assert.equal(window.ModeAtlasProgress.getXP(),7);
+  assert.deepEqual(latestWrite.sections.progress.data.state.credits,{});
+  assert.deepEqual(latestWrite.sections.progress.data.state.claims,{});
+  await window.KanaCloudSync.resetAllData();
+  for(const key of ['sources','events','adjustments','credits','claims','activity','runs'])assert.deepEqual(latestWrite.sections.progress.data.state[key],{});
+});
+
+
+test('account switches preserve offline saves without uploading one account into another',async()=>{
+  const {context,window,localStorage}=createBaseContext({configured:true});
+  vm.runInContext(STORAGE_SOURCE,context);
+  let changed;const writes=[];
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,
+    GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,callback)=>{changed=callback;},
+    getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>false}),setDoc:async(ref,data)=>writes.push({ref,data})};
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);
+  for(let i=0;i<50&&!changed;i++)await delay(1);
+  // First sign-in adopts genuine guest work.
+  localStorage.setItem('charStats',JSON.stringify({'あ':{correct:3,wrong:0}}));
+  changed({uid:'save-A'});await window.KanaCloudSync.waitForInitialHydration();await window.KanaCloudSync.syncNow();
+  assert.equal(writes.at(-1).data.sections.reading.data.stats['あ'].correct,3);
+  context.navigator.onLine=false;
+  localStorage.setItem('charStats',JSON.stringify({'あ':{correct:8,wrong:0}}));
+  localStorage.setItem('kanaWordBank',JSON.stringify([{english:'private A note'}]));
+  changed(null);changed({uid:'save-B'});await window.KanaCloudSync.waitForInitialHydration();
+  assert.equal(localStorage.getItem('charStats'),null);
+  assert.equal(localStorage.getItem('kanaWordBank'),null);
+  localStorage.setItem('charStats',JSON.stringify({'い':{correct:2,wrong:0}}));
+  context.navigator.onLine=true;await window.KanaCloudSync.syncNow();
+  assert.equal(writes.at(-1).ref,'users/save-B/appData/kanaTrainer');
+  assert.equal(writes.at(-1).data.sections.reading.data.stats['あ'],undefined);
+  assert.ok(!JSON.stringify(writes.at(-1).data).includes('private A note'));
+  context.navigator.onLine=false;changed({uid:'save-A'});await window.KanaCloudSync.waitForInitialHydration();
+  assert.equal(JSON.parse(localStorage.getItem('charStats'))['あ'].correct,8,'unsynced A progress survives account switching');
+  assert.match(localStorage.getItem('kanaWordBank'),/private A note/);
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'offline');
+  // A quota failure partway through restoring B leaves a recoverable journal,
+  // preserves A's cache and never permits the partial B save to sync.
+  const setItem=localStorage.setItem.bind(localStorage);
+  localStorage.setItem=(key,value)=>{if(key==='charStats')throw new Error('Storage quota');setItem(key,value);};
+  changed({uid:'save-B'});await window.KanaCloudSync.waitForInitialHydration();
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'paused');
+  assert.ok(localStorage.getItem('modeAtlasPracticeTransaction'));
+  const pendingJournal=localStorage.getItem('modeAtlasPracticeTransaction');
+  assert.throws(()=>window.ModeAtlasStorage.transaction(()=>window.ModeAtlasStorage.set('modeAtlasLastMode','writing')),/Storage quota/);
+  assert.equal(localStorage.getItem('modeAtlasPracticeTransaction'),pendingJournal,'later practice must not overwrite an incomplete account restore');
+  const previousWrites=writes.length;context.navigator.onLine=true;
+  await window.KanaCloudSync.syncNow();assert.equal(writes.length,previousWrites);
+  assert.equal(JSON.parse(localStorage.getItem('modeAtlasAccountSave:save-A')).snapshot.sections.reading.data.stats['あ'].correct,8);
+  localStorage.setItem=setItem;
+  vm.runInContext(STORAGE_SOURCE,context); // Reopening replays the existing journal.
+  assert.equal(localStorage.getItem('modeAtlasPracticeTransaction'),null);
+  changed({uid:'save-B'});await window.KanaCloudSync.waitForInitialHydration();await window.KanaCloudSync.syncNow();
+  assert.equal(writes.at(-1).data.sections.reading.data.stats['い'].correct,2);
+  assert.equal(writes.at(-1).data.sections.reading.data.stats['あ'],undefined);
 });

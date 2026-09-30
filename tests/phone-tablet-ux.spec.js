@@ -55,11 +55,9 @@ async function seedStableState(page) {
 }
 
 async function gotoApp(page, path) {
-  await page.route(/https:\/\/(www\.)?gstatic\.com\/.*/, route => route.abort());
-  await page.route(/https:\/\/(www\.)?googleapis\.com\/.*/, route => route.abort());
-  await page.goto(path, { waitUntil: 'commit', timeout: 5000 });
-  await page.waitForSelector('body', { timeout: 5000 });
-  await page.waitForTimeout(700);
+  await page.route(/https:\/\/([\w-]+\.)?gstatic\.com\/.*/, route => route.abort());
+  await page.route(/https:\/\/([\w-]+\.)?googleapis\.com\/.*/, route => route.abort());
+  await page.goto(path, { waitUntil: 'domcontentloaded', timeout: 15000 });
 }
 
 function columnCount(template) {
@@ -210,7 +208,7 @@ test.describe('Phone and Tablet study UX', () => {
 
     const setup = await page.evaluate(() => {
       const root = document.querySelector('#modifierOptions.ma-structured-modifiers');
-      const buttons = root ? [...root.querySelectorAll('button')] : [];
+      const buttons = root ? [...root.querySelectorAll('button')].filter(button=>button.checkVisibility()) : [];
       const groups = root ? [...root.querySelectorAll('.ma-modifier-group')] : [];
       const controlMetrics = buttons.map((button) => {
         const rect = button.getBoundingClientRect();
@@ -243,7 +241,7 @@ test.describe('Phone and Tablet study UX', () => {
     ), null, 2)).toBe(true);
     expect(setup.groupsFit).toBe(true);
 
-    await page.locator('#modifiersTab').click();
+    await page.locator('#practiceSetupDone').click();
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await page.waitForTimeout(100);
     const clearance = await page.evaluate(() => {
@@ -292,6 +290,7 @@ test.describe('Phone and Tablet study UX', () => {
   test('Achievement detail uses the dialog close control as Back before dismissing', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await gotoApp(page, '/kana/');
+    await page.waitForFunction(() => typeof window.ModeAtlasFeatures?.openAchievements === 'function');
     await page.evaluate(() => window.ModeAtlasFeatures.openAchievements());
     const dialog = page.locator('[data-ma-dialog-layer]');
     await expect(dialog).toBeVisible();
@@ -311,6 +310,7 @@ test.describe('Phone and Tablet study UX', () => {
   test('Phone Mastery Map reveals the kana grid without an initial scroll hunt', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoApp(page, '/kana/');
+    await page.waitForFunction(() => typeof window.ModeAtlasFeatures?.openMasteryMap === 'function');
     await page.evaluate(() => window.ModeAtlasFeatures.openMasteryMap());
     await expect(page.locator('[data-ma-dialog-layer]')).toBeVisible();
     await expect(page.locator('[data-ma-dialog-message]')).toBeHidden();
@@ -328,19 +328,19 @@ test.describe('Phone and Tablet study UX', () => {
     expect(geometry.overviewHeight).toBeLessThan(190);
   });
 
-  test('Phone loss state keeps the correct answer and Try again action in the visible trainer frame', async ({ page }) => {
+  test('Phone correction keeps the answer and Continue action in the visible trainer frame', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoApp(page, '/reading/');
     await page.locator('#startBtn').click();
     await page.locator('#input').fill('zz');
-    await expect(page.locator('#gameOver')).toBeVisible();
-    await expect(page.locator('#retryBtn')).toBeVisible();
+    await expect(page.locator('#studyFeedback')).toBeVisible();
+    await expect(page.locator('#studyFeedbackContinue')).toBeVisible();
     await expect(page.locator('#endSessionBtn')).toBeVisible();
-    await expect(page.locator('#pauseSessionBtn')).toBeHidden();
+    await expect(page.locator('#pauseSessionBtn')).toBeVisible();
     await expect(page.locator('#skipKanaBtn')).toBeHidden();
     const frame = await page.evaluate(() => {
-      const answer = document.getElementById('gameOverAnswer').getBoundingClientRect();
-      const retry = document.getElementById('retryBtn').getBoundingClientRect();
+      const answer = document.querySelector('.ma-study-feedback__correction').getBoundingClientRect();
+      const retry = document.getElementById('studyFeedbackContinue').getBoundingClientRect();
       const viewportBottom = Number(window.visualViewport?.height || window.innerHeight) + Number(window.visualViewport?.offsetTop || 0);
       return {
         answerVisible: answer.top >= -2 && answer.bottom <= viewportBottom + 2,
@@ -350,8 +350,8 @@ test.describe('Phone and Tablet study UX', () => {
     expect(frame.answerVisible).toBe(true);
     expect(frame.retryVisible).toBe(true);
 
-    await page.locator('#retryBtn').click();
-    await expect(page.locator('#gameOver')).toBeHidden();
+    await page.locator('#studyFeedbackContinue').click();
+    await expect(page.locator('#studyFeedback')).toBeHidden();
     await expect(page.locator('#skipKanaBtn')).toBeVisible();
     await expect(page.locator('#pauseSessionBtn')).toBeVisible();
     await expect(page.locator('#endSessionBtn')).toBeVisible();
@@ -443,6 +443,8 @@ test.describe('Phone and Tablet study UX', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem('modeAtlasDisplayMode', 'phone'));
     await gotoApp(page, '/results/');
+    await expect(page.locator('.results-layout')).toBeVisible();
+    await expect(page.locator('.results-layout')).toHaveCSS('display', 'grid');
     const metrics = await page.evaluate(() => {
       const layout = document.querySelector('.results-layout');
       const tests = document.querySelector('.results-list-card .tests-grid');
@@ -491,13 +493,13 @@ test.describe('Phone and Tablet study UX', () => {
     await page.locator('#modifiersTab').click();
     const setup = await page.evaluate(() => {
       const root = document.querySelector('#modifierOptions.ma-structured-modifiers');
-      const buttons = root ? [...root.querySelectorAll('button')] : [];
+      const buttons = root ? [...root.querySelectorAll('button')].filter(button=>button.checkVisibility()) : [];
       return {
         columns: root ? getComputedStyle(root).gridTemplateColumns : '',
         controlsFit: buttons.every((button) => button.scrollWidth <= button.clientWidth + 1)
       };
     });
-    expect(columnCount(setup.columns)).toBe(2);
+    expect(columnCount(setup.columns)).toBe(1);
     expect(setup.controlsFit).toBe(true);
   });
 });

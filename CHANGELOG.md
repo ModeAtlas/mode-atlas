@@ -1,3 +1,194 @@
+## 2.76.0 - 2026-09-30
+
+- Implemented gated opt-in Friends profiles, random/rotatable codes, request acceptance/decline/cancellation, mutual friendships, removal and blocking for web and iOS.
+- Added friends-only rankings for level/XP, study streak, Reading/Writing/combined mastery and total correct, using shared reward frames/titles, equal ranks for ties and bounded pagination.
+- Built an authenticated Firebase callable backend, private rules and retryable save/deletion triggers. Server transactions own both relationship sides; profile responses exclude emails, provider photos and private saves.
+- Reused canonical progression, date, reward, review and kana owners through a read-only server adapter. Hardened progress normalization against inherited map keys and oversized counters; retained existing save and XP semantics.
+- Integrated confirmed opt-out and account deletion, including stale-account responses, delayed cleanup, rate-limit bypass attempts and in-flight deletion protection.
+- Added emulator integration and responsive browser coverage plus a dedicated GitHub backend gate. The feature remains disabled until reviewed Firebase deployment; no billing, production rules, main-branch or entitlement changes were made. Rankings are synced progress, not verified competitive XP.
+
+## 2.75.0 - 2026-09-30
+
+- Moved Export, Copy and Import save files from web/iOS Settings into Dev Diagnostics → Save files. File UI loads only with eligible developer diagnostics.
+- Consolidated normal data controls into one Settings row with automatic-save guidance, Repair save, Reset data and account deletion. Reset and deletion retain confirmation; automatic local saves and cloud sync continue through their existing owners.
+- Replaced the eager import/export module with small public reset controls and a lazy developer file module. Removed duplicate fallback backup/preview/import code; cloud sync remains the sole backup format and import-policy owner.
+- Rechecked developer access and account identity during asynchronous file actions, including after confirmation and before cloud writes. Native localhost does not grant developer access; eligibility uses the authenticated account owner.
+- Retired the export-dependent Safety Net achievement from the active catalogue without deleting saved history or changing earned XP.
+- Added regressions for normal-user access, developer export/copy/import, cancellation, malformed files, account changes and native Share Sheet completion. This reduces exposed editing tools; it does not make client-owned progress tamper-proof or replace future server validation for leaderboards.
+
+## 2.74.1 - 2026-09-30
+
+- Fixed unnecessary iOS Atlas home scrolling with returning-user recommendations by fitting goal progress into single rows and budgeting compact spacing for notched phones.
+- Kept full recommendation text on standard notched-phone layouts, 44px primary actions and natural scrolling for larger accessibility text and short viewports.
+- Added layout regressions for every recommendation, completed goals, cloud hydration and multiple phone sizes in both appearances. The Your Atlas menu, website presentation and shared learning data owners are unchanged.
+- Recorded a friends/leaderboards design review in `docs/friends-leaderboards-plan.md`; no social feature or backend deployment is enabled in this patch.
+
+## 2.74.0 - 2026-09-30
+
+- Moved account progression above save status and gave Your Atlas a spaced, labelled profile entry.
+- Replaced the iOS home’s duplicate trainer shortcuts with live daily goal progress from the shared routine owner.
+- Separated Goals and Rewards, kept their tabs and close control visible, and replaced tall reward cards with avatar/frame selection rows and a separate native app-icon section.
+- Applied selected frames to the dock/navigation avatar and unified frame colours with the existing achievement rank palette in both appearances.
+- Extended journalled recovery to Reading/Writing Daily Challenge and Test Mode, preserving sequence, counters, question timing and active session time. Daily attempts resume during their original calendar day; formal tests and guided sets last seven days.
+- Preserved final-answer completion exactly once, account boundaries and existing guided checkpoints. Added browser navigation recovery without resetting earned progress or creating incomplete formal results.
+- Kept shared scoring/progression owners and native home scoping; no native entitlement or dependency changes.
+
+## 2.73.0 - 2026-09-30
+
+- Added spaced recall across days and weeks with separate Reading/Writing confidence and one-time mastery milestones.
+- Rebalanced new-answer XP, set completion, accuracy, streak, due-review and routine rewards. Historical XP stays unchanged; the new level curve never lowers an existing level.
+- Added daily/weekly goals and the Atlas collection with selectable profile titles/frames and three unlockable native app icons. Every practice mode remains available.
+- Added journalled guided-set recovery, delayed mistake retries, automatic iOS focus with restoration, gentle question motion and coordinated optional native haptics.
+- Unified session XP, level, mastery and unlock feedback in the completion summary. Profile, Kana and widget progress consume the same progression owner.
+- Preserved semantic progression and review evidence during outgoing cloud sync; verified legacy backup import and complete reset of the new fields.
+- Removed superseded immediate-repeat/SRS award paths. See `docs/progression-2.73.0.md` for policy, migration and source ownership.
+
+## 2.72.0 - 2026-09-29
+
+- Explicit Incorrect/Skipped feedback, neutral kana examples and consistent session summaries across Reading and Writing.
+- Seven clear mode choices in Practice Setup, grouped options and an accessible iOS bottom sheet.
+- Guided follow-up sets for mistakes from any mode, including kana outside the regular selection.
+- Correct early-stop handling for Daily/Test; full timers required for timed records; accurate six-choice Test metadata.
+- Joined-kana answer/statistics fixes, bounded Writing choice generation, and saved Time Trial settings.
+- Consolidated session completion and summary ownership; removed superseded drawer styling. See `docs/trainer-review-2.72.0.md`.
+## 2.71.0 - 2026-09-29
+
+- Added shared 10/20/30-question guided Reading and Writing sets, with explicit progress and a useful completion summary. Existing free, timed, daily and test modes retain their rules.
+- Added learner-paced mistake explanations and seven kana contrast pairs, plus targeted practice from a completed set's mistakes. Answers continue through the existing scoring and save owners.
+- Made Atlas suggest a short activity with a reason based on selected kana and recorded practice, using one canonical row map shared with both trainers.
+- Integrated teaching with the existing pause/feedback lifecycle and iOS keyboard layout. Fixed the existing skip-feedback argument mismatch.
+- Added functional study-flow regressions and documented the later skippable, replayable tutorial and long-term review work.
+
+## 2.70.0 - 2026-09-29
+
+- Raised the native minimum to iOS 18 under the project configuration, inherited by app and widget targets and derived by Capacitor for its Swift package. Selected Xcode 26.3 in native CI.
+- Removed old widget date/background and notification-settings fallbacks, replaced deprecated broad appearance observation with targeted UIKit trait registration, and made the native operation queue explicitly preserve main-actor isolation across suspension.
+- Added one shared foreground OpenIntent and parameterised App Shortcut for Siri, Spotlight and Shortcuts, plus a configurable Control Centre/Lock Screen control. All native entry points reuse one consume-once navigation queue and the shared web destination map.
+- Added circular, rectangular and inline Lock Screen progress widgets using the existing snapshot, with system styling and accessible labels. Existing Home Screen widgets and themes are preserved.
+- Fixed the dock treating Daily Challenge/Review as the same destination as standard Reading. Exact-screen taps still avoid reloading.
+- Added native intent execution/queue checks, deployment/metadata verification and a dock-mode regression. No new entitlement, learning backend or product dependency.
+
+## 2.69.1 - 2026-09-29
+
+- Removed ticking seconds from widget activity recency. The first minute reads “Less than a minute ago”; later activity uses minutes, hours and days, with at most two units.
+- Used system-managed live date formatting on iOS 18+ and bounded precomputed labels on iOS 15–17. The first-minute transition and local-midnight rollover are scheduled without app timers, polling or extra snapshot reloads.
+- Kept the widget data contract, all three sizes, both colour themes and website behaviour unchanged.
+
+## 2.69.0 - 2026-09-29
+
+- Consolidated pause/resume and answer feedback under the existing session owner. Native inactivity pauses practice, including Speed Run; answer, daily/test and session timing exclude paused intervals. Resume is explicit.
+- Corrected shared retry visibility so idle and ended sessions cannot expose an unrelated End session action.
+- Added iOS backup export through the Share Sheet, with protected temporary files, iPad presentation support and accurate cancellation handling. The web adapter retains browser downloads.
+- Bundled licensed Inter, Sora and Noto Sans JP variable fonts for offline iOS use. One font loader selects the existing web transport or pinned local fonts; no new runtime dependency.
+- Connected UIKit Dynamic Type to native layout reflow, enlarged dock utility targets, corrected Kana-menu focus transfer, labelled Japanese content and retained accessible keyboard focus.
+- Added Reading, Writing and Daily Challenge Home Screen quick actions through the existing native destination queue.
+- Replaced shortcut-focused widgets with small, medium and large progress views. A bounded v2 projection adds word count, mode totals, level XP and last study activity while keeping v1 snapshots readable. Older totals remain available; daily status rolls over separately.
+- Replaced inferred click tracking with explicit successful study/Word Bank activity calls. Widget publication never changes the last-activity timestamp or owns Firebase data.
+
+## 2.68.1 - 2026-09-29
+
+- Reserved the iPhone home-indicator inset before dock measurement and replaced body-mutation sampling with observation of the dock's actual size, including restored pages.
+- Tightened native Atlas spacing to fit its header, continuation, progress and final actions above the dock, while preserving intrinsic scrolling for larger text and short screens.
+- Anchored native toast feedback above the dock or in-app keyboard through the existing shared toast component.
+- Separated secondary trainer actions from selected options at their shared source; iOS Pause/End session now use neutral control surfaces with original website colours retained.
+- Added real top/bottom safe-area emulation, cold/return navigation, delayed progress, safe-area changes and large-text reachability coverage.
+
+## 2.68.0 - 2026-09-29
+
+- Added an iOS-only semantic colour palette: paper/white Light mode and neutral graphite/charcoal Dark mode, with shared geometry and unchanged website paint.
+- Connected legacy trainer/results paint to named roles at the component source; restricted the website's existing light-mode repaint rules to the web runtime.
+- Applied the palette to native home, dock, setup, keyboard, drawers, feedback and progress. Preserved meaningful chart/rank colours rather than flattening data graphics.
+- Made the system launch screen and widgets adaptive, mirrored the saved appearance into UIKit, and updated native Results canvases when appearance changes.
+- Added palette contrast/ownership checks, six-screen native theme evidence, System/manual preference tests, and computed website-paint comparisons against 2.67.0.
+
+## 2.67.0 - 2026-09-29
+
+- Polished shared instructions, Results, Words and About; standardised practice/practise usage and removed developer-facing explanations from everyday UI.
+- Improved long button/profile text wrapping and made semantic hidden state reliable across component layouts.
+- Made Profile/Settings repeat-tap closing consistent and removed the misleading web update checker from native Settings.
+- Fixed Writing setup persisting into Reading settings; removed competing Writing handlers and runtime sound/input function wrappers.
+- Consolidated mastery, sync status, developer eligibility and display preferences under their existing owners.
+- Added a web/native layout matrix and documented ownership findings and remaining architectural limits.
+
+## 2.66.1 - 2026-09-29
+
+- Reduced native Reminders to its toggle, time picker and always-visible iPhone Settings button; routine status text and widget settings were removed at source.
+- Moved Test notification into the existing authorised developer menu, on iOS only.
+- Removed widget opt-in preferences and their bridge API. Provisioned App Group builds publish progress automatically; unprovisioned builds retain shortcuts.
+
+## 2.66.0 - 2026-09-29
+
+- Added iOS Settings controls for opt-in daily local reminders, local-time scheduling, a test notification and denied-permission recovery.
+- Added an embedded WidgetKit extension with small and medium practice shortcuts. Optional App Group provisioning enables an opt-in level, streak and daily-progress display.
+- Kept the existing progress/account owners and native platform facade; widget snapshots contain no identity or Firebase credentials. Reset, account deletion and sign-out clear shared progress and cancel reminders.
+- Added reminder UI regression coverage, widget snapshot calendar/freshness checks and release-gate verification of the embedded widget product.
+- Default signing remains free of App Group, push and Apple sign-in capabilities; shared progress requires a separately provisioned App Group.
+
+## 2.65.0 - 2026-09-29
+
+- Rebuilt the iOS home around a contextual continuation card, real level progress and a daily challenge, with responsive height and native-only styling.
+- Fixed Reading/Writing top clipping by making shared trainer spacing consume the native safe-area insets; automatic device sizing ignores saved browser scaling.
+- Removed native Display/Install settings and moved Repair save alongside the shared save actions.
+- Added an entitlement-free native engagement foundation: protected progress snapshot storage and explicit local reminder permission/schedule/cancel APIs. Widget extension and reminder settings UI remain future work.
+
+## 2.59.0 - 2026-09-28
+
+- Rebuilt the iOS dock as the only native navigation surface, moving the existing Profile, Settings and Focus controls into it without duplicating their behavior.
+- Placed Practice setup above the measured dock and centered the trainer against the visible iPhone viewport, including keyboard and focus states.
+- Matched the static iOS launch screen to the Mode Atlas kana mark and loading handoff, and removed the artificial page-navigation delay and warm-page splash.
+- Kept the website's navigation, layout and loading behavior unchanged.
+
+## 2.58.0 - 2026-09-28
+
+- Replaced the generic iOS launch image with a Mode Atlas launch screen and matched the native WebView background to prevent a blank flash during startup.
+- Added an iOS-only bottom navigation for the five main study areas, retaining profile and settings in the top bar and keeping the website unchanged.
+- Smoothed native document navigation and loading handoff, respected safe areas and reduced motion, and kept controls clear of the keyboard.
+
+## 2.57.2 - 2026-09-27
+
+- Initialized the iOS web session with explicit local storage persistence so native Google credential sign-in can persist across bundled page navigation without relying on WebKit IndexedDB startup.
+- Reported a stalled native credential handoff after 15 seconds and included Firebase error codes in sign-in feedback, avoiding a silent return to the Guest profile.
+
+## 2.57.1 - 2026-09-27
+
+- Resolved the native shell's clean page URLs to their bundled HTML documents, restoring the correct Kana, Reading, Writing, Results and Word Bank pages with their styling and scripts.
+- Treated Capacitor's internal localhost as a native runtime, so developer diagnostics appear only for the signed-in admin account inside the iOS app.
+- Verified that the built iOS app contains the page and style assets used by native navigation.
+
+## 2.57.0 - 2026-09-27
+
+- Provisioned the real Firebase Apple app registration for `app.modeatlas` in the existing `mode-atlus` project.
+- Bundled the validated Firebase plist with the iOS target and derived the Google callback URL scheme from that single configuration owner.
+- Routed the Google callback through the iOS scene delegate while retaining Capacitor navigation URL handling.
+- Made Firebase configuration mandatory for release checks and verified the built simulator app's bundled plist and resolved URL scheme.
+
+## 2.56.0 - 2026-09-27
+
+- Route cold and warm iOS launches through Capacitor App to shared Mode Atlas destinations, with a dedicated `modeatlas://open/` navigation scheme.
+- Activate the Reading Daily Challenge and weak-kana review setup from destination links, including the existing website review links.
+- Keep native launch URL handling restricted to known Mode Atlas destinations and ignore unrelated authentication callbacks.
+- Normalize Capacitor's generated Firebase SPM symlink to a repository-relative target during iOS sync so builds stay source-clean across checkout locations.
+
+## 2.55.0 - 2026-09-27
+- Added native Google sign-in transport for the iOS shell using Capacitor Firebase Authentication 8.5.2.
+- Kept Firebase JavaScript Auth as the single authenticated session owner across web and iOS; native iOS owns only the Google account chooser and returns an OAuth credential to the existing cloud-sync owner.
+- Configured the Capacitor Firebase plugin with `skipNativeAuth: true` and only the `google.com` provider to prevent duplicate native/web Firebase sessions.
+- Updated `cloud-sync.js` to exchange the native Google credential through `GoogleAuthProvider.credential()` and `signInWithCredential()`, preserving the same Firebase UID, Firestore path, hydration, merge and sync logic used by the website.
+- Added explicit native auth capabilities to the shared `AtlasPlatform` boundary instead of placing iOS-specific calls in trainer/page code.
+- Added a Firebase Apple configuration validator and documented the required `app.modeatlas` registration in the existing `mode-atlus` Firebase project. Native Google sign-in remains intentionally unavailable until the real iOS `GoogleService-Info.plist` is provisioned; no placeholder client IDs are committed.
+- Synchronized the real Capacitor iOS project and Swift Package Manager dependencies with the Google-only Firebase Authentication trait.
+- Extended audit, regression and simulated native-shell coverage for the single-owner authentication boundary.
+
+## 2.54.0 - 2026-09-27
+- Added the first Mode Atlas iOS/native foundation without duplicating learning logic or creating a separate frontend implementation.
+- Introduced one shared `AtlasPlatform` facade with explicit web and iOS adapters for native-capability boundaries such as app version, external links, destinations, notifications, badges, and widget snapshots.
+- Added first-class native runtime detection to the shared head bootstrap. Native mode is now an explicit environment rather than an inferred browser special case.
+- Browser-only PWA install prompts, deployed-version checks, document revision guards, and Service Worker/update ownership are explicitly disabled inside the native runtime.
+- Kept browser Firebase authentication disabled inside the native WebView until the native Firebase authentication bridge owns that responsibility; existing web Firebase behaviour is unchanged.
+- Added a deterministic `build_ios_web.py` builder that packages the validated revisioned web runtime for iOS while excluding Service Worker/PWA transport files and duplicate canonical JS/CSS sources.
+- Restored the permanent release gate, removed the legacy duplicate changelog workflow, and added native-foundation source tests plus a simulated Capacitor/iOS lifecycle smoke test.
+- No Reading, Writing, Kana, Results, Word Bank, SRS, mastery, achievement, scoring, or persistence logic was rewritten for iOS.
+
 ## 2.53.3 - 2026-09-27
 - Corrected the phone navigation top-of-page state so it sits in normal document flow on first load and whenever the user returns to the page top.
 - The nav now becomes a floating fixed control only after the user has left the top of the page and performs the deliberate upward reveal gesture.

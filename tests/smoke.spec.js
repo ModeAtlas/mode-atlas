@@ -63,11 +63,9 @@ async function seedStableLocalState(page) {
 }
 
 async function gotoApp(page, path) {
-  await page.route(/https:\/\/(www\.)?gstatic\.com\/.*/, route => route.abort());
-  await page.route(/https:\/\/(www\.)?googleapis\.com\/.*/, route => route.abort());
-  await page.goto(path, { waitUntil: 'commit', timeout: 5000 });
-  await page.waitForSelector('body', { timeout: 5000 });
-  await page.waitForTimeout(1000);
+  await page.route(/https:\/\/([\w-]+\.)?gstatic\.com\/.*/, route => route.abort());
+  await page.route(/https:\/\/([\w-]+\.)?googleapis\.com\/.*/, route => route.abort());
+  await page.goto(path, { waitUntil: 'domcontentloaded', timeout: 15000 });
 }
 
 async function expectNoSevereConsoleErrors(page, run) {
@@ -113,7 +111,7 @@ test.describe('Mode Atlas core smoke tests', () => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/');
       await Promise.all([
-        page.waitForURL(/\/kana\/$/, { timeout: 7500, waitUntil: 'commit' }),
+        page.waitForURL(/\/kana\/$/, { timeout: 15000, waitUntil: 'domcontentloaded' }),
         page.locator('a.atlas-product__action[href="/kana/"]').click({ noWaitAfter: true }),
       ]);
       await expect(page.locator('#mainContent.kana-hub')).toBeVisible({ timeout: 5000 });
@@ -131,10 +129,10 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('#mainContent.kana-hub')).toBeVisible();
 
       const settingsButton = page.locator('[data-settings-open]:visible').first();
-      const settingsDrawer = page.locator('#settingsDrawer');
+      const settingsDrawer = page.locator('#maAccount-settings');
       await expect(settingsDrawer).toBeAttached({ timeout: 5000 });
       await expect(settingsButton).toBeVisible();
-      await expect(settingsButton).toHaveAttribute('data-settings-bound', 'shared', { timeout: 5000 });
+      await expect(settingsButton).toHaveAttribute('aria-controls', 'maAccountSheet');
       await settingsButton.click();
       await expect(settingsDrawer).toBeVisible();
 
@@ -171,7 +169,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('#heatmap .cell').first()).toBeVisible();
       await page.locator('#modifiersTab').click();
       await expect(page.locator('#modifiersContent')).toHaveClass(/open/);
-      await page.locator('#modifiersTab').click();
+      await page.locator('#practiceSetupDone').click();
       await expect(page.locator('#modifiersContent')).not.toHaveClass(/open/);
       await page.locator('#startBtn').click();
 
@@ -189,10 +187,10 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('body')).not.toHaveClass(/ma-session-paused/);
 
       await page.locator('#skipKanaBtn').click();
-      await expect(page.locator('#hint')).toContainText('Answer:', { timeout: 3000 });
+      await expect(page.locator('#studyFeedback')).toContainText('Correct answer:', { timeout: 3000 });
 
       await page.locator('#endSessionBtn').click();
-      await expect(page.locator('.ma-dialog-layer.is-open .ma-session-dialog-content')).toBeVisible();
+      await expect(page.locator('.ma-dialog-layer.is-open .ma-study-summary')).toBeVisible();
     });
   });
 
@@ -207,10 +205,10 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('#choiceGrid button')).toHaveCount(4);
 
       await page.locator('#choiceGrid button').first().click();
-      await expect(page.locator('#choiceGrid')).toBeVisible();
+      await expect.poll(()=>page.locator('#choiceGrid').isVisible().then(async visible=>visible||await page.locator('#studyFeedback').isVisible())).toBe(true);
 
       await page.locator('#endSessionBtn').click();
-      await expect(page.locator('.ma-dialog-layer.is-open .ma-session-dialog-content')).toBeVisible();
+      await expect(page.locator('.ma-dialog-layer.is-open .ma-study-summary')).toBeVisible();
     });
   });
 
@@ -253,25 +251,25 @@ test.describe('Mode Atlas core smoke tests', () => {
 
       const profileTrigger = page.locator('#profileOpenBtn');
       await profileTrigger.click();
-      const profileDrawer = page.locator('#profileDrawer');
+      const profileDrawer = page.locator('#maAccount-profile');
       await expect(profileDrawer).toBeVisible();
-      await expect(page.locator('#profileCloseBtn')).toBeFocused();
-      await page.locator('#profileCloseBtn').click();
+      await expect(page.locator('#maAccountClose')).toBeFocused();
+      await page.locator('#maAccountClose').click();
       await expect(profileDrawer).toHaveAttribute('aria-hidden', 'true');
-      await expect(profileDrawer).not.toHaveClass(/\bopen\b/);
-      await expect(page.locator('body')).not.toHaveClass(/profile-open/);
+      await expect(profileDrawer).not.toHaveClass(/\bis-active\b/);
+      await expect(page.locator('body')).not.toHaveClass(/ma-account-open/);
       await expect(profileTrigger).toBeFocused();
 
       const settingsButton = page.locator('[data-settings-open]:visible').first();
       await settingsButton.click();
-      const settingsDrawer = page.locator('#settingsDrawer');
+      const settingsDrawer = page.locator('#maAccount-settings');
       await expect(settingsDrawer).toBeVisible();
-      await expect(page.locator('#settingsCloseBtn')).toBeFocused();
+      await expect(page.locator('#maAccountClose')).toBeFocused();
 
-      await page.locator('#settingsCloseBtn').click();
+      await page.locator('#maAccountClose').click();
       await expect(settingsDrawer).toHaveAttribute('aria-hidden', 'true');
-      await expect(settingsDrawer).not.toHaveClass(/\bopen\b/);
-      await expect(page.locator('body')).not.toHaveClass(/settings-open/);
+      await expect(settingsDrawer).not.toHaveClass(/\bis-active\b/);
+      await expect(page.locator('body')).not.toHaveClass(/ma-account-open/);
       await expect(settingsButton).toBeFocused();
     });
   });
@@ -340,10 +338,8 @@ test.describe('Mode Atlas core smoke tests', () => {
 
     const assertDrawerFits = async (selector) => {
       const drawer = page.locator(selector);
-      await expect(drawer).toHaveClass(/\bopen\b/);
-      // Visibility becomes true as soon as the off-canvas drawer starts its
-      // transition. Wait for the shared drawer animation to finish inside the
-      // viewport before validating its final geometry.
+      await expect(drawer).toHaveClass(/\bis-active\b/);
+      // Account sections share the same viewport-constrained shell.
       await expect.poll(async () => {
         const metrics = await readDrawerMetrics(selector);
         return metrics.right <= metrics.viewportWidth + 1;
@@ -360,19 +356,19 @@ test.describe('Mode Atlas core smoke tests', () => {
 
     const settingsTrigger = page.locator('[data-settings-open]:visible').first();
     await settingsTrigger.click();
-    await expect(page.locator('#settingsDrawer')).toBeVisible();
-    await assertDrawerFits('#settingsDrawer');
+    await expect(page.locator('#maAccount-settings')).toBeVisible();
+    await assertDrawerFits('#maAccount-settings');
 
     await page.evaluate(() => document.getElementById('profileOpenBtn')?.click());
-    await expect(page.locator('#profileDrawer')).toBeVisible();
-    await expect(page.locator('#settingsDrawer')).not.toHaveClass(/\bopen\b/);
-    await expect(page.locator('.ma-drawer.open')).toHaveCount(1);
-    await page.locator('#profileCloseBtn').click();
+    await expect(page.locator('#maAccount-profile')).toBeVisible();
+    await expect(page.locator('#maAccount-settings')).not.toHaveClass(/\bis-active\b/);
+    await expect(page.locator('.ma-account-view.is-active')).toHaveCount(1);
+    await page.locator('#maAccountClose').click();
 
     const profileTrigger = page.locator('#profileOpenBtn');
     await profileTrigger.click();
-    await expect(page.locator('#profileDrawer')).toBeVisible();
-    await assertDrawerFits('#profileDrawer');
-    await page.locator('#profileCloseBtn').click();
+    await expect(page.locator('#maAccount-profile')).toBeVisible();
+    await assertDrawerFits('#maAccount-profile');
+    await page.locator('#maAccountClose').click();
   });
 });

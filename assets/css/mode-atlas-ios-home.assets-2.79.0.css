@@ -1,0 +1,75 @@
+/* Native Atlas composition. Web home remains owned by home-page.css.
+   Flexible hero absorbs taller screens. Inline goal rows leave room for every
+   recommendation; larger text and short/landscape viewports can still scroll. */
+html[data-ma-runtime="ios"] .atlas-home > :not(.atlas-ios-home){display:none;}
+html[data-ma-runtime="ios"] .atlas-home{width:100%;max-width:680px;padding:12px 18px 0;}
+html[data-ma-runtime="ios"] body.ma-atlas-page::after{display:none;}
+html[data-ma-runtime="ios"] .atlas-ios-home{
+  display:grid;grid-template-rows:auto minmax(min-content,1fr) auto auto;gap:12px;
+  min-height:calc(100svh - var(--ma-page-inset-top) - var(--ma-page-inset-bottom) - 12px);
+  position:relative;z-index:1;
+}
+html[data-ma-runtime="ios"] .atlas-ios-home__header{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+html[data-ma-runtime="ios"] .atlas-ios-home__eyebrow{margin:0 0 6px;font-size:.62rem;font-weight:800;letter-spacing:.14em;color:var(--ma-muted);}
+html[data-ma-runtime="ios"] .atlas-ios-home__header h1{margin:0;font:850 clamp(1.85rem,7vw,2.35rem)/1.08 var(--ma-font-display);letter-spacing:-.045em;}
+html[data-ma-runtime="ios"] .atlas-ios-home__brand{display:grid;place-items:center;width:46px;height:46px;border-radius:16px;background:color-mix(in srgb,var(--ma-atlas) 15%,var(--ma-card));color:var(--ma-atlas);font:800 1.1rem var(--ma-font-jp);}
+html[data-ma-runtime="ios"] .atlas-ios-home__continue{
+  --home-accent:var(--ma-reading);
+  display:grid;grid-template-columns:minmax(0,1fr) 96px;grid-template-rows:1fr auto;align-items:center;gap:16px 8px;
+  padding:18px;border-radius:26px;text-decoration:none;color:var(--ma-text-strong);
+  background:var(--ma-surface);
+  border:1px solid var(--ma-border);
+}
+html[data-ma-runtime="ios"] .atlas-ios-home__continue[data-mode="writing"]{--home-accent:var(--ma-writing);}
+html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>small{color:var(--home-accent);font-size:.73rem;font-weight:800;}
+html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>strong{display:block;margin-top:8px;font:850 clamp(1.65rem,7vw,2.2rem)/1.06 var(--ma-font-display);letter-spacing:-.04em;max-width:12ch;}
+html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy p{max-width:24ch;margin:10px 0 0;color:var(--ma-text-soft);font-size:.83rem;line-height:1.45;}
+html[data-ma-runtime="ios"] .atlas-ios-home__art{position:relative;height:100px;pointer-events:none;}
+html[data-ma-runtime="ios"] .atlas-ios-home__art>span{position:absolute;display:grid;place-items:center;width:72px;height:86px;border-radius:18px;font:800 3rem var(--ma-font-jp);border:1px solid color-mix(in srgb,var(--home-accent) 45%,var(--ma-border));background:var(--ma-card);}
+html[data-ma-runtime="ios"] .atlas-ios-home__art>span:first-child{top:0;right:0;transform:rotate(12deg);color:var(--ma-muted);}
+html[data-ma-runtime="ios"] .atlas-ios-home__art>span:last-child{top:16px;right:18px;transform:rotate(-9deg);color:var(--home-accent);background:color-mix(in srgb,var(--home-accent) 13%,var(--ma-card));}
+html[data-ma-runtime="ios"] .atlas-ios-home__hero-footer{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--ma-border);padding-top:14px;}
+html[data-ma-runtime="ios"] .atlas-ios-home__hero-footer>small{font-size:.65rem;color:var(--ma-muted);max-width:16ch;}
+html[data-ma-runtime="ios"] .atlas-ios-home__cta{display:flex;align-items:center;justify-content:center;gap:12px;min-height:44px;padding:0 14px;border-radius:14px;background:var(--ma-native-primary);color:var(--ma-native-primary-text);font-size:.8rem;font-weight:850;}
+html[data-ma-runtime="ios"] .atlas-ios-home h2{margin:0;font:800 1rem/1.25 var(--ma-font-display);}
+html[data-ma-runtime="ios"] .atlas-ios-home__section-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+html[data-ma-runtime="ios"] .atlas-ios-home__section-heading>a{display:flex;align-items:center;min-height:32px;text-decoration:none;color:var(--ma-muted);font-size:.72rem;}
+html[data-ma-runtime="ios"] .atlas-ios-home__stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:8px 0;}
+html[data-ma-runtime="ios"] .atlas-ios-home__stats>div{display:grid;gap:4px;text-align:center;border-right:1px solid var(--ma-border);}
+html[data-ma-runtime="ios"] .atlas-ios-home__stats>div:last-child{border:0;}
+html[data-ma-runtime="ios"] .atlas-ios-home__stats strong{font:850 1.7rem/1.1 var(--ma-font-display);color:var(--ma-text-strong);}
+html[data-ma-runtime="ios"] .atlas-ios-home__stats span{font-size:.67rem;color:var(--ma-muted);}
+html[data-ma-runtime="ios"] .atlas-ios-home__level{display:grid;gap:7px;font-size:.65rem;color:var(--ma-muted);}
+html[data-ma-runtime="ios"] .atlas-ios-home__level progress{appearance:none;width:100%;height:6px;border:0;border-radius:8px;overflow:hidden;background:var(--ma-border);}
+html[data-ma-runtime="ios"] .atlas-ios-home__level progress::-webkit-progress-bar{background:var(--ma-border);}
+html[data-ma-runtime="ios"] .atlas-ios-home__level progress::-webkit-progress-value{background:var(--ma-atlas);border-radius:8px;}
+html[data-ma-runtime="ios"] .atlas-ios-home__today{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;margin-top:6px;text-decoration:none;font-size:.75rem;color:var(--ma-text-soft);}
+html[data-ma-runtime="ios"] .atlas-ios-home__routine .atlas-ios-home__section-heading{margin-bottom:4px;}
+html[data-ma-runtime="ios"] .atlas-ios-home__routine .ma-button{font-size:.7rem;min-height:44px;padding:6px 10px;white-space:normal;}
+html[data-ma-runtime="ios"] .atlas-ios-home .ma-routine-goal{grid-template-columns:minmax(0,1fr) 72px 4.5em;align-items:center;gap:8px;font-size:.68rem;}
+html[data-ma-runtime="ios"] .atlas-ios-home .ma-routine-goal span{grid-column:3;text-align:right;}
+html[data-ma-runtime="ios"] .atlas-ios-home .ma-routine-goal progress{grid-column:2;grid-row:1;}
+html[data-ma-runtime="ios"] .atlas-ios-home a:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
+html[data-ma-runtime="ios"] .atlas-ios-home__continue:active{filter:brightness(.9);}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__continue{grid-template-columns:minmax(0,1fr);}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__art{display:none;}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__hero-footer{flex-wrap:wrap;}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__stats{gap:8px;}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__stats strong{font-size:1.3rem;overflow-wrap:anywhere;}
+html[data-ma-runtime="ios"][data-ma-large-text] .atlas-ios-home__today{flex-wrap:wrap;}
+/* A notched phone also needs compact spacing: its usable height excludes both
+   safe areas and the dock, even when the full viewport exceeds 740px. */
+@media(max-height:860px){
+  html[data-ma-runtime="ios"] .atlas-ios-home{gap:8px;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__continue{padding:12px 16px;gap:8px;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>strong{margin-top:4px;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy p{margin-top:8px;line-height:1.4;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__hero-footer{padding-top:8px;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__stats{margin:4px 0;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__stats strong{font-size:1.5rem;}
+}
+@media(max-height:740px){
+  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy p{display:none;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__hero-copy>strong{font-size:1.7rem;}
+  html[data-ma-runtime="ios"] .atlas-ios-home__art{height:70px;transform:scale(.75);transform-origin:center;}
+}

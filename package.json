@@ -1,6 +1,6 @@
 {
   "name": "mode-atlas",
-  "version": "2.53.3",
+  "version": "2.79.0",
   "private": true,
   "description": "Mode Atlas static web app smoke tests",
   "scripts": {
@@ -10,11 +10,39 @@
     "test:report": "playwright show-report",
     "build:revision": "python3 build_revision_assets.py",
     "audit": "python3 audit_project.py",
-    "release:check": "python3 build_revision_assets.py && python3 audit_project.py && node --test tests/backend.test.js tests/frontend.test.js",
+    "release:check": "python3 build_revision_assets.py && python3 build_social_backend.py && python3 sync_ios_project.py && python3 validate_ios_firebase_config.py --require && python3 audit_project.py && python3 build_ios_web.py --check && node --test tests/backend.test.js tests/frontend.test.js tests/ios-foundation.test.js tests/ios-theme.test.js tests/study-flow.test.js tests/progression.test.js tests/social.test.js",
     "test:backend": "node --test tests/backend.test.js",
-    "test:frontend": "node --test tests/frontend.test.js"
+    "test:frontend": "node --test tests/frontend.test.js",
+    "build:ios-web": "python3 build_ios_web.py",
+    "check:ios-web": "python3 build_ios_web.py --check",
+    "test:ios-foundation": "node --test tests/ios-foundation.test.js",
+    "test:ios-shell": "playwright test tests/ios-shell.spec.js",
+    "ios:sync": "python3 sync_ios_project.py && npm run build:ios-web && npx cap sync ios && python3 sync_ios_project.py --normalize-spm-links",
+    "ios:open": "npx cap open ios",
+    "ios:check-version": "python3 sync_ios_project.py",
+    "ios:check-firebase": "python3 validate_ios_firebase_config.py",
+    "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js tests/ios-experience.spec.js tests/study-flow.spec.js tests/trainer-modes.spec.js tests/progression.spec.js tests/dev-backups.spec.js tests/social.spec.js tests/account-navigation.spec.js tests/sounds.spec.js tests/release-readiness.spec.js",
+    "build:social": "python3 build_social_backend.py",
+    "test:social": "npm run build:social && npm --prefix backend test",
+    "social:install": "npm --prefix backend ci && npm --prefix backend/functions ci",
+    "social:login": "backend/node_modules/.bin/firebase login",
+    "social:status": "backend/node_modules/.bin/firebase firestore:databases:get --project mode-atlus && backend/node_modules/.bin/firebase functions:list --project mode-atlus",
+    "social:deploy": "backend/node_modules/.bin/firebase deploy --project mode-atlus --only firestore:rules,firestore:indexes,functions:mode-atlas-social"
   },
   "devDependencies": {
-    "@playwright/test": "^1.49.0"
+    "@capacitor/cli": "8.5.2",
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/noto-sans-jp": "5.3.0",
+    "@fontsource-variable/sora": "5.3.0",
+    "@playwright/test": "^1.49.0",
+    "esbuild": "0.25.12"
+  },
+  "dependencies": {
+    "@capacitor-firebase/authentication": "8.5.2",
+    "@capacitor/app": "8.0.1",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.5.2",
+    "firebase": "12.12.1"
   }
 }
