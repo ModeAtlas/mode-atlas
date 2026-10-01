@@ -7,7 +7,7 @@
   const button=(label,cls='ma-button ma-button--ghost')=>{const node=el('button',cls,label);node.type='button';return node;};
   function appearance(){
     const state=root.ModeAtlasProgress.readState(),level=root.ModeAtlasProgress.getSummary(state).level;
-    return root.ModeAtlasRewardRules.landmarks.find(item=>item.id===state.appearance.landmark&&item.level<=level)||root.ModeAtlasRewardRules.landmarks[0];
+    return root.ModeAtlasRewardRules.appearance(state.appearance.landmark,level);
   }
   function refresh(){
     const item=appearance(),summary=root.ModeAtlasProgress.getSummary(),routine=root.ModeAtlasProgress.routine();

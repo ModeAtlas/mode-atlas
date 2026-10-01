@@ -17,7 +17,7 @@ struct WidgetSnapshotTests {
                 levelXp: 125, levelRequirement: 250)
         }
         assert(sample().isValid && sample().isFresh(at: now))
-        assert(!sample(version: 3).isValid)
+        assert(!sample(version: 4).isValid)
         assert(!sample(words: -1).isValid)
         assert(!sample(level: 0).isValid)
         assert(!sample(progress: 1.1).isValid)
@@ -43,11 +43,27 @@ struct WidgetSnapshotTests {
         legacy["schemaVersion"] = 2
         let incomplete = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: legacy))
         assert(!incomplete.isValid, "A v2 snapshot must contain all statistics")
+        var atlas = sample(version: 3)
+        atlas.title = "Trail Finder"; atlas.frame = "plain"; atlas.studyStreak = 3; atlas.lastStudyDay = day
+        atlas.nextTitle = "Grove Explorer"; atlas.nextLevel = 5
+        atlas.goals = [ModeAtlasWidgetGoal(id: "recall", label: "Recall 20 kana today", value: 20, target: 20),
+                       ModeAtlasWidgetGoal(id: "balance", label: "Read 5 and write 5 today", value: 6, target: 10),
+                       ModeAtlasWidgetGoal(id: "review", label: "Recall 5 due kana today", value: 1, target: 5),
+                       ModeAtlasWidgetGoal(id: "week", label: "Practise on 4 days this week", value: 2, target: 4)]
+        assert(atlas.isValid)
+        let decodedAtlas = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONEncoder().encode(atlas))
+        assert(decodedAtlas.title == "Trail Finder" && decodedAtlas.goals(at: now).first!.value == 20)
+        assert(decodedAtlas.goals(at: tomorrow).first!.value == 0, "Yesterday's completed daily goals must reset")
+        assert(decodedAtlas.routineStreak(at: tomorrow) == 3)
+        assert(decodedAtlas.routineStreak(at: calendarDay(2, after: now)) == 0)
+        atlas.nextLevel = 3; assert(!atlas.isValid); atlas.nextLevel = 5
+        atlas.goals = [atlas.goals!.first!]; assert(!atlas.isValid)
         assert(ModeAtlasWidgetStore.read() == nil, "Unprovisioned builds must not read another container")
         testActivityTiming()
         print("Widget bounds, v1 migration, retained totals, first-minute boundaries, minimal timelines, calendar rollover and round-trip passed")
     }
 
+    static func calendarDay(_ days: Int, after date: Date) -> Date { Calendar.current.date(byAdding: .day, value: days, to: date)! }
     static func testActivityTiming() {
         let activity = Date(timeIntervalSince1970: 1_790_726_390.125)
         for elapsed in [-30.0, 0, 59.999, 60, 120, 3600, 86400] {

@@ -1,5 +1,6 @@
 const { defineConfig, devices } = require('@playwright/test');
 const fs = require('fs');
+const publishedWebRoot = process.env.MODE_ATLAS_WEB_ROOT;
 
 const systemChromium = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
   || (fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
@@ -23,8 +24,9 @@ module.exports = defineConfig({
   },
   webServer: {
     command: 'python3 -m http.server 4173 --bind 127.0.0.1',
+    cwd: publishedWebRoot || __dirname,
     url: 'http://127.0.0.1:4173',
-    reuseExistingServer: true,
+    reuseExistingServer: !publishedWebRoot,
     timeout: 10_000
   },
   projects: [

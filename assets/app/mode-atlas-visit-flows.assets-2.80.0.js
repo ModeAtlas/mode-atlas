@@ -95,9 +95,10 @@
     card.append(content);
     m.append(card);
     document.body.appendChild(m);
+    window.addEventListener('modeAtlasDialogStateChanged',()=>{card.inert=window.ModeAtlasDialog.isOpen();card.setAttribute('aria-hidden',String(card.inert));});
     m.addEventListener('click',e=>{if(e.target===m)closeModal()});
     document.addEventListener('keydown',e=>{
-      if(!m.classList.contains('open'))return;
+      if(!m.classList.contains('open')||window.ModeAtlasDialog?.isOpen()||window.ModeAtlasTour?.isOpen())return;
       if(e.key==='Escape'){e.preventDefault();closeModal();return;}
       if(e.key!=='Tab')return;
       const items=[...card.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled)')].filter(el=>el.getClientRects().length);
@@ -107,8 +108,8 @@
     })
   }
   let visitFocus=null;
-  function openModal(locked=false){visitFocus=document.activeElement;const modal=document.getElementById('maVisitModal');if(!modal)return;modal.dataset.locked=locked?'true':'false';modal.classList.add('open');requestAnimationFrame(()=>modal.querySelector('[role=dialog]')?.focus());try{document.dispatchEvent(new CustomEvent('ma:visit-flow-opened'))}catch{}}
-  function closeModal(force,resumeInstall=true){const modal=document.getElementById('maVisitModal'); if(!modal)return; if(modal.dataset.locked==='true' && force!==true)return; modal.classList.remove('open'); modal.dataset.locked='false';visitFocus?.focus?.({preventScroll:true}); try{document.dispatchEvent(new CustomEvent('ma:visit-flow-closed',{detail:{resumeInstall}}))}catch{}}
+  function openModal(locked=false){visitFocus=document.activeElement;const modal=document.getElementById('maVisitModal');if(!modal)return;modal.dataset.locked=locked?'true':'false';modal.classList.add('open');window.ModeAtlasOverlay.lock(modal);requestAnimationFrame(()=>modal.querySelector('[role=dialog]')?.focus());try{document.dispatchEvent(new CustomEvent('ma:visit-flow-opened'))}catch{}}
+  function closeModal(force,resumeInstall=true){const modal=document.getElementById('maVisitModal'); if(!modal)return; if(modal.dataset.locked==='true' && force!==true)return; modal.classList.remove('open');window.ModeAtlasOverlay.unlock(modal); modal.dataset.locked='false';visitFocus?.focus?.({preventScroll:true}); try{document.dispatchEvent(new CustomEvent('ma:visit-flow-closed',{detail:{resumeInstall}}))}catch{}}
   function markLegalComplete(){
     storeSet(K.complete,'true');
     storeSet('modeAtlasLegalAccepted','true');
@@ -283,11 +284,11 @@
     return initialCloudReady;
   }
   async function maybe(){
-    if(visitDecisionMade)return;
+    if(visitDecisionMade||window.ModeAtlasTour?.isOpen())return;
     const q=new URLSearchParams(location.search),ff=sessionStorage.getItem(K.forceFirst)==='1'||q.has('devFirstVisit')||q.has('setup'),fr=sessionStorage.getItem(K.forceReturn)==='1'||q.has('devReturn');
     sessionStorage.removeItem(K.forceFirst);sessionStorage.removeItem(K.forceReturn);storeRemove(K.forceFirst);storeRemove(K.forceReturn);
     const initialCloudReady=await waitForInitialCloudState();
-    if(visitDecisionMade)return;
+    if(visitDecisionMade||window.ModeAtlasTour?.isOpen())return;
     if(ff){visitDecisionMade=true;return first(branchDestination(location.href)||'/kana/',{force:true});}
     if(fr){visitDecisionMade=true;return ret();}
     if(!initialCloudReady&&window.KanaCloudSync?.getUser?.())return;
@@ -314,26 +315,7 @@
     visitDecisionMade=true;
     first(target);
   }
-  let tourOpen=false;
-  function showTour(){
-    if(tourOpen||!window.ModeAtlasDialog?.feature)return;
-    tourOpen=true;window.ModeAtlasAccountNavigation?.close?.();
-    sessionStorage.removeItem('modeAtlasTourPending');
-    const native=window.ModeAtlasEnv?.isNativeApp;
-    const steps=[
-      ['Your daily starting point',native?'Use the dock to move between Atlas, Kana and Words. Tap your avatar for your profile, Friends and Settings. Tap Kana again to switch between Reading, Writing and Results.':'Atlas brings your goals and next practice together. Use the navigation to explore Kana and Words, or open your profile for Friends and account settings.'],
-      ['Make practice yours','Start with a short guided set. Reading asks for the sound of a kana; Writing asks you to choose the matching kana. Open Practice setup to change the mode and the characters you practise.'],
-      ['Keep your progress','Practice saves automatically on this device. Sign in to sync your progress between the app and website. Friends is optional, and joining it lets you choose what name and avatar other learners see.']
-    ];
-    let index=0;
-    const content=vEl('div','ma-visit-tour'),count=vEl('p','ma-visit-kicker'),title=vEl('h3'),copy=vEl('p','ma-visit-copy'),actions=vEl('div','ma-visit-actions');
-    const back=vBtn('ma-button','Back'),next=vBtn('ma-button ma-button--primary','Next');title.tabIndex=-1;actions.append(back,next);content.append(count,title,copy,actions);
-    function render(focus=false){count.textContent=`${index+1} of ${steps.length}`;title.textContent=steps[index][0];copy.textContent=steps[index][1];back.hidden=index===0;next.textContent=index===steps.length-1?'Start exploring':'Next';if(focus)title.focus();}
-    back.addEventListener('click',()=>{index--;render(true);});
-    next.addEventListener('click',()=>{if(index===steps.length-1)window.ModeAtlasDialog.close();else{index++;render(true);}});
-    render();
-    window.ModeAtlasDialog.feature({kicker:'Welcome',title:'A quick look around',contentNode:content,closeLabel:'Skip tour',closeAriaLabel:'Skip tour'}).finally(()=>{tourOpen=false;storeSet('modeAtlasTourSeen','1');});
-  }
+  function showTour(){window.ModeAtlasTour?.start();}
   function maybeTour(){if(sessionStorage.getItem('modeAtlasTourPending')==='1'&&!document.querySelector('#maVisitModal.open'))showTour();}
   document.addEventListener('click',event=>{if(event.target.closest?.('[data-ma-tour]')){event.preventDefault();showTour();}});
   document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(maybeTour),{once:true});

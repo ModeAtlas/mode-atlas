@@ -61,7 +61,7 @@
    visual ownership lives in CSS rather than injected runtime styles. */
 .ma-visit-backdrop{position:fixed;inset:0;z-index:240;display:none;align-items:center;justify-content:center;padding:18px;background:var(--ma-backdrop);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .ma-visit-backdrop.open{display:flex}
-.ma-visit-card{width:min(640px,100%);max-height:min(92vh,820px);overflow:auto;border-radius:var(--ma-radius-card);padding:22px;color:var(--ma-text)}
+.ma-visit-card{width:min(640px,100%);max-height:min(calc(var(--ma-overlay-height,100dvh) - 36px),820px);overflow:auto;border-radius:var(--ma-radius-card);padding:22px;color:var(--ma-text)}
 .ma-visit-kicker{font-size:11px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:var(--ma-muted);margin-bottom:10px}
 .ma-visit-title{font-size:30px;line-height:1.04;font-weight:950;letter-spacing:-.04em;margin:0 0 10px}
 .ma-visit-copy{color:var(--ma-muted);line-height:1.55;margin:0 0 18px;font-size:15px}
@@ -77,3 +77,27 @@
 .ma-visit-legal{display:grid;gap:12px;margin-top:14px}.ma-visit-legal-links{display:flex;flex-wrap:wrap;gap:10px;color:var(--ma-muted);font-size:13px}.ma-visit-legal-links a{color:var(--ma-link);font-weight:900;text-decoration:none}.ma-visit-legal-links a:hover{text-decoration:underline}.ma-visit-link-note{color:var(--ma-muted);font-size:12px;font-weight:800}
 .ma-visit-check{font-size:13px}.ma-visit-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.ma-visit-btn{min-width:128px}.ma-status.ma-visit-error{display:none;margin-top:10px}.ma-status.ma-visit-error.show{display:flex}
 @media(max-width:640px){.ma-visit-card{padding:18px;border-radius:22px}.ma-visit-title{font-size:25px}.ma-visit-presets{grid-template-columns:1fr}.ma-visit-actions{display:grid}.ma-visit-btn{width:100%}}
+
+.ma-help-form,.ma-help-field{display:grid;gap:10px;min-width:0;}
+.ma-help-form{gap:18px;}
+.ma-help-field{font-weight:700;}
+.ma-help-field :is(input,textarea,select){box-sizing:border-box;width:100%;min-height:44px;min-width:0;padding:12px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-control);color:var(--ma-text);font:400 max(16px,1rem)/1.5 var(--ma-font-ui);}
+.ma-help-field textarea{resize:vertical;}
+.ma-help-note{font-size:.85rem;line-height:1.55;color:var(--ma-muted);margin:0;overflow-wrap:anywhere;}
+.ma-help-fallback{display:flex;flex-wrap:wrap;gap:10px;}
+.ma-help-fallback[hidden]{display:none;}
+.ma-help-legal{line-height:1.65;overflow-wrap:anywhere;}
+.ma-help-legal h2{font-size:1.1rem;margin:24px 0 8px;}
+.ma-help-legal a{color:var(--ma-link);}
+
+.ma-tour-layer{position:fixed;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;overflow:visible;background:transparent;color:var(--ma-text);z-index:120000;pointer-events:none;}
+.ma-tour-layer::backdrop{background:transparent;}
+.ma-tour-shade{position:absolute;inset:0;pointer-events:auto;}
+.ma-tour-spot{position:fixed;box-sizing:border-box;border:2px solid var(--ma-atlas);border-radius:16px;box-shadow:0 0 0 9999px var(--ma-backdrop);pointer-events:none;}
+.ma-tour-card{position:fixed;box-sizing:border-box;overflow:auto;overscroll-behavior:contain;padding:18px;border-radius:20px;border:1px solid var(--ma-border-strong);background:var(--ma-surface-strong);color:var(--ma-text);box-shadow:var(--ma-shadow);pointer-events:auto;}
+.ma-tour-card h2{font-size:1.13rem;line-height:1.25;margin:6px 0 10px;}
+.ma-tour-count{font-size:.75rem;font-weight:750;color:var(--ma-muted);margin:0;}
+.ma-tour-copy{font-size:.9rem;line-height:1.5;margin:0 0 14px;}
+.ma-tour-actions{display:flex;gap:8px;margin-bottom:8px;}
+.ma-tour-actions button{flex:1;}
+.ma-tour-card .ma-button{min-height:44px;}

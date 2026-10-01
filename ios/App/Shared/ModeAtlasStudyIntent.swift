@@ -3,7 +3,7 @@ import AppIntents
 extension ModeAtlasDestination: AppEnum {
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Mode Atlas screen")
     static var caseDisplayRepresentations: [ModeAtlasDestination: DisplayRepresentation] = [
-        .atlas: "Atlas", .kana: "Kana", .reading: "Reading", .writing: "Writing",
+        .atlas: "Atlas", .yourAtlas: "Your Atlas", .kana: "Kana", .reading: "Reading", .writing: "Writing",
         .daily: "Daily Challenge", .results: "Results", .wordBank: "Words"
     ]
 
@@ -12,6 +12,7 @@ extension ModeAtlasDestination: AppEnum {
     }
     var symbol: String {
         switch self {
+        case .yourAtlas: return "sparkles"
         case .atlas: return "house"
         case .kana: return "character"
         case .reading: return "book"

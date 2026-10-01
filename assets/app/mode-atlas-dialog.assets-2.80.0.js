@@ -91,11 +91,12 @@
     if (!active) return;
     const current = active;
     active = null;
-    const { layer, previousFocus, previousOverflow, onKeydown, resolve } = current;
+    const { layer, previousFocus, onKeydown, resolve } = current;
     document.removeEventListener('keydown', onKeydown, true);
     layer.classList.remove('is-open');
     layer.hidden = true;
-    document.body.style.overflow = previousOverflow;
+    if(layer.contains(document.activeElement))document.activeElement.blur();
+    root.ModeAtlasOverlay.unlock(layer);
     const content = layer.querySelector('[data-ma-dialog-content]');
     if (content) content.replaceChildren();
     announceState();
@@ -160,8 +161,7 @@
     requestAnimationFrame(() => layer.classList.add('is-open'));
 
     const previousFocus = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    root.ModeAtlasOverlay.lock(layer);
 
     const onKeydown = (event) => {
       if (!active) return;
@@ -188,7 +188,7 @@
       }
     };
 
-    active = { ...request, layer, previousFocus, previousOverflow, onKeydown };
+    active = { ...request, layer, previousFocus, onKeydown };
     announceState();
     document.addEventListener('keydown', onKeydown, true);
 

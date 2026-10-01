@@ -35,7 +35,7 @@
     var path = platform.destinationPath(destination);
     if (!path) return false;
     var target = root.ModeAtlasVersionFile?.appUrl?.(path) || path;
-    if (location.pathname + location.search === target) return true;
+    if (location.pathname + location.search === target) {if(destination==='yourAtlas')root.ModeAtlasAccountNavigation?.open('atlas');return true;}
     if (replace) location.replace(target);
     else location.assign(target);
     return true;
@@ -127,6 +127,7 @@
         platform: 'ios'
       };
     },
+    composeFeedback: async function(draft){return hasBridge('composeFeedback')?nativeBridge.composeFeedback(draft):{status:'unavailable'};},
     openExternalLink: async function(url){
       if (hasBridge('openExternalLink')) {
         const result=await nativeBridge.openExternalLink({ url:String(url || '') });

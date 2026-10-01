@@ -1,11 +1,11 @@
 /* Account navigation owns its shell; profile/settings own only their content. */
-body.ma-account-open{overflow:hidden;}
+
 .ma-account-layer{position:fixed;inset:0;z-index:90;}
 .ma-account-layer[hidden]{display:none;}
 .ma-account-backdrop{position:absolute;inset:0;background:var(--ma-backdrop);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 .ma-account-sheet{
   position:absolute;top:18px;right:18px;display:flex;flex-direction:column;
-  width:min(600px,calc(100vw - 36px));height:min(800px,calc(100dvh - 36px));
+  width:min(600px,calc(100vw - 36px));height:min(800px,calc(var(--ma-overlay-height,100dvh) - 36px));
   overflow:hidden;box-sizing:border-box;border:1px solid var(--ma-border);border-radius:var(--ma-radius-lg);
   background:var(--ma-surface-strong);box-shadow:var(--ma-shadow);color:var(--ma-text);
   animation:ma-account-enter var(--ma-motion-fast) ease-out;
@@ -92,7 +92,7 @@ html[data-ma-signed-in="false"] [data-ma-sign-in]{visibility:visible;pointer-eve
 
 
 @media(max-width:760px),(pointer:coarse){
-  .ma-account-sheet{top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;left:8px;width:auto;height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 16px);border-radius:24px;}
+  .ma-account-sheet{top:calc(env(safe-area-inset-top,0px) + 8px);right:8px;left:8px;width:auto;height:calc(var(--ma-overlay-height,100dvh) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 16px);border-radius:24px;}
   .ma-account-header{padding:16px;}
   .ma-account-header h2{font-size:1.55rem;}
   .ma-account-tabs{margin:0 12px 16px;}
@@ -104,8 +104,7 @@ body[data-effective-display-mode="tablet"] .ma-account-sheet{left:auto;right:16p
 body[data-effective-display-mode="phone"] .ma-account-sheet{left:8px;right:8px;width:auto;}
 html[data-ma-runtime="ios"] .ma-account-sheet{
   top:calc(env(safe-area-inset-top,0px) + 8px);
-  height:calc(var(--ma-ios-visible-height,100dvh) - env(safe-area-inset-top,0px) - var(--ma-ios-dock-height,0px) - 16px);
-  max-height:calc(100dvh - env(safe-area-inset-top,0px) - 16px);
+  height:calc(var(--ma-overlay-height,100dvh) - env(safe-area-inset-top,0px) - var(--ma-ios-dock-height,0px) - 16px);
 }
 @media(max-width:560px){
   .ma-account-settings .ma-button{font-size:.82rem;}
