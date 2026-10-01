@@ -51,14 +51,20 @@ async function loadFirestoreModule() {
 
 async function ensureFirestore() {
   if (db) return true;
-  if (!app) {
-    const setupReady = await setupFirebase();
-    if (!setupReady || !app) return false;
+  try {
+    if (!app) {
+      const setupReady = await setupFirebase();
+      if (!setupReady || !app) return false;
+    }
+    const loaded = await loadFirestoreModule();
+    if (!loaded || typeof getFirestore !== 'function') throw new Error('Cloud storage unavailable');
+    if (!db) db = getFirestore(app);
+    return !!db;
+  } catch (error) {
+    window.ModeAtlasDiagnostics?.record('cloud-sync',error);
+    if (currentUser) setCloudState(false, 'Cloud storage could not be opened. Try again.');
+    return false;
   }
-  const loaded = await loadFirestoreModule();
-  if (!loaded || typeof getFirestore !== 'function') return false;
-  if (!db) db = getFirestore(app);
-  return !!db;
 }
 
 async function loadFirebaseModules() {
@@ -1556,9 +1562,7 @@ async function performSyncOnce() {
           snapshot.sections[name]={...localSection,data:{state},updatedAt};
           writeSectionToLocal(name,{state},updatedAt);
           changedSections.push(name);
-        } else if (!sectionHasMeaningfulData(name, localData) && sectionHasMeaningfulData(name, remoteData)) {
-          snapshot.sections[name] = remoteSection;
-        } else if (remoteUpdatedAt > localUpdatedAt && sectionHasMeaningfulData(name, remoteData)) {
+        } else if (sectionHasMeaningfulData(name, remoteData) && (!sectionHasMeaningfulData(name, localData) || remoteUpdatedAt > localUpdatedAt)) {
           snapshot.sections[name] = remoteSection;
           writeSectionToLocal(name, remoteData, remoteUpdatedAt);
           changedSections.push(name);
@@ -1578,6 +1582,8 @@ async function performSyncOnce() {
     if (!currentUser || currentUser.uid !== uid) return false;
 
     if (hasLocalImportGuard()) clearLocalImportGuard();
+    // A successful read/merge/write also completes a failed initial hydration.
+    hydratedForUserId = uid;
     setCloudState(true);
     emitCloudDataChanged('sync-merge', changedSections);
     return true;

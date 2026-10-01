@@ -25,7 +25,7 @@ test('first-use tour hands off to an unstarted ten-question set without a sign-i
   expect(bounds.left).toBeGreaterThanOrEqual(0);expect(bounds.right).toBeLessThanOrEqual(bounds.width);expect(bounds.overflow).toBeLessThanOrEqual(1);
   await page.screenshot({path:test.info().outputPath('first-set-handoff.png')});
   await tour.getByRole('button',{name:'Try a short set'}).click();
-  await expect(page).toHaveURL(/\/reading\/\?practice=10$/);
+  await expect(page).toHaveURL(/\/reading\/$/);
   await expect(page.locator('#startBtn')).toBeVisible();
   expect(await page.evaluate(()=>sessionStarted)).toBe(false);
   expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);
@@ -65,17 +65,22 @@ test('paused cloud sync offers one retry and replaces the failure with confirmed
   await page.getByRole('button',{name:'Retry sync',exact:true}).click();
   await expect(page.locator('#profileSyncSummary')).toHaveText('Sync pending');
   await expect(page.getByRole('button',{name:'Retry sync',exact:true})).toBeHidden();
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(()=>!!document.activeElement.closest('#maAccountSheet'))).toBe(true);
   expect(await page.evaluate(()=>retryCalls)).toBe(1);await page.evaluate(()=>finishRetry());
   await expect(page.locator('#profileSyncChip')).toHaveText('Synced');
 });
-test('native reading accepts hardware letters, selection replacement and deletion without submitting',async({page})=>{
+test('native hardware input supports editing and uses the shared answer checker',async({page})=>{
   await launch(page,'/reading/?practice=10&starter=starter');await page.locator('#startBtn').click();
-  const input=page.locator('#input');await input.focus();await page.keyboard.type('kya');await expect(input).toHaveValue('kya');
-  await page.keyboard.press('Backspace');await expect(input).toHaveValue('ky');
-  await input.evaluate(node=>node.setSelectionRange(0,2));await page.keyboard.type('shi');await expect(input).toHaveValue('shi');
-  await input.evaluate(node=>node.setSelectionRange(0,0));await page.keyboard.press('Delete');await expect(input).toHaveValue('hi');
+  await page.evaluate(()=>{currentChar='し';charMap['し']='shi';hiraganaEl.textContent='し';});
+  const input=page.locator('#input');await input.focus();await page.keyboard.type('sh');await expect(input).toHaveValue('sh');
+  await page.keyboard.press('Backspace');await expect(input).toHaveValue('s');
+  await input.evaluate(node=>node.setSelectionRange(0,1));await page.keyboard.type('sh');await expect(input).toHaveValue('sh');
+  await input.evaluate(node=>node.setSelectionRange(1,1));await page.keyboard.press('Delete');await expect(input).toHaveValue('s');
   expect(await page.evaluate(()=>sessionStats.answered)).toBe(0);
-  await page.locator('.ma-ios-reading-keyboard [data-key="a"]').focus();await page.keyboard.press('Enter');
-  await expect(page.locator('.ma-ios-reading-keyboard [data-key="a"]')).toBeFocused();
-  await expect(page.locator('.ma-ios-accessibility-status')).toContainText('Answer:');
+  await page.locator('.ma-ios-reading-keyboard [data-key="h"]').focus();await page.keyboard.press('Enter');
+  await expect(page.locator('.ma-ios-reading-keyboard [data-key="h"]')).toBeFocused();
+  await expect(page.locator('.ma-ios-accessibility-status')).toContainText('Answer: sh');
+  await page.keyboard.type('i');
+  expect(await page.evaluate(()=>sessionStats.correct)).toBe(1);
 });

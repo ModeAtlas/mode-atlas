@@ -56,8 +56,9 @@
       .filter(node=>!node.closest('[hidden],[inert]')&&node.getClientRects().length);
     const first=items[0],last=items.at(-1);
     if(!first){event.preventDefault();sheet.focus();return;}
-    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
-    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+    const outside=!sheet.contains(document.activeElement)||!!document.activeElement.closest('[hidden],[inert]');
+    if(event.shiftKey&&(outside||document.activeElement===first)){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&(outside||document.activeElement===last)){event.preventDefault();first.focus();}
   }
   function install({href,profileMarkup,settingsMarkup}){
     if(layer)return;
