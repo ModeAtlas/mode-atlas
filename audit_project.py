@@ -201,12 +201,12 @@ def main() -> int:
     ios_version_match = re.search(r"var\s+VERSION\s*=\s*['\"]([^'\"]+)['\"]", version_source)
     if ios_version_match:
         ios_version = ios_version_match.group(1)
-        major, minor, patch = (int(part) for part in ios_version.split('.'))
-        ios_build = major * 1_000_000 + minor * 1_000 + patch
+        from sync_ios_project import ios_build_number
+        ios_build_number()  # Validate the independent upload sequence.
         if f'MARKETING_VERSION = {ios_version};' not in ios_project_source:
             fail(errors, 'Xcode marketing version is not synchronized with Mode Atlas VERSION')
-        if f'CURRENT_PROJECT_VERSION = {ios_build};' not in ios_project_source:
-            fail(errors, 'Xcode build number is not synchronized with Mode Atlas VERSION')
+        if ios_project_source.count('CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";') != 4:
+            fail(errors, 'App and widget must inherit the shared iOS upload build number')
     if 'PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;' not in ios_project_source:
         fail(errors, 'Xcode bundle identifier drifted from app.modeatlas')
 

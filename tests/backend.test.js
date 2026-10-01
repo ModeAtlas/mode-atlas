@@ -976,3 +976,24 @@ test('account switches preserve offline saves without uploading one account into
   assert.equal(writes.at(-1).data.sections.reading.data.stats['い'].correct,2);
   assert.equal(writes.at(-1).data.sections.reading.data.stats['あ'],undefined);
 });
+
+test('save status remains pending through the debounce and upload, and failures are retryable',async()=>{
+  const {context,window}=createBaseContext({configured:true});
+  let changed,pendingWrite=null,fail=false;
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,
+    GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,callback)=>{changed=callback;},
+    getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>false}),
+    setDoc:async()=>{if(pendingWrite)await pendingWrite.promise;if(fail)throw Object.assign(new Error('test failure'),{code:'unavailable'});}};
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);
+  for(let i=0;i<50&&!changed;i++)await delay(1);
+  changed({uid:'learner'});await window.KanaCloudSync.waitForInitialHydration();await window.KanaCloudSync.syncNow();
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'cloud');
+  pendingWrite=deferred();window.KanaCloudSync.scheduleSync(1000);
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'pending','debounced work is not yet synced');
+  const sync=window.KanaCloudSync.syncNow();assert.equal(window.KanaCloudSync.getSyncStatus().state,'pending');
+  pendingWrite.resolve();await sync;pendingWrite=null;assert.equal(window.KanaCloudSync.getSyncStatus().state,'cloud');
+  fail=true;assert.equal(await window.KanaCloudSync.syncNow(),false);
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'paused');assert.equal(window.KanaCloudSync.getSyncStatus().canRetry,true);
+  fail=false;await window.KanaCloudSync.syncNow();assert.equal(window.KanaCloudSync.getSyncStatus().state,'cloud');
+  context.navigator.onLine=false;assert.equal(window.KanaCloudSync.getSyncStatus().state,'offline');
+});

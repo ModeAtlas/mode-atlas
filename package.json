@@ -1,6 +1,6 @@
 {
   "name": "mode-atlas",
-  "version": "2.80.0",
+  "version": "2.81.0",
   "private": true,
   "description": "Mode Atlas static web app smoke tests",
   "scripts": {
@@ -10,7 +10,7 @@
     "test:report": "playwright show-report",
     "build:revision": "python3 build_revision_assets.py",
     "audit": "python3 audit_project.py",
-    "release:check": "python3 build_revision_assets.py && python3 build_social_backend.py && python3 sync_ios_project.py && python3 validate_ios_firebase_config.py --require && python3 audit_project.py && python3 -m unittest discover -s tests -p 'test_web_publish.py' -v && python3 build_ios_web.py --check && node --test tests/backend.test.js tests/frontend.test.js tests/ios-foundation.test.js tests/ios-theme.test.js tests/study-flow.test.js tests/progression.test.js tests/social.test.js",
+    "release:check": "python3 build_revision_assets.py && python3 build_social_backend.py && python3 sync_ios_project.py && python3 validate_ios_firebase_config.py --require && python3 audit_project.py && python3 -m unittest discover -s tests -p 'test_*.py' -v && python3 build_ios_web.py --check && node --test tests/backend.test.js tests/frontend.test.js tests/ios-foundation.test.js tests/ios-theme.test.js tests/study-flow.test.js tests/progression.test.js tests/social.test.js tests/beta-readiness.test.js",
     "test:backend": "node --test tests/backend.test.js",
     "test:frontend": "node --test tests/frontend.test.js",
     "build:ios-web": "python3 build_ios_web.py",
@@ -21,13 +21,15 @@
     "ios:open": "npx cap open ios",
     "ios:check-version": "python3 sync_ios_project.py",
     "ios:check-firebase": "python3 validate_ios_firebase_config.py",
-    "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js tests/ios-experience.spec.js tests/study-flow.spec.js tests/trainer-modes.spec.js tests/progression.spec.js tests/dev-backups.spec.js tests/social.spec.js tests/account-navigation.spec.js tests/sounds.spec.js tests/release-readiness.spec.js",
+    "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js tests/ios-experience.spec.js tests/study-flow.spec.js tests/trainer-modes.spec.js tests/progression.spec.js tests/dev-backups.spec.js tests/social.spec.js tests/account-navigation.spec.js tests/sounds.spec.js tests/release-readiness.spec.js tests/beta-readiness.spec.js",
     "build:social": "python3 build_social_backend.py",
     "test:social": "npm run build:social && npm --prefix backend test",
     "social:install": "npm --prefix backend ci && npm --prefix backend/functions ci",
     "social:login": "backend/node_modules/.bin/firebase login",
     "social:status": "backend/node_modules/.bin/firebase firestore:databases:get --project mode-atlus && backend/node_modules/.bin/firebase functions:list --project mode-atlus",
-    "social:deploy": "backend/node_modules/.bin/firebase deploy --project mode-atlus --only firestore:rules,firestore:indexes,functions:mode-atlas-social"
+    "social:deploy": "backend/node_modules/.bin/firebase deploy --project mode-atlus --only firestore:rules,firestore:indexes,functions:mode-atlas-social",
+    "ios:next-build": "python3 sync_ios_project.py --next-build",
+    "ios:signing": "python3 configure_ios_signing.py"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.2",

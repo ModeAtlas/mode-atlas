@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent
 VERSION_SOURCE = ROOT / "assets/app/mode-atlas-version.js"
 PBXPROJ = ROOT / "ios/App/App.xcodeproj/project.pbxproj"
 SPM_SYMLINK = ROOT / "ios/App/CapApp-SPM/symlinks/CapacitorFirebaseAuthentication"
+BUILD_CONFIG = ROOT / "ios/release.xcconfig"
 
 
 def release_version() -> str:
@@ -29,11 +30,21 @@ def release_version() -> str:
     return version
 
 
-def ios_build_number(version: str) -> int:
-    major, minor, patch = (int(part) for part in version.split("."))
-    if minor >= 1000 or patch >= 1000:
-        raise SystemExit("iOS deterministic build-number encoding supports minor/patch values below 1000.")
-    return major * 1_000_000 + minor * 1_000 + patch
+def ios_build_number() -> int:
+    """One committed upload sequence, shared by the app and widget extension."""
+    values = re.findall(r"^MODE_ATLAS_BUILD_NUMBER = ([1-9][0-9]*);?$", BUILD_CONFIG.read_text(), re.M)
+    if len(values) != 1 or int(values[0]) > 999999999:
+        raise SystemExit("ios/release.xcconfig needs one positive MODE_ATLAS_BUILD_NUMBER below 1000000000.")
+    return int(values[0])
+
+
+def next_build() -> int:
+    value = ios_build_number() + 1
+    if value > 999999999:
+        raise SystemExit("iOS upload build number is out of range.")
+    source = BUILD_CONFIG.read_text()
+    BUILD_CONFIG.write_text(re.sub(r"^MODE_ATLAS_BUILD_NUMBER = [0-9]+;?$", f"MODE_ATLAS_BUILD_NUMBER = {value}", source, flags=re.M))
+    return value
 
 
 def sync_privacy_resources(source: str) -> str:
@@ -62,7 +73,7 @@ def sync_privacy_resources(source: str) -> str:
 
 def sync() -> tuple[str, int, bool]:
     version = release_version()
-    build = ios_build_number(version)
+    build = ios_build_number()
     validate_firebase(require=True)
     with FIREBASE_PLIST.open("rb") as handle:
         firebase = plistlib.load(handle)
@@ -71,7 +82,7 @@ def sync() -> tuple[str, int, bool]:
         raise SystemExit("Firebase REVERSED_CLIENT_ID is not a valid iOS URL scheme.")
     source = PBXPROJ.read_text(encoding="utf-8")
     updated = re.sub(r"MARKETING_VERSION = [^;]+;", f"MARKETING_VERSION = {version};", source)
-    updated = re.sub(r"CURRENT_PROJECT_VERSION = [^;]+;", f"CURRENT_PROJECT_VERSION = {build};", updated)
+    updated = re.sub(r"CURRENT_PROJECT_VERSION = [^;]+;", 'CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";', updated)
     if "GOOGLE_REVERSED_CLIENT_ID = " in updated:
         updated = re.sub(r"GOOGLE_REVERSED_CLIENT_ID = [^;]+;", f"GOOGLE_REVERSED_CLIENT_ID = {reversed_client_id};", updated)
     else:
@@ -92,7 +103,7 @@ def sync() -> tuple[str, int, bool]:
 
     if updated.count(f"MARKETING_VERSION = {version};") < 2:
         raise SystemExit("Could not synchronize all Xcode marketing-version build settings.")
-    if updated.count(f"CURRENT_PROJECT_VERSION = {build};") < 2:
+    if updated.count('CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";') != 4:
         raise SystemExit("Could not synchronize all Xcode build-number settings.")
     if updated.count(f"GOOGLE_REVERSED_CLIENT_ID = {reversed_client_id};") != 2:
         raise SystemExit("Could not synchronize the Firebase callback scheme in both Xcode configurations.")
@@ -120,6 +131,10 @@ if __name__ == "__main__":
     if sys.argv[1:] == ["--normalize-spm-links"]:
         normalize_spm_link()
         raise SystemExit(0)
+    if sys.argv[1:] == ["--next-build"]:
+        next_build()
+    elif sys.argv[1:]:
+        raise SystemExit("Usage: sync_ios_project.py [--next-build | --normalize-spm-links]")
     version, build, changed = sync()
     status = "updated" if changed else "already synchronized"
     print(f"Mode Atlas iOS version {status}: {version} ({build})")

@@ -114,6 +114,7 @@
         widgets: hasBridge('getEngagementState'),
         widgetSnapshots: hasBridge('publishWidgetSnapshot'),
         backupSharing: hasBridge('exportBackup'),
+        friendSharing: hasBridge('shareFriendCode'),
         appIntents: hasBridge('consumeDestination'),
         authentication: providers.length > 0,
         authProviders: providers
@@ -128,6 +129,7 @@
       };
     },
     composeFeedback: async function(draft){return hasBridge('composeFeedback')?nativeBridge.composeFeedback(draft):{status:'unavailable'};},
+    shareFriendCode: async function(code){return hasBridge('shareFriendCode')?nativeBridge.shareFriendCode({code}):{status:'unavailable'};},
     openExternalLink: async function(url){
       if (hasBridge('openExternalLink')) {
         const result=await nativeBridge.openExternalLink({ url:String(url || '') });

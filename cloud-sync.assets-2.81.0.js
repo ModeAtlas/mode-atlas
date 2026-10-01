@@ -914,9 +914,9 @@ function getSyncStatus() {
   }
   if (!accountSaveReady) return {state:'paused',tone:'warning',text:'Account switch paused · free device storage and reopen the app',lastSync,user};
   if (!online) return {state:'offline',tone:'warning',text:'Offline · saved on this device',lastSync,user};
-  if (state === 'offline') return {state:'paused',tone:'warning',text:'Sync paused · saved on this device',lastSync,user};
+  if (cloudSyncPromise || syncTimeout || deferredSessionSync) return {state:'pending',tone:'neutral',text:'Saved on this device · sync pending',lastSync,user};
+  if (state === 'offline') return {state:'paused',tone:'warning',text:'Sync paused · saved on this device',lastSync,user,canRetry:true};
   if (hydratedForUserId !== user.uid) return {state:'pending',tone:'neutral',text:'Loading your cloud save…',lastSync,user};
-  if (cloudSyncPromise || deferredSessionSync) return {state:'pending',tone:'neutral',text:'Saved on this device · sync pending',lastSync,user};
   return { state: 'cloud', tone: 'ok', text: 'Synced across devices', lastSync, user };
 }
 
@@ -1191,6 +1191,7 @@ async function hydrateFromCloud(force = false) {
       return true;
     } catch (error) {
       console.warn('Cloud save hydrate failed.', error);
+      window.ModeAtlasDiagnostics?.record('cloud-sync',error);
       if(currentUser?.uid===uid)setCloudState(false, error?.message || 'Cloud hydrate failed');
       return false;
     }
@@ -1422,6 +1423,7 @@ async function performAccountDeletion() {
     if (!window.ModeAtlasSocial?.deleteAccount) throw new Error('Account deletion is unavailable in this build.');
     setSessionCloudPause(true);
     clearTimeout(syncTimeout);
+    syncTimeout = null;
     if (cloudSyncPromise) await cloudSyncPromise;
     if (cloudHydrationPromise) await cloudHydrationPromise;
     if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
@@ -1581,15 +1583,19 @@ async function performSyncOnce() {
     return true;
   } catch (error) {
     console.warn('Cloud save sync failed.', error);
+    window.ModeAtlasDiagnostics?.record('cloud-sync',error);
     if (currentUser?.uid === uid) setCloudState(false, error?.message || 'Cloud sync failed');
     return false;
   }
 }
 
 function syncNow() {
+  clearTimeout(syncTimeout);
+  syncTimeout = null;
   if (isSessionCloudPaused()) {
     deferredSessionSync = true;
     window.ModeAtlasDeferredCloudSync = true;
+    emitStatus();
     return cloudSyncPromise || Promise.resolve(false);
   }
   if (cloudSyncPromise) {
@@ -1610,6 +1616,7 @@ function syncNow() {
     cloudSyncPromise = null;
     emitStatus();
   });
+  emitStatus();
   return cloudSyncPromise;
 }
 
@@ -1617,15 +1624,18 @@ function scheduleSync(delay = 800) {
   if (isSessionCloudPaused()) {
     deferredSessionSync = true;
     window.ModeAtlasDeferredCloudSync = true;
+    emitStatus();
     return false;
   }
   clearTimeout(syncTimeout);
   syncTimeout = setTimeout(() => {
+    syncTimeout = null;
     syncNow().catch((error) => {
       console.warn('Cloud save sync failed.', error);
       setCloudState(false, error?.message || 'Cloud sync failed');
     });
   }, delay);
+  emitStatus();
   return true;
 }
 
@@ -1792,6 +1802,7 @@ async function importLocalBackup(obj) {
   const restoreCloudActivity = !isSessionCloudPaused();
   if (restoreCloudActivity) setSessionCloudPause(true);
   clearTimeout(syncTimeout);
+  syncTimeout = null;
   if (cloudSyncPromise) {
     try { await cloudSyncPromise; } catch {}
   }
@@ -1870,6 +1881,7 @@ async function resetAllData() {
   const restoreCloudActivity = !isSessionCloudPaused();
   if (restoreCloudActivity) setSessionCloudPause(true);
   clearTimeout(syncTimeout);
+  syncTimeout = null;
   if (cloudSyncPromise) {
     try { await cloudSyncPromise; } catch {}
   }

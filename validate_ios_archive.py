@@ -13,7 +13,7 @@ def validate(app: Path) -> None:
         info = plistlib.loads((bundle / "Info.plist").read_bytes())
         assert info["CFBundleIdentifier"] == identifier
         assert info["CFBundleShortVersionString"] == version
-        assert str(info["CFBundleVersion"]) == str(ios_build_number(version))
+        assert str(info["CFBundleVersion"]) == str(ios_build_number())
         assert info["MinimumOSVersion"] == "18.0"
         privacy = plistlib.loads((bundle / "PrivacyInfo.xcprivacy").read_bytes())
         assert privacy["NSPrivacyTracking"] is False

@@ -83,25 +83,37 @@
     keyboard.addEventListener('pointerup', release);
     keyboard.addEventListener('pointercancel', release);
     keyboard.addEventListener('pointerleave', release);
-    keyboard.addEventListener('click', function(event){
-      var key = event.target.closest('button[data-key]');
-      if (!key || input.disabled || !document.body.classList.contains('trainer-session-active')) return;
-      if (event.detail === 0) feedback(); // Hardware keyboard/accessibility activation.
+    function typeKey(value,keepFocus){
+      if (input.disabled || !document.body.classList.contains('trainer-session-active')) return;
       var start = input.selectionStart ?? input.value.length;
       var end = input.selectionEnd ?? start;
-      if (key.dataset.key === 'delete') {
-        if (start === end && start > 0) start -= 1;
+      if (value === 'delete' || value === 'forward-delete') {
+        if(start===end){if(value==='delete'&&start>0)start-=1;else if(value==='forward-delete')end+=1;}
         input.value = input.value.slice(0, start) + input.value.slice(end);
       } else {
-        input.value = input.value.slice(0, start) + key.dataset.key + input.value.slice(end);
+        input.value = input.value.slice(0, start) + value + input.value.slice(end);
         start += 1;
       }
       // VoiceOver and hardware-key activation retain focus on the key.
-      if (event.detail !== 0) input.focus({preventScroll:true});
+      if (!keepFocus) input.focus({preventScroll:true});
       input.setSelectionRange(start, start);
       input.dispatchEvent(new Event('input', {bubbles:true}));
-      if (event.detail === 0) status.textContent = input.value ? 'Answer: ' + input.value : 'Answer cleared';
+      if (keepFocus) status.textContent = input.value ? 'Answer: ' + input.value : 'Answer cleared';
+    }
+    keyboard.addEventListener('click', function(event){
+      var key = event.target.closest('button[data-key]');
+      if (!key || input.disabled || !document.body.classList.contains('trainer-session-active')) return;
+      if (event.detail === 0) feedback();
+      typeKey(key.dataset.key,event.detail===0);
     });
+    function hardwareKey(event){
+      if(event.isComposing||event.metaKey||event.ctrlKey||event.altKey||input.disabled||!document.body.classList.contains('trainer-session-active'))return;
+      const value=/^[a-z]$/i.test(event.key)?event.key.toLowerCase():event.key==='Backspace'?'delete':event.key==='Delete'?'forward-delete':'';
+      if(!value)return;
+      event.preventDefault();typeKey(value,true);
+    }
+    input.addEventListener('keydown',hardwareKey);
+    keyboard.addEventListener('keydown',hardwareKey);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});

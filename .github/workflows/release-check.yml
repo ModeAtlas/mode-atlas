@@ -237,7 +237,7 @@ jobs:
         run: |
           app_path="${RUNNER_TEMP}/ModeAtlasDerivedData/Build/Products/Debug-iphonesimulator/App.app"
           expected_version="$(node -p "require('./package.json').version")"
-          expected_build="$(python3 -c 'from sync_ios_project import ios_build_number, release_version; print(ios_build_number(release_version()))')"
+          expected_build="$(python3 -c 'from sync_ios_project import ios_build_number; print(ios_build_number())')"
           test -d "$app_path"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")" = "app.modeatlas"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "$expected_version"

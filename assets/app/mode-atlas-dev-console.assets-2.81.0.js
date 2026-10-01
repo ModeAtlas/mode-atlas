@@ -416,7 +416,7 @@
       if (event.target.closest('[data-ma-dev-save-files]')) replaceDevBody(backdrop, [renderSaveFilesPanel(backdrop)]);
       if (event.target.closest('[data-ma-dev-xp-add]')) adjustDevXp(backdrop, 1);
       if (event.target.closest('[data-ma-dev-xp-remove]')) adjustDevXp(backdrop, -1);
-      if (event.target.closest('[data-ma-dev-copy]')) navigator.clipboard?.writeText(JSON.stringify({ diagnostics: safeDevData(), dataFlow: safeDataFlow() }, null, 2)).then(() => toast('Diagnostics copied.'));
+      if (event.target.closest('[data-ma-dev-copy]')) navigator.clipboard?.writeText(JSON.stringify({ diagnostics: safeDevData(), dataFlow: safeDataFlow(), recentErrors: window.ModeAtlasDiagnostics?.snapshot() || [] }, null, 2)).then(() => toast('Diagnostics copied.'));
       if (event.target.closest('[data-ma-dev-repair]')) {
         const result = window.ModeAtlas?.repairSaveData?.() || { summary: 'repair unavailable' };
         toast('Repair complete · ' + result.summary);

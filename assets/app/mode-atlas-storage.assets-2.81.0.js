@@ -94,6 +94,8 @@
   ].filter((value, index, list) => value && list.indexOf(value) === index));
   const APP_LOCAL_PREFIXES = Object.freeze(['modeAtlasVersionFileCheckedResetDay:', 'modeAtlasVersionFileAttemptedResetDay:', 'modeAtlasAccountSave:']);
   const APP_SESSION_EXACT = Object.freeze([
+    'modeAtlasDiagnostics',
+    'modeAtlasActiveTour',
     'modeAtlasForceFirstVisit',
     'modeAtlasForceDailyReturn',
     'modeAtlasShowWhatsNewAfterOnboarding',

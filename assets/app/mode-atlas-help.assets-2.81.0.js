@@ -13,15 +13,20 @@
     category.name='category';message.name='message';message.rows=5;message.required=true;message.minLength=5;message.maxLength=4000;message.placeholder='Tell us what happened or what you would like to improve.';
     reply.name='reply';reply.type='email';reply.autocomplete='email';reply.maxLength=254;reply.value=root.KanaCloudSync?.getUser?.()?.email||'';
     const info=el('p','ma-help-note','Your message becomes an email to '+support+'. Review it before sending. Your progress and account identifiers are not attached.');
+    const include=el('input');include.type='checkbox';include.name='diagnostics';
+    const consent=el('label','ma-help-consent');consent.append(include,document.createTextNode('Include technical error details (optional)'));
+    const technical=root.ModeAtlasDiagnostics?.report()||'No recent technical errors recorded.';
+    const preview=el('details','ma-help-diagnostics');preview.append(el('summary','','View technical details'),el('pre','',technical));
     const state=el('p','ma-help-note');state.setAttribute('role','status');
     const submit=el('button','ma-button ma-button--primary','Continue to email');submit.type='submit';
-    form.append(field('What is this about?',category),field('Message',message),field('Reply email (optional)',reply),info,submit,state);
+    form.append(field('What is this about?',category),field('Message',message),field('Reply email (optional)',reply),info,consent,preview,submit,state);
     const fallback=el('div','ma-help-fallback');fallback.hidden=true;form.append(fallback);
     form.addEventListener('submit',async event=>{
       event.preventDefault();if(!form.reportValidity()||submit.disabled)return;submit.disabled=true;fallback.hidden=true;state.textContent='Preparing your email…';
       const subject=`Mode Atlas · ${category.value}`;
-      const body=`${message.value.trim()}\n\n${reply.value?'Reply email: '+reply.value+'\n':''}Mode Atlas ${root.ModeAtlasVersion||'dev'} · ${root.ModeAtlasEnv?.isNativeApp?'iOS':'website'}\nScreen: ${location.pathname}`;
       try{
+        const version=await root.AtlasPlatform.getAppVersion().catch(()=>({}));
+        const body=`${message.value.trim()}\n\n${reply.value?'Reply email: '+reply.value+'\n':''}Mode Atlas ${root.ModeAtlasVersion||'dev'}${version.build?' ('+version.build+')':''} · ${root.ModeAtlasEnv?.isNativeApp?'iOS':'website'}\nScreen: ${root.ModeAtlasDiagnostics?.screen()||'other'}${include.checked?'\n\nTechnical details:\n'+technical:''}`;
         const result=await root.AtlasPlatform.composeFeedback({subject,body});
         state.textContent={queued:'Added to your Mail outbox.',saved:'Draft saved in Mail.',cancelled:'Your message is still here if you want to edit it.',opened:'Review and send the draft in your email app. If it did not open, copy your message below.',failed:'Mail could not prepare this message.'}[result.status]||'Set up Mail or use another email app.';
         if(['unavailable','failed','opened'].includes(result.status)){
@@ -30,7 +35,7 @@
           const copy=button('Copy email',async()=>{try{await navigator.clipboard.writeText(`To: ${support}\nSubject: ${subject}\n\n${body}`);state.textContent='Email copied.';}catch{message.focus();message.select();state.textContent='Select and copy your message.';}});
           fallback.replaceChildren(open,copy);fallback.hidden=false;
         }
-      }catch{state.textContent='Your message is still here. Please try again.';}
+      }catch(error){root.ModeAtlasDiagnostics?.record('feedback',error);state.textContent='Your message is still here. Please try again.';}
       finally{submit.disabled=false;}
     });
     root.ModeAtlasDialog.feature({title:'Send feedback',contentNode:form}).finally(()=>{feedbackOpen=false;});

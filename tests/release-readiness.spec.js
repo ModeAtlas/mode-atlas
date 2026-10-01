@@ -139,7 +139,7 @@ test('native legal reader opens bundled policies offline and feedback stays an e
   await form.getByRole('button',{name:'Continue to email'}).click();
   await expect(form.getByLabel('Message',{exact:true})).toHaveValue('A helpful, editable feedback message.');
   await expect(form.getByRole('status')).toContainText('still here');
-  const drafts=await page.evaluate(()=>feedbackDrafts);expect(drafts).toHaveLength(1);expect(drafts[0].body).toContain('Screen: /');expect(drafts[0].body).not.toContain('uid');
+  const drafts=await page.evaluate(()=>feedbackDrafts);expect(drafts).toHaveLength(1);expect(drafts[0].body).toContain('Screen: atlas');expect(drafts[0].body).not.toContain('uid');
   await page.screenshot({path:test.info().outputPath('feedback-form.png')});
 });
 
