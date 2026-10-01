@@ -32,12 +32,9 @@
   function getPageName(){
     var path = (location.pathname || '/').replace(/\/+$/, '/');
 
-    if (path === '/' || /\/index\.html$/i.test(path)) return 'index.html';
-    if (/\/kana\/?$/i.test(path) || /\/kana\/index\.html$/i.test(path)) return 'kana.html';
-    if (/\/reading\/?$/i.test(path) || /\/reading\/index\.html$/i.test(path) || /\/default\.html$/i.test(path)) return 'default.html';
-    if (/\/writing\/?$/i.test(path) || /\/writing\/index\.html$/i.test(path) || /\/reverse\.html$/i.test(path)) return 'reverse.html';
-    if (/\/results\/?$/i.test(path) || /\/results\/index\.html$/i.test(path) || /\/test\.html$/i.test(path)) return 'test.html';
-    if (/\/wordbank\/?$/i.test(path) || /\/wordbank\/index\.html$/i.test(path)) return 'wordbank.html';
+    var routes = {kana:'kana.html',reading:'default.html',writing:'reverse.html',results:'test.html',wordbank:'wordbank.html',privacy:'privacy.html',terms:'terms.html',achievements:'achievements.html'};
+    var match = path.match(/\/(kana|reading|writing|results|wordbank|privacy|terms|achievements)(?:\/(?:index\.html)?)?$/i);
+    if (match) return routes[match[1].toLowerCase()];
 
     return (path.split('/').filter(Boolean).pop() || 'index.html').toLowerCase();
   }

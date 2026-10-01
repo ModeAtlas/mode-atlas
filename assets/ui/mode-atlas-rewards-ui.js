@@ -9,11 +9,22 @@
     const state=root.ModeAtlasProgress.readState(),level=root.ModeAtlasProgress.getSummary(state).level;
     return root.ModeAtlasRewardRules.appearance(state.appearance.landmark,level);
   }
+  function banner(){
+    const state=root.ModeAtlasProgress.readState();
+    return root.ModeAtlasRewardRules.banner(state.appearance.banner,root.ModeAtlasProgress.getSummary(state).level);
+  }
   function refresh(){
-    const item=appearance(),summary=root.ModeAtlasProgress.getSummary(),routine=root.ModeAtlasProgress.routine();
+    const item=appearance(),selectedBanner=banner(),summary=root.ModeAtlasProgress.getSummary(),routine=root.ModeAtlasProgress.routine();
     const title=document.getElementById('profileAtlasTitle');if(title)title.textContent=item.title;
     document.querySelectorAll('#profileAvatar,#topProfileDot,[data-ma-selected-avatar]').forEach(node=>{node.dataset.maFrame=item.frame;});
     document.querySelectorAll('[data-ma-selected-title]').forEach(node=>{node.textContent=item.title;});
+    document.querySelectorAll('[data-ma-selected-banner]').forEach(node=>{node.dataset.maBanner=selectedBanner.id;});
+    document.querySelectorAll('.ma-atlas-banner-choice').forEach(node=>{
+      const reward=root.ModeAtlasRewardRules.banners.find(reward=>reward.id===node.dataset.maBanner),unlocked=summary.level>=reward.level;
+      node.disabled=!unlocked;node.setAttribute('aria-pressed',String(reward.id===selectedBanner.id));
+      node.querySelector('small').textContent=reward.id===selectedBanner.id?'Selected':unlocked?'Available':`Level ${reward.level}`;
+      node.setAttribute('aria-label',`${reward.name} banner, ${reward.id===selectedBanner.id?'selected':unlocked?'available':'unlocks at level '+reward.level}`);
+    });
     document.querySelectorAll('.ma-atlas-landmark').forEach(node=>{
       const reward=root.ModeAtlasRewardRules.landmarks.find(reward=>reward.id===node.dataset.landmark),unlocked=summary.level>=reward.level;
       node.disabled=!unlocked;node.dataset.unlocked=String(unlocked);node.setAttribute('aria-pressed',String(reward.id===item.id));
@@ -62,6 +73,14 @@
   }
   function rewardPanel(summary){
     const panel=el('div','ma-atlas-panel');
+    panel.append(el('h3','','Profile banners'),el('p','ma-atlas-rewards__note','A background for your profile and Friends cards. Mix it with any unlocked title and frame.'));
+    const banners=el('div','ma-atlas-banners');
+    for(const item of root.ModeAtlasRewardRules.banners){
+      const choose=button('','ma-atlas-banner-choice ma-profile-banner');choose.dataset.maBanner=item.id;
+      choose.append(el('strong','',item.name),el('small','',summary.level>=item.level?'Available':`Level ${item.level}`));
+      choose.addEventListener('click',()=>{if(root.ModeAtlasProgress.selectBanner(item.id))refresh();});banners.append(choose);
+    }
+    panel.append(banners);
     panel.append(el('h3','','Titles & frames'),el('p','ma-atlas-rewards__note','Choose a look for your profile. Unlock more as you level up.'));
     const collection=el('div','ma-atlas-collection');
     for(const item of root.ModeAtlasRewardRules.landmarks){
@@ -99,7 +118,7 @@
   }
   function mount(host){
     const summary=root.ModeAtlasProgress.getSummary(),selected=appearance();
-    const content=el('div','ma-atlas-rewards'),identity=el('div','ma-atlas-identity');
+    const content=el('div','ma-atlas-rewards'),identity=el('div','ma-atlas-identity ma-profile-banner');identity.dataset.maSelectedBanner='';
     const preview=avatar(selected);preview.dataset.maSelectedAvatar='';
     const copy=el('div','ma-atlas-identity__copy'),title=el('strong','',selected.title);title.dataset.maSelectedTitle='';
     const status=el('span');status.dataset.maAtlasSummary='';
@@ -126,5 +145,5 @@
   for(const event of ['modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady'])root.addEventListener(event,refresh);
   document.addEventListener('ma:ui-refresh',refresh);
   document.addEventListener('DOMContentLoaded',refresh);
-  root.ModeAtlasRewardsUI=Object.freeze({open,mount,refresh,appearance,renderGoals});
+  root.ModeAtlasRewardsUI=Object.freeze({open,mount,refresh,appearance,banner,renderGoals});
 })(window);

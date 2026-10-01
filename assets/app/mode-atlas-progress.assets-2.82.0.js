@@ -112,7 +112,7 @@
       claims: mergeClaims(a.claims,b.claims),
       activity: mergeActivity(a.activity,b.activity),
       runs: normalizeRuns({...a.runs,...b.runs}),
-      appearance: a.appearance.at>b.appearance.at||(a.appearance.at===b.appearance.at&&a.appearance.landmark>b.appearance.landmark)?a.appearance:b.appearance,
+      appearance: mergeAppearance(a.appearance,b.appearance),
       updatedAt: Math.max(a.updatedAt, b.updatedAt)
     };
     const sourceIds = new Set([...Object.keys(a.sources), ...Object.keys(b.sources)]);
@@ -182,7 +182,12 @@
   function normalizeRuns(input){
     return Object.fromEntries(Object.entries(object(input)).filter(([id,row])=>safeKey(id)&&id.length<100&&row&&finiteCount(row.at)).sort((a,b)=>b[1].at-a[1].at||a[0].localeCompare(b[0])).slice(0,64).map(([id,row])=>[id,{answers:finiteCount(row.answers),done:!!row.done,at:finiteCount(row.at)}]));
   }
-  function normalizeAppearance(input={}){return {landmark:String(scalar(input?.landmark)||'trail').slice(0,24),at:finiteCount(input?.at)};}
+  function normalizeAppearance(input={}){return {landmark:String(scalar(input?.landmark)||'trail').slice(0,24),at:finiteCount(input?.at),banner:String(scalar(input?.banner)||'plain').slice(0,24),bannerAt:finiteCount(input?.bannerAt)};}
+  function mergeAppearance(a,b){
+    const title=a.at>b.at||(a.at===b.at&&a.landmark>b.landmark)?a:b;
+    const banner=a.bannerAt>b.bannerAt||(a.bannerAt===b.bannerAt&&a.banner>b.banner)?a:b;
+    return {landmark:title.landmark,at:title.at,banner:banner.banner,bannerAt:banner.bannerAt};
+  }
   const dayKey=at=>root.ModeAtlasDates.localDateKey(new Date(at||Date.now()));
   function activityTotals(state,day){
     const row=state.activity[day]||{sources:{},reviews:{}};
@@ -263,7 +268,12 @@
   function selectAppearance(id){
     const state=readState(),item=root.ModeAtlasRewardRules.landmarks.find(x=>x.id===id);
     if(!item||getSummary(state).level<item.level)return false;
-    state.appearance={landmark:id,at:Date.now()};persistState(state,{source:'appearance'});return true;
+    state.appearance={...state.appearance,landmark:id,at:Math.max(Date.now(),state.appearance.at+1)};persistState(state,{source:'appearance'});return true;
+  }
+  function selectBanner(id){
+    const state=readState(),item=root.ModeAtlasRewardRules.banners.find(x=>x.id===id);
+    if(!item||getSummary(state).level<item.level)return false;
+    state.appearance={...state.appearance,banner:id,bannerAt:Math.max(Date.now(),state.appearance.bannerAt+1)};persistState(state,{source:'appearance'});return true;
   }
 
   function makeDeviceId(){
@@ -438,7 +448,7 @@
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
-    award, awardOnce, debugAdjustXP, startRun, recordAnswer, finishRun, routine, studyDays, studyStreak, selectAppearance, levelRequirement,
+    award, awardOnce, debugAdjustXP, startRun, recordAnswer, finishRun, routine, studyDays, studyStreak, selectAppearance, selectBanner, levelRequirement,
     getXP, getLifetimeCorrect, getLevelFromXP, getSummary
   });
 

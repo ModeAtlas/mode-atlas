@@ -109,6 +109,24 @@ function createModeration({db,identities,staff,now=Date.now}){
         history:(value?.history||[]).map(({id,message,at})=>({id,message,at}))};
     });
   }
+  async function warningAccounts(user,data){
+    await requireStaff(user);fields(data,['cursor']);
+    if(data.cursor!=null&&!staff.validUid(data.cursor))fail('invalid-argument','Refresh the warnings list.');
+    let query=warnings.orderBy(FieldPath.documentId()).limit(20);if(data.cursor)query=query.startAfter(data.cursor);
+    const found=await query.get(),targets=await Promise.all(found.docs.map(doc=>staff.user(doc.id)));
+    return db.runTransaction(async tx=>{
+      // Recheck the actor and every protected target against one role snapshot.
+      const access=await staff.readMany(tx,user,[null,...targets]);staff.requireStaff(access[0]);
+      const records=found.size?await tx.getAll(...found.docs.map(doc=>doc.ref),...found.docs.map(doc=>account(doc.id))):[];
+      const rows=found.docs.flatMap((doc,index)=>{
+        const warning=records[index].data(),profile=records[index+found.size].data();
+        if(!targets[index]||!warning?.count||profile?.deleting)return [];
+        return [{uid:doc.id,displayName:profile?.profile?.displayName||'Former Friends member',role:access[index+1].targetRole,
+          canAct:access[index+1].canAct,count:warning.count,lastWarnedAt:warning.history?.[0]?.at||0}];
+      });
+      return {rows,nextCursor:found.size===20?found.docs.at(-1).id:null};
+    });
+  }
   async function warn(user,data){
     await requireStaff(user);fields(data,['uid','message','requestId']);const target=await staff.user(data.uid);
     const message=typeof data.message==='string'?data.message.trim():'';
@@ -143,6 +161,6 @@ function createModeration({db,identities,staff,now=Date.now}){
       return {warnings:(record?.pending||[]).map(({id,message,at})=>({id,message,at})),role:(await staff.read(tx,user)).role};
     });
   }
-  return {report,list,review,restricted,restore,details,warn,clearWarnings,notices,restriction:async uid=>(await restrictions.doc(uid).get()).exists};
+  return {report,list,review,restricted,restore,details,warningAccounts,warn,clearWarnings,notices,restriction:async uid=>(await restrictions.doc(uid).get()).exists};
 }
 module.exports={createModeration};

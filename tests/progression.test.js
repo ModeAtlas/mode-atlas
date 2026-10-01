@@ -16,6 +16,29 @@ function load(seed={}){
   return {root,values,now:()=>now,setNow:value=>{now=value;},progress:root.ModeAtlasProgress,review:root.ModeAtlasReview};
 }
 function answer(env,id,index,options={}){return env.progress.recordAnswer({runId:id,index,mode:'reading',correct:true,units:1,at:env.now(),...options});}
+test('banner rewards migrate safely and stay independent of titles, frames and XP',()=>{
+  const e=load({modeAtlasProgress:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':700}},appearance:{landmark:'grove',at:10}}}),p=e.progress;
+  assert.deepEqual(plain(p.readState().appearance),{landmark:'grove',at:10,banner:'plain',bannerAt:0});
+  const xp=p.getXP();
+  assert.equal(p.selectBanner('summit'),false);assert.equal(p.selectBanner('<script>'),false);
+  assert.equal(p.selectBanner('grove'),true);assert.equal(p.selectAppearance('trail'),true);
+  assert.equal(p.readState().appearance.banner,'grove');assert.equal(p.readState().appearance.landmark,'trail');
+  const first=p.readState().appearance.bannerAt;
+  assert.equal(p.selectBanner('plain'),true);assert.ok(p.readState().appearance.bannerAt>first);
+  assert.equal(p.readState().appearance.landmark,'trail');assert.equal(p.getXP(),xp);
+});
+test('offline banner and frame changes merge independently in either order, including resets and ties',()=>{
+  const p=load().progress;
+  const left={appearance:{landmark:'summit',at:30,banner:'grove',bannerAt:10}},right={appearance:{landmark:'trail',at:5,banner:'bridge',bannerAt:20}};
+  const merged=p.mergeStates(left,right);
+  assert.deepEqual(plain(merged.appearance),{landmark:'summit',at:30,banner:'bridge',bannerAt:20});
+  assert.deepEqual(plain(merged),plain(p.mergeStates(right,left)));
+  assert.deepEqual(plain(merged),plain(p.mergeStates(merged,merged)));
+  const reset=p.mergeStates(merged,{appearance:{banner:'plain',bannerAt:21}});
+  assert.equal(reset.appearance.banner,'plain');assert.equal(reset.appearance.landmark,'summit');
+  const a={appearance:{banner:'grove',bannerAt:40}},b={appearance:{banner:'horizon',bannerAt:40}};
+  assert.deepEqual(plain(p.mergeStates(a,b)),plain(p.mergeStates(b,a)));
+});
 test('v1/v2 migration preserves every earned XP and lifetime count, and never lowers a level',()=>{
   for(const xp of [0,99,100,249,700,2700,10450,63700,250000]){
     const {progress:p}=load({modeAtlasProgress:{version:2,legacySeeded:true,sources:{old:{'kana.reading.correct':xp}},events:{},adjustments:{}}});

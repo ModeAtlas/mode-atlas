@@ -1,3 +1,12 @@
+## 2.82.0 - 2026-10-01
+
+- Compacted the shared Friends toolbar and identity cards while retaining 44px controls, visible pending requests and accessible large-text layouts.
+- Consolidated staff actions into one Moderator menu with Reports, Warnings, Moderators and Restricted tabs inside the existing account panel. Added a private, paginated warnings directory; moderators have read-only team access and existing protected-account restrictions still apply.
+- Added seven profile banner choices using the shared milestone palette, unlocked by the existing levels. Independent banner and frame timestamps preserve offline changes across devices; server projections validate banner unlocks from the canonical progress model.
+- Applied banners to Profile, Your Atlas and Friends cards without replacing theme ownership or introducing another save store.
+- Replaced route/filename labels in feedback emails with friendly screen names and corrected page identity for nested web index URLs.
+- Expanded both-platform layout, rewards, permission and save-merge coverage. Release gates continue validating public website packaging, simulated iOS, Firebase emulator behaviour, native builds and Release archives.
+
 ## 2.76.0 - 2026-09-30
 
 - Implemented gated opt-in Friends profiles, random/rotatable codes, request acceptance/decline/cancellation, mutual friendships, removal and blocking for web and iOS.

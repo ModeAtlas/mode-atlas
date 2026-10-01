@@ -721,6 +721,9 @@ test('theme preference is applied before paint and survives page-to-page loads b
 
   assert.equal(documentElement.dataset.maTheme, 'light');
   assert.equal(documentElement.dataset.maThemePreference, 'light');
+  for(const [url,page] of Object.entries({'/':'index.html','/index.html':'index.html','/kana/':'kana.html','/kana/index.html':'kana.html','/kana.html':'kana.html','/reading':'default.html','/reading/index.html':'default.html','/default.html':'default.html','/writing/':'reverse.html','/reverse.html':'reverse.html','/results/index.html':'test.html','/test.html':'test.html','/mode-atlas/wordbank/index.html':'wordbank.html','/mode-atlas/privacy/':'privacy.html','/terms/index.html':'terms.html'})){
+    location.pathname=url;assert.equal(window.ModeAtlasPageName(),page,url);
+  }
 });
 
 test('post-consolidation frontend ownership keeps pause, dynamic controls, and public pages clean', () => {
