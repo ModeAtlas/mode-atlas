@@ -74,11 +74,17 @@
 .ma-atlas-icon-choice:disabled{opacity:.65;cursor:default;}
 .ma-atlas-icon-choice[aria-busy="true"]{opacity:.6;}
 .ma-atlas-landmark:focus-visible,.ma-atlas-icon-choice:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
-.ma-profile-banner{position:relative;isolation:isolate;}
-.ma-profile-banner::before{content:"";position:absolute;inset:1px;border-radius:inherit;z-index:-1;pointer-events:none;box-sizing:border-box;padding-inline-start:var(--ma-banner-art-inset,0);background-color:var(--ma-banner-canvas,transparent);background-image:var(--ma-banner-art,none);background-origin:content-box;background-size:var(--ma-banner-fit,auto);background-position:var(--ma-banner-position,center);background-repeat:var(--ma-banner-repeat,repeat);}
+.ma-profile-banner,.ma-account-card[data-ma-banner="hunny"] .ma-account-user{position:relative;isolation:isolate;}
+.ma-profile-banner::before,.ma-account-card[data-ma-banner="hunny"] .ma-account-user::before{content:"";position:absolute;inset:1px;border-radius:inherit;z-index:-1;pointer-events:none;box-sizing:border-box;padding-inline-start:var(--ma-banner-art-inset,0);background-color:var(--ma-banner-canvas,transparent);background-image:var(--ma-banner-art,none);background-origin:content-box;background-size:var(--ma-banner-fit,auto);background-position:var(--ma-banner-position,center);background-repeat:var(--ma-banner-repeat,repeat);}
 /* Supplied artwork keeps its proportions inside the right-hand area; its canvas
    fills the whole card and owns readable text colours in either app theme. */
-[data-ma-banner="hunny"]{--ma-banner-art:url('../rewards/hunny.webp');--ma-banner-canvas:#fff;--ma-banner-art-inset:55%;--ma-banner-fit:contain;--ma-banner-position:right center;--ma-banner-repeat:no-repeat;--ma-card:#fff;--ma-surface-strong:#f3f5f7;--ma-surface-inset:#eef1f4;--ma-control-bg:#f0f3f8;--ma-control-active:#e7eef8;--ma-text:#243042;--ma-text-strong:#17212d;--ma-muted:#53616b;--ma-success:#18734a;color:var(--ma-text-strong);}
+[data-ma-banner="hunny"]{--ma-banner-art:url('../rewards/hunny.webp');--ma-banner-canvas:#fff;--ma-banner-art-space:5rem;--ma-banner-art-inset:calc(100% - var(--ma-banner-art-space));--ma-banner-fit:contain;--ma-banner-position:right center;--ma-banner-repeat:no-repeat;--ma-card:#fff;--ma-surface-strong:#f3f5f7;--ma-surface-inset:#eef1f4;--ma-control-bg:#f0f3f8;--ma-control-active:#e7eef8;--ma-text:#243042;--ma-text-strong:#17212d;--ma-muted:#53616b;--ma-success:#18734a;color:var(--ma-text-strong);}
+.ma-atlas-banner-choice[data-ma-banner="hunny"]{--ma-banner-art-space:4rem;}
+.ma-profile-banner[data-ma-banner="hunny"]:not(.ma-account-card),.ma-account-card[data-ma-banner="hunny"] .ma-account-user{padding-inline-end:var(--ma-banner-art-space);}
+.ma-social-self[data-ma-banner="hunny"]{flex-wrap:wrap;}
+/* Account actions keep their full width below the illustrated identity row. */
+.ma-account-card[data-ma-banner="hunny"]::before{background-image:none;}
+.ma-account-card[data-ma-banner="hunny"] .ma-account-avatar{flex-shrink:0;}
 .ma-reward-exclusive{justify-self:start;font-size:.62rem;line-height:1.4;font-weight:750;letter-spacing:.04em;text-transform:uppercase;border-radius:6px;padding:3px 6px;background:var(--ma-surface-strong);color:var(--ma-text-strong);}
 [data-ma-banner="trail"]{--ma-banner-art:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--ma-atlas) 28%,transparent),transparent 70%),repeating-linear-gradient(130deg,transparent 0 24px,color-mix(in srgb,var(--ma-atlas) 8%,transparent) 25px 27px,transparent 28px 52px);}
 [data-ma-banner="grove"]{--ma-banner-art:radial-gradient(ellipse at 100% 100%,color-mix(in srgb,var(--ma-rank-1) 24%,transparent),transparent 70%),repeating-radial-gradient(ellipse at 100% 100%,transparent 0 18px,color-mix(in srgb,var(--ma-rank-1) 12%,transparent) 19px 21px,transparent 22px 40px);}
@@ -99,7 +105,7 @@ html[data-ma-large-text] .ma-atlas-banners{grid-template-columns:1fr;}
 .ma-practice-recovery{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%;margin-bottom:14px;padding:14px;border:1px solid var(--ma-border);border-radius:16px;box-sizing:border-box;background:var(--ma-card);}
 .ma-practice-recovery p{flex-basis:100%;margin:0 0 4px;font-size:.85rem;line-height:1.5;color:var(--ma-muted);}
 .ma-mastery-directions{font-size:.85rem;line-height:1.6;}
-@media(max-width:380px){.ma-routine-goals{grid-template-columns:1fr;}.ma-atlas-icons{grid-template-columns:repeat(2,minmax(0,1fr));}.ma-atlas-landmark{gap:10px;padding:12px 10px;}}
+@media(max-width:380px){.ma-routine-goals{grid-template-columns:1fr;}.ma-atlas-icons{grid-template-columns:repeat(2,minmax(0,1fr));}.ma-atlas-landmark{gap:10px;padding:12px 10px;}.ma-atlas-banner-choice[data-ma-banner="hunny"]{grid-column:1/-1;}}
 html[data-ma-large-text] .ma-routine-goals{grid-template-columns:1fr;}
 html[data-ma-large-text] .ma-atlas-icons{grid-template-columns:repeat(2,minmax(0,1fr));}
 html[data-ma-large-text] .ma-atlas-landmark{flex-wrap:wrap;}

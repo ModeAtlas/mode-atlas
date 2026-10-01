@@ -283,6 +283,12 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   await page.evaluate(async()=>{ModeAtlasRewardAccess.clear();rewardUser='admin';rewardGrant={grants:[],allCustom:true};await ModeAtlasRewardAccess.refresh(true);});
   await expect(page.getByRole('button',{name:'Hunny banner, selected',exact:true})).toBeVisible();
   await expect(page.getByRole('button',{name:'Open horizon banner, unlocks at level 50',exact:true})).toBeDisabled();
+  if(native){
+    await page.setViewportSize({width:320,height:700});
+    await page.getByRole('button',{name:'Hunny banner, selected',exact:true}).scrollIntoViewIfNeeded();
+    expect(await page.locator('.ma-atlas-banners').evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
+    await page.screenshot({path:info.outputPath('exclusive-small.png'),animations:'disabled'});
+  }
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
   if(native)await page.setViewportSize({width:320,height:700});
   await page.getByRole('button',{name:'Hunny banner, selected',exact:true}).scrollIntoViewIfNeeded();

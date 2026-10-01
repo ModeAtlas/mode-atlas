@@ -109,6 +109,8 @@ crops the subject. Banner artwork belongs on the right, with the image's canvas
 colour filling the whole card; keep text and small control surfaces readable on
 that canvas in both app themes. Hunny uses the shared banner variables for its
 white canvas, a right-hand artwork area, `contain` fit and local text colours.
+Text reserves that artwork area; Profile paints the illustration in the identity
+row above its action buttons so controls cannot cover the subject.
 Future supplied avatar illustrations should use `object-fit: contain` inside their
 avatar canvas; this does not change the existing provider-photo treatment.
 
