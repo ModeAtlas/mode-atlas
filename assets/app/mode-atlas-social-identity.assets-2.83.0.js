@@ -1,10 +1,10 @@
 /* Shared identity policy. The server alone reserves names and supplies account photos. */
 (function(root,factory){
-  if(typeof module==='object'&&module.exports)module.exports=factory();
-  else root.ModeAtlasSocialIdentity=factory();
-})(typeof window!=='undefined'?window:globalThis,function(){
+  if(typeof module==='object'&&module.exports)module.exports=factory(require('./mode-atlas-reward-rules.js'));
+  else root.ModeAtlasSocialIdentity=factory(root.ModeAtlasRewardRules);
+})(typeof window!=='undefined'?window:globalThis,function(rewards){
   'use strict';
-  const avatars=Object.freeze({kana:['あ','Hiragana'],katakana:['ア','Katakana'],book:['本','Book'],sakura:['桜','Cherry blossom'],mountain:['山','Mountain'],moon:['月','Moon']});
+  const avatars=Object.freeze(Object.fromEntries(rewards.avatars.map(item=>[item.id,Object.freeze([item.symbol,item.name])])));
   const emojis=Object.freeze(['🌸','🌙','🍵','🍙','🍜','🍣','🍪','🍓','🦊','🐱','🐶','🐼','🐸','🦋','🐉','🌻','🍀','⭐','🔥','🌈','🎮','🎧','📚','🧠']);
   const cleanName=value=>(typeof value==='string'?value:'').normalize('NFKC').trim().replace(/\s+/g,' ');
   const nameKey=value=>cleanName(value).normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/ß/g,'ss').replace(/[ ._'’\-]/g,'');

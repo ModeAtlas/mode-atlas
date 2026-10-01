@@ -112,7 +112,9 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
 
     @objc func setAppIcon(_ call: CAPPluginCall) {
         let name = call.getString("name")
-        guard name == nil || ["Grove", "Summit", "Horizon"].contains(name!) else {
+        let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any]
+        let alternates = icons?["CFBundleAlternateIcons"] as? [String: Any] ?? [:]
+        guard name == nil || alternates[name!] != nil else {
             call.reject("Unknown app icon"); return
         }
         DispatchQueue.main.async {

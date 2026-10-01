@@ -87,9 +87,11 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: collection, title, frame
   await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
   await expect(page.locator('.ma-atlas-rewards .ma-routine-goal')).toHaveCount(4);
   await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.locator('[data-reward-category="frames"] > summary').click();
   const grove=page.locator('[data-landmark="grove"]');
   await grove.click();
   await expect(grove).toHaveAttribute('aria-pressed','true');
+  await page.locator('[data-reward-category="icons"] > summary').click();
   await page.getByRole('button',{name:'Use Grove app icon',exact:true}).click();
   expect(await page.evaluate(()=>iconCalls)).toEqual([{name:'Grove'}]);
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
@@ -208,6 +210,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile orde
   expect(order).toBe(true);
   await page.screenshot({animations:'disabled',path:info.outputPath(`profile-${theme}.png`)});
   await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.locator('[data-reward-category="frames"] > summary').click();
   await page.locator('[data-landmark="grove"]').click();
   await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
   const frame=await page.locator('#topProfileDot').evaluate(node=>getComputedStyle(node).boxShadow);expect(frame).toContain(theme==='dark'?'232, 155, 128':'143, 62, 37');
@@ -226,6 +229,7 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   await expect(page.getByRole('button',{name:'Open horizon banner, unlocks at level 50',exact:true})).toBeDisabled();
   await expect(page.locator('.ma-atlas-identity')).toHaveAttribute('data-ma-banner','grove');
   await page.screenshot({path:info.outputPath('banner-rewards.png'),animations:'disabled'});
+  await page.locator('[data-reward-category="frames"] > summary').click();
   await page.locator('[data-landmark="grove"]').click();
   expect(await page.evaluate(()=>ModeAtlasRewardsUI.banner().id)).toBe('grove');
   await page.getByRole('tab',{name:'Profile',exact:true}).click();
@@ -238,4 +242,38 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   expect(await page.locator('.ma-atlas-banners').evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
   await page.getByRole('button',{name:'Original banner, available',exact:true}).click();
   expect(await page.evaluate(()=>ModeAtlasRewardsUI.banner().id)).toBe('plain');
+});
+
+for(const native of [false,true])for(const theme of ['light','dark'])test(`${native?'iOS':'web'} ${theme}: exclusive banner access and collapsible categories stay readable across accounts`,async({page},info)=>{
+  await prepare(page,{native,theme});await open(page,'/');
+  await page.evaluate(()=>ModeAtlasRewardsUI.open());await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);
+  await expect(page.locator('[data-reward-category="frames"]')).not.toHaveAttribute('open','');
+  await page.evaluate(async()=>{
+    window.rewardUser='tester';window.rewardGrant={grants:['hunny-tester'],allCustom:false};
+    KanaCloudSync.getUser=()=>rewardUser?{uid:rewardUser}:null;
+    const call=ModeAtlasSocial.call;window.ModeAtlasSocial={...ModeAtlasSocial,call:(action,...args)=>action==='rewards'?Promise.resolve({...rewardGrant,validUntil:Date.now()+86400000}):call(action,...args)};
+    await ModeAtlasRewardAccess.refresh(true);
+  });
+  await page.getByRole('button',{name:'Hunny banner, available',exact:true}).click();
+  await expect(page.locator('.ma-atlas-identity')).toHaveAttribute('data-ma-banner','hunny');
+  const image=await page.evaluate(()=>new Promise(resolve=>{const image=new Image();image.onload=()=>resolve(image.naturalWidth>0);image.onerror=()=>resolve(false);image.src='/assets/rewards/hunny.webp';}));expect(image).toBe(true);
+  const summary=page.locator('[data-reward-category="banners"] > summary');await summary.click();await summary.focus();await page.keyboard.press('Enter');
+  await expect(page.getByRole('button',{name:'Hunny banner, selected',exact:true})).toBeVisible();
+  await page.screenshot({path:info.outputPath('exclusive-banner-collection.png'),animations:'disabled'});
+  await page.getByRole('tab',{name:'Profile',exact:true}).click();
+  await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','hunny');
+  await page.screenshot({path:info.outputPath('exclusive-profile.png'),animations:'disabled'});
+  await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.evaluate(async()=>{ModeAtlasRewardAccess.clear();rewardUser='ordinary';rewardGrant={grants:[],allCustom:false};await ModeAtlasRewardAccess.refresh(true);});
+  await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);await expect(page.locator('.ma-atlas-identity')).toHaveAttribute('data-ma-banner','plain');
+  await page.evaluate(async()=>{ModeAtlasRewardAccess.clear();rewardUser='admin';rewardGrant={grants:[],allCustom:true};await ModeAtlasRewardAccess.refresh(true);});
+  await expect(page.getByRole('button',{name:'Hunny banner, selected',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Open horizon banner, unlocks at level 50',exact:true})).toBeDisabled();
+  await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
+  if(native)await page.setViewportSize({width:320,height:700});
+  await page.getByRole('button',{name:'Hunny banner, selected',exact:true}).scrollIntoViewIfNeeded();
+  expect(await page.evaluate(()=>[document.documentElement,...document.querySelectorAll('.ma-reward-category,.ma-atlas-banner-choice:not([hidden])')].every(node=>node.scrollWidth<=node.clientWidth+1))).toBe(true);
+  await page.screenshot({path:info.outputPath('exclusive-large-text.png'),animations:'disabled'});
+  await page.evaluate(()=>{rewardUser='';ModeAtlasRewardAccess.clear();});await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);
 });

@@ -9,7 +9,7 @@ const progress = createProgress({ModeAtlasDates: dates, ModeAtlasRewardRules: re
 const review = createReview({ModeAtlasDates: dates});
 const identity = require('./shared/mode-atlas-social-identity.js');
 
-function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0) {
+function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
   const sections = save.sections || {};
   const data = name => sections[name]?.data || {};
   const state = data('progress').state || {};
@@ -26,7 +26,7 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0) {
     ModeAtlasDates:{...dates,localDateKey:value=>dates.dateKeyInTimeZone(value,timeZone)}});
   const seeded = owner.ensureSeeded({sync:false,emit:false});
   const summary = owner.getSummary(seeded);
-  const selected = rewards.appearance(seeded.appearance.landmark,summary.level);
+  const selected = rewards.appearance(seeded.appearance.landmark,summary.level,access);
   let readingMastered=0,writingMastered=0,combinedMastered=0;
   for (const char of kana.collections.all) {
     const reading={review:data('reading').srs?.[char],stats:data('reading').stats?.[char],time:data('reading').times?.[char]};
@@ -37,15 +37,15 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0) {
   }
   return {xp:summary.xp,level:summary.level,totalCorrect:summary.lifetimeCorrect,
     readingMastered,writingMastered,combinedMastered,kanaCount:kana.collections.all.length,
-    landmark:selected.id,banner:rewards.banner(seeded.appearance.banner,summary.level).id,studyDays:owner.studyDays(seeded),syncedAt};
+    landmark:selected.id,banner:rewards.banner(seeded.appearance.banner,summary.level,access).id,studyDays:owner.studyDays(seeded),syncedAt};
 }
 
 function publicProfile(uid, account, now = Date.now(), full = true) {
   if(!account?.active || account.deleting || account.restricted || !account.profile)return null;
   const summary=account.summary || projectSave();
-  const landmark=rewards.appearance(summary.landmark,summary.level);
+  const landmark=rewards.appearance(summary.landmark,summary.level,account.rewardAccess);
   const out={uid,displayName:account.profile.displayName,avatar:account.profile.avatar,
-    frame:landmark.frame,title:landmark.title,banner:rewards.banner(summary.banner,summary.level).id,level:summary.level};
+    frame:landmark.frame,title:landmark.title,banner:rewards.banner(summary.banner,summary.level,account.rewardAccess).id,level:summary.level};
   if(out.avatar==='account'){
     const url=identity.photoURL(account.profile.avatarURL);if(url)out.avatarURL=url;else out.avatar='kana';
   }

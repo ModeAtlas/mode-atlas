@@ -1,3 +1,12 @@
+## 2.83.0 - 2026-10-01
+
+- Added one shared reward catalogue/access policy for level unlocks, account exclusives and event grants across banners, title/frame sets, app icons and Atlas avatars.
+- Added the account-exclusive Hunny banner using supplied artwork. Firebase validates the designated verified account; verified Admin can preview/equip every custom reward. Recipient matching remains server-side.
+- Kept grants outside client learning saves and exports. Private UID records support activation dates, expiry and revocation; public Friends responses recheck access and account deletion removes grant records.
+- Added an account-bound, expiring offline presentation cache with stale-response protection and a recoverable loading state. Existing progress owns banner selection and cloud merges.
+- Made reward categories collapsible with keyboard-accessible summaries, available counts and large-text layouts on web and iOS.
+- Derived native alternate icon build names from the shared catalogue and validated the native bridge against compiled icons, removing duplicate hard-coded name lists.
+
 ## 2.82.0 - 2026-10-01
 
 - Compacted the shared Friends toolbar and identity cards while retaining 44px controls, visible pending requests and accessible large-text layouts.

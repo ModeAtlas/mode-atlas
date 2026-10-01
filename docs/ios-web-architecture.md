@@ -496,3 +496,11 @@ and cached separately when switching accounts. Friends reporting/moderation is
 server-owned, with access rules, limits and expiry policies. See
 [testflight-readiness-2.79.0.md](testflight-readiness-2.79.0.md) for ownership,
 deployment, validation and the remaining Apple/account operations.
+
+## Account-exclusive reward extension (2.83.0)
+
+The shared catalogue now handles both level unlocks and private account/event grants.
+`ModeAtlasRewardAccess` caches only account-bound presentation access; it never enters
+the cloud learning save. Firebase owns grants and validates public custom cosmetics.
+Reward selections remain with the existing progress/Friends/device owners. See
+[exclusive rewards](exclusive-rewards-2.83.0.md) for rollout and new reward types.

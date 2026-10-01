@@ -23,6 +23,18 @@
 .ma-atlas-panel{display:flex;flex-direction:column;gap:14px;min-height:0;padding:4px 4px 12px;}
 .ma-atlas-panel[hidden]{display:none;}
 .ma-atlas-panel>*{flex-shrink:0;}
+.ma-reward-category{border:1px solid var(--ma-border);border-radius:18px;background:var(--ma-surface-inset);min-width:0;}
+.ma-reward-category>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:12px 16px;box-sizing:border-box;cursor:pointer;list-style:none;}
+.ma-reward-category>summary::-webkit-details-marker{display:none;}
+.ma-reward-category>summary:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;border-radius:16px;}
+.ma-reward-category__heading{display:grid;gap:4px;min-width:0;}
+.ma-reward-category__heading strong{font-size:.9rem;line-height:1.4;color:var(--ma-text-strong);}
+.ma-reward-category__meta{font-size:.72rem;line-height:1.5;color:var(--ma-muted);overflow-wrap:anywhere;}
+.ma-reward-category__arrow{font-size:1.25rem;color:var(--ma-muted);}
+.ma-reward-category[open] .ma-reward-category__arrow{transform:rotate(180deg);}
+.ma-reward-category__content{display:grid;gap:12px;padding:0 12px 12px;}
+.ma-reward-access{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:.8rem;line-height:1.5;color:var(--ma-muted);}
+.ma-reward-access[hidden],.ma-atlas-banner-choice[hidden],.ma-atlas-landmark[hidden],.ma-atlas-icon-choice[hidden]{display:none;}
 .ma-routine-goals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
 .ma-routine-goal{display:grid;align-content:start;gap:8px;padding:14px;border:1px solid var(--ma-border);border-radius:14px;min-width:0;background:var(--ma-card);}
 .ma-routine-goal strong{font-size:.82rem;line-height:1.4;}
@@ -64,6 +76,9 @@
 .ma-atlas-landmark:focus-visible,.ma-atlas-icon-choice:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
 .ma-profile-banner{position:relative;isolation:isolate;}
 .ma-profile-banner::before{content:"";position:absolute;inset:1px;border-radius:inherit;z-index:-1;pointer-events:none;background-image:var(--ma-banner-art,none);}
+[data-ma-banner="hunny"]{--ma-banner-art:linear-gradient(90deg,var(--ma-card) 10%,color-mix(in srgb,var(--ma-card) 90%,transparent) 35%,color-mix(in srgb,var(--ma-card) 40%,transparent) 72%),url('../rewards/hunny.webp');}
+.ma-profile-banner[data-ma-banner="hunny"]::before{background-size:100% 100%,auto 190%;background-position:center,right 42%;background-repeat:no-repeat;}
+.ma-reward-exclusive{justify-self:start;font-size:.62rem;line-height:1.4;font-weight:750;letter-spacing:.04em;text-transform:uppercase;border-radius:6px;padding:3px 6px;background:var(--ma-surface-strong);color:var(--ma-text-strong);}
 [data-ma-banner="trail"]{--ma-banner-art:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--ma-atlas) 28%,transparent),transparent 70%),repeating-linear-gradient(130deg,transparent 0 24px,color-mix(in srgb,var(--ma-atlas) 8%,transparent) 25px 27px,transparent 28px 52px);}
 [data-ma-banner="grove"]{--ma-banner-art:radial-gradient(ellipse at 100% 100%,color-mix(in srgb,var(--ma-rank-1) 24%,transparent),transparent 70%),repeating-radial-gradient(ellipse at 100% 100%,transparent 0 18px,color-mix(in srgb,var(--ma-rank-1) 12%,transparent) 19px 21px,transparent 22px 40px);}
 [data-ma-banner="bridge"]{--ma-banner-art:linear-gradient(125deg,transparent 35%,color-mix(in srgb,var(--ma-rank-2) 24%,transparent)),repeating-linear-gradient(45deg,transparent 0 24px,color-mix(in srgb,var(--ma-rank-2) 10%,transparent) 25px 27px,transparent 28px 52px);}

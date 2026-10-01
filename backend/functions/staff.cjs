@@ -52,6 +52,7 @@ function createStaff({db,auth,now=Date.now}){
     const [record,users]=await Promise.all([registry.get(),auth.getUsers(ids.map(uid=>({uid})))]);
     const roles=new Map(users.users.map(user=>[user.uid,role(user,record.data())]));
     profiles.filter(Boolean).forEach(profile=>{profile.role=roles.get(profile.uid)||'member';});
+    return new Map(users.users.map(user=>[user.uid,user]));
   }
   async function erase(uid){await db.runTransaction(async tx=>{const doc=await tx.get(registry),moderators={...(doc.data()?.moderators||{})};if(Object.hasOwn(moderators,uid)){delete moderators[uid];tx.set(registry,{moderators});}});}
   return {read,readMany,current,assign,list,badges,erase,user,requireStaff,requireAction,validUid};

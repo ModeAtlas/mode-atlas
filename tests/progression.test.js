@@ -142,3 +142,41 @@ test('untrusted progress rejects prototype keys and keeps oversized counters fin
   assert.equal(Object.keys(normalized.credits).length,0);assert.equal(Object.keys(normalized.adjustments).length,0);
   assert.equal({}.answer,undefined);
 });
+
+test('exclusive rewards are hidden and locked without a matching grant; admin custom access does not grant levels',()=>{
+  const e=load(),rules=e.root.ModeAtlasRewardRules,custom=rules.item('banners','hunny');
+  assert.equal(rules.visible(custom,50,{}),false);assert.equal(e.progress.selectBanner('hunny'),false);
+  assert.equal(rules.banner('hunny',50,{}).id,'plain');
+  for(const access of [{grants:['hunny-tester']},{allCustom:true}]){
+    e.root.ModeAtlasRewardAccess={current:()=>access};
+    assert.equal(rules.visible(custom,1,access),true);assert.equal(e.progress.selectBanner('hunny'),true);
+    assert.equal(e.progress.selectBanner('horizon'),false);
+    for(const type of ['banners','frames','icons','avatars']){
+      assert.ok(rules.catalogue[type].length);assert.equal(rules.allowed(type,'missing',50,access),false);
+    }
+  }
+  assert.equal(e.progress.getXP(),0);
+});
+
+test('reward access survives offline reload for its owner only and ignores delayed responses after an account switch',async()=>{
+  const createAccess=require('../assets/app/mode-atlas-reward-access.js');
+  let uid='tester',cache=null,online=true,clock=100000,finish;
+  const deps={user:()=>uid,online:()=>online,read:()=>cache,write:value=>{cache=value;},now:()=>clock,fetch:()=>new Promise(resolve=>{finish=resolve;})};
+  const a=createAccess(deps),pending=a.refresh();finish({grants:['hunny-tester'],allCustom:false,validUntil:clock+1000});await pending;
+  assert.deepEqual(a.current().grants,['hunny-tester']);
+  online=false;const restored=createAccess(deps);await restored.refresh();assert.deepEqual(restored.current().grants,['hunny-tester']);
+  uid='stranger';assert.deepEqual(restored.current().grants,[]);
+  online=true;uid='tester';const delayed=a.refresh(true);a.clear();uid='stranger';finish({grants:[],allCustom:true,validUntil:clock+1000});await delayed;
+  assert.deepEqual(a.current().grants,[]);assert.equal(a.current().allCustom,false);assert.equal(cache,null);
+  const ordinary=a.refresh();finish({grants:[],allCustom:false,validUntil:clock+1000});await ordinary;assert.equal(a.current().allCustom,false);
+  cache={uid,checkedAt:clock,access:{grants:['hunny-tester'],validUntil:clock+1000}};clock+=1001;assert.deepEqual(a.current().grants,[]);
+  uid='';assert.deepEqual(a.current().grants,[]);
+});
+
+test('reward access shares in-flight reads, handles older backends and keeps grant data outside save exports',async()=>{
+  const createAccess=require('../assets/app/mode-atlas-reward-access.js');let cache=null,calls=0,clock=100000;
+  const a=createAccess({user:()=> 'tester',online:()=>true,read:()=>cache,write:value=>{cache=value;},now:()=>clock,fetch:async()=>{calls++;return {ok:true};}});
+  await Promise.all([a.refresh(),a.refresh()]);assert.equal(calls,1);assert.equal(a.status(),'error');assert.deepEqual(a.current().grants,[]);
+  const e=load();assert.equal(e.root.ModeAtlasStorage.isBackupKey('modeAtlasRewardAccess'),false);
+  e.root.ModeAtlasStorage.setJSON('modeAtlasRewardAccess',{allCustom:true});e.root.ModeAtlasStorage.clearAppData();assert.equal(e.root.ModeAtlasStorage.get('modeAtlasRewardAccess',null),null);
+});
