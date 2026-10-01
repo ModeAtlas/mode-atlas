@@ -23,7 +23,7 @@
     const ticket=generation;status('');host.setAttribute('aria-busy','true');
     const controls=[...host.querySelectorAll('button,input,select,textarea')];controls.forEach(node=>{node.dataset.wasDisabled=String(node.disabled);node.disabled=true;});
     try{const result=await action();if(alive(ticket))await onSuccess?.(result);}
-    catch(error){if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
+    catch(error){root.ModeAtlasDiagnostics?.record('friends',error);if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
     finally{if(alive(ticket))host.removeAttribute('aria-busy');controls.forEach(node=>{node.disabled=node.dataset.wasDisabled==='true';delete node.dataset.wasDisabled;});}
   }
   function screen(){generation++;status('');if(body.contains(document.activeElement))document.activeElement.blur();body.replaceChildren();const panel=host.closest('.ma-account-view');if(panel)panel.scrollTop=0;host.removeAttribute('aria-busy');return generation;}
@@ -173,8 +173,20 @@
   function myCode(){
     screen();back('Friends',home);body.append(el('h3','','Your friend code'),el('p','ma-social-note','Share this code with someone you want to add. You choose which requests to accept.'));
     const input=el('input','ma-social-code');input.readOnly=true;input.setAttribute('aria-label','Your friend code');input.value=state.code.match(/.{1,4}/g).join('-');input.addEventListener('click',()=>input.select());body.append(input);
-    body.append(button('Copy code',async()=>{try{await navigator.clipboard.writeText(input.value);status('Friend code copied.','success');}catch{input.focus();input.select();status('Select and copy your code.');}},'ma-button ma-button--primary'));
+    const actions=el('div','ma-social-tools');
+    if(root.AtlasPlatform.getCapabilities().friendSharing){
+      const share=button('Share code',async()=>{
+        if(share.disabled)return;const ticket=generation;share.disabled=true;status('');
+        try{const result=await root.AtlasPlatform.shareFriendCode(input.value);if(alive(ticket)){
+          if(result.status==='shared')status('Friend code shared.','success');
+          else if(result.status!=='cancelled')status('Sharing is unavailable. You can copy your code instead.');
+        }}catch(error){root.ModeAtlasDiagnostics?.record('sharing',error);if(alive(ticket))status('Could not share your code. Try again or copy it instead.','error');}
+        finally{share.disabled=false;}
+      },'ma-button ma-button--primary');actions.append(share);
+    }
+    actions.append(button('Copy code',async()=>{try{await navigator.clipboard.writeText(input.value);status('Friend code copied.','success');}catch{input.focus();input.select();status('Select and copy your code.');}}));body.append(actions);
     body.append(button('Create a new code',()=>confirmAction('Replace your friend code?','Your old code will stop working. Existing friends and requests are kept.','Replace code','rotateCode',{},myCode)));
+    focusTitle();
   }
   function addFriend(){
     screen();back('Friends',home);body.append(el('h3','','Find a friend'));

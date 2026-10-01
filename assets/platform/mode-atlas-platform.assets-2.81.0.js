@@ -79,6 +79,7 @@
       });
     },
     composeFeedback: function(draft){ return call('composeFeedback', [draft], {status:'unavailable'}); },
+    shareFriendCode: function(code){ return call('shareFriendCode', [String(code || '')], {status:'unavailable'}); },
     openExternalLink: function(url){ return call('openExternalLink', [String(url || '')], false); },
     playSound: function(cue,volume){ return call('playSound', [cue,volume], false); },
     stopSounds: function(){ return call('stopSounds', [], false); },

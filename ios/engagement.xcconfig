@@ -1,5 +1,7 @@
 // Default builds need no App Group capability. Optional local settings apply to
 // both targets through the project configuration; never invent a signing team.
+#include "release.xcconfig"
 MODE_ATLAS_APP_GROUP =
 MODE_ATLAS_ENTITLEMENTS = Shared/LocalOnly.entitlements
 #include? "widget-sharing.local.xcconfig"
+#include? "signing.local.xcconfig"

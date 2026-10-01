@@ -17,6 +17,7 @@
         notifications: typeof root.Notification !== 'undefined',
         appBadge: typeof navigator.setAppBadge === 'function',
         widgets: false,
+        friendSharing: typeof navigator.share === 'function',
         appIntents: false
       };
     },
@@ -30,6 +31,14 @@
     composeFeedback: function(draft){
       location.href='mailto:support@mode-atlas.com?subject='+encodeURIComponent(draft.subject)+'&body='+encodeURIComponent(draft.body);
       return {status:'opened'};
+    },
+    shareFriendCode: async function(code){
+      if(!/^[A-F0-9]{4}(?:-[A-F0-9]{4}){4}$/.test(code))throw new Error('Invalid friend code');
+      if(typeof navigator.share!=='function')return {status:'unavailable'};
+      try{
+        await navigator.share({title:'Learn with me on Mode Atlas',text:`Add me in Mode Atlas: ${code}\nOpen Profile → Friends → Add friend and enter this code.`});
+        return {status:'shared'};
+      }catch(error){if(error?.name==='AbortError')return {status:'cancelled'};throw error;}
     },
     openExternalLink: function(url){
       if (!url) return false;

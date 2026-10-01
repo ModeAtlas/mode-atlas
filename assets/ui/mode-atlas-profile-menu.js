@@ -57,12 +57,13 @@
               </div>
               <span class="ma-status-chip ma-status-chip--info" id="profileSyncChip">Checking</span>
             </div>
-            <div class="ma-sync-status-line">
+            <div class="ma-sync-status-line" role="status" aria-live="polite" aria-atomic="true">
               <span class="ma-sync-dot" id="profileSyncDot" aria-hidden="true"></span>
               <strong id="profileSyncSummary">Checking sync status…</strong>
             </div>
             <div class="ma-sync-detail" id="profileSyncDetail">Your current save status will appear here.</div>
             <div class="ma-sync-meta" id="profileSyncMeta">Last cloud sync: Never synced</div>
+            <button class="ma-button ma-button--ghost" id="profileSyncRetry" type="button" hidden>Retry sync</button>
           </section>
         `;
     }

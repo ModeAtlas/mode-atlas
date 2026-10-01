@@ -86,6 +86,12 @@
 .ma-help-note{font-size:.85rem;line-height:1.55;color:var(--ma-muted);margin:0;overflow-wrap:anywhere;}
 .ma-help-fallback{display:flex;flex-wrap:wrap;gap:10px;}
 .ma-help-fallback[hidden]{display:none;}
+.ma-help-consent{display:flex;align-items:center;gap:10px;min-height:44px;font-size:.9rem;line-height:1.5;}
+.ma-help-consent input{flex:none;width:22px;height:22px;accent-color:var(--ma-atlas);}
+.ma-help-diagnostics{min-width:0;font-size:.85rem;}
+.ma-help-diagnostics summary{padding:10px 0;cursor:pointer;}
+.ma-help-diagnostics pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;}
+.ma-help-form :is(input,textarea,select,summary):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
 .ma-help-legal{line-height:1.65;overflow-wrap:anywhere;}
 .ma-help-legal h2{font-size:1.1rem;margin:24px 0 8px;}
 .ma-help-legal a{color:var(--ma-link);}
@@ -98,6 +104,6 @@
 .ma-tour-card h2{font-size:1.13rem;line-height:1.25;margin:6px 0 10px;}
 .ma-tour-count{font-size:.75rem;font-weight:750;color:var(--ma-muted);margin:0;}
 .ma-tour-copy{font-size:.9rem;line-height:1.5;margin:0 0 14px;}
-.ma-tour-actions{display:flex;gap:8px;margin-bottom:8px;}
+.ma-tour-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
 .ma-tour-actions button{flex:1;}
 .ma-tour-card .ma-button{min-height:44px;}

@@ -1,0 +1,13 @@
+node_modules/
+playwright-report/
+test-results/
+.build/
+ios/App/App/public/
+.DS_Store
+
+__pycache__/
+*.pyc
+backend/functions/shared/
+.firebase/
+*-debug.log
+/assets/fonts/*.woff2

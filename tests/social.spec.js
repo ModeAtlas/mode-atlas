@@ -1,13 +1,14 @@
 const {test,expect}=require('@playwright/test');
 const socialConfig=require('../assets/app/mode-atlas-social-config.js');
-async function launch(page,{native=true,theme='dark',width=393}={}){
+async function launch(page,{native=true,theme='dark',width=393,share=false}={}){
   await page.setViewportSize({width,height:852});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
-  await page.addInitScript(({native,theme})=>{
+  await page.addInitScript(({native,theme,share})=>{
     if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
+    if(share){window.sharedCodes=[];window.nextShare='cancelled';window.Capacitor.Plugins.ModeAtlasNative={shareFriendCode:async value=>{sharedCodes.push(value);if(nextShare==='failed')throw new Error('sharing failed');return {status:nextShare};}};}
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
     localStorage.setItem('maWhatsNewSeen','social-tests');localStorage.setItem('modeAtlasThemePreference',theme);
-  },{native,theme});
+  },{native,theme,share});
   await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
 }
 async function prepare(page,{active=true,...layout}={}){
@@ -264,4 +265,15 @@ test('warnings arrive on a visit, remain until acknowledged and disappear on acc
   await expect(warning).toBeVisible();
   await page.evaluate(()=>{window.socialUser='other';window.dispatchEvent(new Event('kanaCloudSyncStatusChanged'));});
   await expect(warning).toBeHidden();expect(await page.evaluate(()=>noticeAcknowledged.input.ids)).toEqual(['warning-one']);
+});
+
+test('native friend sharing supports cancel, failure, retry and sends only the friend code',async({page})=>{
+  await prepare(page,{share:true,width:320});await page.getByRole('button',{name:'My code',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Your friend code'})).toBeFocused();
+  const share=page.getByRole('button',{name:'Share code',exact:true});await share.click();await expect(share).toBeEnabled();
+  await expect(page.getByText('Friend code shared.',{exact:true})).toBeHidden();
+  expect(await page.evaluate(()=>sharedCodes)).toEqual([{code:'ABCD-EF01-2345-6789-ABCD'}]);
+  await page.evaluate(()=>window.nextShare='failed');await share.click();await expect(page.getByText('Could not share your code. Try again or copy it instead.')).toBeVisible();
+  await page.evaluate(()=>window.nextShare='shared');await share.click();await expect(page.getByText('Friend code shared.',{exact:true})).toBeVisible();
+  await fits(page);await page.screenshot({path:test.info().outputPath('friend-code-sharing.png')});
 });

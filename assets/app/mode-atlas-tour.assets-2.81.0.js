@@ -1,5 +1,6 @@
 /* A guided walk through real UI. Only presentation/navigation changes; the tour
-   never starts a practice session or changes learning/settings data. */
+   never starts a practice session or changes learning/settings data. First use
+   can finish at the existing guided-set start screen. */
 (function ModeAtlasTour(root){
   'use strict';
   const key='modeAtlasActiveTour',native=!!root.ModeAtlasEnv?.isNativeApp;
@@ -17,8 +18,11 @@
   ];
   function save(){try{sessionStorage.setItem(key,JSON.stringify(state));}catch{}}
   function destroy(){cancelAnimationFrame(frame);observer?.disconnect();observer=null;root.removeEventListener('resize',layout);root.visualViewport?.removeEventListener('resize',layout);root.visualViewport?.removeEventListener('scroll',layout);document.removeEventListener('scroll',layout,true);document.removeEventListener('keydown',onKey,true);layer?.remove();layer=null;target=null;}
-  function finish(){
-    const returnPath=state?.returnPath;state=null;try{sessionStorage.removeItem(key);localStorage.setItem('modeAtlasTourSeen','1');}catch{}
+  function finish(practice=false){
+    const returnPath=practice===true
+      ?root.ModeAtlasVersionFile.appUrl(/^\/reading\/\?practice=10(?:&starter=starter)?$/.test(state?.practiceHref)?state.practiceHref:'/reading/?practice=10')
+      :state?.returnPath;
+    state=null;try{sessionStorage.removeItem(key);localStorage.setItem('modeAtlasTourSeen','1');}catch{}
     destroy();root.ModeAtlasPracticeSetup?.close();root.ModeAtlasAccountNavigation?.close();
     root.dispatchEvent(new Event('modeAtlasTourClosed'));
     if(returnPath&&returnPath!==location.pathname+location.search){location.assign(returnPath);return;}
@@ -69,10 +73,12 @@
     layer=el('div','ma-tour-layer');layer.setAttribute('popover','manual');
     const shade=el('div','ma-tour-shade'),spot=el('div','ma-tour-spot'),card=el('section','ma-tour-card');
     card.setAttribute('role','dialog');card.setAttribute('aria-modal','true');card.setAttribute('aria-label','A quick look around');
-    const count=el('p','ma-tour-count',`${state.step+1} of ${steps.length}`),title=el('h2','',step.title),copy=el('p','ma-tour-copy',step.text),actions=el('div','ma-tour-actions');title.tabIndex=-1;
+    const firstFinish=state.firstUse&&state.step===steps.length-1;
+    const count=el('p','ma-tour-count',`${state.step+1} of ${steps.length}`),title=el('h2','',step.title),copy=el('p','ma-tour-copy',step.text+(firstFinish?' Ready to try? Your first set has 10 questions, at your own pace. You can sign in to sync your progress whenever you’re ready.':'')),actions=el('div','ma-tour-actions');title.tabIndex=-1;
     const skip=el('button','ma-button ma-button--ghost','Skip tour');skip.type='button';skip.addEventListener('click',finish);
     const back=el('button','ma-button ma-button--ghost','Back');back.type='button';back.hidden=state.step===0;back.addEventListener('click',()=>advance(-1));
-    const next=el('button','ma-button ma-button--primary',state.step===steps.length-1?'Finish tour':'Next');next.type='button';next.addEventListener('click',()=>state.step===steps.length-1?finish():advance(1));
+    const next=el('button','ma-button ma-button--primary',firstFinish?'Try a short set':state.step===steps.length-1?'Finish tour':'Next');next.type='button';next.addEventListener('click',()=>state.step===steps.length-1?finish(!!state.firstUse):advance(1));
+    if(firstFinish)skip.textContent='Explore on my own';
     actions.append(back,next);card.append(count,title,copy,actions,skip);layer.append(shade,spot,card);
     (step.setup?document.getElementById('practiceSetupDialog'):document.body).append(layer);
     layer.showPopover?.();observer=new ResizeObserver(layout);observer.observe(target);observer.observe(card);
@@ -82,8 +88,9 @@
   function advance(amount){if(!state)return;state.step+=amount;save();void show();}
   function start(){
     if(state)return;previousFocus=document.activeElement;
-    try{sessionStorage.removeItem('modeAtlasTourPending');}catch{}
-    root.ModeAtlas?.markWhatsNewSeen?.();state={step:0,at:Date.now(),returnPath:location.pathname+location.search};save();void show();
+    let firstUse=false;try{firstUse=sessionStorage.getItem('modeAtlasTourPending')==='1';sessionStorage.removeItem('modeAtlasTourPending');}catch{}
+    const practiceHref=root.ModeAtlasStudyPlan.recommend({readingSettings:root.ModeAtlasStorage.json('settings',undefined),writingSettings:root.ModeAtlasStorage.json('reverseSettings',undefined)}).href;
+    root.ModeAtlas?.markWhatsNewSeen?.();state={step:0,at:Date.now(),firstUse,practiceHref,returnPath:location.pathname+location.search};save();void show();
   }
   root.ModeAtlasTour=Object.freeze({start,isOpen:()=>!!state,finish});
   document.addEventListener('DOMContentLoaded',()=>{if(state)requestAnimationFrame(show);},{once:true});

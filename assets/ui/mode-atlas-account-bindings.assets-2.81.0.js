@@ -45,8 +45,9 @@
     return date.toLocaleString([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
   }
 
+  let nativeBuild = '';
   function appVersionLabel(){
-    return String(window.ModeAtlasVersion || window.MODE_ATLAS_VERSION || 'dev-local');
+    return String(window.ModeAtlasVersion || window.MODE_ATLAS_VERSION || 'dev-local')+(nativeBuild?' · Build '+nativeBuild:'');
   }
 
   function setUpdateStatus(message, tone){
@@ -247,6 +248,13 @@
   }
 
   function bindAccountActions(){
+    const retry=document.getElementById('profileSyncRetry');
+    retry?.addEventListener('click',async()=>{
+      if(retry.disabled)return;retry.disabled=true;
+      try{await window.KanaCloudSync?.syncNow();}
+      catch(error){window.ModeAtlasDiagnostics?.record('cloud-sync',error);}
+      finally{retry.disabled=false;updateSyncStatus();}
+    });
     const link = document.getElementById('profileLinkBtn');
     const remove = document.getElementById('settingsDeleteAccountBtn');
     link?.addEventListener('click', openAccountMethods);
@@ -312,14 +320,16 @@
     const meta = document.getElementById('profileSyncMeta');
     const dot = document.getElementById('profileSyncDot');
     if (summary) summary.textContent = status.text || 'Progress saves on this device';
-    if (detail) detail.textContent = status.user ? 'Signed in. Cloud sync updates automatically when progress changes.' : 'Not signed in. Your progress is saved locally on this device.';
+    if (detail) detail.textContent = !status.user?'Sign in whenever you want to keep progress across devices.':({offline:'You can keep practising. Sync resumes when your connection returns.',paused:status.canRetry?'Your cloud save could not be updated. Check your connection and try again.':'Free some device storage, then reopen Mode Atlas.',pending:'Changes will sync automatically. You can keep practising.',cloud:'Your latest changes are saved to your account.'}[status.state]||'Cloud sync updates automatically when progress changes.');
+    const retry=document.getElementById('profileSyncRetry');
+    if(retry)retry.hidden=!status.canRetry;
     if (meta) meta.textContent = 'Last cloud sync: ' + formatTime(status.lastSync || storageGet('modeAtlasLastCloudSyncAt', '0'));
     if (dot) dot.className = 'ma-sync-dot ' + tone;
     const chip = document.getElementById('profileSyncChip');
     if (chip) {
       const normalizedTone = ['ok','cloud','success'].includes(tone) ? 'success' : ['warning','offline'].includes(tone) ? 'warning' : ['error','danger'].includes(tone) ? 'danger' : 'info';
       chip.className = 'ma-status-chip ma-status-chip--' + normalizedTone;
-      chip.textContent = status.user ? (normalizedTone === 'success' ? 'Synced' : status.state || 'Cloud') : 'Local only';
+      chip.textContent = status.user ? (normalizedTone === 'success' ? 'Synced' : ({pending:'Pending',paused:'Paused',offline:'Offline'}[status.state]||'Cloud')) : 'Local only';
     }
     const native = window.ModeAtlasEnv?.isNativeApp === true;
     const link = document.getElementById('profileLinkBtn');
@@ -349,6 +359,9 @@
     try { window.ModeAtlasSounds?.refresh?.(); } catch {}
     refreshUpdateLabels();
     window.ModeAtlasProfile = Object.assign(window.ModeAtlasProfile || {}, { open: trigger => window.ModeAtlasAccountNavigation.open('profile',trigger), close: () => window.ModeAtlasAccountNavigation.close(), refresh: updateSyncStatus });
+    if(window.ModeAtlasEnv?.isNativeApp)window.AtlasPlatform.getAppVersion().then(value=>{
+      if(/^[0-9]+$/.test(value.build)){nativeBuild=String(value.build);refreshUpdateLabels();}
+    }).catch(()=>{});
     window.ModeAtlasSettings = Object.assign(window.ModeAtlasSettings || {}, { open: trigger => window.ModeAtlasAccountNavigation.open('settings',trigger), close: () => window.ModeAtlasAccountNavigation.close() });
     try { window.dispatchEvent(new CustomEvent('modeAtlasProfileMenuReady')); } catch {}
     try { window.dispatchEvent(new CustomEvent('modeAtlasSettingsMenuReady')); } catch {}

@@ -14,7 +14,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
-        "exportBackup", "getAccessibilityPreferences", "setAppIcon", "playSound", "stopSounds", "openExternalLink", "composeFeedback"
+        "exportBackup", "getAccessibilityPreferences", "setAppIcon", "playSound", "stopSounds", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
@@ -24,9 +24,41 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     private var lastReload = Date.distantPast
     private var observers: [NSObjectProtocol] = []
     private var sharingBackup = false
+    private var sharingFriendCode = false
     private var changingIcon = false
     private var mailCall: CAPPluginCall?
     private let sounds = ModeAtlasSoundPlayer()
+
+    @objc func getAppVersion(_ call: CAPPluginCall) {
+        call.resolve(["version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
+                      "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "", "platform": "ios"])
+    }
+
+    @objc func shareFriendCode(_ call: CAPPluginCall) {
+        guard let code = call.getString("code"), code.range(of: "^[A-F0-9]{4}(-[A-F0-9]{4}){4}$", options: .regularExpression) != nil else {
+            call.reject("Invalid friend code"); return
+        }
+        DispatchQueue.main.async {
+            guard !self.sharingFriendCode, let controller = self.bridge?.viewController,
+                  controller.presentedViewController == nil else {
+                call.reject("Close the current sheet first"); return
+            }
+            let text = "Add me in Mode Atlas: \(code)\nOpen Profile → Friends → Add friend and enter this code."
+            let sheet = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+            sheet.completionWithItemsHandler = { _, completed, _, error in
+                self.sharingFriendCode = false
+                if let error { call.reject("Could not share your friend code", nil, error) }
+                else { call.resolve(["status": completed ? "shared" : "cancelled"]) }
+            }
+            if let popover = sheet.popoverPresentationController {
+                popover.sourceView = controller.view
+                popover.sourceRect = CGRect(x: controller.view.bounds.midX, y: controller.view.bounds.maxY - controller.view.safeAreaInsets.bottom, width: 1, height: 1)
+                popover.permittedArrowDirections = []
+            }
+            self.sharingFriendCode = true
+            controller.present(sheet, animated: true)
+        }
+    }
 
     @objc func playSound(_ call: CAPPluginCall) {
         guard let cue = call.getString("cue"), let volume = call.getDouble("volume"), volume.isFinite,

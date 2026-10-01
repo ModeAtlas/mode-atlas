@@ -261,6 +261,7 @@ LEGAL_STYLES = (
 )
 
 INTERACTIVE_SCRIPTS_BEFORE_STORAGE = (
+    'assets/app/mode-atlas-diagnostics.js',
     'assets/ui/mode-atlas-navigation-menu.js',
     'assets/app/mode-atlas-toast.js',
     'assets/app/mode-atlas-overlay.js',

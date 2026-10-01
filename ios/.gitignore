@@ -14,3 +14,4 @@ App/App/config.xml
 
 # Device-specific optional App Group provisioning
 widget-sharing.local.xcconfig
+signing.local.xcconfig

@@ -2,7 +2,9 @@ name: Deploy Mode Atlas website
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'agent/mode-atlas-*'
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -17,6 +19,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Check out source
         uses: actions/checkout@v6

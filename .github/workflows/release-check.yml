@@ -1,0 +1,272 @@
+name: Mode Atlas release gate
+
+on:
+  push:
+    branches:
+      - main
+      - 'agent/mode-atlas-*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mode-atlas-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-check:
+    name: Audit, regressions, browser smoke, and native web bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Package the committed public website
+        run: python3 build_web.py --output "$RUNNER_TEMP/mode-atlas-web"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Read release version
+        id: release
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Guard public npm lockfile
+        shell: bash
+        run: |
+          if grep -Eiq 'internal\.api\.openai|applied-caas|artifactory/api/npm' package-lock.json backend/package-lock.json backend/functions/package-lock.json; then
+            echo 'package-lock.json contains a non-public package registry URL.' >&2
+            exit 1
+          fi
+
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run release checks
+        run: npm run release:check
+
+      - name: Verify generated release assets are committed
+        run: git diff --exit-code
+
+      - name: Run simulated iOS shell smoke test
+        run: npm run test:ios-shell -- --project=mobile-chromium
+
+      - name: Upload native layout evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-layout-${{ github.sha }}
+          path: test-results/**/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Fetch website colour baseline
+        run: git fetch --no-tags --depth=1 origin "$(cat tests/fixtures/web-theme-baseline.txt)"
+
+      - name: Run web and iOS polish matrix
+        run: npm run test:polish -- --project=desktop-chromium
+
+      - name: Upload polish layout evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polish-layout-${{ github.sha }}
+          path: test-results/**/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Run desktop and mobile browser smoke tests
+        env:
+          MODE_ATLAS_WEB_ROOT: ${{ runner.temp }}/mode-atlas-web
+        run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
+
+      - name: Build deterministic iOS web payload
+        run: npm run build:ios-web
+
+      - name: Verify native payload excludes browser-only lifecycle files
+        shell: bash
+        run: |
+          test -f .build/ios-web/mode-atlas-native-manifest.json
+          test ! -e .build/ios-web/sw.js
+          test ! -e .build/ios-web/site.webmanifest
+
+      - name: Stage validated source artifact
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          release_dir="${RUNNER_TEMP}/mode-atlas-release"
+          rm -rf "$release_dir"
+          mkdir -p "$release_dir"
+          git archive HEAD | tar -x -C "$release_dir"
+
+      - name: Upload validated source artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mode-Atlas-${{ steps.release.outputs.version }}-${{ github.sha }}
+          path: ${{ runner.temp }}/mode-atlas-release
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload validated iOS web payload
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mode-Atlas-iOS-Web-${{ steps.release.outputs.version }}-${{ github.sha }}
+          path: .build/ios-web
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+
+  social-backend-check:
+    name: Social backend, access rules, callable functions, and deletion triggers
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            backend/functions/package-lock.json
+      - name: Set up Java for Firestore emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install backend and test dependencies
+        run: |
+          npm --prefix backend ci --ignore-scripts --registry=https://registry.npmjs.org/
+          npm --prefix backend/functions ci --ignore-scripts --registry=https://registry.npmjs.org/
+      - name: Package canonical policy and test demo Firebase project
+        run: |
+          python3 build_social_backend.py
+          npm --prefix backend test
+      - name: Upload emulator diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: social-emulator-${{ github.sha }}
+          path: backend/*-debug.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  ios-native-build:
+    name: Build native iOS shell
+    needs: [release-check, social-backend-check]
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify selected Xcode and SDK
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+
+      - name: Synchronize native shell
+        run: npm run ios:sync
+
+      - name: Verify native generation is source-clean
+        run: git diff --exit-code -- . ':(exclude)ios/App/App/public' ':(exclude)ios/App/App/capacitor.config.json' ':(exclude)ios/App/App/config.xml'
+
+      - name: Test widget snapshot model and activity timing
+        run: |
+          swiftc ios/App/Shared/ModeAtlasWidgetData.swift ios/App/ModeAtlasWidgets/WidgetActivity.swift tests/native/WidgetSnapshotTests.swift -o "${RUNNER_TEMP}/widget-model-tests"
+          "${RUNNER_TEMP}/widget-model-tests"
+
+      - name: Test intent navigation before and after bridge loading
+        run: |
+          swiftc ios/App/Shared/ModeAtlasDestination.swift ios/App/Shared/ModeAtlasStudyIntent.swift tests/native/NavigationIntentTests.swift -o "${RUNNER_TEMP}/navigation-intent-tests"
+          "${RUNNER_TEMP}/navigation-intent-tests"
+
+      - name: Build iPhone/iPad simulator target
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -derivedDataPath "${RUNNER_TEMP}/ModeAtlasDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Build unsigned Release archive for iPhone and iPad
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj \
+            -scheme App \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            -archivePath "${RUNNER_TEMP}/ModeAtlas.xcarchive" \
+            -derivedDataPath "${RUNNER_TEMP}/ModeAtlasReleaseData" \
+            CODE_SIGNING_ALLOWED=NO archive
+          python3 validate_ios_archive.py "${RUNNER_TEMP}/ModeAtlas.xcarchive/Products/Applications/App.app"
+
+      - name: Verify native product metadata
+        shell: bash
+        run: |
+          app_path="${RUNNER_TEMP}/ModeAtlasDerivedData/Build/Products/Debug-iphonesimulator/App.app"
+          expected_version="$(node -p "require('./package.json').version")"
+          expected_build="$(python3 -c 'from sync_ios_project import ios_build_number; print(ios_build_number())')"
+          test -d "$app_path"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")" = "app.modeatlas"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "$expected_version"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "$expected_build"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$app_path/Info.plist")" = "18.0"
+          for icon in Grove Summit Horizon; do
+            test "$(/usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundleAlternateIcons:$icon:CFBundleIconName" "$app_path/Info.plist")" = "$icon"
+          done
+          test -d "$app_path/Metadata.appintents"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "modeatlas"
+          widget_path="$app_path/PlugIns/ModeAtlasWidgets.appex"
+          test -d "$widget_path"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$widget_path/Info.plist")" = "app.modeatlas.widgets"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$widget_path/Info.plist")" = "$expected_version"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$widget_path/Info.plist")" = "$expected_build"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$widget_path/Info.plist")" = "18.0"
+          test -d "$widget_path/Metadata.appintents"
+          test -f "$app_path/GoogleService-Info.plist"
+          test -f "$app_path/public/kana/index.html"
+          test -f "$app_path/public/assets/css/mode-atlas-page-shared.assets-${expected_version}.css"
+          python3 - "$app_path/GoogleService-Info.plist" <<'PY'
+          import plistlib
+          import sys
+          from pathlib import Path
+
+          source = plistlib.loads(Path('ios/App/App/GoogleService-Info.plist').read_bytes())
+          bundled = plistlib.loads(Path(sys.argv[1]).read_bytes())
+          if source != bundled:
+              raise SystemExit('Bundled Firebase configuration differs from source')
+          PY
+          google_scheme="$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' "$app_path/GoogleService-Info.plist")"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:1:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "$google_scheme"

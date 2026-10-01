@@ -101,11 +101,12 @@ test('Capacitor iOS shell is repository-owned and versioned from Mode Atlas rele
   assert.deepEqual([...project.matchAll(/IPHONEOS_DEPLOYMENT_TARGET = ([^;]+);/g)].map(match=>match[1]), ['18.0','18.0']);
   assert.match(read('ios/App/CapApp-SPM/Package.swift'), /platforms: \[\.iOS\(\.v18\)\]/);
   const version = JSON.parse(read('package.json')).version;
-  const [major, minor, patch] = version.split('.').map(Number);
   assert.ok(project.includes(`MARKETING_VERSION = ${version};`));
-  assert.ok(project.includes(`CURRENT_PROJECT_VERSION = ${major * 1_000_000 + minor * 1_000 + patch};`));
+  assert.equal(project.split('CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";').length-1,4);
+  assert.match(read('ios/release.xcconfig'),/^MODE_ATLAS_BUILD_NUMBER = [1-9][0-9]*$/m);
+  assert.match(read('ios/engagement.xcconfig'),/#include "release.xcconfig"/);
   assert.match(sync, /Mode Atlas' canonical version owner/);
-  assert.match(sync, /major \* 1_000_000 \+ minor \* 1_000 \+ patch/);
+  assert.match(sync, /BUILD_CONFIG/);
 });
 
 test('generated native web payload stays out of source control', () => {
