@@ -12,15 +12,14 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'A clearer start, easier sharing and more helpful save status.';
+  const WHATS_NEW_COPY = 'More room for friends and new ways to make your profile yours.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Finish your first tour with a short, guided practice set.',
-    'Share your friend code through your device’s sharing options.',
-    'Save status shows pending changes and offers a retry when sync pauses.',
-    'Feedback can include optional technical details to help resolve problems.',
-    'Reading practice on iOS supports typing with a hardware keyboard.'
+    'Friends has a compact toolbar with more room for your list.',
+    'Unlock profile banners as you level up and mix them with your favourite frame.',
+    'Your chosen banner appears on your profile and Friends cards.',
+    'Feedback uses clear screen names on both the website and iOS.'
   ];
 
   function storeGet(key, fallback = '') {

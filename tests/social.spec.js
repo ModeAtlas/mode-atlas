@@ -170,7 +170,7 @@ test('Friends avatar picker supports single emojis and an explicit account-photo
 
 test('reporting fits a small phone and moderation actions require confirmation',async({page},info)=>{
   await prepare(page,{native:true,width:320,theme:'light'});
-  await expect(page.getByRole('button',{name:'Review reports',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Moderator menu',exact:true})).toHaveCount(0);
   await page.locator('.ma-social-person').first().click();await page.getByRole('button',{name:'Report',exact:true}).click();
   await page.getByLabel('Reason',{exact:true}).selectOption('harassment');
   await page.getByLabel('Details (optional)',{exact:true}).fill('Repeated unwanted requests.');await fits(page);
@@ -187,7 +187,7 @@ test('reporting fits a small phone and moderation actions require confirmation',
       return original(action,data);
     };
   });
-  await page.getByRole('button',{name:'Done',exact:true}).click();await page.getByRole('button',{name:'Review reports',exact:true}).click();
+  await page.getByRole('button',{name:'Done',exact:true}).click();await page.getByRole('button',{name:'Moderator menu',exact:true}).click();
   await expect(page.getByText('<img src=x onerror=alert(1)>',{exact:true})).toBeVisible();await fits(page);
   await page.getByRole('button',{name:'Restrict Friends access',exact:true}).click();await expect(page.getByRole('heading',{name:'Restrict Friends access?',exact:true})).toBeVisible();
   expect(await page.evaluate(()=>reviewed)).toBe(false);
@@ -218,7 +218,8 @@ test('staff controls show role badges, warning history and an explicit warning c
     ModeAtlasSocial.call=async(action,input)=>{
       if(action==='state')return {...await call(action,input),canModerate:true,role:'admin'};
       if(action==='profile')return {profile:{...socialFixture.friend,role:'moderator'}};
-      if(action==='listModerators')return {rows:[{uid:'friend',displayName:'Mika'}]};
+      if(action==='listReports')return {rows:[],nextCursor:null};
+      if(action==='listModerators')return {canManage:true,rows:[{uid:'friend',displayName:'Mika'}]};
       if(action==='staffProfile')return {uid:'friend',displayName:'Mika',role:'moderator',canAct:true,canManage:true,count:2,history:[{id:'warning',message:'An earlier warning',at:Date.now()}]};
       return call(action,input);
     };
@@ -231,7 +232,9 @@ test('staff controls show role badges, warning history and an explicit warning c
   expect(await page.evaluate(()=>socialCalls.some(row=>row.action==='warnProfile'))).toBe(false);
   await page.getByRole('button',{name:'Send warning',exact:true}).click();
   expect(await page.evaluate(()=>socialCalls.find(row=>row.action==='warnProfile').input.message)).toBe('Please review the community rules.');
-  await page.getByRole('button',{name:'Moderators',exact:true}).click();
+  await page.getByRole('button',{name:'← Friends',exact:true}).click();
+  await page.getByRole('button',{name:'Moderator menu',exact:true}).click();
+  await page.getByRole('tab',{name:'Team',exact:true}).click();
   await page.getByRole('button',{name:'Remove role',exact:true}).click();
   expect(await page.evaluate(()=>socialCalls.some(row=>row.action==='assignModerator'))).toBe(false);
   await page.getByRole('button',{name:'Remove role',exact:true}).click();
@@ -277,3 +280,64 @@ test('native friend sharing supports cancel, failure, retry and sends only the f
   await page.evaluate(()=>window.nextShare='shared');await share.click();await expect(page.getByText('Friend code shared.',{exact:true})).toBeVisible();
   await fits(page);await page.screenshot({path:test.info().outputPath('friend-code-sharing.png')});
 });
+
+for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native:true,width:393,theme:'dark',role:'moderator'},{native:true,width:320,theme:'light',role:'admin'},{native:false,width:393,theme:'light',role:'member'}]){
+  test(`${layout.native?'iOS':'web'} ${layout.width} ${layout.role}: compact Friends and moderation hub fit without stacked menus`,async({page},info)=>{
+    await prepare(page,layout);
+    await page.evaluate(role=>{
+      socialFixture.self.role=role;
+      socialFixture.friends=['Mika','Ren','Hana','Yuki','Sora','Aoi'].map((displayName,index)=>({...socialFixture.friend,uid:'friend-'+index,displayName,banner:['grove','bridge','summit','lantern','trail','plain'][index]}));
+      const original=ModeAtlasSocial.call;
+      ModeAtlasSocial.call=async(action,input)=>{
+        if(action==='state')return {...await original(action,input),role,canModerate:role!=='member'};
+        if(action==='listReports'||action==='listRestrictions')return {rows:[],nextCursor:null};
+        if(action==='listModerators')return {canManage:role==='admin',rows:[{uid:'friend',displayName:'Mika'}]};
+        if(action==='listWarnings'){
+          const result={rows:[{uid:'friend',displayName:input?.cursor?'Ren':'Mika',role:'member',canAct:true,count:2,lastWarnedAt:Date.now()}],nextCursor:input?.cursor?null:'friend'};
+          if(window.delayWarnings)return new Promise(resolve=>{window.finishWarnings=()=>resolve(result);});
+          return result;
+        }
+        if(action==='staffProfile')return {uid:'friend',displayName:'Mika',role:'member',canAct:true,canManage:role==='admin',count:2,history:[{id:'one',message:'Please keep your profile welcoming.',at:Date.now()}]};
+        return original(action,input);
+      };
+      ModeAtlasAccountNavigation.close();ModeAtlasAccountNavigation.open('friends');
+    },layout.role);
+    await expect(page.locator('#maSocialList .ma-social-row')).toHaveCount(6);await fits(page);
+    await expect(page.locator('.ma-social-row[data-ma-banner="grove"]')).toHaveCount(1);
+    if(layout.width===1280){
+      const controls=await page.locator('.ma-social-home-tools>.ma-button').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().height));
+      expect(controls.every(height=>height>=44&&height<=48)).toBe(true);
+      const select=await page.getByRole('combobox',{name:'Friends list'}).boundingBox(),request=await page.getByRole('button',{name:'Review 1 pending friend request'}).boundingBox();
+      expect(Math.abs(select.y-request.y)).toBeLessThanOrEqual(1);
+    }
+    await expect(page.getByRole('button',{name:'Review reports',exact:true})).toHaveCount(0);
+    const visibleRows=await page.locator('#maSocialList').evaluate(list=>{
+      const panel=list.closest('.ma-account-view').getBoundingClientRect();
+      return [...list.children].filter(row=>{const box=row.getBoundingClientRect();return box.top>=panel.top&&box.bottom<=panel.bottom;}).length;
+    });
+    if(layout.width>=393)expect(visibleRows).toBeGreaterThanOrEqual(3);
+    await page.screenshot({path:info.outputPath('friends-compact-banners.png'),animations:'disabled'});
+    const staff=page.getByRole('button',{name:'Moderator menu',exact:true});
+    if(layout.role==='member'){await expect(staff).toHaveCount(0);return;}
+    await staff.click();await page.getByRole('tab',{name:'Warnings',exact:true}).click();await fits(page);
+    await expect(page.getByText('2 warnings',{exact:false})).toBeVisible();
+    await expect(page.locator('[data-ma-dialog-layer]:visible')).toHaveCount(0);
+    await page.getByRole('button',{name:/Mika.*2 warnings/}).click();
+    await expect(page.getByText('Please keep your profile welcoming.',{exact:true})).toBeVisible();
+    await expect(page.getByRole('button',{name:'Clear warnings',exact:true})).toHaveCount(layout.role==='admin'?1:0);
+    await page.getByRole('button',{name:'← Moderator menu',exact:true}).click();
+    await page.getByRole('button',{name:'Next page',exact:true}).click();await expect(page.getByText('Ren',{exact:true})).toBeVisible();
+    await page.getByRole('button',{name:'Back to first page',exact:true}).click();await expect(page.getByText('Mika',{exact:true})).toBeVisible();
+    await page.getByRole('tab',{name:'Team',exact:true}).click();
+    await expect(page.getByRole('button',{name:'Remove role',exact:true})).toHaveCount(layout.role==='admin'?1:0);
+    await page.getByRole('tab',{name:'Team',exact:true}).press('ArrowLeft');
+    await expect(page.getByRole('tab',{name:'Warnings',exact:true})).toBeFocused();
+    await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
+    await fits(page);await page.screenshot({path:info.outputPath('moderator-hub-large-text.png'),animations:'disabled'});
+    await page.evaluate(()=>{window.delayWarnings=true;});
+    await page.getByRole('tab',{name:'Warnings',exact:true}).click();
+    await expect.poll(()=>page.evaluate(()=>typeof finishWarnings)).toBe('function');
+    await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.evaluate(()=>finishWarnings());
+    await expect(page.locator('#maModerationPanel')).toHaveCount(0);await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
+  });
+}

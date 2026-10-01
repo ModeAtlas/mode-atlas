@@ -18,6 +18,13 @@ test('technical reports omit sensitive error text, stack, URL parameters and unk
   api.record('friends',{name:'private@example.test',code:'privateUID',message:'hidden'},{file:'https://other.test/private.js'});
   assert.equal(api.snapshot().at(-1).name,'Error');assert.equal(api.snapshot().at(-1).file,'');
 });
+test('feedback labels use the same friendly names for web routes and native filenames',()=>{
+  const {api,window}=load();
+  for(const [label,aliases] of Object.entries({'Atlas':['atlas','index.html'],'Kana':['kana','kana.html'],'Reading practice':['reading','default.html'],'Writing practice':['writing','reverse.html'],'Results':['results','test.html'],'Word Bank':['wordbank','wordbank.html'],'Privacy Policy':['privacy','privacy.html'],'Terms of Use':['terms','terms.html'],'Achievements':['achievements','achievements.html']})){
+    for(const alias of aliases){window.ModeAtlasPageName=()=>alias;assert.equal(api.screenLabel(),label,alias);}
+  }
+  window.ModeAtlasPageName=()=>'/private-file.html';assert.equal(api.screenLabel(),'Mode Atlas');
+});
 test('diagnostics deduplicate bursts, bound storage, expire and clear on account changes',()=>{
   const {api,saved,emit}=load();
   for(let i=0;i<200;i++)api.record('script',{name:'TypeError'});

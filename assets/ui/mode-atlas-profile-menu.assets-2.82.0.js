@@ -7,7 +7,7 @@
   window.ModeAtlasProfileMenu = {
     markup({ href }){
       return `
-          <section class="ma-card ma-card--soft ma-profile-card ma-account-card" aria-label="Mode Atlas account">
+          <section class="ma-card ma-card--soft ma-profile-card ma-account-card ma-profile-banner" data-ma-selected-banner aria-label="Mode Atlas account">
             <div class="ma-account-user">
               <img class="ma-account-avatar" id="profileAvatar" alt="" />
               <div class="ma-account-copy">

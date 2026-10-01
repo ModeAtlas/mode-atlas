@@ -42,6 +42,29 @@ Use `AtlasPlatform.destinationPath` for native navigation links and app links.
 This keeps a website feature available in the next iOS bundle without copying
 its business logic.
 
+Every release is a web **and** iOS release from implementation through review.
+Shared features must include browser and simulated-native cases in the existing
+polish matrix, including narrow screens, both appearances and larger text where
+layout changes. Keep one source owner; never fix a generated asset or native
+public copy directly. Server changes must test the real callable boundary and
+access rules in the Firebase emulator, not only a mocked UI.
+
+Before publishing a development branch, regenerate the revisioned assets and
+backend policy, then run `npm run release:check`. Before merging its PR, require
+the existing release-gate and public-website packaging workflows to pass for
+that commit: desktop/mobile website smoke, web/iOS polish, simulated native
+navigation, backend integration, iPhone/iPad build and unsigned Release archive.
+Inspect layout screenshots for changed shared screens. Do not waive the native
+gate because a change looks web-only, or the website gate because it began as
+an iOS request. GitHub Pages receives only `build_web.py` output; native sources
+and dependency symlinks never enter the published website artifact.
+
+When a release adds a callable action or server projection, deploy the compatible
+backend before releasing either client. Record any device-only checks separately
+from automated results. Local Apple signing and App Group settings stay in the
+ignored local configurations. This workflow does not replace signing or testing
+on a real device.
+
 The iOS bundle is a snapshot: changing the deployed website does not update an
 installed app. Signed-in Firestore data still syncs through the same account.
 Anonymous local storage belongs to each installation and is not shared across

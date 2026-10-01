@@ -13,7 +13,7 @@
 .ma-atlas-rewards h3{font:800 1rem/1.4 var(--ma-font-display);}
 .ma-atlas-rewards__note{font-size:.8rem;line-height:1.5;color:var(--ma-muted);}
 .ma-atlas-rewards__actions{display:flex;flex-wrap:wrap;gap:8px;}
-.ma-atlas-identity{display:flex;align-items:center;gap:14px;padding:4px;}
+.ma-atlas-identity{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--ma-border);border-radius:18px;background:var(--ma-card);}
 .ma-atlas-identity__copy{display:grid;gap:4px;min-width:0;}
 .ma-atlas-identity__copy strong{font-size:1rem;line-height:1.4;}
 .ma-atlas-identity__copy span{font-size:.75rem;line-height:1.5;color:var(--ma-muted);}
@@ -62,6 +62,23 @@
 .ma-atlas-icon-choice:disabled{opacity:.65;cursor:default;}
 .ma-atlas-icon-choice[aria-busy="true"]{opacity:.6;}
 .ma-atlas-landmark:focus-visible,.ma-atlas-icon-choice:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
+.ma-profile-banner{position:relative;isolation:isolate;}
+.ma-profile-banner::before{content:"";position:absolute;inset:1px;border-radius:inherit;z-index:-1;pointer-events:none;background-image:var(--ma-banner-art,none);}
+[data-ma-banner="trail"]{--ma-banner-art:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--ma-atlas) 28%,transparent),transparent 70%),repeating-linear-gradient(130deg,transparent 0 24px,color-mix(in srgb,var(--ma-atlas) 8%,transparent) 25px 27px,transparent 28px 52px);}
+[data-ma-banner="grove"]{--ma-banner-art:radial-gradient(ellipse at 100% 100%,color-mix(in srgb,var(--ma-rank-1) 24%,transparent),transparent 70%),repeating-radial-gradient(ellipse at 100% 100%,transparent 0 18px,color-mix(in srgb,var(--ma-rank-1) 12%,transparent) 19px 21px,transparent 22px 40px);}
+[data-ma-banner="bridge"]{--ma-banner-art:linear-gradient(125deg,transparent 35%,color-mix(in srgb,var(--ma-rank-2) 24%,transparent)),repeating-linear-gradient(45deg,transparent 0 24px,color-mix(in srgb,var(--ma-rank-2) 10%,transparent) 25px 27px,transparent 28px 52px);}
+[data-ma-banner="summit"]{--ma-banner-art:conic-gradient(from 315deg at 78% 110%,color-mix(in srgb,var(--ma-rank-3) 22%,transparent) 0deg 90deg,transparent 90deg 360deg),conic-gradient(from 315deg at 105% 110%,color-mix(in srgb,var(--ma-rank-3) 12%,transparent) 0deg 90deg,transparent 90deg 360deg);}
+[data-ma-banner="lantern"]{--ma-banner-art:radial-gradient(circle at 90% 30%,color-mix(in srgb,var(--ma-rank-4) 30%,transparent),transparent 55%),repeating-radial-gradient(circle at 90% 30%,transparent 0 15px,color-mix(in srgb,var(--ma-rank-4) 10%,transparent) 16px 18px,transparent 19px 34px);}
+[data-ma-banner="horizon"]{--ma-banner-art:linear-gradient(155deg,transparent 35%,color-mix(in srgb,var(--ma-rank-5) 24%,transparent)),repeating-radial-gradient(ellipse at 100% 140%,transparent 0 16px,color-mix(in srgb,var(--ma-rank-5) 13%,transparent) 17px 19px,transparent 20px 36px);}
+.ma-atlas-banners{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.ma-atlas-banner-choice{display:grid;align-content:end;gap:5px;min-width:0;min-height:92px;padding:14px;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-card);color:var(--ma-text-strong);font:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere;}
+.ma-atlas-banner-choice strong{font-size:.85rem;line-height:1.4;}
+.ma-atlas-banner-choice small{font-size:.75rem;line-height:1.4;color:var(--ma-muted);}
+.ma-atlas-banner-choice[aria-pressed="true"]{border-color:var(--ma-success);box-shadow:inset 0 0 0 1px var(--ma-success);}
+.ma-atlas-banner-choice[aria-pressed="true"] small{color:var(--ma-success);font-weight:750;}
+.ma-atlas-banner-choice:disabled{cursor:default;border-style:dashed;}
+.ma-atlas-banner-choice:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
+html[data-ma-large-text] .ma-atlas-banners{grid-template-columns:1fr;}
 .ma-profile-title{margin-top:5px;font-size:.8rem;line-height:1.4;color:var(--ma-muted);}
 .ma-practice-recovery{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;width:100%;margin-bottom:14px;padding:14px;border:1px solid var(--ma-border);border-radius:16px;box-sizing:border-box;background:var(--ma-card);}
 .ma-practice-recovery p{flex-basis:100%;margin:0 0 4px;font-size:.85rem;line-height:1.5;color:var(--ma-muted);}

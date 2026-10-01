@@ -37,7 +37,7 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0) {
   }
   return {xp:summary.xp,level:summary.level,totalCorrect:summary.lifetimeCorrect,
     readingMastered,writingMastered,combinedMastered,kanaCount:kana.collections.all.length,
-    landmark:selected.id,studyDays:owner.studyDays(seeded),syncedAt};
+    landmark:selected.id,banner:rewards.banner(seeded.appearance.banner,summary.level).id,studyDays:owner.studyDays(seeded),syncedAt};
 }
 
 function publicProfile(uid, account, now = Date.now(), full = true) {
@@ -45,7 +45,7 @@ function publicProfile(uid, account, now = Date.now(), full = true) {
   const summary=account.summary || projectSave();
   const landmark=rewards.appearance(summary.landmark,summary.level);
   const out={uid,displayName:account.profile.displayName,avatar:account.profile.avatar,
-    frame:landmark.frame,title:landmark.title,level:summary.level};
+    frame:landmark.frame,title:landmark.title,banner:rewards.banner(summary.banner,summary.level).id,level:summary.level};
   if(out.avatar==='account'){
     const url=identity.photoURL(account.profile.avatarURL);if(url)out.avatarURL=url;else out.avatar='kana';
   }

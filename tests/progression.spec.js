@@ -217,3 +217,25 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile orde
   await page.locator('#maAccountClose').click();await page.locator('.ma-ios-tabs__links a[href="/kana/"]').click();await page.waitForURL('**/kana/');
   await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
 });
+
+for(const native of [false,true])for(const theme of ['light','dark'])test(`${native?'iOS':'web'} ${theme}: profile banners preview, unlock and persist separately from frames`,async({page},info)=>{
+  await prepare(page,{native,theme,xp:700});await open(page,'/');
+  await page.evaluate(()=>ModeAtlasRewardsUI.open());await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  const banner=page.getByRole('button',{name:'Kana grove banner, available',exact:true});await banner.click();
+  await expect(page.getByRole('button',{name:'Kana grove banner, selected',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.getByRole('button',{name:'Open horizon banner, unlocks at level 50',exact:true})).toBeDisabled();
+  await expect(page.locator('.ma-atlas-identity')).toHaveAttribute('data-ma-banner','grove');
+  await page.screenshot({path:info.outputPath('banner-rewards.png'),animations:'disabled'});
+  await page.locator('[data-landmark="grove"]').click();
+  expect(await page.evaluate(()=>ModeAtlasRewardsUI.banner().id)).toBe('grove');
+  await page.getByRole('tab',{name:'Profile',exact:true}).click();
+  await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','grove');
+  await page.screenshot({path:info.outputPath('profile-banner.png'),animations:'disabled'});
+  await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  expect(await page.evaluate(()=>({banner:ModeAtlasRewardsUI.banner().id,frame:ModeAtlasRewardsUI.appearance().id,xp:ModeAtlasProgress.getXP()}))).toEqual({banner:'grove',frame:'grove',xp:700});
+  await page.evaluate(()=>{ModeAtlasRewardsUI.open();document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
+  await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  expect(await page.locator('.ma-atlas-banners').evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
+  await page.getByRole('button',{name:'Original banner, available',exact:true}).click();
+  expect(await page.evaluate(()=>ModeAtlasRewardsUI.banner().id)).toBe('plain');
+});

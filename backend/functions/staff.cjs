@@ -14,12 +14,13 @@ function createStaff({db,auth,now=Date.now}){
     if(!validUid(uid))fail('invalid-argument','Choose an account.');
     try{return await auth.getUser(uid);}catch(error){if(error.code==='auth/user-not-found')return null;throw error;}
   }
-  async function read(tx,actor,target){
+  async function readMany(tx,actor,targets){
     const [record,restriction]=await tx.getAll(registry,db.doc('socialRestrictions/'+actor.uid));
-    const data=record.data(),actorAssignedRole=role(actor,data),actorRole=actorAssignedRole==='moderator'&&restriction.exists?'member':actorAssignedRole,targetRole=assignedRole(target,data);
-    return {role:actorRole,targetRole,moderatorAssigned:!!target&&Object.hasOwn(data?.moderators||{},target.uid),canManage:actorRole==='admin',
-      canAct:actorRole==='admin'||(actorRole==='moderator'&&targetRole==='member'&&actor.uid!==target?.uid)};
+    const data=record.data(),actorAssignedRole=role(actor,data),actorRole=actorAssignedRole==='moderator'&&restriction.exists?'member':actorAssignedRole;
+    return targets.map(target=>{const targetRole=assignedRole(target,data);return {role:actorRole,targetRole,moderatorAssigned:!!target&&Object.hasOwn(data?.moderators||{},target.uid),canManage:actorRole==='admin',
+      canAct:actorRole==='admin'||(actorRole==='moderator'&&targetRole==='member'&&actor.uid!==target?.uid)};});
   }
+  async function read(tx,actor,target){return (await readMany(tx,actor,[target]))[0];}
   function requireStaff(access){if(access.role==='member')fail('permission-denied','This action is available to the moderation team.');}
   function requireAction(access){requireStaff(access);if(!access.canAct)fail('permission-denied','Only Admin can action accounts belonging to the moderation team.');}
   async function current(actor){return db.runTransaction(async tx=>(await read(tx,actor)).role);}
@@ -38,11 +39,13 @@ function createStaff({db,auth,now=Date.now}){
     });return {ok:true};
   }
   async function list(actor,data){
-    if(!isAdmin(actor))fail('permission-denied','Only Admin can manage moderators.');
-    if(!data||Object.keys(data).length)fail('invalid-argument','Refresh the moderator list.');
-    const roles=(await registry.get()).data()?.moderators||{},ids=Object.keys(roles);
-    const profiles=ids.length?await db.getAll(...ids.map(uid=>db.doc('socialAccounts/'+uid))):[];
-    return {rows:profiles.map(doc=>({uid:doc.id,displayName:doc.data()?.profile?.displayName||roles[doc.id].label||'Former Friends member'}))};
+    if(!data||typeof data!=='object'||Array.isArray(data)||Object.keys(data).length)fail('invalid-argument','Refresh the moderator list.');
+    return db.runTransaction(async tx=>{
+      const access=await read(tx,actor);requireStaff(access);
+      const roles=(await tx.get(registry)).data()?.moderators||{},ids=Object.keys(roles);
+      const profiles=ids.length?await tx.getAll(...ids.map(uid=>db.doc('socialAccounts/'+uid))):[];
+      return {canManage:access.canManage,rows:profiles.map(doc=>({uid:doc.id,displayName:doc.data()?.profile?.displayName||roles[doc.id].label||'Former Friends member'}))};
+    });
   }
   async function badges(profiles){
     const ids=[...new Set(profiles.filter(Boolean).map(profile=>profile.uid))];if(!ids.length)return;
@@ -51,6 +54,6 @@ function createStaff({db,auth,now=Date.now}){
     profiles.filter(Boolean).forEach(profile=>{profile.role=roles.get(profile.uid)||'member';});
   }
   async function erase(uid){await db.runTransaction(async tx=>{const doc=await tx.get(registry),moderators={...(doc.data()?.moderators||{})};if(Object.hasOwn(moderators,uid)){delete moderators[uid];tx.set(registry,{moderators});}});}
-  return {read,current,assign,list,badges,erase,user,requireStaff,requireAction,validUid};
+  return {read,readMany,current,assign,list,badges,erase,user,requireStaff,requireAction,validUid};
 }
 module.exports={createStaff};

@@ -66,7 +66,7 @@ function createSocial({db,auth,now=Date.now}){
     if(marker.exists && createdAt<=marker.data().at)fail('unauthenticated','This account has been deleted.');
   }
   async function limit(uid,action,createdAt){
-    const bucket=action==='lookup' || action==='sendRequest'?'lookup':action==='state' || action==='list' || action==='profile' || action==='accountNotices' || action==='staffProfile'?'read':'write';
+    const bucket=action==='lookup' || action==='sendRequest'?'lookup':['state','list','profile','accountNotices','staffProfile','listWarnings','listModerators','listReports','listRestrictions'].includes(action)?'read':'write';
     const max={lookup:12,read:60,write:30}[bucket],at=now();
     await db.runTransaction(async tx=>{
       const ref=limits.doc(uid),[doc,marker]=await tx.getAll(ref,deletionRef(uid)),data=doc.data()||{};
@@ -293,16 +293,17 @@ function createSocial({db,auth,now=Date.now}){
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['state','list','profile','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
+    const actions=['state','list','profile','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
     if(['state','rotateCode','leave'].includes(action))fields(data,[]);
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
-    if(!['state','leave','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'].includes(action)&&await moderation.restriction(uid))fail('permission-denied','Friends access is restricted. Contact support@mode-atlas.com to appeal.');
+    if(!['state','leave','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'].includes(action)&&await moderation.restriction(uid))fail('permission-denied','Friends access is restricted. Contact support@mode-atlas.com to appeal.');
     if(action==='accountNotices')return moderation.notices(user,data);
     if(action==='acknowledgeWarnings')return moderation.notices(user,data,true);
     if(action==='staffProfile')return moderation.details(user,data);
     if(action==='listModerators')return staff.list(user,data);
+    if(action==='listWarnings')return moderation.warningAccounts(user,data);
     if(action==='assignModerator')return staff.assign(user,data);
     if(action==='warnProfile')return moderation.warn(user,data);
     if(action==='clearWarnings')return moderation.clearWarnings(user,data);

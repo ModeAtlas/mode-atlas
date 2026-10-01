@@ -32,6 +32,15 @@ test('deletion and receipt lookup remain bound to the originally confirmed accou
 });
 
 const identity=require('../assets/app/mode-atlas-social-identity.js');
+test('the server projects only unlocked banners from the shared save, with a safe legacy default',()=>{
+  const {projectSave,publicProfile}=require('../backend/functions/projection.cjs');
+  const save=(xp,banner)=>({sections:{progress:{data:{state:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':xp}},appearance:{landmark:'grove',at:1,banner,bannerAt:2}}}}}});
+  for(const [xp,banner,expected] of [[700,'grove','grove'],[0,'horizon','plain'],[700,'unknown','plain'],[700,undefined,'plain']]){
+    const summary=projectSave(save(xp,banner));assert.equal(summary.banner,expected);
+    const profile=publicProfile('friend',{active:true,profile:{displayName:'Friend',avatar:'kana',timeZone:'UTC'},summary});
+    assert.equal(profile.banner,expected);assert.equal(profile.stats.xp,xp);
+  }
+});
 test('identity policy normalises equivalent names and reserves official-looking names',()=>{
   assert.equal(identity.nameKey('  Ｊáck.Wright '),identity.nameKey('JACK wright'));
   for(const name of ['Owner',' STAFF ','Ａｄｍｉｎ','Admіn','a.d.m.i.n','Admin 1','Mode Atlas Support','Staff-42','0wner123','Administrator'])assert.equal(identity.reservedName(name),true,name);

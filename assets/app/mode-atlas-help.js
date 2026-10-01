@@ -26,7 +26,7 @@
       const subject=`Mode Atlas · ${category.value}`;
       try{
         const version=await root.AtlasPlatform.getAppVersion().catch(()=>({}));
-        const body=`${message.value.trim()}\n\n${reply.value?'Reply email: '+reply.value+'\n':''}Mode Atlas ${root.ModeAtlasVersion||'dev'}${version.build?' ('+version.build+')':''} · ${root.ModeAtlasEnv?.isNativeApp?'iOS':'website'}\nScreen: ${root.ModeAtlasDiagnostics?.screen()||'other'}${include.checked?'\n\nTechnical details:\n'+technical:''}`;
+        const body=`${message.value.trim()}\n\n${reply.value?'Reply email: '+reply.value+'\n':''}Mode Atlas ${root.ModeAtlasVersion||'dev'}${version.build?' ('+version.build+')':''} · ${root.ModeAtlasEnv?.isNativeApp?'iOS':'website'}\nScreen: ${root.ModeAtlasDiagnostics?.screenLabel()||'Mode Atlas'}${include.checked?'\n\nTechnical details:\n'+technical:''}`;
         const result=await root.AtlasPlatform.composeFeedback({subject,body});
         state.textContent={queued:'Added to your Mail outbox.',saved:'Draft saved in Mail.',cancelled:'Your message is still here if you want to edit it.',opened:'Review and send the draft in your email app. If it did not open, copy your message below.',failed:'Mail could not prepare this message.'}[result.status]||'Set up Mail or use another email app.';
         if(['unavailable','failed','opened'].includes(result.status)){
