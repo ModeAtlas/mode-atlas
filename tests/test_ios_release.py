@@ -36,6 +36,7 @@ class ReleaseTests(unittest.TestCase):
         local = '// keep local preferences\nOTHER_SETTING = value\n'
         updated, settings = signing_plan(project, local)
         self.assertNotIn('ABC1234567', updated)
+        self.assertEqual(updated, '\tCODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_ENTITLEMENTS)";\n')
         self.assertIn('CODE_SIGN_ENTITLEMENTS', updated)
         self.assertIn('OTHER_SETTING = value', settings)
         self.assertIn('DEVELOPMENT_TEAM = ABC1234567', settings)

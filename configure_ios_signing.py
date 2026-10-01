@@ -3,12 +3,14 @@
 Run once after choosing a team in Xcode, or pass --team YOURTEAMID.
 App Group configuration continues to belong to widget-sharing.local.xcconfig.
 """
+from __future__ import annotations
+
 from pathlib import Path
 import argparse
 import re
 
 ROOT = Path(__file__).resolve().parent
-TEAM_LINE = re.compile(r'^[ \t]*(?:DEVELOPMENT_TEAM|DevelopmentTeam) = "?([A-Z0-9]{10})"?;?[ \t]*$', re.M)
+TEAM_LINE = re.compile(r'^[ \t]*(?:DEVELOPMENT_TEAM|DevelopmentTeam) = "?([A-Z0-9]{10})"?;?[ \t]*(?:\r?\n|$)', re.M)
 
 
 def signing_plan(project: str, local: str = '', requested: str | None = None) -> tuple[str, str]:
