@@ -95,3 +95,5 @@ expiry, normal-user hiding, admin access, keyboard disclosure controls, large te
 both themes/targets, Friends viewing, forged token/save rejection, private rules,
 grant activation/revocation and full-account cleanup. Existing XP, merge, emulator,
 public-site packaging and native simulator/archive gates remain required.
+The guided tour highlights the visible Profile banners collection heading, so its
+controls stay reachable while other reward collections are collapsed.
