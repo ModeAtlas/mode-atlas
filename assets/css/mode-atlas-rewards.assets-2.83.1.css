@@ -75,9 +75,10 @@
 .ma-atlas-icon-choice[aria-busy="true"]{opacity:.6;}
 .ma-atlas-landmark:focus-visible,.ma-atlas-icon-choice:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
 .ma-profile-banner{position:relative;isolation:isolate;}
-.ma-profile-banner::before{content:"";position:absolute;inset:1px;border-radius:inherit;z-index:-1;pointer-events:none;background-image:var(--ma-banner-art,none);}
-[data-ma-banner="hunny"]{--ma-banner-art:linear-gradient(90deg,var(--ma-card) 10%,color-mix(in srgb,var(--ma-card) 90%,transparent) 35%,color-mix(in srgb,var(--ma-card) 40%,transparent) 72%),url('../rewards/hunny.webp');}
-.ma-profile-banner[data-ma-banner="hunny"]::before{background-size:100% 100%,auto 190%;background-position:center,right 42%;background-repeat:no-repeat;}
+.ma-profile-banner::before{content:"";position:absolute;inset:1px;border-radius:inherit;z-index:-1;pointer-events:none;box-sizing:border-box;padding-inline-start:var(--ma-banner-art-inset,0);background-color:var(--ma-banner-canvas,transparent);background-image:var(--ma-banner-art,none);background-origin:content-box;background-size:var(--ma-banner-fit,auto);background-position:var(--ma-banner-position,center);background-repeat:var(--ma-banner-repeat,repeat);}
+/* Supplied artwork keeps its proportions inside the right-hand area; its canvas
+   fills the whole card and owns readable text colours in either app theme. */
+[data-ma-banner="hunny"]{--ma-banner-art:url('../rewards/hunny.webp');--ma-banner-canvas:#fff;--ma-banner-art-inset:55%;--ma-banner-fit:contain;--ma-banner-position:right center;--ma-banner-repeat:no-repeat;--ma-card:#fff;--ma-surface-strong:#f3f5f7;--ma-surface-inset:#eef1f4;--ma-control-bg:#f0f3f8;--ma-control-active:#e7eef8;--ma-text:#243042;--ma-text-strong:#17212d;--ma-muted:#53616b;--ma-success:#18734a;color:var(--ma-text-strong);}
 .ma-reward-exclusive{justify-self:start;font-size:.62rem;line-height:1.4;font-weight:750;letter-spacing:.04em;text-transform:uppercase;border-radius:6px;padding:3px 6px;background:var(--ma-surface-strong);color:var(--ma-text-strong);}
 [data-ma-banner="trail"]{--ma-banner-art:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--ma-atlas) 28%,transparent),transparent 70%),repeating-linear-gradient(130deg,transparent 0 24px,color-mix(in srgb,var(--ma-atlas) 8%,transparent) 25px 27px,transparent 28px 52px);}
 [data-ma-banner="grove"]{--ma-banner-art:radial-gradient(ellipse at 100% 100%,color-mix(in srgb,var(--ma-rank-1) 24%,transparent),transparent 70%),repeating-radial-gradient(ellipse at 100% 100%,transparent 0 18px,color-mix(in srgb,var(--ma-rank-1) 12%,transparent) 19px 21px,transparent 22px 40px);}

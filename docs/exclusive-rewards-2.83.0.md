@@ -74,7 +74,10 @@ revocation. Admin retains testing access to custom rewards.
   transitions/sign-out. Delayed responses cannot populate another account's cache.
 - Offline presentation lasts at most 24 hours and never beyond an access expiry.
   Online reads refresh on return/open, with concurrent reads deduplicated and a
-  one-minute throttle. Failed/older backends retain normal rewards and show Retry.
+  one-minute throttle. Failed/older backends retain normal rewards. A status row is
+  shown only while the account owns an available custom item; existing owners see
+  a quiet saved-rewards message and can refresh after an unsuccessful lookup.
+  Accounts without custom rewards see no extra-rewards loading/error section.
   The cache is a presentation convenience, not proof of ownership. Public Friends
   responses validate selected custom cosmetics with fresh server access, so local
   modifications do not grant public custom rewards.
@@ -97,3 +100,19 @@ grant activation/revocation and full-account cleanup. Existing XP, merge, emulat
 public-site packaging and native simulator/archive gates remain required.
 The guided tour highlights the visible Profile banners collection heading, so its
 controls stay reachable while other reward collections are collapsed.
+
+## Supplied artwork and 2.83.1 follow-up
+
+Supplied banner and avatar illustrations must preserve their proportions and show
+the complete subject. Use containment rather than stretching or enlargement that
+crops the subject. Banner artwork belongs on the right, with the image's canvas
+colour filling the whole card; keep text and small control surfaces readable on
+that canvas in both app themes. Hunny uses the shared banner variables for its
+white canvas, a right-hand artwork area, `contain` fit and local text colours.
+Future supplied avatar illustrations should use `object-fit: contain` inside their
+avatar canvas; this does not change the existing provider-photo treatment.
+
+The 2.83.1 follow-up uses native build **2080004** and the existing 2.83.0 backend.
+If that backend has already been deployed, this follow-up requires no further
+Firebase deployment. Release verification still covers ordinary/eligible/Admin
+accounts, cached access failures, both themes and targets, large text and Friends.

@@ -59,6 +59,15 @@ gate because a change looks web-only, or the website gate because it began as
 an iOS request. GitHub Pages receives only `build_web.py` output; native sources
 and dependency symlinks never enter the published website artifact.
 
+Browser, Firebase and Xcode jobs run concurrently against the same commit; the
+whole release workflow must succeed before handoff or merge. This removes an
+unnecessary dependency without skipping any checks. In the 2.83.0 reference run,
+the browser job took 530 seconds, Firebase 96 seconds and Xcode 359 seconds; Xcode
+previously waited for both other jobs. Browser workers remain at their existing
+setting, including the isolated native-payload preparation. Deliberate timing
+assertions are retained. CI stores per-test JSON results in `browser-results-*`
+artifacts so later reviews can compare durations without transferring full logs.
+
 When a release adds a callable action or server projection, deploy the compatible
 backend before releasing either client. Record any device-only checks separately
 from automated results. Local Apple signing and App Group settings stay in the

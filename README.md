@@ -6,7 +6,7 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.83.0
+Version: 2.83.1
 
 Development and release requirements for both platforms: [Web and iOS architecture](docs/ios-web-architecture.md).
 Current shared rewards release and backend rollout: [2.83.0](docs/exclusive-rewards-2.83.0.md).

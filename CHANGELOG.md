@@ -1,3 +1,9 @@
+## 2.83.1 - 2026-10-01
+
+- Hide extra-reward status until the account owns a currently available custom reward. Existing owners can refresh their saved rewards without a misleading missing-rewards error.
+- Fit the complete Hunny artwork proportionally on the right of each banner, with a white canvas across the whole card and readable text in both themes.
+- Run the independent Xcode, browser and Firebase jobs concurrently while retaining every release gate. Save browser test results and timings as compact CI artifacts for subsequent reviews.
+
 ## 2.83.0 - 2026-10-01
 
 - Added one shared reward catalogue/access policy for level unlocks, account exclusives and event grants across banners, title/frame sets, app icons and Atlas avatars.

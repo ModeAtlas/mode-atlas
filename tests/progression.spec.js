@@ -250,22 +250,35 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);
   await expect(page.locator('[data-reward-category="frames"]')).not.toHaveAttribute('open','');
   await page.evaluate(async()=>{
-    window.rewardUser='tester';window.rewardGrant={grants:['hunny-tester'],allCustom:false};
+    window.rewardUser='ordinary';window.rewardGrant={grants:[],allCustom:false};window.rewardFail=true;
     KanaCloudSync.getUser=()=>rewardUser?{uid:rewardUser}:null;
-    const call=ModeAtlasSocial.call;window.ModeAtlasSocial={...ModeAtlasSocial,call:(action,...args)=>action==='rewards'?Promise.resolve({...rewardGrant,validUntil:Date.now()+86400000}):call(action,...args)};
+    const call=ModeAtlasSocial.call;window.ModeAtlasSocial={...ModeAtlasSocial,call:(action,...args)=>action==='rewards'?(rewardFail?Promise.reject(new Error('Unavailable')):Promise.resolve({...rewardGrant,validUntil:Date.now()+86400000})):call(action,...args)};
     await ModeAtlasRewardAccess.refresh(true);
   });
+  // A signed-in account with no known extra rewards must not see an invitation
+  // or an error when the backend is unavailable.
+  await expect(page.locator('.ma-reward-access')).toBeHidden();
+  await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);
+  await page.evaluate(async()=>{rewardUser='tester';rewardFail=false;rewardGrant={grants:['hunny-tester'],allCustom:false};await ModeAtlasRewardAccess.refresh(true);});
   await page.getByRole('button',{name:'Hunny banner, available',exact:true}).click();
   await expect(page.locator('.ma-atlas-identity')).toHaveAttribute('data-ma-banner','hunny');
+  await page.evaluate(async()=>{rewardFail=true;await ModeAtlasRewardAccess.refresh(true);});
+  await expect(page.locator('.ma-reward-access span')).toHaveText('Showing your saved extra rewards.');
+  await expect(page.getByRole('button',{name:'Hunny banner, selected',exact:true})).toBeEnabled();
+  await page.evaluate(()=>{rewardFail=false;});
+  await page.locator('.ma-reward-access').getByRole('button',{name:'Refresh',exact:true}).click();
+  await expect(page.locator('.ma-reward-access')).toBeHidden();
   const image=await page.evaluate(()=>new Promise(resolve=>{const image=new Image();image.onload=()=>resolve(image.naturalWidth>0);image.onerror=()=>resolve(false);image.src='/assets/rewards/hunny.webp';}));expect(image).toBe(true);
   const summary=page.locator('[data-reward-category="banners"] > summary');await summary.click();await summary.focus();await page.keyboard.press('Enter');
   await expect(page.getByRole('button',{name:'Hunny banner, selected',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Hunny banner, selected',exact:true}).scrollIntoViewIfNeeded();
   await page.screenshot({path:info.outputPath('exclusive-banner-collection.png'),animations:'disabled'});
   await page.getByRole('tab',{name:'Profile',exact:true}).click();
   await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','hunny');
   await page.screenshot({path:info.outputPath('exclusive-profile.png'),animations:'disabled'});
   await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.evaluate(async()=>{ModeAtlasRewardAccess.clear();rewardUser='ordinary';rewardGrant={grants:[],allCustom:false};await ModeAtlasRewardAccess.refresh(true);});
+  await expect(page.locator('.ma-reward-access')).toBeHidden();
   await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);await expect(page.locator('.ma-atlas-identity')).toHaveAttribute('data-ma-banner','plain');
   await page.evaluate(async()=>{ModeAtlasRewardAccess.clear();rewardUser='admin';rewardGrant={grants:[],allCustom:true};await ModeAtlasRewardAccess.refresh(true);});
   await expect(page.getByRole('button',{name:'Hunny banner, selected',exact:true})).toBeVisible();

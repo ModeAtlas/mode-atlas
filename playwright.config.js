@@ -7,6 +7,7 @@ const systemChromium = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 
 const reporters = [['list'], ['html', { open: 'never' }]];
 if (process.env.GITHUB_ACTIONS === 'true') reporters.splice(1, 0, ['github']);
+if (process.env.MODE_ATLAS_TEST_REPORT) reporters.push(['json', { outputFile: process.env.MODE_ATLAS_TEST_REPORT }]);
 
 module.exports = defineConfig({
   testDir: './tests',

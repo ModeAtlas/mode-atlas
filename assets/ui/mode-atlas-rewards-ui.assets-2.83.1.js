@@ -45,8 +45,14 @@
       const selected=type==='banners'?selectedBanner.name:type==='frames'?item.title:'';
       section.querySelector('.ma-reward-category__meta').textContent=[selected,`${items.filter(item=>rules.unlocked(item,summary.level,access())).length} available`].filter(Boolean).join(' · ');
     }
-    const loading=document.querySelector('.ma-reward-access');
-    if(loading){const state=root.ModeAtlasRewardAccess?.status();loading.hidden=!root.KanaCloudSync?.getUser?.()||!['loading','offline','error'].includes(state);loading.querySelector('span').textContent=state==='loading'?'Checking extra rewards…':state==='offline'?'Connect to refresh extra rewards.':'Extra rewards couldn’t load.';loading.querySelector('button').hidden=state==='loading';}
+    const notice=document.querySelector('.ma-reward-access');
+    if(notice){
+      const state=root.ModeAtlasRewardAccess?.status(),owned=access();
+      const hasExtra=Object.values(rules.catalogue).some(items=>items.some(reward=>reward.grant&&rules.unlocked(reward,summary.level,owned)));
+      notice.hidden=!hasExtra||!['loading','offline','error'].includes(state);
+      notice.querySelector('span').textContent=state==='loading'?'Refreshing your extra rewards…':state==='offline'?'Showing your saved extra rewards while offline.':'Showing your saved extra rewards.';
+      notice.querySelector('button').hidden=state!=='error';
+    }
     document.querySelectorAll('[data-ma-routine-streak]').forEach(node=>{node.textContent=String(routine.streak);});
     document.querySelectorAll('[data-ma-atlas-summary]').forEach(node=>{node.textContent=`Level ${summary.level} · ${routine.streak}-day study streak`;});
     renderGoals(document.querySelector('.ma-atlas-rewards .ma-routine-goals'));
@@ -93,7 +99,7 @@
   function rewardPanel(summary){
     const panel=el('div','ma-atlas-panel');
     const notice=el('div','ma-reward-access');notice.hidden=true;notice.setAttribute('role','status');
-    const retry=button('Retry');retry.addEventListener('click',()=>{void root.ModeAtlasRewardAccess?.refresh(true);});notice.append(el('span'),retry);panel.append(notice);
+    const retry=button('Refresh');retry.addEventListener('click',()=>{void root.ModeAtlasRewardAccess?.refresh(true);});notice.append(el('span'),retry);panel.append(notice);
     const bannersSection=category('banners','Profile banners','A background for your profile and Friends cards.',true),banners=el('div','ma-atlas-banners');
     for(const item of rules.banners){
       const choose=button('','ma-atlas-banner-choice ma-profile-banner');choose.dataset.maBanner=item.id;
