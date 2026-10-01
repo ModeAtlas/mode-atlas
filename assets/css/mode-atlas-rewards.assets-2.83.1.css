@@ -79,7 +79,7 @@
 /* Supplied artwork keeps its proportions inside the right-hand area; its canvas
    fills the whole card and owns readable text colours in either app theme. */
 [data-ma-banner="hunny"]{--ma-banner-art:url('../rewards/hunny.webp');--ma-banner-canvas:#fff;--ma-banner-art-space:5rem;--ma-banner-art-inset:calc(100% - var(--ma-banner-art-space));--ma-banner-fit:contain;--ma-banner-position:right center;--ma-banner-repeat:no-repeat;--ma-card:#fff;--ma-surface-strong:#f3f5f7;--ma-surface-inset:#eef1f4;--ma-control-bg:#f0f3f8;--ma-control-active:#e7eef8;--ma-text:#243042;--ma-text-strong:#17212d;--ma-muted:#53616b;--ma-success:#18734a;color:var(--ma-text-strong);}
-.ma-atlas-banner-choice[data-ma-banner="hunny"]{--ma-banner-art-space:4rem;}
+.ma-atlas-banner-choice[data-ma-banner="hunny"]{--ma-banner-art-space:3rem;}
 .ma-profile-banner[data-ma-banner="hunny"]:not(.ma-account-card),.ma-account-card[data-ma-banner="hunny"] .ma-account-user{padding-inline-end:var(--ma-banner-art-space);}
 .ma-social-self[data-ma-banner="hunny"]{flex-wrap:wrap;}
 /* Account actions keep their full width below the illustrated identity row. */

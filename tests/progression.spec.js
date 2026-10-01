@@ -272,6 +272,9 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   const summary=page.locator('[data-reward-category="banners"] > summary');await summary.click();await summary.focus();await page.keyboard.press('Enter');
   await expect(page.getByRole('button',{name:'Hunny banner, selected',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Hunny banner, selected',exact:true}).scrollIntoViewIfNeeded();
+  expect(await page.locator('.ma-atlas-banner-choice[data-ma-banner="hunny"] .ma-reward-exclusive').evaluate(node=>{
+    const text=document.createRange();text.selectNodeContents(node);return text.getClientRects().length;
+  })).toBe(1);
   await page.screenshot({path:info.outputPath('exclusive-banner-collection.png'),animations:'disabled'});
   await page.getByRole('tab',{name:'Profile',exact:true}).click();
   await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','hunny');
