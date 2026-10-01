@@ -112,6 +112,10 @@ test('visual tour opens real practice setup, goals, rewards and account sections
   await expect(page.locator('#maAccount-atlas')).toBeVisible();await expect(page.locator('#atlasPanel0')).toBeVisible();
   await page.screenshot({path:test.info().outputPath('tour-goals.png')});
   await tour.getByRole('button',{name:'Next',exact:true}).click();await expect(page.locator('#atlasPanel1')).toBeVisible();
+  await expect(page.locator('[data-reward-category="banners"] > summary')).toBeInViewport();
+  await expect(page.locator('[data-reward-category="frames"]')).not.toHaveAttribute('open','');
+  await expect(tour.getByRole('button',{name:'Next',exact:true})).toBeInViewport();
+  await page.screenshot({path:test.info().outputPath('tour-rewards.png')});
   await tour.getByRole('button',{name:'Next',exact:true}).click();await expect(page.locator('#maAccount-friends')).toBeVisible();
   await tour.getByRole('button',{name:'Next',exact:true}).click();await expect(page.locator('#maAccount-settings')).toBeVisible();
   expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(before);

@@ -267,12 +267,12 @@
   }
   function selectAppearance(id){
     const state=readState(),item=root.ModeAtlasRewardRules.landmarks.find(x=>x.id===id);
-    if(!item||getSummary(state).level<item.level)return false;
+    if(!root.ModeAtlasRewardRules.unlocked(item,getSummary(state).level,root.ModeAtlasRewardAccess?.current()))return false;
     state.appearance={...state.appearance,landmark:id,at:Math.max(Date.now(),state.appearance.at+1)};persistState(state,{source:'appearance'});return true;
   }
   function selectBanner(id){
     const state=readState(),item=root.ModeAtlasRewardRules.banners.find(x=>x.id===id);
-    if(!item||getSummary(state).level<item.level)return false;
+    if(!root.ModeAtlasRewardRules.unlocked(item,getSummary(state).level,root.ModeAtlasRewardAccess?.current()))return false;
     state.appearance={...state.appearance,banner:id,bannerAt:Math.max(Date.now(),state.appearance.bannerAt+1)};persistState(state,{source:'appearance'});return true;
   }
 

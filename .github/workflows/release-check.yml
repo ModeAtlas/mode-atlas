@@ -61,6 +61,8 @@ jobs:
         run: git diff --exit-code
 
       - name: Run simulated iOS shell smoke test
+        env:
+          MODE_ATLAS_TEST_REPORT: .build/test-reports/native-shell.json
         run: npm run test:ios-shell -- --project=mobile-chromium
 
       - name: Upload native layout evidence
@@ -76,6 +78,8 @@ jobs:
         run: git fetch --no-tags --depth=1 origin "$(cat tests/fixtures/web-theme-baseline.txt)"
 
       - name: Run web and iOS polish matrix
+        env:
+          MODE_ATLAS_TEST_REPORT: .build/test-reports/polish.json
         run: npm run test:polish -- --project=desktop-chromium
 
       - name: Upload polish layout evidence
@@ -90,7 +94,17 @@ jobs:
       - name: Run desktop and mobile browser smoke tests
         env:
           MODE_ATLAS_WEB_ROOT: ${{ runner.temp }}/mode-atlas-web
+          MODE_ATLAS_TEST_REPORT: .build/test-reports/website-smoke.json
         run: npm run test:smoke -- --project=desktop-chromium --project=mobile-chromium
+
+      - name: Upload browser results and timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-results-${{ github.sha }}
+          path: .build/test-reports/*.json
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Build deterministic iOS web payload
         run: npm run build:ios-web
@@ -171,7 +185,8 @@ jobs:
 
   ios-native-build:
     name: Build native iOS shell
-    needs: [release-check, social-backend-check]
+    # Each job validates the same commit independently. The workflow passes only
+    # when browser, Firebase and native checks all succeed; no serial wait needed.
     runs-on: macos-15
     timeout-minutes: 30
     env:

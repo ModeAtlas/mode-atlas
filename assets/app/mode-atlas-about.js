@@ -16,10 +16,9 @@
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Friends has a compact toolbar with more room for your list.',
-    'Unlock profile banners as you level up and mix them with your favourite frame.',
-    'Your chosen banner appears on your profile and Friends cards.',
-    'Feedback uses clear screen names on both the website and iOS.'
+    'Browse banners, titles and frames in expandable reward collections.',
+    'Exclusive rewards appear in your collection when your account unlocks them.',
+    'Profile banners carry across your profile and Friends cards.'
   ];
 
   function storeGet(key, fallback = '') {

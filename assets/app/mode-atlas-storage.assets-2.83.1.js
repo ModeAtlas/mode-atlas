@@ -140,6 +140,7 @@
   const APP_LOCAL_EXACT = Object.freeze([
     ...APP_BACKUP_EXACT,
     'modeAtlasCloudAccessState',
+    'modeAtlasRewardAccess',
     'modeAtlasInstallPromptDismissedAt',
     'modeAtlasInstallPromptSeen',
     'modeAtlasLastCloudErrorAt',

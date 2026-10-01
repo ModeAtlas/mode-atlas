@@ -9,6 +9,8 @@ from pathlib import Path
 import os
 import plistlib
 import re
+import json
+import subprocess
 
 from validate_ios_firebase_config import PLIST as FIREBASE_PLIST, validate as validate_firebase
 
@@ -92,12 +94,22 @@ def sync() -> tuple[str, int, bool]:
             updated,
         )
 
+    # Names come from the shared reward catalogue; the native bridge reads the
+    # compiled Info.plist instead of maintaining a second entitlement catalogue.
+    icon_names = json.loads(subprocess.check_output([
+        "node", "-p", "JSON.stringify(require('./assets/app/mode-atlas-reward-rules.js').icons.filter(item=>item.icon).map(item=>item.icon))"
+    ], cwd=ROOT, text=True))
+    if any(not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", name) for name in icon_names):
+        raise SystemExit("Invalid alternate app icon name in reward catalogue.")
+    for name in icon_names:
+        if not (ROOT / f"ios/App/App/Assets.xcassets/{name}.appiconset/Contents.json").is_file():
+            raise SystemExit(f"Missing bundled reward app icon: {name}")
     # Alternate icon catalogues are owned here so local signing-project backups
     # receive the same release configuration without losing personal team values.
     updated = re.sub(r'(?m)^[ \t]*ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = [^;]+;\n', '', updated)
     updated = re.sub(
         r'(?m)^([ \t]*)ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;',
-        lambda match: match.group(0) + '\n' + match.group(1) + 'ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Grove Summit Horizon";',
+        lambda match: match.group(0) + '\n' + match.group(1) + 'ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "' + ' '.join(icon_names) + '";',
         updated,
     )
 

@@ -56,7 +56,7 @@ test('rules preserve owner-only profile/app-data access and deny every direct so
     await assertFails(getDoc(doc(mine,path)));
     await assertFails(setDoc(doc(mine,path),{}));
   }
-  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','accountDeletions']){
+  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','accountDeletions']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));
   }
@@ -403,4 +403,42 @@ test('Admin and Moderator permissions, official badges, warning privacy, acknowl
   await until(async()=>!(await db.doc('socialWarnings/'+peer.uid).get()).exists);
   assert.equal((await adminCall('listWarnings')).rows.some(row=>row.uid===peer.uid),false);
   assert.equal(Object.hasOwn((await db.doc('socialStaff/roles').get()).data().moderators,peer.uid),false);
+});
+
+test('reward policy verifies the audience, admin role, event windows and revocations',()=>{
+  const {entitlement}=require('../functions/rewards.cjs'),{createHash}=require('node:crypto');
+  const email='tester@example.test',audience=createHash('sha256').update(email).digest('hex');
+  const account={uid:'reward-owner',email:email.toUpperCase(),emailVerified:true},at=10000;
+  assert.deepEqual(entitlement(account,{},at,audience).grants,['hunny-tester']);
+  for(const change of [{emailVerified:false},{disabled:true},{email:'other@example.test'}])assert.deepEqual(entitlement({...account,...change},{},at,audience).grants,[]);
+  assert.deepEqual(entitlement(account,{grants:{'hunny-tester':{revoked:true}}},at,audience).grants,[]);
+  const other={...account,email:'other@example.test'};
+  for(const row of [{startsAt:at+1},{expiresAt:at},{revoked:true},{expiresAt:'later'}])assert.deepEqual(entitlement(other,{grants:{'hunny-tester':row}},at).grants,[]);
+  assert.deepEqual(entitlement(other,{grants:{'hunny-tester':{startsAt:at,expiresAt:at+100}}},at),{allCustom:false,grants:['hunny-tester'],validUntil:at+100});
+  assert.equal(entitlement({...account,email:'admin@mode-atlas.com'}, {},at).allCustom,true);
+  assert.equal(entitlement({...account,email:'admin@mode-atlas.com',emailVerified:false}, {},at).allCustom,false);
+});
+
+test('custom rewards need no Friends enrolment and never trust forged tokens or save grants',async()=>{
+  const a=await learner('RewardTester'),b=await learner('RewardViewer');await friend(a,b);
+  const selected=save(0);selected.sections.progress.data.state.appearance.banner='hunny';
+  selected.sections.progress.data.state.rewardAccess={allCustom:true,grants:['hunny-tester']};
+  await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(selected);
+  assert.deepEqual((await a.call('rewards')).grants,[]);
+  assert.equal((await a.call('state')).profile.banner,'plain');
+  const forged=await service.call({auth:{uid:a.uid,token:{email:'admin@mode-atlas.com',email_verified:true}},data:{action:'rewards',data:{},expectedUid:a.uid}});
+  assert.equal(forged.allCustom,false);assert.deepEqual(forged.grants,[]);
+  await assert.rejects(a.call('rewards',{uid:b.uid}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('rewards',{},b.uid),{code:'UNAUTHENTICATED'});
+  await db.doc(`rewardEntitlements/${a.uid}`).set({grants:{'hunny-tester':{awardedAt:Date.now()}}});
+  assert.deepEqual((await a.call('rewards')).grants,['hunny-tester']);
+  assert.equal((await a.call('state')).profile.banner,'hunny');
+  const view=(await b.call('list')).rows.find(row=>row.uid===a.uid);assert.equal(view.banner,'hunny');assert.equal(view.rewardAccess,undefined);
+  await db.doc(`rewardEntitlements/${a.uid}`).set({grants:{'hunny-tester':{revoked:true}}});
+  assert.equal((await b.call('list')).rows.find(row=>row.uid===a.uid).banner,'plain','revocation takes effect in Friends before the owner returns');
+  await db.doc(`rewardEntitlements/${a.uid}`).set({grants:{'hunny-tester':{}}});
+  await a.call('leave');assert.deepEqual((await a.call('rewards')).grants,['hunny-tester']);
+  assert.equal((await a.call('state')).active,false);
+  const admin=await service.call({auth:{uid:'legacy-admin'},data:{action:'rewards',data:{},expectedUid:'legacy-admin'}});assert.equal(admin.allCustom,true);
+  await auth.deleteUser(a.uid);await service.cleanupAccount(a.uid);assert.equal((await db.doc(`rewardEntitlements/${a.uid}`).get()).exists,false);
 });

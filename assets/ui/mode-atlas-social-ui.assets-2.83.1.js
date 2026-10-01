@@ -17,7 +17,7 @@
   function profileCard(profile,cls){
     const node=el('div',cls+' ma-profile-banner');
     if(profile.uid===owner){node.dataset.maSelectedBanner='';node.dataset.maBanner=root.ModeAtlasRewardsUI.banner().id;}
-    else node.dataset.maBanner=root.ModeAtlasRewardRules.banner(profile.banner,profile.level||1).id;
+    else node.dataset.maBanner=(root.ModeAtlasRewardRules.item('banners',profile.banner)||root.ModeAtlasRewardRules.banners[0]).id;
     return node;
   }
   function status(message,tone='info'){if(notice){notice.textContent=message;notice.dataset.tone=tone;notice.hidden=!message;}}
@@ -50,7 +50,7 @@
     }
     empty('Loading your circle…','');
     try{
-      const result=await root.ModeAtlasSocial.call('state');if(!alive(ticket))return;state=result;
+      const [result]=await Promise.all([root.ModeAtlasSocial.call('state'),root.ModeAtlasRewardAccess?.refresh()]);if(!alive(ticket))return;state=result;
       if(result.restricted){screen();empty('Friends access is restricted','Contact support@mode-atlas.com if you think this is a mistake. Your learning progress is still available.');return;}
       if(result.deleting){screen();empty('Removing your friends profile','Please try again shortly.');return;}
       if(!result.active)editProfile();else home();
@@ -157,8 +157,10 @@
       const grid=el('div','ma-social-avatar-choices');
       if(avatarMode==='atlas'){
         selected=selectedAtlas;
-        for(const [id,[symbol,name]]of Object.entries(avatars)){
-          const choice=button(symbol,()=>{selectedAtlas=id;renderAvatars();options.querySelector(`[data-avatar="${id}"]`).focus();},'ma-button ma-social-avatar-choice');choice.dataset.avatar=id;choice.setAttribute('aria-label',name);choice.setAttribute('aria-pressed',String(id===selected));grid.append(choice);
+        for(const item of root.ModeAtlasRewardRules.avatars){
+          if(!root.ModeAtlasRewardRules.visible(item,root.ModeAtlasProgress.getSummary().level,root.ModeAtlasRewardAccess?.current()))continue;
+          const {id,symbol,name}=item;
+          const choice=button(symbol,()=>{selectedAtlas=id;renderAvatars();options.querySelector(`[data-avatar="${id}"]`).focus();},'ma-button ma-social-avatar-choice');choice.dataset.avatar=id;choice.disabled=!root.ModeAtlasRewardRules.unlocked(item,root.ModeAtlasProgress.getSummary().level,root.ModeAtlasRewardAccess?.current());choice.setAttribute('aria-label',name);choice.setAttribute('aria-pressed',String(id===selected));grid.append(choice);
         }
       }else{
         selected='emoji:'+selectedEmoji;

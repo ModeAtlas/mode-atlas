@@ -341,3 +341,17 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
     await expect(page.locator('#maModerationPanel')).toHaveCount(0);await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
   });
 }
+
+test('a friend’s server-approved exclusive banner displays without granting it to the viewer',async({page},info)=>{
+  await prepare(page,{native:true});
+  await page.evaluate(()=>{socialFixture.friend.banner='hunny';});
+  await page.getByRole('button',{name:'Refresh',exact:true}).click();
+  await expect(page.locator('.ma-social-row[data-ma-banner="hunny"]')).toHaveCount(1);
+  expect(await page.locator('.ma-social-row[data-ma-banner="hunny"]').evaluate(row=>{
+    const artLeft=row.getBoundingClientRect().left+parseFloat(getComputedStyle(row,'::before').paddingLeft);
+    return [...row.querySelectorAll('.ma-social-person,.ma-social-score')].every(node=>node.getBoundingClientRect().right<=artLeft+1);
+  })).toBe(true);
+  await page.screenshot({path:info.outputPath('friend-exclusive-banner.png'),animations:'disabled'});
+  await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);
+});
