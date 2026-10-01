@@ -234,7 +234,7 @@ test('staff controls show role badges, warning history and an explicit warning c
   expect(await page.evaluate(()=>socialCalls.find(row=>row.action==='warnProfile').input.message)).toBe('Please review the community rules.');
   await page.getByRole('button',{name:'← Friends',exact:true}).click();
   await page.getByRole('button',{name:'Moderator menu',exact:true}).click();
-  await page.getByRole('tab',{name:'Moderators',exact:true}).click();
+  await page.getByRole('tab',{name:'Team',exact:true}).click();
   await page.getByRole('button',{name:'Remove role',exact:true}).click();
   expect(await page.evaluate(()=>socialCalls.some(row=>row.action==='assignModerator'))).toBe(false);
   await page.getByRole('button',{name:'Remove role',exact:true}).click();
@@ -304,6 +304,12 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
     },layout.role);
     await expect(page.locator('#maSocialList .ma-social-row')).toHaveCount(6);await fits(page);
     await expect(page.locator('.ma-social-row[data-ma-banner="grove"]')).toHaveCount(1);
+    if(layout.width===1280){
+      const controls=await page.locator('.ma-social-home-tools>.ma-button').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().height));
+      expect(controls.every(height=>height>=44&&height<=48)).toBe(true);
+      const select=await page.getByRole('combobox',{name:'Friends list'}).boundingBox(),request=await page.getByRole('button',{name:'Review 1 pending friend request'}).boundingBox();
+      expect(Math.abs(select.y-request.y)).toBeLessThanOrEqual(1);
+    }
     await expect(page.getByRole('button',{name:'Review reports',exact:true})).toHaveCount(0);
     const visibleRows=await page.locator('#maSocialList').evaluate(list=>{
       const panel=list.closest('.ma-account-view').getBoundingClientRect();
@@ -322,9 +328,9 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
     await page.getByRole('button',{name:'← Moderator menu',exact:true}).click();
     await page.getByRole('button',{name:'Next page',exact:true}).click();await expect(page.getByText('Ren',{exact:true})).toBeVisible();
     await page.getByRole('button',{name:'Back to first page',exact:true}).click();await expect(page.getByText('Mika',{exact:true})).toBeVisible();
-    await page.getByRole('tab',{name:'Moderators',exact:true}).click();
+    await page.getByRole('tab',{name:'Team',exact:true}).click();
     await expect(page.getByRole('button',{name:'Remove role',exact:true})).toHaveCount(layout.role==='admin'?1:0);
-    await page.getByRole('tab',{name:'Moderators',exact:true}).press('ArrowLeft');
+    await page.getByRole('tab',{name:'Team',exact:true}).press('ArrowLeft');
     await expect(page.getByRole('tab',{name:'Warnings',exact:true})).toBeFocused();
     await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
     await fits(page);await page.screenshot({path:info.outputPath('moderator-hub-large-text.png'),animations:'disabled'});

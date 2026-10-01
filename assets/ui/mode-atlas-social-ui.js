@@ -240,7 +240,7 @@
   }
   async function moderationHub(section='reports',cursor=null){
     if(!state?.canModerate)return;
-    const ticket=screen(),sections=[['reports','Reports'],['warnings','Warnings'],['moderators','Moderators'],['restricted','Restricted']];
+    const ticket=screen(),sections=[['reports','Reports'],['warnings','Warnings'],['moderators','Team'],['restricted','Restricted']];
     back('Friends',home);body.append(el('h3','','Moderator menu'));
     const tabs=el('div','ma-atlas-tabs ma-social-moderation-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Moderation sections');
     for(const [id,label]of sections){

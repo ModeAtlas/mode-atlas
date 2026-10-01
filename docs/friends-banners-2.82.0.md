@@ -8,7 +8,7 @@ The same canonical UI, reward policy and account model serve web and iOS.
 account navigation panel. The home toolbar contains the list selector, Add
 friend, My code, Refresh and one staff-only shield. Pending requests keep their
 visible shortcut. The hub replaces the panel content with Reports, Warnings,
-Moderators and Restricted tabs; it does not stack another dialog. Confirmations
+Team (moderators) and Restricted tabs; it does not stack another dialog. Confirmations
 return to the originating staff section.
 
 `mode-atlas-social.css` owns shared spacing and responsive layouts. Controls retain
