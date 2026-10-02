@@ -11,9 +11,6 @@
   var nativeBridge = plugins.ModeAtlasNative || null;
   var firebaseAuth = plugins.FirebaseAuthentication || null;
   var app = plugins.App || null;
-  // Disabled during Personal Team testing. Enabling Apple also requires the
-  // Xcode entitlement and FirebaseAuthentication provider configuration.
-  var appleSignInEnabled = false;
 
   function hasBridge(method){ return !!(nativeBridge && typeof nativeBridge[method] === 'function'); }
   function hasFirebaseAuth(method){ return !!(firebaseAuth && typeof firebaseAuth[method] === 'function'); }
@@ -105,7 +102,7 @@
     getCapabilities: function(){
       var providers = [];
       if (hasFirebaseAuth('signInWithGoogle')) providers.push('google.com');
-      if (appleSignInEnabled && hasFirebaseAuth('signInWithApple')) providers.push('apple.com');
+      if (hasFirebaseAuth('signInWithApple')) providers.push('apple.com');
       return {
         sounds: hasBridge('playSound'),
         alternateIcons: hasBridge('setAppIcon'),
@@ -184,7 +181,6 @@
       if (providerId !== 'google.com' && providerId !== 'apple.com') {
         return { handled:false, providerId:providerId };
       }
-      if (providerId === 'apple.com' && !appleSignInEnabled) return { handled:false, providerId:providerId };
       var method = providerId === 'apple.com' ? 'signInWithApple' : 'signInWithGoogle';
       if (!hasFirebaseAuth(method)) {
         var unavailable = new Error('Native ' + providerId + ' authentication is unavailable in this build.');
@@ -194,7 +190,20 @@
 
       // Capacitor owns only the provider chooser; the JS Auth session owns UID,
       // persistence and Firestore for both website and iOS.
-      var result = await firebaseAuth[method]({ skipNativeAuth:true });
+      var result;
+      try {
+        result = await firebaseAuth[method]({ skipNativeAuth:true });
+      } catch (error) {
+        // AuthenticationServices cancellation is not an account failure. The
+        // provider plugin may return only Apple's localized error description.
+        if (providerId === 'apple.com' && (String(error?.code) === '1001'
+          || /com\.apple\.AuthenticationServices\.AuthorizationError[^\n]*\b1001\b/.test(String(error?.message || '')))) {
+          var cancelled = new Error('Apple sign-in was cancelled.');
+          cancelled.code = 'auth/cancelled-popup-request';
+          throw cancelled;
+        }
+        throw error;
+      }
       var credential = normalizeCredential(result);
       if (!credential || !credential.idToken || (providerId === 'apple.com' && !credential.nonce)) {
         var missingCredential = new Error('Native sign-in did not return a usable ID token and nonce.');
@@ -204,7 +213,8 @@
       return {
         handled:true,
         providerId:providerId,
-        credential:credential
+        credential:credential,
+        displayName:String(result?.user?.displayName || '')
       };
     },
     signOutIdentityProvider: async function(){
@@ -218,10 +228,10 @@
         return false;
       }
     },
-    revokeAppleAuthorization: async function(authorizationCode){
-      if (!hasFirebaseAuth('revokeAccessToken') || !authorizationCode) return false;
-      await firebaseAuth.revokeAccessToken({ token:authorizationCode });
-      return true;
+    revokeAppleAuthorization: async function(authorizationCode, firebaseIdToken){
+      if (!hasBridge('revokeAppleAuthorization') || !authorizationCode || !firebaseIdToken) return false;
+      const result = await nativeBridge.revokeAppleAuthorization({authorizationCode, firebaseIdToken});
+      return result?.revoked === true;
     }
   });
 })(window);

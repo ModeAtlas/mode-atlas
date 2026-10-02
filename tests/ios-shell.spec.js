@@ -49,7 +49,7 @@ test('iOS home fits portrait phones and keeps its last action above the dock', a
   }
 });
 
-test('native account chooser uses enabled methods and Settings owns account deletion', async ({ page }) => {
+test('native account chooser uses enabled methods and Settings owns account deletion', async ({ page }, testInfo) => {
   await page.addInitScript(() => {
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {
       FirebaseAuthentication: { signInWithGoogle: async () => ({}), signInWithApple: async () => ({}) }
@@ -60,7 +60,8 @@ test('native account chooser uses enabled methods and Settings owns account dele
   await page.evaluate(() => window.ModeAtlasProfile.open());
   await page.locator('#profileAuthBtn').click();
   await expect(page.locator('[data-ma-account-provider="google.com"]')).toHaveText('Continue with Google');
-  await expect(page.locator('[data-ma-account-provider="apple.com"]')).toHaveCount(0);
+  await expect(page.locator('[data-ma-account-provider="apple.com"]')).toHaveText('Continue with Apple');
+  await page.screenshot({path:testInfo.outputPath('apple-account-chooser.png')});
   await expect(page.locator('#maAccount-profile')).toHaveAttribute('aria-hidden','true');
   await page.locator('.ma-dialog__close').click();
   await page.evaluate(() => {

@@ -24,36 +24,64 @@ test('iOS foundation has one platform facade with web and native adapters', () =
   assert.match(native, /getLaunchUrl/);
   assert.match(native, /firebaseAuth\[method\]\(\{ skipNativeAuth:true \}\)/);
   assert.match(native, /providerId === 'apple\.com' \? 'signInWithApple' : 'signInWithGoogle'/);
-  assert.match(native, /firebaseAuth\.revokeAccessToken\(\{ token:authorizationCode \}\)/);
+  assert.match(native, /nativeBridge\.revokeAppleAuthorization\(\{authorizationCode, firebaseIdToken\}\)/);
+  assert.doesNotMatch(native, /firebaseAuth\.revokeAccessToken/);
   assert.doesNotMatch(native, /question selection|mastery calculation/i);
 });
 
-test('platform facade forwards Apple revocation code to its native adapter', async () => {
+test('platform facade forwards Apple code and the owning JS session token to its native adapter', async () => {
   const calls = [];
   const window = {};
   vm.runInNewContext(read('assets/platform/mode-atlas-platform.js'), { window, URL, Promise });
   window.AtlasPlatform.registerAdapter('ios', {
-    revokeAppleAuthorization: async (code) => { calls.push(code); return true; }
+    revokeAppleAuthorization: async (code, idToken) => { calls.push([code, idToken]); return true; }
   });
-  assert.equal(await window.AtlasPlatform.revokeAppleAuthorization('fresh-code'), true);
-  assert.deepEqual(calls, ['fresh-code']);
+  assert.equal(await window.AtlasPlatform.revokeAppleAuthorization('fresh-code', 'firebase-token'), true);
+  assert.deepEqual(calls, [['fresh-code', 'firebase-token']]);
 });
 
-test('Personal Team build hides and rejects Apple sign-in even when its plugin method exists', async () => {
-  let appleCalls = 0;
+test('paid iOS Apple chooser returns a nonce-bound credential without creating a native session', async () => {
+  const calls = [];
   const window = {
     ModeAtlasEnv: { isNativeApp:true },
-    Capacitor: { Plugins: { FirebaseAuthentication: {
+    Capacitor: { Plugins: { ModeAtlasNative: {
+      revokeAppleAuthorization: async (options) => { calls.push(JSON.parse(JSON.stringify(options))); return {revoked:true}; }
+    }, FirebaseAuthentication: {
       signInWithGoogle: async () => ({}),
-      signInWithApple: async () => { appleCalls += 1; }
+      signInWithApple: async (options) => {
+        calls.push(JSON.parse(JSON.stringify(options)));
+        return {credential:{providerId:'apple.com',idToken:'apple-token',nonce:'raw-nonce',authorizationCode:'fresh-code'},user:{displayName:'A Learner'}};
+      },
+      revokeAccessToken: async () => { throw new Error('Native Firebase session must not own revocation'); }
     } } }
   };
   const context = vm.createContext({ window, URL, Promise });
   vm.runInContext(read('assets/platform/mode-atlas-platform.js'), context);
   vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'), context);
-  assert.deepEqual(Array.from(window.AtlasPlatform.getCapabilities().authProviders), ['google.com']);
-  assert.equal((await window.AtlasPlatform.authenticate('apple.com')).handled, false);
-  assert.equal(appleCalls, 0);
+  assert.deepEqual(Array.from(window.AtlasPlatform.getCapabilities().authProviders), ['google.com','apple.com']);
+  const result = await window.AtlasPlatform.authenticate('apple.com');
+  assert.equal(result.handled, true);
+  assert.equal(result.credential.nonce, 'raw-nonce');
+  assert.equal(result.displayName, 'A Learner');
+  assert.equal(await window.AtlasPlatform.revokeAppleAuthorization('fresh-code','firebase-token'), true);
+  assert.deepEqual(calls, [{skipNativeAuth:true},{authorizationCode:'fresh-code',firebaseIdToken:'firebase-token'}]);
+  assert.equal(await window.AtlasPlatform.revokeAppleAuthorization('fresh-code',''), false);
+});
+
+test('Apple authentication rejects missing nonces and normalizes cancelled system sheets', async () => {
+  let cancel = false;
+  const window = {ModeAtlasEnv:{isNativeApp:true},Capacitor:{Plugins:{FirebaseAuthentication:{
+    signInWithApple: async () => {
+      if (cancel) throw new Error('The operation couldn’t be completed. (com.apple.AuthenticationServices.AuthorizationError error 1001.)');
+      return {credential:{idToken:'token-without-nonce'}};
+    }
+  }}}};
+  const context = vm.createContext({window, URL, Promise});
+  vm.runInContext(read('assets/platform/mode-atlas-platform.js'),context);
+  vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'),context);
+  await assert.rejects(window.AtlasPlatform.authenticate('apple.com'),{code:'native-auth-missing-credential'});
+  cancel = true;
+  await assert.rejects(window.AtlasPlatform.authenticate('apple.com'),{code:'auth/cancelled-popup-request'});
 });
 
 test('native runtime disables browser-only update and install ownership', () => {
@@ -128,17 +156,18 @@ test('native auth transport keeps Firebase JS as the single session and Firestor
   assert.equal(pkg.dependencies['@capacitor/app'], '8.0.1');
   assert.equal(pkg.dependencies.firebase, '12.12.1');
   assert.equal(config.plugins.FirebaseAuthentication.skipNativeAuth, true);
-  assert.deepEqual(config.plugins.FirebaseAuthentication.providers, ['google.com']);
+  assert.deepEqual(config.plugins.FirebaseAuthentication.providers, ['google.com','apple.com']);
   assert.deepEqual(config.experimental.ios.spm.packageTraits['@capacitor-firebase/authentication'], ['Google']);
   assert.match(cloud, /signInWithCredential/);
   assert.match(cloud, /AtlasPlatform\?\.authenticate\?\.\(providerId\)/);
   assert.match(cloud, /GoogleAuthProvider\.credential/);
   assert.match(cloud, /new OAuthProvider\('apple\.com'\)\.credential/);
   assert.match(cloud, /linkWithCredential\(user, credential\)/);
-  assert.doesNotMatch(read('ios/App/App.xcodeproj/project.pbxproj'), /com\.apple\.SignInWithApple/);
-  assert.match(read('ios/engagement.xcconfig'), /MODE_ATLAS_ENTITLEMENTS = Shared\/LocalOnly.entitlements/);
+  assert.match(read('ios/engagement.xcconfig'), /MODE_ATLAS_APP_ENTITLEMENTS = App\/App.entitlements/);
+  assert.match(read('ios/engagement.xcconfig'), /MODE_ATLAS_WIDGET_ENTITLEMENTS = Shared\/LocalOnly.entitlements/);
+  assert.match(read('ios/App/App/App.entitlements'), /com.apple.developer.applesignin/);
   assert.doesNotMatch(read('ios/App/Shared/LocalOnly.entitlements'), /<key>/);
-  assert.match(read('assets/platform/mode-atlas-platform-native.js'), /var appleSignInEnabled = false/);
+  assert.doesNotMatch(read('assets/platform/mode-atlas-platform-native.js'), /appleSignInEnabled/);
   assert.match(read('assets/platform/mode-atlas-platform-native.js'), /JS Auth session owns UID/);
   assert.doesNotMatch(cloud, /FirebaseAuthentication\.signInWithGoogle/);
 });

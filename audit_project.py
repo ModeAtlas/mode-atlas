@@ -180,8 +180,8 @@ def main() -> int:
     native_auth = (capacitor_config.get('plugins') or {}).get('FirebaseAuthentication') or {}
     if native_auth.get('skipNativeAuth') is not True:
         fail(errors, 'native Firebase provider transport must keep skipNativeAuth=true so JS Auth remains the session owner')
-    if native_auth.get('providers') != ['google.com']:
-        fail(errors, 'Personal Team testing must enable only Google')
+    if native_auth.get('providers') != ['google.com', 'apple.com']:
+        fail(errors, 'The iOS provider chooser must configure Google and Apple')
     package_json = json.loads(text(ROOT / 'package.json'))
     dependencies = package_json.get('dependencies') or {}
     if dependencies.get('@capacitor-firebase/authentication') != '8.5.2':
@@ -198,6 +198,8 @@ def main() -> int:
         fail(errors, 'cloud-sync.js directly owns native provider implementation instead of using AtlasPlatform')
 
     ios_project_source = text(ROOT / 'ios/App/App.xcodeproj/project.pbxproj')
+    if ios_project_source.count('CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_APP_ENTITLEMENTS)";') != 2 or ios_project_source.count('CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_WIDGET_ENTITLEMENTS)";') != 2:
+        fail(errors, 'App and widget must use their own entitlement selections')
     ios_version_match = re.search(r"var\s+VERSION\s*=\s*['\"]([^'\"]+)['\"]", version_source)
     if ios_version_match:
         ios_version = ios_version_match.group(1)

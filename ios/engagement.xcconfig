@@ -1,7 +1,8 @@
-// Default builds need no App Group capability. Optional local settings apply to
-// both targets through the project configuration; never invent a signing team.
+// The app uses Sign in with Apple. Widget sharing is provisioned on each Mac;
+// the extension never inherits the app's Apple sign-in entitlement.
 #include "release.xcconfig"
 MODE_ATLAS_APP_GROUP =
-MODE_ATLAS_ENTITLEMENTS = Shared/LocalOnly.entitlements
+MODE_ATLAS_APP_ENTITLEMENTS = App/App.entitlements
+MODE_ATLAS_WIDGET_ENTITLEMENTS = Shared/LocalOnly.entitlements
 #include? "widget-sharing.local.xcconfig"
 #include? "signing.local.xcconfig"

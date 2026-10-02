@@ -768,3 +768,10 @@ All notable changes to this project will be documented here.
 ### Fixed
 - Text centering issues
 - Time measurement units
+## 2.84.0 - 2026-10-02
+
+- Enabled native Sign in with Apple alongside Google while preserving the shared Firebase JS account/session owner and explicit linking to an existing account.
+- Preserved Apple's first-authorization display name without overwriting a chosen name, and treated cancelled Apple sheets as normal dismissals.
+- Corrected Apple revocation for the JS-owned session before account deletion; failure retains account data and a changed UID stops the operation.
+- Separated app and widget entitlements, migrated existing local App Group selections, and allowed an explicit paid-team selection to replace a previous local Personal Team.
+- Documented the exact Apple/Firebase activation steps and signed-device acceptance checks. No new backend deployment or TestFlight upload is included.

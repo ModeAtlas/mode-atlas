@@ -1,3 +1,3 @@
 // Increment once for each new TestFlight upload: npm run ios:next-build
 // Independent of the public app version; the app and widget inherit this value.
-MODE_ATLAS_BUILD_NUMBER = 2080004
+MODE_ATLAS_BUILD_NUMBER = 2080005
