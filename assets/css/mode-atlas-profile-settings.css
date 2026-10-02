@@ -123,7 +123,7 @@ html[data-ma-large-text] .ma-account-tab{flex-direction:row;gap:8px;min-height:4
   --ma-button-bg:#fff;--ma-button-bg-hover:#fff;--ma-button-color:#000;
   --ma-button-border:#fff;--ma-button-border-hover:#fff;
   --ma-apple-height:max(48px,3rem);
-  height:var(--ma-apple-height);padding:0 8% 0 0;gap:0;border:0;
+  height:var(--ma-apple-height);padding:0 8% 0 0;gap:0;border:0;overflow:hidden;
   font:500 calc(var(--ma-apple-height) * .43)/1.05 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
 }
 .ma-account-apple img{height:100%;width:auto;flex:none;}
