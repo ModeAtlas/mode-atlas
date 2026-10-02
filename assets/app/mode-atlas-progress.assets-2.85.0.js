@@ -124,8 +124,6 @@
       curveCredit: Math.max(a.curveCredit,b.curveCredit),
       updatedAt: Math.max(a.updatedAt, b.updatedAt)
     };
-    const migrated=[left,right].filter(value=>Number(value?.version)>=STATE_VERSION);
-    if(migrated.length)merged.curveCredit=Math.max(...migrated.map(value=>finiteCount(value.curveCredit)));
     const sourceIds = new Set([...Object.keys(a.sources), ...Object.keys(b.sources)]);
     sourceIds.forEach((sourceId) => {
       const source = {};
@@ -165,7 +163,6 @@
       if(days.some(day=>merged.activity[day].goalVersion===4))reconcilePeriod(merged,week,'weekly');
       else if(weekDays(merged,week)>=4)claim(merged,`${week}:goal:week`,25);
     }
-    if(!migrated.length)merged.curveCredit=legacyCurveCredit(sumXP(merged));
     return merged;
   }
 

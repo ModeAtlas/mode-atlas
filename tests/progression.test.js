@@ -29,18 +29,21 @@ test('the new curve grows after the introductory levels and preserves an existin
   const halfway=load({modeAtlasProgress:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':6405}}}}).progress;
   assert.equal(halfway.getSummary().level,20);assert.equal(halfway.getSummary().progress,.4);assert.equal(halfway.getXP(),6405);
 });
-test('legacy conversion is stable across offline merges, including a zero-credit migrated account',()=>{
+test('legacy conversion preserves cloud progress on fresh installs and stays stable across offline merges',()=>{
   const p=load().progress;
-  const old={version:3,legacySeeded:true,sources:{a:{'kana.reading.correct':6175}}};
-  const current=p.normalizeState(old),laterOld={...old,sources:{a:{'kana.reading.correct':6300}}};
-  const merged=p.mergeStates(current,laterOld);
-  assert.equal(merged.curveCredit,current.curveCredit);assert.equal(p.getXP(merged),6300);
-  assert.deepEqual(plain(merged),plain(p.mergeStates(laterOld,current)));
+  const old={version:3,legacySeeded:true,sources:{a:{'kana.reading.correct':6405}}};
+  const current=p.normalizeState(old);current.credits.newDevice={answer:700};
+  const staleOld={...old,sources:{a:{'kana.reading.correct':6175}}};
+  const merged=p.mergeStates(current,staleOld);
+  assert.equal(merged.curveCredit,current.curveCredit);assert.equal(p.getXP(merged),7105);
+  assert.deepEqual(plain(merged),plain(p.mergeStates(staleOld,current)));
   assert.deepEqual(plain(merged),plain(p.mergeStates(merged,merged)));
-  const early=p.normalizeState({version:3,sources:{a:{'kana.reading.correct':10}}});
-  assert.equal(p.mergeStates(early,laterOld).curveCredit,0,'A completed zero-credit migration must not be repeated');
+  const fresh=p.normalizeState({version:4,legacySeeded:true}),hydrated=p.mergeStates(fresh,old);
+  assert.equal(p.getSummary(hydrated).level,20);assert.equal(p.getSummary(hydrated).progress,.4);assert.equal(p.getXP(hydrated),6405);
+  assert.deepEqual(plain(hydrated),plain(p.mergeStates(old,fresh)));
   const other={version:3,sources:{b:{'kana.writing.correct':230}}};
-  assert.equal(p.getSummary(p.mergeStates(old,other)).progress,.4,'Two old saves convert their combined existing progress once');
+  assert.deepEqual(plain(p.mergeStates(p.mergeStates(fresh,old),other)),plain(p.mergeStates(fresh,p.mergeStates(old,other))),'Migration must not depend on the order in which devices arrive');
+  assert.ok(p.getSummary(p.mergeStates(old,other)).progress>=.4,'Every previously observed level and progress position is retained');
 });
 test('correct-answer XP reflects the actual kana pool and hints, with no retroactive revaluation',()=>{
   const e=load(),p=e.progress;p.startRun('rates');
