@@ -12,6 +12,14 @@
     const snapshot=config.getSnapshot, byId=id=>document.getElementById(id);
     let pendingReview=[];
     const study=()=>snapshot().sessionStats?.study;
+    function rewardContext(current){
+      const state=snapshot();
+      if(!(current.poolSize>0)){
+        const chars=current.focusChars?.length?current.focusChars:root.ModeAtlasPracticeModes.fixedPool(state.settings)?Object.keys(root.getAnswerMapForCurrentMode()):state.activeChars;
+        current.poolSize=new Set(chars.flatMap(kana=>root.ModeAtlasKanaData.splitKana(kana))).size;
+      }
+      if(typeof current.hintsEnabled!=='boolean')current.hintsEnabled=!!state.settings.hint;
+    }
     function sync(){
       const state=snapshot(), count=root.ModeAtlasStudyPlan.practiceCount(state.settings);
       const active=state.sessionStarted, current=study();
@@ -39,6 +47,7 @@
       current.owner=root.ModeAtlasSessionRecovery.accountId();
       current.startedAt=Date.now();
       current.startLevel=root.ModeAtlasProgress.getSummary().level;
+      rewardContext(current);current.independentStreak=0;
       current.xpParts={};current.milestones=[];current.retryQueue=[];current.assisted=0;current.questionAnswered=false;
       root.ModeAtlasProgress.startRun(current.runId);
       pendingReview=[];clearFeedback();
@@ -71,9 +80,10 @@
     }
     function finish(completed){
       const state=snapshot(),current=study();if(!current)return;
-      addXp(root.ModeAtlasProgress.finishRun({runId:current.runId,direction:config.mode,day:current.dateKey,mode:current.mode,count:current.count,
+      rewardContext(current);
+      addXp(root.ModeAtlasProgress.finishRun({runId:current.runId,direction:config.mode,day:current.mode==='dailyChallenge'?current.dateKey:root.getTodayKey(),mode:current.mode,count:current.count,
         answered:state.sessionStats.answered,correct:state.sessionStats.correct,unique:Object.keys(current.items).length,
-        bestStreak:state.sessionStats.bestStreak,assisted:current.assisted,completed}));
+        bestStreak:state.sessionStats.bestStreak,assisted:current.assisted,poolSize:current.poolSize,hintsEnabled:current.hintsEnabled,completed}));
     }
     function prepareAnswer(){
       const state=snapshot();
@@ -85,6 +95,7 @@
     }
     function recordAnswer(answer){
       const current=study();if(!current)return;
+      rewardContext(current);
       current.lastAnswer={kana:String(answer.kana).slice(0,20),answer:String(answer.answer||'').slice(0,40),correct:!!answer.correct,skipped:!!answer.skipped};
       for(const kana of root.ModeAtlasKanaData.splitKana(answer.kana)){
         const row=current.items[kana]||(current.items[kana]={kana,correct:0,wrong:0});
@@ -92,6 +103,8 @@
       }
       const state=snapshot(),at=Date.now(),assisted=!!current.hintShown;
       if(assisted)current.assisted+=1;current.hintShown=false;current.questionAnswered=true;
+      const supported=assisted||current.hintsEnabled;
+      current.independentStreak=answer.correct&&!supported?(current.independentStreak||0)+1:0;
       const reviewed=[],milestones=[];
       for(const kana of root.ModeAtlasKanaData.splitKana(answer.kana)){
         const result=root.ModeAtlasReview.answer(state.srs[kana],{id:`${current.runId}:${state.sessionStats.answered}`,at,correct:answer.correct,assisted},state.stats[kana],state.times[kana]);
@@ -101,8 +114,10 @@
         if(!answer.correct&&current.feedback==='learn'&&!current.retryQueue.some(item=>item.kana===kana))current.retryQueue.push({kana,after:state.sessionStats.answered+3});
       }
       current.milestones.push(...milestones);
+      const units=root.ModeAtlasKanaData.splitKana(answer.kana);
       addXp(root.ModeAtlasProgress.recordAnswer({runId:current.runId,index:state.sessionStats.answered,at,mode:config.mode,correct:answer.correct,
-        units:root.ModeAtlasKanaData.splitKana(answer.kana).length,reviewed,milestones}));
+        units:units.length,kana:units,poolSize:current.poolSize,assisted:supported,streak:current.independentStreak,
+        hiragana:units.filter(kana=>/^[\u3040-\u309f]+$/.test(kana)).length,katakana:units.filter(kana=>/^[\u30a0-\u30ff]+$/.test(kana)).length,reviewed,milestones}));
       sync();
     }
     function clearFeedback(){
@@ -162,7 +177,9 @@
       for(const [label,value]of[['Answered',goal?`${answered} / ${goal}`:answered],['Correct',sessionStats.correct],['Accuracy',answered?`${Math.round(sessionStats.correct/answered*100)}%`:'—']]){
         const card=el('div','');card.append(el('strong','',value),el('span','',label));grid.appendChild(card);
       }
-      content.append(grid,el('p','ma-study-summary__meta',`${rows.length} different kana practised`));
+      const scope=current.poolSize||5,rate=root.ModeAtlasRewardRules.kanaRate(scope,current.hintsEnabled);
+      content.append(grid,el('p','ma-study-summary__meta',`${rows.length} different kana practised · ${scope} in this pool`),
+        el('p','ma-study-summary__meta',`${rate} XP per correct kana · ${current.hintsEnabled?'Hints enabled':'Hints off'}`));
       root.ModeAtlasProgressUI.renderSessionReward(content,{...current,xpGain});
       const details=el('details','ma-study-summary__details');details.appendChild(el('summary','','Session details'));
       const times=sessionStats.timings||[];

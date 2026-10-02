@@ -1,3 +1,13 @@
+## 2.85.0 - 2026-10-03
+
+- Steepen the XP curve after the introductory levels, preserving earned XP, levels and fractional progress through a one-time conversion.
+- Scale Kana answer and session rewards by the actual practice pool and hint setting. Summaries explain the rate; Reading and Writing share the same policy.
+- Rotate three daily and two weekly goals from 24 templates, with dated claims and branch-scoped activity for future learning branches.
+- Add 12 achievement tracks for routines, reward collections, guided sets, independent recall, broad practice, precision and streaks. Give iOS a compact achievement browser with branch/status filters and two-column cards.
+- Keep restored sessions on their recorded reward settings, credit non-daily session completion to its completion date, and retain Daily Challenge's original date.
+- Update widgets for rotating goals and higher level requirements. Expired tasks wait for a fresh app snapshot instead of reusing old labels.
+- Prevent older clients from overwriting a newer progression schema in Firestore. Deploy the compatible backend before updating clients.
+
 ## 2.83.1 - 2026-10-01
 
 - Hide extra-reward status until the account owns a currently available custom reward. Existing owners can refresh their saved rewards without a misleading missing-rewards error.

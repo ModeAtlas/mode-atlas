@@ -23,6 +23,71 @@ async function correct(page,mode){
   await expect.poll(()=>page.evaluate(()=>!locked)).toBe(true);
   await page.evaluate(mode=>mode==='reading'?handleCorrect(getAnswerForCurrentChar()):handleChoiceAnswer(currentChar,document.querySelector('.choice-btn')),mode);
 }
+test.describe('local midnight',()=>{
+test.use({timezoneId:'Australia/Melbourne'});
+for(const mode of ['reading','writing'])test(`${mode}: a guided session crossing midnight credits completion to the finish date`,async({page})=>{
+  await prepare(page);await open(page,`/${mode}/?practice=10`);await page.clock.install({time:new Date('2026-10-02T23:59:40+10:00')});await page.locator('#startBtn').click();
+  expect(await page.evaluate(()=>getTodayKey())).toBe('2026-10-02');
+  for(let i=0;i<5;i++)await correct(page,mode);
+  await page.clock.fastForward(30000);
+  for(let i=5;i<10;i++)await correct(page,mode);
+  await expect(page.locator('.ma-dialog__title')).toHaveText('Set complete');
+  expect(await page.evaluate(()=>Object.fromEntries(Object.entries(ModeAtlasProgress.readState().activity).map(([day,row])=>[day,Object.values(row.metrics).reduce((sum,metrics)=>sum+(metrics['kana.guided']||0),0)])))).toEqual({'2026-10-02':0,'2026-10-03':1});
+});
+});
+
+for(const mode of ['reading','writing'])test(`${mode}: session XP follows its pool and hints, including an older restored checkpoint`,async({page})=>{
+  await prepare(page);await open(page,`/${mode}/?practice=10`);
+  for(const [wide,hint,rate]of [[false,false,2],[false,true,1],[true,false,7]]){
+    await page.evaluate(({wide,hint})=>{
+      Object.assign(settings,{hiraganaRows:wide?Object.keys(ModeAtlasKanaData.hiraganaRows):['h_a'],katakanaRows:wide?Object.keys(ModeAtlasKanaData.katakanaRows):[],hint,focusWeak:false,dakuten:false,yoon:false,extended:false});onSettingsChanged();
+    },{wide,hint});
+    await page.locator('#startBtn').click();await correct(page,mode);
+    expect(await page.evaluate(()=>sessionStats.study.xpParts.answers)).toBe(rate);
+    if(hint){
+      await expect.poll(()=>page.evaluate(()=>!locked)).toBe(true);
+      await page.evaluate(mode=>{const key='modeAtlasPracticeCheckpoint:'+mode,checkpoint=ModeAtlasStorage.json(key);delete checkpoint.sessionStats.study.poolSize;delete checkpoint.sessionStats.study.hintsEnabled;ModeAtlasStorage.setJSON(key,checkpoint);},mode);
+      await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();await page.getByRole('button',{name:'Resume set',exact:true}).click();await correct(page,mode);
+      expect(await page.evaluate(()=>({answers:sessionStats.study.xpParts.answers,pool:sessionStats.study.poolSize,hints:sessionStats.study.hintsEnabled}))).toEqual({answers:2,pool:5,hints:true});
+    }
+    await page.locator('#endSessionBtn').click();
+    await expect(page.locator('.ma-study-summary')).toContainText(`${rate} XP per correct kana`);
+    await page.getByRole('button',{name:'Done',exact:true}).click();
+  }
+});
+
+for(const theme of ['dark','light'])test(`iOS ${theme}: achievements use compact branch filters, retain detail navigation and fit large text`,async({page},info)=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await prepare(page,{theme});await open(page,'/');
+  await page.evaluate(()=>ModeAtlasFeatures.openAchievements());
+  const root=page.locator('.ma-ach-native');await expect(root).toBeVisible();
+  await expect(root.locator('.ma-achievement-section')).toHaveCount(1);
+  await expect(root.locator('.ma-achievement-tile')).toHaveCount(10);
+  const boxes=await root.locator('.ma-achievement-tile').evaluateAll(nodes=>nodes.slice(0,2).map(node=>({x:node.getBoundingClientRect().x,y:node.getBoundingClientRect().y,height:node.getBoundingClientRect().height})));
+  expect(boxes[0].y).toBe(boxes[1].y);expect(boxes[1].x).toBeGreaterThan(boxes[0].x);expect(boxes[0].height).toBeLessThan(200);
+  await page.screenshot({animations:'disabled',path:info.outputPath(`ios-${theme}-achievements.png`)});
+  await root.getByRole('button',{name:'Kana',exact:true}).click();
+  await expect(root.locator('.ma-achievement-tile')).toHaveCount(15);
+  await root.locator('[data-ma-ach-id="kana:on-a-roll"]').click();
+  await expect(root.locator('.ma-ach-info-body')).toContainText('On a Roll');
+  expect(await root.evaluate(node=>node.closest('.ma-dialog').scrollTop)).toBe(0);
+  await page.getByRole('button',{name:'Close achievements or return to achievements',exact:true}).click();
+  await expect(root.getByRole('button',{name:'Kana',exact:true})).toHaveAttribute('aria-pressed','true');
+  await root.getByRole('button',{name:'Unlocked',exact:true}).click();await expect(root.locator('.ma-ach-empty')).toBeVisible();
+  await root.getByRole('button',{name:'All',exact:true}).click();
+  await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
+  expect(await root.evaluate(node=>[node,...node.querySelectorAll('.ma-achievement-tile,.ma-ach-switch')].every(el=>el.scrollWidth<=el.clientWidth+1))).toBe(true);
+  await page.screenshot({animations:'disabled',path:info.outputPath(`ios-${theme}-achievements-large-text.png`)});
+  expect(errors).toEqual([]);
+});
+
+test('web achievements expose every launched branch and the new milestones at a narrow viewport',async({page})=>{
+  await prepare(page,{native:false});await page.setViewportSize({width:390,height:844});await open(page,'/');
+  await page.evaluate(()=>ModeAtlasFeatures.openAchievements());
+  await expect(page.locator('.ma-ach-native')).toHaveCount(0);await expect(page.locator('.ma-achievement-tile')).toHaveCount(26);
+  await expect(page.locator('[data-ma-ach-id="modeAtlas:special-delivery"]')).toContainText('Special Delivery');
+  expect(await page.locator('.ma-ach-dialog-content').evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
+});
 for(const mode of ['reading','writing'])test(`iOS ${mode}: interrupted guided sets resume without replaying XP or answers`,async({page})=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await prepare(page);await open(page,`/${mode}/?practice=10`);await page.locator('#startBtn').click();
@@ -85,7 +150,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: collection, title, frame
   await prepare(page,{theme,xp:700});await open(page,'/');
   await page.evaluate(()=>{ModeAtlasRewardsUI.open();});
   await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
-  await expect(page.locator('.ma-atlas-rewards .ma-routine-goal')).toHaveCount(4);
+  await expect(page.locator('.ma-atlas-rewards .ma-routine-goal')).toHaveCount(5);
   await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.locator('[data-reward-category="frames"] > summary').click();
   const grove=page.locator('[data-landmark="grove"]');

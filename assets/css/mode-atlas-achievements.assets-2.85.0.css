@@ -28,6 +28,35 @@
 .ma-ach-future-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:13px;background:var(--ma-control);color:var(--ma-text);font-weight:950}
 .ma-ach-future-placeholder strong{color:var(--ma-text);font-size:.9rem}.ma-ach-future-placeholder small{font-weight:900;text-transform:uppercase;letter-spacing:.06em;font-size:.68rem}
 
+/* The native achievement browser keeps one branch on screen at a time. */
+.ma-ach-controls{display:grid;gap:8px;margin-bottom:16px;}
+.ma-ach-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:3px;border-radius:12px;background:var(--ma-control);}
+.ma-ach-switch button{appearance:none;min-width:0;min-height:44px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--ma-muted);font:inherit;font-size:.75rem;font-weight:750;cursor:pointer;}
+.ma-ach-switch button[aria-pressed="true"]{background:var(--ma-card);border-color:var(--ma-border);color:var(--ma-text);box-shadow:var(--ma-shadow-soft);}
+.ma-ach-switch button:focus-visible{outline:2px solid var(--ma-accent);outline-offset:1px;}
+.ma-ach-empty{grid-column:1/-1;margin:0;padding:20px 10px;color:var(--ma-muted);line-height:1.5;text-align:center;}
+.ma-ach-native .ma-ach-overview{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 14px;}
+.ma-ach-native .ma-ach-overview>div{padding:10px 8px;border-radius:12px;}
+.ma-ach-native .ma-ach-overview b{font-size:1.15rem;}
+.ma-ach-native .ma-ach-overview span{font-size:.58rem;letter-spacing:.02em;line-height:1.35;}
+.ma-ach-native .ma-ach-section-head{flex-direction:row;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;}
+.ma-ach-native .ma-ach-section-head h3{font-size:.93rem;}
+.ma-ach-native .ma-ach-section-copy{display:none;}
+.ma-ach-native .ma-ach-section-count{font-size:.63rem;}
+.ma-ach-native .ma-achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.ma-ach-native .ma-achievement-tile{display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:auto 1fr auto;align-items:start;gap:10px 7px;min-height:144px;padding:11px;border-radius:14px;box-shadow:none;}
+.ma-ach-native .ma-ach-topline,.ma-ach-native .ma-ach-meter{grid-column:1/-1;}
+.ma-ach-native .ma-ach-topline{gap:3px;flex-wrap:wrap;}
+.ma-ach-native .ma-ach-rank-badge,.ma-ach-native .ma-ach-status-text{min-height:21px;padding:3px 5px;font-size:.55rem;letter-spacing:0;}
+.ma-ach-native .ma-ach-graphic{width:28px;height:32px;margin:0;border-radius:9px;font-size:1rem;}
+.ma-ach-native .ma-ach-copy{gap:5px;margin:0;}
+.ma-ach-native .ma-achievement-tile strong{font-size:.8rem;line-height:1.25;overflow-wrap:anywhere;}
+.ma-ach-native .ma-achievement-tile small{font-size:.65rem;line-height:1.4;}
+.ma-ach-native .ma-ach-meter{height:5px;align-self:end;}
+html[data-ma-large-text] .ma-ach-native .ma-achievement-grid{grid-template-columns:1fr;}
+html[data-ma-large-text] .ma-ach-native .ma-achievement-tile{min-height:120px;}
+@media(min-width:680px){.ma-ach-native .ma-achievement-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+
 .ma-ach-info-topbar{display:grid;gap:16px;align-items:start}
 .ma-ach-info-back{justify-self:start}
 .ma-ach-info-hero{--ma-ach-accent:148,163,184;--ma-ach-rank:148,163,184;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;min-width:0}

@@ -18,7 +18,7 @@
     const store = root.ModeAtlasStorage;
     const words = store?.json?.(store.KEYS.wordBank, []) || [];
     return {
-      schemaVersion:3, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
+      schemaVersion:4, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
       level:Math.max(1,count(progress.level)), correct:count(progress.lifetimeCorrect),
       readingCorrect:count(progress.readingCorrect), writingCorrect:count(progress.writingCorrect),
       words:Array.isArray(words) ? words.length : 0,
@@ -30,7 +30,7 @@
       title:appearance?.title||'Trail Finder',frame:appearance?.frame||'plain',
       nextTitle:next?.title||null,nextLevel:next?.level||null,
       studyStreak:count(routine.streak),lastStudyDay:owner?.studyDays?.(state).sort().at(-1)||null,
-      goals:routine.goals.map(({id,label,value,target})=>({id,label,value:Math.min(count(value),count(target)),target:count(target)}))
+      goals:routine.goals.map(({id,label,period,value,target})=>({id,label,period,value:Math.min(count(value),count(target)),target:count(target)}))
     };
   }
   // Call only from an explicit reminder preference action. Disabling

@@ -6,7 +6,9 @@ struct ModeAtlasWidgetGoal: Codable, Identifiable {
     let label: String
     let value: Int
     let target: Int
-    var isValid: Bool { ["recall", "balance", "review", "week"].contains(id) && !label.isEmpty && label.count <= 80 && target > 0 && target <= 10000 && value >= 0 && value <= target }
+    var period: String? = nil
+    var isWeekly: Bool { period == "weekly" || (period == nil && id == "week") }
+    var isValid: Bool { id.range(of: "^[a-z0-9-]{1,60}$", options: .regularExpression) != nil && (period == nil || ["daily", "weekly"].contains(period!)) && !label.isEmpty && label.count <= 80 && target > 0 && target <= 10000 && value >= 0 && value <= target }
 }
 struct ModeAtlasWidgetSnapshot: Codable {
     let schemaVersion: Int
@@ -35,7 +37,7 @@ struct ModeAtlasWidgetSnapshot: Codable {
     var goals: [ModeAtlasWidgetGoal]? = nil
 
     var isValid: Bool {
-        guard [1, 2, 3].contains(schemaVersion), updatedAt.isFinite, updatedAt > 0,
+        guard [1, 2, 3, 4].contains(schemaVersion), updatedAt.isFinite, updatedAt > 0,
               (1...999).contains(level), (0...1_000_000_000_000).contains(correct),
               (0...100_000).contains(streak), levelProgress.isFinite,
               (0...1).contains(levelProgress), ["kana", "daily", "yourAtlas"].contains(destination) else { return false }
@@ -45,13 +47,15 @@ struct ModeAtlasWidgetSnapshot: Codable {
         if let reading = readingCorrect, let writing = writingCorrect,
            reading < 0 || writing < 0 || reading > correct || writing > correct || reading + writing != correct { return false }
         if let xp = levelXp, !(0...1_000_000_000_000).contains(xp) { return false }
-        if let requirement = levelRequirement, !(1...100_000).contains(requirement) { return false }
+        if let requirement = levelRequirement, !(1...20_000_000).contains(requirement) { return false }
         if let activity = lastActivityAt, !activity.isFinite || activity < 0 || activity > updatedAt + 300_000 { return false }
-        if schemaVersion == 3 {
+        if schemaVersion >= 3 {
             guard let title, !title.isEmpty, title.count <= 60, let frame,
                   ["plain", "grove", "bridge", "summit", "lantern", "horizon"].contains(frame),
                   let studyStreak, (0...100000).contains(studyStreak), let localDay, Self.validDay(localDay),
-                  let goals, goals.count == 4, Set(goals.map(\.id)).count == 4, goals.allSatisfy(\.isValid) else { return false }
+                  let goals, goals.allSatisfy(\.isValid), Set(goals.map(\.id)).count == goals.count else { return false }
+            if schemaVersion == 3 && Set(goals.map(\.id)) != Set(["recall", "balance", "review", "week"]) { return false }
+            if schemaVersion == 4 && (goals.filter { $0.period == "daily" }.count != 3 || goals.filter { $0.period == "weekly" }.count != 2 || goals.count != 5) { return false }
             if let lastStudyDay, !Self.validDay(lastStudyDay) { return false }
             if studyStreak > 0 && lastStudyDay == nil { return false }
             if let nextLevel, nextLevel <= level || nextLevel > 999 { return false }
@@ -94,9 +98,12 @@ struct ModeAtlasWidgetSnapshot: Codable {
             let weekday = calendar.component(.weekday, from: day)
             return calendar.date(byAdding: .day, value: -(weekday + 5) % 7, to: calendar.startOfDay(for: day))!
         }
-        return (goals ?? []).map { goal in
-            let current = goal.id == "week" ? monday(savedDay) == monday(date) : localDay == formatter.string(from: date)
-            return ModeAtlasWidgetGoal(id: goal.id, label: goal.label, value: current ? goal.value : 0, target: goal.target)
+        return (goals ?? []).compactMap { goal in
+            let current = goal.isWeekly ? monday(savedDay) == monday(date) : localDay == formatter.string(from: date)
+            // A rotated goal needs its new label and target from the shared owner.
+            // Keep last-known totals, but never show yesterday's task as today's.
+            if schemaVersion >= 4 && !current { return nil }
+            return ModeAtlasWidgetGoal(id: goal.id, label: goal.label, value: current ? goal.value : 0, target: goal.target, period: goal.period)
         }
     }
     func routineStreak(at date: Date) -> Int {

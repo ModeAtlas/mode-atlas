@@ -4,6 +4,7 @@
   else if(!root.ModeAtlasProgress){
     root.ModeAtlasProgress = factory(root);
     root.ModeAtlasProgress.ensureSeeded({sync:false,emit:false});
+    root.addEventListener('modeAtlasRewardAccessChanged',()=>root.ModeAtlasProgress.recordRewardGrants());
   }
 })(typeof window !== 'undefined' ? window : globalThis, function ModeAtlasProgressOwner(root){
   'use strict';
@@ -11,7 +12,7 @@
   const STORAGE_KEY = 'modeAtlasProgress';
   const UPDATED_AT_KEY = 'modeAtlasProgressUpdatedAt';
   const DEVICE_KEY = 'modeAtlasProgressDeviceId';
-  const STATE_VERSION = 3;
+  const STATE_VERSION = 4;
   const LEGACY_SOURCE = 'legacy-baseline';
 
   const COUNTER_XP = Object.freeze({
@@ -84,7 +85,7 @@
       const normalized = normalizeAdjustment(adjustment, key);
       if (normalized) adjustments[normalized.id] = normalized;
     });
-    return {
+    const state = {
       version: STATE_VERSION,
       legacySeeded: value.legacySeeded === true,
       sources,
@@ -95,8 +96,14 @@
       activity: normalizeActivity(value.activity),
       runs: normalizeRuns(value.runs),
       appearance: normalizeAppearance(value.appearance),
+      collections: normalizeCollections(value.collections),
+      curveCredit: finiteCount(value.curveCredit),
       updatedAt: finiteCount(value.updatedAt)
     };
+    // A single conversion preserves earned XP, level and fractional progress.
+    // This credit only translates level thresholds; it never awards spendable XP.
+    if(Number(value.version)<STATE_VERSION||!value.version)state.curveCredit=legacyCurveCredit(sumXP(state));
+    return state;
   }
 
   function mergeStates(left, right){
@@ -113,8 +120,12 @@
       activity: mergeActivity(a.activity,b.activity),
       runs: normalizeRuns({...a.runs,...b.runs}),
       appearance: mergeAppearance(a.appearance,b.appearance),
+      collections: Object.fromEntries([...new Set([...Object.keys(a.collections),...Object.keys(b.collections)])].sort().map(id=>[id,[a.collections[id],b.collections[id]].includes('event')?'event':'exclusive'])),
+      curveCredit: Math.max(a.curveCredit,b.curveCredit),
       updatedAt: Math.max(a.updatedAt, b.updatedAt)
     };
+    const migrated=[left,right].filter(value=>Number(value?.version)>=STATE_VERSION);
+    if(migrated.length)merged.curveCredit=Math.max(...migrated.map(value=>finiteCount(value.curveCredit)));
     const sourceIds = new Set([...Object.keys(a.sources), ...Object.keys(b.sources)]);
     sourceIds.forEach((sourceId) => {
       const source = {};
@@ -137,21 +148,29 @@
       if (b.runs[id]) merged.runs[id]={...a.runs[id],answers:Math.max(a.runs[id].answers,b.runs[id].answers),done:a.runs[id].done||b.runs[id].done,at:Math.max(a.runs[id].at,b.runs[id].at)};
     }
     merged.runs=normalizeRuns(merged.runs);
-    const weeks=new Map();
+    const weeks=new Set();
     for(const day of Object.keys(merged.activity)){
       const totals=activityTotals(merged,day);
-      if(totals.correct>=20)claim(merged,`${day}:goal:recall`,10);
-      if(totals.reading>=5&&totals.writing>=5)claim(merged,`${day}:goal:balance`,10);
-      if(totals.reviewed>=5)claim(merged,`${day}:goal:review`,10);
+      if(merged.activity[day].goalVersion===4)reconcileGoals(merged,day,false);
+      else {
+        if(totals.correct>=20)claim(merged,`${day}:goal:recall`,10);
+        if(totals.reading>=5&&totals.writing>=5)claim(merged,`${day}:goal:balance`,10);
+        if(totals.reviewed>=5)claim(merged,`${day}:goal:review`,10);
+      }
       for(const mode of ['reading','writing'])claim(merged,`${day}:review:${mode}`,merged.activity[day].reviews[mode].length*2);
-      if(totals.correct>=5){const week=weekKey(day);weeks.set(week,(weeks.get(week)||0)+1);}
+      weeks.add(weekKey(day));
     }
-    for(const [week,days] of weeks)if(days>=4)claim(merged,`${week}:goal:week`,25);
+    for(const week of weeks){
+      const days=Object.keys(merged.activity).filter(day=>weekKey(day)===week);
+      if(days.some(day=>merged.activity[day].goalVersion===4))reconcilePeriod(merged,week,'weekly');
+      else if(weekDays(merged,week)>=4)claim(merged,`${week}:goal:week`,25);
+    }
+    if(!migrated.length)merged.curveCredit=legacyCurveCredit(sumXP(merged));
     return merged;
   }
 
-  // Cumulative device counters retain old XP weights. v3 correct-answer credits
-  // add one XP to newly earned answers without revaluing historical activity.
+  // Cumulative device counters retain their original one-XP weight. Credits
+  // carry the rest of each answer's current rate without revaluing old answers.
   const creditKinds=['answer','completion','accuracy','streak'];
   function normalizeCredits(input){
     const out={};for(const [id,row] of Object.entries(object(input))){if(!safeKey(id))continue;out[id]={};for(const key of creditKinds)out[id][key]=finiteCount(row?.[key]);}return out;
@@ -160,7 +179,7 @@
     const out=normalizeCredits(a);for(const [id,row]of Object.entries(normalizeCredits(b))){out[id]||={};for(const key of creditKinds)out[id][key]=Math.max(out[id][key]||0,row[key]);}return out;
   }
   function normalizeClaims(input){
-    const out={};for(const [id,value]of Object.entries(object(input)))if(id.startsWith('v3:')&&id.length<180)out[id]=Math.min(100,finiteCount(value));return out;
+    const out={};for(const [id,value]of Object.entries(object(input)))if(/^v[34]:/.test(id)&&id.length<180)out[id]=Math.min(1000,finiteCount(value));return out;
   }
   function mergeClaims(a,b){const out=normalizeClaims(a);for(const [id,n]of Object.entries(normalizeClaims(b)))out[id]=Math.max(out[id]||0,n);return out;}
   function normalizeActivity(input){
@@ -168,16 +187,30 @@
       if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!row||typeof row!=='object')continue;
       const sources={};for(const [id,counts]of Object.entries(object(row.sources)))if(safeKey(id))sources[id]=[finiteCount(counts?.[0]),finiteCount(counts?.[1])];
       const reviews={};for(const mode of ['reading','writing'])reviews[mode]=[...new Set((Array.isArray(row.reviews?.[mode])?row.reviews[mode]:[]).filter(x=>typeof x==='string'&&x.length<8))].sort().slice(0,5);
-      out[day]={sources,reviews};
+      const metrics={};for(const [id,counts]of Object.entries(object(row.metrics)))if(safeKey(id))metrics[id]=normalizeMetrics(counts);
+      const kana=[...new Set((Array.isArray(row.kana)?row.kana:[]).filter(k=>typeof k==='string'&&k.length<8))].sort().slice(0,512);
+      out[day]={sources,reviews,metrics,kana,goalVersion:row.goalVersion===4?4:3};
     }return out;
   }
   function mergeActivity(left,right){
     const out=normalizeActivity(left);for(const [day,b]of Object.entries(normalizeActivity(right))){
-      const a=out[day]||{sources:{},reviews:{reading:[],writing:[]}};
+      const a=out[day]||emptyActivity();
       for(const [id,counts]of Object.entries(b.sources))a.sources[id]=[0,1].map(i=>Math.max(a.sources[id]?.[i]||0,counts[i]));
       for(const mode of ['reading','writing'])a.reviews[mode]=[...new Set([...a.reviews[mode],...b.reviews[mode]])].sort().slice(0,5);
+      for(const [id,metrics]of Object.entries(b.metrics)){
+        a.metrics[id]||={};for(const [key,n]of Object.entries(metrics))a.metrics[id][key]=Math.max(a.metrics[id][key]||0,n);
+      }
+      a.kana=[...new Set([...a.kana,...b.kana])].sort().slice(0,512);
+      a.goalVersion=Math.max(a.goalVersion,b.goalVersion);
       out[day]=a;
     }return out;
+  }
+  function emptyActivity(){return {sources:{},reviews:{reading:[],writing:[]},metrics:{},kana:[],goalVersion:3};}
+  function normalizeMetrics(input){
+    return Object.fromEntries(Object.entries(object(input)).filter(([key])=>/^(kana|wordbank|listening|grammar|comprehension)\.[a-zA-Z]+$/.test(key)).map(([key,n])=>[key,finiteCount(n)]));
+  }
+  function normalizeCollections(input){
+    return Object.fromEntries(Object.entries(object(input)).filter(([id,kind])=>safeKey(id)&&/^[a-z0-9-]{1,80}$/.test(id)&&['exclusive','event'].includes(kind)));
   }
   function normalizeRuns(input){
     return Object.fromEntries(Object.entries(object(input)).filter(([id,row])=>safeKey(id)&&id.length<100&&row&&finiteCount(row.at)).sort((a,b)=>b[1].at-a[1].at||a[0].localeCompare(b[0])).slice(0,64).map(([id,row])=>[id,{answers:finiteCount(row.answers),done:!!row.done,at:finiteCount(row.at)}]));
@@ -192,30 +225,65 @@
   function activityTotals(state,day){
     const row=state.activity[day]||{sources:{},reviews:{}};
     const counts=Object.values(row.sources).reduce((sum,n)=>[sum[0]+n[0],sum[1]+n[1]],[0,0]);
-    return {reading:counts[0],writing:counts[1],correct:counts[0]+counts[1],reviewed:(row.reviews.reading||[]).length+(row.reviews.writing||[]).length};
+    const metrics={};for(const source of Object.values(row.metrics||{}))for(const [key,n]of Object.entries(source))metrics[key]=key.endsWith('.streak')?Math.max(metrics[key]||0,n):(metrics[key]||0)+n;
+    return {reading:counts[0],writing:counts[1],correct:counts[0]+counts[1],reviewed:(row.reviews.reading||[]).length+(row.reviews.writing||[]).length,metrics};
   }
   function weekKey(day){const d=new Date(day+'T12:00:00Z');return root.ModeAtlasDates.shiftDateKey(day,-((d.getUTCDay()+6)%7));}
-  function weekDays(state,day){const first=weekKey(day);return Object.keys(state.activity).filter(key=>weekKey(key)===first&&activityTotals(state,key).correct>=5).length;}
+  function correctAcrossBranches(totals){return totals.correct+Object.entries(totals.metrics).filter(([id])=>id.endsWith('.correct')&&!id.startsWith('kana.')).reduce((sum,[,n])=>sum+n,0);}
+  function weekDays(state,day){const first=weekKey(day);return Object.keys(state.activity).filter(key=>weekKey(key)===first&&correctAcrossBranches(activityTotals(state,key))>=5).length;}
   function claim(state,id,value){const key='v3:'+id,old=state.claims[key]||0;state.claims[key]=Math.max(old,finiteCount(value));return state.claims[key]-old;}
+  function goalClaimKey(period,key,id){return `v4:${period}:${key}:goal:${id}`;}
+  function dailyGoalCount(state,day){return Object.entries(state.claims).filter(([key,n])=>n>0&&(key.startsWith(`v4:daily:${day}:goal:`)||new RegExp(`^v3:${day}:goal:(recall|balance|review)$`).test(key))).length;}
+  function periodMetrics(state,key,period){
+    const days=period==='daily'?[key]:Object.keys(state.activity).filter(day=>weekKey(day)===key);
+    const metrics={},kana=new Set();let reading=0,writing=0;
+    for(const day of days){
+      const totals=activityTotals(state,day);reading+=totals.reading;writing+=totals.writing;
+      for(const [id,n]of Object.entries(totals.metrics))metrics[id]=id.endsWith('.streak')?Math.max(metrics[id]||0,n):(metrics[id]||0)+n;
+      for(const char of state.activity[day]?.kana||[])kana.add(char);
+      metrics['study.goals']=(metrics['study.goals']||0)+dailyGoalCount(state,day);
+      if(correctAcrossBranches(totals)>=5)metrics['study.days']=(metrics['study.days']||0)+1;
+    }
+    return {...metrics,'kana.correct':reading+writing,'kana.reading':reading,'kana.writing':writing,'kana.balance':Math.min(10,reading)+Math.min(10,writing),'kana.variety':kana.size};
+  }
+  function reconcilePeriod(state,key,period){
+    const metrics=periodMetrics(state,key,period);let xp=0;
+    for(const goal of root.ModeAtlasRewardRules.goals(key,period))if((metrics[goal.metric]||0)>=goal.target){
+      const id=goalClaimKey(period,key,goal.id),old=state.claims[id]||0;state.claims[id]=Math.max(old,goal.xp);xp+=state.claims[id]-old;
+    }
+    return xp;
+  }
+  function reconcileGoals(state,day,weekly=true){return reconcilePeriod(state,day,'daily')+(weekly?reconcilePeriod(state,weekKey(day),'weekly'):0);}
+  function addActivity(state,day,metrics,kana=[]){
+    const row=state.activity[day]||emptyActivity(),id=getDeviceId();row.goalVersion=4;
+    row.metrics[id]||={};for(const [key,n]of Object.entries(normalizeMetrics(metrics)))row.metrics[id][key]=key.endsWith('.streak')?Math.max(row.metrics[id][key]||0,n):(row.metrics[id][key]||0)+n;
+    row.kana=[...new Set([...row.kana,...kana])].sort().slice(0,512);state.activity[day]=row;return row;
+  }
+  function recordActivity(input){
+    const state=ensureSeeded({sync:false,emit:false}),run=state.runs[input.runId];
+    if(!run||run.done||input.index!==run.answers+1)return {duplicate:true,xp:0,parts:{}};
+    const metrics=normalizeMetrics(input.metrics);if(!Object.keys(metrics).length)return {duplicate:false,xp:0,parts:{}};
+    const at=Number(input.at||Date.now()),day=dayKey(at);addActivity(state,day,metrics);
+    const goals=reconcileGoals(state,day);run.answers=input.index;run.at=at;persistState(state,{source:'activity'});
+    return {duplicate:false,xp:goals,parts:{goals}};
+  }
   function addCredit(state,kind,value){const id=getDeviceId();state.credits[id]||={answer:0,completion:0,accuracy:0,streak:0};state.credits[id][kind]+=finiteCount(value);}
   function startRun(id){const state=ensureSeeded({sync:false,emit:false});if(!state.runs[id])state.runs[id]={answers:0,done:false,at:Date.now()};persistState(state,{source:'practice.start',emit:false});}
   function recordAnswer(input){
     const state=ensureSeeded({sync:false,emit:false}),run=state.runs[input.runId];
     if(!run||run.done||input.index!==run.answers+1)return {duplicate:true,xp:0,parts:{}};
     const at=Number(input.at||Date.now()),day=dayKey(at),mode=input.mode==='writing'?'writing':'reading';
-    const count=input.correct?finiteCount(input.units):0,sourceId=getDeviceId(),parts={answers:count*2};
+    const count=input.correct?finiteCount(input.units):0,sourceId=getDeviceId();
+    const rate=root.ModeAtlasRewardRules.kanaRate(input.poolSize,input.assisted),parts={answers:count*rate};
     const source=state.sources[sourceId]||{};source[`kana.${mode}.correct`]=finiteCount(source[`kana.${mode}.correct`])+count;state.sources[sourceId]=source;
-    addCredit(state,'answer',count);
-    const activity=state.activity[day]||{sources:{},reviews:{reading:[],writing:[]}};
+    addCredit(state,'answer',count*(rate-1));
+    const metrics={'kana.independent':input.assisted?0:count,'kana.broad':input.poolSize>=45?count:0,'kana.hiragana':input.correct?finiteCount(input.hiragana):0,'kana.katakana':input.correct?finiteCount(input.katakana):0,'kana.streak':input.assisted?0:finiteCount(input.streak)};
+    const activity=addActivity(state,day,metrics,input.correct?(input.kana||[]):[]);
     activity.sources[sourceId]||=[0,0];activity.sources[sourceId][mode==='writing'?1:0]+=count;
     activity.reviews[mode]=[...new Set([...activity.reviews[mode],...(input.reviewed||[])])].sort().slice(0,5);state.activity[day]=activity;
     parts.review=claim(state,`${day}:review:${mode}`,activity.reviews[mode].length*2);
     parts.mastery=0;for(const item of input.milestones||[])if(item.stage>=2)parts.mastery+=claim(state,`mastery:${mode}:${item.kana}:${item.stage}`,item.stage===3?25:10);
-    const totals=activityTotals(state,day);parts.goals=0;
-    if(totals.correct>=20)parts.goals+=claim(state,`${day}:goal:recall`,10);
-    if(totals.reading>=5&&totals.writing>=5)parts.goals+=claim(state,`${day}:goal:balance`,10);
-    if(totals.reviewed>=5)parts.goals+=claim(state,`${day}:goal:review`,10);
-    if(weekDays(state,day)>=4)parts.goals+=claim(state,`${weekKey(day)}:goal:week`,25);
+    parts.goals=reconcileGoals(state,day);
     run.answers=input.index;run.at=at;
     persistState(state,{source:'practice.answer'});
     return {duplicate:false,xp:Object.values(parts).reduce((a,b)=>a+b,0),parts};
@@ -229,6 +297,12 @@
     else if(rewards.test)parts.test=claim(state,`${day}:test:${input.direction}`,rewards.test);
     else{parts.completion=rewards.completion;parts.accuracy=rewards.accuracy;addCredit(state,'completion',parts.completion);addCredit(state,'accuracy',parts.accuracy);}
     parts.streak=rewards.streak;addCredit(state,'streak',parts.streak);
+    if(rewards.eligible){
+      const finite=['guided','dailyChallenge','testMode','speedRun','timeTrial'].includes(input.mode);
+      const complete=input.completed&&finite;
+      addActivity(state,day,{'kana.sessions':1,'kana.guided':complete&&input.mode==='guided'?1:0,'kana.daily':complete&&input.mode==='dailyChallenge'?1:0,'kana.tests':complete&&input.mode==='testMode'?1:0,'kana.precise':complete&&!input.assisted&&!input.hintsEnabled&&input.correct/input.answered>=.9?1:0});
+      parts.goals=reconcileGoals(state,day);
+    }
     run.done=true;run.at=Date.now();persistState(state,{source:'practice.finish'});
     return {xp:Object.values(parts).reduce((a,b)=>a+b,0),parts};
   }
@@ -246,7 +320,7 @@
   }
   function studyDays(input,legacy=legacyStudyDays()){
     const state=input?normalizeState(input):readState();
-    return [...new Set([...Object.keys(state.activity).filter(day=>activityTotals(state,day).correct>=5),...legacy])]
+    return [...new Set([...Object.keys(state.activity).filter(day=>correctAcrossBranches(activityTotals(state,day))>=5),...legacy])]
       .filter(day=>/^\d{4}-\d{2}-\d{2}$/.test(day)).sort();
   }
   function studyStreak(days,today){
@@ -256,14 +330,34 @@
     return streak;
   }
   function routine(input,at=Date.now()){
-    const state=input?normalizeState(input):readState(),today=dayKey(at),total=activityTotals(state,today);
+    const state=input?normalizeState(input):readState(),today=dayKey(at);
     const streak=studyStreak(studyDays(state),today);
-    return {streak,weekDays:weekDays(state,today),goals:[
-      {id:'recall',label:'Recall 20 kana today',value:total.correct,target:20,xp:10},
-      {id:'balance',label:'Read 5 and write 5 today',value:Math.min(5,total.reading)+Math.min(5,total.writing),target:10,xp:10},
-      {id:'review',label:'Recall 5 due kana today',value:total.reviewed,target:5,xp:10},
-      {id:'week',label:'Practise on 4 days this week',value:weekDays(state,today),target:4,xp:25}
-    ]};
+    const goals=[];
+    for(const period of ['daily','weekly']){
+      const key=period==='daily'?today:weekKey(today),metrics=periodMetrics(state,key,period);
+      goals.push(...root.ModeAtlasRewardRules.goals(key,period).map(goal=>({...goal,value:state.claims[goalClaimKey(period,key,goal.id)]?goal.target:metrics[goal.metric]||0})));
+    }
+    return {streak,weekDays:weekDays(state,today),goals};
+  }
+  function achievementStats(input){
+    const state=input?normalizeState(input):readState(),days=new Set();let dailyGoals=0,weeklyGoals=0;
+    for(const [key,n]of Object.entries(state.claims))if(n){
+      const daily=/^v4:daily:(\d{4}-\d{2}-\d{2}):goal:/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:(recall|balance|review)$/.exec(key);
+      if(daily){dailyGoals++;if(dailyGoalCount(state,daily[1])>=3)days.add(daily[1]);}
+      if(/^v4:weekly:.*:goal:|^v3:.*:goal:week$/.test(key))weeklyGoals++;
+    }
+    const metrics={};let bestStreak=0;
+    for(const day of Object.keys(state.activity))for(const [key,n]of Object.entries(activityTotals(state,day).metrics)){metrics[key]=(metrics[key]||0)+n;if(key==='kana.streak')bestStreak=Math.max(bestStreak,n);}
+    const collections=Object.values(state.collections);
+    return {dailyGoals,weeklyGoals,goalDays:days.size,studyDays:studyDays(state).length,guidedSets:metrics['kana.guided']||0,independent:metrics['kana.independent']||0,broadRecall:metrics['kana.broad']||0,preciseSets:metrics['kana.precise']||0,bestStreak,exclusiveRewards:collections.filter(kind=>kind==='exclusive').length,eventRewards:collections.filter(kind=>kind==='event').length,collectedRewards:collections.length};
+  }
+  function recordRewardGrants(){
+    const grants=root.ModeAtlasRewardAccess?.current()?.grants||[];if(!grants.length)return;
+    const state=ensureSeeded({sync:false,emit:false});let changed=false;
+    for(const rewards of Object.values(root.ModeAtlasRewardRules.catalogue))for(const reward of rewards){
+      if(reward.grant&&grants.includes(reward.grant)&&!state.collections[reward.grant]){state.collections[reward.grant]=reward.kind==='event'?'event':'exclusive';changed=true;}
+    }
+    if(changed)persistState(state,{source:'reward.received'});
   }
   function selectAppearance(id){
     const state=readState(),item=root.ModeAtlasRewardRules.landmarks.find(x=>x.id===id);
@@ -335,7 +429,10 @@
 
   function ensureSeeded(options = {}){
     let state = readState();
-    if (state.legacySeeded) return state;
+    if (state.legacySeeded){
+      const raw=store()?.json?.(STORAGE_KEY,{})||{};
+      return Number(raw.version)<STATE_VERSION?persistState(state,{sync:false,emit:false,source:'curve.migration'}):state;
+    }
     const readingCorrect = correctFromStats('reading');
     const writingCorrect = correctFromStats('writing');
     const legacy = {};
@@ -343,6 +440,7 @@
     if (writingCorrect) legacy['kana.writing.correct'] = writingCorrect;
     if (Object.keys(legacy).length) state.sources[LEGACY_SOURCE] = legacy;
     state.legacySeeded = true;
+    state.curveCredit=legacyCurveCredit(sumXP(state));
     return persistState(state, { sync: options.sync === true, emit: options.emit !== false, source: 'legacy-seed' });
   }
 
@@ -382,6 +480,9 @@
 
   function getXP(input){
     const state = input ? normalizeState(input) : ensureSeeded({ sync: false, emit: false });
+    return sumXP(state);
+  }
+  function sumXP(state){
     let xp = 0;
     Object.values(state.sources).forEach((source) => {
       Object.entries(source).forEach(([type, count]) => { xp += finiteCount(count) * (COUNTER_XP[type] || 0); });
@@ -394,8 +495,12 @@
   }
 
   function levelRequirement(level){
-    const current = Math.max(1, Math.floor(Number(level || 1)));
-    return Math.min(800, 100 + ((current - 1) * 25));
+    return root.ModeAtlasRewardRules.levelRequirement(level);
+  }
+  function legacyCurveCredit(xp){
+    let level=1,floor=0,required=100,newFloor=0;
+    while(xp>=floor+required&&level<999){floor+=required;newFloor+=levelRequirement(level);level++;required=Math.min(800,100+(level-1)*25);}
+    return Math.max(0,newFloor+Math.floor(Math.min(1,(xp-floor)/required)*levelRequirement(level))-xp);
   }
 
   function getLevelFromXP(value){
@@ -414,7 +519,7 @@
   function getSummary(input){
     const state = input ? normalizeState(input) : ensureSeeded({ sync: false, emit: false });
     const xp = getXP(state);
-    const levelInfo = getLevelFromXP(xp);
+    const levelInfo = getLevelFromXP(Math.min(Number.MAX_SAFE_INTEGER,xp+state.curveCredit));
     const readingCorrect = counterTotal(state, 'kana.reading.correct');
     const writingCorrect = counterTotal(state, 'kana.writing.correct');
     return {
@@ -422,7 +527,7 @@
       xp,
       levelXp: levelInfo.intoLevel,
       levelRequirement: levelInfo.required,
-      nextLevelAt: levelInfo.nextAt,
+      nextLevelAt: levelInfo.nextAt-state.curveCredit,
       progress: levelInfo.required ? Math.min(1, levelInfo.intoLevel / levelInfo.required) : 0,
       readingCorrect,
       writingCorrect,
@@ -448,7 +553,7 @@
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
-    award, awardOnce, debugAdjustXP, startRun, recordAnswer, finishRun, routine, studyDays, studyStreak, selectAppearance, selectBanner, levelRequirement,
+    award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, achievementStats, recordRewardGrants, studyDays, studyStreak, selectAppearance, selectBanner, levelRequirement,
     getXP, getLifetimeCorrect, getLevelFromXP, getSummary
   });
 

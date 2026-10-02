@@ -646,7 +646,7 @@ function buildEmptySnapshot() {
     readingTests: { primary: [], backup: [], altPrimary: [], altBackup: [] },
     writingTests: { primary: [], backup: [] },
     wordBank: { items: [] },
-    progress: { state: { version: 3, legacySeeded: true, sources: {}, events: {}, adjustments: {}, credits: {}, claims: {}, activity: {}, runs: {}, appearance: {landmark:'trail',at:0}, updatedAt: now } }
+    progress: { state: window.ModeAtlasProgress.normalizeState({version:window.ModeAtlasProgress.STATE_VERSION,legacySeeded:true,updatedAt:now}) }
   };
   const sections = {};
   Object.keys(SECTION_DEFS).forEach((name) => { sections[name] = { updatedAt: now, data: empty[name] || {} }; });

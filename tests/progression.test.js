@@ -16,6 +16,86 @@ function load(seed={}){
   return {root,values,now:()=>now,setNow:value=>{now=value;},progress:root.ModeAtlasProgress,review:root.ModeAtlasReview};
 }
 function answer(env,id,index,options={}){return env.progress.recordAnswer({runId:id,index,mode:'reading',correct:true,units:1,at:env.now(),...options});}
+test('the new curve grows after the introductory levels and preserves an existing level without adding XP',()=>{
+  const e=load({modeAtlasProgress:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':6175}}}}),p=e.progress;
+  assert.deepEqual([1,5,10,20,30,50].map(p.levelRequirement),[100,300,1000,4600,11800,37000]);
+  const migrated=p.readState();assert.equal(p.getXP(),6175);assert.equal(p.getSummary().level,20);assert.equal(p.getSummary().progress,0);
+  p.startRun('endless');let answerXP=0;
+  for(let i=1;i<=111;i++)answerXP+=answer(e,'endless',i,{poolSize:150}).parts.answers;
+  assert.equal(answerXP,888);assert.equal(p.getSummary().level,20);assert.ok(p.getSummary().progress<.25);
+  assert.equal(p.readState().curveCredit,migrated.curveCredit);
+  const reloaded=load({modeAtlasProgress:p.readState()}).progress;
+  assert.deepEqual(plain(reloaded.getSummary()),plain(p.getSummary()));
+  const halfway=load({modeAtlasProgress:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':6405}}}}).progress;
+  assert.equal(halfway.getSummary().level,20);assert.equal(halfway.getSummary().progress,.4);assert.equal(halfway.getXP(),6405);
+});
+test('legacy conversion is stable across offline merges, including a zero-credit migrated account',()=>{
+  const p=load().progress;
+  const old={version:3,legacySeeded:true,sources:{a:{'kana.reading.correct':6175}}};
+  const current=p.normalizeState(old),laterOld={...old,sources:{a:{'kana.reading.correct':6300}}};
+  const merged=p.mergeStates(current,laterOld);
+  assert.equal(merged.curveCredit,current.curveCredit);assert.equal(p.getXP(merged),6300);
+  assert.deepEqual(plain(merged),plain(p.mergeStates(laterOld,current)));
+  assert.deepEqual(plain(merged),plain(p.mergeStates(merged,merged)));
+  const early=p.normalizeState({version:3,sources:{a:{'kana.reading.correct':10}}});
+  assert.equal(p.mergeStates(early,laterOld).curveCredit,0,'A completed zero-credit migration must not be repeated');
+  const other={version:3,sources:{b:{'kana.writing.correct':230}}};
+  assert.equal(p.getSummary(p.mergeStates(old,other)).progress,.4,'Two old saves convert their combined existing progress once');
+});
+test('correct-answer XP reflects the actual kana pool and hints, with no retroactive revaluation',()=>{
+  const e=load(),p=e.progress;p.startRun('rates');
+  const cases=[[5,false,2],[5,true,1],[10,false,3],[20,false,4],[46,false,6],[92,false,7],[150,false,8],[150,true,4]];
+  for(const [i,[poolSize,assisted,expected]]of cases.entries())assert.equal(answer(e,'rates',i+1,{poolSize,assisted}).parts.answers,expected);
+  assert.equal(answer(e,'rates',9,{correct:false,poolSize:150}).parts.answers,0);
+  assert.equal(answer(e,'rates',10,{units:3,poolSize:150}).parts.answers,24);
+  assert.equal(p.getLifetimeCorrect(),11);
+  assert.equal(p.getXP(),59);
+  assert.equal(load({modeAtlasProgress:p.readState()}).progress.getXP(),59);
+});
+test('daily and Monday-based weekly goals rotate deterministically with only launched branches',()=>{
+  const e=load(),rules=e.root.ModeAtlasRewardRules,seen=new Set();
+  for(let i=0;i<28;i++){
+    const at=Date.parse('2026-09-28T12:00:00Z')+i*86400000;
+    const goals=plain(e.progress.routine(undefined,at).goals);
+    assert.equal(goals.length,5);assert.equal(new Set(goals.map(g=>g.id)).size,5);
+    assert.equal(goals.filter(g=>g.period==='daily').length,3);assert.equal(goals.filter(g=>g.period==='weekly').length,2);
+    goals.forEach(g=>{seen.add(g.id);assert.ok(rules.goalBranches.includes(g.branch));});
+    assert.deepEqual(goals,plain(e.progress.routine(undefined,at+1000).goals));
+  }
+  assert.ok(seen.size>=20);
+  const weekly=day=>plain(e.progress.routine(undefined,Date.parse(day+'T12:00:00Z')).goals.filter(g=>g.period==='weekly').map(g=>g.id));
+  assert.deepEqual(weekly('2026-09-28'),weekly('2026-10-04'));assert.notDeepEqual(weekly('2026-10-04'),weekly('2026-10-05'));
+});
+test('rotating goals complete once when offline device evidence is combined',()=>{
+  const a=load({modeAtlasProgressDeviceId:'a'}),b=load({modeAtlasProgressDeviceId:'b'});
+  for(const [e,id]of [[a,'a'],[b,'b']]){e.progress.startRun(id);for(let i=1;i<=10;i++)answer(e,id,i);}
+  const left=a.progress.readState(),right=b.progress.readState(),merged=a.progress.mergeStates(left,right);
+  assert.equal(merged.claims['v4:daily:2026-09-30:goal:read-20'],40);assert.equal(a.progress.getXP(merged),80);
+  assert.deepEqual(plain(merged),plain(a.progress.mergeStates(right,left)));
+  assert.deepEqual(plain(merged),plain(a.progress.mergeStates(merged,left)));
+  assert.equal(a.progress.achievementStats(merged).dailyGoals,1);
+});
+test('new branch activity uses shared run receipts and study days without enabling unreleased goals',()=>{
+  const e=load(),p=e.progress;p.startRun('listening');
+  const input={runId:'listening',index:1,at:e.now(),metrics:{'listening.correct':5,'unknown.correct':100,'constructor':100}};
+  assert.equal(p.recordActivity(input).duplicate,false);assert.equal(p.recordActivity(input).duplicate,true);
+  assert.equal(p.routine().weekDays,1);assert.equal(p.achievementStats().studyDays,1);assert.equal(p.getXP(),0);
+  const row=Object.values(p.readState().activity['2026-09-30'].metrics)[0];assert.deepEqual(plain(row),{'listening.correct':5});
+  assert.ok(p.routine().goals.every(g=>g.branch==='kana'));
+});
+test('achievement evidence counts real goal completions, unassisted streaks and received reward sets',()=>{
+  const e=load(),p=e.progress;p.startRun('set');
+  for(let i=1;i<=20;i++)answer(e,'set',i,{poolSize:46,streak:i,kana:['あ','い','う','え','お'][i%5].split(''),hiragana:1});
+  p.finishRun({runId:'set',direction:'reading',mode:'guided',count:20,answered:20,correct:20,unique:5,poolSize:46,bestStreak:20,completed:true});
+  let stats=p.achievementStats();assert.equal(stats.dailyGoals,3);assert.equal(stats.goalDays,1);assert.equal(stats.guidedSets,1);assert.equal(stats.preciseSets,1);assert.equal(stats.bestStreak,20);assert.equal(stats.independent,20);assert.equal(stats.broadRecall,20);
+  e.root.ModeAtlasRewardAccess={current:()=>({allCustom:true,grants:[]})};p.recordRewardGrants();assert.equal(p.achievementStats().collectedRewards,0);
+  e.root.ModeAtlasRewardRules={...e.root.ModeAtlasRewardRules,catalogue:{...e.root.ModeAtlasRewardRules.catalogue,avatars:[{grant:'autumn-2026',kind:'event'}]}};
+  e.root.ModeAtlasRewardAccess={current:()=>({grants:['hunny-tester','autumn-2026','unknown-grant']})};
+  const xp=p.getXP();p.recordRewardGrants();p.recordRewardGrants();stats=p.achievementStats();
+  assert.equal(stats.exclusiveRewards,1);assert.equal(stats.eventRewards,1);assert.equal(stats.collectedRewards,2);assert.equal(p.getXP(),xp);
+  e.root.ModeAtlasRewardAccess={current:()=>({grants:[]})};p.recordRewardGrants();assert.equal(p.achievementStats().collectedRewards,2);
+  assert.equal(load().progress.achievementStats().collectedRewards,0,'A different account does not inherit receipts');
+});
 test('banner rewards migrate safely and stay independent of titles, frames and XP',()=>{
   const e=load({modeAtlasProgress:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':700}},appearance:{landmark:'grove',at:10}}}),p=e.progress;
   assert.deepEqual(plain(p.readState().appearance),{landmark:'grove',at:10,banner:'plain',bannerAt:0});
@@ -59,7 +139,7 @@ test('new answers earn 2 XP; duplicate, out-of-order and completed-run answers c
 test('completion, accuracy and streak rewards are earned once and exclude incomplete or assisted perfection',()=>{
   const e=load();e.progress.startRun('set');for(let i=1;i<=10;i++)answer(e,'set',i);
   const session={runId:'set',direction:'reading',mode:'guided',count:10,answered:10,correct:10,unique:5,bestStreak:10,completed:true};
-  assert.deepEqual(plain(e.progress.finishRun(session).parts),{completion:5,accuracy:15,streak:5});
+  assert.deepEqual(plain(e.progress.finishRun(session).parts),{completion:5,accuracy:13,streak:4,goals:0});
   assert.equal(e.progress.finishRun(session).xp,0);
   const rules=e.root.ModeAtlasRewardRules;
   assert.equal(rules.session({...session,completed:false}).completion,0);
@@ -76,13 +156,13 @@ test('offline devices merge counters, goals and one-time mastery without double-
   assert.deepEqual(plain(merged),plain(a.progress.mergeStates(right,left)));
   assert.deepEqual(plain(merged),plain(a.progress.mergeStates(merged,merged)));
   assert.equal(a.progress.getLifetimeCorrect(merged),20);
-  assert.equal(a.progress.getXP(merged),80); // 40 answers + 20 direction milestones + two 10 XP goals.
+  assert.equal(a.progress.getXP(merged),60); // 40 answers + 20 direction milestones; today's Reading goal needs 20 Reading answers.
   const same=b.progress.mergeStates(left,left);assert.equal(b.progress.getXP(same),30);
 });
 test('daily/test completion awards are capped per direction and day, with only improved accuracy topping up',()=>{
   const e=load();
-  function finish(id,correct){e.progress.startRun(id);return e.progress.finishRun({runId:id,direction:'reading',day:'2026-09-30',mode:'dailyChallenge',answered:20,correct,unique:12,bestStreak:0,completed:true}).xp;}
-  assert.equal(finish('first',16),15);assert.equal(finish('same',16),0);assert.equal(finish('better',20),10);assert.equal(finish('again',20),0);
+  function finish(id,correct){e.progress.startRun(id);return e.progress.finishRun({runId:id,direction:'reading',day:'2026-09-30',mode:'dailyChallenge',answered:20,correct,unique:12,poolSize:150,bestStreak:0,completed:true}).parts.daily;}
+  assert.equal(finish('first',16),80);assert.equal(finish('same',16),0);assert.equal(finish('better',20),30);assert.equal(finish('again',20),0);
 });
 test('review bonuses are limited to five distinct due kana per direction per day',()=>{
   const e=load();e.progress.startRun('review');
