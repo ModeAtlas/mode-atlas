@@ -61,7 +61,10 @@ test('native account chooser uses enabled methods and Settings owns account dele
   await page.locator('#profileAuthBtn').click();
   await expect(page.locator('[data-ma-account-provider="google.com"]')).toHaveText('Continue with Google');
   await expect(page.locator('[data-ma-account-provider="apple.com"]')).toHaveText('Continue with Apple');
-  await page.screenshot({path:testInfo.outputPath('apple-account-chooser.png')});
+  await expect(page.locator('[data-ma-account-provider="apple.com"]')).toHaveCSS('background-color','rgb(255, 255, 255)');
+  await expect.poll(() => page.locator('.ma-account-apple img').evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
+  await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');
+  await page.screenshot({path:testInfo.outputPath('apple-account-chooser.png'),animations:'disabled'});
   await expect(page.locator('#maAccount-profile')).toHaveAttribute('aria-hidden','true');
   await page.locator('.ma-dialog__close').click();
   await page.evaluate(() => {

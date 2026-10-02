@@ -5,6 +5,7 @@ iOS upload build: **2080005**. This release enables native Sign in with Apple al
 ## Code included
 
 - Native Apple sign-in, first-authorization name preservation, normal cancellation, and the existing explicit provider-linking flow.
+- The Apple action uses Apple's original logo artwork, a black-and-white button, and the approved “Continue with Apple” title. The existing linking confirmation still explains which account will be connected.
 - Account deletion reauthenticates the same user, obtains the JS Firebase ID token, revokes Apple authorization, then calls the existing server deletion owner. A failed revocation or changed account stops deletion and retains the device save.
 - The native bridge sends revocation to Firebase's documented `accounts:revokeToken` endpoint, using the bundled Firebase project and native bundle header. It has a bounded network timeout and does not persist or log credentials. The native Firebase SDK's revocation method requires a native currentUser, so it cannot be used with our `skipNativeAuth` architecture. The native SDK itself omits redirectUri for a native Apple authorization code; the bridge follows that native request shape.
 - App-only Apple entitlements and separate widget entitlements. `ios:sync` migrates existing local App Group settings without changing the registered group or unrelated local settings. No team ID, private key or App Group is invented.
@@ -57,6 +58,7 @@ Automated checks validate code, UI, configuration, simulator builds and an unsig
 
 - Firebase Apple setup: https://firebase.google.com/docs/auth/ios/apple
 - Apple capability setup: https://developer.apple.com/help/account/identifiers/enable-app-capabilities/
+- Apple button design and original artwork: https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple and https://developer.apple.com/design/resources/
 - Firebase token revocation: https://docs.cloud.google.com/identity-platform/docs/reference/rest/v2/accounts/revokeToken
 - Native request shape: https://github.com/firebase/firebase-ios-sdk/blob/12.7.0/FirebaseAuth/Sources/Swift/Backend/RPC/RevokeTokenRequest.swift
 - Native session requirement: https://github.com/firebase/firebase-ios-sdk/blob/12.7.0/FirebaseAuth/Sources/Swift/Auth/Auth.swift
