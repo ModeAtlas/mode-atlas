@@ -1,13 +1,49 @@
 import tempfile
 import unittest
+import plistlib
 from pathlib import Path
 from unittest.mock import patch
 
 import sync_ios_project as release
 from configure_ios_signing import signing_plan
+from configure_ios_widgets import sync_widget_configuration
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_apple_entitlements_remain_on_app_with_or_without_widget_sharing(self):
+        root = release.ROOT / 'ios/App'
+        for app_path, widget_path in [('App/App.entitlements', 'Shared/LocalOnly.entitlements'),
+                                      ('App/AppWithWidgets.entitlements', 'Shared/WidgetSharing.entitlements')]:
+            app = plistlib.loads((root / app_path).read_bytes())
+            widget = plistlib.loads((root / widget_path).read_bytes())
+            self.assertEqual(app['com.apple.developer.applesignin'], ['Default'])
+            self.assertNotIn('com.apple.developer.applesignin', widget)
+            self.assertEqual(app.get('com.apple.security.application-groups'), widget.get('com.apple.security.application-groups'))
+        project = release.sync_auth_entitlements(release.PBXPROJ.read_text())
+        self.assertEqual(project.count('CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_APP_ENTITLEMENTS)";'), 2)
+        self.assertEqual(project.count('CODE_SIGN_ENTITLEMENTS = "$(MODE_ATLAS_WIDGET_ENTITLEMENTS)";'), 2)
+        self.assertEqual(project, release.sync_auth_entitlements(project))
+
+    def test_existing_app_group_is_migrated_without_losing_local_settings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / 'widgets.xcconfig'
+            config.write_text('// local\nMODE_ATLAS_APP_GROUP = group.real.progress\nMODE_ATLAS_ENTITLEMENTS = Shared/WidgetSharing.entitlements\nOTHER = keep\n')
+            sync_widget_configuration(config)
+            updated = config.read_text()
+            self.assertIn('MODE_ATLAS_APP_GROUP = group.real.progress', updated)
+            self.assertIn('OTHER = keep', updated)
+            self.assertIn('MODE_ATLAS_APP_ENTITLEMENTS = App/AppWithWidgets.entitlements', updated)
+            self.assertNotIn('MODE_ATLAS_ENTITLEMENTS =', updated)
+            sync_widget_configuration(config)
+            self.assertEqual(config.read_text(), updated)
+            config.write_text('MODE_ATLAS_APP_GROUP =\n')
+            with self.assertRaises(ValueError):
+                sync_widget_configuration(config)
+            self.assertEqual(config.read_text(), 'MODE_ATLAS_APP_GROUP =\n')
+            config.unlink()
+            sync_widget_configuration(config)
+            self.assertFalse(config.exists(), 'No App Group is invented for an unconfigured Mac')
+
     def test_upload_sequence_is_independent_and_keeps_both_targets_together(self):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / 'release.xcconfig'
@@ -49,6 +85,17 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             signing_plan('', requested='not-a-team')
         self.assertIn('DEVELOPMENT_TEAM = ABC1234567', signing_plan('', requested='ABC1234567')[1])
+
+    def test_explicit_paid_team_replaces_old_local_team_without_changing_widgets(self):
+        project = 'DEVELOPMENT_TEAM = NEW1234567;\nMODE_ATLAS_APP_GROUP = group.real.progress;\n'
+        local = 'DEVELOPMENT_TEAM = OLD1234567\nOTHER = keep\n'
+        with self.assertRaises(ValueError):
+            signing_plan(project, local)
+        updated, settings = signing_plan(project, local, requested='NEW1234567')
+        self.assertIn('group.real.progress', updated)
+        self.assertNotIn('OLD1234567', settings)
+        self.assertIn('DEVELOPMENT_TEAM = NEW1234567', settings)
+        self.assertIn('OTHER = keep', settings)
 
 
 if __name__ == '__main__':

@@ -32,6 +32,15 @@ test('deletion and receipt lookup remain bound to the originally confirmed accou
 });
 
 const identity=require('../assets/app/mode-atlas-social-identity.js');
+test('server and client agree on migrated levels, new XP and rotating study days',()=>{
+  const createProgress=require('../assets/app/mode-atlas-progress.js'),rules=require('../assets/app/mode-atlas-reward-rules.js'),dates=require('../assets/app/mode-atlas-date.js');
+  const owner=createProgress({ModeAtlasRewardRules:rules,ModeAtlasDates:dates});
+  const state=owner.normalizeState({version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':6405}}});
+  state.credits.newDevice={answer:700};
+  const projected=require('../backend/functions/projection.cjs').projectSave({sections:{progress:{data:{state}}}});
+  assert.equal(projected.level,owner.getSummary(state).level);assert.equal(projected.xp,7105);
+  assert.equal(projected.level,20);
+});
 test('the server projects only unlocked banners from the shared save, with a safe legacy default',()=>{
   const {projectSave,publicProfile}=require('../backend/functions/projection.cjs');
   const save=(xp,banner)=>({sections:{progress:{data:{state:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':xp}},appearance:{landmark:'grove',at:1,banner,bannerAt:2}}}}}});

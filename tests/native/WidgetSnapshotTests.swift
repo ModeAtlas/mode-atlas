@@ -58,6 +58,23 @@ struct WidgetSnapshotTests {
         assert(decodedAtlas.routineStreak(at: calendarDay(2, after: now)) == 0)
         atlas.nextLevel = 3; assert(!atlas.isValid); atlas.nextLevel = 5
         atlas.goals = [atlas.goals!.first!]; assert(!atlas.isValid)
+        var rotating = sample(version: 4)
+        rotating.title = "Trail Finder"; rotating.frame = "plain"; rotating.studyStreak = 3; rotating.lastStudyDay = day
+        rotating.goals = [ModeAtlasWidgetGoal(id: "read-20", label: "Read 20 kana correctly", value: 20, target: 20, period: "daily"),
+                          ModeAtlasWidgetGoal(id: "broad-15", label: "Recall 15 kana from a pool of at least 45", value: 6, target: 15, period: "daily"),
+                          ModeAtlasWidgetGoal(id: "streak-10", label: "Reach a 10-answer streak without hints", value: 4, target: 10, period: "daily"),
+                          ModeAtlasWidgetGoal(id: "days-3", label: "Practise on 3 days this week", value: 2, target: 3, period: "weekly"),
+                          ModeAtlasWidgetGoal(id: "tests-2", label: "Complete 2 formal tests this week", value: 1, target: 2, period: "weekly")]
+        assert(rotating.isValid && rotating.goals(at: now).count == 5)
+        let decodedRotation = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONEncoder().encode(rotating))
+        assert(decodedRotation.goals(at: tomorrow).allSatisfy(\.isWeekly), "Expired daily labels must disappear until the app publishes today's rotation")
+        assert(decodedRotation.goals(at: calendarDay(7, after: now)).isEmpty, "Expired weekly labels must also disappear")
+        assert(decodedRotation.goals(at: now).filter(\.isWeekly).count == 2)
+        var highLevel = try JSONSerialization.jsonObject(with: JSONEncoder().encode(rotating)) as! [String: Any]
+        highLevel["levelRequirement"] = 163000
+        let higherCurve = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: highLevel))
+        assert(higherCurve.isValid, "High-level requirements on the new curve must remain usable")
+        rotating.goals![0].period = "weekly"; assert(!rotating.isValid, "A snapshot requires three daily and two weekly goals")
         assert(ModeAtlasWidgetStore.read() == nil, "Unprovisioned builds must not read another container")
         testActivityTiming()
         print("Widget bounds, v1 migration, retained totals, first-minute boundaries, minimal timelines, calendar rollover and round-trip passed")

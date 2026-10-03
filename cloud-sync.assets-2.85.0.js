@@ -1,5 +1,5 @@
 let initializeApp, getApps, getApp;
-let getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, linkWithCredential, reauthenticateWithPopup, reauthenticateWithCredential, signOut, onAuthStateChanged;
+let getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, linkWithCredential, reauthenticateWithPopup, reauthenticateWithCredential, updateProfile, signOut, onAuthStateChanged;
 let getFirestore, doc, getDoc, setDoc;
 let firebaseModulesPromise = null;
 let firebaseModulesLoaded = false;
@@ -91,6 +91,7 @@ async function loadFirebaseModules() {
     linkWithCredential = authMod.linkWithCredential;
     reauthenticateWithCredential = authMod.reauthenticateWithCredential;
     reauthenticateWithPopup = authMod.reauthenticateWithPopup;
+    updateProfile = authMod.updateProfile;
     signOut = authMod.signOut;
     onAuthStateChanged = authMod.onAuthStateChanged;
     return true;
@@ -645,7 +646,7 @@ function buildEmptySnapshot() {
     readingTests: { primary: [], backup: [], altPrimary: [], altBackup: [] },
     writingTests: { primary: [], backup: [] },
     wordBank: { items: [] },
-    progress: { state: { version: 3, legacySeeded: true, sources: {}, events: {}, adjustments: {}, credits: {}, claims: {}, activity: {}, runs: {}, appearance: {landmark:'trail',at:0}, updatedAt: now } }
+    progress: { state: window.ModeAtlasProgress.normalizeState({version:window.ModeAtlasProgress.STATE_VERSION,legacySeeded:true,updatedAt:now}) }
   };
   const sections = {};
   Object.keys(SECTION_DEFS).forEach((name) => { sections[name] = { updatedAt: now, data: empty[name] || {} }; });
@@ -1303,11 +1304,12 @@ async function performProviderSignIn(providerId) {
         error.code = 'native-auth-web-session-unavailable';
         throw error;
       }
-      const webCredential = await nativeProviderCredential(providerId);
+      const nativeResult = await window.AtlasPlatform?.authenticate?.(providerId);
+      const webCredential = credentialFromNativeResult(providerId, nativeResult);
       const handoff = signInWithCredential(auth, webCredential);
       let timer;
       try {
-        await Promise.race([
+        const result = await Promise.race([
           handoff,
           new Promise((_, reject) => {
             timer = setTimeout(() => {
@@ -1317,6 +1319,12 @@ async function performProviderSignIn(providerId) {
             }, 15000);
           })
         ]);
+        // Apple supplies the name only during the first authorization. Keep it
+        // in the existing Firebase profile without overwriting a chosen name.
+        if (isApple && nativeResult.displayName && result?.user && !result.user.displayName) {
+          try { await updateProfile(result.user, {displayName:nativeResult.displayName}); }
+          catch (error) { console.warn('Apple profile name could not be saved.', error?.code || 'profile-update-failed'); }
+        }
       } finally {
         clearTimeout(timer);
       }
@@ -1338,6 +1346,7 @@ async function performProviderSignIn(providerId) {
     await syncNow();
     return true;
   } catch (error) {
+    if (String(error?.code || '') === 'auth/cancelled-popup-request') return false;
     console.error(providerName + ' sign-in failed.', error);
     const code = String(error?.code || '');
     const nativeSetupProblem = (code.includes('native-auth') && code !== 'native-auth-handoff-timeout')
@@ -1382,6 +1391,7 @@ async function performProviderLink(providerId) {
     window.ModeAtlasFeedback?.toast?.('Account linked. Both sign-in methods now use the same progress.', 'success');
     return true;
   } catch (error) {
+    if (String(error?.code || '') === 'auth/cancelled-popup-request') return false;
     console.error('Provider linking failed.', error);
     await window.ModeAtlasFeedback?.alert?.({
       kicker:'Account', title:'Could not link account',
@@ -1434,7 +1444,9 @@ async function performAccountDeletion() {
     if (cloudHydrationPromise) await cloudHydrationPromise;
     if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
     if (providerId === 'apple.com') {
-      if (!appleAuthorizationCode || !await window.AtlasPlatform?.revokeAppleAuthorization?.(appleAuthorizationCode)) {
+      const firebaseIdToken = await user.getIdToken();
+      if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
+      if (!appleAuthorizationCode || !await window.AtlasPlatform?.revokeAppleAuthorization?.(appleAuthorizationCode, firebaseIdToken)) {
         throw new Error('Apple authorization could not be revoked. Please try again.');
       }
     }
@@ -1466,6 +1478,7 @@ async function performAccountDeletion() {
     window.ModeAtlasFeedback?.toast?.(result.cleanupPending ? 'Your account was deleted. Cloud data removal is finishing automatically.' : 'Your account and learning data were deleted.', 'success');
     return true;
   } catch (error) {
+    if (String(error?.code || '') === 'auth/cancelled-popup-request') return false;
     console.error('Account deletion failed.', error);
     await window.ModeAtlasFeedback?.alert?.({
       kicker:'Account', title:'Could not confirm account deletion',

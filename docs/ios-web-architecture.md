@@ -5,6 +5,12 @@ the canonical source of page markup, study behavior, local save format, Firebase
 session and Firestore sync. The iOS app bundles those same pages and assets in a
 Capacitor WebView. It does not load the live website at runtime.
 
+Current Apple developer activation: [2.84.0 setup](apple-developer-2.84.0.md).
+Native Apple sign-in is enabled from 2.84.0; the older Personal Team notes below
+describe historical releases. App and widget use separate entitlement selectors.
+The existing JS session supplies the authenticated token for native Apple
+authorization revocation, avoiding a second native Firebase session.
+
 ## Source ownership
 
 | Concern | Owner | Used by |

@@ -5,7 +5,6 @@
   const ranks={plain:'Original',grove:'Bronze',bridge:'Silver',summit:'Gold',lantern:'Amethyst',horizon:'Diamond'};
   const rules=root.ModeAtlasRewardRules;
   const access=()=>root.ModeAtlasRewardAccess?.current()||{};
-  const compactLabels={recall:'Recall 20 kana',balance:'Read 5 · Write 5',review:'Recall 5 due kana'};
   const button=(label,cls='ma-button ma-button--ghost')=>{const node=el('button',cls,label);node.type='button';return node;};
   function appearance(){
     const state=root.ModeAtlasProgress.readState(),level=root.ModeAtlasProgress.getSummary(state).level;
@@ -66,9 +65,11 @@
   function renderGoals(host,{compact=false}={}){
     if(!host)return;
     const routine=root.ModeAtlasProgress.routine();host.replaceChildren();
-    for(const goal of routine.goals.filter(goal=>!compact||goal.id!=='week')){
+    for(const goal of routine.goals.filter(goal=>!compact||goal.period==='daily')){
       const complete=goal.value>=goal.target,card=el('div','ma-routine-goal');card.dataset.goal=goal.id;card.dataset.complete=String(complete);
-      card.append(el('strong','',compact?compactLabels[goal.id]:goal.label));
+      card.dataset.period=goal.period;
+      if(!compact)card.append(el('small','ma-routine-goal__period',goal.period==='weekly'?'This week':'Today'));
+      card.append(el('strong','',compact?goal.short:goal.label));
       const value=el('span','',compact?`${Math.min(goal.target,goal.value)}/${goal.target}${complete?' ✓':''}`:complete?`✓ Complete · +${goal.xp} XP`:`${Math.min(goal.target,goal.value)} / ${goal.target} · +${goal.xp} XP`);
       card.append(value);
       const meter=el('progress');meter.max=goal.target;meter.value=Math.min(goal.target,goal.value);meter.setAttribute('aria-label',goal.label);card.append(meter);host.append(card);
@@ -77,6 +78,7 @@
   function goalPanel(){
     const panel=el('div','ma-atlas-panel');
     panel.append(el('h3','','Daily & weekly goals'));
+    panel.append(el('p','ma-atlas-rewards__note','A fresh set each day. Weekly goals rotate on Monday.'));
     const goals=el('div','ma-routine-goals');renderGoals(goals);panel.append(goals);
     const reviewActions=el('div','ma-atlas-rewards__actions');
     for(const mode of ['reading','writing']){

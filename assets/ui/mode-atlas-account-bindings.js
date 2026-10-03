@@ -220,7 +220,18 @@
       button.type = 'button';
       button.className = 'ma-button ma-button--wide';
       button.dataset.maAccountProvider = id;
-      button.textContent = connected ? name + ' · Connected' : (user ? 'Link ' : 'Continue with ') + name;
+      if (id === 'apple.com' && !connected) {
+        button.classList.add('ma-account-apple');
+        const logo = document.createElement('img');
+        logo.src = '/assets/icons/apple-sign-in.svg';
+        logo.alt = '';
+        logo.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.textContent = 'Continue with Apple';
+        button.append(logo, label);
+      } else {
+        button.textContent = connected ? name + ' · Connected' : (user ? 'Link ' : 'Continue with ') + name;
+      }
       button.disabled = connected || !available.includes(id);
       button.addEventListener('click', async () => {
         if (accountActionBusy || (sync?.getUser?.()?.uid || null) !== uid) return;

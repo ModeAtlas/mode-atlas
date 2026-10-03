@@ -118,3 +118,13 @@ html[data-ma-large-text] .ma-account-tab{flex-direction:row;gap:8px;min-height:4
 /* Provider choice uses the shared dialog; account state stays in cloud-sync. */
 .ma-account-methods{display:grid;gap:12px;}
 .ma-account-methods .ma-button{min-height:48px;}
+/* Apple's original padded artwork fills the button height without cropping. */
+.ma-account-methods .ma-account-apple{
+  --ma-button-bg:#fff;--ma-button-bg-hover:#fff;--ma-button-color:#000;
+  --ma-button-border:#fff;--ma-button-border-hover:#fff;
+  --ma-apple-height:max(48px,3rem);
+  height:var(--ma-apple-height);padding:0 8% 0 0;gap:0;border:0;overflow:hidden;
+  font:500 calc(var(--ma-apple-height) * .43)/1.05 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+}
+.ma-account-apple img{height:100%;width:auto;flex:none;}
+.ma-account-apple span{flex:1;min-width:0;}

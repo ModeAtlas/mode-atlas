@@ -6,10 +6,12 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.83.1
+Version: 2.85.0
 
 Development and release requirements for both platforms: [Web and iOS architecture](docs/ios-web-architecture.md).
-Current shared rewards release and backend rollout: [2.83.0](docs/exclusive-rewards-2.83.0.md).
+XP, rotating goals, achievements and rollout: [2.85.0](docs/progression-2.85.0.md).
+Shared reward catalogue and backend setup: [2.83.0](docs/exclusive-rewards-2.83.0.md).
+Paid Apple developer setup, Firebase activation and device checks: [2.84.0](docs/apple-developer-2.84.0.md).
 
 ## 2.20.19
 - Made `ModeAtlasKanaData` the single canonical kana inventory owner (240 kana) and moved Kana Metrics/Achievements to consume the same collections and mastery rules.

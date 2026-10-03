@@ -13,6 +13,7 @@ import json
 import subprocess
 
 from validate_ios_firebase_config import PLIST as FIREBASE_PLIST, validate as validate_firebase
+from configure_ios_widgets import sync_widget_configuration
 
 ROOT = Path(__file__).resolve().parent
 VERSION_SOURCE = ROOT / "assets/app/mode-atlas-version.js"
@@ -121,10 +122,37 @@ def sync() -> tuple[str, int, bool]:
         raise SystemExit("Could not synchronize the Firebase callback scheme in both Xcode configurations.")
 
     updated = sync_privacy_resources(updated)
+    updated = sync_auth_entitlements(updated)
+    try:
+        sync_widget_configuration()
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     changed = updated != source
     if changed:
         PBXPROJ.write_text(updated, encoding="utf-8")
     return version, build, changed
+
+
+def sync_auth_entitlements(source: str) -> str:
+    """App-only Apple sign-in must survive local widget and signing selections."""
+    counts = {'App': 0, 'ModeAtlasWidgets': 0}
+    def update(match):
+        block = match.group(0)
+        owner = next((name for name in counts if f'INFOPLIST_FILE = {name}/Info.plist;' in block), None)
+        if owner is None:
+            return block
+        setting = 'MODE_ATLAS_APP_ENTITLEMENTS' if owner == 'App' else 'MODE_ATLAS_WIDGET_ENTITLEMENTS'
+        replacement = f'CODE_SIGN_ENTITLEMENTS = "$({setting})";'
+        if 'CODE_SIGN_ENTITLEMENTS = ' not in block:
+            block = block.replace(f'INFOPLIST_FILE = {owner}/Info.plist;', replacement + f'\n\t\t\t\tINFOPLIST_FILE = {owner}/Info.plist;')
+        else:
+            block = re.sub(r'CODE_SIGN_ENTITLEMENTS = [^;]+;', replacement, block)
+        counts[owner] += 1
+        return block
+    updated = re.sub(r'buildSettings = \{[^{}]*\};', update, source)
+    if counts != {'App': 2, 'ModeAtlasWidgets': 2}:
+        raise SystemExit('Could not identify the app and widget signing configurations; project left unchanged.')
+    return updated
 
 
 def normalize_spm_link() -> None:

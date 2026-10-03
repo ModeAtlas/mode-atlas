@@ -5,6 +5,7 @@ import UserNotifications
 import WidgetKit
 import AVFAudio
 import MessageUI
+import FirebaseCore
 
 @objc(ModeAtlasNativePlugin)
 public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, NotificationHandlerProtocol, MFMailComposeViewControllerDelegate {
@@ -14,7 +15,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
-        "exportBackup", "getAccessibilityPreferences", "setAppIcon", "playSound", "stopSounds", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion"
+        "exportBackup", "getAccessibilityPreferences", "setAppIcon", "playSound", "stopSounds", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion", "revokeAppleAuthorization"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
@@ -32,6 +33,39 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     @objc func getAppVersion(_ call: CAPPluginCall) {
         call.resolve(["version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
                       "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "", "platform": "ios"])
+    }
+
+    @objc func revokeAppleAuthorization(_ call: CAPPluginCall) {
+        guard let code = call.getString("authorizationCode"), !code.isEmpty,
+              let idToken = call.getString("firebaseIdToken"), !idToken.isEmpty,
+              let apiKey = FirebaseApp.app()?.options.apiKey,
+              let bundleID = Bundle.main.bundleIdentifier else {
+            call.reject("Apple authorization revocation is unavailable.", "apple-revocation-unavailable"); return
+        }
+        // Firebase's native revokeToken method requires a native currentUser.
+        // JS Auth owns our only session, so send its fresh token to the same
+        // documented endpoint. Credentials are never persisted or logged.
+        var components = URLComponents(string: "https://identitytoolkit.googleapis.com/v2/accounts:revokeToken")!
+        components.queryItems = [URLQueryItem(name: "key", value: apiKey)]
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(bundleID, forHTTPHeaderField: "X-Ios-Bundle-Identifier")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: [
+            "providerId": "apple.com", "tokenType": "CODE", "token": code, "idToken": idToken
+        ])
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 15
+        configuration.timeoutIntervalForResource = 20
+        let session = URLSession(configuration: configuration)
+        session.dataTask(with: request) { _, response, error in
+            defer { session.finishTasksAndInvalidate() }
+            guard error == nil, let status = (response as? HTTPURLResponse)?.statusCode, (200..<300).contains(status) else {
+                call.reject("Apple authorization could not be revoked. Please try again.", "apple-revocation-failed")
+                return
+            }
+            call.resolve(["revoked": true])
+        }.resume()
     }
 
     @objc func shareFriendCode(_ call: CAPPluginCall) {

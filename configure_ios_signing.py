@@ -14,13 +14,16 @@ TEAM_LINE = re.compile(r'^[ \t]*(?:DEVELOPMENT_TEAM|DevelopmentTeam) = "?([A-Z0-
 
 
 def signing_plan(project: str, local: str = '', requested: str | None = None) -> tuple[str, str]:
-    teams = set(TEAM_LINE.findall(project)) | set(TEAM_LINE.findall(local))
+    project_teams = set(TEAM_LINE.findall(project))
+    teams = project_teams | set(TEAM_LINE.findall(local))
     if requested:
         if not re.fullmatch(r'[A-Z0-9]{10}', requested):
             raise ValueError('Use the 10-character Apple team ID from Xcode.')
-        if teams - {requested}:
+        if project_teams - {requested}:
             raise ValueError('Different signing teams are present. Resolve the team selection in Xcode first.')
-        teams.add(requested)
+        # An explicit paid-team selection can replace this Mac's previous
+        # Personal Team. A mixed app/widget project still requires resolution.
+        teams = {requested}
     if len(teams) != 1:
         raise ValueError('Choose one team in Xcode first, or run npm run ios:signing -- --team YOURTEAMID.')
     team = teams.pop()

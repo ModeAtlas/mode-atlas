@@ -24,36 +24,64 @@ test('iOS foundation has one platform facade with web and native adapters', () =
   assert.match(native, /getLaunchUrl/);
   assert.match(native, /firebaseAuth\[method\]\(\{ skipNativeAuth:true \}\)/);
   assert.match(native, /providerId === 'apple\.com' \? 'signInWithApple' : 'signInWithGoogle'/);
-  assert.match(native, /firebaseAuth\.revokeAccessToken\(\{ token:authorizationCode \}\)/);
+  assert.match(native, /nativeBridge\.revokeAppleAuthorization\(\{authorizationCode, firebaseIdToken\}\)/);
+  assert.doesNotMatch(native, /firebaseAuth\.revokeAccessToken/);
   assert.doesNotMatch(native, /question selection|mastery calculation/i);
 });
 
-test('platform facade forwards Apple revocation code to its native adapter', async () => {
+test('platform facade forwards Apple code and the owning JS session token to its native adapter', async () => {
   const calls = [];
   const window = {};
   vm.runInNewContext(read('assets/platform/mode-atlas-platform.js'), { window, URL, Promise });
   window.AtlasPlatform.registerAdapter('ios', {
-    revokeAppleAuthorization: async (code) => { calls.push(code); return true; }
+    revokeAppleAuthorization: async (code, idToken) => { calls.push([code, idToken]); return true; }
   });
-  assert.equal(await window.AtlasPlatform.revokeAppleAuthorization('fresh-code'), true);
-  assert.deepEqual(calls, ['fresh-code']);
+  assert.equal(await window.AtlasPlatform.revokeAppleAuthorization('fresh-code', 'firebase-token'), true);
+  assert.deepEqual(calls, [['fresh-code', 'firebase-token']]);
 });
 
-test('Personal Team build hides and rejects Apple sign-in even when its plugin method exists', async () => {
-  let appleCalls = 0;
+test('paid iOS Apple chooser returns a nonce-bound credential without creating a native session', async () => {
+  const calls = [];
   const window = {
     ModeAtlasEnv: { isNativeApp:true },
-    Capacitor: { Plugins: { FirebaseAuthentication: {
+    Capacitor: { Plugins: { ModeAtlasNative: {
+      revokeAppleAuthorization: async (options) => { calls.push(JSON.parse(JSON.stringify(options))); return {revoked:true}; }
+    }, FirebaseAuthentication: {
       signInWithGoogle: async () => ({}),
-      signInWithApple: async () => { appleCalls += 1; }
+      signInWithApple: async (options) => {
+        calls.push(JSON.parse(JSON.stringify(options)));
+        return {credential:{providerId:'apple.com',idToken:'apple-token',nonce:'raw-nonce',authorizationCode:'fresh-code'},user:{displayName:'A Learner'}};
+      },
+      revokeAccessToken: async () => { throw new Error('Native Firebase session must not own revocation'); }
     } } }
   };
   const context = vm.createContext({ window, URL, Promise });
   vm.runInContext(read('assets/platform/mode-atlas-platform.js'), context);
   vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'), context);
-  assert.deepEqual(Array.from(window.AtlasPlatform.getCapabilities().authProviders), ['google.com']);
-  assert.equal((await window.AtlasPlatform.authenticate('apple.com')).handled, false);
-  assert.equal(appleCalls, 0);
+  assert.deepEqual(Array.from(window.AtlasPlatform.getCapabilities().authProviders), ['google.com','apple.com']);
+  const result = await window.AtlasPlatform.authenticate('apple.com');
+  assert.equal(result.handled, true);
+  assert.equal(result.credential.nonce, 'raw-nonce');
+  assert.equal(result.displayName, 'A Learner');
+  assert.equal(await window.AtlasPlatform.revokeAppleAuthorization('fresh-code','firebase-token'), true);
+  assert.deepEqual(calls, [{skipNativeAuth:true},{authorizationCode:'fresh-code',firebaseIdToken:'firebase-token'}]);
+  assert.equal(await window.AtlasPlatform.revokeAppleAuthorization('fresh-code',''), false);
+});
+
+test('Apple authentication rejects missing nonces and normalizes cancelled system sheets', async () => {
+  let cancel = false;
+  const window = {ModeAtlasEnv:{isNativeApp:true},Capacitor:{Plugins:{FirebaseAuthentication:{
+    signInWithApple: async () => {
+      if (cancel) throw new Error('The operation couldn’t be completed. (com.apple.AuthenticationServices.AuthorizationError error 1001.)');
+      return {credential:{idToken:'token-without-nonce'}};
+    }
+  }}}};
+  const context = vm.createContext({window, URL, Promise});
+  vm.runInContext(read('assets/platform/mode-atlas-platform.js'),context);
+  vm.runInContext(read('assets/platform/mode-atlas-platform-native.js'),context);
+  await assert.rejects(window.AtlasPlatform.authenticate('apple.com'),{code:'native-auth-missing-credential'});
+  cancel = true;
+  await assert.rejects(window.AtlasPlatform.authenticate('apple.com'),{code:'auth/cancelled-popup-request'});
 });
 
 test('native runtime disables browser-only update and install ownership', () => {
@@ -128,17 +156,18 @@ test('native auth transport keeps Firebase JS as the single session and Firestor
   assert.equal(pkg.dependencies['@capacitor/app'], '8.0.1');
   assert.equal(pkg.dependencies.firebase, '12.12.1');
   assert.equal(config.plugins.FirebaseAuthentication.skipNativeAuth, true);
-  assert.deepEqual(config.plugins.FirebaseAuthentication.providers, ['google.com']);
+  assert.deepEqual(config.plugins.FirebaseAuthentication.providers, ['google.com','apple.com']);
   assert.deepEqual(config.experimental.ios.spm.packageTraits['@capacitor-firebase/authentication'], ['Google']);
   assert.match(cloud, /signInWithCredential/);
   assert.match(cloud, /AtlasPlatform\?\.authenticate\?\.\(providerId\)/);
   assert.match(cloud, /GoogleAuthProvider\.credential/);
   assert.match(cloud, /new OAuthProvider\('apple\.com'\)\.credential/);
   assert.match(cloud, /linkWithCredential\(user, credential\)/);
-  assert.doesNotMatch(read('ios/App/App.xcodeproj/project.pbxproj'), /com\.apple\.SignInWithApple/);
-  assert.match(read('ios/engagement.xcconfig'), /MODE_ATLAS_ENTITLEMENTS = Shared\/LocalOnly.entitlements/);
+  assert.match(read('ios/engagement.xcconfig'), /MODE_ATLAS_APP_ENTITLEMENTS = App\/App.entitlements/);
+  assert.match(read('ios/engagement.xcconfig'), /MODE_ATLAS_WIDGET_ENTITLEMENTS = Shared\/LocalOnly.entitlements/);
+  assert.match(read('ios/App/App/App.entitlements'), /com.apple.developer.applesignin/);
   assert.doesNotMatch(read('ios/App/Shared/LocalOnly.entitlements'), /<key>/);
-  assert.match(read('assets/platform/mode-atlas-platform-native.js'), /var appleSignInEnabled = false/);
+  assert.doesNotMatch(read('assets/platform/mode-atlas-platform-native.js'), /appleSignInEnabled/);
   assert.match(read('assets/platform/mode-atlas-platform-native.js'), /JS Auth session owns UID/);
   assert.doesNotMatch(cloud, /FirebaseAuthentication\.signInWithGoogle/);
 });
@@ -206,7 +235,7 @@ test('native engagement snapshot excludes identity and permission requires an ex
     ModeAtlasEnv:{isNativeApp:true},
     ModeAtlasDates:{localDateKey:()=> '2026-09-30'},
     ModeAtlasRewardRules:require('../assets/app/mode-atlas-reward-rules.js'),
-    ModeAtlasProgress:{readState:()=>({appearance:{landmark:'grove'}}),studyDays:()=>['2026-09-29'],routine:()=>({streak:3,goals:[{id:'recall',label:'Recall 20 kana today',value:35,target:20},{id:'balance',label:'Read 5 and write 5 today',value:6,target:10},{id:'review',label:'Recall 5 due kana today',value:2,target:5},{id:'week',label:'Practise on 4 days this week',value:3,target:4}]}),getSummary:() => ({level:4,lifetimeCorrect:73,readingCorrect:50,writingCorrect:23,levelXp:125,levelRequirement:250,progress:.5,uid:'private',email:'private@example.com'})},
+    ModeAtlasProgress:{readState:()=>({appearance:{landmark:'grove'}}),studyDays:()=>['2026-09-29'],routine:()=>({streak:3,goals:[{id:'read-20',period:'daily',label:'Read 20 kana correctly',value:35,target:20},{id:'broad-15',period:'daily',label:'Recall 15 kana from a pool of at least 45',value:6,target:15},{id:'streak-10',period:'daily',label:'Reach a 10-answer streak without hints',value:2,target:10},{id:'days-3',period:'weekly',label:'Practise on 3 days this week',value:3,target:3},{id:'tests-2',period:'weekly',label:'Complete 2 formal tests this week',value:1,target:2}]}),getSummary:() => ({level:4,lifetimeCorrect:73,readingCorrect:50,writingCorrect:23,levelXp:125,levelRequirement:250,progress:.5,uid:'private',email:'private@example.com'})},
     ModeAtlasStorage:{KEYS:{wordBank:'kanaWordBank'},json:()=>[{kana:'private word'},{kana:'second private word'}],number:()=>123456789},
     ModeAtlasKanaMetrics:{kanaStats:() => ({streak:3,dailyDone:true})},
     AtlasPlatform:{
@@ -225,7 +254,7 @@ test('native engagement snapshot excludes identity and permission requires an ex
   await refresh();
   assert.equal(calls[0][0],'snapshot');
   assert.equal(calls[0][1].correct,73);
-  assert.equal(calls[0][1].schemaVersion,3);
+  assert.equal(calls[0][1].schemaVersion,4);
   assert.equal(calls[0][1].words,2);
   assert.equal(calls[0][1].readingCorrect,50);
   assert.equal(calls[0][1].writingCorrect,23);
@@ -236,7 +265,8 @@ test('native engagement snapshot excludes identity and permission requires an ex
   assert.equal(calls[0][1].studyStreak,3);
   assert.equal(calls[0][1].lastStudyDay,'2026-09-29');
   assert.equal(calls[0][1].goals[0].value,20,'goal progress is capped without recalculating its policy');
-  assert.equal(calls[0][1].goals.length,4);
+  assert.equal(calls[0][1].goals.length,5);
+  assert.deepEqual(Array.from(calls[0][1].goals,goal=>goal.period),['daily','daily','daily','weekly','weekly']);
   assert.equal(JSON.stringify(calls).includes('private'),false);
   calls.length=0;
   await window.ModeAtlasNativeEngagement.configureReminder({enabled:false});

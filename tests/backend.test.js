@@ -101,7 +101,7 @@ function patchFirebaseLoader(source) {
     getAuth=m.getAuth; initializeAuth=m.initializeAuth; browserLocalPersistence=m.browserLocalPersistence;
     GoogleAuthProvider=m.GoogleAuthProvider; OAuthProvider=m.OAuthProvider;
     signInWithCredential=m.signInWithCredential; linkWithCredential=m.linkWithCredential;
-    reauthenticateWithCredential=m.reauthenticateWithCredential; reauthenticateWithPopup=m.reauthenticateWithPopup;
+    reauthenticateWithCredential=m.reauthenticateWithCredential; reauthenticateWithPopup=m.reauthenticateWithPopup; updateProfile=m.updateProfile;
     signInWithPopup=m.signInWithPopup;
     signInWithRedirect=m.signInWithRedirect; getRedirectResult=m.getRedirectResult; signOut=m.signOut;
     onAuthStateChanged=m.onAuthStateChanged; getFirestore=m.getFirestore; doc=m.doc; getDoc=m.getDoc; setDoc=m.setDoc;
@@ -284,24 +284,64 @@ test('native Google credential creates a persistent JS session and updates Profi
   assert.equal(emailEl.textContent, user.email);
 });
 
+test('Apple sign-in keeps the JS session, saves a first-use name and treats cancellation as a dismissal', async () => {
+  const {context,window} = createBaseContext({configured:true});
+  window.ModeAtlasEnv.isNativeApp = true;
+  let callback, cancelled=false, nameUpdates=0, alerts=0;
+  const user = {uid:'apple-uid',email:'relay@privaterelay.appleid.com',displayName:null};
+  const auth = {currentUser:null};
+  window.ModeAtlasFeedback = {alert:async()=>{alerts++;}};
+  window.AtlasPlatform = {authenticate:async(provider)=>{
+    assert.equal(provider,'apple.com');
+    if(cancelled)throw Object.assign(new Error('Cancelled'),{code:'auth/cancelled-popup-request'});
+    return {handled:true,credential:{idToken:'apple-token',nonce:'raw-nonce'},displayName:'Apple Name'};
+  }};
+  context.__mocks = {
+    initializeApp:()=>({}),getApps:()=>[],getApp:()=>({}),initializeAuth:()=>auth,browserLocalPersistence:{},
+    GoogleAuthProvider:class{setCustomParameters(){}},
+    OAuthProvider:class{constructor(id){assert.equal(id,'apple.com');}credential(value){return value;}},
+    onAuthStateChanged:(_auth,fn)=>{callback=fn;fn(null);},getRedirectResult:async()=>null,
+    signInWithCredential:async(_auth,credential)=>{
+      assert.deepEqual(JSON.parse(JSON.stringify(credential)),{idToken:'apple-token',rawNonce:'raw-nonce'});
+      auth.currentUser=user;callback(user);return {user};
+    },
+    updateProfile:async(target,profile)=>{assert.equal(target,user);nameUpdates++;Object.assign(user,profile);},
+    getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>false}),setDoc:async()=>{}
+  };
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);
+  await window.KanaCloudSync.ready;
+  assert.equal(await window.KanaCloudSync.signInWithApple(),true);
+  assert.equal(window.KanaCloudSync.getUser().uid,'apple-uid');
+  assert.equal(user.displayName,'Apple Name');
+  user.displayName='Chosen Name';
+  assert.equal(await window.KanaCloudSync.signInWithApple(),true);
+  assert.equal(user.displayName,'Chosen Name');
+  assert.equal(nameUpdates,1);
+  cancelled=true;
+  assert.equal(await window.KanaCloudSync.signInWithApple(),false);
+  assert.equal(alerts,0);
+  assert.equal(auth.currentUser.uid,'apple-uid');
+});
+
 test('Apple links to the current Firebase UID and revokes authorization on account deletion', async () => {
   const { context, window, localStorage } = createBaseContext({ configured: true });
   window.ModeAtlasEnv.isNativeApp = true;
   window.ModeAtlasStorage = { clearAppData: () => localStorage.clear() };
   let approve = false;
   window.ModeAtlasFeedback = { confirm: async () => approve, alert: async () => {}, toast: () => {} };
-  const user = { uid: 'shared-uid', providerData: [{ providerId:'google.com' }] };
+  const user = { uid: 'shared-uid', providerData: [{ providerId:'google.com' }], getIdToken:async () => 'js-session-token' };
   const auth = { currentUser: user };
   const calls = [];
   let socialFailure = true;
   let switchDuringRevoke=false;
+  let revokeFailure=false;
   window.ModeAtlasSocial = { deleteAccount: async (uid) => { assert.equal(uid,user.uid);calls.push('server'); if(socialFailure)throw new Error('Deletion unavailable'); return {deleted:true}; }, accountDeletionStatus: async(uid)=>{assert.equal(uid,user.uid);return {deleted:false};} };
   window.AtlasPlatform = {
     authenticate: async (providerId) => {
       assert.equal(providerId, 'apple.com');
       return { handled:true, credential:{ idToken:'apple-token', nonce:'raw-nonce', authorizationCode:'apple-code' } };
     },
-    revokeAppleAuthorization: async (code) => { calls.push('revoke:' + code);if(switchDuringRevoke)auth.currentUser={uid:'another-account'};return true; },
+    revokeAppleAuthorization: async (code, idToken) => { assert.equal(idToken,'js-session-token');calls.push('revoke:' + code);if(switchDuringRevoke)auth.currentUser={uid:'another-account'};return !revokeFailure; },
     signOutIdentityProvider: async () => true
   };
   context.__mocks = {
@@ -340,6 +380,11 @@ test('Apple links to the current Firebase UID and revokes authorization on accou
   assert.equal(await window.KanaCloudSync.deleteAccount(), false, 'Server deletion failure must retain the device save');
   assert.deepEqual(calls, ['link','reauth','revoke:apple-code','server']);
   assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'), 'true');
+  calls.length=0;revokeFailure=true;
+  assert.equal(await window.KanaCloudSync.deleteAccount(), false);
+  assert.deepEqual(calls,['reauth','revoke:apple-code'],'failed revocation must not delete the account or its data');
+  assert.equal(localStorage.getItem('modeAtlasOnboardingComplete'),'true');
+  revokeFailure=false;
   calls.length=0;switchDuringRevoke=true;
   assert.equal(await window.KanaCloudSync.deleteAccount(),false);
   assert.deepEqual(calls,['reauth','revoke:apple-code'],'an account change during revocation must not reach server deletion');

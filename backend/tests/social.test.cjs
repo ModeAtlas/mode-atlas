@@ -42,6 +42,20 @@ function save(correct){return {sections:{progress:{data:{state:{version:3,legacy
 async function friend(a,b){await a.call('sendRequest',{code:b.code});await b.call('accept',{uid:a.uid});}
 async function until(check){for(let i=0;i<200;i++){if(await check())return;await new Promise(resolve=>setTimeout(resolve,100));}assert.fail('Expected emulator trigger did not finish');}
 
+test('an older client cannot overwrite migrated progress; current saves and explicit current resets remain allowed',async()=>{
+  const mine=rules.authenticatedContext('curve-migration').firestore(),ref=doc(mine,'users/curve-migration/appData/kanaTrainer');
+  await assertSucceeds(setDoc(ref,save(6175)));
+  const migrated=save(6175);Object.assign(migrated.sections.progress.data.state,{version:4,curveCredit:20000,collections:{'hunny-tester':'exclusive'}});
+  await assertSucceeds(setDoc(ref,migrated));
+  await assertFails(setDoc(ref,save(6300)));
+  await assertFails(setDoc(ref,{sections:{reading:{data:{stats:{}}}}}));
+  assert.equal((await getDoc(ref)).data().sections.progress.data.state.curveCredit,20000);
+  migrated.sections.progress.data.state.sources.device['kana.reading.correct']=6180;
+  await assertSucceeds(setDoc(ref,migrated));
+  const reset=save(0);reset.sections.progress.data.state.version=4;
+  await assertSucceeds(setDoc(ref,reset));
+});
+
 test('rules preserve owner-only profile/app-data access and deny every direct social read/write',async()=>{
   const mine=rules.authenticatedContext('rules-owner').firestore(),other=rules.authenticatedContext('rules-other').firestore(),anon=rules.unauthenticatedContext().firestore();
   for(const path of ['users/rules-owner','users/rules-owner/appData/kanaTrainer','users/rules-owner/appData/otherSave']){

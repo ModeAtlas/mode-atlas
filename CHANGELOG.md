@@ -1,3 +1,13 @@
+## 2.85.0 - 2026-10-03
+
+- Steepen the XP curve after the introductory levels, preserving earned XP, levels and fractional progress through a one-time conversion.
+- Scale Kana answer and session rewards by the actual practice pool and hint setting. Summaries explain the rate; Reading and Writing share the same policy.
+- Rotate three daily and two weekly goals from 24 templates, with dated claims and branch-scoped activity for future learning branches.
+- Add 12 achievement tracks for routines, reward collections, guided sets, independent recall, broad practice, precision and streaks. Give iOS a compact achievement browser with branch/status filters and two-column cards.
+- Keep restored sessions on their recorded reward settings, credit non-daily session completion to its completion date, and retain Daily Challenge's original date.
+- Update widgets for rotating goals and higher level requirements. Expired tasks wait for a fresh app snapshot instead of reusing old labels.
+- Prevent older clients from overwriting a newer progression schema in Firestore. Deploy the compatible backend before updating clients.
+
 ## 2.83.1 - 2026-10-01
 
 - Hide extra-reward status until the account owns a currently available custom reward. Existing owners can refresh their saved rewards without a misleading missing-rewards error.
@@ -768,3 +778,10 @@ All notable changes to this project will be documented here.
 ### Fixed
 - Text centering issues
 - Time measurement units
+## 2.84.0 - 2026-10-02
+
+- Enabled native Sign in with Apple alongside Google while preserving the shared Firebase JS account/session owner and explicit linking to an existing account.
+- Preserved Apple's first-authorization display name without overwriting a chosen name, and treated cancelled Apple sheets as normal dismissals.
+- Corrected Apple revocation for the JS-owned session before account deletion; failure retains account data and a changed UID stops the operation.
+- Separated app and widget entitlements, migrated existing local App Group selections, and allowed an explicit paid-team selection to replace a previous local Personal Team.
+- Documented the exact Apple/Firebase activation steps and signed-device acceptance checks. No new backend deployment or TestFlight upload is included.

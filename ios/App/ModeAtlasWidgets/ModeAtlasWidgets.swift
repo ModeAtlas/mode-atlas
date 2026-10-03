@@ -85,7 +85,7 @@ struct StudyWidgetView: View {
         }.font(.caption2).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
     }
     private func goalSummary(_ value: ModeAtlasWidgetSnapshot) -> some View {
-        let goals = value.goals(at: entry.date).filter { $0.id != "week" }
+        let goals = value.goals(at: entry.date).filter { !$0.isWeekly }
         let done = goals.filter { $0.value >= $0.target }.count
         return HStack(spacing: 4) {
             Image(systemName: done == 3 ? "checkmark.circle.fill" : "scope").foregroundStyle(done == 3 ? green : blue)
@@ -95,6 +95,9 @@ struct StudyWidgetView: View {
     }
     private func goals(_ value: ModeAtlasWidgetSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 6) {
+            if value.goals(at: entry.date).filter({ !$0.isWeekly }).isEmpty {
+                Text("Open Mode Atlas for today’s goals").font(.caption2).foregroundStyle(.secondary)
+            }
             ForEach(value.goals(at: entry.date)) { goal in
                 HStack(spacing: 8) {
                     Image(systemName: goal.value >= goal.target ? "checkmark.circle.fill" : "circle")

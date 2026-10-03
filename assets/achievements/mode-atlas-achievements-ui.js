@@ -126,7 +126,8 @@ function applyAchievementVisuals(root = document) {
       correct,wrong,total:correct+wrong,seen,
       new:mastery.New,mastered:mastery.Mastered,reviewing:mastery.Reviewing,learning:mastery.Learning,
       under2,under1,speed3to2,speed2to1,speedUnder1,wordCount,resultCount,perfect:perfectSeen.size,cloud,recentSave,
-      atlasLevel:Number(progression.level||1),avg:avgCount?avgSum/avgCount:0,snapshot,...presetValues
+      atlasLevel:Number(progression.level||1),avg:avgCount?avgSum/avgCount:0,snapshot,...presetValues,
+      ...window.ModeAtlasProgress?.achievementStats?.()
     };
   }
 
@@ -143,9 +144,22 @@ function applyAchievementVisuals(root = document) {
   ]);
 
   const RANK_ACCENTS = Object.freeze([1,2,3,4,5].map(rank => `var(--ma-rank-${rank}-rgb)`));
+  function progressTrack(id,name,icon,key,targets,noun,detail){
+    return Object.freeze({id,name,icon,ranks:Object.freeze(targets.map((target,index)=>Object.freeze({
+      tier:targets.length>1?['I','II','III','IV','V'][index]:'',target,key,
+      short:`${target.toLocaleString()} ${target===1?noun.replace(/s$/,''):noun}`,detail:detail.replace('{n}',target.toLocaleString()),unlockId:`progress-${id}-${target}`
+    })))});
+  }
 
   const ACHIEVEMENT_TRACKS = Object.freeze({
     modeAtlas:Object.freeze([
+      progressTrack('daily-dedication','Daily Dedication','☀','dailyGoals',[1,10,50,150,365],'daily goals','Complete {n} daily goals. Each completed rotating goal counts once.'),
+      progressTrack('weekly-wayfinder','Weekly Wayfinder','◷','weeklyGoals',[1,5,20,50],'weekly goals','Complete {n} weekly goals across Mode Atlas.'),
+      progressTrack('full-circle','Full Circle','◎','goalDays',[1,7,30,100],'complete goal days','Complete all three daily goals on {n} different days.'),
+      progressTrack('steady-steps','Steady Steps','↗','studyDays',[7,30,100,365],'study days','Practise on {n} different days. Five correct answers make a study day; saved historic challenges and formal tests also count.'),
+      progressTrack('special-delivery','Special Delivery','✦','exclusiveRewards',[1],'exclusive reward','Receive an exclusive reward for your account, such as the Hunny tester banner.'),
+      progressTrack('seasonal-souvenir','Seasonal Souvenir','❖','eventRewards',[1],'event reward','Receive a limited-time event reward when an event is available. The achievement remains after the event ends.'),
+      progressTrack('keepsakes','Keepsakes','◇','collectedRewards',[1,3,5],'reward sets','Receive {n} different exclusive or event reward sets. Items belonging to the same set count together; developer previews do not count.'),
       Object.freeze({id:'study-rhythm',name:'Study Rhythm',icon:'◎',ranks:Object.freeze([
         Object.freeze({tier:'I',short:'25 answers',detail:'Answer 25 questions in Mode Atlas. This is the first step toward a sustained study rhythm.',target:25,key:'total',unlockId:'general-0'}),
         Object.freeze({tier:'II',short:'250 answers',detail:'Answer 250 total questions and establish a repeatable practice rhythm.',target:250,key:'total',unlockId:'general-1'}),
@@ -165,6 +179,11 @@ function applyAchievementVisuals(root = document) {
       ])})
     ]),
     kana:Object.freeze([
+      progressTrack('set-builder','Set Builder','▦','guidedSets',[1,10,50,200],'guided sets','Complete {n} guided sets with at least 10 answers, three different kana and 25% accuracy.'),
+      progressTrack('independent-recall','Independent Recall','✓','independent',[50,250,1000,5000],'unassisted recalls','Recall {n} kana correctly with hints switched off.'),
+      progressTrack('wider-horizons','Wider Horizons','↔','broadRecall',[25,100,500,2000],'wide-pool recalls','Recall {n} kana correctly while practising a pool of at least 45 different kana.'),
+      progressTrack('precision-practice','Precision Practice','⦿','preciseSets',[1,10,50,100],'precise sessions','Complete {n} guided sets, challenges, formal tests or timed sessions with at least 10 answers, three different kana, 90% accuracy and hints off.'),
+      progressTrack('on-a-roll','On a Roll','⚡','bestStreak',[10,25,50,100],'correct in a row','Reach {n} consecutive correct answers in one session with hints switched off.'),
       Object.freeze({id:'kana-discovery',name:'Kana Discovery',icon:'カ',ranks:Object.freeze([
         Object.freeze({tier:'I',short:'25 kana seen',detail:'Practise at least 25 unique kana in Reading or Writing.',target:25,key:'seen',unlockId:'kana-0'}),
         Object.freeze({tier:'II',short:'75 kana seen',detail:'Practise at least 75 unique kana in the Kana Trainer.',target:75,key:'seen',unlockId:'kana-1'}),
@@ -194,7 +213,7 @@ function applyAchievementVisuals(root = document) {
         Object.freeze({tier:'III',short:'50 kana under 1.0s',detail:'Reach fluent-speed timing on 50 kana. This is a strong recognition milestone.',target:50,key:'under1',unlockId:'kana-13'})
       ])}),
       Object.freeze({id:'mastery-path',name:'Mastery Path',icon:'達',ranks:Object.freeze([
-        Object.freeze({tier:'I',short:'20 mastered',detail:'Reach Mastered on 20 kana. Mastered combines attempts, accuracy, and speed.',target:20,key:'mastered',unlockId:'kana-14'}),
+        Object.freeze({tier:'I',short:'20 mastered',detail:'Reach Mastered on 20 kana through accurate, unassisted recall spaced across days.',target:20,key:'mastered',unlockId:'kana-14'}),
         Object.freeze({tier:'II',short:'50 mastered',detail:'Reach Mastered on 50 kana.',target:50,key:'mastered',unlockId:'kana-15'}),
         Object.freeze({tier:'III',short:'100 mastered',detail:'Reach Mastered on 100 kana.',target:100,key:'mastered',unlockId:'kana-16'})
       ])}),
@@ -277,7 +296,7 @@ function applyAchievementVisuals(root = document) {
     return tile;
   }
 
-  function categorySection(categoryKey,s){
+  function categorySection(categoryKey,s,filter='all'){
     const meta=CATEGORY_META[categoryKey];
     const tracks=ACHIEVEMENT_TRACKS[categoryKey]||[];
     const milestones=tracks.flatMap(track=>track.ranks);
@@ -289,7 +308,8 @@ function applyAchievementVisuals(root = document) {
     copy.append(achEl('h3','',meta.title),achEl('p','ma-ach-section-copy',meta.description));
     head.append(copy,achEl('span','ma-ach-section-count',`${unlocked}/${milestones.length} milestones`));
     const grid=achEl('div','ma-achievement-grid');
-    tracks.forEach(track=>grid.append(achievementTile(track,s,categoryKey)));
+    tracks.filter(track=>filter==='all'||(filter==='unlocked'?trackState(track,s).completedCount>0:!trackState(track,s).complete)).forEach(track=>grid.append(achievementTile(track,s,categoryKey)));
+    if(!grid.children.length)grid.append(achEl('p','ma-ach-empty',filter==='unlocked'?'Your unlocked achievements will appear here.':'Every track in this branch is complete.'));
     section.append(head,grid);
     return section;
   }
@@ -360,7 +380,7 @@ function applyAchievementVisuals(root = document) {
     window.addEventListener('modeAtlasCloudDataChanged',checkFromEvent);
     window.addEventListener('pageshow',event=>{ if(event.persisted===true) checkFromEvent(); });
   }
-  function renderAchievements(){
+  function renderAchievements(selection,onSelect){
     const s=countStats(); ACH_INDEX={};
     const milestones=milestoneList();
     const unlocked=milestones.filter(({rank})=>isRankDone(rank,s)).length;
@@ -368,16 +388,31 @@ function applyAchievementVisuals(root = document) {
 
     const wrap=document.createDocumentFragment();
     const overview=achEl('div','ma-ach-overview');
-    [[unlocked,'Milestones unlocked'],[trackCount,'Achievement tracks'],[clamp(unlocked/Math.max(1,milestones.length)*100)+'%','Complete']].forEach(([value,label])=>{
+    [[unlocked,selection?'Unlocked':'Milestones unlocked'],[trackCount,selection?'Tracks':'Achievement tracks'],[clamp(unlocked/Math.max(1,milestones.length)*100)+'%','Complete']].forEach(([value,label])=>{
       const item=document.createElement('div');
       item.append(achEl('b','',value), achEl('span','',label));
       overview.append(item);
     });
 
     const layout=achEl('div','ma-achievement-layout');
-    layout.append(categorySection('modeAtlas',s),categorySection('kana',s),categorySection('wordbank',s));
-    FUTURE_CATEGORIES.forEach(item=>layout.append(futureSection(item)));
-    wrap.append(overview,layout);
+    wrap.append(overview);
+    if(selection){
+      const controls=achEl('div','ma-ach-controls');
+      for(const [key,label,options]of [
+        ['category','Achievement branch',[['modeAtlas','Atlas'],['kana','Kana'],['wordbank','Words']]],
+        ['filter','Achievement status',[['all','All'],['progress','In progress'],['unlocked','Unlocked']]]
+      ]){
+        const group=achEl('div','ma-ach-switch');group.setAttribute('role','group');group.setAttribute('aria-label',label);
+        for(const [value,text]of options){const button=achButton('',text);button.setAttribute('aria-pressed',String(selection[key]===value));button.dataset.maAchChoice=`${key}:${value}`;button.addEventListener('click',()=>onSelect(key,value));group.append(button);}
+        controls.append(group);
+      }
+      wrap.append(controls);
+      layout.append(categorySection(selection.category,s,selection.filter));
+    }else{
+      layout.append(categorySection('modeAtlas',s),categorySection('kana',s),categorySection('wordbank',s));
+      FUTURE_CATEGORIES.forEach(item=>layout.append(futureSection(item)));
+    }
+    wrap.append(layout);
     return wrap;
   }
 
@@ -488,8 +523,8 @@ function applyAchievementVisuals(root = document) {
     [
       ['new',s.new,'New','No attempts yet'],
       ['learning',s.learning,'Learning','Building reps, accuracy, or speed'],
-      ['reviewing',s.reviewing,'Reviewing','10+ correct · 85%+ · ≤2.5s'],
-      ['mastered',s.mastered,'Mastered','50+ correct · 95%+ · ≤1.0s']
+      ['reviewing',s.reviewing,'Reviewing','Spaced, unassisted recall'],
+      ['mastered',s.mastered,'Mastered','Consistent recall across days']
     ].forEach(([cls,value,label,copy])=>{
       const item=achEl('div',`ma-mastery-stage ${cls}`);
       item.append(achEl('b','',value),achEl('strong','',label),achEl('span','',copy));
@@ -511,16 +546,31 @@ function applyAchievementVisuals(root = document) {
   let featureOpen=false;
   function buildFeatureContent(kind){
     const root=achEl('div','ma-ach-dialog-content'),view=achEl('div','ma-ach-dialog-view');
+    const native=window.AtlasPlatform?.isNative===true;
+    if(native&&kind!=='mastery')root.classList.add('ma-ach-native');
+    const selection=native?{category:'modeAtlas',filter:'all'}:null;
     let atRoot=true;
+    let lastAchievement='';
+    let lastScroll=0;
     root.append(view);
     const showMain=()=>{
       atRoot=true;
-      view.replaceChildren(kind==='mastery'?renderMasteryMap():renderAchievements());
+      view.replaceChildren(kind==='mastery'?renderMasteryMap():renderAchievements(selection,(key,value)=>{
+        selection[key]=value;showMain();view.querySelector(`[data-ma-ach-choice="${key}:${value}"]`)?.focus({preventScroll:true});
+      }));
       applyAchievementVisuals(view);
+    };
+    const showDetail=detail=>{
+      if(!detail)return;
+      atRoot=false;view.replaceChildren(detail);
+      const dialog=root.closest('.ma-dialog');if(dialog)dialog.scrollTop=0;
+      const heading=detail.querySelector('h3');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
     };
     root.handleFeatureCloseRequest=()=>{
       if(atRoot) return false;
       showMain();
+      const dialog=root.closest('.ma-dialog');if(dialog)dialog.scrollTop=lastScroll;
+      if(lastAchievement)view.querySelector(`[data-ma-ach-id="${lastAchievement}"]`)?.focus({preventScroll:true});
       return true;
     };
     root.addEventListener('click',e=>{
@@ -530,18 +580,20 @@ function applyAchievementVisuals(root = document) {
         const id=rankNav.getAttribute('data-ma-ach-rank-nav');
         const index=Number(rankNav.getAttribute('data-ma-ach-rank-index'));
         const detail=buildAchievementInfo(id,Number.isFinite(index)?index:undefined);
-        if(detail){atRoot=false;view.replaceChildren(detail);}
+        showDetail(detail);
         return;
       }
       const ach=e.target.closest('[data-ma-ach-id]');
       if(ach){
         e.preventDefault();
+        lastScroll=root.closest('.ma-dialog')?.scrollTop||0;
+        lastAchievement=ach.getAttribute('data-ma-ach-id');
         const detail=buildAchievementInfo(ach.getAttribute('data-ma-ach-id'));
-        if(detail){atRoot=false;view.replaceChildren(detail);}
+        showDetail(detail);
         return;
       }
       const kana=e.target.closest('[data-ma-mastery-kana]');
-      if(kana){e.preventDefault();atRoot=false;view.replaceChildren(buildMasteryKanaInfo(kana.getAttribute('data-ma-mastery-kana')));}
+      if(kana){e.preventDefault();lastScroll=root.closest('.ma-dialog')?.scrollTop||0;showDetail(buildMasteryKanaInfo(kana.getAttribute('data-ma-mastery-kana')));}
     });
     showMain(); return root;
   }
@@ -552,7 +604,7 @@ function applyAchievementVisuals(root = document) {
     window.ModeAtlasDialog.feature({
       kicker:kind==='mastery'?'Kana progress':'Mode Atlas progress',
       title:kind==='mastery'?'Mastery Map':'Achievements',
-      message:kind==='mastery'?'':'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.',
+      message:kind==='mastery'||window.AtlasPlatform?.isNative?'':'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.',
       contentNode:content,
       size:'large',
       closeLabel:'×',
