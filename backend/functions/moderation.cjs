@@ -24,7 +24,8 @@ function createModeration({db,identities,staff,now=Date.now}){
       if(!a?.active||a.deleting||a.restricted||!b?.active||b.deleting)fail('not-found','This profile is no longer available.');
       const connected=['friends','incoming','outgoing'].some(key=>Object.hasOwn(a[key]||{},target));
       const code=typeof data.code==='string'?data.code.replace(/[\s-]/g,'').toUpperCase():'';
-      if(!connected&&!blocked.data()?.by?.includes(uid)&&!(code&&code===b.code))fail('permission-denied','Report a profile you have encountered in Friends.');
+      const competitors=a.weekly?.enabled===true&&b.weekly?.enabled===true&&!b.restricted;
+      if(!connected&&!competitors&&!blocked.data()?.by?.includes(uid)&&!(code&&code===b.code))fail('permission-denied','Report a profile you have encountered in Friends.');
       const snapshot={displayName:b.profile.displayName,avatar:b.profile.avatar,avatarURL:b.profile.avatarURL||null};
       const ref=reports.doc(hash(uid+':'+target+':'+JSON.stringify(snapshot))),existing=await tx.get(ref);
       if(existing.exists)return {ok:true};

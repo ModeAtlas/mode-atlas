@@ -50,6 +50,8 @@
       rewardContext(current);current.independentStreak=0;
       current.xpParts={};current.milestones=[];current.retryQueue=[];current.assisted=0;current.questionAnswered=false;
       root.ModeAtlasProgress.startRun(current.runId);
+      const rankingPool=current.focusChars.length?current.focusChars:root.ModeAtlasPracticeModes.fixedPool(state.settings)?Object.keys(root.getAnswerMapForCurrentMode()):state.activeChars;
+      root.ModeAtlasWeekly?.start(current,{pool:[...new Set(rankingPool.flatMap(kana=>root.ModeAtlasKanaData.splitKana(kana)))],direction:config.mode,mode:current.mode,hints:current.hintsEnabled});
       pendingReview=[];clearFeedback();
     }
     function pool(chars){
@@ -80,6 +82,7 @@
     }
     function finish(completed){
       const state=snapshot(),current=study();if(!current)return;
+      root.ModeAtlasWeekly?.finish(current);
       rewardContext(current);
       addXp(root.ModeAtlasProgress.finishRun({runId:current.runId,direction:config.mode,day:current.mode==='dailyChallenge'?current.dateKey:root.getTodayKey(),mode:current.mode,count:current.count,
         answered:state.sessionStats.answered,correct:state.sessionStats.correct,unique:Object.keys(current.items).length,
@@ -97,6 +100,7 @@
       const current=study();if(!current)return;
       rewardContext(current);
       current.lastAnswer={kana:String(answer.kana).slice(0,20),answer:String(answer.answer||'').slice(0,40),correct:!!answer.correct,skipped:!!answer.skipped};
+      root.ModeAtlasWeekly?.answer(current,current.lastAnswer);
       for(const kana of root.ModeAtlasKanaData.splitKana(answer.kana)){
         const row=current.items[kana]||(current.items[kana]={kana,correct:0,wrong:0});
         row[answer.correct?'correct':'wrong']+=1;
@@ -181,6 +185,17 @@
       content.append(grid,el('p','ma-study-summary__meta',`${rows.length} different kana practised · ${scope} in this pool`),
         el('p','ma-study-summary__meta',`${rate} XP per correct kana · ${current.hintsEnabled?'Hints enabled':'Hints off'}`));
       root.ModeAtlasProgressUI.renderSessionReward(content,{...current,xpGain});
+      const weekly=el('p','ma-study-summary__meta');weekly.setAttribute('role','status');
+      const weeklyStatus=()=>{
+        const value=current.weekly;weekly.hidden=!value||value.status==='disabled'||(!value.token&&value.status==='unavailable');
+        const earned=Number(value?.earned||0);
+        weekly.textContent=!value?'':value.status==='connecting'?'Connecting this session to the weekly ranking…':
+          value.status==='unavailable'?'Weekly ranking was unavailable for this session. Your personal progress is saved.':
+          value.status==='expired'?`${earned} weekly XP confirmed. Remaining answers could not enter this week’s ranking.`:
+          value.pending.length?`${earned} weekly XP confirmed · ${value.pending.length} answers waiting to upload.`:`+${earned} weekly XP confirmed`;
+      };
+      const onWeekly=event=>{if(event.detail?.runId===current.runId)weeklyStatus();};
+      weeklyStatus();content.appendChild(weekly);root.addEventListener('modeAtlasWeeklyChanged',onWeekly);
       const details=el('details','ma-study-summary__details');details.appendChild(el('summary','','Session details'));
       const times=sessionStats.timings||[];
       const info=[['Best streak',sessionStats.bestStreak],['Average answer',times.length?root.formatDuration(root.average(times)):'—'],['Active time',root.formatDuration((sessionStats.endTime||Date.now())-sessionStats.startTime)]];
@@ -204,6 +219,7 @@
       if(current.mode==='testMode'&&complete){const results=el('a','ma-button ma-button--ghost','View Results');results.href='/results/';actions.appendChild(results);}
       content.append(actions);
       root.ModeAtlasDialog.feature({kicker:`${config.mode==='writing'?'Writing':'Reading'} · ${mode.label}`,title,contentNode:content}).then(()=>{
+        root.removeEventListener('modeAtlasWeeklyChanged',onWeekly);
         if(reviewing){root.ModeAtlasTrainerControls.setPracticeCount(10);config.start();}else config.naturalBreak();
       });
       return true;

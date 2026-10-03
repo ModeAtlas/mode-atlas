@@ -12,7 +12,7 @@
   const STORAGE_KEY = 'modeAtlasProgress';
   const UPDATED_AT_KEY = 'modeAtlasProgressUpdatedAt';
   const DEVICE_KEY = 'modeAtlasProgressDeviceId';
-  const STATE_VERSION = 4;
+  const STATE_VERSION = 5;
   const LEGACY_SOURCE = 'legacy-baseline';
 
   const COUNTER_XP = Object.freeze({
@@ -97,12 +97,10 @@
       runs: normalizeRuns(value.runs),
       appearance: normalizeAppearance(value.appearance),
       collections: normalizeCollections(value.collections),
-      curveCredit: finiteCount(value.curveCredit),
       updatedAt: finiteCount(value.updatedAt)
     };
-    // A single conversion preserves earned XP, level and fractional progress.
-    // This credit only translates level thresholds; it never awards spendable XP.
-    if(Number(value.version)<STATE_VERSION||!value.version)state.curveCredit=legacyCurveCredit(sumXP(state));
+    // All accounts use earned XP on the same curve. Discard v4's threshold-only
+    // migration credit, including when an older device or backup is merged.
     return state;
   }
 
@@ -121,7 +119,6 @@
       runs: normalizeRuns({...a.runs,...b.runs}),
       appearance: mergeAppearance(a.appearance,b.appearance),
       collections: Object.fromEntries([...new Set([...Object.keys(a.collections),...Object.keys(b.collections)])].sort().map(id=>[id,[a.collections[id],b.collections[id]].includes('event')?'event':'exclusive'])),
-      curveCredit: Math.max(a.curveCredit,b.curveCredit),
       updatedAt: Math.max(a.updatedAt, b.updatedAt)
     };
     const sourceIds = new Set([...Object.keys(a.sources), ...Object.keys(b.sources)]);
@@ -176,7 +173,7 @@
     const out=normalizeCredits(a);for(const [id,row]of Object.entries(normalizeCredits(b))){out[id]||={};for(const key of creditKinds)out[id][key]=Math.max(out[id][key]||0,row[key]);}return out;
   }
   function normalizeClaims(input){
-    const out={};for(const [id,value]of Object.entries(object(input)))if(/^v[34]:/.test(id)&&id.length<180)out[id]=Math.min(1000,finiteCount(value));return out;
+    const out={};for(const [id,value]of Object.entries(object(input)))if(/^v[345]:/.test(id)&&id.length<180)out[id]=Math.min(1000,finiteCount(value));return out;
   }
   function mergeClaims(a,b){const out=normalizeClaims(a);for(const [id,n]of Object.entries(normalizeClaims(b)))out[id]=Math.max(out[id]||0,n);return out;}
   function normalizeActivity(input){
@@ -437,7 +434,6 @@
     if (writingCorrect) legacy['kana.writing.correct'] = writingCorrect;
     if (Object.keys(legacy).length) state.sources[LEGACY_SOURCE] = legacy;
     state.legacySeeded = true;
-    state.curveCredit=legacyCurveCredit(sumXP(state));
     return persistState(state, { sync: options.sync === true, emit: options.emit !== false, source: 'legacy-seed' });
   }
 
@@ -494,12 +490,6 @@
   function levelRequirement(level){
     return root.ModeAtlasRewardRules.levelRequirement(level);
   }
-  function legacyCurveCredit(xp){
-    let level=1,floor=0,required=100,newFloor=0;
-    while(xp>=floor+required&&level<999){floor+=required;newFloor+=levelRequirement(level);level++;required=Math.min(800,100+(level-1)*25);}
-    return Math.max(0,newFloor+Math.floor(Math.min(1,(xp-floor)/required)*levelRequirement(level))-xp);
-  }
-
   function getLevelFromXP(value){
     const xp = Math.max(0, Math.floor(Number(scalar(value) || 0)));
     let level = 1;
@@ -516,7 +506,7 @@
   function getSummary(input){
     const state = input ? normalizeState(input) : ensureSeeded({ sync: false, emit: false });
     const xp = getXP(state);
-    const levelInfo = getLevelFromXP(Math.min(Number.MAX_SAFE_INTEGER,xp+state.curveCredit));
+    const levelInfo = getLevelFromXP(xp);
     const readingCorrect = counterTotal(state, 'kana.reading.correct');
     const writingCorrect = counterTotal(state, 'kana.writing.correct');
     return {
@@ -524,7 +514,7 @@
       xp,
       levelXp: levelInfo.intoLevel,
       levelRequirement: levelInfo.required,
-      nextLevelAt: levelInfo.nextAt-state.curveCredit,
+      nextLevelAt: levelInfo.nextAt,
       progress: levelInfo.required ? Math.min(1, levelInfo.intoLevel / levelInfo.required) : 0,
       readingCorrect,
       writingCorrect,

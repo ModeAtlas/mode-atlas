@@ -39,7 +39,7 @@ test('server and client agree on migrated levels, new XP and rotating study days
   state.credits.newDevice={answer:700};
   const projected=require('../backend/functions/projection.cjs').projectSave({sections:{progress:{data:{state}}}});
   assert.equal(projected.level,owner.getSummary(state).level);assert.equal(projected.xp,7105);
-  assert.equal(projected.level,20);
+  assert.equal(projected.level,12);
 });
 test('the server projects only unlocked banners from the shared save, with a safe legacy default',()=>{
   const {projectSave,publicProfile}=require('../backend/functions/projection.cjs');
@@ -67,4 +67,10 @@ test('avatar policy accepts one emoji grapheme and restricts provider photo URLs
 test('obvious abusive names are filtered without rejecting harmless substrings',()=>{
   for(const name of ['fuck','f.u.c.k','Shit','f4ggot'])assert.equal(identity.objectionableName(name),true,name);
   for(const name of ['Scunthorpe','Classroom','Stafford','桜の道'])assert.equal(identity.objectionableName(name),false,name);
+});
+
+test('cached friend profiles recalculate legacy levels immediately, before their next sync',()=>{
+  const {publicProfile}=require('../backend/functions/projection.cjs');
+  const profile=publicProfile('cached',{active:true,profile:{displayName:'Cached',avatar:'kana',timeZone:'UTC'},summary:{xp:7003,level:21,landmark:'bridge',studyDays:[]}});
+  assert.equal(profile.level,12);assert.equal(profile.stats.xp,7003);
 });

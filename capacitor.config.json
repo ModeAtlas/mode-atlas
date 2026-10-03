@@ -9,6 +9,9 @@
         "google.com",
         "apple.com"
       ]
+    },
+    "FirebaseMessaging": {
+      "presentationOptions": []
     }
   },
   "experimental": {
@@ -16,6 +19,9 @@
       "spm": {
         "packageOptions": {
           "@capacitor-firebase/authentication": {
+            "symlink": true
+          },
+          "@capacitor-firebase/messaging": {
             "symlink": true
           }
         },

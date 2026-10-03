@@ -12,7 +12,7 @@
   // These are product destinations, shared by website navigation and native
   // entry points. Keep incoming links on known pages in the bundled app.
   var destinations = Object.freeze({
-    atlas: '/', yourAtlas: '/?section=atlas', kana: '/kana/', reading: '/reading/', writing: '/writing/',
+    atlas: '/', yourAtlas: '/?section=atlas', weekly: '/?section=friends&ranking=weekly', kana: '/kana/', reading: '/reading/', writing: '/writing/',
     daily: '/reading/?mode=daily', review: '/reading/?mode=review',
     results: '/results/', wordBank: '/wordbank/'
   });
@@ -89,6 +89,8 @@
     openDestination: function(destination, options){ return call('openDestination', [destination, options || {}], false); },
     requestNotifications: function(){ return call('requestNotifications', [], { granted:false, supported:false }); },
     getNotificationStatus: function(){ return call('getNotificationStatus', [], { granted:false, supported:false }); },
+    getPushToken: function(){ return call('getPushToken', [], {token:null}); },
+    deletePushToken: function(){ return call('deletePushToken', [], false); },
     configureStudyReminder: function(options){ return call('configureStudyReminder', [options || {}], { supported:false, enabled:false }); },
     getEngagementState: function(){ return call('getEngagementState', [], {supported:false}); },
     resetEngagement: function(){ return call('resetEngagement', [], {reset:false}); },

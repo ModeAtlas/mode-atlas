@@ -1494,6 +1494,7 @@ function signOutUser() {
 }
 async function performSignOut() {
   if (!auth) return;
+  await window.ModeAtlasNotifications?.signOut?.();
   await signOut(auth);
   window.dispatchEvent(new CustomEvent('modeAtlasAccountSignedOut'));
   hydratedForUserId = null;

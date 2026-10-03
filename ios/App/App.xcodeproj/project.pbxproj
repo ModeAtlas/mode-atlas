@@ -380,11 +380,12 @@
 				CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";
 				GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.323625667322-aldb8bps765pbau4d33p1dat54k7lib0;
 				INFOPLIST_FILE = App/Info.plist;
+				MODE_ATLAS_PUSH_ENVIRONMENT = development;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.85.0;
+				MARKETING_VERSION = 2.86.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -404,11 +405,12 @@
 				CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";
 				GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.323625667322-aldb8bps765pbau4d33p1dat54k7lib0;
 				INFOPLIST_FILE = App/Info.plist;
+				MODE_ATLAS_PUSH_ENVIRONMENT = production;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.85.0;
+				MARKETING_VERSION = 2.86.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -426,7 +428,7 @@
                 CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.85.0;
+                MARKETING_VERSION = 2.86.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;
@@ -444,7 +446,7 @@
                 CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.85.0;
+                MARKETING_VERSION = 2.86.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;

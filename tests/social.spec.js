@@ -28,6 +28,9 @@ async function prepare(page,{active=true,...layout}={}){
       window.socialCalls.push({action,input});
       if(window.socialOffline)throw Object.assign(new Error('Connect to the internet to use Friends.'),{code:'offline'});
       if(action==='state')return window.socialUser==='self'?{active:data.active,profile:data.self,preferences:{displayName:data.self.displayName,avatar:data.self.avatar},accountPhoto:'https://lh3.googleusercontent.com/a/fixture',code:'ABCDEF0123456789ABCD',counts:{friends:data.friends.length,incoming:data.incoming.length,outgoing:data.outgoing.length,blocked:data.blocked.length}}:{active:false};
+      if(action==='weeklyState')return {enabled:!!data.weeklyEnabled,period:ModeAtlasWeeklyRules.period(),score:1200,rank:2,prizes:[500,300,150],minimumScore:100,minimumPlayers:2,awards:[]};
+      if(action==='weeklyPreference'){data.weeklyEnabled=input.enabled;return {enabled:input.enabled};}
+      if(action==='weeklyList')return {rows:(input.scope==='friends'?[{...data.self,rank:1,score:1200}]:[{...data.friend,rank:1,score:1400},{...data.self,rank:2,score:1200}]).map(({stats,...row})=>row),nextCursor:null};
       if(action==='list'){
         const rows=input.kind==='rankings'?[{...data.friend,rank:1,score:9000},{...data.self,rank:2,score:4321}]:data[input.kind];
         const response={rows:structuredClone(rows),total:rows.length,nextCursor:null};
@@ -355,3 +358,25 @@ test('a friend’s server-approved exclusive banner displays without granting it
   await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);
 });
+
+for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'light',width:320},{native:false,theme:'dark',width:1280}]){
+  test(`weekly opt-in, reset, prizes and filters fit ${layout.native?'iOS':'web'} ${layout.theme} ${layout.width}`,async({page},info)=>{
+    await prepare(page,layout);await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+    await page.getByLabel('Ranking',{exact:true}).selectOption('weekly');
+    await expect(page.getByRole('button',{name:'Join weekly competition',exact:true})).toBeVisible();
+    expect(await page.evaluate(()=>socialCalls.some(call=>call.action==='weeklyList'))).toBe(false);
+    await fits(page);await page.getByRole('button',{name:'Join weekly competition',exact:true}).click();
+    await expect(page.locator('.ma-social-rank')).toHaveText(['1','2']);
+    await expect(page.locator('.ma-weekly-summary')).toContainText('Everyone resets together');
+    await expect(page.locator('.ma-weekly-summary')).toContainText('At least two learners');
+    await fits(page);await page.screenshot({path:info.outputPath('weekly-board.png'),animations:'disabled'});
+    await page.locator('#maSocialList').getByRole('button',{name:'Friends',exact:true}).click();
+    await expect(page.locator('.ma-social-rank')).toHaveText(['1']);
+    await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
+    await fits(page);await page.screenshot({path:info.outputPath('weekly-large-text.png'),animations:'disabled'});
+    await page.getByText('How weekly XP works',{exact:true}).click();
+    await page.getByRole('button',{name:'Leave weekly competition',exact:true}).click();
+    await page.getByRole('button',{name:'Leave competition',exact:true}).click();
+    await expect(page.getByRole('button',{name:'Join weekly competition',exact:true})).toBeVisible();
+  });
+}

@@ -18,7 +18,7 @@ from configure_ios_widgets import sync_widget_configuration
 ROOT = Path(__file__).resolve().parent
 VERSION_SOURCE = ROOT / "assets/app/mode-atlas-version.js"
 PBXPROJ = ROOT / "ios/App/App.xcodeproj/project.pbxproj"
-SPM_SYMLINK = ROOT / "ios/App/CapApp-SPM/symlinks/CapacitorFirebaseAuthentication"
+SPM_LINKS = {'CapacitorFirebaseAuthentication': 'authentication', 'CapacitorFirebaseMessaging': 'messaging'}
 BUILD_CONFIG = ROOT / "ios/release.xcconfig"
 
 
@@ -123,6 +123,12 @@ def sync() -> tuple[str, int, bool]:
 
     updated = sync_privacy_resources(updated)
     updated = sync_auth_entitlements(updated)
+    info_path = ROOT / 'ios/App/App/Info.plist'
+    with info_path.open('rb') as handle:
+        info = plistlib.load(handle)
+    if info.get('FirebaseMessagingAutoInitEnabled') is not False:
+        info['FirebaseMessagingAutoInitEnabled'] = False
+        info_path.write_bytes(plistlib.dumps(info, sort_keys=False))
     try:
         sync_widget_configuration()
     except ValueError as error:
@@ -147,6 +153,10 @@ def sync_auth_entitlements(source: str) -> str:
             block = block.replace(f'INFOPLIST_FILE = {owner}/Info.plist;', replacement + f'\n\t\t\t\tINFOPLIST_FILE = {owner}/Info.plist;')
         else:
             block = re.sub(r'CODE_SIGN_ENTITLEMENTS = [^;]+;', replacement, block)
+        if owner == 'App':
+            environment = 'development' if re.search(r'SWIFT_ACTIVE_COMPILATION_CONDITIONS = [^;]*DEBUG', block) else 'production'
+            block = re.sub(r'(?m)^[ \t]*MODE_ATLAS_PUSH_ENVIRONMENT = [^;]+;\n', '', block)
+            block = block.replace('INFOPLIST_FILE = App/Info.plist;', f'INFOPLIST_FILE = App/Info.plist;\n\t\t\t\tMODE_ATLAS_PUSH_ENVIRONMENT = {environment};')
         counts[owner] += 1
         return block
     updated = re.sub(r'buildSettings = \{[^{}]*\};', update, source)
@@ -157,13 +167,15 @@ def sync_auth_entitlements(source: str) -> str:
 
 def normalize_spm_link() -> None:
     """Capacitor writes an absolute checkout path; commit a portable SPM link."""
-    if not SPM_SYMLINK.is_symlink():
-        return
-    dependency = ROOT / "node_modules/@capacitor-firebase/authentication"
-    relative = os.path.relpath(dependency, SPM_SYMLINK.parent)
-    if os.readlink(SPM_SYMLINK) != relative:
-        SPM_SYMLINK.unlink()
-        SPM_SYMLINK.symlink_to(relative)
+    for name, package in SPM_LINKS.items():
+        link = ROOT / 'ios/App/CapApp-SPM/symlinks' / name
+        if not link.is_symlink():
+            continue
+        dependency = ROOT / 'node_modules/@capacitor-firebase' / package
+        relative = os.path.relpath(dependency, link.parent)
+        if os.readlink(link) != relative:
+            link.unlink()
+            link.symlink_to(relative)
 
 
 if __name__ == "__main__":

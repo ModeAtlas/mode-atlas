@@ -16,34 +16,31 @@ function load(seed={}){
   return {root,values,now:()=>now,setNow:value=>{now=value;},progress:root.ModeAtlasProgress,review:root.ModeAtlasReview};
 }
 function answer(env,id,index,options={}){return env.progress.recordAnswer({runId:id,index,mode:'reading',correct:true,units:1,at:env.now(),...options});}
-test('the new curve grows after the introductory levels and preserves an existing level without adding XP',()=>{
-  const e=load({modeAtlasProgress:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':6175}}}}),p=e.progress;
-  assert.deepEqual([1,5,10,20,30,50].map(p.levelRequirement),[100,300,1000,4600,11800,37000]);
-  const migrated=p.readState();assert.equal(p.getXP(),6175);assert.equal(p.getSummary().level,20);assert.equal(p.getSummary().progress,0);
-  p.startRun('endless');let answerXP=0;
-  for(let i=1;i<=111;i++)answerXP+=answer(e,'endless',i,{poolSize:150}).parts.answers;
-  assert.equal(answerXP,888);assert.equal(p.getSummary().level,20);assert.ok(p.getSummary().progress<.25);
-  assert.equal(p.readState().curveCredit,migrated.curveCredit);
-  const reloaded=load({modeAtlasProgress:p.readState()}).progress;
-  assert.deepEqual(plain(reloaded.getSummary()),plain(p.getSummary()));
-  const halfway=load({modeAtlasProgress:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':6405}}}}).progress;
-  assert.equal(halfway.getSummary().level,20);assert.equal(halfway.getSummary().progress,.4);assert.equal(halfway.getXP(),6405);
-});
-test('legacy conversion preserves cloud progress on fresh installs and stays stable across offline merges',()=>{
+test('all accounts use the current earned-XP curve and discard threshold credit',()=>{
+  for(const version of [1,2,3,4,5]){
+    const p=load({modeAtlasProgress:{version,legacySeeded:true,curveCredit:999999,sources:{old:{'kana.reading.correct':7003}}}}).progress;
+    assert.equal(p.getXP(),7003);assert.equal(p.getSummary().level,12);
+    assert.equal(p.getSummary().levelXp,1203);assert.equal(p.getSummary().nextLevelAt,7230);
+    assert.equal(p.readState().version,5);assert.equal('curveCredit' in p.readState(),false);
+    assert.deepEqual(plain(load({modeAtlasProgress:p.readState()}).progress.getSummary()),plain(p.getSummary()));
+  }
   const p=load().progress;
-  const old={version:3,legacySeeded:true,sources:{a:{'kana.reading.correct':6405}}};
+  assert.deepEqual([1,5,10,20,30,50].map(p.levelRequirement),[100,300,1000,4600,11800,37000]);
+});
+test('legacy cloud and offline merges retain earned XP without restoring retired level credit',()=>{
+  const p=load().progress;
+  const old={version:4,legacySeeded:true,curveCredit:20000,sources:{a:{'kana.reading.correct':6405}}};
   const current=p.normalizeState(old);current.credits.newDevice={answer:700};
   const staleOld={...old,sources:{a:{'kana.reading.correct':6175}}};
   const merged=p.mergeStates(current,staleOld);
-  assert.equal(merged.curveCredit,current.curveCredit);assert.equal(p.getXP(merged),7105);
+  assert.equal('curveCredit' in merged,false);assert.equal(p.getXP(merged),7105);assert.equal(p.getSummary(merged).level,12);
   assert.deepEqual(plain(merged),plain(p.mergeStates(staleOld,current)));
   assert.deepEqual(plain(merged),plain(p.mergeStates(merged,merged)));
-  const fresh=p.normalizeState({version:4,legacySeeded:true}),hydrated=p.mergeStates(fresh,old);
-  assert.equal(p.getSummary(hydrated).level,20);assert.equal(p.getSummary(hydrated).progress,.4);assert.equal(p.getXP(hydrated),6405);
+  const fresh=p.normalizeState({version:5,legacySeeded:true}),hydrated=p.mergeStates(fresh,old);
+  assert.equal(p.getSummary(hydrated).level,12);assert.equal(p.getXP(hydrated),6405);
   assert.deepEqual(plain(hydrated),plain(p.mergeStates(old,fresh)));
   const other={version:3,sources:{b:{'kana.writing.correct':230}}};
-  assert.deepEqual(plain(p.mergeStates(p.mergeStates(fresh,old),other)),plain(p.mergeStates(fresh,p.mergeStates(old,other))),'Migration must not depend on the order in which devices arrive');
-  assert.ok(p.getSummary(p.mergeStates(old,other)).progress>=.4,'Every previously observed level and progress position is retained');
+  assert.deepEqual(plain(p.mergeStates(p.mergeStates(fresh,old),other)),plain(p.mergeStates(fresh,p.mergeStates(old,other))));
 });
 test('correct-answer XP reflects the actual kana pool and hints, with no retroactive revaluation',()=>{
   const e=load(),p=e.progress;p.startRun('rates');
@@ -122,12 +119,11 @@ test('offline banner and frame changes merge independently in either order, incl
   const a={appearance:{banner:'grove',bannerAt:40}},b={appearance:{banner:'horizon',bannerAt:40}};
   assert.deepEqual(plain(p.mergeStates(a,b)),plain(p.mergeStates(b,a)));
 });
-test('v1/v2 migration preserves every earned XP and lifetime count, and never lowers a level',()=>{
+test('v1/v2 migration preserves every earned XP and lifetime count on the shared curve',()=>{
   for(const xp of [0,99,100,249,700,2700,10450,63700,250000]){
     const {progress:p}=load({modeAtlasProgress:{version:2,legacySeeded:true,sources:{old:{'kana.reading.correct':xp}},events:{},adjustments:{}}});
     assert.equal(p.getXP(),xp);assert.equal(p.getLifetimeCorrect(),xp);
-    let oldLevel=1,remaining=xp;while(remaining>=100+(oldLevel-1)*50&&oldLevel<999){remaining-=100+(oldLevel-1)*50;oldLevel++;}
-    assert.ok(p.getSummary().level>=oldLevel);
+    assert.equal(p.getSummary().level,p.getLevelFromXP(xp).level);
   }
   const {progress:p}=load({modeAtlasProgress:{legacySeeded:true,sources:{old:{'kana.reading.correct':15,'kana.writing.correct':8}},events:{daily:{type:'kana.reading.dailyComplete',id:'old'}},adjustments:{credit:{id:'credit',amount:7,at:1}}}});
   assert.equal(p.getXP(),35);assert.equal(p.getLifetimeCorrect(),23);
