@@ -4,6 +4,28 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const plain=value=>JSON.parse(JSON.stringify(value));
+test('Both mastery consistently requires both directions and leaves directional evidence intact',()=>{
+  const e=load(),r=e.review,reading={stats:{correct:38,wrong:3},time:2160};
+  assert.equal(r.stage(reading.review,reading.stats,reading.time),2);
+  assert.equal(r.combinedStage(reading,{}),1);
+  assert.equal(r.combinedStage(reading,{stats:{correct:3,wrong:0}}),1);
+  assert.equal(r.combinedStage(reading,reading),2);
+  assert.equal(r.combinedStage({},{}),0);
+  const before=JSON.stringify(reading);r.guidance(reading.review,reading.stats,reading.time);assert.equal(JSON.stringify(reading),before);
+  let row={};for(let i=0;i<4;i++)row=r.answer(row,{id:String(i),at:e.now()+i*86400000,correct:true}).entry;
+  const guide=r.guidance(row);assert.equal(guide.stage,r.stage(row));assert.equal(guide.next,'Mastered');assert.equal(guide.checks[0].value,4);
+});
+test('weekly recap separates local Monday weeks and never estimates undated XP or practice',()=>{
+  const e=load(),p=e.progress;
+  for(const [day,mode]of [['2026-09-27','reading'],['2026-09-28','writing'],['2026-09-30','reading']]){
+    e.setNow(Date.parse(day+'T12:00:00Z'));p.startRun(day);for(let i=1;i<=5;i++)answer(e,day,i,{mode,kana:['あ']});
+  }
+  const current=p.weeklyRecap(undefined,e.now()),previous=p.weeklyRecap(undefined,e.now(),true);
+  assert.deepEqual([current.start,current.studyDays,current.reading,current.writing],['2026-09-28',2,5,5]);
+  assert.deepEqual([previous.start,previous.studyDays,previous.reading,previous.writing],['2026-09-21',1,5,0]);
+  assert.equal(current.variety,1);assert.equal('xp' in current,false);
+  assert.equal(p.weeklyRecap({version:5,legacySeeded:true,sources:{old:{'kana.reading.correct':7003}}},e.now()).reading,0);
+});
 function load(seed={}){
   const values=new Map(Object.entries(seed).map(([key,value])=>[key,typeof value==='string'?value:JSON.stringify(value)]));
   const localStorage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,String(value)),removeItem:key=>values.delete(key),get length(){return values.size;},key:index=>[...values.keys()][index]??null};

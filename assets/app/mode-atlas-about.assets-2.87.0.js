@@ -13,17 +13,15 @@
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
   const NATIVE_RELEASE = window.ModeAtlasEnv?.isNativeApp === true;
-  const WHATS_NEW_COPY = NATIVE_RELEASE ? 'Another way to sign in to your Mode Atlas account.' : 'More room for friends and new ways to make your profile yours.';
+  const WHATS_NEW_COPY = 'Clearer progress and a closer weekly race.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
-  const whatsNewItems = NATIVE_RELEASE ? [
-    'Sign in with Apple or Google in the iOS app.',
-    'Already use Google? Link Apple from Sign-in methods to keep the same progress.',
-    'Choose Hide My Email when creating an Apple account.'
-  ] : [
-    'Browse banners, titles and frames in expandable reward collections.',
-    'Exclusive rewards appear in your collection when your account unlocks them.',
-    'Profile banners carry across your profile and Friends cards.'
+  const whatsNewItems = [
+    'Switch between Reading, Writing and Both in the Mastery Map, with clear next steps for each kana.',
+    'Open focused practice from your goals or mastery tiles.',
+    'See nearby competitors and saved weekly finishes in Rankings.',
+    'Find this week’s and last week’s study recap in Your Atlas.',
+    ...(NATIVE_RELEASE ? ['Choose goal alert times and quiet hours in Notifications.'] : [])
   ];
 
   function storeGet(key, fallback = '') {

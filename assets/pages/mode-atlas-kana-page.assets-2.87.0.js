@@ -583,19 +583,14 @@
         body.replaceChildren(kanaModalGrid([
             ['Follow the recommendation', 'Start with the practice that best matches your saved accuracy, speed, and repetition history.'],
             ['Keep daily challenges moving', 'Reading and Writing daily challenges give you a simple way to keep both recognition and recall active.'],
-            ['Use mastery to target weak spots', 'Mastery stages and the Mastery Map show which kana need more repetitions, accuracy, or speed.']
+            ['Use mastery to target weak spots', 'Mastery stages and the Mastery Map show which kana need more independent recall or spaced review.']
         ]));
     }
 
     function renderMasteryHelpModal(heading, body) {
         heading.kicker = 'Mastery rules';
         heading.title = 'How mastery works';
-        body.replaceChildren(kanaModalGrid([
-            ['New', 'You have not practised this kana yet.'],
-            ['Learning', 'Requires at least 1 attempt, but has not yet reached 10+ correct answers, 85%+ accuracy, and 2.5s or faster average recognition.'],
-            ['Reviewing', 'Requires 10+ correct answers, 85%+ accuracy, and 2.5s or faster average recognition.'],
-            ['Mastered', 'Requires 50+ correct answers, 95%+ accuracy, and 1.0s or faster average recognition.']
-        ]));
+        body.replaceChildren(kanaModalGrid(window.ModeAtlasReview.help()));
     }
 
 

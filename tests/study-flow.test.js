@@ -11,6 +11,19 @@ function load(){
   return context.window;
 }
 const plain = value => JSON.parse(JSON.stringify(value));
+test('goal and mastery shortcuts choose a qualifying mode, script and safe target pool',()=>{
+  const root=load(),plan=root.ModeAtlasStudyPlan;root.ModeAtlasProgress={weeklyRecap:()=>({todayReading:10})};
+  const action=metric=>new URL(plan.goalAction({metric,target:20,value:0}).href,'https://mode-atlas.app');
+  assert.equal(action('kana.writing').pathname,'/writing/');assert.equal(action('kana.balance').pathname,'/writing/');
+  assert.equal(action('kana.daily').searchParams.get('mode'),'daily');assert.equal(action('kana.tests').searchParams.get('mode'),'test');
+  const pool=action('kana.katakana').searchParams.get('kana').split(',');assert.ok(pool.includes('シ'));assert.ok(!pool.includes('あ'));
+  assert.equal(action('kana.broad').searchParams.get('kana').split(',').length,46);
+  assert.equal(action('kana.independent').searchParams.get('hints'),'off');
+  assert.deepEqual(plain(plan.targetChars(['ファ','あ','bad','ファ',null])),['ファ','あ']);
+  assert.equal(plan.target('reading',['unknown']),null);
+  assert.equal(plan.goalAction({metric:'kana.reading',target:20,value:20}),null);
+  assert.equal(plan.goalAction({metric:'study.goals',target:8,value:0},[{period:'daily',metric:'kana.writing',target:20,value:0}]).href.startsWith('/writing/'),true);
+});
 
 test('study lengths reject invalid goals and cannot compete with existing special modes',()=>{
   const {ModeAtlasStudyPlan:plan} = load();

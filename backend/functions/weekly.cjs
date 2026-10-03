@@ -89,14 +89,24 @@ function createWeekly({db,now=Date.now}){
   async function state(uid){
     const period=policy.period(now()),[self,awards,place]=await Promise.all([account(uid).get(),db.doc('weeklyAwards/'+uid).get(),rank(uid,period.id)]);
     return {enabled:active(self.data()),period,...(place||{score:0,rank:null}),prizes:policy.prizes,minimumScore:policy.minimumScore,minimumPlayers:policy.minimumPlayers,
-      awards:Object.values(awards.data()?.weeks||{}).sort((a,b)=>b.week.localeCompare(a.week)).slice(0,8)};
+      awards:Object.values(awards.data()?.weeks||{}).sort((a,b)=>b.week.localeCompare(a.week)).slice(0,8),
+      results:Object.values({...awards.data()?.weeks,...awards.data()?.results}).sort((a,b)=>b.week.localeCompare(a.week)).slice(0,8)};
   }
   async function list(uid,data){
-    fields(data,['scope','cursor']);if(!['global','friends'].includes(data.scope))fail('invalid-argument','Choose Global or Friends.');
+    fields(data,['scope','cursor']);if(!['global','friends','nearby'].includes(data.scope))fail('invalid-argument','Choose Global, Nearby or Friends.');
     const period=policy.period(now()),a=(await account(uid).get()).data();
     if(!active(a))fail('failed-precondition','Join the weekly competition first.');
     let docs,nextCursor=null;
-    if(data.scope==='friends'){
+    if(data.scope==='nearby'){
+      if(data.cursor)fail('invalid-argument','Refresh your nearby ranking.');
+      const self=await entries(period.id).doc(uid).get(),score=self.data()?.score;
+      if(!self.data()?.active||!score)return {rows:[],nextCursor:null,period,scope:data.scope};
+      const [above,below]=await Promise.all([
+        eligible(period.id).orderBy('score','asc').orderBy(FieldPath.documentId(),'desc').startAfter(score,uid).limit(8).get(),
+        eligible(period.id).orderBy('score','desc').orderBy(FieldPath.documentId()).startAfter(score,uid).limit(8).get()
+      ]);
+      docs=[...above.docs,self,...below.docs];
+    }else if(data.scope==='friends'){
       if(data.cursor)fail('invalid-argument','Refresh this week’s friends ranking.');
       docs=await db.getAll(...[uid,...Object.keys(a.friends||{})].map(id=>entries(period.id).doc(id)));
     }else{
@@ -118,54 +128,73 @@ function createWeekly({db,now=Date.now}){
     }
     rows.sort((a,b)=>b.score-a.score||a.uid.localeCompare(b.uid));
     const ranks=new Map();
-    if(data.scope==='global')await Promise.all([...new Set(rows.map(row=>row.score))].map(async score=>{
+    if(data.scope!=='friends')await Promise.all([...new Set(rows.map(row=>row.score))].map(async score=>{
       const above=await entries(period.id).where('active','==',true).where('score','>',score).count().get();ranks.set(score,above.data().count+1);
     }));
     rows.forEach((row,i)=>{if(!ranks.has(row.score))ranks.set(row.score,i+1);row.rank=ranks.get(row.score);});
     return {rows,nextCursor,period,scope:data.scope};
   }
   async function syncAccount(uid){
-    const a=(await account(uid).get()).data();
     for(const week of [policy.period(now()).id,policy.period(now()-7*86400000).id]){
-      const ref=entries(week).doc(uid);await db.runTransaction(async tx=>{const doc=await tx.get(ref);if(doc.exists&&doc.data().active!==!!active(a))tx.update(ref,{active:!!active(a)});});
+      const ref=entries(week).doc(uid);
+      await db.runTransaction(async tx=>{
+        const [doc,period,self]=await tx.getAll(ref,weeks.doc(week),account(uid));
+        // A closed week's eligibility freezes before results are recorded. Its
+        // public board is no longer exposed; private results survive opt-out.
+        if(!period.data()?.frozenAt&&doc.exists&&doc.data().active!==!!active(self.data()))tx.update(ref,{active:!!active(self.data())});
+      });
     }
   }
   async function settle(week){
-    const ref=weeks.doc(week),period=(await ref.get()).data();
-    if(!period||period.settled||period.endAt+300000>now())return;
-    const qualified=entries(week).where('active','==',true).where('score','>=',policy.minimumScore);
-    const podium=await qualified.orderBy('score','desc').orderBy(FieldPath.documentId()).limit(3).get();
-    if(!period.topScores&&podium.size<policy.minimumPlayers){await ref.update({settled:true,settledAt:now(),reason:'minimum-players'});return;}
-    const topScores=await db.runTransaction(async tx=>{
-      const current=(await tx.get(ref)).data();
-      if(current.topScores)return current.topScores;
-      const scores=podium.docs.map(doc=>doc.data().score);
-      tx.update(ref,{topScores:scores,frozenAt:now()});return scores;
+    const ref=weeks.doc(week),initial=(await ref.get()).data();
+    if(!initial||initial.settled||initial.endAt+300000>now())return;
+    const period=await db.runTransaction(async tx=>{
+      const current=(await tx.get(ref)).data();if(current.settled||current.frozenAt)return current;
+      const podium=await tx.get(entries(week).where('active','==',true).where('score','>=',policy.minimumScore).orderBy('score','desc').orderBy(FieldPath.documentId()).limit(3));
+      const frozen={...current,topScores:current.topScores||podium.docs.map(doc=>doc.data().score),frozenAt:now()};
+      if(frozen.topScores.length<policy.minimumPlayers)frozen.reason='minimum-players';
+      tx.set(ref,frozen);return frozen;
     });
-    const cutoff=topScores.at(-1);
-    let cursor=period.awardCursor||null;
-    // Bound one scheduled invocation; the durable cursor resumes large ties.
-    let query=entries(week).where('active','==',true).where('score','>=',cutoff).orderBy('score','desc').orderBy(FieldPath.documentId()).limit(100);
+    if(period.settled)return;
+    const cursor=period.resultsCursor||null;
+    let query=eligible(week).orderBy('score','desc').orderBy(FieldPath.documentId()).limit(100);
     if(cursor)query=query.startAfter(cursor.score,cursor.uid);
     const found=await query.get();
-    for(const entry of found.docs){
-      const place=topScores.filter(score=>score>entry.data().score).length+1;
-      if(place>3)continue;
-      const uid=entry.id,xp=policy.prizes[place-1],prize=ref.collection('awards').doc(uid),saveRef=db.doc(`users/${uid}/appData/kanaTrainer`),history=db.doc('weeklyAwards/'+uid);
+    let count=period.resultCount||0,lastScore=period.lastScore??null,lastRank=period.lastRank||0;
+    const ranked=found.docs.map(entry=>{
+      count++;const score=entry.data().score,place=score===lastScore?lastRank:count;
+      lastScore=score;lastRank=place;return {entry,score,place};
+    });
+    // Results and prizes share one idempotent transaction per learner. Bound the
+    // invocation to 100 entries, with ten concurrent transactions and a cursor.
+    for(let index=0;index<ranked.length;index+=10)await Promise.all(ranked.slice(index,index+10).map(async({entry,score,place})=>{
+      const uid=entry.id,prize=ref.collection('awards').doc(uid),saveRef=db.doc(`users/${uid}/appData/kanaTrainer`),history=db.doc('weeklyAwards/'+uid);
+      const eligiblePrize=period.topScores.length>=policy.minimumPlayers&&score>=policy.minimumScore&&place<=3;
       await db.runTransaction(async tx=>{
-        const [existing,self,save,receipt,barrier,current]=await tx.getAll(prize,account(uid),saveRef,history,db.doc('accountDeletions/'+uid),entry.ref);
-        if(existing.exists||barrier.exists||!active(self.data())||!current.data()?.active)return;
-        const value=save.data()||{},state=progress.normalizeState(value.sections?.progress?.data?.state||{legacySeeded:true});
-        state.claims[`v5:weekly:${week}:prize`]=xp;state.updatedAt=now();
-        const award={week,rank:place,xp,score:entry.data().score,at:now()};
-        const historyRows={...(receipt.data()?.weeks||{}),[week]:award};
-        tx.set(prize,{...award,uid,expiresAt:new Date(period.endAt+90*86400000)});
-        tx.set(history,{weeks:Object.fromEntries(Object.entries(historyRows).sort(([a],[b])=>b.localeCompare(a)).slice(0,52))});
-        tx.set(saveRef,{...value,updatedAt:now(),sections:{...value.sections,progress:{updatedAt:now(),data:{state}}}});
+        const [existing,self,receipt,barrier,current]=await tx.getAll(prize,account(uid),history,db.doc('accountDeletions/'+uid),entry.ref);
+        if(barrier.exists||!self.exists||!current.exists||receipt.data()?.results?.[week])return;
+        const awardPrize=eligiblePrize&&active(self.data())&&!existing.exists;
+        const save=awardPrize?await tx.get(saveRef):null;
+        const xp=existing.data()?.xp||(awardPrize?policy.prizes[place-1]:0),result={week,rank:place,xp,score,at:now()};
+        const previous=receipt.data()||{},results={...previous.results,[week]:result},awards={...previous.weeks};
+        if(awardPrize){
+          const value=save.data()||{},state=progress.normalizeState(value.sections?.progress?.data?.state||{legacySeeded:true});
+          state.claims[`v5:weekly:${week}:prize`]=xp;state.updatedAt=now();
+          awards[week]=result;
+          tx.set(prize,{...result,uid,expiresAt:new Date(period.endAt+90*86400000)});
+          tx.set(saveRef,{...value,updatedAt:now(),sections:{...value.sections,progress:{updatedAt:now(),data:{state}}}});
+        }
+        const recent=rows=>Object.fromEntries(Object.entries(rows).sort(([a],[b])=>b.localeCompare(a)).slice(0,52));
+        tx.set(history,{weeks:recent(awards),results:recent(results)});
+        tx.update(entry.ref,{finalRank:place,finalizedAt:now()});
       });
-    }
+    }));
     const last=found.docs.at(-1);
-    await ref.update(found.size===100?{awardCursor:{uid:last.id,score:last.data().score}}:{settled:true,settledAt:now(),awardCursor:null});
+    await db.runTransaction(async tx=>{
+      const current=(await tx.get(ref)).data();
+      if(current.settled||JSON.stringify(current.resultsCursor||null)!==JSON.stringify(cursor))return;
+      tx.update(ref,{resultCount:count,lastScore,lastRank,...(found.size===100?{resultsCursor:{uid:last.id,score:last.data().score}}:{settled:true,settledAt:now(),resultsCursor:null})});
+    });
   }
   async function maintain(){
     const pending=await weeks.where('settled','==',false).where('endAt','<=',now()-300000).orderBy('endAt').limit(3).get();

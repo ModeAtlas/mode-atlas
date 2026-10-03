@@ -55,6 +55,7 @@
     document.querySelectorAll('[data-ma-routine-streak]').forEach(node=>{node.textContent=String(routine.streak);});
     document.querySelectorAll('[data-ma-atlas-summary]').forEach(node=>{node.textContent=`Level ${summary.level} · ${routine.streak}-day study streak`;});
     renderGoals(document.querySelector('.ma-atlas-rewards .ma-routine-goals'));
+    renderRecap(document.querySelector('.ma-atlas-recap'));
   }
   function avatar(item){
     const node=el('span','ma-atlas-avatar');node.dataset.maFrame=item.frame;node.setAttribute('aria-hidden','true');
@@ -66,14 +67,29 @@
     if(!host)return;
     const routine=root.ModeAtlasProgress.routine();host.replaceChildren();
     for(const goal of routine.goals.filter(goal=>!compact||goal.period==='daily')){
-      const complete=goal.value>=goal.target,card=el('div','ma-routine-goal');card.dataset.goal=goal.id;card.dataset.complete=String(complete);
+      const complete=goal.value>=goal.target,action=root.ModeAtlasStudyPlan.goalAction(goal,routine.goals),card=el(action?'a':'div','ma-routine-goal');card.dataset.goal=goal.id;card.dataset.complete=String(complete);
+      if(action){card.href=action.href;card.setAttribute('aria-label',`${goal.label} · ${Math.min(goal.value,goal.target)} of ${goal.target} · ${action.label}`);}
       card.dataset.period=goal.period;
       if(!compact)card.append(el('small','ma-routine-goal__period',goal.period==='weekly'?'This week':'Today'));
       card.append(el('strong','',compact?goal.short:goal.label));
       const value=el('span','',compact?`${Math.min(goal.target,goal.value)}/${goal.target}${complete?' ✓':''}`:complete?`✓ Complete · +${goal.xp} XP`:`${Math.min(goal.target,goal.value)} / ${goal.target} · +${goal.xp} XP`);
       card.append(value);
       const meter=el('progress');meter.max=goal.target;meter.value=Math.min(goal.target,goal.value);meter.setAttribute('aria-label',goal.label);card.append(meter);host.append(card);
+      if(action&&!compact)card.append(el('small','ma-routine-goal__action',action.label+' →'));
     }
+  }
+  function renderRecap(host){
+    if(!host)return;
+    const previous=host.dataset.previous==='true',data=root.ModeAtlasProgress.weeklyRecap(undefined,Date.now(),previous);
+    host.replaceChildren();
+    const controls=el('div','ma-atlas-tabs');controls.setAttribute('role','group');controls.setAttribute('aria-label','Recap week');
+    for(const [value,label]of [[false,'This week'],[true,'Last week']]){const control=button(label);control.setAttribute('aria-pressed',String(value===previous));control.addEventListener('click',()=>{host.dataset.previous=String(value);renderRecap(host);host.querySelector('[aria-pressed="true"]')?.focus();});controls.append(control);}
+    host.append(el('h3','','Your weekly recap'),controls,el('p','ma-atlas-rewards__note',`${data.start} – ${data.end} · Your local study week`));
+    const grid=el('div','ma-recap-grid');
+    for(const [label,value]of [['Study days',`${data.studyDays} / 7`],['Reading correct',data.reading],['Writing correct',data.writing],['Different kana',data.variety],['Daily goals completed',data.dailyGoals],['Weekly goals completed',data.weeklyGoals]]){const card=el('div');card.append(el('strong','',Number.isFinite(value)?value.toLocaleString():value),el('span','',label));grid.append(card);}
+    host.append(grid,el('p','ma-atlas-rewards__note',data.reading+data.writing?'Each study day needs five correct answers across your practice. These totals use saved, dated activity; older undated practice is not estimated.':'No dated practice is recorded for this week yet. A short session is a good place to start.'));
+    const link=el('a','ma-button ma-button--ghost','Start a short session');link.href='/reading/?practice=10';host.append(link);
+    const ranking=el('a','ma-button ma-button--ghost','View weekly ranking');ranking.href=root.AtlasPlatform.destinationPath('weekly');host.append(ranking);
   }
   function goalPanel(){
     const panel=el('div','ma-atlas-panel');
@@ -146,16 +162,17 @@
     const status=el('span');status.dataset.maAtlasSummary='';
     copy.append(title,status);identity.append(preview,copy);content.append(identity);
     const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Your Atlas');
-    const panels=[goalPanel(),rewardPanel(summary)];
-    const controls=['Goals','Rewards'].map((label,index)=>{
+    const recap=el('div','ma-atlas-panel ma-atlas-recap');renderRecap(recap);
+    const panels=[goalPanel(),rewardPanel(summary),recap];
+    const controls=['Goals','Rewards','Recap'].map((label,index)=>{
       const tab=button(label);tab.id=`atlasTab${index}`;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',`atlasPanel${index}`);
       panels[index].id=`atlasPanel${index}`;panels[index].setAttribute('role','tabpanel');panels[index].setAttribute('aria-labelledby',tab.id);panels[index].tabIndex=0;
       tab.addEventListener('click',()=>selectTab(index));tabs.append(tab);return tab;
     });
-    function selectTab(index){controls.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});}
+    function selectTab(index){controls.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});if(index===2)renderRecap(recap);}
     tabs.addEventListener('keydown',event=>{
       const index=controls.indexOf(document.activeElement);if(index<0)return;
-      const target=event.key==='ArrowRight'?(index+1)%2:event.key==='ArrowLeft'?(index+1)%2:event.key==='Home'?0:event.key==='End'?1:-1;
+      const target=event.key==='ArrowRight'?(index+1)%controls.length:event.key==='ArrowLeft'?(index+controls.length-1)%controls.length:event.key==='Home'?0:event.key==='End'?controls.length-1:-1;
       if(target>=0){event.preventDefault();selectTab(target);controls[target].focus();}
     });
     selectTab(0);content.append(tabs,...panels);

@@ -6,9 +6,11 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.86.0
+Version: 2.87.0
 
 Development and release requirements for both platforms: [Web and iOS architecture](docs/ios-web-architecture.md).
+Mastery, targeted practice, weekly results and notification timing: [2.87.0](docs/development-2.87.0.md).
+
 Weekly competition, notification setup and corrected account levels: [2.86.0](docs/weekly-competition-2.86.0.md).
 XP, rotating goals and achievements: [2.85.0](docs/progression-2.85.0.md) (level preservation superseded by 2.86.0).
 Shared reward catalogue and backend setup: [2.83.0](docs/exclusive-rewards-2.83.0.md).

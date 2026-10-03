@@ -129,7 +129,7 @@
   async function loadPage(list,cursor){
     const ticket=generation,loading=el('p','ma-social-note','Loading…');list.append(loading);
     try{
-      const result=await root.ModeAtlasSocial.call('list',{kind:tab==='rankings'?'rankings':kind,metric,...(cursor?{cursor}:{})});
+      const result=await root.ModeAtlasSocial.call('list',{kind:tab==='rankings'?'rankings':kind,...(tab==='rankings'?{metric}:{}),...(cursor?{cursor}:{})});
       if(!alive(ticket))return;loading.remove();
       if(!result.rows.length && !cursor)list.append(el('p','ma-social-empty',kind==='incoming'?'You’re all caught up. New requests will appear here.':kind==='outgoing'?'No requests waiting for a reply.':kind==='blocked'?'No blocked profiles.':'Your circle starts here. Add a friend using their code.'));
       for(const profile of result.rows)list.append(row(profile,tab==='rankings'));
@@ -145,6 +145,13 @@
         const card=el('section','ma-weekly-summary');card.append(el('h3','','A fresh start, every week'));
         const reset=new Date(weekly.period.endAt).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
         card.append(el('p','ma-social-note',`Everyone resets together · ${reset}`));
+        const hours=Math.max(0,Math.ceil((weekly.period.endAt-Date.now())/3600000));
+        card.append(el('p','ma-social-note',`About ${hours>=24?`${Math.floor(hours/24)}d ${hours%24}h`:`${hours}h`} remaining · Monday 00:00 UTC reset`));
+        const history=el('details','ma-weekly-rules');history.append(el('summary','','Your weekly results'));
+        const results=weekly.results||weekly.awards||[];
+        if(!results.length)history.append(el('p','ma-social-note','Your place and score will be saved after a week closes. Earlier prize receipts remain available; older unrecorded finishes are not estimated.'));
+        for(const result of results)history.append(el('p','ma-social-note',`Week of ${result.week} · #${number(result.rank)} · ${number(result.score)} weekly XP${result.xp?` · +${number(result.xp)} personal XP`:' · No prize'}`));
+        card.append(history);
         if(!weekly.enabled){
           card.append(el('p','','Join learners worldwide and compare this week with your friends. Your name, chosen avatar, level and weekly score will be visible to other participants.'),
             el('p','ma-social-note','Only new online Kana practice counts. Past XP, imports, developer adjustments and prizes never increase your weekly score.'),
@@ -159,12 +166,18 @@
         card.append(details);
         if(weekly.awards?.length){const recent=weekly.awards[0];card.append(el('p','ma-weekly-prize',`Last prize · #${recent.rank} · +${number(recent.xp)} personal XP · week of ${recent.week}`));}
         const filters=el('div','ma-atlas-tabs');filters.setAttribute('aria-label','Weekly ranking scope');
-        for(const [scope,label]of [['global','Global'],['friends','Friends']]){const control=button(label,()=>{weeklyScope=scope;home();});control.setAttribute('aria-pressed',String(scope===weeklyScope));filters.append(control);}
+        for(const [scope,label]of [['global','Global'],['nearby','Near me'],['friends','Friends']]){const control=button(label,()=>{weeklyScope=scope;home();});control.setAttribute('aria-pressed',String(scope===weeklyScope));filters.append(control);}
         list.append(card,filters);
       }
       const result=await root.ModeAtlasSocial.call('weeklyList',{scope:weeklyScope,...(cursor?{cursor}:{})});if(!alive(ticket))return;
       loading.remove();
-      if(!result.rows.length&&!cursor)list.append(el('p','ma-social-empty',weeklyScope==='friends'?'No friends have posted a weekly score yet. Invite them to join, then start practising.':'The week is open. Start an online Kana session to post your first score.'));
+      if(!result.rows.length&&!cursor)list.append(el('p','ma-social-empty',weeklyScope==='friends'?'No friends have posted a weekly score yet. Invite them to join, then start practising.':weeklyScope==='nearby'?'Post your first weekly score to see learners near your place.':'The week is open. Start an online Kana session to post your first score.'));
+      if(weeklyScope==='nearby'){
+        const self=result.rows.find(row=>row.uid===owner),above=self&&result.rows.filter(row=>row.score>self.score).at(-1);
+        if(above)list.append(el('p','ma-weekly-target',`${number(above.score-self.score+1)} more weekly XP to pass ${above.displayName}.`));
+        else if(self?.rank===1)list.append(el('p','ma-weekly-target','You’re in first place. Keep building your week.'));
+        list.append(el('p','ma-social-note','Nearby places use the global ranking. Tied scores share a place; blocked profiles stay hidden.'));
+      }
       for(const profile of result.rows)list.append(row(profile,true));
       if(result.nextCursor){const more=button('Load more',()=>{more.remove();void loadWeekly(list,result.nextCursor);});list.append(more);}
     }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');list.append(button('Try again',home));}}
@@ -359,7 +372,7 @@
   }
   function mount(parent){
     if(!root.ModeAtlasSocial.isEnabled())return;
-    owner=root.KanaCloudSync?.getUser?.()?.uid;state=null;tab=new URLSearchParams(location.search).get('ranking')==='weekly'?'rankings':'friends';kind='friends';
+    owner=root.KanaCloudSync?.getUser?.()?.uid;state=null;tab=new URLSearchParams(location.search).get('ranking')==='weekly'?'rankings':'friends';kind='friends';weeklyScope='global';
     if(tab==='rankings')metric='weekly';
     const container=el('div','ma-social');host=container;
     notice=el('p','ma-social-status');notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.hidden=true;

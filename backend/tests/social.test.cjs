@@ -505,12 +505,14 @@ test('weekly rankings honor friends, mutual blocking, shared ranks, opt-out and 
   for(const [p,score]of [[a,200],[b,200],[c,100]])await db.doc(`weeklyCompetitions/${week}/entries/${p.uid}`).set({uid:p.uid,week,active:true,score,days:{}});
   await db.doc('socialAccounts/'+a.uid).update({'summary.level':21});
   const board=await weekly.list(a.uid,{scope:'global'});
+  assert.deepEqual((await weekly.list(a.uid,{scope:'nearby'})).rows.map(row=>row.uid),board.rows.map(row=>row.uid));
   assert.deepEqual(board.rows.map(row=>row.rank),[1,1,3]);assert.equal(board.rows.find(row=>row.uid===a.uid).level,12);
   assert.ok(board.rows.every(row=>!row.stats));
   assert.equal((await weekly.list(a.uid,{scope:'friends'})).rows.length,1);
   await friend(a,b);assert.equal((await weekly.list(a.uid,{scope:'friends'})).rows.length,2);
   await a.call('block',{uid:b.uid});assert.ok(!(await weekly.list(a.uid,{scope:'global'})).rows.some(row=>row.uid===b.uid));
   assert.ok(!(await weekly.list(b.uid,{scope:'global'})).rows.some(row=>row.uid===a.uid));
+  assert.ok(!(await weekly.list(a.uid,{scope:'nearby'})).rows.some(row=>row.uid===b.uid));
   await weekly.preference(c.uid,{enabled:false});assert.ok(!(await weekly.list(a.uid,{scope:'global'})).rows.some(row=>row.uid===c.uid));
   await weekly.preference(c.uid,{enabled:true});assert.equal((await weekly.state(c.uid)).score,100);
 });
@@ -526,11 +528,13 @@ test('weekly prizes settle once, honor ties and preserve private saves without f
   for(const [p,base,prize,rank]of [[a,7003,500,1],[b,5800,500,1],[c,0,150,3]]){
     const saved=(await db.doc(`users/${p.uid}/appData/kanaTrainer`).get()).data();
     assert.equal(projectSave(saved).xp,base+prize);assert.equal(saved.sections.wordBank.data.items[0].english,'private word');
-    const status=await weekly.state(p.uid);assert.equal(status.score,0);assert.equal(status.awards[0].xp,prize);assert.equal(status.awards[0].rank,rank);
+    const status=await weekly.state(p.uid);assert.equal(status.score,0);assert.equal(status.awards[0].xp,prize);assert.equal(status.awards[0].rank,rank);assert.deepEqual(status.results[0],status.awards[0]);
   }
   const next=policy.period(at);await db.doc('weeklyCompetitions/'+next.id).set({...next,settled:false});
   await db.doc(`weeklyCompetitions/${next.id}/entries/${a.uid}`).set({uid:a.uid,active:true,score:100});at=next.endAt+300001;
   await weekly.settle(next.id);assert.equal((await db.doc('weeklyCompetitions/'+next.id).get()).data().reason,'minimum-players');
+  assert.equal((await weekly.state(a.uid)).results[0].xp,0);assert.equal((await weekly.state(a.uid)).results[0].rank,1);
+  await weekly.preference(a.uid,{enabled:false});await weekly.syncAccount(a.uid);assert.equal((await weekly.state(a.uid)).results[0].score,100);
 });
 
 test('account notification tokens move between owners and alerts are once per day with quiet hours',async()=>{
@@ -542,8 +546,8 @@ test('account notification tokens move between owners and alerts are once per da
   const preferences={dailyGoals:true,weeklyGoals:true,streak:true,overtaken:true},token='test-push-token-'.repeat(5);
   await notifications.configure(a.uid,{preferences,token,timeZone:'UTC'});
   await notifications.inspect(a.uid);await notifications.inspect(a.uid);assert.equal(sent.length,1);
-  position=3;await notifications.inspect(a.uid);assert.equal(sent.length,1,'No rank alerts after 8pm');
-  at+=12*3600000;position=4;await notifications.inspect(a.uid);assert.equal(sent.length,1,'No rank alerts before 9am');
+  at+=2*3600000;position=3;await notifications.inspect(a.uid);assert.equal(sent.length,1,'No rank alerts after quiet hours start');
+  at+=10*3600000;position=4;await notifications.inspect(a.uid);assert.equal(sent.length,1,'No rank alerts before 9am');
   at+=3600000;position=5;await notifications.inspect(a.uid);assert.equal(sent.length,2);assert.match(sent[1].notification.body,/#5/);
   position=6;await notifications.inspect(a.uid);assert.equal(sent.length,2,'One rank alert per local day');
   await notifications.configure(b.uid,{preferences,token,timeZone:'UTC'});
@@ -567,4 +571,57 @@ test('goal and streak notices use the saved account time zone and suppress compl
   value.sections.progress.data.state.claims=Object.fromEntries(['daily','weekly'].flatMap(period=>rules.goals(period==='daily'?day:week,period).map(goal=>[`v4:${period}:${period==='daily'?day:week}:goal:${goal.id}`,goal.xp])));
   assert.equal(evening(value,preferences,'Australia/Melbourne',at),null);
   assert.equal(evening(value,preferences,'UTC',at),null);
+});
+
+test('non-ranking friends lists ignore legacy ranking filters while lifetime rankings validate metrics',async()=>{
+  const a=await learner('List Regression');
+  for(const kind of ['friends','incoming','outgoing','blocked'])assert.deepEqual((await a.call('list',{kind,metric:'weekly'})).rows,[]);
+  await assert.rejects(a.call('list',{kind:'rankings',metric:'weekly'}),{code:'INVALID_ARGUMENT'});
+});
+
+test('weekly results resume a tie across the bounded cursor and preserve every private finish once',async()=>{
+  const {createWeekly}=require('../functions/weekly.cjs'),policy=require('../functions/shared/mode-atlas-weekly-rules.js');
+  const period=policy.period(Date.parse('2093-09-30T12:00:00Z')),weekly=createWeekly({db,now:()=>period.endAt+300001});
+  const ref=db.doc('weeklyCompetitions/'+period.id),batch=db.batch();batch.set(ref,{...period,settled:false});
+  for(let i=0;i<103;i++){
+    const uid='cursor-result-'+String(i).padStart(3,'0'),score=i<101?200:50;
+    batch.set(db.doc('socialAccounts/'+uid),{active:true,weekly:{enabled:true}});
+    batch.set(ref.collection('entries').doc(uid),{uid,active:true,score});
+  }
+  await batch.commit();await weekly.settle(period.id);
+  assert.equal((await ref.get()).data().settled,false);assert.equal((await ref.get()).data().resultCount,100);
+  await weekly.settle(period.id);await weekly.settle(period.id);
+  assert.equal((await ref.get()).data().settled,true);assert.equal((await ref.get()).data().resultCount,103);
+  for(const [id,rank,xp]of [['000',1,500],['100',1,500],['101',102,0],['102',102,0]]){
+    const uid='cursor-result-'+id,status=await weekly.state(uid);assert.equal(status.results[0].rank,rank);assert.equal(status.results[0].xp,xp);
+    const saved=(await db.doc(`users/${uid}/appData/kanaTrainer`).get()).data();assert.equal(projectSave(saved||{}).xp,xp);
+  }
+  await weekly.erase('cursor-result-100');assert.equal((await db.doc('weeklyAwards/cursor-result-100').get()).exists,false);
+});
+
+test('notification timing preserves old-client schedules and suppresses overlap per device',async()=>{
+  const {createNotifications}=require('../functions/notifications.cjs');
+  let at=Date.parse('2092-10-01T20:15:00Z');const sent=[];
+  const notifications=createNotifications({db,now:()=>at,weekly:{rank:async()=>null},messaging:{sendEachForMulticast:async request=>{sent.push(request);return {successCount:request.tokens.length,responses:request.tokens.map(()=>({success:true}))};}}});
+  const a=await learner('Timed Alerts'),preferences={dailyGoals:true,weeklyGoals:false,streak:false,overtaken:false};
+  const schedule={reminderMinute:1200,quietStart:1290,quietEnd:480};
+  await notifications.configure(a.uid,{preferences,token:'local-overlap-token-12345',timeZone:'UTC',schedule,localReminder:{enabled:true,hour:19,minute:30}});
+  await notifications.configure(a.uid,{preferences,token:'other-device-token-12345',timeZone:'UTC',localReminder:{enabled:false,hour:19,minute:0}});
+  assert.deepEqual((await notifications.state(a.uid)).schedule,schedule);
+  await notifications.inspect(a.uid);await notifications.inspect(a.uid);assert.equal(sent.length,1);assert.deepEqual(sent[0].tokens,['other-device-token-12345']);
+  assert.equal(Number(sent[0].apns.headers['apns-expiration'])*1000,Date.parse('2092-10-01T21:30:00Z'));
+  await assert.rejects(notifications.configure(a.uid,{preferences,token:'',timeZone:'UTC',schedule:{...schedule,reminderMinute:1305}}),{code:'invalid-argument'});
+  at=Date.parse('2092-10-02T21:45:00Z');await notifications.send(a.uid,{id:'late-test',kind:'dailyGoals',title:'Late',body:'No delivery',destination:'yourAtlas',expiresAt:at+3600000});assert.equal(sent.length,1);
+});
+
+test('cached mastery projections refresh on Friends views without waiting for another study session',async()=>{
+  const a=await learner('Mastery Reader'),b=await learner('Mastery Friend');await friend(a,b);
+  await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':1,'summary.combinedMastered':1});
+  const result=await a.call('list',{kind:'rankings',metric:'mastery'}),peer=result.rows.find(row=>row.uid===b.uid);
+  assert.equal(peer.stats.readingMastered,1);assert.equal(peer.stats.writingMastered,0);assert.equal(peer.stats.combinedMastered,0);
+  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,2);
+  const saved=(await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis();
+  await a.call('list',{kind:'friends'});assert.equal((await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis(),saved);
+  await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':1,'summary.combinedMastered':1});
+  assert.equal((await a.call('profile',{uid:b.uid})).profile.stats.combinedMastered,0);
 });

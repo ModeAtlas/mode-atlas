@@ -419,8 +419,8 @@ test('account alerts are independent, opt-in and remain editable with large text
     KanaCloudSync.getUser=()=>({uid:'alerts-owner'});
     window.ModeAtlasSocial={...ModeAtlasSocial,call:async(action,data)=>{
       alertTest.calls.push(action);
-      if(action==='configureNotifications')alertTest.preferences={...data.preferences};
-      return {preferences:{...alertTest.preferences}};
+      if(action==='configureNotifications'){alertTest.preferences={...data.preferences};alertTest.schedule={...data.schedule};}
+      return {preferences:{...alertTest.preferences},schedule:alertTest.schedule};
     }};
     ModeAtlasSettings.open();
   });
@@ -431,6 +431,15 @@ test('account alerts are independent, opt-in and remain editable with large text
   }
   await daily.uncheck();await expect(daily).toBeEnabled();await expect(daily).not.toBeChecked();
   await expect(page.locator('#maAlert-streak')).toBeChecked();
+  await page.locator('#maAlertTime-reminderMinute').fill('18:30');
+  await page.locator('#maAlertTime-quietStart').fill('21:30');
+  await page.locator('#maAlertTime-quietEnd').fill('08:00');
+  await page.getByRole('button',{name:'Save alert times',exact:true}).click();
+  await expect(page.locator('#maReminderStatus')).toHaveText('Alert times saved.');
+  expect(await page.evaluate(()=>alertTest.schedule)).toEqual({reminderMinute:1110,quietStart:1290,quietEnd:480});
+  await page.locator('#maAlertTime-reminderMinute').fill('22:00');
+  await page.getByRole('button',{name:'Save alert times',exact:true}).click();
+  await expect(page.locator('#maReminderStatus')).toContainText('outside quiet hours');
   await page.setViewportSize({width:320,height:852});
   await page.evaluate(()=>{document.documentElement.style.setProperty('--ma-ios-text-scale','1.6');document.documentElement.setAttribute('data-ma-large-text','');});
   await page.locator('#maAlert-overtaken').scrollIntoViewIfNeeded();

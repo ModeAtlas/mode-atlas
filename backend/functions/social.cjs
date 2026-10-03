@@ -1,7 +1,7 @@
 'use strict';
 const {randomBytes,randomUUID,createHash}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
-const {projectSave,publicProfile,rankProfiles}=require('./projection.cjs');
+const {projectSave,publicProfile,rankProfiles,PROJECTION_VERSION}=require('./projection.cjs');
 const identity=require('./shared/mode-atlas-social-identity.js');
 const {createIdentityStore,mayUseName,accountPhoto}=require('./identity.cjs');
 const {createModeration}=require('./moderation.cjs');
@@ -197,8 +197,8 @@ function createSocial({db,auth,messaging,now=Date.now}){
     fields(data,['kind','metric','cursor']);
     const kind=data.kind||'friends',metric=data.metric||'xp';
     if(!['friends','incoming','outgoing','blocked','rankings'].includes(kind))fail('invalid-argument','Choose a friends list.');
-    if(!['xp','streak','mastery','reading','writing','correct'].includes(metric))fail('invalid-argument','Choose a ranking.');
-    return db.runTransaction(async tx=>{
+    if(kind==='rankings'&&!['xp','streak','mastery','reading','writing','correct'].includes(metric))fail('invalid-argument','Choose a ranking.');
+    const result=await db.runTransaction(async tx=>{
       const self=await tx.get(accountRef(uid)),a=self.data();requireActive(a);
       let ids;
       if(kind==='blocked'){
@@ -218,28 +218,40 @@ function createSocial({db,auth,messaging,now=Date.now}){
       });
       if(kind==='rankings')profiles=rankProfiles(profiles,metric);
       else profiles.sort((a,b)=>a.displayName.localeCompare(b.displayName,'en')||a.uid.localeCompare(b.uid,'en'));
-      return {...slicePage(profiles,data.cursor),total:profiles.length,metric};
+      const visible=new Set(profiles.map(row=>row.uid));
+      const stale=kind==='friends'||kind==='rankings'?docs.filter(doc=>visible.has(doc.id)&&doc.data().summary?.projectionVersion!==PROJECTION_VERSION).map(doc=>doc.id):[];
+      return {response:{...slicePage(profiles,data.cursor),total:profiles.length,metric},stale};
     });
+    if(result.stale.length){
+      // Only a policy migration loads private saves. Normal list requests retain
+      // their original read cost; migrations use bounded, separate transactions.
+      for(let i=0;i<result.stale.length;i+=10)await Promise.all(result.stale.slice(i,i+10).map(id=>refreshSummary(id,null,true)));
+      return list(uid,data);
+    }
+    return result.response;
   }
   async function profile(uid,data){
     fields(data,['uid']);if(!validUid(data.uid))fail('invalid-argument','Choose a profile.');
-    return db.runTransaction(async tx=>{
+    const result=await db.runTransaction(async tx=>{
       const [self,other,blocked]=await tx.getAll(accountRef(uid),accountRef(data.uid),blockRef(uid,data.uid));const a=self.data(),b=other.data();requireActive(a);
       const friend=uid===data.uid||(has(a.friends,data.uid)&&has(b?.friends,uid));
       if(blocked.exists||(!friend&&!(weeklyActive(a)&&weeklyActive(b))))fail('permission-denied','This profile is available to accepted friends or weekly competitors.');
-      const value=publicProfile(data.uid,b,now(),friend);if(!value)fail('not-found','This profile is no longer available.');return {profile:value,friend};
+      const value=publicProfile(data.uid,b,now(),friend);if(!value)fail('not-found','This profile is no longer available.');
+      return {profile:value,friend,stale:friend&&b.summary?.projectionVersion!==PROJECTION_VERSION};
     });
+    if(result.stale){await refreshSummary(data.uid,null,true);return profile(uid,data);}
+    delete result.stale;return result;
   }
-  async function refreshSummary(uid,user){
+  async function refreshSummary(uid,user,cachedAccess=false){
     if(!validUid(uid))return;
-    if(!user)user=await staff.user(uid);
+    if(!user&&!cachedAccess)user=await staff.user(uid);
     await db.runTransaction(async tx=>{
       const ref=accountRef(uid),[doc,save]=await tx.getAll(ref,saveRef(uid)),a=doc.data();
       if(!a?.active || a.deleting)return;
       // Read the latest save inside the transaction: trigger delivery can repeat or reorder.
       const syncedAt=save.updateTime?.toMillis()||0;
-      const rewardAccess=await rewards.read(user,tx);
-      if(a.summary?.version===5&&a.summary?.syncedAt===syncedAt&&a.rewardAccess&&rewards.key(a.rewardAccess)===rewards.key(rewardAccess))return;
+      const rewardAccess=cachedAccess?a.rewardAccess||{}:await rewards.read(user,tx);
+      if(a.summary?.version===5&&a.summary?.projectionVersion===PROJECTION_VERSION&&a.summary?.syncedAt===syncedAt&&a.rewardAccess&&rewards.key(a.rewardAccess)===rewards.key(rewardAccess))return;
       tx.update(ref,{rewardAccess,summary:projectSave(save.data(),a.profile.timeZone,syncedAt,rewardAccess)});
     });
   }

@@ -364,3 +364,48 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   await page.screenshot({path:info.outputPath('exclusive-large-text.png'),animations:'disabled'});
   await page.evaluate(()=>{rewardUser='';ModeAtlasRewardAccess.clear();});await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);
 });
+
+for(const mode of ['reading','writing'])test(`${mode}: targeted mastery practice uses kana outside selected rows and actual pool XP`,async({page})=>{
+  await prepare(page);await open(page,`/${mode}/?practice=10&kana=${encodeURIComponent('ファ')}&hints=off`);
+  await expect(page.locator('#studySetDescription')).toContainText('ファ');
+  await expect(page).toHaveURL(new RegExp('/'+mode+'/$'));
+  expect(await page.evaluate(()=>sessionStarted)).toBe(false);
+  await page.locator('#startBtn').click();
+  expect(await page.evaluate(()=>({kana:currentChar,pool:sessionStats.study.poolSize,hints:sessionStats.study.hintsEnabled}))).toEqual({kana:'ファ',pool:1,hints:false});
+  if(mode==='writing')await page.locator('.choice-btn').getByText('ファ',{exact:true}).click();
+  else for(const letter of 'fa')await page.locator(`.ma-ios-reading-keyboard [data-key="${letter}"]`).click();
+  await expect.poll(()=>page.evaluate(()=>sessionStats.correct)).toBe(1);
+  expect(await page.evaluate(()=>sessionStats.study.xpParts.answers)).toBe(2);
+});
+
+test('mastery separates Reading, Writing and Both and returns to the selected map',async({page},info)=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page);await open(page,'/');
+  await page.evaluate(()=>{
+    ModeAtlasStorage.writeModeJSON('reading','charStats',{'い':{correct:38,wrong:3},'う':{correct:50,wrong:1}});
+    ModeAtlasStorage.writeModeJSON('reading','charTimes',{'い':2160,'う':1540});
+    ModeAtlasStorage.writeModeJSON('writing','charStats',{'い':{correct:3,wrong:0},'う':{correct:2,wrong:0}});
+    ModeAtlasFeatures.openMasteryMap();
+  });
+  const cell=page.locator('[data-ma-mastery-kana="い"]');await expect(cell).toContainText('Reviewing');
+  await page.getByRole('button',{name:'Writing',exact:true}).click();await expect(cell).toContainText('Learning');
+  await page.getByRole('button',{name:'Both',exact:true}).click();await expect(cell).toContainText('Learning');
+  await cell.click();await expect(page.locator('.ma-mastery-directions')).toContainText('Reading: Reviewing · Writing: Learning');
+  await expect(page.locator('.ma-mastery-checks')).toHaveCount(2);
+  const link=page.getByRole('link',{name:'Practise Writing',exact:true});await expect(link).toHaveAttribute('href',/\/writing\/\?practice=10&kana=/);
+  await page.setViewportSize({width:320,height:852});await page.evaluate(()=>{document.documentElement.style.fontSize='24px';});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:info.outputPath('mastery-directions.png'),animations:'disabled'});
+  await page.getByRole('button',{name:'Close Mastery Map or return to the map',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Both',exact:true})).toHaveAttribute('aria-pressed','true');await expect(cell).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
+test('goal shortcuts and weekly recap expose recorded activity without inventing historical totals',async({page})=>{
+  await prepare(page);await open(page,'/');await page.evaluate(()=>ModeAtlasRewardsUI.open());
+  await expect(page.locator('.ma-routine-goal[href]').first()).toHaveAttribute('href',/\/(reading|writing)\/\?/);
+  await page.getByRole('tab',{name:'Recap',exact:true}).click();
+  await expect(page.locator('.ma-recap-grid')).toContainText('Reading correct');await expect(page.locator('.ma-recap-grid')).toContainText('0 / 7');
+  await page.getByRole('button',{name:'Last week',exact:true}).click();await expect(page.locator('.ma-atlas-recap')).toContainText('No dated practice');
+  await expect(page.getByRole('link',{name:'View weekly ranking',exact:true})).toHaveAttribute('href','/?section=friends&ranking=weekly');
+  await page.getByRole('tab',{name:'Recap',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toHaveAttribute('aria-selected','true');
+});

@@ -333,6 +333,15 @@
     }
     return {streak,weekDays:weekDays(state,today),goals};
   }
+  function weeklyRecap(input,at=Date.now(),previous=false){
+    const state=input?normalizeState(input):readState(),today=dayKey(at),start=weekKey(root.ModeAtlasDates.shiftDateKey(today,previous?-7:0));
+    const metrics=periodMetrics(state,start,'weekly'),daily=activityTotals(state,today);
+    const weeklyGoals=Object.entries(state.claims).filter(([key,n])=>n>0&&(key.startsWith(`v4:weekly:${start}:goal:`)||key===`v3:${start}:goal:week`)).length;
+    return {start,end:root.ModeAtlasDates.shiftDateKey(start,6),studyDays:metrics['study.days']||0,
+      reading:metrics['kana.reading']||0,writing:metrics['kana.writing']||0,variety:metrics['kana.variety']||0,
+      sessions:metrics['kana.sessions']||0,dailyGoals:metrics['study.goals']||0,weeklyGoals,
+      todayReading:daily.reading,todayWriting:daily.writing};
+  }
   function achievementStats(input){
     const state=input?normalizeState(input):readState(),days=new Set();let dailyGoals=0,weeklyGoals=0;
     for(const [key,n]of Object.entries(state.claims))if(n){
@@ -540,7 +549,7 @@
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
-    award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, achievementStats, recordRewardGrants, studyDays, studyStreak, selectAppearance, selectBanner, levelRequirement,
+    award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordRewardGrants, studyDays, studyStreak, selectAppearance, selectBanner, levelRequirement,
     getXP, getLifetimeCorrect, getLevelFromXP, getSummary
   });
 

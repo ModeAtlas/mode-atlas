@@ -32,6 +32,7 @@ async function prepare(page,{active=true,...layout}={}){
       if(action==='weeklyPreference'){data.weeklyEnabled=input.enabled;return {enabled:input.enabled};}
       if(action==='weeklyList')return {rows:(input.scope==='friends'?[{...data.self,rank:1,score:1200}]:[{...data.friend,rank:1,score:1400},{...data.self,rank:2,score:1200}]).map(({stats,...row})=>row),nextCursor:null};
       if(action==='list'){
+        if(input.metric&&!['xp','streak','mastery','reading','writing','correct'].includes(input.metric))throw new Error('Choose a ranking.');
         const rows=input.kind==='rankings'?[{...data.friend,rank:1,score:9000},{...data.self,rank:2,score:4321}]:data[input.kind];
         const response={rows:structuredClone(rows),total:rows.length,nextCursor:null};
         if(window.socialDelayList)return new Promise(resolve=>{window.finishSocialList=()=>resolve(response);});
@@ -370,7 +371,19 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await expect(page.locator('.ma-weekly-summary')).toContainText('Everyone resets together');
     await expect(page.locator('.ma-weekly-summary')).toContainText('At least two learners');
     await fits(page);await page.screenshot({path:info.outputPath('weekly-board.png'),animations:'disabled'});
+    await page.locator('#maSocialList').getByRole('button',{name:'Near me',exact:true}).click();
+    await expect(page.locator('.ma-weekly-target')).toContainText('201 more weekly XP');
     await page.locator('#maSocialList').getByRole('button',{name:'Friends',exact:true}).click();
+    await expect(page.locator('.ma-social-rank')).toHaveText(['1']);
+    await page.locator('#maSocialTab-friends').click();
+    await expect(page.locator('.ma-social-row')).toHaveCount(1);await expect(page.locator('.ma-social-status')).toBeHidden();
+    for(const kind of ['incoming','outgoing','blocked','friends']){
+      await page.getByLabel('Friends list',{exact:true}).selectOption(kind);
+      await expect.poll(()=>page.evaluate(()=>socialCalls.filter(call=>call.action==='list').at(-1).input.kind)).toBe(kind);
+    }
+    expect(await page.evaluate(()=>socialCalls.filter(call=>call.action==='list'&&call.input.kind!=='rankings').every(call=>!('metric' in call.input)))).toBe(true);
+    await page.locator('#maSocialTab-rankings').click();
+    await expect(page.getByLabel('Ranking',{exact:true})).toHaveValue('weekly');
     await expect(page.locator('.ma-social-rank')).toHaveText(['1']);
     await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
     await fits(page);await page.screenshot({path:info.outputPath('weekly-large-text.png'),animations:'disabled'});
