@@ -6,6 +6,7 @@ import WidgetKit
 import AVFAudio
 import MessageUI
 import FirebaseCore
+import FirebaseMessaging
 
 @objc(ModeAtlasNativePlugin)
 public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, NotificationHandlerProtocol, MFMailComposeViewControllerDelegate {
@@ -13,7 +14,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     public let jsName = "ModeAtlasNative"
     public let pluginMethods: [CAPPluginMethod] = [
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
-        "configureStudyReminder", "getEngagementState",
+        "configureStudyReminder", "getEngagementState", "deletePushToken",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
         "exportBackup", "getAccessibilityPreferences", "setAppIcon", "playSound", "stopSounds", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion", "revokeAppleAuthorization"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
@@ -33,6 +34,15 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     @objc func getAppVersion(_ call: CAPPluginCall) {
         call.resolve(["version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
                       "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "", "platform": "ios"])
+    }
+
+    @objc func deletePushToken(_ call: CAPPluginCall) {
+        enqueue(call) {
+            guard FirebaseApp.app() != nil else { return ["deleted": true] }
+            Messaging.messaging().isAutoInitEnabled = false
+            try await Messaging.messaging().deleteToken()
+            return ["deleted": true]
+        }
     }
 
     @objc func revokeAppleAuthorization(_ call: CAPPluginCall) {

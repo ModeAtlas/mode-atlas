@@ -35,14 +35,16 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
     if(review.stage(writing.review,writing.stats,writing.time)===3)writingMastered++;
     if(review.combinedStage(reading,writing)===3)combinedMastered++;
   }
-  return {xp:summary.xp,level:summary.level,totalCorrect:summary.lifetimeCorrect,
+  return {version:progress.STATE_VERSION,xp:summary.xp,level:summary.level,totalCorrect:summary.lifetimeCorrect,
     readingMastered,writingMastered,combinedMastered,kanaCount:kana.collections.all.length,
     landmark:selected.id,banner:rewards.banner(seeded.appearance.banner,summary.level,access).id,studyDays:owner.studyDays(seeded),syncedAt};
 }
 
 function publicProfile(uid, account, now = Date.now(), full = true) {
   if(!account?.active || account.deleting || account.restricted || !account.profile)return null;
-  const summary=account.summary || projectSave();
+  const saved=account.summary || projectSave();
+  // A cached profile must not keep a legacy level until its owner studies again.
+  const summary={...saved,level:progress.getLevelFromXP(saved.xp).level};
   const landmark=rewards.appearance(summary.landmark,summary.level,account.rewardAccess);
   const out={uid,displayName:account.profile.displayName,avatar:account.profile.avatar,
     frame:landmark.frame,title:landmark.title,banner:rewards.banner(summary.banner,summary.level,account.rewardAccess).id,level:summary.level};

@@ -4,7 +4,7 @@
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=text;return node;};
   const identityPolicy=root.ModeAtlasSocialIdentity,avatars=identityPolicy.avatars;
   const number=value=>Number(value||0).toLocaleString();
-  let host=null,body=null,notice=null,state=null,owner=null,generation=0,tab='friends',kind='friends',metric='xp';
+  let host=null,body=null,notice=null,state=null,owner=null,generation=0,tab='friends',kind='friends',metric='xp',weeklyScope='global';
   const alive=ticket=>!!host?.isConnected && ticket===generation && owner===root.KanaCloudSync?.getUser?.()?.uid;
   function button(label,action,cls='ma-button ma-button--ghost'){
     const node=el('button',cls,label);node.type='button';if(action)node.addEventListener('click',action);return node;
@@ -89,17 +89,18 @@
       tools.append(label,button('Add friend',()=>addFriend(),'ma-button ma-button--primary'),button('My code',myCode),iconButton('Refresh','refresh',load));
     }else{
       const label=el('div','ma-social-filter','Compare'),select=el('select');select.setAttribute('aria-label','Ranking');
-      for(const [value,title]of [['xp','Level & XP'],['streak','Study streak'],['mastery','Mastery · Both'],['reading','Mastery · Reading'],['writing','Mastery · Writing'],['correct','Total correct']]){const option=el('option','',title);option.value=value;select.append(option);}
+      for(const [value,title]of [['weekly','This week'],['xp','Lifetime · Level & XP'],['streak','Study streak'],['mastery','Mastery · Both'],['reading','Mastery · Reading'],['writing','Mastery · Writing'],['correct','Total correct']]){const option=el('option','',title);option.value=value;select.append(option);}
       select.value=metric;select.addEventListener('change',()=>{metric=select.value;home();});label.append(select);tools.append(label,iconButton('Refresh','refresh',load));
     }
     if(state.canModerate)tools.append(iconButton('Moderator menu','shield',()=>moderationHub()));
     body.append(tools);
-    if(tab==='rankings')body.append(el('p','ma-social-note','Rankings use each friend’s latest synced learning progress.'));
+    if(tab==='rankings'&&metric!=='weekly')body.append(el('p','ma-social-note','Rankings use each friend’s latest synced learning progress.'));
     const list=el('div','ma-social-list');list.id='maSocialList';list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby','maSocialTab-'+tab);body.append(list);
-    void loadPage(list,null);
+    if(tab==='rankings'&&metric==='weekly')void loadWeekly(list);
+    else void loadPage(list,null);
   }
   function score(row){
-    if(metric==='xp')return `${number(row.score)} XP`;
+    if(metric==='xp'||metric==='weekly')return `${number(row.score)} XP`;
     if(metric==='streak')return `${number(row.score)} ${row.score===1?'day':'days'}`;
     if(metric==='correct')return `${number(row.score)} correct`;
     return `${number(row.score)} / ${number(row.stats.kanaCount)}`;
@@ -135,6 +136,38 @@
       if(tab==='rankings' && result.total===1)list.append(el('p','ma-social-note','Add a friend to compare your progress.'));
       if(result.nextCursor){const more=button('Load more',()=>{more.remove();void loadPage(list,result.nextCursor);});list.append(more);}
     }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');}}
+  }
+  async function loadWeekly(list,cursor=null){
+    const ticket=generation,loading=el('p','ma-social-note','Loading this week…');list.append(loading);
+    try{
+      if(!cursor){
+        const weekly=await root.ModeAtlasSocial.call('weeklyState');if(!alive(ticket))return;
+        const card=el('section','ma-weekly-summary');card.append(el('h3','','A fresh start, every week'));
+        const reset=new Date(weekly.period.endAt).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+        card.append(el('p','ma-social-note',`Everyone resets together · ${reset}`));
+        if(!weekly.enabled){
+          card.append(el('p','','Join learners worldwide and compare this week with your friends. Your name, chosen avatar, level and weekly score will be visible to other participants.'),
+            el('p','ma-social-note','Only new online Kana practice counts. Past XP, imports, developer adjustments and prizes never increase your weekly score.'),
+            button('Join weekly competition',()=>run(()=>root.ModeAtlasSocial.call('weeklyPreference',{enabled:true}),home),'ma-button ma-button--primary'));
+          loading.remove();list.append(card);return;
+        }
+        const stats=el('div','ma-weekly-stats');
+        for(const [label,value]of [['Global rank',weekly.rank?'#'+number(weekly.rank):'—'],['Weekly XP',number(weekly.score)]]){const item=el('div');item.append(el('strong','',value),el('span','',label));stats.append(item);}
+        card.append(stats,el('p','ma-social-note','Prizes · 500 / 300 / 150 personal XP'));
+        const details=el('details','ma-weekly-rules');details.append(el('summary','','How weekly XP works'),el('p','ma-social-note','At least two learners must earn 100 weekly XP. First, second and third receive 500, 300 and 150 personal XP. Ties share the same place and prize.'),el('p','ma-social-note','Online Reading and Writing answers are checked by the server. Broader practice earns more as you cover different kana in a session; hints reduce the rate. Completion and goal bonuses, old saves and prizes count only towards personal XP. Submit before the reset; interrupted connections can retry within the same one-hour session. The daily safety limit is 20,000 weekly XP.'));
+        details.append(button('Leave weekly competition',()=>confirmAction('Leave the weekly competition?','Your profile will disappear from the weekly board. Your personal XP and Friends stay available. Rejoining this week restores your existing weekly score.','Leave competition','weeklyPreference',{enabled:false},home,home)));
+        card.append(details);
+        if(weekly.awards?.length){const recent=weekly.awards[0];card.append(el('p','ma-weekly-prize',`Last prize · #${recent.rank} · +${number(recent.xp)} personal XP · week of ${recent.week}`));}
+        const filters=el('div','ma-atlas-tabs');filters.setAttribute('aria-label','Weekly ranking scope');
+        for(const [scope,label]of [['global','Global'],['friends','Friends']]){const control=button(label,()=>{weeklyScope=scope;home();});control.setAttribute('aria-pressed',String(scope===weeklyScope));filters.append(control);}
+        list.append(card,filters);
+      }
+      const result=await root.ModeAtlasSocial.call('weeklyList',{scope:weeklyScope,...(cursor?{cursor}:{})});if(!alive(ticket))return;
+      loading.remove();
+      if(!result.rows.length&&!cursor)list.append(el('p','ma-social-empty',weeklyScope==='friends'?'No friends have posted a weekly score yet. Invite them to join, then start practising.':'The week is open. Start an online Kana session to post your first score.'));
+      for(const profile of result.rows)list.append(row(profile,true));
+      if(result.nextCursor){const more=button('Load more',()=>{more.remove();void loadWeekly(list,result.nextCursor);});list.append(more);}
+    }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');list.append(button('Try again',home));}}
   }
   function editProfile(){
     screen();const editing=state?.active;if(editing)back('Friends',home);
@@ -221,11 +254,13 @@
       const profile=result.profile,card=profileCard(profile,'ma-social-self');card.append(avatar(profile),identity(profile));body.append(card);
       if(state.canModerate)body.append(button('Moderation & warnings',()=>staffProfile(uid)));
       const stats=profile.stats,grid=el('div','ma-social-stats');
-      for(const [label,value]of [['Atlas level',number(profile.level)],['Total XP',number(stats.xp)],['Study streak',`${number(stats.streak)} days`],['Total correct',number(stats.totalCorrect)],['Reading mastery',`${stats.readingMastered} / ${stats.kanaCount}`],['Writing mastery',`${stats.writingMastered} / ${stats.kanaCount}`]]){const tile=el('div');tile.append(el('span','',label),el('strong','',value));grid.append(tile);}body.append(grid);
-      body.append(el('p','ma-social-note',stats.syncedAt?`Progress synced ${new Date(stats.syncedAt).toLocaleString()}.`:'Progress will appear after the next sync.'));
+      if(stats){
+        for(const [label,value]of [['Atlas level',number(profile.level)],['Total XP',number(stats.xp)],['Study streak',`${number(stats.streak)} days`],['Total correct',number(stats.totalCorrect)],['Reading mastery',`${stats.readingMastered} / ${stats.kanaCount}`],['Writing mastery',`${stats.writingMastered} / ${stats.kanaCount}`]]){const tile=el('div');tile.append(el('span','',label),el('strong','',value));grid.append(tile);}body.append(grid);
+        body.append(el('p','ma-social-note',stats.syncedAt?`Progress synced ${new Date(stats.syncedAt).toLocaleString()}.`:'Progress will appear after the next sync.'));
+      }else body.append(el('p','ma-social-note','Weekly competitor. Learning totals and mastery are shared only with accepted friends.'));
       if(uid!==owner){const actions=el('div','ma-social-tools');actions.append(
         button('Report',()=>reportProfile(profile)),
-        button('Remove friend',()=>confirmAction('Remove '+profile.displayName+'?','You will stop appearing in each other’s friends list and rankings.','Remove friend','remove',{uid},()=>showProfile(uid))),
+        ...(stats?[button('Remove friend',()=>confirmAction('Remove '+profile.displayName+'?','You will stop appearing in each other’s friends list and rankings.','Remove friend','remove',{uid},()=>showProfile(uid)))]:[]),
         button('Block',()=>confirmAction('Block '+profile.displayName+'?','You will not see each other’s profiles or receive requests from each other.','Block','block',{uid},()=>showProfile(uid)),'ma-button ma-button--danger'));body.append(actions);}
     }catch(error){if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
   }
@@ -324,7 +359,8 @@
   }
   function mount(parent){
     if(!root.ModeAtlasSocial.isEnabled())return;
-    owner=root.KanaCloudSync?.getUser?.()?.uid;state=null;tab='friends';kind='friends';
+    owner=root.KanaCloudSync?.getUser?.()?.uid;state=null;tab=new URLSearchParams(location.search).get('ranking')==='weekly'?'rankings':'friends';kind='friends';
+    if(tab==='rankings')metric='weekly';
     const container=el('div','ma-social');host=container;
     notice=el('p','ma-social-status');notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.hidden=true;
     body=el('div','ma-social-body');host.append(notice,body);

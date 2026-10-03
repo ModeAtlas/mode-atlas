@@ -10,10 +10,25 @@
   var plugins = capacitor.Plugins || {};
   var nativeBridge = plugins.ModeAtlasNative || null;
   var firebaseAuth = plugins.FirebaseAuthentication || null;
+  var messaging = plugins.FirebaseMessaging || null;
   var app = plugins.App || null;
 
   function hasBridge(method){ return !!(nativeBridge && typeof nativeBridge[method] === 'function'); }
   function hasFirebaseAuth(method){ return !!(firebaseAuth && typeof firebaseAuth[method] === 'function'); }
+  var pendingPush=null;
+  function consumePush(){
+    const account=root.KanaCloudSync?.getUser?.()?.uid;
+    if(!pendingPush||!account)return;
+    const data=pendingPush;pendingPush=null;
+    if(data.owner===account&&platform.destinationPath(data.destination))navigate(data.destination,false);
+  }
+  if(messaging?.addListener){
+    messaging.addListener('tokenReceived',()=>root.dispatchEvent(new CustomEvent('modeAtlasPushTokenChanged')));
+    messaging.addListener('notificationActionPerformed',event=>{
+      pendingPush=event.notification?.data;consumePush();
+    });
+    root.addEventListener('kanaCloudSyncStatusChanged',consumePush);
+  }
 
   // UIKit supplies the system text preference; the native stylesheet owns reflow.
   if (hasBridge('getAccessibilityPreferences')) {
@@ -32,7 +47,7 @@
     var path = platform.destinationPath(destination);
     if (!path) return false;
     var target = root.ModeAtlasVersionFile?.appUrl?.(path) || path;
-    if (location.pathname + location.search === target) {if(destination==='yourAtlas')root.ModeAtlasAccountNavigation?.open('atlas');return true;}
+    if (location.pathname + location.search === target) {if(destination==='yourAtlas')root.ModeAtlasAccountNavigation?.open('atlas');if(destination==='weekly')root.ModeAtlasAccountNavigation?.open('friends');return true;}
     if (replace) location.replace(target);
     else location.assign(target);
     return true;
@@ -107,6 +122,7 @@
         sounds: hasBridge('playSound'),
         alternateIcons: hasBridge('setAppIcon'),
         notifications: hasBridge('requestNotifications'),
+        remoteNotifications: typeof messaging?.getToken==='function',
         appBadge: hasBridge('setBadge'),
         widgets: hasBridge('getEngagementState'),
         widgetSnapshots: hasBridge('publishWidgetSnapshot'),
@@ -158,6 +174,15 @@
     getNotificationStatus: async function(){
       if (!hasBridge('getNotificationStatus')) return {granted:false, supported:false};
       return nativeBridge.getNotificationStatus();
+    },
+    getPushToken: async function(){
+      if(!messaging?.getToken)throw new Error('Push notifications are unavailable in this build.');
+      return messaging.getToken();
+    },
+    deletePushToken: async function(){
+      if(hasBridge('deletePushToken'))return nativeBridge.deletePushToken();
+      if(!messaging?.deleteToken)return false;
+      await messaging.deleteToken();return true;
     },
     configureStudyReminder: async function(options){
       if (!hasBridge('configureStudyReminder')) return {supported:false, enabled:false};

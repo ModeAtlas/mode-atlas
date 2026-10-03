@@ -19,7 +19,7 @@
 .ma-atlas-identity__copy span{font-size:.75rem;line-height:1.5;color:var(--ma-muted);}
 .ma-atlas-tabs{display:flex;gap:4px;padding:4px;border-radius:16px;background:var(--ma-surface-inset);border:1px solid var(--ma-border);}
 .ma-atlas-tabs .ma-button{flex:1;min-height:44px;border:0;background:transparent;}
-.ma-atlas-tabs [aria-selected="true"]{background:var(--ma-card);box-shadow:var(--ma-shadow-soft);color:var(--ma-text-strong);}
+.ma-atlas-tabs :is([aria-selected="true"],[aria-pressed="true"]){background:var(--ma-card);box-shadow:var(--ma-shadow-soft);color:var(--ma-text-strong);}
 .ma-atlas-panel{display:flex;flex-direction:column;gap:14px;min-height:0;padding:4px 4px 12px;}
 .ma-atlas-panel[hidden]{display:none;}
 .ma-atlas-panel>*{flex-shrink:0;}

@@ -15,7 +15,7 @@ service cloud.firestore {
     }
     match /users/{uid}/appData/{docId} {
       allow read, create, delete: if ownsActiveAccount(uid);
-      // An older client must not erase migrated XP thresholds or goal evidence.
+      // Older clients must not restore retired level credits or erase goal evidence.
       allow update: if ownsActiveAccount(uid)
         && progressVersion(request.resource.data) >= progressVersion(resource.data);
     }

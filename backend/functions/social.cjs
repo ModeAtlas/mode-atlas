@@ -7,6 +7,8 @@ const {createIdentityStore,mayUseName,accountPhoto}=require('./identity.cjs');
 const {createModeration}=require('./moderation.cjs');
 const {createStaff}=require('./staff.cjs');
 const {createRewards}=require('./rewards.cjs');
+const {createWeekly,active:weeklyActive}=require('./weekly.cjs');
+const {createNotifications}=require('./notifications.cjs');
 const rewardRules=require('./shared/mode-atlas-reward-rules.js');
 const LIMITS=Object.freeze({friends:100,requests:50,blocks:100,page:20});
 const fail=(code,message)=>{throw new HttpsError(code,message);};
@@ -55,11 +57,13 @@ function slicePage(items,cursor){
   return {rows,nextCursor:start+rows.length<items.length?rows.at(-1).uid:null};
 }
 
-function createSocial({db,auth,now=Date.now}){
+function createSocial({db,auth,messaging,now=Date.now}){
   const identities=createIdentityStore({db,auth,now});
   const staff=createStaff({db,auth,now});
   const moderation=createModeration({db,identities,staff,now});
   const rewards=createRewards({db,now});
+  const weekly=createWeekly({db,now});
+  const notifications=createNotifications({db,messaging,weekly,now});
   async function decorate(profiles){
     profiles=profiles.filter(Boolean);if(!profiles.length)return;
     const users=await staff.badges(profiles);
@@ -74,7 +78,7 @@ function createSocial({db,auth,now=Date.now}){
     if(marker.exists && createdAt<=marker.data().at)fail('unauthenticated','This account has been deleted.');
   }
   async function limit(uid,action,createdAt){
-    const bucket=action==='lookup' || action==='sendRequest'?'lookup':['rewards','state','list','profile','accountNotices','staffProfile','listWarnings','listModerators','listReports','listRestrictions'].includes(action)?'read':'write';
+    const bucket=action==='lookup' || action==='sendRequest'?'lookup':['rewards','state','list','profile','weeklyState','weeklyList','notificationState','accountNotices','staffProfile','listWarnings','listModerators','listReports','listRestrictions'].includes(action)?'read':'write';
     const max={lookup:12,read:60,write:30}[bucket],at=now();
     await db.runTransaction(async tx=>{
       const ref=limits.doc(uid),[doc,marker]=await tx.getAll(ref,deletionRef(uid)),data=doc.data()||{};
@@ -220,9 +224,10 @@ function createSocial({db,auth,now=Date.now}){
   async function profile(uid,data){
     fields(data,['uid']);if(!validUid(data.uid))fail('invalid-argument','Choose a profile.');
     return db.runTransaction(async tx=>{
-      const [self,other]=await tx.getAll(accountRef(uid),accountRef(data.uid));const a=self.data(),b=other.data();requireActive(a);
-      if(uid!==data.uid && (!has(a.friends,data.uid)||!has(b?.friends,uid)))fail('permission-denied','This profile is available to accepted friends.');
-      const value=publicProfile(data.uid,b,now());if(!value)fail('not-found','This profile is no longer available.');return {profile:value};
+      const [self,other,blocked]=await tx.getAll(accountRef(uid),accountRef(data.uid),blockRef(uid,data.uid));const a=self.data(),b=other.data();requireActive(a);
+      const friend=uid===data.uid||(has(a.friends,data.uid)&&has(b?.friends,uid));
+      if(blocked.exists||(!friend&&!(weeklyActive(a)&&weeklyActive(b))))fail('permission-denied','This profile is available to accepted friends or weekly competitors.');
+      const value=publicProfile(data.uid,b,now(),friend);if(!value)fail('not-found','This profile is no longer available.');return {profile:value,friend};
     });
   }
   async function refreshSummary(uid,user){
@@ -234,7 +239,7 @@ function createSocial({db,auth,now=Date.now}){
       // Read the latest save inside the transaction: trigger delivery can repeat or reorder.
       const syncedAt=save.updateTime?.toMillis()||0;
       const rewardAccess=await rewards.read(user,tx);
-      if(a.summary?.syncedAt===syncedAt&&a.rewardAccess&&rewards.key(a.rewardAccess)===rewards.key(rewardAccess))return;
+      if(a.summary?.version===5&&a.summary?.syncedAt===syncedAt&&a.rewardAccess&&rewards.key(a.rewardAccess)===rewards.key(rewardAccess))return;
       tx.update(ref,{rewardAccess,summary:projectSave(save.data(),a.profile.timeZone,syncedAt,rewardAccess)});
     });
   }
@@ -285,10 +290,10 @@ function createSocial({db,auth,now=Date.now}){
     // A non-profile deletion receipt prevents an already-authorized request from
     // recreating social data after Auth deletion. It stores no raw UID or scores.
     if(deletedAccount && validUid(uid))await deletionRef(uid).set({at:now(),expiresAt:new Date(now()+7*86400000)});
-    const id=await beginErase(uid);await cleanup(uid,id);
+    const id=await beginErase(uid);await weekly.syncAccount(uid);await cleanup(uid,id);
     // Opting out must not reset rate limits. Auth deletion removes them too.
     if(deletedAccount && validUid(uid)){
-      await Promise.all([rewards.erase(uid),staff.erase(uid),db.doc('socialWarnings/'+uid).delete(),limits.doc(uid).delete(),db.doc('socialRestrictions/'+uid).delete(),db.doc('socialReportLimits/'+uid).delete()]);
+      await Promise.all([weekly.erase(uid),notifications.erase(uid),rewards.erase(uid),staff.erase(uid),db.doc('socialWarnings/'+uid).delete(),limits.doc(uid).delete(),db.doc('socialRestrictions/'+uid).delete(),db.doc('socialReportLimits/'+uid).delete()]);
       for(const field of ['target','reporter'])while(true){
         const found=await db.collection('socialReports').where(field,'==',uid).limit(100).get();if(found.empty)break;
         const batch=db.batch();found.docs.forEach(doc=>batch.delete(doc.ref));await batch.commit();
@@ -305,12 +310,15 @@ function createSocial({db,auth,now=Date.now}){
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['rewards','state','list','profile','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
+    const actions=['rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
-    if(['rewards','state','rotateCode','leave'].includes(action))fields(data,[]);
+    if(['rewards','state','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
     if(action==='rewards')return rewards.read(user);
+    if(action==='notificationState')return notifications.state(uid);
+    if(action==='configureNotifications')return notifications.configure(uid,data);
+    if(action==='unregisterNotifications')return notifications.unregister(uid,data);
     if(!['state','leave','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'].includes(action)&&await moderation.restriction(uid))fail('permission-denied','Friends access is restricted. Contact support@mode-atlas.com to appeal.');
     if(action==='accountNotices')return moderation.notices(user,data);
     if(action==='acknowledgeWarnings')return moderation.notices(user,data,true);
@@ -326,6 +334,11 @@ function createSocial({db,auth,now=Date.now}){
     if(action==='reportProfile')return moderation.report(uid,data);
     if(action==='listReports')return moderation.list(user,data);
     if(action==='reviewReport')return moderation.review(user,data);
+    if(action==='weeklyState')return weekly.state(uid);
+    if(action==='weeklyPreference')return weekly.preference(uid,data);
+    if(action==='weeklyStart')return weekly.start(uid,data);
+    if(action==='weeklySubmit')return weekly.submit(uid,data);
+    if(action==='weeklyList'){const result=await weekly.list(uid,data);await decorate(result.rows);return result;}
     if(action==='state'){await refreshSummary(uid,user);const result=await state(uid,user);if(result.profile){result.profile.role=result.role;rewards.sanitize(result.profile,await rewards.read(user));}return result;}
     if(action==='updateProfile')return updateProfile(uid,data,createdAt,user);
     if(action==='rotateCode')return rotateCode(uid);
@@ -336,6 +349,8 @@ function createSocial({db,auth,now=Date.now}){
     if(action==='leave')return erase(uid);
     return relationship(uid,action,data);
   }
-  return {call,refreshSummary,beginErase,cleanup,erase};
+  return {call,refreshSummary,beginErase,cleanup,erase,
+    refreshCompetition:weekly.syncAccount,
+    maintainEngagement:async()=>{await weekly.maintain();await notifications.maintain();}};
 }
 module.exports={createSocial,LIMITS,validateProfile};

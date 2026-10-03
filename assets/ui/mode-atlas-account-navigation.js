@@ -102,7 +102,8 @@
     });
     root.addEventListener('modeAtlasDialogStateChanged',syncVisibility);
     root.addEventListener('pagehide',close);
-    if(new URLSearchParams(location.search).get('section')==='atlas')queueMicrotask(()=>open('atlas'));
+    const requested=new URLSearchParams(location.search).get('section');
+    if(['atlas','friends'].includes(requested))queueMicrotask(()=>open(requested));
   }
   root.ModeAtlasAccountNavigation=Object.freeze({install,open,close,isOpen:()=>!!current,current:()=>current});
 })(window);
