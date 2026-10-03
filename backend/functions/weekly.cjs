@@ -134,7 +134,7 @@ function createWeekly({db,now=Date.now}){
     const ref=weeks.doc(week),period=(await ref.get()).data();
     if(!period||period.settled||period.endAt+300000>now())return;
     const qualified=entries(week).where('active','==',true).where('score','>=',policy.minimumScore);
-    const podium=await qualified.orderBy('score','desc').limit(3).get();
+    const podium=await qualified.orderBy('score','desc').orderBy(FieldPath.documentId()).limit(3).get();
     if(!period.topScores&&podium.size<policy.minimumPlayers){await ref.update({settled:true,settledAt:now(),reason:'minimum-players'});return;}
     const topScores=await db.runTransaction(async tx=>{
       const current=(await tx.get(ref)).data();
