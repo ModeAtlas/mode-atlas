@@ -1,3 +1,11 @@
+## 2.88.0 - 2026-10-04
+
+- Move Friends / Rankings to the top of the shared screen and show the editable Friends profile only in Friends.
+- Open Rankings directly to the weekly ladder, with visible This week / All time controls and remembered all-time metrics while switching views.
+- Remove the synced-progress explanatory text and Near me controls from the client.
+- Compact the weekly summary around rank, XP and one local reset time. Keep rules/prizes and previous results in adjacent disclosures; retain Global and Friends comparisons.
+- Preserve existing profile, request, moderation, weekly opt-in and privacy behavior. No Firebase schema or scoring change; existing 2.87.0 server support remains compatible with installed clients.
+
 ## 2.87.0 - 2026-10-03
 
 - Fix switching from the weekly ranking to Friends, including older clients after the backend update.

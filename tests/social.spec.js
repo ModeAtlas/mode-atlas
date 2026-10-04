@@ -88,7 +88,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
   test(`${layout.native?'iOS':'web'} ${layout.theme} ${layout.width}: friends, rankings and frames fit`,async({page},info)=>{
     const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,layout);await fits(page);
     await expect(page.locator('.ma-social-row [data-ma-frame="lantern"]')).toBeVisible();
-    await page.getByRole('tab',{name:'Rankings',exact:true}).click();await expect(page.locator('.ma-social-rank')).toHaveText(['1','2']);await fits(page);
+    await page.getByRole('tab',{name:'Rankings',exact:true}).click();await page.getByRole('button',{name:'All time',exact:true}).click();await expect(page.locator('.ma-social-rank')).toHaveText(['1','2']);await fits(page);
     await page.screenshot({path:info.outputPath('rankings.png'),animations:'disabled'});
     await page.getByLabel('Ranking',{exact:true}).selectOption('reading');await fits(page);
     await page.locator('.ma-social-person').first().click();await expect(page.getByText('Reading mastery',{exact:true})).toBeVisible();await fits(page);
@@ -124,7 +124,7 @@ test('block and opt-out require confirmation; cancelling preserves the current v
 });
 test('sign-out clears friends immediately and a delayed result cannot restore them',async({page})=>{
   await prepare(page);
-  await page.evaluate(()=>{socialDelayList=true;});await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+  await page.evaluate(()=>{socialDelayList=true;});await page.getByRole('tab',{name:'Rankings',exact:true}).click();await page.getByRole('button',{name:'All time',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>typeof finishSocialList)).toBe('function');
   await page.evaluate(()=>{socialUser=null;window.dispatchEvent(new Event('kanaCloudSyncStatusChanged'));finishSocialList();});
   await expect(page.getByText('Learn alongside friends',{exact:true})).toBeVisible();
@@ -138,6 +138,7 @@ test('offline failure offers refresh without a fabricated empty friends list',as
 test('leaving Friends discards a delayed response without changing the next account section',async({page})=>{
   await prepare(page);await page.evaluate(()=>{socialDelayList=true;});
   await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+  await page.getByRole('button',{name:'All time',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>typeof finishSocialList)).toBe('function');
   await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();
   await page.evaluate(()=>{finishSocialList();socialDelayList=false;});
@@ -362,20 +363,35 @@ test('a friend’s server-approved exclusive banner displays without granting it
 
 for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'light',width:320},{native:false,theme:'dark',width:1280}]){
   test(`weekly opt-in, reset, prizes and filters fit ${layout.native?'iOS':'web'} ${layout.theme} ${layout.width}`,async({page},info)=>{
-    await prepare(page,layout);await page.getByRole('tab',{name:'Rankings',exact:true}).click();
-    await page.getByLabel('Ranking',{exact:true}).selectOption('weekly');
+    await prepare(page,layout);
+    expect(await page.locator('.ma-social-body').evaluate(body=>body.firstElementChild.getAttribute('aria-label'))).toBe('Friends and rankings');
+    await expect(page.locator('.ma-social-self').getByRole('button',{name:'Edit',exact:true})).toBeVisible();
+    await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+    await expect(page.getByRole('button',{name:'This week',exact:true})).toHaveAttribute('aria-pressed','true');
+    await expect(page.locator('.ma-social-self')).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Edit',exact:true})).toHaveCount(0);
+    await expect(page.getByLabel('Ranking',{exact:true})).toHaveCount(0);
     await expect(page.getByRole('button',{name:'Join weekly competition',exact:true})).toBeVisible();
     expect(await page.evaluate(()=>socialCalls.some(call=>call.action==='weeklyList'))).toBe(false);
     await fits(page);await page.getByRole('button',{name:'Join weekly competition',exact:true}).click();
     await expect(page.locator('.ma-social-rank')).toHaveText(['1','2']);
-    await expect(page.locator('.ma-weekly-summary')).toContainText('Everyone resets together');
-    await expect(page.locator('.ma-weekly-summary')).toContainText('At least two learners');
+    await expect(page.getByRole('heading',{name:'Weekly ladder',exact:true})).toBeVisible();
+    await expect(page.locator('.ma-weekly-summary time')).toContainText('Resets');
+    await expect(page.locator('.ma-weekly-stats')).toContainText('Global rank');
+    await expect(page.locator('.ma-weekly-details details[open]')).toHaveCount(0);
+    await expect(page.getByText(/Rankings use each friend/)).toHaveCount(0);
+    await expect(page.getByRole('button',{name:'Near me',exact:true})).toHaveCount(0);
+    await expect(page.getByRole('group',{name:'Weekly ranking scope'}).getByRole('button')).toHaveText(['Global','Friends']);
+    const summaryBox=await page.locator('.ma-weekly-summary').boundingBox();expect(summaryBox.height).toBeLessThan(260);
+    if(layout.width>=393){
+      const first=await page.locator('.ma-social-row').first().boundingBox(),panel=await page.locator('#maAccount-friends').boundingBox();
+      expect(first.y+first.height).toBeLessThanOrEqual(panel.y+panel.height);
+    }
     await fits(page);await page.screenshot({path:info.outputPath('weekly-board.png'),animations:'disabled'});
-    await page.locator('#maSocialList').getByRole('button',{name:'Near me',exact:true}).click();
-    await expect(page.locator('.ma-weekly-target')).toContainText('201 more weekly XP');
     await page.locator('#maSocialList').getByRole('button',{name:'Friends',exact:true}).click();
     await expect(page.locator('.ma-social-rank')).toHaveText(['1']);
     await page.locator('#maSocialTab-friends').click();
+    await expect(page.locator('.ma-social-self').getByRole('button',{name:'Edit',exact:true})).toBeVisible();
     await expect(page.locator('.ma-social-row')).toHaveCount(1);await expect(page.locator('.ma-social-status')).toBeHidden();
     for(const kind of ['incoming','outgoing','blocked','friends']){
       await page.getByLabel('Friends list',{exact:true}).selectOption(kind);
@@ -383,13 +399,43 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     }
     expect(await page.evaluate(()=>socialCalls.filter(call=>call.action==='list'&&call.input.kind!=='rankings').every(call=>!('metric' in call.input)))).toBe(true);
     await page.locator('#maSocialTab-rankings').click();
-    await expect(page.getByLabel('Ranking',{exact:true})).toHaveValue('weekly');
+    await expect(page.getByRole('button',{name:'This week',exact:true})).toHaveAttribute('aria-pressed','true');
+    await expect(page.locator('.ma-social-rank')).toHaveText(['1']);
+    await page.getByRole('button',{name:'All time',exact:true}).click();await page.getByLabel('Ranking',{exact:true}).selectOption('writing');
+    await expect(page.getByText(/Rankings use each friend/)).toHaveCount(0);await expect(page.locator('.ma-social-self')).toHaveCount(0);
+    await page.getByRole('button',{name:'This week',exact:true}).click();await page.getByRole('button',{name:'All time',exact:true}).click();
+    await expect(page.getByLabel('Ranking',{exact:true})).toHaveValue('writing');
+    await page.getByRole('button',{name:'This week',exact:true}).click();
     await expect(page.locator('.ma-social-rank')).toHaveText(['1']);
     await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
     await fits(page);await page.screenshot({path:info.outputPath('weekly-large-text.png'),animations:'disabled'});
-    await page.getByText('How weekly XP works',{exact:true}).click();
+    await page.getByText('Rules & prizes',{exact:true}).click();
+    await expect(page.getByText(/Everyone resets together on Monday/)).toBeVisible();await fits(page);
     await page.getByRole('button',{name:'Leave weekly competition',exact:true}).click();
     await page.getByRole('button',{name:'Leave competition',exact:true}).click();
     await expect(page.getByRole('button',{name:'Join weekly competition',exact:true})).toBeVisible();
   });
 }
+
+test('weekly deep links open the ladder and delayed weekly rows cannot replace Friends',async({page})=>{
+  await prepare(page);
+  await page.evaluate(()=>{
+    socialFixture.weeklyEnabled=true;
+    const call=ModeAtlasSocial.call;
+    ModeAtlasSocial.call=async(action,input)=>{
+      const result=await call(action,input);
+      if(action==='weeklyState')return {...result,results:[{week:'2026-09-21',rank:4,score:840,xp:0}]};
+      if(action==='weeklyList'&&window.delayWeekly)return new Promise(resolve=>{window.finishWeekly=()=>resolve(result);});
+      return result;
+    };
+    ModeAtlasAccountNavigation.close();history.replaceState(null,'','/?section=friends&ranking=weekly');ModeAtlasAccountNavigation.open('friends');
+  });
+  await expect(page.getByRole('heading',{name:'Weekly ladder',exact:true})).toBeVisible();
+  await page.getByText('Past results',{exact:true}).click();await expect(page.getByText('Week of 2026-09-21 · #4 · 840 weekly XP · No prize',{exact:true})).toBeVisible();
+  await page.locator('#maSocialTab-rankings').focus();await page.keyboard.press('ArrowLeft');await expect(page.locator('#maSocialTab-friends')).toBeFocused();
+  await page.evaluate(()=>{window.delayWeekly=true;});await page.keyboard.press('ArrowRight');
+  await expect.poll(()=>page.evaluate(()=>typeof finishWeekly)).toBe('function');
+  await page.locator('#maSocialTab-friends').click();await page.evaluate(()=>finishWeekly());
+  await expect(page.locator('.ma-social-row')).toHaveCount(1);await expect(page.locator('.ma-weekly-summary')).toHaveCount(0);
+  await expect(page.locator('.ma-social-self').getByRole('button',{name:'Edit',exact:true})).toBeVisible();
+});

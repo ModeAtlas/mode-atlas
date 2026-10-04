@@ -12,16 +12,14 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const NATIVE_RELEASE = window.ModeAtlasEnv?.isNativeApp === true;
-  const WHATS_NEW_COPY = 'Clearer progress and a closer weekly race.';
+  const WHATS_NEW_COPY = 'More room for friends and the weekly race.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Switch between Reading, Writing and Both in the Mastery Map, with clear next steps for each kana.',
-    'Open focused practice from your goals or mastery tiles.',
-    'See nearby competitors and saved weekly finishes in Rankings.',
-    'Find this week’s and last week’s study recap in Your Atlas.',
-    ...(NATIVE_RELEASE ? ['Choose goal alert times and quiet hours in Notifications.'] : [])
+    'Switch between Friends and Rankings at the top of the page.',
+    'Open Rankings straight into the weekly ladder, with All time alongside it.',
+    'See your weekly rank, XP and reset time in a compact summary.',
+    'Compare Global or Friends, with rules, prizes and past results one tap away.'
   ];
 
   function storeGet(key, fallback = '') {

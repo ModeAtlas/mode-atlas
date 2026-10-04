@@ -4,7 +4,7 @@
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=text;return node;};
   const identityPolicy=root.ModeAtlasSocialIdentity,avatars=identityPolicy.avatars;
   const number=value=>Number(value||0).toLocaleString();
-  let host=null,body=null,notice=null,state=null,owner=null,generation=0,tab='friends',kind='friends',metric='xp',weeklyScope='global';
+  let host=null,body=null,notice=null,state=null,owner=null,generation=0,tab='friends',kind='friends',metric='weekly',lifetimeMetric='xp',weeklyScope='global';
   const alive=ticket=>!!host?.isConnected && ticket===generation && owner===root.KanaCloudSync?.getUser?.()?.uid;
   function button(label,action,cls='ma-button ma-button--ghost'){
     const node=el('button',cls,label);node.type='button';if(action)node.addEventListener('click',action);return node;
@@ -60,8 +60,6 @@
     if(!state?.active)return void load();
     screen();
     body.classList.add('ma-social-home');
-    const self=profileCard(state.profile,'ma-social-self');self.append(avatar(state.profile),identity(state.profile),button('Edit',()=>editProfile()));body.append(self);
-    if(state.preferences?.requiresNameChange){const note=el('div','ma-social-name-notice');note.append(el('p','','Your previous name is unavailable. Choose a new display name.'),button('Choose name',()=>editProfile()));body.append(note);}
     const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Friends and rankings');
     for(const value of ['friends','rankings']){
       const node=button(value==='friends'?'Friends':'Rankings',()=>{tab=value;home();});
@@ -75,6 +73,8 @@
     });body.append(tabs);
     const tools=el('div','ma-social-tools');
     if(tab==='friends'){
+      const self=profileCard(state.profile,'ma-social-self');self.append(avatar(state.profile),identity(state.profile),button('Edit',()=>editProfile()));body.append(self);
+      if(state.preferences?.requiresNameChange){const note=el('div','ma-social-name-notice');note.append(el('p','','Your previous name is unavailable. Choose a new display name.'),button('Choose name',()=>editProfile()));body.append(note);}
       tools.classList.add('ma-social-home-tools');tools.dataset.staff=String(!!state.canModerate);
       const label=el('div','ma-social-filter'),select=el('select');select.setAttribute('aria-label','Friends list');
       for(const [value,title] of [['friends','Friends'],['incoming','Requests'],['outgoing','Sent'],['blocked','Blocked']]){
@@ -87,14 +87,21 @@
         pending.setAttribute('aria-label',`Review ${state.counts.incoming} pending friend ${state.counts.incoming===1?'request':'requests'}`);label.append(pending);
       }
       tools.append(label,button('Add friend',()=>addFriend(),'ma-button ma-button--primary'),button('My code',myCode),iconButton('Refresh','refresh',load));
+      if(state.canModerate)tools.append(iconButton('Moderator menu','shield',()=>moderationHub()));
     }else{
-      const label=el('div','ma-social-filter','Compare'),select=el('select');select.setAttribute('aria-label','Ranking');
-      for(const [value,title]of [['weekly','This week'],['xp','Lifetime · Level & XP'],['streak','Study streak'],['mastery','Mastery · Both'],['reading','Mastery · Reading'],['writing','Mastery · Writing'],['correct','Total correct']]){const option=el('option','',title);option.value=value;select.append(option);}
-      select.value=metric;select.addEventListener('change',()=>{metric=select.value;home();});label.append(select);tools.append(label,iconButton('Refresh','refresh',load));
+      const periods=el('div','ma-social-periods');periods.setAttribute('role','group');periods.setAttribute('aria-label','Ranking period');
+      for(const [value,label]of [['weekly','This week'],['lifetime','All time']]){
+        const control=button(label,()=>{metric=value==='weekly'?'weekly':lifetimeMetric;home();document.getElementById('maRankingPeriod-'+value)?.focus({preventScroll:true});});
+        control.id='maRankingPeriod-'+value;control.setAttribute('aria-pressed',String(value==='weekly'?metric==='weekly':metric!=='weekly'));periods.append(control);
+      }
+      tools.append(periods,iconButton('Refresh','refresh',load));
     }
-    if(state.canModerate)tools.append(iconButton('Moderator menu','shield',()=>moderationHub()));
     body.append(tools);
-    if(tab==='rankings'&&metric!=='weekly')body.append(el('p','ma-social-note','Rankings use each friend’s latest synced learning progress.'));
+    if(tab==='rankings'&&metric!=='weekly'){
+      const label=el('label','ma-social-filter','Compare friends'),select=el('select');select.setAttribute('aria-label','Ranking');
+      for(const [value,title]of [['xp','Level & XP'],['streak','Study streak'],['mastery','Mastery · Both'],['reading','Mastery · Reading'],['writing','Mastery · Writing'],['correct','Total correct']]){const option=el('option','',title);option.value=value;select.append(option);}
+      select.value=metric;select.addEventListener('change',()=>{lifetimeMetric=metric=select.value;home();body.querySelector('select[aria-label="Ranking"]')?.focus({preventScroll:true});});label.append(select);body.append(label);
+    }
     const list=el('div','ma-social-list');list.id='maSocialList';list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby','maSocialTab-'+tab);body.append(list);
     if(tab==='rankings'&&metric==='weekly')void loadWeekly(list);
     else void loadPage(list,null);
@@ -142,42 +149,36 @@
     try{
       if(!cursor){
         const weekly=await root.ModeAtlasSocial.call('weeklyState');if(!alive(ticket))return;
-        const card=el('section','ma-weekly-summary');card.append(el('h3','','A fresh start, every week'));
-        const reset=new Date(weekly.period.endAt).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
-        card.append(el('p','ma-social-note',`Everyone resets together · ${reset}`));
+        const card=el('section','ma-weekly-summary'),heading=el('div','ma-weekly-heading');heading.append(el('h3','','Weekly ladder'));
         const hours=Math.max(0,Math.ceil((weekly.period.endAt-Date.now())/3600000));
-        card.append(el('p','ma-social-note',`About ${hours>=24?`${Math.floor(hours/24)}d ${hours%24}h`:`${hours}h`} remaining · Monday 00:00 UTC reset`));
-        const history=el('details','ma-weekly-rules');history.append(el('summary','','Your weekly results'));
+        heading.append(el('span','ma-social-note',`${hours>=24?`${Math.floor(hours/24)}d ${hours%24}h`:`${hours}h`} left`));card.append(heading);
+        if(weekly.enabled){
+          const stats=el('div','ma-weekly-stats');
+          for(const [label,value]of [['Global rank',weekly.rank?'#'+number(weekly.rank):'—'],['Weekly XP',number(weekly.score)]]){const item=el('div');item.append(el('strong','',value),el('span','',label));stats.append(item);}
+          card.append(stats);
+        }
+        const end=new Date(weekly.period.endAt),reset=el('time','ma-social-note',`Resets ${end.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'})}`);reset.dateTime=end.toISOString();card.append(reset);
+        const history=el('details','ma-weekly-rules');history.append(el('summary','','Past results'));
         const results=weekly.results||weekly.awards||[];
-        if(!results.length)history.append(el('p','ma-social-note','Your place and score will be saved after a week closes. Earlier prize receipts remain available; older unrecorded finishes are not estimated.'));
+        if(!results.length)history.append(el('p','ma-social-note','Your place and score will appear here after your first weekly finish.'));
         for(const result of results)history.append(el('p','ma-social-note',`Week of ${result.week} · #${number(result.rank)} · ${number(result.score)} weekly XP${result.xp?` · +${number(result.xp)} personal XP`:' · No prize'}`));
-        card.append(history);
+        const details=el('details','ma-weekly-rules');details.append(el('summary','','Rules & prizes'),el('p','ma-social-note','Everyone resets together on Monday at 00:00 UTC. At least two learners must earn 100 weekly XP. First, second and third receive 500, 300 and 150 personal XP. Ties share the same place and prize.'),el('p','ma-social-note','Online Reading and Writing answers are checked by the server. Broader practice earns more as you cover different kana in a session; hints reduce the rate. Completion and goal bonuses, old saves and prizes count only towards personal XP. Submit before the reset; interrupted connections can retry within the same one-hour session. The daily safety limit is 20,000 weekly XP.'));
+        if(weekly.enabled)details.append(button('Leave weekly competition',()=>confirmAction('Leave the weekly competition?','Your profile will disappear from the weekly board. Your personal XP and Friends stay available. Rejoining this week restores your existing weekly score.','Leave competition','weeklyPreference',{enabled:false},home,home)));
+        const extra=el('div','ma-weekly-details');extra.append(details,history);
         if(!weekly.enabled){
           card.append(el('p','','Join learners worldwide and compare this week with your friends. Your name, chosen avatar, level and weekly score will be visible to other participants.'),
             el('p','ma-social-note','Only new online Kana practice counts. Past XP, imports, developer adjustments and prizes never increase your weekly score.'),
             button('Join weekly competition',()=>run(()=>root.ModeAtlasSocial.call('weeklyPreference',{enabled:true}),home),'ma-button ma-button--primary'));
-          loading.remove();list.append(card);return;
+          card.append(extra);loading.remove();list.append(card);return;
         }
-        const stats=el('div','ma-weekly-stats');
-        for(const [label,value]of [['Global rank',weekly.rank?'#'+number(weekly.rank):'—'],['Weekly XP',number(weekly.score)]]){const item=el('div');item.append(el('strong','',value),el('span','',label));stats.append(item);}
-        card.append(stats,el('p','ma-social-note','Prizes · 500 / 300 / 150 personal XP'));
-        const details=el('details','ma-weekly-rules');details.append(el('summary','','How weekly XP works'),el('p','ma-social-note','At least two learners must earn 100 weekly XP. First, second and third receive 500, 300 and 150 personal XP. Ties share the same place and prize.'),el('p','ma-social-note','Online Reading and Writing answers are checked by the server. Broader practice earns more as you cover different kana in a session; hints reduce the rate. Completion and goal bonuses, old saves and prizes count only towards personal XP. Submit before the reset; interrupted connections can retry within the same one-hour session. The daily safety limit is 20,000 weekly XP.'));
-        details.append(button('Leave weekly competition',()=>confirmAction('Leave the weekly competition?','Your profile will disappear from the weekly board. Your personal XP and Friends stay available. Rejoining this week restores your existing weekly score.','Leave competition','weeklyPreference',{enabled:false},home,home)));
-        card.append(details);
-        if(weekly.awards?.length){const recent=weekly.awards[0];card.append(el('p','ma-weekly-prize',`Last prize · #${recent.rank} · +${number(recent.xp)} personal XP · week of ${recent.week}`));}
-        const filters=el('div','ma-atlas-tabs');filters.setAttribute('aria-label','Weekly ranking scope');
-        for(const [scope,label]of [['global','Global'],['nearby','Near me'],['friends','Friends']]){const control=button(label,()=>{weeklyScope=scope;home();});control.setAttribute('aria-pressed',String(scope===weeklyScope));filters.append(control);}
+        card.append(extra);
+        const filters=el('div','ma-atlas-tabs');filters.setAttribute('role','group');filters.setAttribute('aria-label','Weekly ranking scope');
+        for(const [scope,label]of [['global','Global'],['friends','Friends']]){const control=button(label,()=>{weeklyScope=scope;home();});control.setAttribute('aria-pressed',String(scope===weeklyScope));filters.append(control);}
         list.append(card,filters);
       }
       const result=await root.ModeAtlasSocial.call('weeklyList',{scope:weeklyScope,...(cursor?{cursor}:{})});if(!alive(ticket))return;
       loading.remove();
-      if(!result.rows.length&&!cursor)list.append(el('p','ma-social-empty',weeklyScope==='friends'?'No friends have posted a weekly score yet. Invite them to join, then start practising.':weeklyScope==='nearby'?'Post your first weekly score to see learners near your place.':'The week is open. Start an online Kana session to post your first score.'));
-      if(weeklyScope==='nearby'){
-        const self=result.rows.find(row=>row.uid===owner),above=self&&result.rows.filter(row=>row.score>self.score).at(-1);
-        if(above)list.append(el('p','ma-weekly-target',`${number(above.score-self.score+1)} more weekly XP to pass ${above.displayName}.`));
-        else if(self?.rank===1)list.append(el('p','ma-weekly-target','You’re in first place. Keep building your week.'));
-        list.append(el('p','ma-social-note','Nearby places use the global ranking. Tied scores share a place; blocked profiles stay hidden.'));
-      }
+      if(!result.rows.length&&!cursor)list.append(el('p','ma-social-empty',weeklyScope==='friends'?'No friends have posted a weekly score yet. Invite them to join, then start practising.':'The week is open. Start an online Kana session to post your first score.'));
       for(const profile of result.rows)list.append(row(profile,true));
       if(result.nextCursor){const more=button('Load more',()=>{more.remove();void loadWeekly(list,result.nextCursor);});list.append(more);}
     }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');list.append(button('Try again',home));}}
@@ -373,7 +374,7 @@
   function mount(parent){
     if(!root.ModeAtlasSocial.isEnabled())return;
     owner=root.KanaCloudSync?.getUser?.()?.uid;state=null;tab=new URLSearchParams(location.search).get('ranking')==='weekly'?'rankings':'friends';kind='friends';weeklyScope='global';
-    if(tab==='rankings')metric='weekly';
+    metric='weekly';lifetimeMetric='xp';
     const container=el('div','ma-social');host=container;
     notice=el('p','ma-social-status');notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.hidden=true;
     body=el('div','ma-social-body');host.append(notice,body);
