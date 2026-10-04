@@ -26,6 +26,8 @@
 .ma-social-field{display:grid;gap:8px;color:var(--ma-text);font-weight:700;}
 .ma-social-field input,.ma-social-field select,.ma-social-field textarea{width:100%;font-weight:400;}
 .ma-social .ma-button{min-height:44px;white-space:normal;overflow-wrap:anywhere;}
+.ma-social-home>.ma-atlas-tabs .ma-button{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 6px;padding:8px;overflow-wrap:normal;}
+.ma-social-home>.ma-atlas-tabs .ma-social-badge{margin:0;}
 .ma-social-status{padding:12px 14px;border-radius:12px;background:var(--ma-surface-strong);color:var(--ma-text);font-size:.85rem;line-height:1.5;}
 .ma-social-status[data-tone="error"]{border:1px solid var(--ma-danger);}
 .ma-social-empty{padding:24px 16px;border:1px dashed var(--ma-border);border-radius:18px;color:var(--ma-muted);text-align:center;line-height:1.6;}

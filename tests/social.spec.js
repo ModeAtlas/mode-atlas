@@ -408,6 +408,9 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await page.getByRole('button',{name:'This week',exact:true}).click();
     await expect(page.locator('.ma-social-rank')).toHaveText(['1']);
     await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
+    const tabLines=await page.getByRole('tablist',{name:'Friends and rankings'}).getByRole('tab').evaluateAll(tabs=>tabs.map(tab=>{
+      const label=tab.firstChild,range=document.createRange();range.selectNodeContents(label);return range.getClientRects().length;
+    }));expect(tabLines).toEqual([1,1]);
     await fits(page);await page.screenshot({path:info.outputPath('weekly-large-text.png'),animations:'disabled'});
     await page.getByText('Rules & prizes',{exact:true}).click();
     await expect(page.getByText(/Everyone resets together on Monday/)).toBeVisible();await fits(page);
