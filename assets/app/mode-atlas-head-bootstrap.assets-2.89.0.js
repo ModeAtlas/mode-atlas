@@ -32,8 +32,8 @@
   function getPageName(){
     var path = (location.pathname || '/').replace(/\/+$/, '/');
 
-    var routes = {kana:'kana.html',reading:'default.html',writing:'reverse.html',results:'test.html',wordbank:'wordbank.html',privacy:'privacy.html',terms:'terms.html',achievements:'achievements.html'};
-    var match = path.match(/\/(kana|reading|writing|results|wordbank|privacy|terms|achievements)(?:\/(?:index\.html)?)?$/i);
+    var routes = {learn:'learn.html',progress:'progress.html',friends:'friends.html',kana:'kana.html',reading:'default.html',writing:'reverse.html',results:'test.html',wordbank:'wordbank.html',privacy:'privacy.html',terms:'terms.html',achievements:'achievements.html'};
+    var match = path.match(/\/(learn|progress|friends|kana|reading|writing|results|wordbank|privacy|terms|achievements)(?:\/(?:index\.html)?)?$/i);
     if (match) return routes[match[1].toLowerCase()];
 
     return (path.split('/').filter(Boolean).pop() || 'index.html').toLowerCase();

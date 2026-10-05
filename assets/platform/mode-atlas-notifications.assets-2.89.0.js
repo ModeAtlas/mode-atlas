@@ -6,7 +6,7 @@
   const blank=()=>Object.fromEntries(keys.map(key=>[key,false]));
   const uid=()=>root.KanaCloudSync?.getUser?.()?.uid;
   const timing=root.ModeAtlasNotificationRules;
-  let owner=null,token=null,preferences=blank(),schedule=timing.normalize(),revision=0,refreshing=null,tokenWork=Promise.resolve();
+  let owner=null,token=null,preferences=blank(),schedule=timing.normalize(),timeZone=null,revision=0,refreshing=null,tokenWork=Promise.resolve();
   const current=(account,ticket)=>account===uid()&&ticket===revision;
   function nativeToken(method,account,ticket){
     const work=tokenWork.then(()=>{
@@ -22,8 +22,8 @@
     const result=await root.ModeAtlasSocial.call('notificationState',{},account);
     if(account!==uid()||ticket!==revision)throw new Error('The account changed.');
     if(owner!==account){owner=account;token=null;}
-    preferences=result.preferences;schedule=timing.normalize(result.schedule);
-    return {supported:supported(),signedIn:true,preferences:{...preferences},schedule:{...schedule}};
+    preferences=result.preferences;schedule=timing.normalize(result.schedule);timeZone=result.timeZone||null;
+    return {supported:supported(),signedIn:true,preferences:{...preferences},schedule:{...schedule},timeZone};
   }
   async function payload(next,currentToken,nextSchedule){
     const engagement=await Promise.resolve(root.AtlasPlatform.getEngagementState?.()).catch(()=>null);
@@ -31,7 +31,7 @@
     return {preferences:next,schedule:nextSchedule,token:currentToken||'',timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC',
       ...(reminder?{localReminder:{enabled:!!reminder.enabled,hour:reminder.hour??19,minute:reminder.minute??0}}:{})};
   }
-  async function configure(next,nextSchedule=schedule){
+  async function configure(next,nextSchedule=schedule,{updateTimeZone=false}={}){
     if(!timing.valid(nextSchedule))throw new Error('Use 15-minute steps and choose a goal alert time outside quiet hours. Quiet start and end must differ.');
     const account=uid(),ticket=++revision;
     if(!account)throw new Error('Sign in to choose account notifications.');
@@ -47,17 +47,18 @@
     }
     if(!current(account,ticket))throw new Error('The account changed.');
     const data=await payload(next,currentToken,nextSchedule);
+    if(updateTimeZone)data.updateTimeZone=true;
     if(!current(account,ticket))throw new Error('The account changed.');
     const result=await root.ModeAtlasSocial.call('configureNotifications',data,account);
     if(account!==uid()||ticket!==revision)return;
-    owner=account;token=currentToken;preferences=result.preferences;schedule=timing.normalize(result.schedule||nextSchedule);
+    owner=account;token=currentToken;preferences=result.preferences;schedule=timing.normalize(result.schedule||nextSchedule);timeZone=result.timeZone||timeZone;
     if(!enabled){token=null;await nativeToken('deletePushToken');}
     root.dispatchEvent(new CustomEvent('modeAtlasEngagementChanged'));
     return result;
   }
   async function signOut(){
     ++revision;
-    const previousOwner=owner,previousToken=token;owner=null;token=null;preferences=blank();schedule=timing.normalize();
+    const previousOwner=owner,previousToken=token;owner=null;token=null;preferences=blank();schedule=timing.normalize();timeZone=null;
     await Promise.allSettled([
       previousOwner&&previousToken&&previousOwner===uid()?root.ModeAtlasSocial.call('unregisterNotifications',{token:previousToken},previousOwner):Promise.resolve(),
       nativeToken('deletePushToken')
@@ -86,5 +87,6 @@
   let lastAccount;
   root.addEventListener('kanaCloudSyncStatusChanged',()=>{const account=uid();if(account!==lastAccount){lastAccount=account;void reconnect();}});
   root.addEventListener('online',()=>{void reconnect();});
+  root.addEventListener('modeAtlasAppStateChanged',event=>{if(event.detail?.isActive)void reconnect();});
   root.ModeAtlasNotifications=Object.freeze({read,configure,signOut,reconnect});
 })(window);

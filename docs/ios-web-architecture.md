@@ -418,14 +418,15 @@ a separate scorer, save format or recommendation policy.
 
 The iOS home replaces its duplicate Reading/Writing shortcuts with compact daily
 progress from `ModeAtlasRewardsUI.renderGoals`. That renderer also presents the
-full goals in Your Atlas; `ModeAtlasProgress.routine` remains the data owner.
+full goals on Progress; `ModeAtlasProgress.routine` remains the data owner.
 Profile progression precedes sync status. Reward selection applies the same
-frame to the account avatar and the navigation avatar, which iOS moves into the
-dock. Achievement rank colours are defined once in the shared theme, with the
+frame to the account avatar and the navigation avatar, which iOS places in the page header. Achievement rank colours are defined once in the shared theme, with the
 existing native light/dark rank tokens resolving their iOS appearance.
 
-Your Atlas separates Goals and Rewards in keyboard-accessible tabs. Its header
-and tabs stay visible while each panel scrolls. Titles/frames are selectable
+Progress separates Goals, Rewards and Recap in keyboard-accessible tabs on its
+full page. Friends has its own full page. The shared account sheet contains only
+Profile and Settings. Atlas, Learn, Progress and Friends are stable primary
+destinations; Kana sections remain in the page rather than replacing the dock. Titles/frames are selectable
 rows with avatar previews; UIKit app icon selection is a separate device action.
 There is no duplicate progression state or alternative rewards controller.
 

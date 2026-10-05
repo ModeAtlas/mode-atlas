@@ -23,9 +23,11 @@
     for(let next=Math.floor(at/60000)*60000+60000;next<=limit;next+=60000){if(clock(next,timeZone).day!==day||!allowed(next,timeZone,input,evening))return next;}
     return limit;
   }
-  function overlaps(reminder,input){
+  function overlaps(reminder,input,at,deviceTimeZone,accountTimeZone){
     if(!reminder?.enabled)return false;
-    const distance=Math.abs(reminder.hour*60+reminder.minute-normalize(input).reminderMinute);
+    const shift=at&&deviceTimeZone&&accountTimeZone?clock(at,deviceTimeZone).minute-clock(at,accountTimeZone).minute:0;
+    const alertMinute=((normalize(input).reminderMinute+shift)%1440+1440)%1440;
+    const distance=Math.abs(reminder.hour*60+reminder.minute-alertMinute);
     return Math.min(distance,1440-distance)<=60;
   }
   return Object.freeze({defaults,valid,normalize,quiet,clock,allowed,expiresAt,overlaps});

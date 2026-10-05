@@ -2,11 +2,10 @@
 (function ModeAtlasAccountNavigation(root){
   'use strict';
   if(root.ModeAtlasAccountNavigation)return;
-  let layer, sheet, current='', returnFocus=null, disposeView=null;
-  const sections=[['profile','Profile','user'],['atlas','Your Atlas','achievement'],['friends','Friends','people'],['settings','Settings','settings']];
+  let layer, sheet, current='', returnFocus=null, profileButton=null, profileHome=null;
+  const sections=[['profile','Profile','user'],['settings','Settings','settings']];
   const panels=new Map(), tabs=new Map();
 
-  function available(name){return name!=='friends'||root.ModeAtlasSocial?.isEnabled();}
   function syncVisibility(){
     if(!layer)return;
     const dialogOpen=root.ModeAtlasDialog?.isOpen()===true;
@@ -16,25 +15,25 @@
     document.querySelectorAll('[data-profile-open]').forEach(button=>button.setAttribute('aria-expanded',String(!!current&&(root.ModeAtlasEnv?.isNativeApp||current!=='settings'))));
     document.querySelectorAll('[data-settings-open]').forEach(button=>button.setAttribute('aria-expanded',String(current==='settings')));
   }
-  function releaseView(){if(disposeView){disposeView();disposeView=null;}}
   function select(name,{focus=false}={}){
-    if(!panels.has(name)||!available(name))return;
+    if(!panels.has(name))return;
     if(current!==name){
-      releaseView();current=name;
+      current=name;
       for(const [key,panel]of panels){panel.hidden=key!==name;panel.classList.toggle('is-active',key===name);}
       for(const [key,tab]of tabs){tab.setAttribute('aria-selected',String(key===name));tab.tabIndex=key===name?0:-1;}
       document.getElementById('maAccountTitle').textContent=sections.find(section=>section[0]===name)[1];
-      if(name==='atlas')disposeView=root.ModeAtlasRewardsUI.mount(panels.get(name));
-      if(name==='friends')disposeView=root.ModeAtlasSocialUI.mount(panels.get(name));
       if(name==='settings')root.ModeAtlasNativeSettings?.refresh?.();
     }
     syncVisibility();
     if(focus)tabs.get(name).focus({preventScroll:true});
   }
   function open(name='profile',trigger){
-    if(!layer||!panels.has(name)||!available(name))return;
+    const destination={atlas:'progress',friends:'friends'}[name];
+    if(destination){root.ModeAtlasVersionFile.navigate(root.AtlasPlatform.destinationPath(destination));return;}
+    if(!layer||!panels.has(name))return;
     if(!current){
       returnFocus=trigger instanceof Element?trigger:document.activeElement;
+      if(profileButton)document.getElementById('maAccountClose').before(profileButton);
       layer.hidden=false;root.ModeAtlasOverlay.lock(layer);document.body.classList.add('ma-account-open');
     }
     select(name);
@@ -44,9 +43,10 @@
   function close(){
     if(!current)return;
     if(layer.contains(document.activeElement))document.activeElement.blur();
-    releaseView();current='';layer.hidden=true;root.ModeAtlasOverlay.unlock(layer);document.body.classList.remove('ma-account-open');
+    current='';layer.hidden=true;root.ModeAtlasOverlay.unlock(layer);document.body.classList.remove('ma-account-open');
     for(const panel of panels.values()){panel.hidden=true;panel.classList.remove('is-active');}
     syncVisibility();
+    if(profileButton)profileHome.after(profileButton);
     const target=returnFocus;returnFocus=null;
     if(target?.isConnected)target.focus({preventScroll:true});
   }
@@ -63,7 +63,7 @@
   function install({href,profileMarkup,settingsMarkup}){
     if(layer)return;
     const icon=name=>`<svg class="ma-icon" aria-hidden="true"><use href="${href('assets/mode-atlas-icons.svg')}#icon-${name}"></use></svg>`;
-    const visible=sections.filter(([name])=>available(name));
+    const visible=sections;
     layer=document.createElement('div');layer.className='ma-account-layer';layer.hidden=true;
     layer.innerHTML=`<div class="ma-account-backdrop" data-ma-account-close></div>
       <section class="ma-account-sheet" id="maAccountSheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="maAccountTitle" tabindex="-1">
@@ -75,6 +75,7 @@
         ${visible.map(([name])=>`<section class="ma-account-view ma-account-${name}" id="maAccount-${name}" role="tabpanel" aria-labelledby="maAccountTab-${name}" aria-hidden="true" tabindex="0" hidden>${name==='profile'?profileMarkup:name==='settings'?settingsMarkup:''}</section>`).join('')}
       </section>`;
     document.body.append(layer);sheet=layer.querySelector('.ma-account-sheet');sheet.inert=true;
+    if(root.ModeAtlasEnv?.isNativeApp){profileButton=document.getElementById('profileOpenBtn');if(profileButton){profileHome=document.createComment('profile-home');profileButton.before(profileHome);}}
     for(const [name]of visible){
       panels.set(name,document.getElementById('maAccount-'+name));
       const tab=document.getElementById('maAccountTab-'+name);tabs.set(name,tab);
@@ -103,7 +104,11 @@
     root.addEventListener('modeAtlasDialogStateChanged',syncVisibility);
     root.addEventListener('pagehide',close);
     const requested=new URLSearchParams(location.search).get('section');
-    if(['atlas','friends'].includes(requested))queueMicrotask(()=>open(requested));
+    if(['atlas','friends'].includes(requested)){
+      const target=new URL(root.AtlasPlatform.destinationPath(requested==='atlas'?'progress':'friends'),location.origin);
+      if(requested==='friends'&&new URLSearchParams(location.search).get('ranking')==='weekly')target.searchParams.set('ranking','weekly');
+      root.ModeAtlasVersionFile.navigate(target.pathname+target.search);
+    }
   }
   root.ModeAtlasAccountNavigation=Object.freeze({install,open,close,isOpen:()=>!!current,current:()=>current});
 })(window);

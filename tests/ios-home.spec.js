@@ -86,9 +86,8 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: returning suggestions an
   await expect(page.locator('.ma-toast')).toHaveCount(0,{timeout:15000});
   await page.screenshot({path:testInfo.outputPath(`returning-goals-${theme}.png`)});
   await page.locator('.atlas-ios-home__routine [data-ma-rewards-open]').click();
-  await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
-  await page.getByRole('button', { name: 'Close account menu', exact: true }).click();
-  await expect(page.locator('#maAccountSheet')).toBeHidden();
+  await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
+  await page.locator('.ma-ios-tab[href="/"]').click();
   await expectCompact(page);
 });
 
@@ -117,9 +116,8 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: cold launch, safe-area c
   await expectCompact(page);
   await device.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}});
   await expectCompact(page);
-  await page.locator('.ma-ios-tabs__links a[href="/kana/"]').click();
-  await page.waitForURL('**/kana/');
-  await page.locator('.ma-ios-kana-back').click();
+  await page.locator('.ma-ios-tabs__links a[href="/learn/"]').click();
+  await page.waitForURL('**/learn/');
   await page.locator('.ma-ios-tabs__links a[href="/"]').click();
   await page.waitForURL('**/');
   await expect(page.locator('html')).toHaveAttribute('data-ma-native-warm','true');

@@ -12,7 +12,7 @@
   // These are product destinations, shared by website navigation and native
   // entry points. Keep incoming links on known pages in the bundled app.
   var destinations = Object.freeze({
-    atlas: '/', yourAtlas: '/?section=atlas', weekly: '/?section=friends&ranking=weekly', kana: '/kana/', reading: '/reading/', writing: '/writing/',
+    atlas: '/', learn: '/learn/', progress: '/progress/', yourAtlas: '/progress/', friends: '/friends/', weekly: '/friends/?ranking=weekly', kana: '/kana/', reading: '/reading/', writing: '/writing/',
     daily: '/reading/?mode=daily', review: '/reading/?mode=review',
     results: '/results/', wordBank: '/wordbank/'
   });
@@ -30,11 +30,12 @@
       } else if (url.protocol === 'https:' && (url.hostname === 'mode-atlas.app' || url.hostname === 'www.mode-atlas.app')) {
         path = url.pathname;
       } else return '';
-      var pages = { '/':'atlas', '/kana/':'kana', '/reading/':'reading', '/writing/':'writing', '/results/':'results', '/wordbank/':'wordBank' };
+      var pages = { '/':'atlas', '/learn/':'learn', '/progress/':'progress', '/friends/':'friends', '/kana/':'kana', '/reading/':'reading', '/writing/':'writing', '/results/':'results', '/wordbank/':'wordBank' };
       if (path !== '/' && !path.endsWith('/')) path += '/';
       var key = pages[path];
       if (!key) return '';
       if (key === 'atlas' && url.searchParams.get('section') === 'atlas') return 'yourAtlas';
+      if ((key === 'atlas' && url.searchParams.get('section') === 'friends') || key === 'friends') return url.searchParams.get('ranking') === 'weekly' ? 'weekly' : 'friends';
       if (key === 'reading' && url.searchParams.get('mode') === 'daily') return 'daily';
       if (key === 'reading' && (url.searchParams.get('mode') === 'review' || url.searchParams.get('focusWeak') === '1')) return 'review';
       return key;

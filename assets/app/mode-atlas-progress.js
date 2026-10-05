@@ -93,6 +93,7 @@
       adjustments,
       credits: normalizeCredits(value.credits),
       claims: normalizeClaims(value.claims),
+      goalPlans: normalizeGoalPlans(value.goalPlans),
       activity: normalizeActivity(value.activity),
       runs: normalizeRuns(value.runs),
       appearance: normalizeAppearance(value.appearance),
@@ -115,6 +116,7 @@
       adjustments: {},
       credits: mergeCredits(a.credits,b.credits),
       claims: mergeClaims(a.claims,b.claims),
+      goalPlans: mergeGoalPlans(a.goalPlans,b.goalPlans),
       activity: mergeActivity(a.activity,b.activity),
       runs: normalizeRuns({...a.runs,...b.runs}),
       appearance: mergeAppearance(a.appearance,b.appearance),
@@ -146,7 +148,7 @@
     const weeks=new Set();
     for(const day of Object.keys(merged.activity)){
       const totals=activityTotals(merged,day);
-      if(merged.activity[day].goalVersion===4)reconcileGoals(merged,day,false);
+      if(merged.activity[day].goalVersion>=4)reconcileGoals(merged,day,false);
       else {
         if(totals.correct>=20)claim(merged,`${day}:goal:recall`,10);
         if(totals.reading>=5&&totals.writing>=5)claim(merged,`${day}:goal:balance`,10);
@@ -157,7 +159,7 @@
     }
     for(const week of weeks){
       const days=Object.keys(merged.activity).filter(day=>weekKey(day)===week);
-      if(days.some(day=>merged.activity[day].goalVersion===4))reconcilePeriod(merged,week,'weekly');
+      if(days.some(day=>merged.activity[day].goalVersion>=4))reconcilePeriod(merged,week,'weekly');
       else if(weekDays(merged,week)>=4)claim(merged,`${week}:goal:week`,25);
     }
     return merged;
@@ -226,8 +228,60 @@
   function correctAcrossBranches(totals){return totals.correct+Object.entries(totals.metrics).filter(([id])=>id.endsWith('.correct')&&!id.startsWith('kana.')).reduce((sum,[,n])=>sum+n,0);}
   function weekDays(state,day){const first=weekKey(day);return Object.keys(state.activity).filter(key=>weekKey(key)===first&&correctAcrossBranches(activityTotals(state,key))>=5).length;}
   function claim(state,id,value){const key='v3:'+id,old=state.claims[key]||0;state.claims[key]=Math.max(old,finiteCount(value));return state.claims[key]-old;}
-  function goalClaimKey(period,key,id){return `v4:${period}:${key}:goal:${id}`;}
-  function dailyGoalCount(state,day){return Object.entries(state.claims).filter(([key,n])=>n>0&&(key.startsWith(`v4:daily:${day}:goal:`)||new RegExp(`^v3:${day}:goal:(recall|balance|review)$`).test(key))).length;}
+  function goalClaimKey(period,key,goal){return `v4:${period}:${key}:goal:${goal.id}`;}
+  function goalAwards(state,key,period){
+    const slots={};
+    for(const goal of root.ModeAtlasRewardRules.goalCatalogue.filter(goal=>goal.period===period)){
+      const xp=state.claims[goalClaimKey(period,key,goal)]||0;
+      if(xp)slots[goal.slot]=Math.max(slots[goal.slot]||0,xp);
+    }return slots;
+  }
+  function goalCount(state,key,period){
+    const legacy=period==='daily'?['recall','balance','review'].filter(id=>state.claims[`v3:${key}:goal:${id}`]).length:Number(!!state.claims[`v3:${key}:goal:week`]);
+    return Math.max(legacy,Object.keys(goalAwards(state,key,period)).length);
+  }
+  function normalizeGoalPlans(input){
+    const out={};
+    for(const [key,plan]of Object.entries(object(input))){
+      const match=/^(daily|weekly):(\d{4}-\d{2}-\d{2})$/.exec(key);
+      if(!match||!plan||![0,1].includes(plan.version)||!Array.isArray(plan.ids))continue;
+      const instant=Date.parse(match[2]+'T12:00:00Z');
+      if(!Number.isFinite(instant)||new Date(instant).toISOString().slice(0,10)!==match[2]||(match[1]==='weekly'&&weekKey(match[2])!==match[2]))continue;
+      const goals=plan.ids.map(id=>root.ModeAtlasRewardRules.goalCatalogue.find(goal=>goal.id===id&&goal.period===match[1]));
+      const size=match[1]==='daily'?3:2;
+      if(goals.length!==size||goals.some((goal,index)=>!goal||goal.slot!==index))continue;
+      out[key]={version:plan.version,at:finiteCount(plan.at),assisted:plan.assisted===true,ids:goals.map(goal=>goal.id)};
+    }return out;
+  }
+  function mergeGoalPlans(left,right){
+    const out=normalizeGoalPlans(left);
+    for(const [key,plan]of Object.entries(normalizeGoalPlans(right))){
+      const previous=out[key];
+      // Earliest assignment wins; deterministic tie-breaking converges offline devices.
+      if(!previous||plan.at<previous.at||(plan.at===previous.at&&JSON.stringify(plan)<JSON.stringify(previous)))out[key]=plan;
+    }return out;
+  }
+  function ensureGoalPlans(state,day,at){
+    let changed=false;
+    for(const period of ['daily','weekly']){
+      const key=period==='daily'?day:weekKey(day),id=period+':'+key;if(state.goalPlans[id])continue;
+      const active=Object.entries(state.activity).filter(([date])=>period==='daily'?date===day:weekKey(date)===key);
+      const legacy=active.some(([,row])=>row.goalVersion===4)||Object.keys(state.claims).some(claim=>claim.startsWith(`v4:${period}:${key}:goal:`));
+      const known=new Set(),profile={variety:0,katakana:0,independent:0,daysAvailable:7-((new Date(day+'T12:00:00Z').getUTCDay()+6)%7)};
+      for(const [date,row]of Object.entries(state.activity))if(date<=day){
+        for(const kana of row.kana)known.add(kana);
+        const metrics=activityTotals(state,date).metrics;profile.katakana+=metrics['kana.katakana']||0;profile.independent+=metrics['kana.independent']||0;
+      }
+      profile.variety=known.size;
+      state.goalPlans[id]={version:legacy?0:1,at:finiteCount(at),assisted:!legacy&&profile.independent<20,ids:root.ModeAtlasRewardRules.goals(key,period,legacy?undefined:profile).map(goal=>goal.id)};
+      changed=true;
+    }return changed;
+  }
+  function periodGoals(state,key,period){
+    const plan=state.goalPlans[period+':'+key];
+    return plan?plan.ids.map(id=>({...root.ModeAtlasRewardRules.goalCatalogue.find(goal=>goal.id===id),planVersion:plan.version,assisted:plan.assisted})):root.ModeAtlasRewardRules.goals(key,period);
+  }
+  function dailyGoalCount(state,day){return goalCount(state,day,'daily');}
   function periodMetrics(state,key,period){
     const days=period==='daily'?[key]:Object.keys(state.activity).filter(day=>weekKey(day)===key);
     const metrics={},kana=new Set();let reading=0,writing=0;
@@ -241,14 +295,15 @@
     return {...metrics,'kana.correct':reading+writing,'kana.reading':reading,'kana.writing':writing,'kana.balance':Math.min(10,reading)+Math.min(10,writing),'kana.variety':kana.size};
   }
   function reconcilePeriod(state,key,period){
-    const metrics=periodMetrics(state,key,period);let xp=0;
-    for(const goal of root.ModeAtlasRewardRules.goals(key,period))if((metrics[goal.metric]||0)>=goal.target){
-      const id=goalClaimKey(period,key,goal.id),old=state.claims[id]||0;state.claims[id]=Math.max(old,goal.xp);xp+=state.claims[id]-old;
+    const metrics=periodMetrics(state,key,period),awarded=goalAwards(state,key,period);let xp=0;
+    for(const goal of periodGoals(state,key,period))if(!awarded[goal.slot]&&(metrics[goal.metric]||0)>=goal.target){
+      const id=goalClaimKey(period,key,goal),old=state.claims[id]||0;state.claims[id]=Math.max(old,goal.xp);xp+=state.claims[id]-old;
     }
     return xp;
   }
   function reconcileGoals(state,day,weekly=true){return reconcilePeriod(state,day,'daily')+(weekly?reconcilePeriod(state,weekKey(day),'weekly'):0);}
   function addActivity(state,day,metrics,kana=[]){
+    ensureGoalPlans(state,day,Date.now());
     const row=state.activity[day]||emptyActivity(),id=getDeviceId();row.goalVersion=4;
     row.metrics[id]||={};for(const [key,n]of Object.entries(normalizeMetrics(metrics)))row.metrics[id][key]=key.endsWith('.streak')?Math.max(row.metrics[id][key]||0,n):(row.metrics[id][key]||0)+n;
     row.kana=[...new Set([...row.kana,...kana])].sort().slice(0,512);state.activity[day]=row;return row;
@@ -325,30 +380,34 @@
   }
   function routine(input,at=Date.now()){
     const state=input?normalizeState(input):readState(),today=dayKey(at);
+    const changed=ensureGoalPlans(state,today,at);
+    if(changed&&!input)persistState(state,{source:'goals.assign',emit:false});
     const streak=studyStreak(studyDays(state),today);
     const goals=[];
     for(const period of ['daily','weekly']){
       const key=period==='daily'?today:weekKey(today),metrics=periodMetrics(state,key,period);
-      goals.push(...root.ModeAtlasRewardRules.goals(key,period).map(goal=>({...goal,value:state.claims[goalClaimKey(period,key,goal.id)]?goal.target:metrics[goal.metric]||0})));
+      goals.push(...periodGoals(state,key,period).map(goal=>({...goal,value:goalAwards(state,key,period)[goal.slot]?goal.target:metrics[goal.metric]||0})));
     }
     return {streak,weekDays:weekDays(state,today),goals};
   }
   function weeklyRecap(input,at=Date.now(),previous=false){
     const state=input?normalizeState(input):readState(),today=dayKey(at),start=weekKey(root.ModeAtlasDates.shiftDateKey(today,previous?-7:0));
     const metrics=periodMetrics(state,start,'weekly'),daily=activityTotals(state,today);
-    const weeklyGoals=Object.entries(state.claims).filter(([key,n])=>n>0&&(key.startsWith(`v4:weekly:${start}:goal:`)||key===`v3:${start}:goal:week`)).length;
+    const weeklyGoals=goalCount(state,start,'weekly');
     return {start,end:root.ModeAtlasDates.shiftDateKey(start,6),studyDays:metrics['study.days']||0,
       reading:metrics['kana.reading']||0,writing:metrics['kana.writing']||0,variety:metrics['kana.variety']||0,
       sessions:metrics['kana.sessions']||0,dailyGoals:metrics['study.goals']||0,weeklyGoals,
       todayReading:daily.reading,todayWriting:daily.writing};
   }
   function achievementStats(input){
-    const state=input?normalizeState(input):readState(),days=new Set();let dailyGoals=0,weeklyGoals=0;
+    const state=input?normalizeState(input):readState(),days=new Set(),dailyKeys=new Set(),weeklyKeys=new Set();
     for(const [key,n]of Object.entries(state.claims))if(n){
-      const daily=/^v4:daily:(\d{4}-\d{2}-\d{2}):goal:/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:(recall|balance|review)$/.exec(key);
-      if(daily){dailyGoals++;if(dailyGoalCount(state,daily[1])>=3)days.add(daily[1]);}
-      if(/^v4:weekly:.*:goal:|^v3:.*:goal:week$/.test(key))weeklyGoals++;
+      const daily=/^v4:daily:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:(recall|balance|review)$/.exec(key);
+      const weekly=/^v4:weekly:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:week$/.exec(key);
+      if(daily){dailyKeys.add(daily[1]);if(dailyGoalCount(state,daily[1])>=3)days.add(daily[1]);}
+      if(weekly)weeklyKeys.add(weekly[1]);
     }
+    const dailyGoals=[...dailyKeys].reduce((sum,key)=>sum+dailyGoalCount(state,key),0),weeklyGoals=[...weeklyKeys].reduce((sum,key)=>sum+goalCount(state,key,'weekly'),0);
     const metrics={};let bestStreak=0;
     for(const day of Object.keys(state.activity))for(const [key,n]of Object.entries(activityTotals(state,day).metrics)){metrics[key]=(metrics[key]||0)+n;if(key==='kana.streak')bestStreak=Math.max(bestStreak,n);}
     const collections=Object.values(state.collections);
@@ -492,7 +551,14 @@
     Object.values(state.events).forEach((event) => { xp += EVENT_XP[event.type] || 0; });
     Object.values(state.adjustments).forEach((adjustment) => { xp += finiteInteger(adjustment.amount); });
     Object.values(state.credits).forEach(row=>{xp+=Object.values(row).reduce((n,value)=>n+value,0);});
-    xp+=Object.values(state.claims).reduce((n,value)=>n+value,0);
+    // Claim IDs retain the compatible v4 format. Each period has one award per
+    // slot, even if two offline devices were assigned different eligible goals.
+    const periods=new Map();
+    for(const [id,value]of Object.entries(state.claims)){
+      const match=/^v4:(daily|weekly):(\d{4}-\d{2}-\d{2}):goal:/.exec(id);
+      if(match)periods.set(match[1]+':'+match[2],[match[1],match[2]]);else xp+=value;
+    }
+    for(const [period,key]of periods.values())xp+=Object.values(goalAwards(state,key,period)).reduce((sum,value)=>sum+value,0);
     return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(xp)));
   }
 

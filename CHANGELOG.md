@@ -1,3 +1,11 @@
+## 2.89.0 - 2026-10-05
+
+- Keep Atlas, Learn, Progress and Friends available as stable primary destinations on web and iOS. Move Progress and Friends out of the account sheet into shared pages; keep Profile and Settings together behind the avatar.
+- Gather Kana and Word Bank entry points in Learn, including one recommended session. Keep Reading, Writing and Results in the Kana page navigation, and update tours, reminder/widget routes and old account links.
+- Assign goals from demonstrated study experience and the remaining week. Freeze each period's plan, preserve already-active legacy goals, converge offline assignments and prevent multiple awards for the same goal slot. Keep the existing save version and claim format compatible.
+- Preserve an explicit account alert time zone across device reconnects. Show it in Settings and allow a deliberate update to this device's zone. Compare reminder overlap across device and account zones; the daily reminder remains local to its device.
+- Publish the website only after browser/shared-code, Firebase and native release jobs pass for the same main-branch commit. Development branches remain validation-only.
+
 ## 2.88.0 - 2026-10-04
 
 - Move Friends / Rankings to the top of the shared screen and show the editable Friends profile only in Friends.

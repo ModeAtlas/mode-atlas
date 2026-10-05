@@ -40,11 +40,11 @@ html[data-ma-runtime="ios"] .ma-loading-sub{color:var(--ma-muted);font-size:12px
 html[data-ma-runtime="ios"] .ma-loading-card .ma-skeleton{display:none;}
 html[data-ma-runtime="ios"][data-ma-native-warm="true"] .ma-loading-screen{display:none;}
 
-/* A single dock row; the profile destination stays available beside the Kana rail. */
+/* Stable primary destinations; account actions belong to the page header. */
 html[data-ma-runtime="ios"] .ma-ios-tabs{
   --ma-ios-accent:var(--ma-atlas);
   position:fixed;z-index:100;left:0;right:0;bottom:0;
-  display:grid;grid-template-columns:minmax(0,3fr) minmax(60px,1fr);gap:2px;
+  display:block;
   padding:5px max(10px,env(safe-area-inset-right,0px)) calc(5px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
   border-top:1px solid var(--ma-border);
   background:var(--ma-surface-strong);
@@ -55,9 +55,11 @@ html[data-ma-runtime="ios"] body.ma-reading-page .ma-ios-tabs{--ma-ios-accent:va
 html[data-ma-runtime="ios"] body.ma-writing-page .ma-ios-tabs{--ma-ios-accent:var(--ma-writing);}
 html[data-ma-runtime="ios"] body.ma-wordbank-page .ma-ios-tabs{--ma-ios-accent:var(--ma-words);}
 html[data-ma-runtime="ios"] body:is(.ma-kana-page,.ma-results-page) .ma-ios-tabs{--ma-ios-accent:var(--ma-kana);}
-html[data-ma-runtime="ios"] .ma-ios-profile{--ma-nav-accent:var(--ma-ios-accent);}
-html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__avatar{width:28px;height:28px;min-width:28px;font-size:1rem;}
-html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__action-label{display:block;font-size:.625rem;line-height:1.2;}
+html[data-ma-runtime="ios"] .ma-ios-profile{display:flex;align-items:center;justify-content:center;flex-shrink:0;min-width:44px;min-height:44px;padding:6px;border:1px solid var(--ma-border);border-radius:50%;background:var(--ma-control);color:var(--ma-text-strong);}
+html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__avatar{width:30px;height:30px;min-width:30px;font-size:1rem;}
+html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__action-label{display:none;}
+html[data-ma-runtime="ios"] .ma-ios-page-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;}
+html[data-ma-runtime="ios"] .ma-ios-page-tools a{display:flex;align-items:center;min-height:44px;color:var(--ma-muted);text-decoration:none;font-weight:750;}
 html[data-ma-runtime="ios"] .ma-ios-practice-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;margin-bottom:10px;}
 html[data-ma-runtime="ios"] .ma-ios-practice-actions :is(#modifiersTab,#studyNavHideBtn){
   display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:44px;padding:8px 12px;
@@ -66,34 +68,26 @@ html[data-ma-runtime="ios"] .ma-ios-practice-actions :is(#modifiersTab,#studyNav
 html[data-ma-runtime="ios"] .ma-ios-practice-actions #modifiersTab[aria-expanded="true"]{border-color:var(--ma-atlas);}
 html[data-ma-runtime="ios"] body.trainer-session-active .ma-ios-practice-actions,
 html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-practice-actions{display:none;}
-html[data-ma-runtime="ios"] .ma-ios-tabs__rail{height:max(49px,3.0625rem);overflow:hidden;position:relative;}
-html[data-ma-runtime="ios"] .ma-ios-tabs__links,
-html[data-ma-runtime="ios"] .ma-ios-kana-menu{
-  position:absolute;inset:0;display:flex;gap:2px;justify-content:space-around;
-  transition:transform .23s cubic-bezier(.22,1,.36,1);
-}
-html[data-ma-runtime="ios"] .ma-ios-kana-menu{transform:translateX(102%);}
-html[data-ma-runtime="ios"] .ma-ios-tabs__rail.is-kana-open .ma-ios-tabs__links{transform:translateX(-102%);}
-html[data-ma-runtime="ios"] .ma-ios-tabs__rail.is-kana-open .ma-ios-kana-menu{transform:translateX(0);}
+html[data-ma-runtime="ios"] .ma-ios-tabs__links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;}
 html[data-ma-runtime="ios"] .ma-ios-tab{
   flex:1 1 0;min-width:0;min-height:49px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   border-radius:12px;color:var(--ma-muted);text-decoration:none;
-  font-size:.625rem;font-weight:750;line-height:1.2;text-align:center;touch-action:manipulation;overflow-wrap:anywhere;
+  font-size:.625rem;font-weight:750;line-height:1.2;text-align:center;touch-action:manipulation;overflow-wrap:normal;
 }
 html[data-ma-runtime="ios"] button.ma-ios-tab{
   border:0;background:transparent;cursor:pointer;font-family:inherit;
 }
 html[data-ma-runtime="ios"] .ma-ios-tab__icon{font-family:var(--ma-font-jp);font-size:1.25rem;font-weight:800;line-height:1.2;}
 html[data-ma-runtime="ios"] .ma-ios-tab.is-active{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-ios-accent) 17%,transparent);}
-html[data-ma-runtime="ios"] .ma-ios-tab[aria-expanded="true"]{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-kana) 23%,var(--ma-card));}
 html[data-ma-runtime="ios"] .ma-ios-tab:focus-visible,
+html[data-ma-runtime="ios"] .ma-ios-profile:focus-visible,
 html[data-ma-runtime="ios"] .ma-ios-practice-actions button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
 
 /* Focus uses the same exit control; practice owns entry and session state. */
 html[data-ma-runtime="ios"] .ma-ios-tabs>.ma-nav-handle{display:none;}
 html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs{grid-template-columns:1fr;}
-html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__rail,
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__links,
 html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-profile{display:none;}
 html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs #studyNavShowBtn{
   display:inline-flex;position:static;justify-self:center;min-height:44px;width:auto;padding:0 20px;
@@ -184,7 +178,6 @@ html[data-ma-runtime="ios"] .ma-ios-accessibility-status{position:absolute;width
 @media (prefers-reduced-motion:reduce){
   html[data-ma-runtime="ios"] .ma-ios-tabs,
   html[data-ma-runtime="ios"] .ma-ios-tabs__links,
-  html[data-ma-runtime="ios"] .ma-ios-kana-menu,
   html[data-ma-runtime="ios"] .ma-loading-screen{transition:none;}
   html[data-ma-runtime="ios"] .ma-loading-mark,
   html[data-ma-runtime="ios"] .ma-loading-title,

@@ -102,15 +102,10 @@ test.describe('Phone and Tablet study UX', () => {
     await focus.click();
     await expect(page.locator('body')).not.toHaveClass(/study-nav-hidden/);
 
-    const trigger = page.locator('[data-ma-kana-menu-trigger]');
-    await trigger.click({ noWaitAfter: true });
-    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('#maKanaMenu')).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe('/reading/');
-
+    await expect(page.getByRole('navigation',{name:'Kana sections',exact:true})).toBeVisible();
     await Promise.all([
       page.waitForURL(/\/writing\/$/, { timeout: 5000, waitUntil: 'commit' }),
-      page.locator('[data-ma-kana-nav-item="writing"]').click({ noWaitAfter: true })
+      page.locator('.ma-kana-navigation a[href="/writing/"]').click({ noWaitAfter: true })
     ]);
     expect(new URL(page.url()).pathname).toBe('/writing/');
   });

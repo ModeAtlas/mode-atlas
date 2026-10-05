@@ -1,6 +1,6 @@
 {
   "name": "mode-atlas",
-  "version": "2.88.0",
+  "version": "2.89.0",
   "private": true,
   "description": "Mode Atlas static web app smoke tests",
   "scripts": {
@@ -21,7 +21,7 @@
     "ios:open": "npx cap open ios",
     "ios:check-version": "python3 sync_ios_project.py",
     "ios:check-firebase": "python3 validate_ios_firebase_config.py",
-    "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js tests/ios-experience.spec.js tests/study-flow.spec.js tests/trainer-modes.spec.js tests/progression.spec.js tests/dev-backups.spec.js tests/social.spec.js tests/account-navigation.spec.js tests/sounds.spec.js tests/release-readiness.spec.js tests/beta-readiness.spec.js",
+    "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js tests/ios-experience.spec.js tests/study-flow.spec.js tests/trainer-modes.spec.js tests/progression.spec.js tests/dev-backups.spec.js tests/social.spec.js tests/account-navigation.spec.js tests/hub-navigation.spec.js tests/sounds.spec.js tests/release-readiness.spec.js tests/beta-readiness.spec.js",
     "build:social": "python3 build_social_backend.py",
     "test:social": "npm run build:social && npm --prefix backend test",
     "social:install": "npm --prefix backend ci && npm --prefix backend/functions ci",

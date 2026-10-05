@@ -161,7 +161,7 @@
     const copy=el('div','ma-atlas-identity__copy'),title=el('strong','',selected.title);title.dataset.maSelectedTitle='';
     const status=el('span');status.dataset.maAtlasSummary='';
     copy.append(title,status);identity.append(preview,copy);content.append(identity);
-    const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Your Atlas');
+    const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Progress');
     const recap=el('div','ma-atlas-panel ma-atlas-recap');renderRecap(recap);
     const panels=[goalPanel(),rewardPanel(summary),recap];
     const controls=['Goals','Rewards','Recap'].map((label,index)=>{
@@ -175,11 +175,14 @@
       const target=event.key==='ArrowRight'?(index+1)%controls.length:event.key==='ArrowLeft'?(index+controls.length-1)%controls.length:event.key==='Home'?0:event.key==='End'?controls.length-1:-1;
       if(target>=0){event.preventDefault();selectTab(target);controls[target].focus();}
     });
-    selectTab(0);content.append(tabs,...panels);
+    selectTab(new URLSearchParams(location.search).get('tab')==='rewards'?1:0);content.append(tabs,...panels);
     host.replaceChildren(content);refresh();void root.ModeAtlasRewardAccess?.refresh();
     return ()=>content.remove();
   }
-  function open(){root.ModeAtlasAccountNavigation?.open('atlas');}
+  function open(section='goals'){
+    if(location.pathname==='/progress/'){document.getElementById(section==='rewards'?'atlasTab1':'atlasTab0')?.click();root.ModeAtlasAccountNavigation?.close();return;}
+    root.ModeAtlasVersionFile.navigate('/progress/'+(section==='rewards'?'?tab=rewards':''));
+  }
   document.addEventListener('click',event=>{if(event.target.closest('[data-ma-rewards-open]'))open();});
   for(const event of ['modeAtlasRewardAccessChanged','modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady'])root.addEventListener(event,refresh);
   document.addEventListener('ma:ui-refresh',refresh);

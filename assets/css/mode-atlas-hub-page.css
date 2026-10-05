@@ -1,0 +1,24 @@
+/* Shared composition for top-level learning, progress and social pages. */
+.ma-hub-page{margin:0;background:var(--ma-app-bg);color:var(--ma-text-strong);}
+.ma-hub-page>.shell{width:min(1040px,100%);margin:auto;padding:0 20px;}
+.ma-hub-main{max-width:900px;margin:24px auto 0;}
+.ma-hub-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;}
+.ma-hub-header h1{margin:0;font-size:clamp(1.8rem,5vw,2.4rem);line-height:1.15;}
+.ma-hub-header p{margin:8px 0 0;color:var(--ma-muted);font-size:.9rem;line-height:1.5;}
+.ma-hub-header .ma-hub-eyebrow{margin:0 0 6px;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;font-weight:800;}
+#maHubContent{display:grid;gap:20px;min-width:0;}
+.ma-hub-next{display:grid;gap:10px;padding:22px;border:1px solid var(--ma-border);border-radius:22px;background:var(--ma-surface);color:var(--ma-text-strong);text-decoration:none;}
+.ma-hub-next small{color:var(--ma-reading);font-weight:800;}
+.ma-hub-next strong{font:800 1.45rem/1.25 var(--ma-font-display);}
+.ma-hub-next span,.ma-learning-branch p,.ma-hub-upcoming p,.ma-hub-note{color:var(--ma-muted);font-size:.85rem;line-height:1.6;}
+.ma-learning-branches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+.ma-learning-branch{padding:20px;border:1px solid var(--ma-border);border-radius:20px;background:var(--ma-card);}
+.ma-learning-branch h2{margin:0;font-size:1.2rem;}
+.ma-learning-branch__actions{display:flex;flex-wrap:wrap;gap:8px;}
+.ma-learning-branch__actions a{flex:1 1 auto;}
+.ma-hub-upcoming{padding:16px 0;border-top:1px solid var(--ma-border);}
+.ma-hub-upcoming summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:750;color:var(--ma-muted);}
+.ma-hub-upcoming summary::after{content:'＋';margin-left:auto;}
+.ma-hub-upcoming[open] summary::after{content:'−';}
+html[data-ma-runtime="ios"] .ma-hub-main{margin-top:8px;}
+@media(max-width:600px){.ma-hub-page>.shell{padding:0 16px;}.ma-learning-branches{grid-template-columns:1fr;}.ma-hub-header{margin-bottom:18px;}}

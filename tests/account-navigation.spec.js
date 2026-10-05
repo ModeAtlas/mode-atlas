@@ -31,14 +31,14 @@ for(const layout of [
   {native:true,theme:'dark',width:320,height:700},
   {native:true,theme:'light',width:820,height:1180},
   {native:false,theme:'dark',width:1280,height:900}
-])test(`${layout.native?'iOS':'web'} ${layout.width} ${layout.theme}: account sections are peers in one surface`,async({page},info)=>{
+])test(`${layout.native?'iOS':'web'} ${layout.width} ${layout.theme}: profile and settings share one account surface`,async({page},info)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,layout);
   await page.locator('#profileOpenBtn').click();
   await expect(page.locator('#profileOpenBtn')).toHaveAttribute('aria-controls','maAccountSheet');
   await expect(page.locator('#profileOpenBtn')).toHaveAttribute('aria-expanded','true');
   const navigation=page.getByRole('tablist',{name:'Account sections',exact:true});
-  await expect(navigation.getByRole('tab')).toHaveText(['Profile','Your Atlas','Friends','Settings']);
-  for(const label of ['Profile','Your Atlas','Friends','Settings']){
+  await expect(navigation.getByRole('tab')).toHaveText(['Profile','Settings']);
+  for(const label of ['Profile','Settings']){
     await navigation.getByRole('tab',{name:label,exact:true}).click();
     await expect(page.locator('#maAccountTitle')).toHaveText(label);
     await expect(page.locator('.ma-account-view:visible')).toHaveCount(1);
@@ -48,9 +48,6 @@ for(const layout of [
   }
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
   await fits(page);
-  await navigation.getByRole('tab',{name:'Friends',exact:true}).click();
-  await page.getByRole('button',{name:'Sign in',exact:true}).click();
-  await expect(navigation.getByRole('tab',{name:'Profile',exact:true})).toHaveAttribute('aria-selected','true');
   await page.locator('#maAccountClose').click();
   await expect(page.locator('#profileOpenBtn')).toHaveAttribute('aria-expanded','false');
   await expect(page.locator('#profileOpenBtn')).toBeFocused();
@@ -72,20 +69,19 @@ test('account navigation keeps focus and settings context across a cancelled des
   await expect(page.locator('.ma-account-layer')).toBeHidden();
   await expect(page.locator('#profileOpenBtn')).toBeFocused();
 });
-test('account section keys and repeated dock taps keep one navigation owner',async({page})=>{
+test('account section keys and repeated avatar taps keep one navigation owner',async({page})=>{
   await prepare(page);
   await page.locator('#profileOpenBtn').click();
   const nav=page.getByRole('tablist',{name:'Account sections',exact:true});
   await nav.getByRole('tab',{name:'Profile',exact:true}).focus();
   await page.keyboard.press('ArrowRight');
-  await expect(nav.getByRole('tab',{name:'Your Atlas',exact:true})).toBeFocused();
+  await expect(nav.getByRole('tab',{name:'Settings',exact:true})).toBeFocused();
   await page.keyboard.press('End');
   await expect(nav.getByRole('tab',{name:'Settings',exact:true})).toBeFocused();
   await page.locator('#profileOpenBtn').click();
   await expect(page.locator('.ma-account-layer')).toBeHidden();
   await page.locator('#profileOpenBtn').click();
-  await nav.getByRole('tab',{name:'Your Atlas',exact:true}).click();
-  await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await nav.getByRole('tab',{name:'Settings',exact:true}).click();
   await page.locator('#profileOpenBtn').click();
   await expect(page.locator('.ma-account-layer')).toBeHidden();
   await page.locator('#profileOpenBtn').click();

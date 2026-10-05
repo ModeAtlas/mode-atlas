@@ -12,14 +12,14 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'More room for friends and the weekly race.';
+  const WHATS_NEW_COPY = 'A clearer home for your learning.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Switch between Friends and Rankings at the top of the page.',
-    'Open Rankings straight into the weekly ladder, with All time alongside it.',
-    'See your weekly rank, XP and reset time in a compact summary.',
-    'Compare Global or Friends, with rules, prizes and past results one tap away.'
+    'Move between Atlas, Learn, Progress and Friends with consistent navigation.',
+    'Find Kana practice and your Word Bank together in Learn.',
+    'Get rotating goals suited to your study experience, fixed for each day and week.',
+    'See the account time zone used for alerts and change it when you need to.'
   ];
 
   function storeGet(key, fallback = '') {

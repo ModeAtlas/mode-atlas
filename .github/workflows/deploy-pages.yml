@@ -1,13 +1,8 @@
 name: Deploy Mode Atlas website
 
+# Publication is called only after every release job validates this commit.
 on:
-  push:
-    branches:
-      - main
-      - 'agent/mode-atlas-*'
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

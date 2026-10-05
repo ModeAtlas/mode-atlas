@@ -285,3 +285,13 @@ jobs:
           PY
           google_scheme="$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' "$app_path/GoogleService-Info.plist")"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:1:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "$google_scheme"
+
+  deploy-website:
+    name: Publish validated website
+    needs: [release-check, social-backend-check, ios-native-build]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy-pages.yml

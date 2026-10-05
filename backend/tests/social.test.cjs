@@ -625,3 +625,17 @@ test('cached mastery projections refresh on Friends views without waiting for an
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':1,'summary.combinedMastered':1});
   assert.equal((await a.call('profile',{uid:b.uid})).profile.stats.combinedMastered,0);
 });
+
+
+test('account alert timezone survives device reconnects until explicitly changed',async()=>{
+  const {createNotifications}=require('../functions/notifications.cjs');
+  const n=createNotifications({db,weekly:{rank:async()=>null}}),user=await learner('Zone Reader');
+  const preferences={dailyGoals:true,weeklyGoals:false,streak:false,overtaken:false};
+  await n.configure(user.uid,{preferences,token:'timezone-first-device-12345',timeZone:'UTC'});
+  await n.configure(user.uid,{preferences,token:'timezone-second-device-12345',timeZone:'Australia/Melbourne'});
+  assert.equal((await n.state(user.uid)).timeZone,'UTC');
+  await n.configure(user.uid,{preferences,token:'timezone-second-device-12345',timeZone:'Australia/Melbourne',updateTimeZone:true});
+  await n.configure(user.uid,{preferences,token:'timezone-first-device-12345',timeZone:'UTC'});
+  assert.equal((await n.state(user.uid)).timeZone,'Australia/Melbourne');
+  await assert.rejects(n.configure(user.uid,{preferences,token:'',timeZone:'UTC',updateTimeZone:'yes'}),{code:'invalid-argument'});
+});

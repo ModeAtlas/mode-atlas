@@ -64,3 +64,15 @@ test('denied notification access saves no preference or token',async()=>{
   c.root.permission({granted:false});await assert.rejects(pending,/iPhone Settings/);
   assert.equal(c.calls.filter(x=>x.action==='configureNotifications').length,0);assert.ok(!c.calls.includes('token'));
 });
+
+test('timezone changes are explicit and reminder overlap compares actual time zones',async()=>{
+  const c=client();await c.api.read();
+  await c.api.configure({...blank(),dailyGoals:true});
+  await c.api.reconnect();
+  assert.ok(c.calls.filter(row=>row.action==='configureNotifications').every(row=>row.data.updateTimeZone===undefined));
+  await c.api.configure({...blank(),dailyGoals:true},c.root.ModeAtlasNotificationRules.defaults,{updateTimeZone:true});
+  assert.equal(c.calls.filter(row=>row.action==='configureNotifications').at(-1).data.updateTimeZone,true);
+  const rules=c.root.ModeAtlasNotificationRules,at=Date.parse('2026-10-05T09:15:00Z');
+  assert.equal(rules.overlaps({enabled:true,hour:20,minute:0},rules.defaults,at,'UTC','Australia/Melbourne'),false);
+  assert.equal(rules.overlaps({enabled:true,hour:9,minute:0},rules.defaults,at,'UTC','Australia/Melbourne'),true);
+});

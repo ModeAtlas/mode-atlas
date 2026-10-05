@@ -78,11 +78,12 @@ test('daily and Monday-based weekly goals rotate deterministically with only lau
   const e=load(),rules=e.root.ModeAtlasRewardRules,seen=new Set();
   for(let i=0;i<28;i++){
     const at=Date.parse('2026-09-28T12:00:00Z')+i*86400000;
-    const goals=plain(e.progress.routine(undefined,at).goals);
+    const day=new Date(at).toISOString().slice(0,10);
+    const goals=plain([...rules.goals(day,'daily'),...rules.goals(e.root.ModeAtlasDates.shiftDateKey(day,-((new Date(at).getUTCDay()+6)%7)),'weekly')]);
     assert.equal(goals.length,5);assert.equal(new Set(goals.map(g=>g.id)).size,5);
     assert.equal(goals.filter(g=>g.period==='daily').length,3);assert.equal(goals.filter(g=>g.period==='weekly').length,2);
     goals.forEach(g=>{seen.add(g.id);assert.ok(rules.goalBranches.includes(g.branch));});
-    assert.deepEqual(goals,plain(e.progress.routine(undefined,at+1000).goals));
+    assert.deepEqual(goals.filter(g=>g.period==='daily'),plain(rules.goals(day,'daily')));
   }
   assert.ok(seen.size>=20);
   const weekly=day=>plain(e.progress.routine(undefined,Date.parse(day+'T12:00:00Z')).goals.filter(g=>g.period==='weekly').map(g=>g.id));
@@ -90,7 +91,7 @@ test('daily and Monday-based weekly goals rotate deterministically with only lau
 });
 test('rotating goals complete once when offline device evidence is combined',()=>{
   const a=load({modeAtlasProgressDeviceId:'a'}),b=load({modeAtlasProgressDeviceId:'b'});
-  for(const [e,id]of [[a,'a'],[b,'b']]){e.progress.startRun(id);for(let i=1;i<=10;i++)answer(e,id,i);}
+  for(const [e,id]of [[a,'a'],[b,'b']]){e.progress.persistState({...e.progress.readState(),goalPlans:{'daily:2026-09-30':{version:1,at:e.now(),assisted:true,ids:['read-20','hiragana-20','guided-1']}}});e.progress.startRun(id);for(let i=1;i<=10;i++)answer(e,id,i);}
   const left=a.progress.readState(),right=b.progress.readState(),merged=a.progress.mergeStates(left,right);
   assert.equal(merged.claims['v4:daily:2026-09-30:goal:read-20'],40);assert.equal(a.progress.getXP(merged),80);
   assert.deepEqual(plain(merged),plain(a.progress.mergeStates(right,left)));
@@ -106,7 +107,9 @@ test('new branch activity uses shared run receipts and study days without enabli
   assert.ok(p.routine().goals.every(g=>g.branch==='kana'));
 });
 test('achievement evidence counts real goal completions, unassisted streaks and received reward sets',()=>{
-  const e=load(),p=e.progress;p.startRun('set');
+  const e=load(),p=e.progress;
+  p.persistState({...p.readState(),goalPlans:{'daily:2026-09-30':{version:1,at:e.now(),assisted:true,ids:['read-20','hiragana-20','guided-1']}}});
+  p.startRun('set');
   for(let i=1;i<=20;i++)answer(e,'set',i,{poolSize:46,streak:i,kana:['あ','い','う','え','お'][i%5].split(''),hiragana:1});
   p.finishRun({runId:'set',direction:'reading',mode:'guided',count:20,answered:20,correct:20,unique:5,poolSize:46,bestStreak:20,completed:true});
   let stats=p.achievementStats();assert.equal(stats.dailyGoals,3);assert.equal(stats.goalDays,1);assert.equal(stats.guidedSets,1);assert.equal(stats.preciseSets,1);assert.equal(stats.bestStreak,20);assert.equal(stats.independent,20);assert.equal(stats.broadRecall,20);
@@ -160,7 +163,7 @@ test('new answers earn 2 XP; duplicate, out-of-order and completed-run answers c
 test('completion, accuracy and streak rewards are earned once and exclude incomplete or assisted perfection',()=>{
   const e=load();e.progress.startRun('set');for(let i=1;i<=10;i++)answer(e,'set',i);
   const session={runId:'set',direction:'reading',mode:'guided',count:10,answered:10,correct:10,unique:5,bestStreak:10,completed:true};
-  assert.deepEqual(plain(e.progress.finishRun(session).parts),{completion:5,accuracy:13,streak:4,goals:0});
+  assert.deepEqual(plain(e.progress.finishRun(session).parts),{completion:5,accuracy:13,streak:4,goals:40});
   assert.equal(e.progress.finishRun(session).xp,0);
   const rules=e.root.ModeAtlasRewardRules;
   assert.equal(rules.session({...session,completed:false}).completion,0);
@@ -280,4 +283,40 @@ test('reward access shares in-flight reads, handles older backends and keeps gra
   await Promise.all([a.refresh(),a.refresh()]);assert.equal(calls,1);assert.equal(a.status(),'error');assert.deepEqual(a.current().grants,[]);
   const e=load();assert.equal(e.root.ModeAtlasStorage.isBackupKey('modeAtlasRewardAccess'),false);
   e.root.ModeAtlasStorage.setJSON('modeAtlasRewardAccess',{allCustom:true});e.root.ModeAtlasStorage.clearAppData();assert.equal(e.root.ModeAtlasStorage.get('modeAtlasRewardAccess',null),null);
+});
+
+
+test('beginner goals stay suitable and frozen through settings changes and new evidence',()=>{
+  const e=load(),p=e.progress;
+  const before=plain(p.routine().goals);
+  assert.equal(before.length,5);
+  assert.ok(before.every(goal=>!['kana.independent','kana.streak','kana.precise','kana.broad','kana.katakana','kana.variety','kana.tests','kana.daily'].includes(goal.metric)));
+  e.root.ModeAtlasStorage.setJSON('settings',{hiraganaRows:['h_a'],hint:false});
+  p.startRun('progress');for(let i=1;i<=60;i++)answer(e,'progress',i,{kana:['あ'+i],katakana:1,assisted:false});
+  assert.deepEqual(plain(p.routine().goals.map(({id,assisted})=>({id,assisted}))),before.map(({id,assisted})=>({id,assisted})));
+  assert.deepEqual(plain(load({modeAtlasProgress:p.readState()}).progress.routine().goals),plain(p.routine().goals));
+  e.setNow(e.now()+86400000);const next=p.routine().goals;
+  assert.ok(next.filter(g=>g.period==='daily').every(g=>!g.assisted));
+  assert.deepEqual(plain(next.filter(g=>g.period==='weekly').map(g=>g.id)),before.filter(g=>g.period==='weekly').map(g=>g.id));
+});
+test('a late-week newcomer receives achievable weekly goals and existing active goals survive migration',()=>{
+  const e=load();e.setNow(Date.parse('2026-10-04T12:00:00Z'));
+  const weekly=e.progress.routine().goals.filter(g=>g.period==='weekly');
+  assert.equal(weekly.find(g=>g.metric==='study.days').target,1);
+  assert.ok(weekly.some(g=>['recall-50','guided-2'].includes(g.id)));
+  const old={version:5,legacySeeded:true,activity:{'2026-09-30':{goalVersion:4,sources:{a:[20,0]}}},claims:{'v4:daily:2026-09-30:goal:read-20':40}};
+  const migrated=load({modeAtlasProgress:old});
+  assert.deepEqual(plain(migrated.progress.routine().goals.filter(g=>g.period==='daily').map(g=>g.id)),plain(migrated.root.ModeAtlasRewardRules.goals('2026-09-30','daily').map(g=>g.id)));
+  assert.equal(migrated.progress.getXP(),40);
+});
+test('conflicting offline goal assignments converge and cannot multiply period rewards',()=>{
+  const e=load(),p=e.progress;
+  const a={goalPlans:{'daily:2026-09-30':{version:1,at:20,assisted:true,ids:['read-20','hiragana-20','guided-1']}},claims:{'v4:daily:2026-09-30:goal:read-20':40}};
+  const b={goalPlans:{'daily:2026-09-30':{version:1,at:10,assisted:false,ids:['recall-40','balance-10','sessions-2']}},claims:{'v4:daily:2026-09-30:goal:recall-40':60}};
+  const merged=p.mergeStates(a,b);
+  assert.deepEqual(plain(merged),plain(p.mergeStates(b,a)));
+  assert.deepEqual(plain(merged.goalPlans['daily:2026-09-30'].ids),b.goalPlans['daily:2026-09-30'].ids);
+  assert.equal(p.getXP(merged),60);assert.equal(p.achievementStats(merged).dailyGoals,1);
+  const legacy={claims:{'v4:daily:2026-09-30:goal:read-20':40}};
+  assert.equal(p.getXP(p.mergeStates(merged,legacy)),60);
 });

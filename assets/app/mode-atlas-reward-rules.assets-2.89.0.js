@@ -60,11 +60,34 @@
     goal('tests-2','weekly',1,'Complete 2 formal tests this week','2 formal tests',2,300,'kana.tests'),
     goal('independent-200','weekly',1,'Recall 200 kana without hints this week','Independent recall',200,250,'kana.independent')
   ]);
-  function goals(key,period){
+  const goalCatalogue=Object.freeze([...goalPool,
+    goal('days-1','weekly',0,'Practise on 1 day this week','1 study day',1,60,'study.days'),
+    goal('days-2','weekly',0,'Practise on 2 days this week','2 study days',2,120,'study.days'),
+    goal('recall-50','weekly',1,'Recall 50 kana this week','50 correct',50,100,'kana.correct'),
+    goal('guided-2','weekly',1,'Complete 2 guided sets this week','2 guided sets',2,100,'kana.guided')
+  ]);
+  function suitable(goal,profile){
+    const {metric,target,period}=goal,days=profile.daysAvailable||7;
+    if(metric==='kana.katakana'&&profile.katakana<5)return false;
+    if(metric==='kana.variety'&&profile.variety<target)return false;
+    if(['kana.broad','kana.tests'].includes(metric)&&profile.variety<45)return false;
+    if(['kana.independent','kana.streak','kana.precise','kana.tests'].includes(metric)&&profile.independent<20)return false;
+    if(metric==='kana.daily'&&profile.variety<20)return false;
+    if(period==='weekly'){
+      if(metric==='study.days')return target<=days&&(target>=3||target===Math.min(days,2));
+      if(metric==='study.goals'&&days<3)return false;
+      if(metric==='kana.correct')return target<100?days<5:days>=5;
+      if(metric==='kana.guided')return target<3?days<3:days>=3;
+      if(metric==='kana.independent'&&days<4)return false;
+    }
+    return true;
+  }
+  function goals(key,period,profile){
     const ordinal=Math.floor(Date.parse(key+'T12:00:00Z')/86400000/(period==='weekly'?7:1));
     if(!Number.isFinite(ordinal))return [];
-    return [...new Set(goalPool.filter(g=>g.period===period).map(g=>g.slot))].map(slot=>{
-      const pool=goalPool.filter(g=>g.period===period&&g.slot===slot&&goalBranches.includes(g.branch));
+    const catalogue=profile?goalCatalogue:goalPool;
+    return [...new Set(catalogue.filter(g=>g.period===period).map(g=>g.slot))].map(slot=>{
+      const pool=catalogue.filter(g=>g.period===period&&g.slot===slot&&goalBranches.includes(g.branch)&&(!profile||suitable(g,profile)));
       return pool[((ordinal+slot*3)%pool.length+pool.length)%pool.length];
     }).filter(Boolean);
   }
@@ -96,5 +119,5 @@
   function allowed(type,id,level,access){return unlocked(item(type,id),level,access);}
   function appearance(id,level,access){const reward=item('frames',id);return unlocked(reward,level,access)?reward:landmarks[0];}
   function banner(id,level,access){const reward=item('banners',id);return unlocked(reward,level,access)?reward:banners[0];}
-  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goals,landmarks,appearance,banners,banner,icons,avatars,catalogue,item,unlocked,visible,allowed});
+  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,catalogue,item,unlocked,visible,allowed});
 });

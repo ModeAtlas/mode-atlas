@@ -63,6 +63,9 @@ class NavConfig:
 
 NAV_CONFIGS: dict[str, NavConfig] = {
     'index.html': NavConfig('atlas', 'あア', 'Mode Atlas', 'Learn Japanese'),
+    'learn/index.html': NavConfig('learn', '学', 'Mode Atlas', 'Learn'),
+    'progress/index.html': NavConfig('progress', '記', 'Mode Atlas', 'Progress'),
+    'friends/index.html': NavConfig('friends', '友', 'Mode Atlas', 'Friends'),
     'kana/index.html': NavConfig('kana', 'かな', 'Mode Atlas', 'Kana Trainer', accent='kana'),
     'reading/index.html': NavConfig('reading', '読', 'Kana Trainer', 'Reading Practice', brand_href='/kana/', accent='reading', hideable=True),
     'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Writing Practice', brand_href='/kana/', accent='writing', hideable=True),
@@ -74,8 +77,9 @@ NAV_CONFIGS: dict[str, NavConfig] = {
 
 PRIMARY_LINKS = (
     ('atlas', 'Atlas', '/'),
-    ('kana', 'Kana Trainer', '/kana/'),
-    ('wordbank', 'Word Bank', '/wordbank/'),
+    ('learn', 'Learn', '/learn/'),
+    ('progress', 'Progress', '/progress/'),
+    ('friends', 'Friends', '/friends/'),
 )
 
 KANA_LINKS = (
@@ -101,41 +105,11 @@ def render_navigation(config: NavConfig) -> str:
     legal_page = config.key in {'privacy', 'terms'}
     links = LEGAL_LINKS if legal_page else PRIMARY_LINKS
     kana_section = not legal_page and config.key in KANA_KEYS
-    product_active = 'kana' if kana_section else config.key
-
-    kana_flyout = ''
-    if not legal_page:
-        local_links = []
-        for key, label, href in KANA_LINKS:
-            active = key == config.key
-            classes = 'ma-nav__section-link' + (' is-active' if active else '')
-            current = ' aria-current="page"' if active else ''
-            local_links.append(
-                f'<a class="{classes}" data-ma-nav-scope="kana" data-ma-kana-nav-item="{_attr(key)}" href="{_attr(href)}"{current}>{html.escape(label)}</a>'
-            )
-        kana_flyout = (
-            '<div class="ma-nav__flyout" id="maKanaMenu" data-ma-kana-nav '
-            'aria-label="Kana Trainer sections">'
-            + ' '.join(local_links)
-            + '</div>'
-        )
+    product_active = 'learn' if kana_section or config.key == 'wordbank' else config.key
 
     link_markup = []
     for key, label, href in links:
         active = key == product_active
-        if key == 'kana' and not legal_page:
-            classes = 'ma-nav__link ma-nav__menu-trigger' + (' is-active' if active else '')
-            link_markup.append(
-                '<div class="ma-nav__menu" data-ma-kana-menu>'
-                f'<button class="{classes}" type="button" data-ma-nav-scope="product" '
-                'data-ma-nav-item="kana" data-ma-kana-menu-trigger aria-haspopup="true" '
-                'aria-expanded="false" aria-controls="maKanaMenu">'
-                f'<span>{html.escape(label)}</span><span class="ma-nav__menu-chevron" aria-hidden="true"></span>'
-                '</button>'
-                f'{kana_flyout}'
-                '</div>'
-            )
-            continue
         classes = 'ma-nav__link' + (' is-active' if active else '')
         current = ' aria-current="page"' if key == config.key else ''
         link_markup.append(
@@ -157,8 +131,14 @@ def render_navigation(config: NavConfig) -> str:
           <svg class="ma-icon ma-nav__settings-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-settings"></use></svg>
           <span class="ma-nav__action-label">Settings</span>
         </button>
-        {hide_action}
+{hide_action}
       </div>"""
+
+    branch_markup = ''
+    if kana_section:
+        branch_markup = '<nav class="ma-kana-navigation" aria-label="Kana sections">' + ''.join(
+            f'<a href="{href}"' + (' aria-current="page"' if key == config.key else '') + f'>{label}</a>'
+            for key, label, href in KANA_LINKS) + '</nav>'
 
     nav_id = ' id="studyNav"' if config.hideable else ''
     handle = ''
@@ -182,6 +162,7 @@ def render_navigation(config: NavConfig) -> str:
   </div>
 </nav>
 <div class="ma-nav-spacer" data-ma-nav-spacer aria-hidden="true"></div>{handle}
+{branch_markup}
 {NAV_END}"""
 
 HEAD_ASSETS_START = '<!-- MODE_ATLAS_HEAD_ASSETS_START -->'
@@ -343,6 +324,18 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
     'index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-home-page.css', 'assets/css/mode-atlas-ios-home.css'),
         body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-home-page.js',)),
+    ),
+    'learn/index.html': FrontendAssetConfig(
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-hub-page.css',),
+        body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-hub-page.js',)),
+    ),
+    'progress/index.html': FrontendAssetConfig(
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-hub-page.css',),
+        body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-hub-page.js',)),
+    ),
+    'friends/index.html': FrontendAssetConfig(
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-hub-page.css',),
+        body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-hub-page.js',)),
     ),
     'kana/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kana-page.css',),

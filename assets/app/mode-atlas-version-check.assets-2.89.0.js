@@ -169,7 +169,7 @@
   }
 
   var APP_PAGE_PATHS = new Set([
-    '/', '/kana/', '/reading/', '/writing/', '/results/', '/wordbank/',
+    '/', '/learn/', '/progress/', '/friends/', '/kana/', '/reading/', '/writing/', '/results/', '/wordbank/',
     '/privacy/', '/terms/', '/index.html', '/kana.html', '/default.html',
     '/reverse.html', '/test.html', '/wordbank.html'
   ]);

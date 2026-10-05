@@ -33,7 +33,7 @@ test('shared navigation is generated consistently across all public pages', () =
     assert.equal(count(html, /<!-- MODE_ATLAS_NAV_START -->/g), 1, `${rel} nav start marker`);
     assert.equal(count(html, /<!-- MODE_ATLAS_NAV_END -->/g), 1, `${rel} nav end marker`);
     assert.equal(count(html, /data-ma-navigation="shared"/g), 1, `${rel} shared nav owner`);
-    assert.equal(count(html, /aria-current="page"/g), 1, `${rel} should expose one current page`);
+    assert.equal(count(html, /aria-current="page"/g), rel==='wordbank/index.html'?0:1, `${rel} current page belongs to its navigation scope`);
     assert.match(html, new RegExp(`mode-atlas-components\\.${REVISION.replaceAll('.', '\\.')}\\.css`), `${rel} component primitives`);
     assert.match(html, new RegExp(`mode-atlas-navigation\\.${REVISION.replaceAll('.', '\\.')}\\.css`), `${rel} shared nav css`);
     assert.doesNotMatch(html, /[?&](?:build|v|reload|swretired)=/i, `${rel} public links must stay canonical`);
@@ -1122,74 +1122,14 @@ test('2.33.2 Kana setup is destination-owned and persisted as app state', () => 
   assert.match(kana, new RegExp(`mode-atlas-presets\\.${REVISION.replaceAll('.', '\\.')}\\.js`));
 });
 
-test('2.34 product navigation separates Mode Atlas destinations from Kana sections', () => {
-  const frontend = read('frontend_components.py');
-  const navCss = read('assets/css/mode-atlas-navigation.css');
-  const productPages = ['index.html', 'wordbank/index.html'];
-  const kanaPages = ['kana/index.html', 'reading/index.html', 'writing/index.html', 'results/index.html'];
-
-  assert.match(frontend, /PRIMARY_LINKS = \([\s\S]*?'Atlas'[\s\S]*?'Kana Trainer'[\s\S]*?'Word Bank'[\s\S]*?\)/);
-  assert.doesNotMatch(frontend.match(/PRIMARY_LINKS = \([\s\S]*?\)\n/)[0], /'Reading'|'Writing'|'Results'/);
-  assert.match(frontend, /KANA_LINKS = \([\s\S]*?'Overview'[\s\S]*?'Reading'[\s\S]*?'Writing'[\s\S]*?'Test Results'/);
-  assert.match(navCss, /\.ma-nav__flyout\{/);
-  assert.match(navCss, /\.ma-nav__section-link\.is-active\{/);
-  assert.doesNotMatch(navCss, /\.ma-nav__subnav\{/);
-
-  for (const rel of [...productPages, ...kanaPages]) {
-    const html = read(rel);
-    assert.equal(count(html, /data-ma-nav-scope="product"/g), 3, `${rel} product navigation count`);
-    assert.equal(count(html, /data-ma-nav-scope="kana"/g), 4, `${rel} Kana destination count`);
-    assert.equal(count(html, /data-ma-kana-nav(?:\s|>)/g), 1, `${rel} one Kana flyout owner`);
-    assert.equal(count(html, /data-ma-kana-menu-trigger/g), 1, `${rel} one Kana flyout trigger`);
-    assert.equal(count(html, /aria-current="page"/g), 1, `${rel} one current page`);
+test('primary destinations and in-page Kana navigation share their build-time owner',()=>{
+  for(const rel of ['index.html','learn/index.html','progress/index.html','friends/index.html','kana/index.html','reading/index.html','writing/index.html','results/index.html','wordbank/index.html']){
+    const html=read(rel);
+    assert.equal(count(html,/data-ma-nav-scope="product"/g),4,rel);
+    assert.doesNotMatch(html,/maKanaMenu|data-ma-kana-menu-trigger/,rel);
+    for(const label of ['atlas','learn','progress','friends'])assert.ok(html.includes(`data-ma-nav-item="${label}"`),rel+': '+label);
   }
-  for (const rel of kanaPages) {
-    const html = read(rel);
-    assert.match(html, /class="[^"]*ma-nav__menu-trigger[^"]*is-active[^"]*"[^>]*data-ma-nav-item="kana"/, `${rel} Kana Trainer product active`);
-  }
-});
-
-test('2.34.1 Kana navigation flyout stays out of header flow and supports pointer, touch, and keyboard dismissal', () => {
-  const frontend = read('frontend_components.py');
-  const navCss = read('assets/css/mode-atlas-navigation.css');
-  const navRuntime = read('assets/ui/mode-atlas-navigation-menu.js');
-  assert.match(navCss, /\.ma-nav__flyout\{[\s\S]*?position:absolute;/);
-  assert.match(navCss, /\.ma-nav__menu:hover \.ma-nav__flyout/);
-  assert.doesNotMatch(navCss, /ma-nav--has-subnav/);
-  assert.match(navRuntime, /data-ma-kana-menu-trigger/);
-  assert.match(navRuntime, /aria-expanded/);
-  assert.match(navRuntime, /\(hover:hover\) and \(pointer:fine\)/);
-  assert.match(navRuntime, /pointerdown/);
-  assert.match(navRuntime, /event\.key !== 'Escape'/);
-  assert.match(frontend, /data-ma-nav-spacer/);
-  assert.match(navRuntime, /bindPhoneScrollNavigation/);
-  assert.match(navRuntime, /window\.addEventListener\('scroll', schedule, \{ passive:true \}\)/);
-  assert.match(navRuntime, /ma-nav--scroll-hidden/);
-  assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav\{[\s\S]*?position:fixed;/);
-  assert.match(navCss, /body\[data-effective-display-mode="phone"\] \.ma-nav-spacer\{[\s\S]*?display:block;/);
-  assert.match(navRuntime, /syncPhoneNavGeometry/);
-  assert.match(navRuntime, /rect\.bottom \+ 12/);
-  assert.match(navRuntime, /ResizeObserver/);
-  assert.match(navRuntime, /direction > 0 && travel >= 12/);
-  assert.match(navRuntime, /direction < 0 && travel >= 48/);
-  assert.match(navCss, /body\[data-effective-display-mode="phone"\]:not\(\.study-nav-hidden\) \.ma-nav\.ma-nav--scroll-hidden/);
-  for (const rel of APP_PAGES) {
-    const html = read(rel);
-    assert.match(html, new RegExp(`mode-atlas-navigation-menu\\.${REVISION.replaceAll('.', '\\.')}\\.js`), `${rel} shared Kana menu runtime`);
-  }
-});
-
-test('2.34.2 Kana flyout uses one disclosure control across pointer, touch, and keyboard input', () => {
-  const frontend = read('frontend_components.py');
-  const navJs = read('assets/ui/mode-atlas-navigation-menu.js');
-  const navCss = read('assets/css/mode-atlas-navigation.css');
-  assert.match(frontend, /f'<button class="\{classes\}" type="button" data-ma-nav-scope="product"/);
-  assert.doesNotMatch(frontend, /f'<a class="\{classes\}" href="\/kana\/" data-ma-nav-scope="product"/);
-  assert.match(navJs, /trigger\.addEventListener\('click', function\(\)\{\s*setOpen\(true\);/);
-  assert.match(navJs, /menu\.addEventListener\('focusin', function\(\)\{ setOpen\(true\); \}\);/);
-  assert.match(navJs, /document\.addEventListener\('pointerdown'/);
-  assert.doesNotMatch(navJs, /location\.href|location\.assign/);
-  assert.match(navCss, /\.ma-nav__section-link\{[\s\S]*?justify-content:center;[\s\S]*?text-align:center;/);
+  for(const rel of ['kana/index.html','reading/index.html','writing/index.html','results/index.html'])assert.match(read(rel),/class="ma-kana-navigation" aria-label="Kana sections"/);
 });
 
 test('2.35 Atlas homepage stays editorial, product-led, and free of learner stats', () => {
@@ -1675,7 +1615,7 @@ test('2.45 responsive and accessibility QA keeps landmarks, keyboard controls, f
   }
 
   assert.match(navigation, /\.ma-skip-link\{/);
-  assert.match(navigation, /@media\(pointer:coarse\)[\s\S]*\.ma-nav__section-link[\s\S]*min-height:44px/);
+  assert.match(navigation, /@media\(pointer:coarse\)[\s\S]*\.ma-nav__action[\s\S]*min-height:44px/);
   assert.match(components, /@media\(pointer:coarse\)[\s\S]*\.ma-button--small\{--ma-button-min-height:44px;\}/);
   assert.match(dialog, /ModeAtlasOverlay\.lock\(layer\)/);
   assert.match(read('assets/app/mode-atlas-overlay.js'), /visualViewport\?\.addEventListener\('scroll',measure\)/);

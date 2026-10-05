@@ -149,7 +149,7 @@ test('due review can select kana outside setup rows, and account changes invalid
 for(const theme of ['dark','light'])test(`iOS ${theme}: collection, title, frame and app icon rewards work at large text`,async({page},testInfo)=>{
   await prepare(page,{theme,xp:700});await open(page,'/');
   await page.evaluate(()=>{ModeAtlasRewardsUI.open();});
-  await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
+  await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   await expect(page.locator('.ma-atlas-rewards .ma-routine-goal')).toHaveCount(5);
   await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.locator('[data-reward-category="frames"] > summary').click();
@@ -188,8 +188,8 @@ test('a level-crossing set has one reward summary and opens the collection witho
   await expect(page.locator('.ma-dialog__title')).toHaveText('Set complete');
   await expect(page.locator('.ma-session-rewards__level')).toHaveText('Level up · Atlas Level 2');
   expect(await page.evaluate(()=>ModeAtlasProgressUI.hasPendingLevelUp())).toBe(false);
-  await page.getByRole('button',{name:'Your Atlas',exact:true}).click();
-  await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
+  await page.getByRole('button',{name:'Progress',exact:true}).click();
+  await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   expect(await page.locator('.ma-dialog-layer').count()).toBe(1);
 });
 
@@ -274,15 +274,15 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile orde
   const order=await page.evaluate(()=>document.querySelector('.ma-progression-card').getBoundingClientRect().bottom<document.querySelector('.ma-sync-card').getBoundingClientRect().top);
   expect(order).toBe(true);
   await page.screenshot({animations:'disabled',path:info.outputPath(`profile-${theme}.png`)});
-  await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.evaluate(()=>ModeAtlasAccountNavigation.close());await open(page,'/progress/');await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.locator('[data-reward-category="frames"] > summary').click();
   await page.locator('[data-landmark="grove"]').click();
   await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
   const frame=await page.locator('#topProfileDot').evaluate(node=>getComputedStyle(node).boxShadow);expect(frame).toContain(theme==='dark'?'232, 155, 128':'143, 62, 37');
   await page.screenshot({animations:'disabled',path:info.outputPath(`rewards-${theme}.png`)});
   await page.getByRole('tab',{name:'Rewards',exact:true}).focus();await page.keyboard.press('ArrowLeft');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toBeFocused();
-  await page.locator('#maAccountClose').click();await page.locator('.atlas-ios-home [data-ma-rewards-open]').click();await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
-  await page.locator('#maAccountClose').click();await page.locator('.ma-ios-tabs__links a[href="/kana/"]').click();await page.waitForURL('**/kana/');
+  await open(page,'/');await page.locator('.atlas-ios-home [data-ma-rewards-open]').click();await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
+  await open(page,'/kana/');
   await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
 });
 
@@ -297,7 +297,7 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   await page.locator('[data-reward-category="frames"] > summary').click();
   await page.locator('[data-landmark="grove"]').click();
   expect(await page.evaluate(()=>ModeAtlasRewardsUI.banner().id)).toBe('grove');
-  await page.getByRole('tab',{name:'Profile',exact:true}).click();
+  await page.locator('#profileOpenBtn').click();
   await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','grove');
   await page.screenshot({path:info.outputPath('profile-banner.png'),animations:'disabled'});
   await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();
@@ -341,10 +341,10 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
     const text=document.createRange();text.selectNodeContents(node);return text.getClientRects().length;
   })).toBe(1);
   await page.screenshot({path:info.outputPath('exclusive-banner-collection.png'),animations:'disabled'});
-  await page.getByRole('tab',{name:'Profile',exact:true}).click();
+  await page.locator('#profileOpenBtn').click();
   await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','hunny');
   await page.screenshot({path:info.outputPath('exclusive-profile.png'),animations:'disabled'});
-  await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.evaluate(()=>ModeAtlasAccountNavigation.close());await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.evaluate(async()=>{ModeAtlasRewardAccess.clear();rewardUser='ordinary';rewardGrant={grants:[],allCustom:false};await ModeAtlasRewardAccess.refresh(true);});
   await expect(page.locator('.ma-reward-access')).toBeHidden();
   await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);await expect(page.locator('.ma-atlas-identity')).toHaveAttribute('data-ma-banner','plain');
@@ -406,6 +406,6 @@ test('goal shortcuts and weekly recap expose recorded activity without inventing
   await page.getByRole('tab',{name:'Recap',exact:true}).click();
   await expect(page.locator('.ma-recap-grid')).toContainText('Reading correct');await expect(page.locator('.ma-recap-grid')).toContainText('0 / 7');
   await page.getByRole('button',{name:'Last week',exact:true}).click();await expect(page.locator('.ma-atlas-recap')).toContainText('No dated practice');
-  await expect(page.getByRole('link',{name:'View weekly ranking',exact:true})).toHaveAttribute('href','/?section=friends&ranking=weekly');
+  await expect(page.getByRole('link',{name:'View weekly ranking',exact:true})).toHaveAttribute('href','/friends/?ranking=weekly');
   await page.getByRole('tab',{name:'Recap',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toHaveAttribute('aria-selected','true');
 });

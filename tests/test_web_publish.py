@@ -27,6 +27,19 @@ class ResourceParser(HTMLParser):
 
 
 class WebsitePublishTests(unittest.TestCase):
+    def test_publication_requires_all_release_jobs_for_the_same_commit(self):
+        gate = (ROOT / '.github/workflows/release-check.yml').read_text()
+        publication = (ROOT / '.github/workflows/deploy-pages.yml').read_text()
+        publish_job = gate.split('  deploy-website:', 1)[1]
+        self.assertIn('needs: [release-check, social-backend-check, ios-native-build]', publish_job)
+        self.assertIn("github.ref == 'refs/heads/main'", publish_job)
+        self.assertIn("github.event_name != 'pull_request'", publish_job)
+        self.assertIn('uses: ./.github/workflows/deploy-pages.yml', publish_job)
+        triggers = publication.split('on:', 1)[1].split('permissions:', 1)[0]
+        self.assertIn('workflow_call:', triggers)
+        for independent_trigger in ('push:', 'pull_request:', 'workflow_dispatch:'):
+            self.assertNotIn(independent_trigger, triggers)
+
     def test_release_artifact_preserves_runtime_and_has_all_page_resources(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "site"

@@ -17,7 +17,7 @@ from build_ios_fonts import build_fonts
 
 ROOT = Path(__file__).resolve().parent
 VERSION_FILE = ROOT / "assets/app/mode-atlas-version.js"
-PAGE_DIRS = ("kana", "reading", "writing", "results", "wordbank", "privacy", "terms")
+PAGE_DIRS = ("learn", "progress", "friends", "kana", "reading", "writing", "results", "wordbank", "privacy", "terms")
 ROOT_RUNTIME_FILES = ("index.html",)
 ASSET_DIR = "assets"
 
