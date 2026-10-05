@@ -1,3 +1,10 @@
+## 2.90.0 - 2026-10-06
+
+- Replace Learn's stacked branch cards and boxed button grids with an open suggested-session area and simple Reading, Writing and Results rows. Keep Kana Overview and Word Bank directly accessible.
+- Use the existing green Reading / blue Writing identity, shared icons, restrained kana artwork and clear touch targets. Put the session action in one place and remove the repeated introductory paragraph.
+- Keep the same shared study recommendation, routes and saved progress. Adapt the open layout for phones, tablets, desktop and larger text; keep planned branches in one quiet disclosure.
+- Extend the existing navigation check to cover the new layout, recommendation updates, readable large text and a direct Writing review launch. No Firebase deployment or native configuration change is required beyond the normal sync/build.
+
 ## 2.89.1 - 2026-10-05
 
 - Fix Learn, Progress and Friends loading the unstyled homepage in the installed iOS app. Resolve clean URLs from the actual bundled documents instead of maintaining a separate native page allowlist.

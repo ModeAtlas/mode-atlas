@@ -12,15 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'A clearer home for your learning.';
+  const WHATS_NEW_COPY = 'A lighter way to find your next session.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Learn, Progress and Friends now open correctly on iPhone and iPad.',
-    'Move between Atlas, Learn, Progress and Friends with consistent navigation.',
-    'Find Kana practice and your Word Bank together in Learn.',
-    'Get rotating goals suited to your study experience, fixed for each day and week.',
-    'See the account time zone used for alerts and change it when you need to.'
+    'Start your suggested session directly from a cleaner Learn page.',
+    'Open Reading, Writing and Results from simple, easy-to-scan rows.',
+    'Reach your Word Bank with one tap, alongside your Kana practice.'
   ];
 
   function storeGet(key, fallback = '') {
