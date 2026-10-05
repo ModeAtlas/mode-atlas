@@ -33,6 +33,7 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[false,12
   await page.goto('/?section=atlas');await expect(page).toHaveURL(/\/progress\/$/);
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  expect(await page.getByRole('tablist',{name:'Progress',exact:true}).getByRole('tab').evaluateAll(tabs=>tabs.every(tab=>{const range=document.createRange();range.selectNodeContents(tab);return range.getClientRects().length===1&&tab.scrollWidth<=tab.clientWidth+1;}))).toBe(true);
   if(native)expect(await nav().evaluate(dock=>[...dock.querySelectorAll('.ma-ios-tab__label')].every(node=>{const range=document.createRange();range.selectNodeContents(node);return range.getClientRects().length===1&&node.scrollWidth<=node.clientWidth+1;}))).toBe(true);
   await page.screenshot({path:info.outputPath('progress-large-text.png'),animations:'disabled'});
   expect(errors).toEqual([]);
