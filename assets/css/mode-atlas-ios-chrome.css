@@ -172,10 +172,16 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .ma-
   margin-top:8px;padding-top:8px;
 }
 html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .session-actions .ma-button{min-height:44px;}
+/* The early head bootstrap opts the native app into cross-document transitions. */
+@keyframes ma-ios-leave{to{opacity:0}}
+@keyframes ma-ios-enter{from{opacity:.92;transform:translateY(3px)}to{opacity:1;transform:none}}
+html[data-ma-runtime="ios"]::view-transition-old(root){animation:90ms ease-out both ma-ios-leave;}
+html[data-ma-runtime="ios"]::view-transition-new(root){animation:140ms ease-out both ma-ios-enter;}
 /* At large system text sizes, reflow the existing surfaces instead of cropping. */
 html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-practice-actions{flex-wrap:wrap;}
 html[data-ma-runtime="ios"] .ma-ios-accessibility-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 @media (prefers-reduced-motion:reduce){
+  html[data-ma-runtime="ios"]::view-transition-old(root),html[data-ma-runtime="ios"]::view-transition-new(root){animation-duration:.01ms;}
   html[data-ma-runtime="ios"] .ma-ios-tabs,
   html[data-ma-runtime="ios"] .ma-ios-tabs__links,
   html[data-ma-runtime="ios"] .ma-loading-screen{transition:none;}

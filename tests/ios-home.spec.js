@@ -32,6 +32,7 @@ async function geometry(page){
   });
 }
 async function expectCompact(page){
+  await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   await expect.poll(async()=>{
     const g=await geometry(page);
     return g.overflow<=1 && g.gap>=12 && g.gap<=24 && g.header>=59 && g.horizontal<=1 && Math.abs(g.actual-g.measured)<1 ? null : g;

@@ -15,6 +15,17 @@
     (typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform())
     || (nativePlatform && nativePlatform !== 'web')
   ));
+  // Opt in before the first render so incoming native page transitions never
+  // depend on deferred chrome setup. Animation styling stays in iOS chrome CSS.
+  if(isNativeApp && nativePlatform === 'ios'){
+    var nativeTransitions=document.createElement('style');
+    nativeTransitions.textContent='@view-transition{navigation:auto}';
+    document.head.appendChild(nativeTransitions);
+    // A fast second navigation can skip an animation; routing still succeeds.
+    for(const eventName of ['pageswap','pagereveal'])window.addEventListener(eventName,event=>{
+      event.viewTransition?.ready.catch(()=>{});
+    });
+  }
   var isLocalFile = protocol === 'file:';
   var isLocalhost = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(host || '');
   var isLocalServer = isLocalhost && (protocol === 'http:' || protocol === 'https:');

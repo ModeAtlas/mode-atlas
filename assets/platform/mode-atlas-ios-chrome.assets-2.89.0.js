@@ -9,17 +9,6 @@
   const current=tabs.find(tab=>root.AtlasPlatform.destinationPath(tab[0])===route)?.[0]
     || (/^\/(kana|reading|writing|results|wordbank)\//.test(route)?'learn':'');
 
-  // Cross-document transitions keep the previous local page visible until the
-  // next page is ready. Unsupported WebViews retain ordinary navigation.
-  var transitionStyle = document.createElement('style');
-  transitionStyle.textContent = '@view-transition{navigation:auto}' +
-    '@keyframes ma-ios-leave{to{opacity:0}}' +
-    '@keyframes ma-ios-enter{from{opacity:.92;transform:translateY(3px)}to{opacity:1;transform:none}}' +
-    '::view-transition-old(root){animation:90ms ease-out both ma-ios-leave}' +
-    '::view-transition-new(root){animation:140ms ease-out both ma-ios-enter}' +
-    '@media(prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation-duration:.01ms}}';
-  document.head.appendChild(transitionStyle);
-
   function render(){
     if (document.querySelector('.ma-ios-tabs')) return;
     var dock = document.createElement('nav');
