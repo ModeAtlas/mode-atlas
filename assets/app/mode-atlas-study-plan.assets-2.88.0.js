@@ -19,6 +19,35 @@
     });
     return {answered: rows.reduce((n, row) => n + row.attempts, 0), weak: rows.filter(row => row.attempts >= 4 && row.wrong >= 2 && row.correct / row.attempts < .8)};
   }
+  function targetChars(chars=[]){
+    const known=new Set(root.ModeAtlasKanaData.collections.all);
+    return Array.isArray(chars)?[...new Set(chars)].filter(char=>known.has(char)).slice(0,512):[];
+  }
+  function target(mode,chars,count=10){
+    const pool=targetChars(chars);if(!pool.length)return null;
+    return `/${mode==='writing'?'writing':'reading'}/?${new URLSearchParams({practice:String(lengths.includes(count)?count:10),kana:pool.join(','),hints:'off'})}`;
+  }
+  function goalAction(goal,goals=[]){
+    if(!goal||goal.value>=goal.target)return null;
+    if(goal.metric==='study.goals'){
+      const next=goals.find(item=>item.period==='daily'&&item.value<item.target);
+      return next?goalAction(next):null;
+    }
+    let mode=goal.metric==='kana.writing'?'writing':'reading';
+    if(goal.metric==='kana.balance'){
+      const routine=root.ModeAtlasProgress.weeklyRecap();
+      mode=routine.todayReading>=10?'writing':'reading';
+    }
+    const params=new URLSearchParams({practice:'20',hints:'off'});
+    if(goal.metric==='kana.daily'){params.delete('practice');params.set('mode','daily');}
+    if(goal.metric==='kana.tests'){params.delete('practice');params.set('mode','test');}
+    let chars;
+    if(['kana.broad','kana.hiragana'].includes(goal.metric))chars=root.ModeAtlasKanaData.collections.hiragana;
+    if(goal.metric==='kana.katakana')chars=root.ModeAtlasKanaData.collections.katakana;
+    if(goal.metric==='kana.variety')chars=goal.target>46?[...root.ModeAtlasKanaData.collections.hiragana,...root.ModeAtlasKanaData.collections.katakana]:root.ModeAtlasKanaData.collections.hiragana;
+    if(chars)params.set('kana',chars.join(','));
+    return {href:`/${mode}/?${params}`,label:goal.metric==='kana.daily'?'Open Daily Challenge':goal.metric==='kana.tests'?'Open formal test':`Practise ${mode==='writing'?'Writing':'Reading'}`};
+  }
   function recommend(input = {}){
     const reading = evidence(input.readingStats, availableChars(input.readingSettings));
     const writing = evidence(input.writingStats, availableChars(input.writingSettings));
@@ -57,5 +86,5 @@
     }
     return {unique: rows.size, mistakes: [...rows.values()].filter(row => row.wrong > 0).sort((a,b) => b.wrong - a.wrong)};
   }
-  root.ModeAtlasStudyPlan = Object.freeze({lengths, practiceCount, availableChars, evidence, recommend, summarise});
+  root.ModeAtlasStudyPlan = Object.freeze({lengths, practiceCount, availableChars, evidence, targetChars, target, goalAction, recommend, summarise});
 })(window);

@@ -217,18 +217,21 @@
     const params=new URLSearchParams(location.search);
     const confusable=params.get('confusable')==='1'||storeGet('modeAtlasConfusableMode')==='1';
     const daily=params.get('mode')==='daily';
+    const formal=params.get('mode')==='test';
+    const target=window.ModeAtlasStudyPlan.targetChars((params.get('kana')||'').split(','));
+    const noHints=params.get('hints')==='off';
     const due=params.get('due')==='1';
     const review=params.get('mode')==='review'||params.get('focusWeak')==='1';
     const practice=Number(params.get('practice'));
-    const guided=!daily&&window.ModeAtlasStudyPlan.lengths.includes(practice);
+    const guided=!daily&&!formal&&window.ModeAtlasStudyPlan.lengths.includes(practice);
     // Consume navigation intent before a synchronous UI refresh can re-enter.
-    const keys=['confusable','mode','focusWeak','practice','due'];
+    const keys=['confusable','mode','focusWeak','practice','due','kana','hints'];
     if(keys.some(key=>params.has(key))){
       keys.forEach(key=>params.delete(key));
       history.replaceState(null,'',location.pathname+(params.size?'?'+params.toString():'')+location.hash);
     }
     if(confusable) storeRemove('modeAtlasConfusableMode');
-    if(!confusable&&!daily&&!review&&!guided&&!due) return;
+    if(!confusable&&!daily&&!formal&&!review&&!guided&&!due&&!target.length) return;
     const s=getSettings();
     if(confusable){
       Object.assign(s,{confusableKana:true,hint:false,srs:true,focusWeak:false,endless:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,speedRun:false,dakuten:false,yoon:false,extendedKatakana:false,hiraganaRows:CONF_HIRA_ROWS.slice(),katakanaRows:CONF_KATA_ROWS.slice(),activeBottomTab:'modifiers',practiceCount:0});
@@ -242,8 +245,11 @@
       if(!confusable) s.confusableKana=false;
     }
     if(due){applyPracticeLength(s,10);s.hint=false;s.focusWeak=false;trainerController.study.requestDue();}
+    if(formal)window.ModeAtlasPracticeModes.select(s,'testMode');
+    if(target.length&&!daily&&!formal){applyPracticeLength(s,guided?practice:10);s.focusWeak=false;s.confusableKana=false;trainerController.study.requestKana(target);}
+    if(noHints)s.hint=false;
     setSettings(s);
-    if(confusable||daily||review||due) setActivePreset('');
+    if(confusable||daily||formal||review||due||target.length||noHints) setActivePreset('');
     saveAndRefresh();
   }
 

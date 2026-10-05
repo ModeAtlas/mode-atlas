@@ -8,6 +8,7 @@ const kana = require('./shared/mode-atlas-kana-data.js');
 const progress = createProgress({ModeAtlasDates: dates, ModeAtlasRewardRules: rewards});
 const review = createReview({ModeAtlasDates: dates});
 const identity = require('./shared/mode-atlas-social-identity.js');
+const PROJECTION_VERSION=2;
 
 function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
   const sections = save.sections || {};
@@ -35,7 +36,7 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
     if(review.stage(writing.review,writing.stats,writing.time)===3)writingMastered++;
     if(review.combinedStage(reading,writing)===3)combinedMastered++;
   }
-  return {version:progress.STATE_VERSION,xp:summary.xp,level:summary.level,totalCorrect:summary.lifetimeCorrect,
+  return {version:progress.STATE_VERSION,projectionVersion:PROJECTION_VERSION,xp:summary.xp,level:summary.level,totalCorrect:summary.lifetimeCorrect,
     readingMastered,writingMastered,combinedMastered,kanaCount:kana.collections.all.length,
     landmark:selected.id,banner:rewards.banner(seeded.appearance.banner,summary.level,access).id,studyDays:owner.studyDays(seeded),syncedAt};
 }
@@ -67,4 +68,4 @@ function rankProfiles(profiles,metric) {
   let rank=0,previous;
   return rows.map((row,index)=>{if(row.score!==previous)rank=index+1;previous=row.score;return {...row,rank};});
 }
-module.exports={projectSave,publicProfile,rankProfiles};
+module.exports={projectSave,publicProfile,rankProfiles,PROJECTION_VERSION};

@@ -1,3 +1,27 @@
+## 2.88.0 - 2026-10-04
+
+- Move Friends / Rankings to the top of the shared screen and show the editable Friends profile only in Friends.
+- Open Rankings directly to the weekly ladder, with visible This week / All time controls and remembered all-time metrics while switching views.
+- Remove the synced-progress explanatory text and Near me controls from the client.
+- Compact the weekly summary around rank, XP and one local reset time. Keep rules/prizes and previous results in adjacent disclosures; retain Global and Friends comparisons.
+- Preserve existing profile, request, moderation, weekly opt-in and privacy behavior. No Firebase schema or scoring change; existing 2.87.0 server support remains compatible with installed clients.
+
+## 2.87.0 - 2026-10-03
+
+- Fix switching from the weekly ranking to Friends, including older clients after the backend update.
+- Separate Reading, Writing and Both in the Mastery Map, show canonical next-stage evidence, and start targeted practice from a kana or learning/due group. Both consistently requires both directions; recorded answers and XP are unchanged.
+- Open suitable sessions directly from unfinished goals and add this-week/last-week recaps from dated activity.
+- Add nearby global competitors, a next-person XP gap and private weekly finish history, including non-prize finishes. Keep ties and prizes idempotent across bounded settlement pages.
+- Add account alert times and quiet hours, respect local daylight saving and avoid goal/streak overlap with each device’s daily reminder.
+- Move native audio activation and decoding off the UI thread, reuse the active ambient session and retain silent-mode behavior.
+- Refresh outdated cached mastery summaries when Friends profiles are viewed. Remove the obsolete mastery speed summary and update the shared help.
+
+## 2.86.0 - 2026-10-03
+
+- Add opt-in global/friends weekly competition with server-checked live Kana scores and personal XP prizes.
+- Add optional goal, streak and overtaken notifications with account-bound device tokens.
+- Recalculate all displayed levels from earned XP using the current curve; retire legacy level-preservation credit.
+
 ## 2.85.0 - 2026-10-03
 
 - Steepen the XP curve after the introductory levels, preserving earned XP, levels and fractional progress through a one-time conversion.

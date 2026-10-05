@@ -12,18 +12,14 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const NATIVE_RELEASE = window.ModeAtlasEnv?.isNativeApp === true;
-  const WHATS_NEW_COPY = NATIVE_RELEASE ? 'Another way to sign in to your Mode Atlas account.' : 'More room for friends and new ways to make your profile yours.';
+  const WHATS_NEW_COPY = 'More room for friends and the weekly race.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
-  const whatsNewItems = NATIVE_RELEASE ? [
-    'Sign in with Apple or Google in the iOS app.',
-    'Already use Google? Link Apple from Sign-in methods to keep the same progress.',
-    'Choose Hide My Email when creating an Apple account.'
-  ] : [
-    'Browse banners, titles and frames in expandable reward collections.',
-    'Exclusive rewards appear in your collection when your account unlocks them.',
-    'Profile banners carry across your profile and Friends cards.'
+  const whatsNewItems = [
+    'Switch between Friends and Rankings at the top of the page.',
+    'Open Rankings straight into the weekly ladder, with All time alongside it.',
+    'See your weekly rank, XP and reset time in a compact summary.',
+    'Compare Global or Friends, with rules, prizes and past results one tap away.'
   ];
 
   function storeGet(key, fallback = '') {

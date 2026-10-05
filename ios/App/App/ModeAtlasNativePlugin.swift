@@ -107,7 +107,12 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     @objc func playSound(_ call: CAPPluginCall) {
         guard let cue = call.getString("cue"), let volume = call.getDouble("volume"), volume.isFinite,
               volume >= 0, volume <= 1 else { call.reject("Invalid sound"); return }
-        DispatchQueue.main.async { call.resolve(["played": self.sounds.play(cue, volume: Float(volume))]) }
+        DispatchQueue.main.async {
+            guard UIApplication.shared.applicationState == .active else { call.resolve(["played": false]); return }
+            self.sounds.play(cue, volume: Float(volume)) { played in
+                DispatchQueue.main.async { call.resolve(["played": played]) }
+            }
+        }
     }
     @objc func stopSounds(_ call: CAPPluginCall) {
         DispatchQueue.main.async { self.sounds.fadeOut(); call.resolve() }
@@ -388,12 +393,16 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
 // Native audio outlives individual bundled pages. PCM scores are generated from
 // mode-atlas-sound-cues.js; no second set of pitch/envelope definitions lives here.
 private final class ModeAtlasSoundPlayer: NSObject, AVAudioPlayerDelegate {
+    // Session activation and audio decoding can block. This queue owns all audio
+    // state; the main queue only handles UIKit state and the Capacitor response.
+    private let audioQueue = DispatchQueue(label: "app.modeatlas.audio", qos: .userInitiated)
     private let names: Set<String> = ["tap", "correct", "wrong", "finish", "achievement", "success", "warning", "error"]
     private var players: [AVAudioPlayer] = []
     private var observers: [NSObjectProtocol] = []
     private var lastPlay: [String: TimeInterval] = [:]
     private var quietUntil: TimeInterval = 0
     private var sessionReady = false
+    private var sessionActive = false
     override init() {
         super.init()
         for name in [UIApplication.willResignActiveNotification, AVAudioSession.interruptionNotification] {
@@ -403,8 +412,11 @@ private final class ModeAtlasSoundPlayer: NSObject, AVAudioPlayerDelegate {
         }
     }
     deinit { observers.forEach { NotificationCenter.default.removeObserver($0) } }
-    func play(_ name: String, volume: Float) -> Bool {
-        guard names.contains(name), UIApplication.shared.applicationState == .active else { return false }
+    func play(_ name: String, volume: Float, completion: @escaping (Bool) -> Void) {
+        audioQueue.async { completion(self.playOnQueue(name, volume: volume)) }
+    }
+    private func playOnQueue(_ name: String, volume: Float) -> Bool {
+        guard names.contains(name) else { return false }
         let now = Date.timeIntervalSinceReferenceDate
         players.removeAll { !$0.isPlaying }
         guard players.count < 4, now - (lastPlay[name] ?? -1) >= (name == "tap" ? 0.08 : 0.14),
@@ -416,9 +428,13 @@ private final class ModeAtlasSoundPlayer: NSObject, AVAudioPlayerDelegate {
                 try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
                 sessionReady = true
             }
-            try AVAudioSession.sharedInstance().setActive(true)
+            if !sessionActive {
+                try AVAudioSession.sharedInstance().setActive(true)
+                sessionActive = true
+            }
             let player = try AVAudioPlayer(contentsOf: url)
             player.volume = volume; player.delegate = self
+            player.prepareToPlay()
             guard player.play() else { return false }
             players.append(player); lastPlay[name] = now
             if name != "tap" { quietUntil = now + player.duration }
@@ -426,14 +442,22 @@ private final class ModeAtlasSoundPlayer: NSObject, AVAudioPlayerDelegate {
         } catch { return false }
     }
     func fadeOut() {
-        let fading = players
-        fading.forEach { $0.setVolume(0, fadeDuration: 0.018) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.025) { [weak self] in
+        audioQueue.async {
+            let fading = self.players
+            self.quietUntil = 0
+            self.lastPlay.removeAll()
+            fading.forEach { $0.setVolume(0, fadeDuration: 0.018) }
+            self.audioQueue.asyncAfter(deadline: .now() + 0.025) {
             fading.forEach { $0.stop() }
-            self?.players.removeAll { player in fading.contains { $0 === player } }
+                self.players.removeAll { player in fading.contains { $0 === player } }
+                if self.players.isEmpty {
+                    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+                    self.sessionActive = false
+                }
+            }
         }
     }
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        players.removeAll { $0 === player }
+        audioQueue.async { self.players.removeAll { $0 === player } }
     }
 }

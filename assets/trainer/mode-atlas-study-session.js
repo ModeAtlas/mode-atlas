@@ -26,7 +26,7 @@
       const select=byId('studyLength');
       if(select){select.value=String(count);select.disabled=active;}
       byId('studySetSetup').hidden=!!(state.settings.dailyChallenge||state.settings.testMode||state.settings.timeTrial||state.settings.speedRun||state.settings.endless||state.settings.comboKana);
-      byId('studySetDescription').textContent=count?`${count} questions. Mistakes pause so you can learn the answer.`:'No timer. Learn from each mistake and continue when you are ready.';
+      byId('studySetDescription').textContent=pendingReview.length?`${count} questions · Targeted practice: ${pendingReview.join(' ')}. Hints follow the setting below.`:count?`${count} questions. Mistakes pause so you can learn the answer.`:'No timer. Learn from each mistake and continue when you are ready.';
       const goal=current?.count || (current?.mode==='dailyChallenge'?20:current?.mode==='testMode'?state.testSequence?.length:0);
       const progress=byId('studySessionProgress');
       progress.hidden=!active||!goal;
@@ -41,7 +41,7 @@
       const state=snapshot(), mode=root.ModeAtlasPracticeModes.describe(state.settings);
       const weak=state.settings.focusWeak&&!root.ModeAtlasPracticeModes.fixedPool(state.settings)?root.ModeAtlasStudyPlan.evidence(state.stats,state.activeChars).weak.map(row=>row.kana):[];
       sessionStats.study={mode:mode.id,feedback:mode.feedback,count:root.ModeAtlasStudyPlan.practiceCount(state.settings),items:{},lastAnswer:null,
-        focusChars:pendingReview.length?pendingReview.slice():weak,dateKey:root.getTodayKey()};
+        focusChars:pendingReview.length&&!root.ModeAtlasPracticeModes.fixedPool(state.settings)?pendingReview.slice():weak,dateKey:root.getTodayKey()};
       const current=sessionStats.study;
       current.runId=root.crypto?.randomUUID?.()||`set-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       current.owner=root.ModeAtlasSessionRecovery.accountId();
@@ -225,7 +225,7 @@
       return true;
     }
     byId('studyLength').addEventListener('change',event=>root.ModeAtlasTrainerControls.setPracticeCount(Number(event.target.value)));
-    return Object.freeze({sync,begin,pool,beforeQuestion,nextPick,retryDue,requestDue(){pendingReview=root.ModeAtlasReview.due(snapshot().srs);},prepareAnswer,recordAnswer,finish,showFeedback,clearFeedback,showSummary,hasPendingReview:()=>pendingReview.length>0});
+    return Object.freeze({sync,begin,pool,beforeQuestion,nextPick,retryDue,requestDue(){pendingReview=root.ModeAtlasReview.due(snapshot().srs);},requestKana(chars){pendingReview=root.ModeAtlasStudyPlan.targetChars(chars);},prepareAnswer,recordAnswer,finish,showFeedback,clearFeedback,showSummary,hasPendingReview:()=>pendingReview.length>0});
   }
   root.ModeAtlasStudySession=Object.freeze({create});
 })(window);
