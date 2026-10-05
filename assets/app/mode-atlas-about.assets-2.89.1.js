@@ -16,6 +16,7 @@
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
+    'Learn, Progress and Friends now open correctly on iPhone and iPad.',
     'Move between Atlas, Learn, Progress and Friends with consistent navigation.',
     'Find Kana practice and your Word Bank together in Learn.',
     'Get rotating goals suited to your study experience, fixed for each day and week.',

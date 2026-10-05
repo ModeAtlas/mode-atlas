@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 import plistlib
+import re
 from pathlib import Path
 from unittest.mock import patch
 
@@ -10,6 +11,18 @@ from configure_ios_widgets import sync_widget_configuration
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_router_source_survives_a_retained_local_signing_project(self):
+        source = release.PBXPROJ.read_text()
+        legacy = re.sub(r'^.*28910000000000000000000[12].*\n', '', source, flags=re.M)
+        legacy = legacy.replace('MARKETING_VERSION = ', 'DEVELOPMENT_TEAM = LOCAL12345;\nMARKETING_VERSION = ')
+        updated = release.sync_document_router_source(legacy)
+        self.assertEqual(updated.count('289100000000000000000001'), 3)
+        self.assertEqual(updated.count('289100000000000000000002'), 2)
+        self.assertEqual(updated.count('DEVELOPMENT_TEAM = LOCAL12345;'), legacy.count('DEVELOPMENT_TEAM = LOCAL12345;'))
+        self.assertEqual(release.sync_document_router_source(updated), updated)
+        with self.assertRaises(SystemExit):
+            release.sync_document_router_source(legacy.replace('504EC3001FED79650016851F', 'MISSING_SOURCE_PHASE'))
+
     def test_apple_entitlements_remain_on_app_with_or_without_widget_sharing(self):
         root = release.ROOT / 'ios/App'
         for app_path, widget_path in [('App/App.entitlements', 'Shared/LocalOnly.entitlements'),

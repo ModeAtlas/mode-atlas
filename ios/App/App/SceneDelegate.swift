@@ -18,23 +18,6 @@ enum ModeAtlasAppearance {
     static var canvas: UIColor { UIColor(named: "AppCanvas") ?? .systemBackground }
 }
 
-// Capacitor's default router serves index.html for every extensionless URL.
-// Mode Atlas has real documents at these clean paths, so resolve them before
-// falling back to Capacitor's asset routing.
-private struct ModeAtlasRouter: Router {
-    var basePath: String = ""
-
-    func route(for path: String) -> String {
-        let page = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        if ["kana", "reading", "writing", "results", "wordbank", "privacy", "terms"].contains(page) {
-            return basePath + "/" + page + "/index.html"
-        }
-        var fallback = CapacitorRouter()
-        fallback.basePath = basePath
-        return fallback.route(for: path)
-    }
-}
-
 private final class ModeAtlasBridgeViewController: CAPBridgeViewController {
     override var preferredStatusBarStyle: UIStatusBarStyle {
         traitCollection.userInterfaceStyle == .dark ? .lightContent : .darkContent

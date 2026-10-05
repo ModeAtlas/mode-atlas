@@ -226,6 +226,20 @@ jobs:
           swiftc ios/App/Shared/ModeAtlasDestination.swift ios/App/Shared/ModeAtlasStudyIntent.swift tests/native/NavigationIntentTests.swift -o "${RUNNER_TEMP}/navigation-intent-tests"
           "${RUNNER_TEMP}/navigation-intent-tests"
 
+      - name: Test native document routing against the shipped web bundle
+        run: |
+          # Compile the installed SDK's real Router source; no substitute router.
+          mkdir -p "${RUNNER_TEMP}/mode-atlas-router-tests"
+          swiftc -parse-as-library -emit-module -emit-object -module-name Capacitor \
+            node_modules/@capacitor/ios/Capacitor/Capacitor/Router.swift \
+            -emit-module-path "${RUNNER_TEMP}/mode-atlas-router-tests/Capacitor.swiftmodule" \
+            -o "${RUNNER_TEMP}/mode-atlas-router-tests/CapacitorRouter.o"
+          swiftc -I "${RUNNER_TEMP}/mode-atlas-router-tests" \
+            "${RUNNER_TEMP}/mode-atlas-router-tests/CapacitorRouter.o" \
+            ios/App/App/ModeAtlasRouter.swift tests/native/DocumentRouterTests.swift \
+            -o "${RUNNER_TEMP}/document-router-tests"
+          "${RUNNER_TEMP}/document-router-tests" ios/App/App/public
+
       - name: Build iPhone/iPad simulator target
         run: |
           xcodebuild -project ios/App/App.xcodeproj \
@@ -246,6 +260,7 @@ jobs:
             -derivedDataPath "${RUNNER_TEMP}/ModeAtlasReleaseData" \
             CODE_SIGNING_ALLOWED=NO archive
           python3 validate_ios_archive.py "${RUNNER_TEMP}/ModeAtlas.xcarchive/Products/Applications/App.app"
+          "${RUNNER_TEMP}/document-router-tests" "${RUNNER_TEMP}/ModeAtlas.xcarchive/Products/Applications/App.app/public"
 
       - name: Verify native product metadata
         shell: bash

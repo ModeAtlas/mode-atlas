@@ -1,3 +1,9 @@
+## 2.89.1 - 2026-10-05
+
+- Fix Learn, Progress and Friends loading the unstyled homepage in the installed iOS app. Resolve clean URLs from the actual bundled documents instead of maintaining a separate native page allowlist.
+- Exercise the production Swift router and the installed Capacitor routing implementation against every bundled page and its script/style references, including the final Release archive. Retain coverage of fallback assets and future nested pages.
+- Include the native route source when synchronizing a Mac checkout that retains local signing settings. No Firebase, account, learning-data or website behavior change.
+
 ## 2.89.0 - 2026-10-05
 
 - Keep Atlas, Learn, Progress and Friends available as stable primary destinations on web and iOS. Move Progress and Friends out of the account sheet into shared pages; keep Profile and Settings together behind the avatar.
