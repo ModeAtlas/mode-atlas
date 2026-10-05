@@ -254,6 +254,7 @@ INTERACTIVE_SCRIPTS_BEFORE_STORAGE = (
 )
 INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-reward-rules.js',
+    'assets/app/mode-atlas-date.js',
     'assets/app/mode-atlas-progress.js',
     'assets/app/mode-atlas-progress-ui.js',
     'assets/app/mode-atlas-save-repair.js',
@@ -265,7 +266,6 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-tour.js',
     'assets/app/mode-atlas-visit-flows.js',
     'assets/app/mode-atlas-data-controls.js',
-    'assets/app/mode-atlas-date.js',
     'assets/app/mode-atlas-review.js',
     'assets/data/mode-atlas-kana-data.js',
     'assets/app/mode-atlas-kana-metrics.js',

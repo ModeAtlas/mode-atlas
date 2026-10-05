@@ -190,7 +190,7 @@ test('a level-crossing set has one reward summary and opens the collection witho
   expect(await page.evaluate(()=>ModeAtlasProgressUI.hasPendingLevelUp())).toBe(false);
   await page.getByRole('button',{name:'Progress',exact:true}).click();
   await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
-  expect(await page.locator('.ma-dialog-layer').count()).toBe(1);
+  await expect(page.locator('.ma-dialog-layer')).toHaveCount(0);
 });
 
 test('the first slow mistake after upgrading retains previously earned mastery',async({page})=>{

@@ -10,6 +10,9 @@ const REVISION = (VERSION_SOURCE.match(/var\s+CACHE_REVISION\s*=\s*['"]([^'"]+)[
 
 const APP_PAGES = [
   'index.html',
+  'learn/index.html',
+  'progress/index.html',
+  'friends/index.html',
   'kana/index.html',
   'reading/index.html',
   'writing/index.html',
@@ -42,6 +45,7 @@ test('shared navigation is generated consistently across all public pages', () =
 
   for (const rel of APP_PAGES) {
     const html = read(rel);
+    assert.ok(html.indexOf('mode-atlas-date.') < html.indexOf('mode-atlas-progress.'), `${rel} restores saved goal dates only after the date owner loads`);
     assert.equal(count(html, /data-profile-open/g), 1, `${rel} shared profile action`);
     assert.equal(count(html, /data-settings-open/g), 1, `${rel} shared settings action`);
   }

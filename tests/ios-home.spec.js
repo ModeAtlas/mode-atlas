@@ -88,6 +88,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: returning suggestions an
   await page.locator('.atlas-ios-home__routine [data-ma-rewards-open]').click();
   await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   await page.locator('.ma-ios-tab[href="/"]').click();
+  await expect(page.locator('.atlas-ios-home')).toBeVisible();
   await expectCompact(page);
 });
 

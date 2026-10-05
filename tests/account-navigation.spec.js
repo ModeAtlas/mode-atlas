@@ -48,6 +48,7 @@ for(const layout of [
   }
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
   await fits(page);
+  if(layout.native)expect(await page.locator('#maAccountTitle').evaluate(title=>{const range=document.createRange();range.selectNodeContents(title);return range.getClientRects().length;})).toBe(1);
   await page.locator('#maAccountClose').click();
   await expect(page.locator('#profileOpenBtn')).toHaveAttribute('aria-expanded','false');
   await expect(page.locator('#profileOpenBtn')).toBeFocused();

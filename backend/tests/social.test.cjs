@@ -585,7 +585,7 @@ test('weekly results resume a tie across the bounded cursor and preserve every p
   const ref=db.doc('weeklyCompetitions/'+period.id),batch=db.batch();batch.set(ref,{...period,settled:false});
   for(let i=0;i<103;i++){
     const uid='cursor-result-'+String(i).padStart(3,'0'),score=i<101?200:50;
-    batch.set(db.doc('socialAccounts/'+uid),{active:true,weekly:{enabled:true}});
+    batch.set(db.doc('socialAccounts/'+uid),{active:true,profile:{displayName:uid,avatar:'kana',timeZone:'UTC'},weekly:{enabled:true}});
     batch.set(ref.collection('entries').doc(uid),{uid,active:true,score});
   }
   await batch.commit();await weekly.settle(period.id);
