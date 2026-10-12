@@ -20,7 +20,7 @@ async function fits(page){
       if(node.closest('[hidden],[inert]')||!node.getClientRects().length)continue;
       const box=node.getBoundingClientRect();
       if(box.left<rect.left||box.right>rect.right+1)issues.push(node.textContent+' outside sheet');
-      if(node.tagName==='BUTTON'&&node.scrollWidth>node.clientWidth+2)issues.push(node.textContent+' clipped');
+      if(node.tagName==='BUTTON'&&node.scrollWidth>node.clientWidth+2)issues.push(node.textContent+' clipped: '+node.scrollWidth+'px content / '+node.clientWidth+'px available');
     }
     return issues;
   })).toEqual([]);
