@@ -76,6 +76,20 @@ struct WidgetSnapshotTests {
         highLevel["levelRequirement"] = 163000
         let higherCurve = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: highLevel))
         assert(higherCurve.isValid, "High-level requirements on the new curve must remain usable")
+        var commerce = highLevel
+        commerce["schemaVersion"] = 5; commerce["totalXp"] = 7003; commerce["freezesRemaining"] = 1
+        commerce["weekly"] = ["rank": 7, "score": 420, "updatedAt": now.timeIntervalSince1970 * 1000, "endAt": tomorrow.timeIntervalSince1970 * 1000]
+        let enriched = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: commerce))
+        assert(enriched.isValid && enriched.totalXp == 7003 && enriched.weekly!.isCurrent(at: now))
+        assert(!enriched.weekly!.isCurrent(at: tomorrow), "A ranking must disappear when its server week ends")
+        assert(enriched.studyRoutine(at: calendarDay(2, after: now)).streak == 3, "A held freeze must keep the snapshot streak through a missed day")
+        assert(enriched.studyRoutine(at: calendarDay(3, after: now)).streak == 0, "A freeze cannot keep a stale streak indefinitely")
+        commerce["protectedThrough"] = formatter.string(from: tomorrow)
+        let repaired = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: commerce))
+        assert(repaired.studyRoutine(at: calendarDay(2, after: now)).streak == 3, "A repair bridges a gap without adding to the study count")
+        commerce["weekly"] = ["rank": 0, "score": 420, "updatedAt": now.timeIntervalSince1970 * 1000, "endAt": tomorrow.timeIntervalSince1970 * 1000]
+        let invalidRank = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: commerce))
+        assert(!invalidRank.isValid)
         rotating.goals![0].period = "weekly"; assert(!rotating.isValid, "A snapshot requires three daily and two weekly goals")
         assert(ModeAtlasWidgetStore.read() == nil, "Unprovisioned builds must not read another container")
         testActivityTiming()
@@ -101,7 +115,7 @@ struct WidgetSnapshotTests {
         value.lastStudyDay = "2026-10-04"
         let today = calendar.date(from: DateComponents(year: 2026, month: 10, day: 4, hour: 12))!
         let safe = value.studyRoutine(at: today, calendar: calendar)
-        assert(safe.streak == 8 && safe.studiedToday && !safe.needsStudy && safe.status == "Safe for today")
+        assert(safe.streak == 8 && safe.studiedToday && !safe.needsStudy && safe.status == "Studied today")
         let timeline = WidgetActivity.timelineDates(since: nil, at: today, calendar: calendar, boundaries: [safe.expiresAt!])
         assert(timeline.count == 3 && timeline.last == safe.expiresAt, "The timeline must contain the actual expiry even if no background refresh arrives")
         assert(value.studyRoutine(at: timeline[1], calendar: calendar).needsStudy)

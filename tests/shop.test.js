@@ -3,40 +3,64 @@ const assert=require('node:assert/strict');
 const catalogue=require('../assets/app/mode-atlas-shop-catalogue.js');
 const rules=require('../assets/app/mode-atlas-reward-rules.js');
 const createShop=require('../assets/app/mode-atlas-shop.js');
-const wallet=balance=>({version:1,currency:'atlas-tokens',balance,purchasesEnabled:false});
+const createProgress=require('../assets/app/mode-atlas-progress.js');
+const dates=require('../assets/app/mode-atlas-date.js');
+const wallet=(balance,extra={})=>({version:2,currency:'atlas-coins',balance,coinPurchasesEnabled:false,offers:catalogue.products.map(p=>catalogue.offer(p)),owned:[],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,checkedAt:1000,...extra});
 
-test('shop products resolve to real cosmetics without changing free level rewards or enabling payments',()=>{
-  assert.equal(catalogue.purchasesEnabled,false);assert.equal(catalogue.currency.expires,false);
-  assert.equal(new Set(catalogue.products.map(p=>p.storeProductId)).size,catalogue.products.length);
+test('catalogue has stable priced products and themes; paid ownership does not come from admin preview access',()=>{
+  assert.equal(catalogue.coinPurchasesEnabled,false);assert.equal(catalogue.currency.expires,false);
+  assert.equal(new Set(catalogue.products.map(p=>p.id)).size,catalogue.products.length);
   for(const product of catalogue.products){
-    assert.equal(product.tokenPrice,null);
-    for(const reference of product.rewards){
+    assert.ok(Number.isSafeInteger(product.coinPrice)&&product.coinPrice>0);
+    for(const reference of product.rewards||[]){
       const item=rules.item(reference.type,reference.id);assert.ok(item);assert.equal(item.kind,'shop');assert.equal(item.grant,product.grant);
-      assert.equal(rules.unlocked(item,999,{}),false);assert.equal(rules.unlocked(item,1,{grants:[product.grant]}),true);assert.equal(rules.unlocked(item,1,{allCustom:true}),true);
+      assert.equal(rules.unlocked(item,999,{}),false);assert.equal(rules.unlocked(item,1,{grants:[product.grant]}),true);assert.equal(rules.unlocked(item,1,{allCustom:true}),false);
     }
   }
-  for(const [id,level]of [['trail',1],['grove',5],['bridge',10],['summit',20],['lantern',35],['horizon',50]]){
-    assert.equal(rules.allowed('frames',id,level,{}),true);assert.equal(rules.allowed('banners',id,level,{}),true);
-  }
+  for(const [id,level]of [['trail',1],['grove',5],['bridge',10],['summit',20],['lantern',35],['horizon',50]])assert.equal(rules.allowed('frames',id,level,{}),true);
+  assert.equal(rules.allowed('banners','hunny',1,{allCustom:true}),true);
 });
-test('wallet loads once for the active account, remains read-only and clears on sign-out',async()=>{
-  let uid='alice',calls=0,clock=1000;
-  const shop=createShop({user:()=>uid,online:()=>true,now:()=>clock,fetch:async account=>{assert.equal(account,'alice');calls++;return wallet(250);}});
-  await Promise.all([shop.refresh(),shop.refresh()]);assert.equal(calls,1);assert.deepEqual(shop.current(),{status:'ready',balance:250});
+test('sale windows are inclusive at opening, exclusive at closing and independent of permanent rewards',()=>{
+  const product=catalogue.item('sakura'),offers={sakura:{startsAt:1000,endsAt:2000}};
+  assert.equal(catalogue.offer(product,offers,999),null);assert.ok(catalogue.offer(product,offers,1000));assert.equal(catalogue.offer(product,offers,2000),null);
+  assert.equal(catalogue.offer(product,{sakura:{enabled:false}}),null);
+  assert.equal(catalogue.offer(product,{sakura:{startsAt:2000,endsAt:1000}}),null);
+  assert.equal(rules.allowed('themes','sakura',1,{grants:['shop-sakura']}),true);
+});
+test('wallet shares reads, hides a stale balance offline and keeps only account-bound inventory',async()=>{
+  let uid='alice',calls=0,clock=1000,online=true,cache=null;
+  const shop=createShop({user:()=>uid,online:()=>online,now:()=>clock,read:()=>cache,write:value=>{cache=value;},call:async(action,data,account)=>{assert.equal(account,'alice');calls++;return wallet(250,{protection:['2026-10-01']});}});
+  await Promise.all([shop.refresh(),shop.refresh()]);assert.equal(calls,1);assert.equal(shop.current().balance,250);
   await shop.refresh();assert.equal(calls,1);clock+=60001;await shop.refresh();assert.equal(calls,2);
-  assert.deepEqual(Object.keys(shop).sort(),['clear','current','refresh']);uid='';shop.clear();assert.deepEqual(shop.current(),{status:'guest',balance:null});
-  await shop.refresh();assert.equal(calls,2);
+  online=false;await shop.refresh();assert.equal(shop.current().balance,null);assert.deepEqual(shop.protection(),['2026-10-01']);
+  uid='bob';assert.deepEqual(shop.protection(),[]);uid='';shop.clear();assert.equal(shop.current().status,'guest');assert.equal(cache,null);
 });
-test('wallet rejects malformed values and never invents a balance while offline or unavailable',async()=>{
-  for(const result of [wallet(-1),wallet(1.2),wallet(1_000_000_001),{...wallet(5),currency:'xp'},{...wallet(5),purchasesEnabled:true},null]){
-    const shop=createShop({user:()=> 'alice',online:()=>true,fetch:async()=>result});await shop.refresh();assert.deepEqual(shop.current(),{status:'unavailable',balance:null});
+test('wallet rejects malformed balances, products and foreign currencies',async()=>{
+  for(const result of [wallet(-1),wallet(1.2),wallet(1_000_000_001),wallet(5,{currency:'xp'}),wallet(5,{offers:[{id:'sakura',coinPrice:-1,endsAt:null}]}),null]){
+    const shop=createShop({user:()=> 'alice',online:()=>true,call:async()=>result});await shop.refresh();assert.equal(shop.current().status,'unavailable');assert.equal(shop.current().balance,null);
   }
-  let online=true;
-  const shop=createShop({user:()=> 'alice',online:()=>online,fetch:async()=>wallet(600)});await shop.refresh();online=false;await shop.refresh();assert.deepEqual(shop.current(),{status:'offline',balance:null});
 });
-test('a delayed wallet response cannot leak into the next signed-in account',async()=>{
-  let uid='alice',finish;
-  const shop=createShop({user:()=>uid,online:()=>true,fetch:async()=>new Promise(resolve=>{finish=resolve;})});
-  const old=shop.refresh();uid='bob';shop.clear();finish(wallet(1500));await old;assert.equal(shop.current().balance,null);
-  const fresh=shop.refresh();finish(wallet(0));await fresh;assert.deepEqual(shop.current(),{status:'ready',balance:0});
+test('ambiguous purchase retries reuse the receipt ID across reload without optimistic balance or inventory writes',async()=>{
+  let cache=null,attempt=0,ids=[];
+  const deps={user:()=> 'alice',online:()=>true,read:()=>cache,write:value=>{cache=structuredClone(value);},requestId:()=> 'unique-request-id-123',sync:async()=>true,
+    call:async(action,data)=>{if(action==='shop')return wallet(1000);ids.push(data.requestId);if(++attempt===1)throw Object.assign(new Error('timeout'),{code:'deadline-exceeded'});return wallet(500,{owned:['sakura']});}};
+  const shop=createShop(deps);await shop.refresh();await assert.rejects(shop.purchase('sakura'));assert.equal(shop.current().balance,1000);assert.deepEqual(shop.current().owned,[]);
+  const restored=createShop(deps);await restored.refresh();await restored.purchase('sakura');assert.deepEqual(ids,['unique-request-id-123','unique-request-id-123']);assert.equal(restored.current().balance,500);assert.deepEqual(restored.current().owned,['sakura']);assert.deepEqual(cache.requests,{});
+});
+test('a delayed purchase cannot apply to a new account and repeated taps do not start another request',async()=>{
+  let uid='alice',finish,calls=0;
+  const shop=createShop({user:()=>uid,online:()=>true,requestId:()=> 'long-request-123456',call:async action=>{if(action==='shop')return wallet(1000);calls++;return new Promise(resolve=>{finish=resolve;});}});
+  await shop.refresh();const old=shop.purchase('sakura');await new Promise(resolve=>setImmediate(resolve));await assert.rejects(shop.purchase('sakura'),/previous purchase/);assert.equal(calls,1);
+  uid='bob';shop.clear();finish(wallet(500,{owned:['sakura']}));await assert.rejects(old,/account changed/);assert.equal(shop.current().balance,null);assert.deepEqual(shop.current().owned,[]);
+});
+test('a repair requires synced study evidence while shopping stays independent of an active lesson',async()=>{
+  let calls=0;const shop=createShop({user:()=> 'alice',online:()=>true,sync:async()=>false,requestId:()=> 'long-request-123456',call:async()=>{calls++;return wallet(1000);}});
+  await shop.refresh();await shop.purchase('sakura');await assert.rejects(shop.useRepair(),/could not sync/);assert.equal(calls,2);
+});
+test('protected days bridge a study streak without counting as study days or inventing a new streak',()=>{
+  const progress=createProgress({ModeAtlasDates:dates,ModeAtlasRewardRules:rules});
+  assert.equal(progress.studyStreak(['2026-10-01','2026-10-02','2026-10-04'],'2026-10-04',['2026-10-03']),3);
+  assert.equal(progress.studyStreak(['2026-10-01','2026-10-02'],'2026-10-04',['2026-10-03']),2);
+  assert.equal(progress.studyStreak(['2026-10-01','2026-10-02'],'2026-10-05',['2026-10-03']),0);
+  assert.equal(progress.studyStreak([],'2026-10-04',['2026-10-03']),0);
 });

@@ -7,8 +7,18 @@ struct ModeAtlasWidgetGoal: Codable, Identifiable {
     let value: Int
     let target: Int
     var period: String? = nil
+    var short: String? = nil
+    var displayLabel: String { short ?? label }
     var isWeekly: Bool { period == "weekly" || (period == nil && id == "week") }
-    var isValid: Bool { id.range(of: "^[a-z0-9-]{1,60}$", options: .regularExpression) != nil && (period == nil || ["daily", "weekly"].contains(period!)) && !label.isEmpty && label.count <= 80 && target > 0 && target <= 10000 && value >= 0 && value <= target }
+    var isValid: Bool { id.range(of: "^[a-z0-9-]{1,60}$", options: .regularExpression) != nil && (period == nil || ["daily", "weekly"].contains(period!)) && !label.isEmpty && label.count <= 80 && (short == nil || (!short!.isEmpty && short!.count <= 40)) && target > 0 && target <= 10000 && value >= 0 && value <= target }
+}
+struct ModeAtlasWidgetWeekly: Codable {
+    let rank: Int
+    let score: Int
+    let endAt: Double
+    let updatedAt: Double
+    var isValid: Bool { (1...1_000_000).contains(rank) && (0...1_000_000_000).contains(score) && endAt.isFinite && updatedAt.isFinite && updatedAt > 0 && endAt > updatedAt && endAt - updatedAt <= 8 * 86400000 }
+    func isCurrent(at date: Date) -> Bool { isValid && date.timeIntervalSince1970 * 1000 < endAt && date.timeIntervalSince1970 * 1000 >= updatedAt - 300000 }
 }
 struct ModeAtlasWidgetSnapshot: Codable {
     let schemaVersion: Int
@@ -35,9 +45,13 @@ struct ModeAtlasWidgetSnapshot: Codable {
     var studyStreak: Int? = nil
     var lastStudyDay: String? = nil
     var goals: [ModeAtlasWidgetGoal]? = nil
+    var totalXp: Int? = nil
+    var weekly: ModeAtlasWidgetWeekly? = nil
+    var protectedThrough: String? = nil
+    var freezesRemaining: Int? = nil
 
     var isValid: Bool {
-        guard [1, 2, 3, 4].contains(schemaVersion), updatedAt.isFinite, updatedAt > 0,
+        guard [1, 2, 3, 4, 5].contains(schemaVersion), updatedAt.isFinite, updatedAt > 0,
               (1...999).contains(level), (0...1_000_000_000_000).contains(correct),
               (0...100_000).contains(streak), levelProgress.isFinite,
               (0...1).contains(levelProgress), ["kana", "daily", "yourAtlas"].contains(destination) else { return false }
@@ -55,12 +69,17 @@ struct ModeAtlasWidgetSnapshot: Codable {
                   let studyStreak, (0...100000).contains(studyStreak), let localDay, Self.validDay(localDay),
                   let goals, goals.allSatisfy(\.isValid), Set(goals.map(\.id)).count == goals.count else { return false }
             if schemaVersion == 3 && Set(goals.map(\.id)) != Set(["recall", "balance", "review", "week"]) { return false }
-            if schemaVersion == 4 && (goals.filter { $0.period == "daily" }.count != 3 || goals.filter { $0.period == "weekly" }.count != 2 || goals.count != 5) { return false }
+            if schemaVersion >= 4 && (goals.filter { $0.period == "daily" }.count != 3 || goals.filter { $0.period == "weekly" }.count != 2 || goals.count != 5) { return false }
             if let lastStudyDay, !Self.validDay(lastStudyDay) { return false }
             if studyStreak > 0 && lastStudyDay == nil { return false }
             if let nextLevel, nextLevel <= level || nextLevel > 999 { return false }
             if let nextTitle, nextTitle.isEmpty || nextTitle.count > 60 { return false }
             if (nextTitle == nil) != (nextLevel == nil) { return false }
+        }
+        if schemaVersion >= 5 {
+            guard let totalXp, (0...1_000_000_000_000).contains(totalXp), let freezesRemaining, (0...10000).contains(freezesRemaining) else { return false }
+            if let weekly, !weekly.isValid { return false }
+            if let protectedThrough, !Self.validDay(protectedThrough) { return false }
         }
         return true
     }
@@ -103,7 +122,7 @@ struct ModeAtlasWidgetSnapshot: Codable {
             // A rotated goal needs its new label and target from the shared owner.
             // Keep last-known totals, but never show yesterday's task as today's.
             if schemaVersion >= 4 && !current { return nil }
-            return ModeAtlasWidgetGoal(id: goal.id, label: goal.label, value: current ? goal.value : 0, target: goal.target, period: goal.period)
+            return ModeAtlasWidgetGoal(id: goal.id, label: goal.label, value: current ? goal.value : 0, target: goal.target, period: goal.period, short: goal.short)
         }
     }
     func studyRoutine(at date: Date, calendar: Calendar = Calendar(identifier: .gregorian)) -> ModeAtlasWidgetRoutine {
@@ -116,10 +135,16 @@ struct ModeAtlasWidgetSnapshot: Codable {
         guard streak > 0, let day = lastStudyDay, let last = formatter.date(from: day) else {
             return .init(streak: 0, studiedToday: false, expiresAt: nil, available: true)
         }
-        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: last), to: calendar.startOfDay(for: date)).day ?? 0
-        guard (0...1).contains(days) else { return .init(streak: 0, studiedToday: false, expiresAt: nil, available: true) }
-        return .init(streak: streak, studiedToday: days == 0,
-                     expiresAt: calendar.date(byAdding: .day, value: 2, to: calendar.startOfDay(for: last)), available: true)
+        let today = calendar.startOfDay(for: date)
+        guard last <= date else { return .init(streak: 0, studiedToday: false, expiresAt: nil, available: true) }
+        let covered = protectedThrough.flatMap { formatter.date(from: $0) }
+        let anchor = max(last, covered.flatMap { $0 <= date ? $0 : nil } ?? last)
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: anchor), to: today).day ?? 0
+        let freezes = freezesRemaining ?? 0
+        guard (0...(freezes + 1)).contains(days) else { return .init(streak: 0, studiedToday: false, expiresAt: nil, available: true) }
+        return .init(streak: streak, studiedToday: calendar.isDate(last, inSameDayAs: date),
+                     expiresAt: calendar.date(byAdding: .day, value: 2 + freezes, to: calendar.startOfDay(for: anchor)), available: true,
+                     frozen: days > 1 || anchor > last, freezes: max(0, freezes - max(0, days - 1)))
     }
     func routineStreak(at date: Date) -> Int { studyRoutine(at: date).streak }
     func currentStreak(at date: Date) -> Int { completedToday(at: date) ? streak : 0 }
@@ -136,9 +161,11 @@ struct ModeAtlasWidgetRoutine {
     let studiedToday: Bool
     let expiresAt: Date?
     let available: Bool
+    var frozen: Bool = false
+    var freezes: Int = 0
     var needsStudy: Bool { streak > 0 && !studiedToday }
     var status: String {
-        !available ? "Open to update streak" : studiedToday ? "Safe for today" : streak == 0 ? "Start with 5 correct" : "Ends in"
+        !available ? "Open to update streak" : studiedToday ? "Studied today" : streak == 0 ? "Start with 5 correct" : "Ends in"
     }
 }
 

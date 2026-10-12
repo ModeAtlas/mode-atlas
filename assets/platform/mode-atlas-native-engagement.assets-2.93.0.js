@@ -6,6 +6,24 @@
   const platform = root.AtlasPlatform;
   const count = value => Number.isFinite(Number(value)) ? Math.max(0, Math.floor(Number(value))) : 0;
   let preferenceRevision = 0;
+  const rankingKey='modeAtlasWidgetWeekly';
+  let rankingPending=false;
+  function weeklySnapshot(){
+    const cached=root.ModeAtlasStorage?.json(rankingKey,null),uid=root.KanaCloudSync?.getUser?.()?.uid;
+    return uid&&cached?.uid===uid&&cached.weekly?.endAt>Date.now()?cached.weekly:null;
+  }
+  async function refreshRanking(){
+    const uid=root.KanaCloudSync?.getUser?.()?.uid,cached=root.ModeAtlasStorage?.json(rankingKey,null);
+    if(!uid||rankingPending||navigator.onLine===false||cached?.uid===uid&&Date.now()-cached.checkedAt<900000)return;
+    rankingPending=true;
+    try{
+      const result=await root.ModeAtlasSocial.call('weeklyState',{},uid);
+      if(uid!==root.KanaCloudSync?.getUser?.()?.uid)return;
+      const weekly=result.enabled&&Number.isSafeInteger(result.rank)&&result.rank>0?{rank:result.rank,score:count(result.score),endAt:result.period.endAt,updatedAt:Date.now()}:null;
+      root.ModeAtlasStorage.setJSON(rankingKey,{uid,weekly,checkedAt:Date.now()});refresh();
+    }catch{if(uid===root.KanaCloudSync?.getUser?.()?.uid)root.ModeAtlasStorage.setJSON(rankingKey,{uid,weekly:weeklySnapshot(),checkedAt:Date.now()});}
+    finally{rankingPending=false;}
+  }
   const suspendedKey='modeAtlasWidgetSuspended';
   const suspended=()=>root.ModeAtlasStorage?.get?.(suspendedKey)==='true';
   function snapshot(){
@@ -18,7 +36,10 @@
     const store = root.ModeAtlasStorage;
     const words = store?.json?.(store.KEYS.wordBank, []) || [];
     return {
-      schemaVersion:4, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
+      schemaVersion:5, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
+      totalXp:count(progress.xp),weekly:weeklySnapshot(),
+      protectedThrough:root.ModeAtlasShop?.protection?.().filter(day=>day<=root.ModeAtlasDates.localDateKey()).sort().at(-1)||null,
+      freezesRemaining:count(root.ModeAtlasShop?.current?.().inventory?.['streak-freeze']),
       level:Math.max(1,count(progress.level)), correct:count(progress.lifetimeCorrect),
       readingCorrect:count(progress.readingCorrect), writingCorrect:count(progress.writingCorrect),
       words:Array.isArray(words) ? words.length : 0,
@@ -30,7 +51,7 @@
       title:appearance?.title||'Trail Finder',frame:appearance?.frame||'plain',
       nextTitle:next?.title||null,nextLevel:next?.level||null,
       studyStreak:count(routine.streak),lastStudyDay:owner?.studyDays?.(state).sort().at(-1)||null,
-      goals:routine.goals.map(({id,label,period,value,target})=>({id,label,period,value:Math.min(count(value),count(target)),target:count(target)}))
+      goals:routine.goals.map(({id,label,short,period,value,target})=>({id,label,short,period,value:Math.min(count(value),count(target)),target:count(target)}))
     };
   }
   // Call only from an explicit reminder preference action. Disabling
@@ -53,6 +74,7 @@
   function publish(){
     clearTimeout(timer);
     if (suspended()||!platform?.getCapabilities?.().widgetSnapshots) return;
+    void refreshRanking();
     return platform.publishWidgetSnapshot(snapshot()).catch(error => console.warn('Mode Atlas snapshot unavailable', error));
   }
   function refresh(){
@@ -62,11 +84,13 @@
   async function reset(){
     preferenceRevision += 1;
     clearTimeout(timer);
+    root.ModeAtlasStorage?.remove?.(rankingKey);
     await platform.resetEngagement();
     root.dispatchEvent(new CustomEvent('modeAtlasEngagementChanged'));
   }
   root.ModeAtlasNativeEngagement = Object.freeze({snapshot, configureReminder, refresh, reset});
   root.addEventListener('modeAtlasProgressChanged', refresh);
+  root.addEventListener('modeAtlasShopChanged', refresh);
   root.addEventListener('modeAtlasCloudDataChanged', refresh);
   root.addEventListener('modeAtlasActivityChanged', refresh);
   root.addEventListener('storage', refresh);

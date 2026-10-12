@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'A new home for your next look.';
+  const WHATS_NEW_COPY = 'Make more of your Atlas.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Shop now sits beside Profile and Settings in your account menu.',
-    'Explore larger Sakura and Midnight collection previews, with your Atlas Tokens balance at the top.',
-    'Choose owned banners, titles, frames and app icons in Progress → Rewards. Purchases are still unavailable; learning stays free.'
+    'Spend Atlas Coins on Sakura and Midnight collections, including new app-wide themes.',
+    'Find your owned looks and Streak Freeze or Repair items in Progress → Rewards.',
+    'Home Screen widgets bring your level, XP, streak, goals and weekly ranking together.'
   ];
 
   function storeGet(key, fallback = '') {

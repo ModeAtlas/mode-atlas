@@ -254,7 +254,7 @@ test('native engagement snapshot excludes identity and permission requires an ex
   await refresh();
   assert.equal(calls[0][0],'snapshot');
   assert.equal(calls[0][1].correct,73);
-  assert.equal(calls[0][1].schemaVersion,4);
+  assert.equal(calls[0][1].schemaVersion,5);
   assert.equal(calls[0][1].words,2);
   assert.equal(calls[0][1].readingCorrect,50);
   assert.equal(calls[0][1].writingCorrect,23);

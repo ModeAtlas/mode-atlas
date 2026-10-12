@@ -233,6 +233,33 @@ html[data-ma-theme="light"]{
   --shadow:var(--ma-shadow);
 }
 
+/* Collection palettes share the same semantic interface as system appearances. */
+html[data-ma-collection-theme="sakura"]{
+  --ma-collection-page:#fff3f7;--ma-collection-surface:#fffdfd;--ma-collection-elevated:#ffffff;
+  --ma-collection-inset:#f8e4ec;--ma-collection-text:#422834;--ma-collection-heading:#38202c;
+  --ma-collection-secondary:#7c5064;--ma-collection-border:#dec0ce;--ma-collection-hover:#f0d4e1;
+  --ma-collection-selected:#f7d5e4;--ma-collection-accent:#a83268;--ma-collection-on-accent:#ffffff;
+}
+html[data-ma-collection-theme="midnight"]{
+  --ma-collection-page:#181628;--ma-collection-surface:#242139;--ma-collection-elevated:#302947;
+  --ma-collection-inset:#39314f;--ma-collection-text:#ece6ff;--ma-collection-heading:#faf7ff;
+  --ma-collection-secondary:#c0b2d8;--ma-collection-border:#605272;--ma-collection-hover:#44385d;
+  --ma-collection-selected:#4a3667;--ma-collection-accent:#d0b7ff;--ma-collection-on-accent:#25133e;
+}
+html[data-ma-collection-theme]{
+  --ma-app-bg:var(--ma-collection-page);--ma-app-bg-soft:var(--ma-collection-surface);
+  --ma-page-bg:var(--ma-collection-page);--ma-page-bg-atlas:var(--ma-collection-page);
+  --ma-page-bg-kana:var(--ma-collection-page);--ma-page-bg-results:var(--ma-collection-page);--ma-page-bg-words:var(--ma-collection-page);
+  --ma-card:var(--ma-collection-surface);--ma-card-2:var(--ma-collection-elevated);--ma-card-3:var(--ma-collection-inset);
+  --ma-surface:var(--ma-collection-surface);--ma-surface-soft:var(--ma-collection-elevated);--ma-surface-strong:var(--ma-collection-elevated);
+  --ma-light-panel:var(--ma-collection-surface);--ma-light-panel-soft:var(--ma-collection-inset);--ma-light-panel-strong:var(--ma-collection-elevated);
+  --ma-text:var(--ma-collection-text);--ma-text-strong:var(--ma-collection-heading);--ma-muted:var(--ma-collection-secondary);
+  --ma-border:var(--ma-collection-border);--ma-border-strong:var(--ma-collection-border);
+  --ma-control:var(--ma-collection-inset);--ma-control-hover:var(--ma-collection-hover);--ma-control-active:var(--ma-collection-selected);
+  --ma-control-text:var(--ma-collection-text);--ma-control-active-border:var(--ma-collection-accent);
+  --ma-focus-ring:var(--ma-collection-accent);--ma-atlas:var(--ma-collection-accent);--ma-link:var(--ma-collection-accent);
+}
+
 body{background:var(--ma-page-bg);color:var(--ma-text);}
 html[data-ma-theme="light"] body{
   background:var(--ma-page-bg);

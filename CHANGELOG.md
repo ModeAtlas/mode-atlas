@@ -1,3 +1,13 @@
+## 2.93.0 — Coin shop, collection themes and richer widgets
+
+- Spend Atlas Coins on cosmetic collections and streak items through atomic, account-bound server transactions with retry receipts. Only coin top-ups show the coming-soon prompt.
+- Sakura and Midnight include app-wide themes, selectable in Settings and Rewards. Paid collections require a real grant even for Admin; earned and exclusive rewards keep their existing rules.
+- Catalogue sale windows can hide and return products without taking away ownership. Collection IDs and reward entries remain permanent.
+- Streak Freezes automatically bridge missed days; a Streak Repair can reconnect yesterday. Covered days do not award XP, goal progress or ranking points. Late offline study refunds a consumed item.
+- Developer Shop / Coins controls credit the current verified admin and reset its paid purchases without deleting earned/event rewards or refunding spent coins.
+- Home Screen widgets show level/XP, streak, goals and a current weekly rank when available. Lock Screen widgets retain their compact focus; completed study says “Studied today”.
+- Deploy the compatible Firebase backend before syncing and building the client. StoreKit coin purchases remain a later integration.
+
 ## 2.92.0 — Account shop and collection browsing
 
 - Move Shop beside Profile and Settings in the shared account menu. Progress contains Goals, Rewards and Recap; the duplicate Profile shop shortcut is removed.

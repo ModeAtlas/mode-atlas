@@ -16,7 +16,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState", "deletePushToken",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
-        "exportBackup", "getAccessibilityPreferences", "setAppIcon", "playSound", "stopSounds", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion", "revokeAppleAuthorization"
+        "exportBackup", "getAccessibilityPreferences", "getAppIcon", "setAppIcon", "playSound", "stopSounds", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion", "revokeAppleAuthorization"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
@@ -159,6 +159,10 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         }
     }
 
+    @objc func getAppIcon(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { call.resolve(["name": UIApplication.shared.alternateIconName as Any? ?? NSNull()]) }
+    }
+
     @objc func setAppIcon(_ call: CAPPluginCall) {
         let name = call.getString("name")
         let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any]
@@ -239,14 +243,23 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     }
 
     @objc func setAppearance(_ call: CAPPluginCall) {
-        guard let preference = call.getString("preference"), ["dark", "light", "system"].contains(preference) else {
+        guard let preference = call.getString("preference"), ["dark", "light", "system", "sakura", "midnight"].contains(preference) else {
             call.reject("Unknown appearance preference")
+            return
+        }
+        let canvas = call.getString("canvas")
+        if ["sakura", "midnight"].contains(preference) && (canvas == nil || ModeAtlasAppearance.color(canvas!) == nil) {
+            call.reject("A collection appearance needs its canvas colour")
             return
         }
         DispatchQueue.main.async {
             // Only a launch-frame mirror. Shared JavaScript owns the preference.
+            if let canvas { UserDefaults.standard.set(canvas, forKey: ModeAtlasAppearance.canvasKey) }
+            else { UserDefaults.standard.removeObject(forKey: ModeAtlasAppearance.canvasKey) }
             UserDefaults.standard.set(preference, forKey: ModeAtlasAppearance.preferenceKey)
             self.bridge?.viewController?.view.window?.overrideUserInterfaceStyle = ModeAtlasAppearance.style
+            (self.bridge?.viewController as? ModeAtlasBridgeViewController)?.applyCanvas()
+            self.bridge?.viewController?.view.window?.backgroundColor = ModeAtlasAppearance.canvas
             self.bridge?.viewController?.setNeedsStatusBarAppearanceUpdate()
             call.resolve(["applied": true])
         }

@@ -41,9 +41,11 @@
     });
     for(const section of document.querySelectorAll('[data-reward-category]')){
       const type=section.dataset.rewardCategory,items=rules.catalogue[type].filter(item=>rules.visible(item,summary.level,access()));
+      if(type==='themes')section.hidden=!items.length;
       const selected=type==='banners'?selectedBanner.name:type==='frames'?item.title:'';
       section.querySelector('.ma-reward-category__meta').textContent=[selected,`${items.filter(item=>rules.unlocked(item,summary.level,access())).length} available`].filter(Boolean).join(' · ');
     }
+    root.ModeAtlasTheme?.updateButtons();
     const notice=document.querySelector('.ma-reward-access');
     if(notice){
       const state=root.ModeAtlasRewardAccess?.status(),owned=access();
@@ -128,6 +130,10 @@
     const panel=el('div','ma-atlas-panel');
     const notice=el('div','ma-reward-access');notice.hidden=true;notice.setAttribute('role','status');
     const retry=button('Refresh');retry.addEventListener('click',()=>{void root.ModeAtlasRewardAccess?.refresh(true);});notice.append(el('span'),retry);panel.append(notice);
+    const inventory=el('section');root.ModeAtlasShopUI?.renderInventory(inventory);panel.append(inventory);
+    const themesSection=category('themes','App themes','A new look throughout Mode Atlas.'),themes=el('div','ma-owned-themes');
+    for(const theme of rules.themes){const choose=button(theme.name,'ma-button ma-theme-collection-choice');choose.dataset.maThemeChoice=theme.id;choose.dataset.maThemeSample=theme.id;themes.append(choose);}
+    themesSection.content.append(themes);panel.append(themesSection.section);
     const bannersSection=category('banners','Profile banners','A background for your profile and Friends cards.',true),banners=el('div','ma-atlas-banners');
     for(const item of rules.banners){
       const choose=button('','ma-atlas-banner-choice ma-profile-banner');choose.dataset.maBanner=item.id;
@@ -186,7 +192,7 @@
       if(target>=0){event.preventDefault();selectTab(target);controls[target].focus();}
     });
     const requested=new URLSearchParams(location.search).get('tab');selectTab(requested==='rewards'?1:0);content.append(tabs,...panels);
-    host.replaceChildren(content);refresh();void root.ModeAtlasRewardAccess?.refresh();
+    host.replaceChildren(content);refresh();void root.ModeAtlasRewardAccess?.refresh();void root.ModeAtlasShop?.refresh();
     return ()=>content.remove();
   }
   function open(section='goals'){
@@ -194,7 +200,7 @@
     root.ModeAtlasVersionFile.navigate('/progress/'+(section==='rewards'?'?tab=rewards':''));
   }
   document.addEventListener('click',event=>{if(event.target.closest('[data-ma-rewards-open]'))open();});
-  for(const event of ['modeAtlasRewardAccessChanged','modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady'])root.addEventListener(event,refresh);
+  for(const event of ['modeAtlasShopChanged','modeAtlasRewardAccessChanged','modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady'])root.addEventListener(event,refresh);
   document.addEventListener('ma:ui-refresh',refresh);
   document.addEventListener('DOMContentLoaded',refresh);
   root.ModeAtlasRewardsUI=Object.freeze({open,mount,refresh,appearance,banner,renderGoals});

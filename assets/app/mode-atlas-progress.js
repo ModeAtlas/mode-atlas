@@ -372,17 +372,35 @@
     return [...new Set([...Object.keys(state.activity).filter(day=>correctAcrossBranches(activityTotals(state,day))>=5),...legacy])]
       .filter(day=>/^\d{4}-\d{2}-\d{2}$/.test(day)).sort();
   }
-  function studyStreak(days,today){
-    const learned=new Set(days);
+  function studyStreak(days,today,protectedDays=[]){
+    const learned=new Set(days),covered=new Set(protectedDays);
     let day=learned.has(today)?today:root.ModeAtlasDates.shiftDateKey(today,-1),streak=0;
-    while(learned.has(day)){streak++;day=root.ModeAtlasDates.shiftDateKey(day,-1);}
+    while(learned.has(day)||covered.has(day)){if(learned.has(day))streak++;day=root.ModeAtlasDates.shiftDateKey(day,-1);}
     return streak;
+  }
+  // Shared projection for server consumption and offline presentation. Covered
+  // dates bridge continuity; only actual study days contribute to the count.
+  function protectStreak(days,today,protectedDays=[],freezes=[]){
+    const learned=new Set(days),covered=new Set(protectedDays),used={};
+    const remaining=freezes.map(unit=>({...unit})).sort((a,b)=>a.day.localeCompare(b.day)||a.id.localeCompare(b.id));
+    let day=remaining.length?remaining[0].day:today;
+    const previous=root.ModeAtlasDates.shiftDateKey(day,-1);
+    let continuing=studyStreak(days,previous,protectedDays)>0&&(learned.has(previous)||covered.has(previous));
+    for(;day<today;day=root.ModeAtlasDates.shiftDateKey(day,1)){
+      if(learned.has(day)){continuing=true;continue;}
+      if(covered.has(day))continue;
+      if(!continuing)continue;
+      const index=remaining.findIndex(unit=>unit.day<=day);
+      if(index<0){continuing=false;continue;}
+      const [unit]=remaining.splice(index,1);used[day]=unit;covered.add(day);
+    }
+    return {used,remaining,protection:[...covered].sort()};
   }
   function routine(input,at=Date.now()){
     const state=input?normalizeState(input):readState(),today=dayKey(at);
     const changed=ensureGoalPlans(state,today,at);
     if(changed&&!input)persistState(state,{source:'goals.assign',emit:false});
-    const streak=studyStreak(studyDays(state),today);
+    const streak=studyStreak(studyDays(state),today,root.ModeAtlasShop?.protection?.()||[]);
     const goals=[];
     for(const period of ['daily','weekly']){
       const key=period==='daily'?today:weekKey(today),metrics=periodMetrics(state,key,period);
@@ -615,7 +633,7 @@
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
-    award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordRewardGrants, studyDays, studyStreak, selectAppearance, selectBanner, levelRequirement,
+    award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, levelRequirement,
     getXP, getLifetimeCorrect, getLevelFromXP, getSummary
   });
 

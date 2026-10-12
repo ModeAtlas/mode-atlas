@@ -10,7 +10,7 @@ const review = createReview({ModeAtlasDates: dates});
 const identity = require('./shared/mode-atlas-social-identity.js');
 const PROJECTION_VERSION=2;
 
-function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
+function progressOwner(save = {}, timeZone = 'UTC') {
   const sections = save.sections || {};
   const data = name => sections[name]?.data || {};
   const state = data('progress').state || {};
@@ -23,8 +23,13 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
       return fallback;
     }
   };
-  const owner = createProgress({ModeAtlasStorage:storage,ModeAtlasRewardRules:rewards,
+  return createProgress({ModeAtlasStorage:storage,ModeAtlasRewardRules:rewards,
     ModeAtlasDates:{...dates,localDateKey:value=>dates.dateKeyInTimeZone(value,timeZone)}});
+}
+function studyDaysFromSave(save,timeZone='UTC'){const owner=progressOwner(save,timeZone);return owner.studyDays(owner.ensureSeeded({sync:false,emit:false}));}
+function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
+  const sections=save.sections||{},data=name=>sections[name]?.data||{};
+  const owner=progressOwner(save,timeZone);
   const seeded = owner.ensureSeeded({sync:false,emit:false});
   const summary = owner.getSummary(seeded);
   const selected = rewards.appearance(seeded.appearance.landmark,summary.level,access);
@@ -68,4 +73,4 @@ function rankProfiles(profiles,metric) {
   let rank=0,previous;
   return rows.map((row,index)=>{if(row.score!==previous)rank=index+1;previous=row.score;return {...row,rank};});
 }
-module.exports={projectSave,publicProfile,rankProfiles,PROJECTION_VERSION};
+module.exports={projectSave,publicProfile,rankProfiles,PROJECTION_VERSION,studyDaysFromSave,studyStreak:progress.studyStreak,protectStreak:progress.protectStreak};

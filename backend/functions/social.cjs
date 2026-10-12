@@ -63,7 +63,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
   const staff=createStaff({db,auth,now});
   const moderation=createModeration({db,identities,staff,now});
   const rewards=createRewards({db,now});
-  const commerce=createCommerce({db});
+  const commerce=createCommerce({db,now});
   const weekly=createWeekly({db,now});
   const notifications=createNotifications({db,messaging,weekly,now});
   async function decorate(profiles){
@@ -324,13 +324,13 @@ function createSocial({db,auth,messaging,now=Date.now}){
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
+    const actions=['shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
-    if(['shop','rewards','state','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
+    if(['rewards','state','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
     if(action==='rewards')return rewards.read(user);
-    if(action==='shop')return commerce.state(uid);
+    if(['shop','shopPurchase','shopUse','shopDeveloper'].includes(action))return commerce.run(user,action,data);
     if(action==='notificationState')return notifications.state(uid);
     if(action==='configureNotifications')return notifications.configure(uid,data);
     if(action==='unregisterNotifications')return notifications.unregister(uid,data);

@@ -72,7 +72,7 @@ test('rules preserve owner-only profile/app-data access and deny every direct so
     await assertFails(getDoc(doc(mine,path)));
     await assertFails(setDoc(doc(mine,path),{}));
   }
-  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','commerceAccounts','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices']){
+  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','commerceAccounts','shopCatalogue','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));
   }
@@ -492,6 +492,91 @@ test('shop cosmetics require private grants and never project a wallet into soci
   await db.doc(`rewardEntitlements/${a.uid}`).set({grants:{'shop-sakura':{revoked:true}}});
   assert.equal((await b.call('list')).rows.find(row=>row.uid===a.uid).banner,'plain');
 });
+test('coin purchases are atomic, retry-safe and reject forged prices, insufficient funds and direct writes',async()=>{
+  const a=await learner('CoinBuyer'),b=await learner('CoinOther'),timeZone='Australia/Melbourne';
+  const ref=db.doc('commerceAccounts/'+a.uid);await ref.set({version:1,currency:'atlas-tokens',balance:1000});
+  const request={requestId:crypto.randomUUID(),productId:'sakura',coinPrice:500,timeZone};
+  const results=await Promise.all([a.call('shopPurchase',request),a.call('shopPurchase',request)]);
+  for(const result of results){assert.equal(result.balance,500);assert.deepEqual(result.owned,['sakura']);}
+  assert.equal((await ref.collection('operations').get()).size,1);
+  assert.deepEqual((await a.call('rewards')).grants,['shop-sakura']);
+  await assert.rejects(a.call('shopPurchase',{...request,requestId:crypto.randomUUID()}),{code:'ALREADY_EXISTS'});
+  await assert.rejects(a.call('shopPurchase',{...request,productId:'midnight'}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('shopPurchase',{...request,requestId:crypto.randomUUID(),productId:'midnight',coinPrice:1}),{code:'FAILED_PRECONDITION'});
+  await assert.rejects(b.call('shopPurchase',{...request,requestId:crypto.randomUUID()}),{code:'FAILED_PRECONDITION'});
+  await assert.rejects(a.call('shopPurchase',{...request,uid:b.uid}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('shopPurchase',request,b.uid),{code:'UNAUTHENTICATED'});
+  const freeze=()=>a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-freeze',coinPrice:150,timeZone});
+  await Promise.all([freeze(),freeze()]);const wallet=await a.call('shop',{version:2,timeZone});
+  assert.equal(wallet.balance,200);assert.equal(wallet.inventory['streak-freeze'],2);
+  await assert.rejects(freeze(),{code:'FAILED_PRECONDITION'});
+  const mine=rules.authenticatedContext(a.uid).firestore();
+  await assertFails(setDoc(doc(mine,'commerceAccounts/'+a.uid+'/operations/forged'),{balanceAfter:999999}));
+  await assertFails(setDoc(doc(mine,'shopCatalogue/current'),{offers:{sakura:{coinPrice:0}}}));
+  await db.doc('accountDeletions/'+a.uid).set({state:'committing'});
+  await assert.rejects(a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'UNAUTHENTICATED'});
+  assert.equal((await ref.get()).data().balance,200);
+});
+test('rotating a collection out blocks new sales while existing cosmetic and theme ownership survives',async()=>{
+  const a=await learner('RotationOwner'),b=await learner('RotationNew'),timeZone='UTC';
+  for(const user of [a,b])await db.doc('commerceAccounts/'+user.uid).set({version:1,currency:'atlas-tokens',balance:1000});
+  await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone});
+  const listing=db.doc('shopCatalogue/current');
+  try{
+    await listing.set({offers:{midnight:{enabled:false}}});
+    const state=await a.call('shop',{version:2,timeZone});assert.ok(!state.offers.some(p=>p.id==='midnight'));assert.ok(state.owned.includes('midnight'));
+    const grants=await a.call('rewards'),rules=require('../functions/shared/mode-atlas-reward-rules.js');assert.equal(rules.allowed('themes','midnight',1,grants),true);
+    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
+    await listing.set({offers:{midnight:{startsAt:Date.now()+86400000}}});
+    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
+    await listing.set({offers:{midnight:{endsAt:Date.now()-1000}}});
+    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
+    await listing.set({offers:{midnight:{enabled:true}}});
+    assert.ok((await b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone})).owned.includes('midnight'));
+  }finally{await listing.delete();}
+});
+test('developer coin credits and purchase reset use actual Auth role, keep earned/event rewards and audit retries',async()=>{
+  const a=await learner('NotDeveloper'),timeZone='UTC',credit={requestId:crypto.randomUUID(),operation:'credit',amount:2000,timeZone};
+  await assert.rejects(a.call('shopDeveloper',credit),{code:'PERMISSION_DENIED'});
+  await assert.rejects(service.call({auth:{uid:a.uid,token:{email:'admin@mode-atlas.com',email_verified:true}},data:{action:'shopDeveloper',data:credit,expectedUid:a.uid}}),{code:'permission-denied'});
+  const uid='legacy-admin';await db.doc('socialLimits/'+uid).delete();
+  const custom=await auth.createCustomToken(uid),login=await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:custom,returnSecureToken:true})}).then(r=>r.json());
+  const call=async(action,data)=>{
+    if(directService)return service.call({auth:{uid},data:{action,data,expectedUid:uid}});
+    const result=await fetch(`http://127.0.0.1:5001/${projectId}/${config.region}/modeAtlasSocial`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${login.idToken}`},body:JSON.stringify({data:{action,data,expectedUid:uid}})}).then(r=>r.json());
+    if(result.error)throw Object.assign(new Error(result.error.message),{code:result.error.status});return result.result;
+  };
+  await db.doc('rewardEntitlements/'+uid).set({grants:{'hunny-tester':{}}});
+  await db.doc('commerceAccounts/'+uid).delete();
+  await Promise.all([call('shopDeveloper',credit),call('shopDeveloper',credit)]);assert.equal((await call('shop',{version:2,timeZone})).balance,2000);
+  await call('shopPurchase',{requestId:crypto.randomUUID(),productId:'sakura',coinPrice:500,timeZone});
+  await call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-repair',coinPrice:250,timeZone});
+  const reset={requestId:crypto.randomUUID(),operation:'resetPurchases',timeZone};
+  await call('shopDeveloper',reset);const after=await call('shopDeveloper',reset);assert.equal(after.balance,1250);assert.deepEqual(after.owned,[]);assert.equal(after.inventory['streak-repair'],0);
+  const grants=await call('rewards',{});assert.deepEqual(grants.grants,['hunny-tester']);assert.equal(grants.allCustom,true);
+  assert.equal(require('../functions/shared/mode-atlas-reward-rules.js').allowed('themes','sakura',99,grants),false);
+  await call('shopDeveloper',credit);assert.equal((await call('shop',{version:2,timeZone})).balance,1250,'An old credit receipt cannot mint coins after a reset');
+});
+test('streak inventory uses local calendar boundaries, refunds late offline practice and repairs only yesterday',async()=>{
+  const a=await learner('StreakItems'),{createCommerce}=require('../functions/commerce.cjs'),timeZone='Australia/Melbourne';
+  let clock=Date.parse('2026-10-03T23:00:00+10:00');const commerce=createCommerce({db,now:()=>clock}),user=await auth.getUser(a.uid);
+  const ref=db.doc('commerceAccounts/'+a.uid),saveRef=db.doc('users/'+a.uid+'/appData/kanaTrainer');
+  const studied=days=>{const data=save(100);data.sections.reading.data.dailyChallengeHistory=Object.fromEntries(days.map(day=>[day,{}]));return data;};
+  await saveRef.set(studied(['2026-10-01','2026-10-02','2026-10-03']));await ref.set({version:1,currency:'atlas-tokens',balance:2000});
+  const buy=productId=>commerce.run(user,'shopPurchase',{requestId:crypto.randomUUID(),productId,coinPrice:productId==='streak-freeze'?150:250,timeZone});
+  await buy('streak-freeze');await buy('streak-repair');
+  clock=Date.parse('2026-10-05T00:00:00+11:00');
+  const state=()=>commerce.run(user,'shop',{version:2,timeZone});let value=await state();assert.deepEqual(value.protection,['2026-10-04']);assert.equal(value.inventory['streak-freeze'],0);
+  assert.deepEqual((await state()).protection,value.protection);
+  await saveRef.set(studied(['2026-10-01','2026-10-02','2026-10-03','2026-10-04']));value=await state();assert.deepEqual(value.protection,[]);assert.equal(value.inventory['streak-freeze'],1);
+  clock=Date.parse('2026-10-07T00:00:00+11:00');value=await state();assert.deepEqual(value.protection,['2026-10-05']);assert.equal(value.repairDay,'2026-10-06');
+  const request={requestId:crypto.randomUUID(),productId:'streak-repair',timeZone};await commerce.run(user,'shopUse',request);value=await commerce.run(user,'shopUse',request);
+  assert.equal(value.inventory['streak-repair'],0);assert.deepEqual(value.protection,['2026-10-05','2026-10-06']);
+  assert.deepEqual((await saveRef.get()).data(),studied(['2026-10-01','2026-10-02','2026-10-03','2026-10-04']),'Using items must not write learning data or XP');
+  clock=Date.parse('2026-10-10T00:00:00+11:00');await buy('streak-repair');assert.equal((await state()).repairDay,null);
+  await assert.rejects(commerce.run(user,'shopUse',{...request,requestId:crypto.randomUUID()}),{code:'failed-precondition'});
+});
+
 test('weekly callables require explicit participation and never accept client scores',async()=>{
   const a=await learner('Weekly Transport',7003);
   assert.equal((await a.call('weeklyState')).enabled,false);
