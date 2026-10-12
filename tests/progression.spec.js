@@ -23,7 +23,7 @@ async function correct(page,mode){
   await expect.poll(()=>page.evaluate(()=>!locked)).toBe(true);
   await page.evaluate(mode=>mode==='reading'?handleCorrect(getAnswerForCurrentChar()):handleChoiceAnswer(currentChar,document.querySelector('.choice-btn')),mode);
 }
-for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'light',width:320},{native:false,theme:'dark',width:1280}]){
+for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'light',width:320},{native:false,theme:'dark',width:1280},{native:false,theme:'light',width:1280}]){
   test(`shop preview and review help ${view.native?'iOS':'web'} ${view.width} ${view.theme}`,async({page},testInfo)=>{
     await prepare(page,view);await page.setViewportSize({width:view.width,height:852});await open(page,'/progress/');
     await expect(page.getByRole('tablist',{name:'Progress',exact:true}).getByRole('tab')).toHaveText(['Goals','Rewards','Recap']);
@@ -31,6 +31,7 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
     const shop=page.getByRole('tabpanel',{name:'Shop',exact:true});await expect(shop).toBeVisible();
     await expect(shop).toContainText('Purchases aren’t available yet.');
     await expect(shop.locator('[data-ma-token-balance]')).toHaveText('Sign in to view your balance');
+    for(const tile of await shop.locator('[data-ma-shop-product]').all())await expect(tile).not.toHaveCSS('background-image','none');
     for(const frame of await shop.locator('[data-ma-frame]').all())await expect(frame).not.toHaveCSS('box-shadow','none');
     const before=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),appearance:ModeAtlasProgress.readState().appearance}));
     await shop.getByRole('button',{name:'Preview Sakura collection'}).click();
@@ -89,6 +90,11 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
     await shop.getByRole('button',{name:'Preview Midnight collection'}).scrollIntoViewIfNeeded();
     await expect(shop.getByRole('button',{name:'Preview Midnight collection'})).toBeVisible();
     expect(await shop.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
+    expect(await shop.evaluate(node=>{
+      const last=node.querySelector('.ma-shop-product:last-child').getBoundingClientRect();
+      const next=node.querySelector('.ma-shop-rewards-link>span').getBoundingClientRect();
+      return next.top>=last.bottom;
+    })).toBe(true);
     await page.getByRole('tab',{name:'Settings',exact:true}).click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
     await expect(shop).toBeVisible();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
