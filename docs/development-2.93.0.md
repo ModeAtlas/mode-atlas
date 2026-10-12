@@ -60,6 +60,7 @@ uses synced study evidence and calendar dates in the account's current time zone
 Late offline evidence returns an item used on a day that was actually studied.
 The client/widget can project held freezes while offline, with server
 reconciliation on reconnect. Spending requires a connection; repair use also requires a successful study sync.
+Streak-ending notifications respect freeze protection; goal reminders remain independent.
 
 ## Developer testing
 

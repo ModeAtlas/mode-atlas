@@ -43,6 +43,12 @@ function repairDay(w,days,today){
   return !days.includes(yesterday)&&!Object.hasOwn(w.covered,yesterday)&&studyStreak(days,prior,Object.keys(w.covered))>0
     &&(days.includes(prior)||Object.hasOwn(w.covered,prior))?yesterday:null;
 }
+// Read-only projection for reminders; consuming inventory remains transactional.
+function streakStatus(record,save,zone,at){
+  const w=wallet(record?structuredClone(record):null),today=dates.dateKeyInTimeZone(at,zone),days=studyDaysFromSave(save,zone);
+  reconcile(w,days,today,zone);
+  return {streak:studyStreak(days,today,Object.keys(w.covered)),studiedToday:days.includes(today),freezeReady:w.inventory['streak-freeze'].length>0};
+}
 function createCommerce({db,now=Date.now}){
   const reference=uid=>db.doc('commerceAccounts/'+uid);
   async function run(user,action,data={}){
@@ -109,4 +115,4 @@ function createCommerce({db,now=Date.now}){
   }
   return {run,erase:uid=>db.recursiveDelete(reference(uid))};
 }
-module.exports={createCommerce,reconcile,repairDay};
+module.exports={createCommerce,reconcile,repairDay,streakStatus};

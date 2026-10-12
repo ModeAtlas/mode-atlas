@@ -685,6 +685,11 @@ test('goal and streak notices use the saved account time zone and suppress compl
   const preferences={dailyGoals:true,weeklyGoals:true,streak:true,overtaken:false};
   let notice=evening(value,preferences,'Australia/Melbourne',at);
   assert.match(notice.body,/daily goals/);assert.match(notice.body,/weekly goals/);assert.match(notice.body,/1-day streak/);
+  const wallet={version:2,currency:'atlas-coins',balance:0,inventory:{'streak-freeze':[{id:'ready-freeze',at:at-86400000}],'streak-repair':[]},purchases:{},covered:{}};
+  const protectedNotice=evening(value,preferences,'Australia/Melbourne',at,undefined,wallet);
+  assert.match(protectedNotice.body,/daily goals/);assert.doesNotMatch(protectedNotice.body,/streak/,'A held freeze must suppress false midnight urgency');
+  assert.equal(evening(value,{streak:true},'Australia/Melbourne',at,undefined,wallet),null);
+  assert.equal(wallet.inventory['streak-freeze'].length,1,'Notification projection cannot spend an item');
   value.sections.progress.data.state.activity[day]={sources:{a:[5,0]}};
   value.sections.progress.data.state.claims=Object.fromEntries(['daily','weekly'].flatMap(period=>rules.goals(period==='daily'?day:week,period).map(goal=>[`v4:${period}:${period==='daily'?day:week}:goal:${goal.id}`,goal.xp])));
   assert.equal(evening(value,preferences,'Australia/Melbourne',at),null);

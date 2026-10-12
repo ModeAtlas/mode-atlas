@@ -7,17 +7,19 @@ const rules=require('./shared/mode-atlas-reward-rules.js');
 const weeklyRules=require('./shared/mode-atlas-weekly-rules.js');
 const timing=require('./shared/mode-atlas-notification-rules.js');
 const createProgress=require('./shared/mode-atlas-progress.js');
+const {streakStatus}=require('./commerce.cjs');
 const kinds=['dailyGoals','weeklyGoals','streak','overtaken'];
 const blank=()=>Object.fromEntries(kinds.map(kind=>[kind,false]));
 const hash=value=>createHash('sha256').update(value).digest('hex');
-function evening(save,preferences,timeZone,at,schedule){
+function evening(save,preferences,timeZone,at,schedule,wallet){
   const day=dates.dateKeyInTimeZone(at,timeZone);
   if(!timing.allowed(at,timeZone,schedule,true))return null;
   const owner=createProgress({ModeAtlasRewardRules:rules,ModeAtlasDates:{...dates,localDateKey:value=>dates.dateKeyInTimeZone(value,timeZone)}});
   const state=owner.normalizeState(save?.sections?.progress?.data?.state),routine=owner.routine(state,at),parts=[];
   if(preferences.dailyGoals&&routine.goals.some(g=>g.period==='daily'&&g.value<g.target))parts.push('Your daily goals reset at midnight.');
   if(preferences.weeklyGoals&&new Date(day+'T12:00:00Z').getUTCDay()===0&&routine.goals.some(g=>g.period==='weekly'&&g.value<g.target))parts.push('Your weekly goals finish tonight.');
-  if(preferences.streak&&routine.streak>0&&!owner.studyDays(state).includes(day))parts.push(`Keep your ${routine.streak}-day streak with five correct kana before midnight.`);
+  const study=preferences.streak?streakStatus(wallet,save,timeZone,at):null;
+  if(study?.streak>0&&!study.studiedToday&&!study.freezeReady)parts.push(`Keep your ${study.streak}-day streak with five correct kana before midnight.`);
   return parts.length?{id:'evening-'+day,title:'Still time for a little practice',body:parts.join(' '),destination:'yourAtlas',expiresAt:timing.expiresAt(at,timeZone,schedule,true)}:null;
 }
 function createNotifications({db,messaging,weekly,now=Date.now}){
@@ -68,8 +70,8 @@ function createNotifications({db,messaging,weekly,now=Date.now}){
       if(notice.kind&&!value.preferences?.[notice.kind])return [];
       if(!notice.kind&&!['dailyGoals','weeklyGoals','streak'].some(key=>value.preferences?.[key]))return [];
       if(!notice.kind){
-        const save=await tx.get(db.doc(`users/${uid}/appData/kanaTrainer`));
-        const fresh=evening(save.data(),value.preferences,value.timeZone,now(),value.schedule);
+        const [save,wallet]=await tx.getAll(db.doc(`users/${uid}/appData/kanaTrainer`),db.doc('commerceAccounts/'+uid));
+        const fresh=evening(save.data(),value.preferences,value.timeZone,now(),value.schedule,wallet.data());
         if(!fresh)return [];notice=fresh;
       }
       notice.expiresAt=Math.min(notice.expiresAt,timing.expiresAt(now(),value.timeZone,value.schedule,!notice.kind));
@@ -92,8 +94,8 @@ function createNotifications({db,messaging,weekly,now=Date.now}){
   }
   async function inspect(uid){
     const ref=accounts.doc(uid),settings=(await ref.get()).data();if(!settings?.enabled)return;
-    const at=now(),save=(await db.doc(`users/${uid}/appData/kanaTrainer`).get()).data();
-    const notice=evening(save,settings.preferences,settings.timeZone,at,settings.schedule);
+    const at=now(),[save,wallet]=await db.getAll(db.doc(`users/${uid}/appData/kanaTrainer`),db.doc('commerceAccounts/'+uid));
+    const notice=evening(save.data(),settings.preferences,settings.timeZone,at,settings.schedule,wallet.data());
     if(notice)await send(uid,notice);
     if(!settings.preferences.overtaken)return;
     const period=weeklyRules.period(at),place=await weekly.rank(uid,period.id),previous=settings.rank;
