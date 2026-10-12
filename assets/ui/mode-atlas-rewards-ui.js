@@ -31,7 +31,7 @@
       const reward=root.ModeAtlasRewardRules.landmarks.find(reward=>reward.id===node.dataset.landmark),unlocked=rules.unlocked(reward,summary.level,access());
       node.hidden=!rules.visible(reward,summary.level,access());
       node.disabled=!unlocked;node.dataset.unlocked=String(unlocked);node.setAttribute('aria-pressed',String(reward.id===item.id));
-      node.setAttribute('aria-label',`${reward.title}, ${ranks[reward.frame]||reward.name} frame, ${reward.grant?'exclusive reward':`${unlocked?'level':'unlocks at level'} ${reward.level}`}`);
+      node.setAttribute('aria-label',`${reward.title}, ${ranks[reward.frame]||reward.name} frame, ${reward.kind==='shop'?'shop collection':reward.grant?'exclusive reward':`${unlocked?'level':'unlocks at level'} ${reward.level}`}`);
       node.querySelector('.ma-atlas-landmark__state').textContent=unlocked?'✓':'Locked';
     });
     document.querySelectorAll('.ma-atlas-icon-choice').forEach(node=>{
@@ -55,6 +55,7 @@
     document.querySelectorAll('[data-ma-routine-streak]').forEach(node=>{node.textContent=String(routine.streak);});
     document.querySelectorAll('[data-ma-atlas-summary]').forEach(node=>{node.textContent=`Level ${summary.level} · ${routine.streak}-day study streak`;});
     renderGoals(document.querySelector('.ma-atlas-rewards .ma-routine-goals'));
+    renderReviews(document.querySelector('[data-ma-due-reviews]'));
     renderRecap(document.querySelector('.ma-atlas-recap'));
   }
   function avatar(item){
@@ -91,18 +92,27 @@
     const link=el('a','ma-button ma-button--ghost','Start a short session');link.href='/reading/?practice=10';host.append(link);
     const ranking=el('a','ma-button ma-button--ghost','View weekly ranking');ranking.href=root.AtlasPlatform.destinationPath('weekly');host.append(ranking);
   }
+  function renderReviews(reviewActions){
+    if(!reviewActions)return;
+    reviewActions.replaceChildren();
+    for(const mode of ['reading','writing']){
+      const due=root.ModeAtlasReview.due(root.ModeAtlasStorage.readModeJSON(mode,'srs',{}));
+      if(due.length){const link=el('a','ma-button ma-button--ghost',`Review ${mode==='reading'?'Reading':'Writing'} · ${due.length} due`);link.href=`/${mode}/?practice=10&due=1`;reviewActions.append(link);}
+    }
+    if(!reviewActions.childElementCount)reviewActions.append(el('p','ma-atlas-rewards__note','You’re up to date with your reviews.'));
+  }
   function goalPanel(){
     const panel=el('div','ma-atlas-panel');
     panel.append(el('h3','','Daily & weekly goals'));
     panel.append(el('p','ma-atlas-rewards__note','A fresh set each day. Weekly goals rotate on Monday.'));
     const goals=el('div','ma-routine-goals');renderGoals(goals);panel.append(goals);
-    const reviewActions=el('div','ma-atlas-rewards__actions');
-    for(const mode of ['reading','writing']){
-      const due=root.ModeAtlasReview.due(root.ModeAtlasStorage.readModeJSON(mode,'srs',{}));
-      if(due.length){const link=el('a','ma-button ma-button--ghost',`Review ${mode} · ${due.length} due`);link.href=`/${mode}/?practice=10&due=1`;reviewActions.append(link);}
-    }
-    if(!reviewActions.childElementCount)reviewActions.append(el('p','ma-atlas-rewards__note','You’re up to date with your reviews.'));
-    panel.append(reviewActions);
+    const reviews=el('section','ma-due-reviews'),heading=el('div','ma-due-reviews__heading');
+    const title=el('h3','','Spaced reviews');title.id='maDueReviewsTitle';reviews.setAttribute('aria-labelledby',title.id);
+    const help=button('i','ma-info-button');help.setAttribute('aria-label','About due reviews');help.setAttribute('aria-haspopup','dialog');
+    help.addEventListener('click',()=>root.ModeAtlasDialog.alert({title:'What does “due” mean?',message:root.ModeAtlasReview.dueHelp(),confirmLabel:'Got it'}));
+    heading.append(title,help);
+    const reviewActions=el('div','ma-atlas-rewards__actions');reviewActions.dataset.maDueReviews='';renderReviews(reviewActions);
+    reviews.append(heading,reviewActions);panel.append(reviews);
     const mastery=button('Open Mastery Map');mastery.addEventListener('click',()=>root.ModeAtlasFeatures.openMasteryMap());panel.append(mastery);
     return panel;
   }
@@ -122,7 +132,7 @@
     for(const item of rules.banners){
       const choose=button('','ma-atlas-banner-choice ma-profile-banner');choose.dataset.maBanner=item.id;
       choose.append(el('strong','',item.name),el('small'));
-      if(item.grant){const badge=el('span','ma-reward-exclusive',item.kind==='event'?'Event':'Exclusive');choose.append(badge);}
+      if(item.grant){const badge=el('span','ma-reward-exclusive',item.kind==='shop'?'Shop':item.kind==='event'?'Event':'Exclusive');choose.append(badge);}
       choose.addEventListener('click',()=>{if(root.ModeAtlasProgress.selectBanner(item.id))refresh();});banners.append(choose);
     }
     bannersSection.content.append(banners);panel.append(bannersSection.section);
@@ -130,7 +140,7 @@
     for(const item of rules.landmarks){
       const choose=button('','ma-atlas-landmark');choose.dataset.landmark=item.id;
       const copy=el('span','ma-atlas-landmark__copy');
-      copy.append(el('strong','',item.title),el('small','',item.grant?'Exclusive':`${ranks[item.frame]} frame · Level ${item.level}`));
+      copy.append(el('strong','',item.title),el('small','',item.kind==='shop'?'Shop collection':item.grant?'Exclusive':`${ranks[item.frame]} frame · Level ${item.level}`));
       const state=el('span','ma-atlas-landmark__state');state.setAttribute('aria-hidden','true');choose.append(avatar(item),copy,state);
       choose.addEventListener('click',()=>{if(root.ModeAtlasProgress.selectAppearance(item.id))refresh();});collection.append(choose);
     }
@@ -141,7 +151,7 @@
       for(const item of rules.icons){
         const name=item.name,choose=button('','ma-atlas-icon-choice');choose.dataset.appIcon=name;choose.dataset.rewardId=item.id;choose.dataset.rewardLevel=String(item.level||0);
         if(item.icon){const preview=el('img');preview.src=`/assets/rewards/${item.icon}.svg`;preview.alt='';choose.append(preview);}else{const mark=el('span','ma-atlas-icon-choice__original','あア');mark.setAttribute('aria-hidden','true');choose.append(mark);}
-        choose.append(el('strong','',name),el('small','',item.grant?'Exclusive':`Level ${item.level}`));
+        choose.append(el('strong','',name),el('small','',item.kind==='shop'?'Shop':item.grant?'Exclusive':`Level ${item.level}`));
         choose.addEventListener('click',async()=>{
           if(changing||!rules.unlocked(item,root.ModeAtlasProgress.getSummary().level,access()))return;
           changing=true;choose.setAttribute('aria-busy','true');
@@ -161,26 +171,30 @@
     const copy=el('div','ma-atlas-identity__copy'),title=el('strong','',selected.title);title.dataset.maSelectedTitle='';
     const status=el('span');status.dataset.maAtlasSummary='';
     copy.append(title,status);identity.append(preview,copy);content.append(identity);
-    const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Your Atlas');
+    const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Progress');
     const recap=el('div','ma-atlas-panel ma-atlas-recap');renderRecap(recap);
-    const panels=[goalPanel(),rewardPanel(summary),recap];
-    const controls=['Goals','Rewards','Recap'].map((label,index)=>{
+    const shop=el('div','ma-atlas-panel');root.ModeAtlasShopUI.mount(shop);
+    const panels=[goalPanel(),rewardPanel(summary),recap,shop];
+    const controls=['Goals','Rewards','Recap','Shop'].map((label,index)=>{
       const tab=button(label);tab.id=`atlasTab${index}`;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',`atlasPanel${index}`);
       panels[index].id=`atlasPanel${index}`;panels[index].setAttribute('role','tabpanel');panels[index].setAttribute('aria-labelledby',tab.id);panels[index].tabIndex=0;
       tab.addEventListener('click',()=>selectTab(index));tabs.append(tab);return tab;
     });
-    function selectTab(index){controls.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});if(index===2)renderRecap(recap);}
+    function selectTab(index){controls.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});if(index===2)renderRecap(recap);if(index===3)void root.ModeAtlasShop.refresh();}
     tabs.addEventListener('keydown',event=>{
       const index=controls.indexOf(document.activeElement);if(index<0)return;
       const target=event.key==='ArrowRight'?(index+1)%controls.length:event.key==='ArrowLeft'?(index+controls.length-1)%controls.length:event.key==='Home'?0:event.key==='End'?controls.length-1:-1;
       if(target>=0){event.preventDefault();selectTab(target);controls[target].focus();}
     });
-    selectTab(0);content.append(tabs,...panels);
-    host.replaceChildren(content);refresh();void root.ModeAtlasRewardAccess?.refresh();
+    const requested=new URLSearchParams(location.search).get('tab');selectTab(requested==='shop'?3:requested==='rewards'?1:0);content.append(tabs,...panels);
+    host.replaceChildren(content);refresh();root.ModeAtlasShopUI.refresh();void root.ModeAtlasRewardAccess?.refresh();
     return ()=>content.remove();
   }
-  function open(){root.ModeAtlasAccountNavigation?.open('atlas');}
-  document.addEventListener('click',event=>{if(event.target.closest('[data-ma-rewards-open]'))open();});
+  function open(section='goals'){
+    if(location.pathname==='/progress/'){document.getElementById(section==='shop'?'atlasTab3':section==='rewards'?'atlasTab1':'atlasTab0')?.click();root.ModeAtlasAccountNavigation?.close();return;}
+    root.ModeAtlasVersionFile.navigate('/progress/'+(['shop','rewards'].includes(section)?'?tab='+section:''));
+  }
+  document.addEventListener('click',event=>{if(event.target.closest('[data-ma-shop-open]'))open('shop');else if(event.target.closest('[data-ma-rewards-open]'))open();});
   for(const event of ['modeAtlasRewardAccessChanged','modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady'])root.addEventListener(event,refresh);
   document.addEventListener('ma:ui-refresh',refresh);
   document.addEventListener('DOMContentLoaded',refresh);

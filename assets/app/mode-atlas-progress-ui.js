@@ -56,7 +56,7 @@
     const seen=new Set();for(const item of session.milestones||[]){const id=item.kana+item.stage;if(seen.has(id))continue;seen.add(id);card.append(el('span','ma-session-rewards__milestone',`${item.kana} · ${root.ModeAtlasReview.labels[item.stage]}`));}
     const unlocked=root.ModeAtlasRewardRules.landmarks.filter(item=>item.level>session.startLevel&&item.level<=summary.level);
     if(unlocked.length)card.append(el('p','ma-session-rewards__unlock',`Unlocked: ${unlocked.map(item=>item.title).join(', ')}`));
-    const rewards=el('button','ma-button ma-button--ghost ma-button--small','Your Atlas');rewards.type='button';
+    const rewards=el('button','ma-button ma-button--ghost ma-button--small','Progress');rewards.type='button';
     rewards.addEventListener('click',()=>{root.ModeAtlasDialog.close();setTimeout(()=>root.ModeAtlasRewardsUI.open(),0);});card.append(rewards);
     host.append(card);
     root.ModeAtlasFeedback?.haptic?.(up?'milestone':'complete');

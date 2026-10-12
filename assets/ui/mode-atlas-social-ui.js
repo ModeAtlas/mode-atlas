@@ -37,7 +37,7 @@
     catch(error){root.ModeAtlasDiagnostics?.record('friends',error);if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
     finally{if(alive(ticket))host.removeAttribute('aria-busy');controls.forEach(node=>{node.disabled=node.dataset.wasDisabled==='true';delete node.dataset.wasDisabled;});}
   }
-  function screen(){generation++;status('');if(body.contains(document.activeElement))document.activeElement.blur();body.replaceChildren();body.classList.remove('ma-social-home');const panel=host.closest('.ma-account-view');if(panel)panel.scrollTop=0;host.removeAttribute('aria-busy');return generation;}
+  function screen(){generation++;status('');if(body.contains(document.activeElement))document.activeElement.blur();body.replaceChildren();body.classList.remove('ma-social-home');root.scrollTo({top:0,behavior:'instant'});host.removeAttribute('aria-busy');return generation;}
   function empty(title,description){const card=el('div','ma-social-empty');card.append(el('h3','',title),el('p','',description));body.append(card);return card;}
   function focusTitle(){const title=body.querySelector('h3');if(title){title.tabIndex=-1;title.focus({preventScroll:true});}}
   function back(label,action){body.append(button('← '+label,action,'ma-button ma-button--ghost ma-social-back'));}

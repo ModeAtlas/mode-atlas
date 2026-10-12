@@ -47,7 +47,7 @@
     var path = platform.destinationPath(destination);
     if (!path) return false;
     var target = root.ModeAtlasVersionFile?.appUrl?.(path) || path;
-    if (location.pathname + location.search === target) {if(destination==='yourAtlas')root.ModeAtlasAccountNavigation?.open('atlas');if(destination==='weekly')root.ModeAtlasAccountNavigation?.open('friends');return true;}
+    if (location.pathname + location.search === target) {root.scrollTo?.({top:0,behavior:'instant'});return true;}
     if (replace) location.replace(target);
     else location.assign(target);
     return true;

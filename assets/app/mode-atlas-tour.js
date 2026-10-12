@@ -8,12 +8,12 @@
   function read(){try{const value=JSON.parse(sessionStorage.getItem(key));return value&&Number.isInteger(value.step)&&value.step>=0&&value.step<7&&Date.now()-value.at<1800000?value:null;}catch{return null;}}
   let state=read(),layer=null,target=null,observer=null,frame=0,previousFocus=null;
   const steps=[
-    {path:'/',title:'Your daily starting point',text:native?'This dock connects Atlas, Kana and Words. Your avatar opens Profile, Your Atlas, Friends and Settings. Tap Kana again for Reading, Writing and Results.':'Use this navigation to reach Kana and Words. Your profile brings together Your Atlas, Friends and Settings.',selector:native?'.ma-ios-tabs':'.ma-nav'},
+    {path:'/',title:'Your daily starting point',text:'Atlas is your daily starting point. Learn gathers your learning branches, Progress shows your goals and rewards, and Friends opens your social space. Your avatar opens Profile and Settings.',selector:native?'.ma-ios-tabs':'.ma-nav'},
     {path:'/reading/',title:'Make practice yours',text:'Reading asks you to recall the sound of a kana. Practice setup is here whenever you want to choose a session or change your kana selection.',selector:'#modifiersTab'},
     {path:'/reading/',title:'Choose your session',text:'Here are the real practice modes. Guided sets give you a short finish line; reviews revisit due kana. Daily, Test and timed modes offer different challenges. We’ll leave your selection as it is.',setup:true,selector:'.ma-mode-choice'},
-    {path:'/reading/',title:'See your goals grow',text:'Your Atlas rotates daily and weekly goals across recall, variety and completed practice. Completing goals adds XP alongside your answers.',section:'atlas',selector:'.ma-routine-goal'},
-    {path:'/reading/',title:'Make your Atlas your own',text:'Open a reward collection to choose banners, titles and profile frames as you level up. Eligible exclusive rewards appear here too. On iOS, some milestones also unlock an app icon. Your appearance carries into your profile and Friends.',section:'atlas',rewards:true,selector:'[data-reward-category="banners"] > summary'},
-    {path:'/reading/',title:'Learn alongside friends',text:'Friends is optional. Sign in and choose a display name and avatar, then share your friend code. Accepted friends can compare progress. You can report or block a profile at any time.',section:'friends',selector:'#maAccount-friends'},
+    {path:'/progress/',title:'See your goals grow',text:'Progress rotates daily and weekly goals across recall, variety and completed practice. Completing goals adds XP alongside your answers.',selector:'.ma-routine-goal'},
+    {path:'/progress/',title:'Make your Atlas your own',text:'Open a reward collection to choose banners, titles and profile frames as you level up. Eligible exclusive rewards appear here too. On iOS, some milestones also unlock an app icon. Your appearance carries into your profile and Friends.',rewards:true,selector:'[data-reward-category="banners"] > summary'},
+    {path:'/friends/',title:'Learn alongside friends',text:'Friends is optional. Sign in and choose a display name and avatar, then share your friend code. Accepted friends can compare progress. You can report or block a profile at any time.',selector:'.ma-social'},
     {path:'/reading/',title:'Find your preferences here',text:'Settings keeps appearance, sound, saved data and support together. You can replay this tour here any time.',section:'settings',selector:'.ma-theme-panel'}
   ];
   function save(){try{sessionStorage.setItem(key,JSON.stringify(state));}catch{}}
@@ -62,8 +62,8 @@
     if(step.section){
       for(let attempt=0;attempt<60&&!document.getElementById('maAccountSheet');attempt++)await new Promise(resolve=>requestAnimationFrame(resolve));
       if(!state)return;root.ModeAtlasAccountNavigation?.open(step.section);
-      if(step.rewards)document.getElementById('atlasTab1')?.click();
     }
+    if(step.rewards)document.getElementById('atlasTab1')?.click();
     if(step.setup)root.ModeAtlasPracticeSetup?.setOpen(true);
     target=document.querySelector(step.selector);
     // Selectors refer to source-owned components; unavailable features are

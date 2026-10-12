@@ -9,7 +9,7 @@ import shutil
 
 
 ROOT = Path(__file__).resolve().parent
-PUBLIC_DIRS = ("assets", "kana", "reading", "writing", "results", "wordbank", "privacy", "terms")
+PUBLIC_DIRS = ("learn", "progress", "friends", "assets", "kana", "reading", "writing", "results", "wordbank", "privacy", "terms")
 PUBLIC_FILES = (
     "index.html", "default.html", "reverse.html", "kana.html", "test.html", "wordbank.html",
     "cloud-sync.js", "firebase-config.js", "sw.js", "site.webmanifest",

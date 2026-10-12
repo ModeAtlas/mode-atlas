@@ -9,7 +9,7 @@ async function launch(page,{native=true,theme='dark',width=393,share=false}={}){
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
     localStorage.setItem('maWhatsNewSeen','social-tests');localStorage.setItem('modeAtlasThemePreference',theme);
   },{native,theme,share});
-  await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.goto('/friends/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
 }
 async function prepare(page,{active=true,...layout}={}){
   await page.route('**/mode-atlas-social-config.assets-*.js',route=>route.fulfill({contentType:'text/javascript',body:"window.ModeAtlasSocialConfig={enabled:true,region:'australia-southeast1'};"}));
@@ -51,10 +51,9 @@ async function prepare(page,{active=true,...layout}={}){
       if(action==='unblock'){data.blocked=[];return {ok:true};}
       return {ok:true};
     }};
-    ModeAtlasProfile.open();
+    ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
   },active);
-  await page.getByRole('tab',{name:'Friends',exact:true}).click();
-  await expect(page.locator('#maAccountTitle')).toHaveText('Friends');
+  await expect(page.locator('.ma-hub-header h1')).toHaveText('Friends');
   await expect(page.getByText(active?'Jack · You':'Create your friends profile',{exact:true})).toBeVisible();
 }
 for(const native of [false,true])test(`${native?'iOS':'web'}: released Friends entry directs guests to the existing sign-in screen`,async({page})=>{
@@ -63,10 +62,7 @@ for(const native of [false,true])test(`${native?'iOS':'web'}: released Friends e
     if(/firebase-functions\.js|cloudfunctions\.net|\.run\.app/.test(request.url()))socialRequests.push(request.url());
   });
   await launch(page,{native,width:native?393:1280});
-  await page.locator('#profileOpenBtn').click();
-  const entry=page.getByRole('tab',{name:'Friends',exact:true});
-  if(!socialConfig.enabled){await expect(entry).toHaveCount(0);return;}
-  await entry.click();
+  if(!socialConfig.enabled){await expect(page.getByText('Friends is not available yet.',{exact:false})).toBeVisible();return;}
   await expect(page.getByText('Learn alongside friends',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Sign in',exact:true}).click();
   await expect(page.locator('#maAccount-profile')).toHaveAttribute('aria-hidden','false');
@@ -140,12 +136,11 @@ test('leaving Friends discards a delayed response without changing the next acco
   await page.getByRole('tab',{name:'Rankings',exact:true}).click();
   await page.getByRole('button',{name:'All time',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>typeof finishSocialList)).toBe('function');
-  await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();
-  await page.evaluate(()=>{finishSocialList();socialDelayList=false;});
-  await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
+  await page.goto('/progress/');
+  await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   await expect(page.locator('.ma-social')).toHaveCount(0);
   await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
-  await page.getByRole('tab',{name:'Friends',exact:true}).click();
+  await prepare(page);
   await expect(page.getByText('Jack · You',{exact:true})).toBeVisible();
 });
 
@@ -201,19 +196,13 @@ test('reporting fits a small phone and moderation actions require confirmation',
 });
 
 
-test('account reporting follows both keyboard height and viewport pan and restores page scroll',async({page})=>{
+test('report details remain editable in a short viewport without locking page scroll',async({page})=>{
   await prepare(page);
   await page.getByRole('button',{name:/桜の道/}).first().click();await page.getByRole('button',{name:'Report',exact:true}).click();
-  await page.getByLabel('Details (optional)').fill('Keyboard viewport regression.');
-  await page.evaluate(()=>{
-    window.fakeViewport=new EventTarget();Object.assign(fakeViewport,{height:390,width:393,offsetTop:180,offsetLeft:0});
-    ModeAtlasAccountNavigation.close();Object.defineProperty(window,'visualViewport',{configurable:true,value:fakeViewport});ModeAtlasAccountNavigation.open('friends');
-  });
-  await page.getByRole('button',{name:/桜の道/}).first().click();await page.getByRole('button',{name:'Report',exact:true}).click();await page.getByLabel('Details (optional)').focus();
-  const bounds=await page.locator('#maAccountSheet').boundingBox();expect(bounds.y).toBeGreaterThanOrEqual(180);expect(bounds.y+bounds.height).toBeLessThanOrEqual(570);
-  await page.evaluate(()=>{fakeViewport.offsetTop=90;fakeViewport.height=450;fakeViewport.dispatchEvent(new Event('scroll'));});
-  const moved=await page.locator('#maAccountSheet').boundingBox();expect(moved.y).toBeGreaterThanOrEqual(90);expect(moved.y+moved.height).toBeLessThanOrEqual(540);
-  await page.evaluate(()=>ModeAtlasAccountNavigation.close());expect(await page.evaluate(()=>document.body.style.position)).toBe('');
+  await page.setViewportSize({width:393,height:450});
+  const details=page.getByLabel('Details (optional)');await details.fill('Keyboard viewport regression.');await details.scrollIntoViewIfNeeded();
+  await expect(details).toBeInViewport();await expect(details).toHaveValue('Keyboard viewport regression.');
+  expect(await page.evaluate(()=>document.body.style.position)).toBe('');
 });
 
 test('staff controls show role badges, warning history and an explicit warning confirmation',async({page})=>{
@@ -228,7 +217,7 @@ test('staff controls show role badges, warning history and an explicit warning c
       if(action==='staffProfile')return {uid:'friend',displayName:'Mika',role:'moderator',canAct:true,canManage:true,count:2,history:[{id:'warning',message:'An earlier warning',at:Date.now()}]};
       return call(action,input);
     };
-    ModeAtlasAccountNavigation.close();ModeAtlasAccountNavigation.open('friends');
+    ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
   });
   await page.getByRole('button',{name:/桜の道/}).first().click();await expect(page.locator('.ma-social-self').getByText('✓ Moderator',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Moderation & warnings',exact:true}).click();
@@ -305,7 +294,7 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
         if(action==='staffProfile')return {uid:'friend',displayName:'Mika',role:'member',canAct:true,canManage:role==='admin',count:2,history:[{id:'one',message:'Please keep your profile welcoming.',at:Date.now()}]};
         return original(action,input);
       };
-      ModeAtlasAccountNavigation.close();ModeAtlasAccountNavigation.open('friends');
+      ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
     },layout.role);
     await expect(page.locator('#maSocialList .ma-social-row')).toHaveCount(6);await fits(page);
     await expect(page.locator('.ma-social-row[data-ma-banner="grove"]')).toHaveCount(1);
@@ -317,7 +306,7 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
     }
     await expect(page.getByRole('button',{name:'Review reports',exact:true})).toHaveCount(0);
     const visibleRows=await page.locator('#maSocialList').evaluate(list=>{
-      const panel=list.closest('.ma-account-view').getBoundingClientRect();
+      const panel={top:0,bottom:document.querySelector('.ma-ios-tabs')?.getBoundingClientRect().top||innerHeight};
       return [...list.children].filter(row=>{const box=row.getBoundingClientRect();return box.top>=panel.top&&box.bottom<=panel.bottom;}).length;
     });
     if(layout.width>=393)expect(visibleRows).toBeGreaterThanOrEqual(3);
@@ -342,8 +331,8 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
     await page.evaluate(()=>{window.delayWarnings=true;});
     await page.getByRole('tab',{name:'Warnings',exact:true}).click();
     await expect.poll(()=>page.evaluate(()=>typeof finishWarnings)).toBe('function');
-    await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.evaluate(()=>finishWarnings());
-    await expect(page.locator('#maModerationPanel')).toHaveCount(0);await expect(page.locator('#maAccountTitle')).toHaveText('Your Atlas');
+    await page.goto('/progress/');
+    await expect(page.locator('#maModerationPanel')).toHaveCount(0);await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   });
 }
 
@@ -357,7 +346,7 @@ test('a friend’s server-approved exclusive banner displays without granting it
     return [...row.querySelectorAll('.ma-social-person,.ma-social-score')].every(node=>node.getBoundingClientRect().right<=artLeft+1);
   })).toBe(true);
   await page.screenshot({path:info.outputPath('friend-exclusive-banner.png'),animations:'disabled'});
-  await page.getByRole('tab',{name:'Your Atlas',exact:true}).click();await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.goto('/progress/');await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);
 });
 
@@ -384,8 +373,9 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await expect(page.getByRole('group',{name:'Weekly ranking scope'}).getByRole('button')).toHaveText(['Global','Friends']);
     const summaryBox=await page.locator('.ma-weekly-summary').boundingBox();expect(summaryBox.height).toBeLessThan(260);
     if(layout.width>=393){
-      const first=await page.locator('.ma-social-row').first().boundingBox(),panel=await page.locator('#maAccount-friends').boundingBox();
-      expect(first.y+first.height).toBeLessThanOrEqual(panel.y+panel.height);
+      const first=await page.locator('.ma-social-row').first().boundingBox();
+      const bottom=await page.evaluate(()=>document.querySelector('.ma-ios-tabs')?.getBoundingClientRect().top||innerHeight);
+      expect(first.y+first.height).toBeLessThanOrEqual(bottom);
     }
     await fits(page);await page.screenshot({path:info.outputPath('weekly-board.png'),animations:'disabled'});
     await page.locator('#maSocialList').getByRole('button',{name:'Friends',exact:true}).click();
@@ -431,7 +421,7 @@ test('weekly deep links open the ladder and delayed weekly rows cannot replace F
       if(action==='weeklyList'&&window.delayWeekly)return new Promise(resolve=>{window.finishWeekly=()=>resolve(result);});
       return result;
     };
-    ModeAtlasAccountNavigation.close();history.replaceState(null,'','/?section=friends&ranking=weekly');ModeAtlasAccountNavigation.open('friends');
+    history.replaceState(null,'','/friends/?ranking=weekly');ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
   });
   await expect(page.getByRole('heading',{name:'Weekly ladder',exact:true})).toBeVisible();
   await page.getByText('Past results',{exact:true}).click();await expect(page.getByText('Week of 2026-09-21 · #4 · 840 weekly XP · No prize',{exact:true})).toBeVisible();

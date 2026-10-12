@@ -12,14 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'More room for friends and the weekly race.';
+  const WHATS_NEW_COPY = 'Keep your routine in view.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Switch between Friends and Rankings at the top of the page.',
-    'Open Rankings straight into the weekly ladder, with All time alongside it.',
-    'See your weekly rank, XP and reset time in a compact summary.',
-    'Compare Global or Friends, with rules, prizes and past results one tap away.'
+    'Widgets now focus on your study streak and goals, with a countdown when your streak needs attention.',
+    'Tap the information button beside Spaced reviews to understand what “due” means.',
+    'Preview Sakura and Midnight in the new optional shop. Purchases are not available yet; learning stays free.'
   ];
 
   function storeGet(key, fallback = '') {

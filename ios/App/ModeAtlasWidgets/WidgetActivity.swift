@@ -9,9 +9,10 @@ enum WidgetActivity {
     }
 
     static func timelineDates(since activity: Date?, at now: Date,
-                              calendar: Calendar = .current) -> [Date] {
+                              calendar: Calendar = .current, boundaries: [Date] = []) -> [Date] {
         let midnight = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))!
         var dates = Set([now, midnight])
+        dates.formUnion(boundaries.filter { $0 > now })
         if let activity = activity {
             // One state transition; do not leave the first-minute label frozen.
             let firstMinute = activity.addingTimeInterval(60)

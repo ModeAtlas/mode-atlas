@@ -218,7 +218,7 @@ test('native destination router accepts only product links and consumes a launch
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(navigations, [['replace', '/reading/?mode=daily']]);
   assert.equal(context.window.AtlasPlatform.destinationFromUrl('modeatlas://open/?section=atlas'), 'yourAtlas');
-  assert.equal(context.window.AtlasPlatform.destinationPath('yourAtlas'), '/?section=atlas');
+  assert.equal(context.window.AtlasPlatform.destinationPath('yourAtlas'), '/progress/');
   assert.equal(context.window.AtlasPlatform.destinationFromUrl('com.googleusercontent.apps.test:/oauth'), '');
   assert.equal(context.window.AtlasPlatform.destinationFromUrl('https://evil.example/reading/?mode=daily'), '');
   openUrl({ url:'modeatlas://open/reading?mode=review' });

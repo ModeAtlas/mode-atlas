@@ -7,6 +7,7 @@ const {createIdentityStore,mayUseName,accountPhoto}=require('./identity.cjs');
 const {createModeration}=require('./moderation.cjs');
 const {createStaff}=require('./staff.cjs');
 const {createRewards}=require('./rewards.cjs');
+const {createCommerce}=require('./commerce.cjs');
 const {createWeekly,active:weeklyActive}=require('./weekly.cjs');
 const {createNotifications}=require('./notifications.cjs');
 const rewardRules=require('./shared/mode-atlas-reward-rules.js');
@@ -62,6 +63,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
   const staff=createStaff({db,auth,now});
   const moderation=createModeration({db,identities,staff,now});
   const rewards=createRewards({db,now});
+  const commerce=createCommerce({db});
   const weekly=createWeekly({db,now});
   const notifications=createNotifications({db,messaging,weekly,now});
   async function decorate(profiles){
@@ -78,7 +80,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(marker.exists && createdAt<=marker.data().at)fail('unauthenticated','This account has been deleted.');
   }
   async function limit(uid,action,createdAt){
-    const bucket=action==='lookup' || action==='sendRequest'?'lookup':['rewards','state','list','profile','weeklyState','weeklyList','notificationState','accountNotices','staffProfile','listWarnings','listModerators','listReports','listRestrictions'].includes(action)?'read':'write';
+    const bucket=action==='lookup' || action==='sendRequest'?'lookup':['shop','rewards','state','list','profile','weeklyState','weeklyList','notificationState','accountNotices','staffProfile','listWarnings','listModerators','listReports','listRestrictions'].includes(action)?'read':'write';
     const max={lookup:12,read:60,write:30}[bucket],at=now();
     await db.runTransaction(async tx=>{
       const ref=limits.doc(uid),[doc,marker]=await tx.getAll(ref,deletionRef(uid)),data=doc.data()||{};
@@ -305,7 +307,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     const id=await beginErase(uid);await weekly.syncAccount(uid);await cleanup(uid,id);
     // Opting out must not reset rate limits. Auth deletion removes them too.
     if(deletedAccount && validUid(uid)){
-      await Promise.all([weekly.erase(uid),notifications.erase(uid),rewards.erase(uid),staff.erase(uid),db.doc('socialWarnings/'+uid).delete(),limits.doc(uid).delete(),db.doc('socialRestrictions/'+uid).delete(),db.doc('socialReportLimits/'+uid).delete()]);
+      await Promise.all([weekly.erase(uid),notifications.erase(uid),rewards.erase(uid),commerce.erase(uid),staff.erase(uid),db.doc('socialWarnings/'+uid).delete(),limits.doc(uid).delete(),db.doc('socialRestrictions/'+uid).delete(),db.doc('socialReportLimits/'+uid).delete()]);
       for(const field of ['target','reporter'])while(true){
         const found=await db.collection('socialReports').where(field,'==',uid).limit(100).get();if(found.empty)break;
         const batch=db.batch();found.docs.forEach(doc=>batch.delete(doc.ref));await batch.commit();
@@ -322,12 +324,13 @@ function createSocial({db,auth,messaging,now=Date.now}){
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
+    const actions=['shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
-    if(['rewards','state','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
+    if(['shop','rewards','state','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
     if(action==='rewards')return rewards.read(user);
+    if(action==='shop')return commerce.state(uid);
     if(action==='notificationState')return notifications.state(uid);
     if(action==='configureNotifications')return notifications.configure(uid,data);
     if(action==='unregisterNotifications')return notifications.unregister(uid,data);

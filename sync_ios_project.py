@@ -74,6 +74,27 @@ def sync_privacy_resources(source: str) -> str:
     return source
 
 
+def sync_document_router_source(source: str) -> str:
+    """Include the native route owner when retaining a locally signed project."""
+    name = 'ModeAtlasRouter.swift'
+    ref, build = '289100000000000000000001', '289100000000000000000002'
+    if not re.search(rf'{ref}[^\n]*= ', source):
+        source = source.replace('/* End PBXFileReference section */', f'\t\t{ref} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {name}; sourceTree = "<group>"; }};\n/* End PBXFileReference section */')
+    if not re.search(rf'{build}[^\n]*= ', source):
+        source = source.replace('/* End PBXBuildFile section */', f'\t\t{build} /* {name} in Sources */ = {{isa = PBXBuildFile; fileRef = {ref} /* {name} */; }};\n/* End PBXBuildFile section */')
+    for owner, field, item in [('504EC3061FED79650016851F', 'children', ref), ('504EC3001FED79650016851F', 'files', build)]:
+        pattern = rf'(^[ \t]*{owner}(?: /\*[^\n]*?\*/)? = \{{[^{{}}]*?{field} = \()([^)]*)(\))'
+        def include(match):
+            entries = match.group(2)
+            if item not in entries:
+                entries = entries.rstrip() + f'\n\t\t\t\t{item} /* {name} */,\n\t\t\t'
+            return match.group(1) + entries + match.group(3)
+        source, count = re.subn(pattern, include, source, count=1, flags=re.S | re.M)
+        if count != 1:
+            raise SystemExit(f'Could not locate iOS router source owner {owner}; project left unchanged.')
+    return source
+
+
 def sync() -> tuple[str, int, bool]:
     version = release_version()
     build = ios_build_number()
@@ -121,6 +142,7 @@ def sync() -> tuple[str, int, bool]:
     if updated.count(f"GOOGLE_REVERSED_CLIENT_ID = {reversed_client_id};") != 2:
         raise SystemExit("Could not synchronize the Firebase callback scheme in both Xcode configurations.")
 
+    updated = sync_document_router_source(updated)
     updated = sync_privacy_resources(updated)
     updated = sync_auth_entitlements(updated)
     info_path = ROOT / 'ios/App/App/Info.plist'

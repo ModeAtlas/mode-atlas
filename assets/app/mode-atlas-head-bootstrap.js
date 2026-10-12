@@ -15,6 +15,17 @@
     (typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform())
     || (nativePlatform && nativePlatform !== 'web')
   ));
+  // Opt in before the first render so incoming native page transitions never
+  // depend on deferred chrome setup. Animation styling stays in iOS chrome CSS.
+  if(isNativeApp && nativePlatform === 'ios'){
+    var nativeTransitions=document.createElement('style');
+    nativeTransitions.textContent='@view-transition{navigation:auto}';
+    document.head.appendChild(nativeTransitions);
+    // A fast second navigation can skip an animation; routing still succeeds.
+    for(const eventName of ['pageswap','pagereveal'])window.addEventListener(eventName,event=>{
+      event.viewTransition?.ready.catch(()=>{});
+    });
+  }
   var isLocalFile = protocol === 'file:';
   var isLocalhost = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(host || '');
   var isLocalServer = isLocalhost && (protocol === 'http:' || protocol === 'https:');
@@ -32,8 +43,8 @@
   function getPageName(){
     var path = (location.pathname || '/').replace(/\/+$/, '/');
 
-    var routes = {kana:'kana.html',reading:'default.html',writing:'reverse.html',results:'test.html',wordbank:'wordbank.html',privacy:'privacy.html',terms:'terms.html',achievements:'achievements.html'};
-    var match = path.match(/\/(kana|reading|writing|results|wordbank|privacy|terms|achievements)(?:\/(?:index\.html)?)?$/i);
+    var routes = {learn:'learn.html',progress:'progress.html',friends:'friends.html',kana:'kana.html',reading:'default.html',writing:'reverse.html',results:'test.html',wordbank:'wordbank.html',privacy:'privacy.html',terms:'terms.html',achievements:'achievements.html'};
+    var match = path.match(/\/(learn|progress|friends|kana|reading|writing|results|wordbank|privacy|terms|achievements)(?:\/(?:index\.html)?)?$/i);
     if (match) return routes[match[1].toLowerCase()];
 
     return (path.split('/').filter(Boolean).pop() || 'index.html').toLowerCase();

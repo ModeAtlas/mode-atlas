@@ -226,6 +226,20 @@ jobs:
           swiftc ios/App/Shared/ModeAtlasDestination.swift ios/App/Shared/ModeAtlasStudyIntent.swift tests/native/NavigationIntentTests.swift -o "${RUNNER_TEMP}/navigation-intent-tests"
           "${RUNNER_TEMP}/navigation-intent-tests"
 
+      - name: Test native document routing against the shipped web bundle
+        run: |
+          # Compile the installed SDK's real Router source; no substitute router.
+          mkdir -p "${RUNNER_TEMP}/mode-atlas-router-tests"
+          swiftc -parse-as-library -emit-module -emit-object -module-name Capacitor \
+            node_modules/@capacitor/ios/Capacitor/Capacitor/Router.swift \
+            -emit-module-path "${RUNNER_TEMP}/mode-atlas-router-tests/Capacitor.swiftmodule" \
+            -o "${RUNNER_TEMP}/mode-atlas-router-tests/CapacitorRouter.o"
+          swiftc -I "${RUNNER_TEMP}/mode-atlas-router-tests" \
+            "${RUNNER_TEMP}/mode-atlas-router-tests/CapacitorRouter.o" \
+            ios/App/App/ModeAtlasRouter.swift tests/native/DocumentRouterTests.swift \
+            -o "${RUNNER_TEMP}/document-router-tests"
+          "${RUNNER_TEMP}/document-router-tests" ios/App/App/public
+
       - name: Build iPhone/iPad simulator target
         run: |
           xcodebuild -project ios/App/App.xcodeproj \
@@ -246,6 +260,7 @@ jobs:
             -derivedDataPath "${RUNNER_TEMP}/ModeAtlasReleaseData" \
             CODE_SIGNING_ALLOWED=NO archive
           python3 validate_ios_archive.py "${RUNNER_TEMP}/ModeAtlas.xcarchive/Products/Applications/App.app"
+          "${RUNNER_TEMP}/document-router-tests" "${RUNNER_TEMP}/ModeAtlas.xcarchive/Products/Applications/App.app/public"
 
       - name: Verify native product metadata
         shell: bash
@@ -258,7 +273,7 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "$expected_version"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "$expected_build"
           test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$app_path/Info.plist")" = "18.0"
-          for icon in Grove Summit Horizon; do
+          for icon in $(node -p "require('./assets/app/mode-atlas-reward-rules.js').icons.filter(item=>item.icon).map(item=>item.icon).join(' ')"); do
             test "$(/usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundleAlternateIcons:$icon:CFBundleIconName" "$app_path/Info.plist")" = "$icon"
           done
           test -d "$app_path/Metadata.appintents"
@@ -285,3 +300,13 @@ jobs:
           PY
           google_scheme="$(/usr/libexec/PlistBuddy -c 'Print :REVERSED_CLIENT_ID' "$app_path/GoogleService-Info.plist")"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:1:CFBundleURLSchemes:0' "$app_path/Info.plist")" = "$google_scheme"
+
+  deploy-website:
+    name: Publish validated website
+    needs: [release-check, social-backend-check, ios-native-build]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy-pages.yml

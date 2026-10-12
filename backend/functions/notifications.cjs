@@ -22,10 +22,11 @@ function evening(save,preferences,timeZone,at,schedule){
 }
 function createNotifications({db,messaging,weekly,now=Date.now}){
   const accounts=db.collection('notificationAccounts'),devices=db.collection('notificationDevices');
-  async function state(uid){const doc=await accounts.doc(uid).get();return {preferences:{...blank(),...doc.data()?.preferences},schedule:timing.normalize(doc.data()?.schedule)};}
+  async function state(uid){const doc=await accounts.doc(uid).get();return {preferences:{...blank(),...doc.data()?.preferences},schedule:timing.normalize(doc.data()?.schedule),timeZone:doc.data()?.timeZone||null};}
   async function configure(uid,data){
-    if(!data||Object.keys(data).some(key=>!['preferences','token','timeZone','schedule','localReminder'].includes(key))||!data.preferences||Object.keys(data.preferences).length!==kinds.length||kinds.some(key=>typeof data.preferences[key]!=='boolean'))throw new HttpsError('invalid-argument','Choose valid notification preferences.');
+    if(!data||Object.keys(data).some(key=>!['preferences','token','timeZone','schedule','localReminder','updateTimeZone'].includes(key))||!data.preferences||Object.keys(data.preferences).length!==kinds.length||kinds.some(key=>typeof data.preferences[key]!=='boolean'))throw new HttpsError('invalid-argument','Choose valid notification preferences.');
     if(data.schedule!==undefined&&!timing.valid(data.schedule))throw new HttpsError('invalid-argument','Choose times in 15-minute steps and an alert time outside quiet hours.');
+    if(data.updateTimeZone!==undefined&&typeof data.updateTimeZone!=='boolean')throw new HttpsError('invalid-argument','Choose a valid time-zone update.');
     const local=data.localReminder;
     if(local!==undefined&&(!local||Object.keys(local).length!==3||typeof local.enabled!=='boolean'||!Number.isInteger(local.hour)||local.hour<0||local.hour>23||!Number.isInteger(local.minute)||local.minute<0||local.minute>59))throw new HttpsError('invalid-argument','Choose a valid daily reminder.');
     const enabled=kinds.some(key=>data.preferences[key]),timeZone=String(data.timeZone||'');
@@ -38,13 +39,14 @@ function createNotifications({db,messaging,weekly,now=Date.now}){
       const previous=old.data()||{},id=enabled&&token?hash(token):null;
       const oldDevice=id?(await tx.get(devices.doc(id))).data():null;
       const schedule=timing.normalize(data.schedule??previous.schedule);
+      const accountTimeZone=data.updateTimeZone===true||!previous.timeZone?timeZone:previous.timeZone;
       if(enabled&&!id&&kinds.some(key=>data.preferences[key]&&!previous.preferences?.[key]))throw new HttpsError('invalid-argument','Register this iPhone for notifications first.');
       const devicesByTime={...previous.devices,...(id?{[id]:now()}:{})};
       const kept=Object.fromEntries(Object.entries(devicesByTime).sort((a,b)=>b[1]-a[1]).slice(0,5));
-      tx.set(ref,{...previous,preferences:data.preferences,timeZone,schedule,enabled,devices:kept,updatedAt:now()});
-      if(id)tx.set(devices.doc(id),{uid,token,localReminder:local||(oldDevice?.uid===uid&&oldDevice.localReminder)||{enabled:false,hour:19,minute:0},updatedAt:now(),expiresAt:new Date(now()+30*86400000)});
+      tx.set(ref,{...previous,preferences:data.preferences,timeZone:accountTimeZone,schedule,enabled,devices:kept,updatedAt:now()});
+      if(id)tx.set(devices.doc(id),{uid,token,timeZone,localReminder:local||(oldDevice?.uid===uid&&oldDevice.localReminder)||{enabled:false,hour:19,minute:0},updatedAt:now(),expiresAt:new Date(now()+30*86400000)});
       // A token has exactly one owner even when accounts share the same iPhone.
-      return {preferences:data.preferences,schedule};
+      return {preferences:data.preferences,schedule,timeZone:accountTimeZone};
     });
   }
   async function unregister(uid,data){
@@ -72,7 +74,7 @@ function createNotifications({db,messaging,weekly,now=Date.now}){
       }
       notice.expiresAt=Math.min(notice.expiresAt,timing.expiresAt(now(),value.timeZone,value.schedule,!notice.kind));
       const ids=Object.keys(value.devices||{}),records=ids.length?await tx.getAll(...ids.map(id=>devices.doc(id))):[];
-      const active=records.filter(doc=>doc.data()?.uid===uid&&doc.data().expiresAt.toMillis()>now()&&(notice.kind||!timing.overlaps(doc.data().localReminder,value.schedule))).map(doc=>({id:doc.id,token:doc.data().token}));
+      const active=records.filter(doc=>doc.data()?.uid===uid&&doc.data().expiresAt.toMillis()>now()&&(notice.kind||!timing.overlaps(doc.data().localReminder,value.schedule,now(),doc.data().timeZone||value.timeZone,value.timeZone))).map(doc=>({id:doc.id,token:doc.data().token}));
       if(!active.length)return [];
       // Claim before sending: a scheduler retry never creates a second alert.
       // A crash after this claim may miss an alert; it cannot spam the learner.

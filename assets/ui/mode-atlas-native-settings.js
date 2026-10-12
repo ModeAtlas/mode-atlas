@@ -21,7 +21,11 @@
     const schedule=root.ModeAtlasNotificationRules.normalize(state.alerts?.schedule);
     for(const [key]of timingFields){const control=$('maAlertTime-'+key);control.value=`${pad(Math.floor(schedule[key]/60))}:${pad(schedule[key]%60)}`;control.disabled=busy||!state.alerts?.signedIn||!!state.alerts?.error||!state.alerts?.supported;}
     $('maSaveAlertTimes').disabled=busy||!state.alerts?.signedIn||!!state.alerts?.error||!state.alerts?.supported;
-    $('maAccountAlertsStatus').textContent=state.alerts?.error?'Connect to refresh your notification preferences.':!state.alerts?.signedIn?'Sign in to choose account notifications.':!state.alerts?.supported?'Push notifications are unavailable in this build.':'Goal and streak alerts arrive within two hours of your chosen time, only when needed and outside quiet hours. Rank changes are limited to one alert a day. All times follow this device’s time zone. Goal and streak alerts are skipped on this iPhone when its daily reminder is within an hour.';
+    const deviceZone=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC',accountZone=state.alerts?.timeZone||deviceZone;
+    $('maAlertTimeZone').textContent=`Account alert times and quiet hours use ${accountZone.replaceAll('_',' ')}. The daily reminder follows this device.`;
+    $('maUseDeviceTimeZone').hidden=accountZone===deviceZone;
+    $('maUseDeviceTimeZone').disabled=$('maSaveAlertTimes').disabled;
+    $('maAccountAlertsStatus').textContent=state.alerts?.error?'Connect to refresh your notification preferences.':!state.alerts?.signedIn?'Sign in to choose account notifications.':!state.alerts?.supported?'Push notifications are unavailable in this build.':'Goal and streak alerts arrive within two hours of your chosen time when needed. Rank changes are limited to one alert a day. Quiet hours apply to all account alerts. Goal and streak alerts are skipped on devices with a daily reminder within an hour.';
     status(!state.supported?'Reminders are unavailable in this build.':'');
   }
   async function refresh(){
@@ -57,6 +61,8 @@
           <label class="ma-native-preference" for="maReminderTime"><span>Reminder time</span><input id="maReminderTime" type="time" value="19:00" aria-describedby="maReminderStatus" disabled></label>
           ${alertKinds.map(([key,label])=>`<label class="ma-native-preference" for="maAlert-${key}"><span>${label}</span><input id="maAlert-${key}" type="checkbox" role="switch" aria-describedby="maAccountAlertsStatus" disabled></label>`).join('')}
           ${timingFields.map(([key,label])=>`<label class="ma-native-preference" for="maAlertTime-${key}"><span>${label}</span><input id="maAlertTime-${key}" type="time" step="900" required disabled></label>`).join('')}
+          <p id="maAlertTimeZone" class="ma-setting-row__description"></p>
+          <button type="button" class="ma-button ma-button--ghost" id="maUseDeviceTimeZone" hidden>Use this device’s time zone for account alerts</button>
           <button type="button" class="ma-button" id="maSaveAlertTimes" disabled>Save alert times</button>
           <p id="maAccountAlertsStatus" class="ma-setting-row__description"></p>
           <div class="ma-action-row"><button type="button" class="ma-button" id="maNotificationSettings">Open iPhone Settings</button></div>
@@ -76,6 +82,7 @@
         const schedule=Object.fromEntries(timingFields.map(([key])=>{const value=$('maAlertTime-'+key).value.split(':').map(Number);return [key,value.length===2?value[0]*60+value[1]:NaN];}));
         change(()=>root.ModeAtlasNotifications.configure(state.alerts.preferences,schedule),'Alert times saved.');
       });
+      $('maUseDeviceTimeZone').addEventListener('click',()=>change(()=>root.ModeAtlasNotifications.configure(state.alerts.preferences,state.alerts.schedule,{updateTimeZone:true}),'Account alert time zone updated.'));
       $('maNotificationSettings').addEventListener('click',()=>change(()=>root.AtlasPlatform.openNotificationSettings(),result=>result.opened?'':'Could not open iPhone Settings.'));
       document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
       root.addEventListener('modeAtlasEngagementChanged',refresh);

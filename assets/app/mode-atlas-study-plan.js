@@ -38,13 +38,24 @@
       const routine=root.ModeAtlasProgress.weeklyRecap();
       mode=routine.todayReading>=10?'writing':'reading';
     }
-    const params=new URLSearchParams({practice:'20',hints:'off'});
+    const params=new URLSearchParams({practice:'20'});
+    if(goal.assisted){params.set('starter','starter');params.set('hints','on');}
+    else if(['kana.independent','kana.streak','kana.precise','kana.tests','kana.broad'].includes(goal.metric))params.set('hints','off');
     if(goal.metric==='kana.daily'){params.delete('practice');params.set('mode','daily');}
     if(goal.metric==='kana.tests'){params.delete('practice');params.set('mode','test');}
     let chars;
-    if(['kana.broad','kana.hiragana'].includes(goal.metric))chars=root.ModeAtlasKanaData.collections.hiragana;
+    if(goal.metric==='kana.broad'||(goal.metric==='kana.hiragana'&&!goal.assisted))chars=root.ModeAtlasKanaData.collections.hiragana;
     if(goal.metric==='kana.katakana')chars=root.ModeAtlasKanaData.collections.katakana;
     if(goal.metric==='kana.variety')chars=goal.target>46?[...root.ModeAtlasKanaData.collections.hiragana,...root.ModeAtlasKanaData.collections.katakana]:root.ModeAtlasKanaData.collections.hiragana;
+    if(goal.planVersion===1){
+      const seen=[...new Set(Object.values(root.ModeAtlasProgress.readState().activity).flatMap(row=>row.kana))];
+      if(chars){
+        const relevant=seen.filter(kana=>chars.includes(kana));
+        const minimum=goal.metric==='kana.variety'?goal.target:goal.metric==='kana.broad'?45:1;
+        chars=relevant.length>=minimum?relevant:chars.slice(0,goal.assisted?5:chars.length);
+        params.delete('starter');
+      }
+    }
     if(chars)params.set('kana',chars.join(','));
     return {href:`/${mode}/?${params}`,label:goal.metric==='kana.daily'?'Open Daily Challenge':goal.metric==='kana.tests'?'Open formal test':`Practise ${mode==='writing'?'Writing':'Reading'}`};
   }

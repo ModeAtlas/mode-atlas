@@ -1,3 +1,33 @@
+## 2.90.0 - 2026-10-06
+
+- Replace Learn's stacked branch cards and boxed button grids with an open suggested-session area and simple Reading, Writing and Results rows. Keep Kana Overview and Word Bank directly accessible.
+- Use the existing green Reading / blue Writing identity, shared icons, restrained kana artwork and clear touch targets. Put the session action in one place and remove the repeated introductory paragraph.
+- Keep the same shared study recommendation, routes and saved progress. Adapt the open layout for phones, tablets, desktop and larger text; keep planned branches in one quiet disclosure.
+- Extend the existing navigation check to cover the new layout, recommendation updates, readable large text and a direct Writing review launch. No Firebase deployment or native configuration change is required beyond the normal sync/build.
+
+
+## 2.91.0 — Study routine widgets, review help and optional shop
+
+- Home Screen and Lock Screen widgets prioritise the app-wide study streak and goals. At-risk streaks show a live countdown to local midnight; completed study days say “Safe for today”. Calendar-aware expiry handles daylight saving and stale snapshots.
+- Progress adds an accessible information popup beside Spaced reviews. Due counts refresh from the shared review owner after local or cloud changes.
+- A cosmetic shop previews Sakura and Midnight banners, titles/frames and native app icons. Existing level rewards and all current learning remain free. Granted looks can be equipped without affecting XP or achievements.
+- The shop catalogue supports future direct purchases and Atlas Tokens. Its private, account-bound wallet is read-only; purchases, token credits and spending are not enabled. Account deletion removes the wallet and its nested records.
+- iOS build 2080013. Deploy the updated social backend before checking wallet access and shared premium cosmetics. No new Apple capabilities or signing profiles.
+
+## 2.89.1 - 2026-10-05
+
+- Fix Learn, Progress and Friends loading the unstyled homepage in the installed iOS app. Resolve clean URLs from the actual bundled documents instead of maintaining a separate native page allowlist.
+- Exercise the production Swift router and the installed Capacitor routing implementation against every bundled page and its script/style references, including the final Release archive. Retain coverage of fallback assets and future nested pages.
+- Include the native route source when synchronizing a Mac checkout that retains local signing settings. No Firebase, account, learning-data or website behavior change.
+
+## 2.89.0 - 2026-10-05
+
+- Keep Atlas, Learn, Progress and Friends available as stable primary destinations on web and iOS. Move Progress and Friends out of the account sheet into shared pages; keep Profile and Settings together behind the avatar.
+- Gather Kana and Word Bank entry points in Learn, including one recommended session. Keep Reading, Writing and Results in the Kana page navigation, and update tours, reminder/widget routes and old account links.
+- Assign goals from demonstrated study experience and the remaining week. Freeze each period's plan, preserve already-active legacy goals, converge offline assignments and prevent multiple awards for the same goal slot. Keep the existing save version and claim format compatible.
+- Preserve an explicit account alert time zone across device reconnects. Show it in Settings and allow a deliberate update to this device's zone. Compare reminder overlap across device and account zones; the daily reminder remains local to its device.
+- Publish the website only after browser/shared-code, Firebase and native release jobs pass for the same main-branch commit. Development branches remain validation-only.
+
 ## 2.88.0 - 2026-10-04
 
 - Move Friends / Rankings to the top of the shared screen and show the editable Friends profile only in Friends.
