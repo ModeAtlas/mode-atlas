@@ -31,7 +31,12 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
     const shop=page.getByRole('tabpanel',{name:'Shop',exact:true});await expect(shop).toBeVisible();
     await expect(shop).toContainText('Purchases aren’t available yet.');
     await expect(shop.locator('[data-ma-token-balance]')).toHaveText('Sign in to view your balance');
-    for(const tile of await shop.locator('[data-ma-shop-product]').all())await expect(tile).not.toHaveCSS('background-image','none');
+    for(const tile of await shop.locator('[data-ma-shop-product]').all()){
+      await expect(tile).not.toHaveCSS('background-image','none');
+      const foreground=await tile.evaluate(node=>getComputedStyle(node).color);
+      await expect(tile.locator('.ma-shop-product__name')).toHaveCSS('color',foreground);
+      await expect(tile.locator('.ma-shop-product__name')).toHaveCSS('-webkit-text-fill-color',foreground);
+    }
     for(const frame of await shop.locator('[data-ma-frame]').all())await expect(frame).not.toHaveCSS('box-shadow','none');
     const before=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),appearance:ModeAtlasProgress.readState().appearance}));
     await shop.getByRole('button',{name:'Preview Sakura collection'}).click();
