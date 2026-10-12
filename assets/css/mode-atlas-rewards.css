@@ -74,9 +74,9 @@
 [data-ma-frame="summit"]{--ma-frame-color:var(--ma-rank-3);}
 [data-ma-frame="lantern"]{--ma-frame-color:var(--ma-rank-4);}
 [data-ma-frame="horizon"]{--ma-frame-color:var(--ma-rank-5);}
-[data-ma-frame="sakura"]{--ma-frame-color:light-dark(#a8366a,#efa4c1);}
-[data-ma-frame="midnight"]{--ma-frame-color:light-dark(#5756b8,#b4b0f5);}
-[data-ma-frame]:not([data-ma-frame="plain"]){box-shadow:0 0 0 2px var(--ma-surface-strong),0 0 0 4px var(--ma-frame-color);}
+[data-ma-frame="sakura"]{--ma-frame-color:color-mix(in srgb,#c8588b 70%,var(--ma-text-strong));}
+[data-ma-frame="midnight"]{--ma-frame-color:color-mix(in srgb,#8378ce 70%,var(--ma-text-strong));}
+[data-ma-frame]:not([data-ma-frame="plain"]){box-shadow:0 0 0 2px var(--ma-card),0 0 0 4px var(--ma-frame-color);}
 .ma-atlas-icons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
 .ma-atlas-icon-choice{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;padding:10px 6px;border:1px solid var(--ma-border);border-radius:16px;color:var(--ma-text);background:var(--ma-card);font:inherit;cursor:pointer;}
 .ma-atlas-icon-choice img,.ma-atlas-icon-choice__original{width:52px;height:52px;border-radius:13px;}

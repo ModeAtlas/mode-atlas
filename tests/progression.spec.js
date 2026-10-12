@@ -29,13 +29,15 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
     const shop=page.getByRole('tabpanel',{name:'Shop',exact:true});await expect(shop).toBeVisible();
     await expect(shop).toContainText('Purchases aren’t available yet.');
     await expect(shop.locator('[data-ma-token-balance]')).toHaveText('Sign in to view your balance');
+    for(const frame of await shop.locator('[data-ma-frame]').all())await expect(frame).not.toHaveCSS('box-shadow','none');
     const before=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),appearance:ModeAtlasProgress.readState().appearance}));
     await shop.getByRole('button',{name:'Preview Sakura collection'}).click();
     await expect(page.locator('.ma-dialog__title')).toHaveText('Sakura');
     await expect(page.getByRole('button',{name:'Use banner & frame'})).toHaveCount(0);
     await expect(page.locator('.ma-shop-includes img')).toBeVisible();
     expect(await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),appearance:ModeAtlasProgress.readState().appearance}))).toEqual(before);
-    await page.screenshot({path:testInfo.outputPath('shop-preview.png')});
+    await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');
+    await page.screenshot({path:testInfo.outputPath('shop-preview.png'),animations:'disabled'});
     await page.keyboard.press('Escape');await expect(shop.getByRole('button',{name:'Preview Sakura collection'})).toBeFocused();
     await shop.getByRole('button',{name:'About Atlas Tokens'}).click();await expect(page.locator('.ma-dialog__message')).toContainText('separate from earned XP');await page.getByRole('button',{name:'Got it',exact:true}).click();
     await page.screenshot({path:testInfo.outputPath('shop.png'),fullPage:true});
@@ -60,9 +62,10 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
       });
       await expect(page.getByRole('link',{name:'Review Reading · 7 due',exact:true})).toBeVisible();
       await expect(page.getByRole('link',{name:'Review Writing · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
+      await expect(page.locator('.ma-toast')).toHaveCount(0);
       const help=page.getByRole('button',{name:'About due reviews'});await help.click();
       await expect(page.locator('.ma-dialog__message')).toContainText('Reading and Writing have separate schedules');
-      await expect(page.locator('.ma-dialog__message')).toContainText('not deadlines');await page.screenshot({path:testInfo.outputPath('review-help.png')});
+      await expect(page.locator('.ma-dialog__message')).toContainText('not deadlines');await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');await page.screenshot({path:testInfo.outputPath('review-help.png'),animations:'disabled'});
       await page.keyboard.press('Escape');await expect(help).toBeFocused();
       await page.evaluate(()=>{ModeAtlasStorage.writeModeJSON('reading','srs',{});dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));});
       await expect(page.getByRole('link',{name:'Review Reading · 7 due',exact:true})).toHaveCount(0);
