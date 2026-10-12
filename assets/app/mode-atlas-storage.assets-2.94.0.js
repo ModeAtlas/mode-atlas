@@ -142,6 +142,7 @@
     'modeAtlasCloudAccessState',
     'modeAtlasRewardAccess',
     'modeAtlasShopState',
+    'modeAtlasSocialProfile',
     'modeAtlasInstallPromptDismissedAt',
     'modeAtlasInstallPromptSeen',
     'modeAtlasLastCloudErrorAt',

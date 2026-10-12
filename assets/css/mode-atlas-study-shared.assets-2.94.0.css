@@ -1065,7 +1065,7 @@ body.ma-writing-page{
   border:1px solid color-mix(in srgb,var(--ma-trainer-accent) 18%,var(--ma-border));
   border-radius:20px;
   box-shadow:var(--ma-shadow),0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 6%,transparent);
-  padding:24px 30px 145px;
+  padding:24px 30px;
   text-align:center;
   position:relative;
 }
@@ -1361,6 +1361,10 @@ body[data-effective-display-mode="phone"].study-nav-hidden .ma-trainer-side-pane
 /* Setup and active practice are distinct visual states. The shared trainer
    visibility owner toggles body.trainer-session-active; presentation consumes
    that state directly instead of re-deriving session state from DOM shape. */
+html:not([data-ma-runtime="ios"]) body:is(.ma-reading-page,.ma-writing-page)[data-effective-display-mode="desktop"]{padding-bottom:64px;}
+html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.trainer-session-active) .ma-trainer-prompt-wrap{min-height:110px;}
+html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.trainer-session-active) .ma-trainer-prompt-wrap :is(.hiragana,.prompt){font-size:96px;}
+html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.trainer-session-active) :is(.hint,.combo-tier-notice):empty{display:none;}
 .ma-trainer-header{
   display:grid;
   justify-items:center;

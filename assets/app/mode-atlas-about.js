@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'Make more of your Atlas.';
+  const WHATS_NEW_COPY = 'A more consistent Atlas.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Spend Atlas Coins on Sakura and Midnight collections, including new app-wide themes.',
-    'Find your owned looks and Streak Freeze or Repair items in Progress → Rewards.',
-    'Home Screen widgets bring your level, XP, streak, goals and weekly ranking together.'
+    'Mastery now checks your overall accuracy and response time alongside spaced recall.',
+    'Your chosen theme and profile image follow you between pages, with new Sakura banner artwork.',
+    'Practice navigation stays in view on web, and widget streak countdowns use minutes instead of seconds.'
   ];
 
   function storeGet(key, fallback = '') {

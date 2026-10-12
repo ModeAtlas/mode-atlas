@@ -23,10 +23,10 @@ struct StudyAccessoryView: View {
                     .accessibilityLabel(routine.available ? "Study streak: \(routine.streak) days. \(routine.needsStudy ? "Study today to keep it going." : routine.status)" : routine.status)
             case .accessoryInline:
                 if routine.needsStudy, let end = routine.expiresAt, end > entry.date {
-                    let timer = Text(timerInterval: entry.date...end, countsDown: true, showsHours: true)
+                    let timer = StudyStreakStatus.countdown(until: end, at: entry.date)
                     Text("Streak: \(routine.streak) · ends in \(timer)")
                 } else {
-                    Text(routine.available ? "Streak: \(routine.streak) · \(routine.studiedToday ? "safe today" : "start today")" : "Open to update streak")
+                    Text(routine.available ? "Streak: \(routine.streak) · \(routine.studiedToday ? "studied today" : "start today")" : "Open to update streak")
                 }
             default:
                 VStack(alignment: .leading, spacing: 2) {

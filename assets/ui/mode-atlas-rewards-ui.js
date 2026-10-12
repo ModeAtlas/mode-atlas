@@ -18,6 +18,7 @@
     const item=appearance(),selectedBanner=banner(),summary=root.ModeAtlasProgress.getSummary(),routine=root.ModeAtlasProgress.routine();
     const title=document.getElementById('profileAtlasTitle');if(title)title.textContent=item.title;
     document.querySelectorAll('#profileAvatar,#topProfileDot,[data-ma-selected-avatar]').forEach(node=>{node.dataset.maFrame=item.frame;});
+    document.querySelectorAll('[data-ma-selected-avatar]').forEach(renderAvatar);
     document.querySelectorAll('[data-ma-selected-title]').forEach(node=>{node.textContent=item.title;});
     document.querySelectorAll('[data-ma-selected-banner]').forEach(node=>{node.dataset.maBanner=selectedBanner.id;});
     document.querySelectorAll('.ma-atlas-banner-choice').forEach(node=>{
@@ -62,9 +63,13 @@
   }
   function avatar(item){
     const node=el('span','ma-atlas-avatar');node.dataset.maFrame=item.frame;node.setAttribute('aria-hidden','true');
-    const source=root.KanaCloudSync?.getUser?.()?.photoURL||document.querySelector('#topProfileDot img')?.getAttribute('src');
-    if(source){const image=el('img');image.src=source;image.alt='';node.append(image);}else node.textContent='あ';
+    renderAvatar(node);
     return node;
+  }
+  function renderAvatar(node){
+    const {symbol,url}=root.ModeAtlasSocialIdentity?.presentation(root.ModeAtlasSocial?.selfProfile?.(),root.KanaCloudSync?.getUser?.())||{symbol:'あ',url:null};
+    const signature=JSON.stringify([symbol,url]);if(node.dataset.avatar===signature)return;node.dataset.avatar=signature;
+    if(url){const image=el('img');image.src=url;image.alt='';image.referrerPolicy='no-referrer';image.addEventListener('error',()=>{node.textContent=symbol;},{once:true});node.replaceChildren(image);}else node.textContent=symbol;
   }
   function renderGoals(host,{compact=false}={}){
     if(!host)return;
@@ -192,7 +197,7 @@
       if(target>=0){event.preventDefault();selectTab(target);controls[target].focus();}
     });
     const requested=new URLSearchParams(location.search).get('tab');selectTab(requested==='rewards'?1:0);content.append(tabs,...panels);
-    host.replaceChildren(content);refresh();void root.ModeAtlasRewardAccess?.refresh();void root.ModeAtlasShop?.refresh();
+    host.replaceChildren(content);refresh();void root.ModeAtlasRewardAccess?.refresh();void root.ModeAtlasShop?.refresh();void root.ModeAtlasSocial?.refreshProfile?.();
     return ()=>content.remove();
   }
   function open(section='goals'){
@@ -200,7 +205,8 @@
     root.ModeAtlasVersionFile.navigate('/progress/'+(section==='rewards'?'?tab=rewards':''));
   }
   document.addEventListener('click',event=>{if(event.target.closest('[data-ma-rewards-open]'))open();});
-  for(const event of ['modeAtlasShopChanged','modeAtlasRewardAccessChanged','modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady'])root.addEventListener(event,refresh);
+  for(const event of ['modeAtlasShopChanged','modeAtlasRewardAccessChanged','modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady','modeAtlasSelfProfileChanged','modeAtlasAccountSignedOut'])root.addEventListener(event,refresh);
+  root.addEventListener('kanaCloudSyncStatusChanged',()=>{refresh();if(document.querySelector('[data-ma-selected-avatar]'))void root.ModeAtlasSocial?.refreshProfile?.();});
   document.addEventListener('ma:ui-refresh',refresh);
   document.addEventListener('DOMContentLoaded',refresh);
   root.ModeAtlasRewardsUI=Object.freeze({open,mount,refresh,appearance,banner,renderGoals});

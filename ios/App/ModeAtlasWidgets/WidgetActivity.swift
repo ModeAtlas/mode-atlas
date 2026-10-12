@@ -8,11 +8,16 @@ enum WidgetActivity {
         date.timeIntervalSince(activity) < 60
     }
 
+    static func isFinalMinute(until deadline: Date, at date: Date) -> Bool {
+        (0...60).contains(deadline.timeIntervalSince(date))
+    }
+
     static func timelineDates(since activity: Date?, at now: Date,
                               calendar: Calendar = .current, boundaries: [Date] = []) -> [Date] {
         let midnight = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))!
         var dates = Set([now, midnight])
         dates.formUnion(boundaries.filter { $0 > now })
+        dates.formUnion(boundaries.map { $0.addingTimeInterval(-60) }.filter { $0 > now })
         if let activity = activity {
             // One state transition; do not leave the first-minute label frozen.
             let firstMinute = activity.addingTimeInterval(60)

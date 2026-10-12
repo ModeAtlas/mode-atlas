@@ -13,15 +13,30 @@
     enabled:()=>root.ModeAtlasSocialConfig?.enabled===true,
     user:()=>root.KanaCloudSync?.getUser?.(),
     online:()=>navigator.onLine!==false,
+    readProfile:()=>root.ModeAtlasStorage.json('modeAtlasSocialProfile',null),
+    writeProfile:value=>value?root.ModeAtlasStorage.setJSON('modeAtlasSocialProfile',value):root.ModeAtlasStorage.remove('modeAtlasSocialProfile'),
+    profileChanged:()=>root.dispatchEvent(new CustomEvent('modeAtlasSelfProfileChanged')),
     transport:async(action,data,uid)=>{
       const send=await client();
       if(root.KanaCloudSync.getUser()?.uid!==uid)throw Object.assign(new Error('The account changed.'),{code:'account-changed'});
       return (await send({action,data,expectedUid:uid})).data;
     }
   });
+  for(const event of ['modeAtlasAccountWillChange','modeAtlasAccountSignedOut'])root.addEventListener(event,root.ModeAtlasSocial.clearProfile);
 })(typeof window!=='undefined'?window:globalThis,function createSocialClient(dependencies){
   'use strict';
-  const {enabled,user,online,transport}=dependencies;
+  const {enabled,user,online,transport,readProfile=()=>null,writeProfile=()=>{},profileChanged=()=>{},now=Date.now}=dependencies;
+  let profilePending=null,profileEpoch=0;
+  function selfProfile(){const cached=readProfile();return user()?.uid&&cached?.uid===user().uid&&cached.checkedAt<=now()&&now()-cached.checkedAt<86400000?cached.profile:null;}
+  function clearProfile(){profileEpoch++;profilePending=null;writeProfile(null);profileChanged();}
+  async function refreshProfile(){
+    const uid=user()?.uid,cached=readProfile();
+    if(!uid||!enabled()||!online())return selfProfile();
+    if(cached?.uid===uid&&cached.checkedAt<=now()&&now()-cached.checkedAt<60000)return selfProfile();
+    if(profilePending?.uid===uid)return profilePending.promise;
+    const ticket=profileEpoch,promise=call('state').then(()=>selfProfile()).catch(()=>selfProfile()).finally(()=>{if(ticket===profileEpoch&&profilePending?.uid===uid)profilePending=null;});
+    profilePending={uid,promise};return promise;
+  }
   const error=(code,message)=>Object.assign(new Error(message),{code});
   async function call(action,data={},expectedUid=user()?.uid){
     const accountAction=['deleteAccount','accountDeletionStatus'].includes(action);
@@ -30,8 +45,12 @@
     if(!uid)throw error('unauthenticated','Sign in to use Friends.');
     if(uid!==expectedUid)throw error('account-changed','The signed-in account changed. Try again.');
     if(!online())throw error('offline','Connect to the internet to use Friends.');
-    const result=await transport(action,data,uid);
+    const ticket=profileEpoch,result=await transport(action,data,uid);
     if(user()?.uid!==uid&&!(accountAction&&!user()&&result.deleted))throw error('account-changed','The signed-in account changed. Try again.');
+    if(action==='state'&&ticket===profileEpoch){
+      const profile=result.active&&result.profile?.uid===uid?result.profile:null;
+      writeProfile({uid,checkedAt:now(),profile});profileChanged();
+    }else if(action==='updateProfile'||action==='removeProfile')clearProfile();
     return result;
   }
   function message(error){
@@ -40,6 +59,6 @@
     if(code==='unavailable'&&error.message?.startsWith('Friends is updating.'))return error.message;
     return 'Friends could not be reached. Check your connection and try again.';
   }
-  return Object.freeze({call,message,isEnabled:enabled,
+  return Object.freeze({call,message,isEnabled:enabled,selfProfile,refreshProfile,clearProfile,
     deleteAccount:uid=>call('deleteAccount',{},uid),accountDeletionStatus:uid=>call('accountDeletionStatus',{},uid)});
 });

@@ -8,12 +8,12 @@ html,body{
   height:auto;
   min-height:100%;
   max-width:100%;
-  overflow-x:hidden;
-  overflow-y:auto;
   overscroll-behavior-y:auto;
 }
-html{background:var(--ma-app-bg);}
+html{background:var(--ma-app-bg);overflow-x:clip;overflow-y:auto;}
 body{
+  overflow-x:clip;
+  overflow-y:visible;
   position:relative;
   min-height:100vh;
   font-family:var(--ma-font-ui);

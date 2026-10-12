@@ -194,6 +194,9 @@ HEAD_SCRIPTS = (
     'assets/app/mode-atlas-legacy-sw-retirement.js',
     'assets/app/mode-atlas-version-check.js',
     'assets/app/mode-atlas-head-bootstrap.js',
+    'assets/app/mode-atlas-reward-rules.js',
+    'assets/app/mode-atlas-reward-access.js',
+    'assets/app/mode-atlas-theme.js',
     'assets/app/mode-atlas-fonts.js',
     'assets/platform/mode-atlas-platform.js',
     'assets/platform/mode-atlas-platform-web.js',
@@ -249,12 +252,10 @@ INTERACTIVE_SCRIPTS_BEFORE_STORAGE = (
     'assets/app/mode-atlas-overlay.js',
     'assets/app/mode-atlas-dialog.js',
     'assets/app/mode-atlas-feedback.js',
-    'assets/app/mode-atlas-theme.js',
     'assets/app/mode-atlas-display-mode.js',
     'assets/app/mode-atlas-storage.js',
 )
 INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
-    'assets/app/mode-atlas-reward-rules.js',
     'assets/app/mode-atlas-shop-catalogue.js',
     'assets/app/mode-atlas-date.js',
     'assets/app/mode-atlas-progress.js',
@@ -288,7 +289,6 @@ ACCOUNT_SCRIPTS = (
     'assets/app/mode-atlas-weekly.js',
     'assets/app/mode-atlas-notification-rules.js',
     'assets/platform/mode-atlas-notifications.js',
-    'assets/app/mode-atlas-reward-access.js',
     'assets/app/mode-atlas-shop.js',
     'assets/ui/mode-atlas-social-ui.js',
     'assets/app/mode-atlas-account-notices.js',
@@ -300,7 +300,6 @@ ACCOUNT_SCRIPTS = (
 )
 LEGAL_BODY_SCRIPTS = (
     'assets/app/mode-atlas-toast.js',
-    'assets/app/mode-atlas-theme.js',
     'assets/app/mode-atlas-display-mode.js',
     'assets/app/mode-atlas-page-state.js',
 )

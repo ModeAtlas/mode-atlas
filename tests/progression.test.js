@@ -13,7 +13,7 @@ test('Both mastery consistently requires both directions and leaves directional 
   assert.equal(r.combinedStage({},{}),0);
   const before=JSON.stringify(reading);r.guidance(reading.review,reading.stats,reading.time);assert.equal(JSON.stringify(reading),before);
   let row={};for(let i=0;i<4;i++)row=r.answer(row,{id:String(i),at:e.now()+i*86400000,correct:true}).entry;
-  const guide=r.guidance(row);assert.equal(guide.stage,r.stage(row));assert.equal(guide.next,'Mastered');assert.equal(guide.checks[0].value,4);
+  const guide=r.guidance(row,reading.stats,reading.time);assert.equal(guide.stage,r.stage(row,reading.stats,reading.time));assert.equal(guide.next,'Mastered');assert.equal(guide.checks.find(check=>check.label==='Recent unassisted attempts').value,4);
 });
 test('weekly recap separates local Monday weeks and never estimates undated XP or practice',()=>{
   const e=load(),p=e.progress;
@@ -214,12 +214,16 @@ test('review schedules cross days and weeks; rapid or assisted repeats do not ac
   const later=r.answer(row,{id:'4',at:row.due,correct:true});assert.equal(later.reviewed,true);assert.equal(later.entry.due-row.due,3*86400000);
   const assisted=r.answer(later.entry,{id:'5',at:later.entry.due,correct:true,assisted:true});assert.equal(assisted.reviewed,false);assert.ok(assisted.entry.level<=1);
 });
-test('mastery depends on recent independent recall across days and retains an earned peak after mistakes',()=>{
+test('mastery requires precise lifetime performance plus sustained independent recall and retains earned milestones',()=>{
   const e=load(),r=e.review;let row={};
-  for(let i=0;i<8;i++){const at=Math.max(e.now()+i*86400000,row.due||0);row=r.answer(row,{id:String(i),at,correct:true}).entry;}
-  assert.equal(r.stage(row),3);assert.equal(row.peak,3);
-  for(let i=0;i<4;i++)row=r.answer(row,{id:'wrong'+i,at:row.lastSeen+1000,correct:false}).entry;
-  assert.equal(r.stage(row),1);assert.equal(row.peak,3);assert.ok(row.recent.length<=12);
+  for(let i=0;i<8;i++){const at=Math.max(e.now()+i*86400000,row.due||0);row=r.answer(row,{id:String(i),at,correct:true},{correct:43+i,wrong:0},950).entry;}
+  assert.equal(r.stage(row,{correct:50,wrong:0},950),3);assert.equal(row.peak,3);
+  for(const [correct,wrong,time] of [[52,3,1100],[86,14,1600],[49,0,900],[18999,1001,900],[50,0,1000.001],[50,0,0]])assert.notEqual(r.stage(row,{correct,wrong},time),3,JSON.stringify({correct,wrong,time}));
+  assert.equal(r.stage(row,{correct:57,wrong:3},1000),3,'Exact 95% and 1 second qualify without rounding');
+  assert.equal(r.stage({...row,recent:[],legacy:3},{correct:52,wrong:3},1100),2,'A saved legacy label cannot bypass current evidence');
+  assert.equal(r.stage(row),1,'A spaced schedule without lifetime evidence cannot grant mastery');
+  for(let i=0;i<4;i++)row=r.answer(row,{id:'wrong'+i,at:row.lastSeen+1000,correct:false},{correct:50,wrong:i+1},950).entry;
+  assert.equal(r.stage(row,{correct:50,wrong:4},950),1);assert.equal(row.peak,3);assert.ok(row.recent.length<=12);
   assert.equal(r.stage(undefined,{correct:50,wrong:0},{avg:900}),3,'legacy accomplishments remain visible before new evidence');
 });
 test('review evidence merges independent offline answers in both orders',()=>{
@@ -293,6 +297,16 @@ test('reward access shares in-flight reads, handles older backends and keeps gra
   await Promise.all([a.refresh(),a.refresh()]);assert.equal(calls,1);assert.equal(a.status(),'error');assert.deepEqual(a.current().grants,[]);
   const e=load();assert.equal(e.root.ModeAtlasStorage.isBackupKey('modeAtlasRewardAccess'),false);
   e.root.ModeAtlasStorage.setJSON('modeAtlasRewardAccess',{allCustom:true});e.root.ModeAtlasStorage.clearAppData();assert.equal(e.root.ModeAtlasStorage.get('modeAtlasRewardAccess',null),null);
+});
+
+test('first-paint reward presentation is bound to the restoring account and never authorises a guest',()=>{
+  const createAccess=require('../assets/app/mode-atlas-reward-access.js');let uid='',restoring=true,owner='first',clock=1000;
+  let cache={uid:'first',checkedAt:clock,access:{grants:['shop-sakura'],validUntil:clock+10000}};
+  const access=createAccess({user:()=>uid,restoring:()=>restoring,restoredUser:()=>owner,online:()=>false,read:()=>cache,write:value=>{cache=value;},fetch:async()=>{},now:()=>clock});
+  assert.deepEqual(access.current().grants,[]);assert.deepEqual(access.presentation().grants,['shop-sakura']);
+  owner='other';assert.deepEqual(access.presentation().grants,[]);owner='first';restoring=false;assert.deepEqual(access.presentation().grants,[]);
+  uid='first';assert.deepEqual(access.current().grants,['shop-sakura']);clock+=10001;assert.deepEqual(access.presentation().grants,[]);
+  access.clear();assert.equal(cache,null);
 });
 
 

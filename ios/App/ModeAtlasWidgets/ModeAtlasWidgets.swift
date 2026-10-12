@@ -216,12 +216,17 @@ struct StudyWidgetView: View {
 struct StudyStreakStatus: View {
     let routine: ModeAtlasWidgetRoutine
     let date: Date
+    static func countdown(until end: Date, at date: Date) -> Text {
+        if WidgetActivity.isFinalMinute(until: end, at: date) { return Text("Less than a minute") }
+        return Text(.currentDate, format: .offset(to: end,
+            allowedFields: [.day, .hour, .minute], maxFieldCount: 2, sign: .never))
+    }
     var body: some View {
         HStack(spacing: 4) {
             if routine.studiedToday { Image(systemName: "checkmark.circle.fill").accessibilityHidden(true) }
             Text(routine.status)
             if routine.needsStudy, let end = routine.expiresAt, end > date {
-                Text(timerInterval: date...end, countsDown: true, showsHours: true)
+                Self.countdown(until: end, at: date)
                     .monospacedDigit()
                     .accessibilityLabel("Streak ends at \(end.formatted(date: .abbreviated, time: .shortened))")
             }

@@ -71,6 +71,9 @@ CRITICAL = {
     'mode-atlas-legacy-sw-retirement.js',
     'mode-atlas-version-check.js',
     'mode-atlas-head-bootstrap.js',
+    'mode-atlas-reward-rules.js',
+    'mode-atlas-reward-access.js',
+    'mode-atlas-theme.js',
     'mode-atlas-fonts.js',
     'mode-atlas-early-loader.js',
 }

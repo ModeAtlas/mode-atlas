@@ -8,7 +8,7 @@ const kana = require('./shared/mode-atlas-kana-data.js');
 const progress = createProgress({ModeAtlasDates: dates, ModeAtlasRewardRules: rewards});
 const review = createReview({ModeAtlasDates: dates});
 const identity = require('./shared/mode-atlas-social-identity.js');
-const PROJECTION_VERSION=2;
+const PROJECTION_VERSION=3;
 
 function progressOwner(save = {}, timeZone = 'UTC') {
   const sections = save.sections || {};
