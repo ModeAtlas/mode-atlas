@@ -327,6 +327,44 @@
     return panel;
   }
 
+  function renderShopPanel(){
+    const panel=devEl('div','ma-dev-progress-panel'),account=window.KanaCloudSync?.getUser?.()?.uid;
+    panel.append(devEl('h3','','Shop testing'),devEl('p','','Changes apply only to the signed-in developer account. Test coins are server credited and use the normal purchase flow.'));
+    const controls=devEl('div','ma-dev-progress-controls'),label=devEl('label','ma-dev-progress-field'),input=devEl('input','ma-dev-progress-input');
+    input.type='number';input.min='1';input.max='100000';input.step='1';input.value='2000';input.dataset.maDevCoins='';
+    label.append(devEl('span','','Atlas Coins to add'),input);
+    const credit=devButton('Add coins','maDevShopCredit','action'),reset=devButton('Reset purchases','maDevShopReset','action');
+    const status=devEl('p');status.dataset.maDevShopStatus='';status.setAttribute('role','status');
+    function refresh(){const wallet=window.ModeAtlasShop.current();credit.disabled=reset.disabled=!wallet.developer||wallet.busy;status.textContent=wallet.developer?`${wallet.balance??'…'} Atlas Coins · ${wallet.owned.length} collections owned`:'Sign in to the verified developer account to test purchases.';}
+    async function perform(operation){
+      if(!canUseDevTools()||!account||account!==window.KanaCloudSync?.getUser?.()?.uid)return;
+      const amount=Number(input.value);if(operation==='credit'&&(!Number.isSafeInteger(amount)||amount<1||amount>100000)){status.textContent='Enter between 1 and 100,000 coins.';return;}
+      if(operation==='resetPurchases'){
+        const confirmed=await window.ModeAtlasDialog.confirm({title:'Reset your shop purchases?',message:'Remove paid collections, themes, streak items and streak repairs from this account. Your remaining coins, earned rewards and exclusive/event grants stay. This does not refund spent coins.',confirmLabel:'Reset purchases',tone:'danger'});
+        if(!confirmed||account!==window.KanaCloudSync?.getUser?.()?.uid)return;
+      }
+      credit.disabled=reset.disabled=true;
+      try{
+        await window.ModeAtlasShop.developer(operation,operation==='credit'?amount:undefined);
+        if(account!==window.KanaCloudSync?.getUser?.()?.uid)return;
+        if(operation==='resetPurchases'){
+          const theme=window.ModeAtlasTheme.getPreference();
+          if(window.ModeAtlasRewardRules.item('themes',theme))window.ModeAtlasTheme.set(window.ModeAtlasTheme.getEffective(theme),{toast:false});
+          const selected=window.ModeAtlasProgress.readState().appearance;
+          if(window.ModeAtlasRewardRules.item('banners',selected.banner)?.kind==='shop')window.ModeAtlasProgress.selectBanner('plain');
+          if(window.ModeAtlasRewardRules.item('frames',selected.landmark)?.kind==='shop')window.ModeAtlasProgress.selectAppearance('trail');
+          if(window.AtlasPlatform.getCapabilities().alternateIcons){
+            const icon=await window.AtlasPlatform.getAppIcon();
+            if(account===window.KanaCloudSync?.getUser?.()?.uid&&window.ModeAtlasRewardRules.icons.some(item=>item.kind==='shop'&&item.icon===icon))await window.AtlasPlatform.setAppIcon(null);
+          }
+        }
+        refresh();status.textContent=operation==='credit'?`${amount.toLocaleString()} coins added. Balance: ${window.ModeAtlasShop.current().balance.toLocaleString()}.`:'Shop purchases reset. Earned and exclusive rewards kept.';
+      }catch(error){refresh();status.textContent=window.ModeAtlasShop.message(error);}
+    }
+    credit.addEventListener('click',()=>void perform('credit'));reset.addEventListener('click',()=>void perform('resetPurchases'));
+    controls.append(label,credit,reset);panel.append(controls,status);refresh();void window.ModeAtlasShop.refresh(true).then(()=>{if(panel.isConnected&&account===window.KanaCloudSync?.getUser?.()?.uid)refresh();});return panel;
+  }
+
   function adjustDevXp(backdrop, direction){
     const input = backdrop.querySelector('[data-ma-dev-xp-amount]');
     const amount = Math.max(1, Math.floor(Number(input?.value || 0)));
@@ -379,6 +417,7 @@
       devButton('Service worker', 'maDevServiceWorker', 'diagnostic'),
       devButton('Progress / XP', 'maDevProgress', 'diagnostic'),
       devButton('Save files', 'maDevSaveFiles', 'diagnostic'),
+      devButton('Shop / Coins', 'maDevShop', 'diagnostic'),
       devButton('Copy diagnostics', 'maDevCopy', 'action'),
       devButton('Repair save data', 'maDevRepair', 'action'),
       devButton('Force sync', 'maDevSync', 'action'),
@@ -412,6 +451,7 @@
         replaceDevBody(backdrop, [renderKeyValueTable({ loading: 'Checking Service Worker…' })]);
         getServiceWorkerInfo().then(info => replaceDevBody(backdrop, [renderJsonPanel('Service worker', info)])).catch(error => replaceDevBody(backdrop, [renderJsonPanel('Service worker error', { error: error?.message || String(error) })]));
       }
+      if (event.target.closest('[data-ma-dev-shop]')) replaceDevBody(backdrop, [renderShopPanel()]);
       if (event.target.closest('[data-ma-dev-progress]')) replaceDevBody(backdrop, [renderProgressPanel()]);
       if (event.target.closest('[data-ma-dev-save-files]')) replaceDevBody(backdrop, [renderSaveFilesPanel(backdrop)]);
       if (event.target.closest('[data-ma-dev-xp-add]')) adjustDevXp(backdrop, 1);

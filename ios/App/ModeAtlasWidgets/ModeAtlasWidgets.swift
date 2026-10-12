@@ -84,61 +84,102 @@ struct StudyWidgetView: View {
             Spacer(minLength: 0)
         }.font(.caption2).lineLimit(1).minimumScaleFactor(0.75)
     }
-    private func goals(_ value: ModeAtlasWidgetSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if value.goals(at: entry.date).filter({ !$0.isWeekly }).isEmpty {
-                Text("Open Mode Atlas for today’s goals").font(.caption2).foregroundStyle(.secondary)
-            }
-            ForEach(value.goals(at: entry.date)) { goal in
-                HStack(spacing: 8) {
-                    Image(systemName: goal.value >= goal.target ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(goal.value >= goal.target ? green : .secondary).accessibilityHidden(true)
-                    Text(goal.label).lineLimit(1).minimumScaleFactor(0.8)
-                    Spacer(minLength: 0)
-                    Text("\(goal.value)/\(goal.target)").monospacedDigit().foregroundStyle(.secondary)
-                }.font(.caption2).accessibilityElement(children: .combine)
-            }
+    private func level(_ value: ModeAtlasWidgetSnapshot, compact: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("LEVEL").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(value.level.formatted()).font(.system(compact ? .title2 : .largeTitle, design: .rounded).weight(.bold))
+                Text(value.title ?? "Your Atlas").font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+            }.minimumScaleFactor(0.75)
+        }.accessibilityElement(children: .combine)
+    }
+    private func xp(_ value: ModeAtlasWidgetSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text("Next level").font(.caption2.weight(.medium))
+                Spacer(minLength: 4)
+                Text("\((value.levelXp ?? 0).formatted()) / \((value.levelRequirement ?? 100).formatted()) XP")
+                    .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+            }.lineLimit(1).minimumScaleFactor(0.7)
+            ProgressView(value: value.levelProgress).tint(blue)
+                .accessibilityLabel("Progress to level \(value.level + 1)")
         }
+    }
+    private func goalColumn(_ value: ModeAtlasWidgetSnapshot, weekly: Bool) -> some View {
+        let goals = value.goals(at: entry.date).filter { $0.isWeekly == weekly }
+        return VStack(alignment: .leading, spacing: 9) {
+            Text(weekly ? "THIS WEEK" : "TODAY").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+            if goals.isEmpty { Text("Open for fresh goals").font(.caption2).foregroundStyle(.secondary).lineLimit(2) }
+            ForEach(goals) { goal in
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 3) {
+                        Text(goal.displayLabel).font(.caption2.weight(.medium)).lineLimit(1).minimumScaleFactor(0.75)
+                        Spacer(minLength: 0)
+                        if goal.value >= goal.target { Image(systemName: "checkmark.circle.fill").font(.caption2).foregroundStyle(green) }
+                    }
+                    HStack(spacing: 6) {
+                        ProgressView(value: Double(goal.value), total: Double(goal.target)).tint(goal.value >= goal.target ? green : blue)
+                        Text("\(goal.value)/\(goal.target)").font(.system(size: 9, weight: .medium, design: .rounded)).monospacedDigit().foregroundStyle(.secondary)
+                    }
+                }.accessibilityElement(children: .ignore).accessibilityLabel("\(goal.label): \(goal.value) of \(goal.target)")
+            }
+        }.frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+    private func ranking(_ value: ModeAtlasWidgetSnapshot) -> some View {
+        HStack(spacing: 5) {
+            if let weekly = value.weekly, weekly.isCurrent(at: entry.date) {
+                Image(systemName: "trophy.fill").foregroundStyle(blue).accessibilityHidden(true)
+                Text("#\(weekly.rank) this week").fontWeight(.semibold)
+                Spacer(minLength: 2)
+                Text("\(weekly.score.formatted()) weekly XP").foregroundStyle(.secondary)
+            } else {
+                Text("\(value.correct.formatted()) correct").fontWeight(.semibold)
+                Spacer(minLength: 2)
+                Text("\((value.totalXp ?? 0).formatted()) total XP").foregroundStyle(.secondary)
+            }
+        }.font(.caption2).lineLimit(1).minimumScaleFactor(0.7)
     }
     private func compact(_ value: ModeAtlasWidgetSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            brand
+            HStack { brand; Text("Lv \(value.level)").font(.caption2.weight(.bold)).foregroundStyle(blue).fixedSize() }
             streak(value, compact: true)
             Spacer(minLength: 0)
+            xp(value)
             goalSummary(value)
-            goalSummary(value, weekly: true)
         }
     }
     private func medium(_ value: ModeAtlasWidgetSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            brand
-            HStack(alignment: .top, spacing: 18) {
+            HStack { brand; Text("Level \(value.level)").font(.caption.weight(.bold)).foregroundStyle(blue).fixedSize() }
+            HStack(alignment: .center, spacing: 16) {
                 streak(value, compact: true).frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 7) {
+                    xp(value)
                     goalSummary(value)
                     goalSummary(value, weekly: true)
-                    if let next = value.goals(at: entry.date).first(where: { !$0.isWeekly && $0.value < $0.target }) {
-                        Text(next.label).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
-                    }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
             Spacer(minLength: 0)
-            activity(value)
+            ranking(value)
         }
     }
     private func large(_ value: ModeAtlasWidgetSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 12) {
             brand
-            streak(value)
-            Divider()
-            goalSummary(value)
-            goals(value)
-            Spacer(minLength: 0)
-            HStack {
-                activity(value)
-                Spacer(minLength: 4)
-                Text("Level \(value.level)").font(.caption2).foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: 16) {
+                level(value).frame(maxWidth: .infinity, alignment: .leading)
+                streak(value).frame(maxWidth: .infinity, alignment: .leading)
             }
+            xp(value)
+            Divider()
+            HStack(alignment: .top, spacing: 16) {
+                goalColumn(value, weekly: false)
+                goalColumn(value, weekly: true)
+            }
+            Spacer(minLength: 0)
+            Divider()
+            ranking(value)
+            activity(value)
         }
     }
     private var empty: some View {
@@ -192,7 +233,7 @@ struct ModeAtlasStudyWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: ModeAtlasWidgetStore.kind, provider: StudyProvider()) { StudyWidgetView(entry: $0) }
             .configurationDisplayName("Your Atlas")
-            .description("Your study streak, time to keep it going, and daily and weekly goals.")
+            .description("Your level, XP, streak, goals and weekly ranking at a glance.")
             .supportedFamilies([.systemSmall, .systemMedium, .systemLarge,
                                 .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }

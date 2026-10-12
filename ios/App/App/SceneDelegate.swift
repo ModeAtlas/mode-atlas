@@ -10,15 +10,26 @@ enum ModeAtlasAppearance {
     static let preferenceKey = "modeAtlasAppearance"
     static var style: UIUserInterfaceStyle {
         switch UserDefaults.standard.string(forKey: preferenceKey) ?? "dark" {
-        case "light": return .light
+        case "light", "sakura": return .light
         case "system": return .unspecified
         default: return .dark
         }
     }
-    static var canvas: UIColor { UIColor(named: "AppCanvas") ?? .systemBackground }
+    static let canvasKey = "modeAtlasAppearanceCanvas"
+    static var canvas: UIColor {
+        if let preference = UserDefaults.standard.string(forKey: preferenceKey), ["sakura", "midnight"].contains(preference),
+           let value = UserDefaults.standard.string(forKey: canvasKey), let color = color(value) { return color }
+        return UIColor(named: "AppCanvas") ?? .systemBackground
+    }
+    static func color(_ value: String) -> UIColor? {
+        guard value.range(of: "^#[0-9a-fA-F]{6}$", options: .regularExpression) != nil,
+              let number = UInt32(value.dropFirst(), radix: 16) else { return nil }
+        return UIColor(red: CGFloat((number >> 16) & 255) / 255, green: CGFloat((number >> 8) & 255) / 255,
+                       blue: CGFloat(number & 255) / 255, alpha: 1)
+    }
 }
 
-private final class ModeAtlasBridgeViewController: CAPBridgeViewController {
+final class ModeAtlasBridgeViewController: CAPBridgeViewController {
     override var preferredStatusBarStyle: UIStatusBarStyle {
         traitCollection.userInterfaceStyle == .dark ? .lightContent : .darkContent
     }
@@ -28,6 +39,12 @@ private final class ModeAtlasBridgeViewController: CAPBridgeViewController {
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (controller: ModeAtlasBridgeViewController, _: UITraitCollection) in
             controller.setNeedsStatusBarAppearanceUpdate()
         }
+    }
+
+    func applyCanvas() {
+        view.backgroundColor = ModeAtlasAppearance.canvas
+        webView?.backgroundColor = ModeAtlasAppearance.canvas
+        webView?.scrollView.backgroundColor = ModeAtlasAppearance.canvas
     }
 
     override func capacitorDidLoad() {

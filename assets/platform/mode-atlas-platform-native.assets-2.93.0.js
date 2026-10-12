@@ -155,13 +155,14 @@
     },
     playSound: async function(cue,volume){return hasBridge('playSound') ? nativeBridge.playSound({cue:cue,volume:volume}) : false;},
     stopSounds: async function(){return hasBridge('stopSounds') ? nativeBridge.stopSounds() : false;},
+    getAppIcon: async function(){ return hasBridge('getAppIcon')?(await nativeBridge.getAppIcon()).name:null; },
     setAppIcon: async function(name){
       if(!hasBridge('setAppIcon'))return false;
       return nativeBridge.setAppIcon({name:name||null});
     },
-    setAppearance: async function(preference){
+    setAppearance: async function(preference,canvas){
       if (!hasBridge('setAppearance')) return false;
-      return nativeBridge.setAppearance({preference:preference});
+      return nativeBridge.setAppearance({preference:preference,...(canvas?{canvas}:{})});
     },
     exportBackup: async function(file){
       if (!hasBridge('exportBackup')) throw new Error('Backup sharing is unavailable in this build.');

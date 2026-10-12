@@ -47,6 +47,7 @@
                   <button class="ma-button ma-theme-choice-btn" type="button" data-ma-theme-choice="light">Light</button>
                   <button class="ma-button ma-theme-choice-btn" type="button" data-ma-theme-choice="system">System</button>
                 </div>
+                <div class="ma-owned-themes" data-ma-owned-themes role="group" aria-label="Collection themes" hidden></div>
               </div>
             </div>
           </section>

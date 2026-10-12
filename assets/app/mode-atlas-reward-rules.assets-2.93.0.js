@@ -111,15 +111,19 @@
     {id:'book',symbol:'本',name:'Book',level:1},{id:'sakura',symbol:'桜',name:'Cherry blossom',level:1},
     {id:'mountain',symbol:'山',name:'Mountain',level:1},{id:'moon',symbol:'月',name:'Moon',level:1}
   ].map(Object.freeze));
-  const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars});
+  const themes=Object.freeze([
+    {id:'sakura',name:'Sakura',appearance:'light',grant:'shop-sakura',kind:'shop'},
+    {id:'midnight',name:'Midnight',appearance:'dark',grant:'shop-midnight',kind:'shop'}
+  ].map(Object.freeze));
+  const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes});
   function item(type,id){return catalogue[type]?.find(reward=>reward.id===id)||null;}
   function unlocked(reward,level,access={}){
     if(!reward)return false;
-    return reward.grant?access?.allCustom===true||Array.isArray(access?.grants)&&access.grants.includes(reward.grant):Number(level)>=reward.level;
+    return reward.grant?(reward.kind!=='shop'&&access?.allCustom===true)||Array.isArray(access?.grants)&&access.grants.includes(reward.grant):Number(level)>=reward.level;
   }
   function visible(reward,level,access){return !!reward&&(!reward.grant||unlocked(reward,level,access));}
   function allowed(type,id,level,access){return unlocked(item(type,id),level,access);}
   function appearance(id,level,access){const reward=item('frames',id);return unlocked(reward,level,access)?reward:landmarks[0];}
   function banner(id,level,access){const reward=item('banners',id);return unlocked(reward,level,access)?reward:banners[0];}
-  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,catalogue,item,unlocked,visible,allowed});
+  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,catalogue,item,unlocked,visible,allowed});
 });

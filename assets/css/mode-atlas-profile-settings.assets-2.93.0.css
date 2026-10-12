@@ -118,8 +118,6 @@ html[data-ma-runtime="ios"] .ma-account-sheet{
   .ma-settings-segmented--display{--ma-segment-count:2!important;}
   .ma-settings-inline-actions{grid-template-columns:1fr;}
 }
-html[data-ma-large-text] .ma-account-tabs{grid-template-columns:repeat(2,minmax(0,1fr));}
-html[data-ma-large-text] .ma-account-tab{flex-direction:row;gap:8px;min-height:48px;}
 @media(prefers-reduced-motion:reduce){.ma-account-sheet{animation:none;}}
 
 /* Provider choice uses the shared dialog; account state stays in cloud-sync. */
@@ -135,3 +133,8 @@ html[data-ma-large-text] .ma-account-tab{flex-direction:row;gap:8px;min-height:4
 }
 .ma-account-apple img{height:100%;width:auto;flex:none;}
 .ma-account-apple span{flex:1;min-width:0;}
+
+.ma-owned-themes{display:flex;flex-wrap:wrap;gap:8px;grid-column:1/-1;width:100%;}
+.ma-theme-panel{flex-wrap:wrap;}
+.ma-theme-collection-choice{--ma-control:var(--ma-theme-sample-bg);--ma-control-hover:var(--ma-theme-sample-card);--ma-control-text:var(--ma-theme-sample-ink);background:var(--ma-control);color:var(--ma-control-text);border-color:color-mix(in srgb,var(--ma-theme-sample-ink) 35%,transparent);}
+.ma-theme-collection-choice[aria-pressed="true"]{outline:2px solid var(--ma-theme-sample-ink);outline-offset:2px;}

@@ -62,7 +62,7 @@
       ['Reading, Writing & Both','Each direction has its own stage. Both reaches Reviewing or Mastered only when both directions do. Speed is shown separately. Earlier practice retains its legacy stage until new recall evidence is recorded.']];
   }
   function dueHelp(){
-    return '“Due” means kana you’ve practised are ready to revisit. Spacing reviews out helps you remember them. Reading and Writing have separate schedules. The number counts kana, not questions; a short session may repeat them. These are suggestions, not deadlines—waiting won’t remove XP or break your study streak.';
+    return '“Due” counts kana ready to revisit, using spaced practice to help you remember them. Reading and Writing have separate schedules. A short session can repeat kana, so this isn’t a question count. Reviews are suggestions, not deadlines. Five correct answers each day keep your study streak going—you don’t need to clear every due review.';
   }
   function answer(input,event,stats={},time=0){
     const row=normalize(input,stats,time), at=number(event.at), id=String(event.id||'');

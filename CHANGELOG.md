@@ -1,3 +1,21 @@
+## 2.93.0 — Coin shop, collection themes and richer widgets
+
+- Spend Atlas Coins on cosmetic collections and streak items through atomic, account-bound server transactions with retry receipts. Only coin top-ups show the coming-soon prompt.
+- Sakura and Midnight include app-wide themes, selectable in Settings and Rewards. Paid collections require a real grant even for Admin; earned and exclusive rewards keep their existing rules.
+- Catalogue sale windows can hide and return products without taking away ownership. Collection IDs and reward entries remain permanent.
+- Streak Freezes automatically bridge missed days; a Streak Repair can reconnect yesterday. Covered days do not award XP, goal progress or ranking points. Late offline study refunds a consumed item.
+- Developer Shop / Coins controls credit the current verified admin and reset its paid purchases without deleting earned/event rewards or refunding spent coins.
+- Home Screen widgets show level/XP, streak, goals and a current weekly rank when available. Lock Screen widgets retain their compact focus; completed study says “Studied today”.
+- Deploy the compatible Firebase backend before syncing and building the client. StoreKit coin purchases remain a later integration.
+
+## 2.92.0 — Account shop and collection browsing
+
+- Move Shop beside Profile and Settings in the shared account menu. Progress contains Goals, Rewards and Recap; the duplicate Profile shop shortcut is removed.
+- Give Sakura and Midnight larger themed displays using their real bundled icons and frames, a compact token wallet, clearer previews and a direct route to owned rewards.
+- Keep equipping banners, titles/frames and icons with Progress → Rewards. Shop marks available collections as in Rewards and never changes a selected look during browsing.
+- Preserve free learning, level rewards, wallet privacy and disabled transactions. Hidden shop panels do not render on every learning-progress event.
+- iOS build 2080014. No new Firebase deployment or signing change is required on top of the 2.91.0 backend.
+
 ## 2.90.0 - 2026-10-06
 
 - Replace Learn's stacked branch cards and boxed button grids with an open suggested-session area and simple Reading, Writing and Results rows. Keep Kana Overview and Word Bank directly accessible.
