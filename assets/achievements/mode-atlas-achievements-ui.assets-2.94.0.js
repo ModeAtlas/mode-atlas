@@ -500,7 +500,11 @@ function applyAchievementVisuals(root = document) {
       if(guide.legacy)section.append(achEl('p','ma-ach-info-copy','This stage comes from earlier lifetime practice. New answers build the spaced recall evidence below.'));
       if(guide.next){
         const list=achEl('ul','ma-mastery-checks');
-        for(const check of guide.checks){const met=check.value>=check.target,row=achEl('li','',`${met?'✓ ':''}${check.label}: ${check.value}${check.percent?'%':''} / ${check.target}${check.percent?'%':''}`);row.dataset.complete=String(met);list.append(row);}
+        for(const check of guide.checks){
+          const met=check.maximum?(check.value===null?check.optional:check.value<=check.target):check.value>=check.target;
+          const format=value=>value===null?'No timing yet':check.unit==='ms'?(value/1000).toFixed(3)+'s':check.percent?value.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4})+'%':String(value);
+          const row=achEl('li','',`${met?'✓ ':''}${check.label}: ${format(check.value)} / ${check.maximum?'≤ ':''}${format(check.target)}`);row.dataset.complete=String(!!met);list.append(row);
+        }
         section.append(list);
       }
       if(guide.due)section.append(achEl('p','ma-ach-info-copy',guide.due<=Date.now()?'Ready for a spaced review.':`Next spaced review: ${new Date(guide.due).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}. Early practice still helps; it does not advance the schedule.`));

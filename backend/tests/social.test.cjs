@@ -739,13 +739,18 @@ test('notification timing preserves old-client schedules and suppresses overlap 
 
 test('cached mastery projections refresh on Friends views without waiting for another study session',async()=>{
   const a=await learner('Mastery Reader'),b=await learner('Mastery Friend');await friend(a,b);
-  await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':1,'summary.combinedMastered':1});
+  const snapshot=save(20),review={reviewVersion:1,level:4,peak:3,days:['2026-10-01','2026-10-02','2026-10-03','2026-10-04'],recent:Array.from({length:12},(_,i)=>({id:'recall-'+i,at:1791000000000+i*86400000,quality:2}))};
+  snapshot.sections.reading.data={stats:{'あ':{correct:52,wrong:3},'お':{correct:86,wrong:14}},times:{'あ':1100,'お':1600},srs:{'あ':review,'お':review}};
+  await db.doc(`users/${b.uid}/appData/kanaTrainer`).set(snapshot);
+  await b.call('state');
+  await until(async()=>(await db.doc('socialAccounts/'+b.uid).get()).data().summary.readingMastered===0);
+  await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.readingMastered':2,'summary.combinedMastered':1});
   const result=await a.call('list',{kind:'rankings',metric:'mastery'}),peer=result.rows.find(row=>row.uid===b.uid);
-  assert.equal(peer.stats.readingMastered,1);assert.equal(peer.stats.writingMastered,0);assert.equal(peer.stats.combinedMastered,0);
-  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,2);
+  assert.equal(peer.stats.readingMastered,0);assert.equal(peer.stats.writingMastered,0);assert.equal(peer.stats.combinedMastered,0);
+  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,3);
   const saved=(await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis();
   await a.call('list',{kind:'friends'});assert.equal((await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis(),saved);
-  await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':1,'summary.combinedMastered':1});
+  await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.combinedMastered':1});
   assert.equal((await a.call('profile',{uid:b.uid})).profile.stats.combinedMastered,0);
 });
 

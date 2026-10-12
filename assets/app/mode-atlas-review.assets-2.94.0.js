@@ -7,7 +7,7 @@
   const DAY = 86400000;
   const intervals = Object.freeze([60000,600000,DAY,3*DAY,7*DAY,14*DAY,30*DAY,60*DAY,90*DAY]);
   const labels = Object.freeze(['New','Learning','Reviewing','Mastered']);
-  const requirements=Object.freeze({2:Object.freeze({attempts:4,accuracy:.75,days:2,level:2}),3:Object.freeze({attempts:8,accuracy:.9,days:4,level:4})});
+  const requirements=Object.freeze({2:Object.freeze({correct:10,lifetimeAccuracy:.85,maxTime:2500,attempts:4,accuracy:.75,days:2,level:2}),3:Object.freeze({correct:50,lifetimeAccuracy:.95,maxTime:1000,attempts:8,accuracy:.95,days:4,level:4})});
   const number = value => ['number','string'].includes(typeof value) && Number.isFinite(Number(value)) ? Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,Number(value))) : 0;
   const date = at => root.ModeAtlasDates.localDateKey(new Date(at));
   function legacyStage(stats={},time=0){
@@ -15,7 +15,9 @@
     const c=number(stats.correct ?? stats.right), w=number(stats.wrong ?? stats.incorrect), total=c+w;
     const avg=time&&typeof time==='object'?number(time.avg||time.average||time.time):number(time);
     const ms=avg&&avg<30?avg*1000:avg;
-    return !total?0:c>=50&&c/total>=.95&&ms>0&&ms<=1000?3:c>=10&&c/total>=.85&&(!ms||ms<=2500)?2:1;
+    if(!total)return 0;
+    for(const next of [3,2]){const target=requirements[next];if(c>=target.correct&&c/total>=target.lifetimeAccuracy&&(ms?ms<=target.maxTime:next===2))return next;}
+    return 1;
   }
   function timeMilliseconds(value){
     const n=typeof value==='number'?number(value):number(value?.avg||value?.average||value?.time);
@@ -40,26 +42,31 @@
   function stage(input,stats={},time=0){
     if(input?.reviewVersion!==1)return legacyStage(stats,time);
     const row=normalize(input), independent=row.recent.filter(x=>x.quality!==1);
-    if(!row.recent.length)return row.legacy;
+    const performance=legacyStage(stats,time);
+    if(!row.recent.length)return performance;
     const accuracy=independent.filter(x=>x.quality===2).length/Math.max(1,independent.length);
-    for(const next of [3,2]){const target=requirements[next];if(independent.length>=target.attempts&&accuracy>=target.accuracy&&row.days.length>=target.days&&row.level>=target.level)return next;}
+    for(const next of [3,2]){const target=requirements[next];if(performance>=next&&independent.length>=target.attempts&&accuracy>=target.accuracy&&row.days.length>=target.days&&row.level>=target.level)return next;}
     return 1;
   }
   function guidance(input,stats={},time=0){
     const current=stage(input,stats,time),row=normalize(input,stats,time),target=requirements[Math.max(2,current+1)];
     const attempts=row.recent.filter(x=>x.quality!==1),accuracy=attempts.filter(x=>x.quality===2).length/Math.max(1,attempts.length);
+    const correct=number(stats?.correct??stats?.right),wrong=number(stats?.wrong??stats?.incorrect),ms=timeMilliseconds(time);
     return {stage:current,next:target?labels[Math.max(2,current+1)]:null,legacy:!row.recent.length&&current>0,due:row.due,
       checks:target?[
+        {label:'Correct answers',value:correct,target:target.correct},
+        {label:'Overall accuracy',value:correct/Math.max(1,correct+wrong)*100,target:target.lifetimeAccuracy*100,percent:true},
+        {label:'Average response time',value:ms||null,target:target.maxTime,maximum:true,unit:'ms',optional:Math.max(2,current+1)===2},
         {label:'Recent unassisted attempts',value:attempts.length,target:target.attempts},
-        {label:'Recent unassisted accuracy',value:Math.round(accuracy*100),target:target.accuracy*100,percent:true},
+        {label:'Recent unassisted accuracy',value:accuracy*100,target:target.accuracy*100,percent:true},
         {label:'Days with independent recall',value:row.days.length,target:target.days},
         {label:'Spaced recall steps',value:row.level,target:target.level}
       ]:[]};
   }
   function help(){
     return [['New','No attempts yet.'],['Learning','Building independent recall. Hints help you learn; unassisted answers build mastery.'],
-      ...[2,3].map(stage=>{const r=requirements[stage];return [labels[stage],`At least ${r.attempts} unassisted attempts in the last 12 answers, ${r.accuracy*100}% accuracy, independent recall on ${r.days} days, and ${r.level} spaced recall steps. Return when a review is due to advance the schedule.`];}),
-      ['Reading, Writing & Both','Each direction has its own stage. Both reaches Reviewing or Mastered only when both directions do. Speed is shown separately. Earlier practice retains its legacy stage until new recall evidence is recorded.']];
+      ...[2,3].map(stage=>{const r=requirements[stage];return [labels[stage],`At least ${r.correct} correct answers, ${r.lifetimeAccuracy*100}% overall accuracy and an average response time of ${r.maxTime/1000}s or less${stage===2?' when timing is available':''}. Also requires ${r.attempts} unassisted attempts in the last 12 answers at ${r.accuracy*100}% accuracy, independent recall on ${r.days} days and ${r.level} spaced recall steps.`];}),
+      ['Reading, Writing & Both','Each direction has its own stage. Both reaches Reviewing or Mastered only when both directions do. Accuracy and time are checked before rounding. Earlier practice is assessed against the same performance thresholds; new answers add spaced-recall evidence.']];
   }
   function dueHelp(){
     return '“Due” counts kana ready to revisit, using spaced practice to help you remember them. Reading and Writing have separate schedules. A short session can repeat kana, so this isn’t a question count. Reviews are suggestions, not deadlines. Five correct answers each day keep your study streak going—you don’t need to clear every due review.';
@@ -80,7 +87,7 @@
     }
     row.lastSeen=at;
     row.recent.push({id,at,quality:independent?2:event.correct?1:0});row.recent=row.recent.slice(-12);
-    const next=stage(row),milestone=next>row.peak?next:0;
+    const next=stage(row,stats,time),milestone=next>row.peak?next:0;
     row.peak=Math.max(row.peak,next);
     return {entry:row,duplicate:false,reviewed,milestone};
   }

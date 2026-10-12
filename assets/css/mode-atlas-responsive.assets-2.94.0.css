@@ -30,7 +30,7 @@ html[data-effective-display-mode="phone"],body[data-effective-display-mode="phon
 body[data-effective-display-mode="tablet"],body[data-effective-display-mode="phone"]{
   padding-left:var(--ma-page-pad);
   padding-right:var(--ma-page-pad);
-  overflow-x:hidden;
+  overflow-x:clip;
 }
 body[data-effective-display-mode="tablet"] .ma-page-frame{
   width:min(100%,calc(100vw - 32px));
@@ -69,11 +69,11 @@ body[data-effective-display-mode="phone"] .ma-page-frame{
     --ma-card-pad:var(--ma-page-card-padding-phone);
     --ma-responsive-card-radius:var(--ma-page-card-radius-phone);
   }
-  body{padding-left:var(--ma-page-pad);padding-right:var(--ma-page-pad);overflow-x:hidden;}
+  body{padding-left:var(--ma-page-pad);padding-right:var(--ma-page-pad);overflow-x:clip;}
   body:not([data-effective-display-mode]) .ma-page-frame{width:min(100%,calc(100vw - 20px));margin-left:auto;margin-right:auto;}
 }
 
-body[data-display-mode="mobile"]{padding-left:var(--ma-page-gutter-phone);padding-right:var(--ma-page-gutter-phone);overflow-x:hidden;}
+body[data-display-mode="mobile"]{padding-left:var(--ma-page-gutter-phone);padding-right:var(--ma-page-gutter-phone);overflow-x:clip;}
 body[data-display-mode="mobile"] .ma-page-frame{width:min(100%,calc(100vw - 20px));}
 @media (max-width:520px){
   body{padding-left:var(--ma-page-gutter-phone);padding-right:var(--ma-page-gutter-phone);}

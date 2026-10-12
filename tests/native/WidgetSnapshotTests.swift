@@ -117,9 +117,10 @@ struct WidgetSnapshotTests {
         let safe = value.studyRoutine(at: today, calendar: calendar)
         assert(safe.streak == 8 && safe.studiedToday && !safe.needsStudy && safe.status == "Studied today")
         let timeline = WidgetActivity.timelineDates(since: nil, at: today, calendar: calendar, boundaries: [safe.expiresAt!])
-        assert(timeline.count == 3 && timeline.last == safe.expiresAt, "The timeline must contain the actual expiry even if no background refresh arrives")
+        assert(timeline.count == 4 && timeline.last == safe.expiresAt, "Only midnight, the final-minute label and expiry need timeline transitions")
         assert(value.studyRoutine(at: timeline[1], calendar: calendar).needsStudy)
-        assert(value.studyRoutine(at: timeline[2], calendar: calendar).streak == 0)
+        assert(WidgetActivity.isFinalMinute(until: safe.expiresAt!, at: timeline[2]))
+        assert(value.studyRoutine(at: timeline[3], calendar: calendar).streak == 0)
         value.lastStudyDay = "2026-10-05"
         assert(value.studyRoutine(at: today, calendar: calendar).streak == 0, "Future dates cannot create a current streak")
         value.studyStreak = 0; value.lastStudyDay = nil
@@ -129,6 +130,9 @@ struct WidgetSnapshotTests {
         let activity = Date(timeIntervalSince1970: 1_790_726_390.125)
         for elapsed in [-30.0, 0, 59.999, 60, 120, 3600, 86400] {
             assert(WidgetActivity.isRecent(since: activity, at: activity.addingTimeInterval(elapsed)) == (elapsed < 60))
+        }
+        for remaining in [-1.0, 0, 59.999, 60, 60.001, 3600] {
+            assert(WidgetActivity.isFinalMinute(until: activity.addingTimeInterval(remaining), at: activity) == (remaining >= 0 && remaining <= 60))
         }
 
         var calendar = Calendar(identifier: .gregorian)

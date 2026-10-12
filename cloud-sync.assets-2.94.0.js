@@ -1968,6 +1968,7 @@ window.KanaCloudSync = {
   markSectionUpdated,
   beginLocalImport,
   getUser,
+  isAuthResolved: () => authResolved,
   getFirebaseApp,
   isConfigured: () => CONFIG_READY,
   getSyncStatus,

@@ -36,5 +36,11 @@
   function photoURL(value){
     try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&/^(?:[a-z0-9-]+\.)*googleusercontent\.com$/i.test(url.hostname)&&url.href.length<=2048?url.href:null;}catch{return null;}
   }
-  return Object.freeze({avatars,emojis,cleanName,nameKey,validName,reservedName,objectionableName,emoji,avatar,photoURL});
+  function presentation(profile,user){
+    const selected=avatar(profile?.avatar),accountPhoto=photoURL(user?.photoURL)||photoURL(user?.providerData?.find(provider=>provider.providerId==='google.com')?.photoURL);
+    const url=selected==='account'?(photoURL(profile.avatarURL)||accountPhoto):selected?null:accountPhoto;
+    const symbol=selected?.startsWith('emoji:')?selected.slice(6):avatars[selected]?.[0]||'あ';
+    return {symbol,url};
+  }
+  return Object.freeze({avatars,emojis,cleanName,nameKey,validName,reservedName,objectionableName,emoji,avatar,photoURL,presentation});
 });

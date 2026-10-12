@@ -1,4 +1,18 @@
 const {test,expect}=require('@playwright/test');
+for(const mode of ['reading','writing'])test(`web ${mode} navigation stays visible and setup clears the desktop dock`,async({page},testInfo)=>{
+  await prepare(page);await page.setViewportSize({width:1280,height:800});await open(page,`/${mode}/`);
+  const branch=page.getByRole('navigation',{name:'Kana sections'}),dock=page.locator('.bottom-shell'),start=page.locator('#startBtn');
+  const bounds=await branch.boundingBox(),left=await page.locator('.left-panel').boundingBox(),right=await page.locator('.right-panel').boundingBox();
+  expect(bounds.x).toBeGreaterThanOrEqual(left.x+left.width);expect(bounds.x+bounds.width).toBeLessThanOrEqual(right.x);
+  expect((await start.boundingBox()).y+(await start.boundingBox()).height).toBeLessThan((await dock.boundingBox()).y);
+  expect(await page.evaluate(()=>document.documentElement.scrollHeight-innerHeight)).toBeLessThanOrEqual(1);
+  await page.screenshot({path:testInfo.outputPath(`desktop-${mode}-setup.png`),animations:'disabled'});
+  await page.setViewportSize({width:1280,height:600});await page.evaluate(()=>scrollTo(0,10000));
+  expect(await page.evaluate(()=>scrollY)).toBeGreaterThan(0);
+  const nav=await page.locator('#studyNav').boundingBox();expect(nav.y).toBeGreaterThanOrEqual(0);expect(nav.y).toBeLessThanOrEqual(14);
+  const button=await start.boundingBox(),bottom=await dock.boundingBox();expect(button.y+button.height).toBeLessThan(bottom.y);
+  await start.click();await expect(page.locator('body')).toHaveClass(/trainer-session-active/);await expect(branch).toBeHidden();
+});
 async function prepare(page,{native=false,theme='dark'}={}){
   await page.setViewportSize({width:native?393:1280,height:native?852:900});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());

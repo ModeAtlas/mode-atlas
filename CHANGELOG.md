@@ -1,3 +1,14 @@
+## 2.94.0 — Consistent mastery, appearance and practice navigation
+
+- Widget streak countdowns use days, hours and minutes, with a final-minute label and boundary-driven timelines; no per-second timer or app polling.
+- Collection themes apply before the first page paint using the account-bound, unexpired reward cache, then reconcile with Firebase Auth. Account changes and sign-out clear access.
+- Mastery requires 50 correct answers, at least 95% overall accuracy and average response time at or below 1 second, together with established spaced recall. Comparisons use raw values. Reviewing requires 10 correct, 85% and at most 2.5 seconds when timing exists, plus spaced evidence.
+- Existing mastery summaries in Friends refresh under projection version 3. Practice records, XP and previously awarded milestones are retained.
+- Progress and Friends share the selected avatar/photo presentation; Progress refreshes after account/profile loading and supports a linked Google photo after Apple sign-in.
+- Web Reading/Writing navigation stays sticky, branch navigation clears the side panels and setup controls clear the bottom dock.
+- Sakura has new cherry-blossom vector artwork with an undistorted right-aligned fit and readable profile text.
+- Public version 2.94.0, iOS build 2080016. Update command and release checks: `docs/development-2.94.0.md`.
+
 ## 2.93.0 — Coin shop, collection themes and richer widgets
 
 - Spend Atlas Coins on cosmetic collections and streak items through atomic, account-bound server transactions with retry receipts. Only coin top-ups show the coming-soon prompt.

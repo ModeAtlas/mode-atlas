@@ -33,7 +33,7 @@
   }
 
   function collection(pref){return window.ModeAtlasRewardRules?.item('themes',pref);}
-  function available(pref){return !['sakura','midnight'].includes(pref)||window.ModeAtlasRewardRules?.allowed('themes',pref,1,window.ModeAtlasRewardAccess?.current());}
+  function available(pref){return !['sakura','midnight'].includes(pref)||window.ModeAtlasRewardRules?.allowed('themes',pref,1,window.ModeAtlasRewardAccess?.presentation?.()||window.ModeAtlasRewardAccess?.current());}
   function updateButtons(){
     for(const host of document.querySelectorAll('[data-ma-owned-themes]')){
       const themes=(window.ModeAtlasRewardRules?.themes||[]).filter(item=>available(item.id));
@@ -131,6 +131,7 @@
   window.addEventListener('modeAtlasRewardAccessChanged',apply);
   window.addEventListener('modeAtlasCloudDataChanged',apply);
   window.addEventListener('modeAtlasAccountSignedOut',apply);
+  window.addEventListener('kanaCloudSyncStatusChanged',apply);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once: true });
   apply();
 })();

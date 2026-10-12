@@ -1,4 +1,52 @@
 const {test,expect}=require('@playwright/test');
+
+for(const native of [false,true])for(const collection of ['sakura','midnight'])test(`collection first paint survives slow auth and page changes ${native?'iOS':'web'} ${collection}`,async({page})=>{
+  await prepare(page,{native,theme:collection});
+  await page.addInitScript(()=>{
+    localStorage.setItem('modeAtlasLastUserId','theme-owner');
+    localStorage.setItem('modeAtlasRewardAccess',JSON.stringify({uid:'theme-owner',checkedAt:Date.now(),access:{grants:['shop-sakura','shop-midnight'],validUntil:Date.now()+86400000}}));
+  });
+  await page.route('**/cloud-sync.assets-*.js',route=>route.fulfill({contentType:'text/javascript',body:`
+    let testUser=null,testResolved=false,readyResolve;
+    window.KanaCloudSync={getUser:()=>testUser,isAuthResolved:()=>testResolved,ready:new Promise(r=>readyResolve=r),isConfigured:()=>false,
+      bindUi:()=>{},beforePageLoad:async()=>false,waitForInitialHydration:async()=>false,getFirebaseApp:async()=>{throw Error('offline');},
+      getSyncStatus:()=>({state:'local',tone:'neutral',text:'Saved',user:testUser}),scheduleSync:()=>{},syncNow:async()=>true};
+    setTimeout(()=>{testUser={uid:'theme-owner'};testResolved=true;readyResolve();dispatchEvent(new CustomEvent('kanaCloudSyncStatusChanged'));},1200);
+  `}));
+  // Observe the first body script, after blocking head scripts and CSS have
+  // executed. CSS request timing is too early because of the preload scanner.
+  await page.route('**/mode-atlas-early-loader.assets-*.js',async route=>{
+    const response=await route.fetch();
+    await route.fulfill({response,body:`
+      window.initialCollectionTheme=document.documentElement.dataset.maCollectionTheme;
+      window.themeChanges=[];
+      new MutationObserver(()=>themeChanges.push(document.documentElement.dataset.maCollectionTheme))
+        .observe(document.documentElement,{attributes:true,attributeFilter:['data-ma-collection-theme']});
+    `+await response.text()});
+  });
+  for(const route of ['/progress/','/reading/','/writing/']){
+    await open(page,route);await expect(page.locator('html')).toHaveAttribute('data-ma-collection-theme',collection);
+    expect(await page.evaluate(()=>initialCollectionTheme)).toBe(collection);
+    await expect.poll(()=>page.evaluate(()=>KanaCloudSync.isAuthResolved())).toBe(true);
+    expect(await page.evaluate(()=>themeChanges.every(theme=>theme===localStorage.getItem('modeAtlasThemePreference')))).toBe(true);
+    await expect(page.locator('html')).toHaveAttribute('data-ma-collection-theme',collection);
+  }
+});
+
+test('Progress avatar refreshes after auth, follows the selected identity and clears on sign-out',async({page})=>{
+  await prepare(page);await open(page,'/progress/');
+  await page.route('https://lh3.googleusercontent.com/a/selected',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#ad5d80"/></svg>'}));
+  await page.evaluate(()=>{
+    window.avatarUser={uid:'avatar-owner',providerData:[{providerId:'google.com',photoURL:'https://lh3.googleusercontent.com/a/selected'}]};window.avatarProfile=null;
+    KanaCloudSync.getUser=()=>avatarUser;
+    ModeAtlasSocial={...ModeAtlasSocial,selfProfile:()=>avatarProfile,refreshProfile:async()=>{}};
+    dispatchEvent(new CustomEvent('kanaCloudSyncStatusChanged'));
+  });
+  const avatar=page.locator('[data-ma-selected-avatar]');await expect(avatar.locator('img')).toHaveAttribute('src','https://lh3.googleusercontent.com/a/selected');
+  await page.evaluate(()=>{avatarProfile={avatar:'emoji:🦊'};dispatchEvent(new CustomEvent('modeAtlasSelfProfileChanged'));});await expect(avatar).toHaveText('🦊');
+  await page.evaluate(()=>{avatarProfile={avatar:'moon'};dispatchEvent(new CustomEvent('modeAtlasSelfProfileChanged'));});await expect(avatar).toHaveText('月');
+  await page.evaluate(()=>{avatarProfile=null;avatarUser=null;dispatchEvent(new CustomEvent('modeAtlasAccountSignedOut'));});await expect(avatar).toHaveText('あ');await expect(avatar.locator('img')).toHaveCount(0);
+});
 async function prepare(page,{native=true,theme='dark',xp=0}={}){
   await page.setViewportSize({width:native?393:1280,height:native?852:900});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());

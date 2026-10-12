@@ -22,9 +22,8 @@
   }
   function status(message,tone='info'){if(notice){notice.textContent=message;notice.dataset.tone=tone;notice.hidden=!message;}}
   function avatar(profile){
-    const value=identityPolicy.avatar(profile.avatar),symbol=value?.startsWith('emoji:')?value.slice(6):avatars[value]?.[0]||'あ';
+    const {symbol,url}=identityPolicy.presentation(profile);
     const node=el('span','ma-atlas-avatar ma-social-avatar',symbol);node.dataset.maFrame=profile.frame||'plain';node.setAttribute('aria-hidden','true');
-    const url=value==='account'?identityPolicy.photoURL(profile.avatarURL):null;
     if(url){const image=el('img');image.src=url;image.alt='';image.referrerPolicy='no-referrer';image.addEventListener('error',()=>{node.textContent='あ';},{once:true});node.replaceChildren(image);}
     return node;
   }
