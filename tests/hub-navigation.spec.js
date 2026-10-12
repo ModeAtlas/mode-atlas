@@ -61,7 +61,7 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   await expect(page.locator('.ma-routine-goal')).toHaveCount(5);
   await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Settings',exact:true}).click();
-  await expect(page.getByRole('tablist',{name:'Account sections'}).getByRole('tab')).toHaveText(['Profile','Settings']);
+  await expect(page.getByRole('tablist',{name:'Account sections'}).getByRole('tab')).toHaveText(['Profile','Shop','Settings']);
   await page.locator('#maAccountClose').click();await expect(page.getByRole('tabpanel',{name:'Rewards',exact:true})).toBeVisible();
   await page.getByRole('tab',{name:'Goals',exact:true}).click();
   await page.screenshot({path:info.outputPath('progress.png'),animations:'disabled'});

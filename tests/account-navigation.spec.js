@@ -31,14 +31,14 @@ for(const layout of [
   {native:true,theme:'dark',width:320,height:700},
   {native:true,theme:'light',width:820,height:1180},
   {native:false,theme:'dark',width:1280,height:900}
-])test(`${layout.native?'iOS':'web'} ${layout.width} ${layout.theme}: profile and settings share one account surface`,async({page},info)=>{
+])test(`${layout.native?'iOS':'web'} ${layout.width} ${layout.theme}: profile, shop and settings share one account surface`,async({page},info)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,layout);
   await page.locator('#profileOpenBtn').click();
   await expect(page.locator('#profileOpenBtn')).toHaveAttribute('aria-controls','maAccountSheet');
   await expect(page.locator('#profileOpenBtn')).toHaveAttribute('aria-expanded','true');
   const navigation=page.getByRole('tablist',{name:'Account sections',exact:true});
-  await expect(navigation.getByRole('tab')).toHaveText(['Profile','Settings']);
-  for(const label of ['Profile','Settings']){
+  await expect(navigation.getByRole('tab')).toHaveText(['Profile','Shop','Settings']);
+  for(const label of ['Profile','Shop','Settings']){
     await navigation.getByRole('tab',{name:label,exact:true}).click();
     await expect(page.locator('#maAccountTitle')).toHaveText(label);
     await expect(page.locator('.ma-account-view:visible')).toHaveCount(1);
@@ -76,7 +76,7 @@ test('account section keys and repeated avatar taps keep one navigation owner',a
   const nav=page.getByRole('tablist',{name:'Account sections',exact:true});
   await nav.getByRole('tab',{name:'Profile',exact:true}).focus();
   await page.keyboard.press('ArrowRight');
-  await expect(nav.getByRole('tab',{name:'Settings',exact:true})).toBeFocused();
+  await expect(nav.getByRole('tab',{name:'Shop',exact:true})).toBeFocused();
   await page.keyboard.press('End');
   await expect(nav.getByRole('tab',{name:'Settings',exact:true})).toBeFocused();
   await page.locator('#profileOpenBtn').click();
@@ -89,4 +89,8 @@ test('account section keys and repeated avatar taps keep one navigation owner',a
   await expect(page.locator('#maAccountTitle')).toHaveText('Profile');
   await expect(page.locator('.ma-account-layer')).toHaveCount(1);
   await expect(page.locator('.ma-account-sheet')).toHaveCount(1);
+  await nav.getByRole('tab',{name:'Shop',exact:true}).click();
+  await page.getByRole('button',{name:/^Your rewards/}).click();
+  await expect(page).toHaveURL(/\/progress\/\?tab=rewards$/);
+  await expect(page.getByRole('tab',{name:'Rewards',exact:true})).toHaveAttribute('aria-selected','true');
 });

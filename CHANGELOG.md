@@ -1,3 +1,11 @@
+## 2.92.0 — Account shop and collection browsing
+
+- Move Shop beside Profile and Settings in the shared account menu. Progress contains Goals, Rewards and Recap; the duplicate Profile shop shortcut is removed.
+- Give Sakura and Midnight larger themed displays using their real bundled icons and frames, a compact token wallet, clearer previews and a direct route to owned rewards.
+- Keep equipping banners, titles/frames and icons with Progress → Rewards. Shop marks available collections as in Rewards and never changes a selected look during browsing.
+- Preserve free learning, level rewards, wallet privacy and disabled transactions. Hidden shop panels do not render on every learning-progress event.
+- iOS build 2080014. No new Firebase deployment or signing change is required on top of the 2.91.0 backend.
+
 ## 2.90.0 - 2026-10-06
 
 - Replace Learn's stacked branch cards and boxed button grids with an open suggested-session area and simple Reading, Writing and Results rows. Keep Kana Overview and Word Bank directly accessible.

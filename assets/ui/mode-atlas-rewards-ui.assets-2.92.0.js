@@ -173,28 +173,27 @@
     copy.append(title,status);identity.append(preview,copy);content.append(identity);
     const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Progress');
     const recap=el('div','ma-atlas-panel ma-atlas-recap');renderRecap(recap);
-    const shop=el('div','ma-atlas-panel');root.ModeAtlasShopUI.mount(shop);
-    const panels=[goalPanel(),rewardPanel(summary),recap,shop];
-    const controls=['Goals','Rewards','Recap','Shop'].map((label,index)=>{
+    const panels=[goalPanel(),rewardPanel(summary),recap];
+    const controls=['Goals','Rewards','Recap'].map((label,index)=>{
       const tab=button(label);tab.id=`atlasTab${index}`;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',`atlasPanel${index}`);
       panels[index].id=`atlasPanel${index}`;panels[index].setAttribute('role','tabpanel');panels[index].setAttribute('aria-labelledby',tab.id);panels[index].tabIndex=0;
       tab.addEventListener('click',()=>selectTab(index));tabs.append(tab);return tab;
     });
-    function selectTab(index){controls.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});if(index===2)renderRecap(recap);if(index===3)void root.ModeAtlasShop.refresh();}
+    function selectTab(index){controls.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});if(index===2)renderRecap(recap);}
     tabs.addEventListener('keydown',event=>{
       const index=controls.indexOf(document.activeElement);if(index<0)return;
       const target=event.key==='ArrowRight'?(index+1)%controls.length:event.key==='ArrowLeft'?(index+controls.length-1)%controls.length:event.key==='Home'?0:event.key==='End'?controls.length-1:-1;
       if(target>=0){event.preventDefault();selectTab(target);controls[target].focus();}
     });
-    const requested=new URLSearchParams(location.search).get('tab');selectTab(requested==='shop'?3:requested==='rewards'?1:0);content.append(tabs,...panels);
-    host.replaceChildren(content);refresh();root.ModeAtlasShopUI.refresh();void root.ModeAtlasRewardAccess?.refresh();
+    const requested=new URLSearchParams(location.search).get('tab');selectTab(requested==='rewards'?1:0);content.append(tabs,...panels);
+    host.replaceChildren(content);refresh();void root.ModeAtlasRewardAccess?.refresh();
     return ()=>content.remove();
   }
   function open(section='goals'){
-    if(location.pathname==='/progress/'){document.getElementById(section==='shop'?'atlasTab3':section==='rewards'?'atlasTab1':'atlasTab0')?.click();root.ModeAtlasAccountNavigation?.close();return;}
-    root.ModeAtlasVersionFile.navigate('/progress/'+(['shop','rewards'].includes(section)?'?tab='+section:''));
+    if(location.pathname==='/progress/'){root.ModeAtlasAccountNavigation?.close();const tab=document.getElementById(section==='rewards'?'atlasTab1':'atlasTab0');tab?.click();tab?.focus();return;}
+    root.ModeAtlasVersionFile.navigate('/progress/'+(section==='rewards'?'?tab=rewards':''));
   }
-  document.addEventListener('click',event=>{if(event.target.closest('[data-ma-shop-open]'))open('shop');else if(event.target.closest('[data-ma-rewards-open]'))open();});
+  document.addEventListener('click',event=>{if(event.target.closest('[data-ma-rewards-open]'))open();});
   for(const event of ['modeAtlasRewardAccessChanged','modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady'])root.addEventListener(event,refresh);
   document.addEventListener('ma:ui-refresh',refresh);
   document.addEventListener('DOMContentLoaded',refresh);

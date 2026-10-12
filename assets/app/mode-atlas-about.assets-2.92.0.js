@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'Keep your routine in view.';
+  const WHATS_NEW_COPY = 'A new home for your next look.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Widgets now focus on your study streak and goals, with a countdown when your streak needs attention.',
-    'Tap the information button beside Spaced reviews to understand what “due” means.',
-    'Preview Sakura and Midnight in the new optional shop. Purchases are not available yet; learning stays free.'
+    'Shop now sits beside Profile and Settings in your account menu.',
+    'Explore larger Sakura and Midnight collection previews, with your Atlas Tokens balance at the top.',
+    'Choose owned banners, titles, frames and app icons in Progress → Rewards. Purchases are still unavailable; learning stays free.'
   ];
 
   function storeGet(key, fallback = '') {

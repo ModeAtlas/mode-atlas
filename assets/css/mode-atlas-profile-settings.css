@@ -118,8 +118,6 @@ html[data-ma-runtime="ios"] .ma-account-sheet{
   .ma-settings-segmented--display{--ma-segment-count:2!important;}
   .ma-settings-inline-actions{grid-template-columns:1fr;}
 }
-html[data-ma-large-text] .ma-account-tabs{grid-template-columns:repeat(2,minmax(0,1fr));}
-html[data-ma-large-text] .ma-account-tab{flex-direction:row;gap:8px;min-height:48px;}
 @media(prefers-reduced-motion:reduce){.ma-account-sheet{animation:none;}}
 
 /* Provider choice uses the shared dialog; account state stays in cloud-sync. */
