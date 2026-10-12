@@ -12,7 +12,7 @@
     const owner=root.ModeAtlasProgress,state=owner?.readState?.();
     const progress = owner?.getSummary?.(state) || {};
     const routine=owner?.routine?.(state)||{streak:0,goals:[]};
-    const appearance=root.ModeAtlasRewardRules?.appearance(state?.appearance?.landmark,progress.level);
+    const appearance=root.ModeAtlasRewardRules?.appearance(state?.appearance?.landmark,progress.level,root.ModeAtlasRewardAccess?.current());
     const next=root.ModeAtlasRewardRules?.landmarks.find(item=>item.level>progress.level);
     const kana = root.ModeAtlasKanaMetrics?.kanaStats?.() || {};
     const store = root.ModeAtlasStorage;

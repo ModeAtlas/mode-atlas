@@ -49,6 +49,8 @@
             </div>
           </section>
 
+          <button class="ma-button ma-button--ghost ma-button--wide" type="button" data-ma-shop-open>${icon(href,'achievement')}<span>Shop · optional looks</span></button>
+
           <section class="ma-card ma-card--soft ma-profile-card ma-sync-card" aria-label="Sync status">
             <div class="ma-profile-card-head">
               <div>

@@ -70,6 +70,8 @@ struct WidgetSnapshotTests {
         assert(decodedRotation.goals(at: tomorrow).allSatisfy(\.isWeekly), "Expired daily labels must disappear until the app publishes today's rotation")
         assert(decodedRotation.goals(at: calendarDay(7, after: now)).isEmpty, "Expired weekly labels must also disappear")
         assert(decodedRotation.goals(at: now).filter(\.isWeekly).count == 2)
+        testStudyRoutine(decodedRotation)
+        assert(!old.studyRoutine(at: now).available, "Legacy answer streaks must never be presented as study streaks")
         var highLevel = try JSONSerialization.jsonObject(with: JSONEncoder().encode(rotating)) as! [String: Any]
         highLevel["levelRequirement"] = 163000
         let higherCurve = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: highLevel))
@@ -81,6 +83,34 @@ struct WidgetSnapshotTests {
     }
 
     static func calendarDay(_ days: Int, after date: Date) -> Date { Calendar.current.date(byAdding: .day, value: days, to: date)! }
+    static func testStudyRoutine(_ snapshot: ModeAtlasWidgetSnapshot) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Australia/Melbourne")!
+        var value = snapshot
+        value.studyStreak = 8
+        for (year, month, day, hours, previous) in [(2026, 10, 4, 23, "2026-10-03"), (2026, 4, 5, 25, "2026-04-04")] {
+            let start = calendar.date(from: DateComponents(year: year, month: month, day: day))!
+            value.lastStudyDay = previous
+            let due = value.studyRoutine(at: start, calendar: calendar)
+            assert(due.streak == 8 && due.needsStudy && due.status == "Ends in")
+            assert(due.expiresAt!.timeIntervalSince(start) == Double(hours * 3600), "Streak deadlines must follow local midnight across DST")
+            assert(value.studyRoutine(at: due.expiresAt!.addingTimeInterval(-1), calendar: calendar).streak == 8)
+            let expired = value.studyRoutine(at: due.expiresAt!, calendar: calendar)
+            assert(expired.streak == 0 && expired.expiresAt == nil && !expired.needsStudy)
+        }
+        value.lastStudyDay = "2026-10-04"
+        let today = calendar.date(from: DateComponents(year: 2026, month: 10, day: 4, hour: 12))!
+        let safe = value.studyRoutine(at: today, calendar: calendar)
+        assert(safe.streak == 8 && safe.studiedToday && !safe.needsStudy && safe.status == "Safe for today")
+        let timeline = WidgetActivity.timelineDates(since: nil, at: today, calendar: calendar, boundaries: [safe.expiresAt!])
+        assert(timeline.count == 3 && timeline.last == safe.expiresAt, "The timeline must contain the actual expiry even if no background refresh arrives")
+        assert(value.studyRoutine(at: timeline[1], calendar: calendar).needsStudy)
+        assert(value.studyRoutine(at: timeline[2], calendar: calendar).streak == 0)
+        value.lastStudyDay = "2026-10-05"
+        assert(value.studyRoutine(at: today, calendar: calendar).streak == 0, "Future dates cannot create a current streak")
+        value.studyStreak = 0; value.lastStudyDay = nil
+        assert(value.studyRoutine(at: today, calendar: calendar).status == "Start with 5 correct")
+    }
     static func testActivityTiming() {
         let activity = Date(timeIntervalSince1970: 1_790_726_390.125)
         for elapsed in [-30.0, 0, 59.999, 60, 120, 3600, 86400] {

@@ -97,13 +97,15 @@
     {id:'bridge',level:10,title:'Bridge Builder',name:'Recall bridge',symbol:'⌁',frame:'bridge',icon:null},
     {id:'summit',level:20,title:'Summit Seeker',name:'Memory summit',symbol:'△',frame:'summit',icon:'Summit'},
     {id:'lantern',level:35,title:'Lantern Keeper',name:'Lantern passage',symbol:'✧',frame:'lantern',icon:null},
-    {id:'horizon',level:50,title:'Horizon Explorer',name:'Open horizon',symbol:'◎',frame:'horizon',icon:'Horizon'}
+    {id:'horizon',level:50,title:'Horizon Explorer',name:'Open horizon',symbol:'◎',frame:'horizon',icon:'Horizon'},
+    {id:'sakura',title:'Blossom Wanderer',name:'Sakura',symbol:'桜',frame:'sakura',icon:'Sakura',grant:'shop-sakura',kind:'shop'},
+    {id:'midnight',title:'Midnight Voyager',name:'Midnight',symbol:'月',frame:'midnight',icon:'Midnight',grant:'shop-midnight',kind:'shop'}
   ].map(Object.freeze));
   // A grant may unlock one item or a coordinated event set across categories.
   // Audience rules and award windows belong to the server, never this catalogue.
-  const banners=Object.freeze([{id:'plain',level:1,name:'Original'},...landmarks.map(({id,level,name})=>({id,level,name:id==='trail'?'First light':name})),
+  const banners=Object.freeze([{id:'plain',level:1,name:'Original'},...landmarks.map(({id,level,name,grant,kind})=>({id,...(grant?{grant,kind}:{level}),name:id==='trail'?'First light':name})),
     {id:'hunny',name:'Hunny',grant:'hunny-tester',kind:'exclusive'}].map(Object.freeze));
-  const icons=Object.freeze([{id:'original',name:'Original',icon:null,level:1},...landmarks.filter(item=>item.icon).map(item=>({id:item.id,name:item.icon,icon:item.icon,level:item.level}))].map(Object.freeze));
+  const icons=Object.freeze([{id:'original',name:'Original',icon:null,level:1},...landmarks.filter(item=>item.icon).map(item=>({id:item.id,name:item.icon,icon:item.icon,...(item.grant?{grant:item.grant,kind:item.kind}:{level:item.level})}))].map(Object.freeze));
   const avatars=Object.freeze([
     {id:'kana',symbol:'あ',name:'Hiragana',level:1},{id:'katakana',symbol:'ア',name:'Katakana',level:1},
     {id:'book',symbol:'本',name:'Book',level:1},{id:'sakura',symbol:'桜',name:'Cherry blossom',level:1},

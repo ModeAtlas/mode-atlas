@@ -121,6 +121,16 @@ test('achievement evidence counts real goal completions, unassisted streaks and 
   e.root.ModeAtlasRewardAccess={current:()=>({grants:[]})};p.recordRewardGrants();assert.equal(p.achievementStats().collectedRewards,2);
   assert.equal(load().progress.achievementStats().collectedRewards,0,'A different account does not inherit receipts');
 });
+test('shop collections never award achievement progress or XP and need an actual grant to equip',()=>{
+  const e=load(),p=e.progress,before=p.getXP();
+  assert.equal(p.selectBanner('sakura'),false);assert.equal(p.selectAppearance('midnight'),false);
+  e.root.ModeAtlasRewardAccess={current:()=>({grants:['shop-sakura']})};
+  assert.equal(p.selectBanner('sakura'),true);assert.equal(p.selectAppearance('sakura'),true);
+  p.recordRewardGrants();assert.equal(p.achievementStats().collectedRewards,0);assert.equal(p.getXP(),before);
+  assert.equal(p.readState().appearance.banner,'sakura');
+  e.root.ModeAtlasRewardAccess={current:()=>({grants:[]})};
+  assert.equal(e.root.ModeAtlasRewardRules.banner('sakura',1,{}).id,'plain');
+});
 test('banner rewards migrate safely and stay independent of titles, frames and XP',()=>{
   const e=load({modeAtlasProgress:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':700}},appearance:{landmark:'grove',at:10}}}),p=e.progress;
   assert.deepEqual(plain(p.readState().appearance),{landmark:'grove',at:10,banner:'plain',bannerAt:0});

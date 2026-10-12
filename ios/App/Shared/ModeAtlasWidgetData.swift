@@ -51,7 +51,7 @@ struct ModeAtlasWidgetSnapshot: Codable {
         if let activity = lastActivityAt, !activity.isFinite || activity < 0 || activity > updatedAt + 300_000 { return false }
         if schemaVersion >= 3 {
             guard let title, !title.isEmpty, title.count <= 60, let frame,
-                  ["plain", "grove", "bridge", "summit", "lantern", "horizon"].contains(frame),
+                  ["plain", "grove", "bridge", "summit", "lantern", "horizon", "sakura", "midnight"].contains(frame),
                   let studyStreak, (0...100000).contains(studyStreak), let localDay, Self.validDay(localDay),
                   let goals, goals.allSatisfy(\.isValid), Set(goals.map(\.id)).count == goals.count else { return false }
             if schemaVersion == 3 && Set(goals.map(\.id)) != Set(["recall", "balance", "review", "week"]) { return false }
@@ -106,20 +106,39 @@ struct ModeAtlasWidgetSnapshot: Codable {
             return ModeAtlasWidgetGoal(id: goal.id, label: goal.label, value: current ? goal.value : 0, target: goal.target, period: goal.period)
         }
     }
-    func routineStreak(at date: Date) -> Int {
-        let calendar = Calendar(identifier: .gregorian)
+    func studyRoutine(at date: Date, calendar: Calendar = Calendar(identifier: .gregorian)) -> ModeAtlasWidgetRoutine {
         let formatter = DateFormatter()
         formatter.calendar = calendar
+        formatter.timeZone = calendar.timeZone
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
-        guard let day = lastStudyDay, let last = formatter.date(from: day) else { return 0 }
+        guard let streak = studyStreak else { return .init(streak: 0, studiedToday: false, expiresAt: nil, available: false) }
+        guard streak > 0, let day = lastStudyDay, let last = formatter.date(from: day) else {
+            return .init(streak: 0, studiedToday: false, expiresAt: nil, available: true)
+        }
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: last), to: calendar.startOfDay(for: date)).day ?? 0
-        return (0...1).contains(days) ? (studyStreak ?? 0) : 0
+        guard (0...1).contains(days) else { return .init(streak: 0, studiedToday: false, expiresAt: nil, available: true) }
+        return .init(streak: streak, studiedToday: days == 0,
+                     expiresAt: calendar.date(byAdding: .day, value: 2, to: calendar.startOfDay(for: last)), available: true)
     }
+    func routineStreak(at date: Date) -> Int { studyRoutine(at: date).streak }
     func currentStreak(at date: Date) -> Int { completedToday(at: date) ? streak : 0 }
     var activityDate: Date? {
         guard let value = lastActivityAt, value > 0 else { return nil }
         return Date(timeIntervalSince1970: value / 1000)
+    }
+}
+
+// Presentation of the shared owner's study days, using calendar boundaries so
+// a daylight-saving day never becomes an incorrect fixed 24-hour countdown.
+struct ModeAtlasWidgetRoutine {
+    let streak: Int
+    let studiedToday: Bool
+    let expiresAt: Date?
+    let available: Bool
+    var needsStudy: Bool { streak > 0 && !studiedToday }
+    var status: String {
+        !available ? "Open to update streak" : studiedToday ? "Safe for today" : streak == 0 ? "Start with 5 correct" : "Ends in"
     }
 }
 

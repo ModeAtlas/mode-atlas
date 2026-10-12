@@ -214,6 +214,7 @@ INTERACTIVE_TAIL_STYLES = (
     'assets/css/mode-atlas-ios-theme.css',
     'assets/css/mode-atlas-components.css',
     'assets/css/mode-atlas-rewards.css',
+    'assets/css/mode-atlas-shop.css',
     'assets/css/mode-atlas-social.css',
     'assets/css/mode-atlas-navigation.css',
     'assets/css/mode-atlas-responsive.css',
@@ -254,6 +255,7 @@ INTERACTIVE_SCRIPTS_BEFORE_STORAGE = (
 )
 INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-reward-rules.js',
+    'assets/app/mode-atlas-shop-catalogue.js',
     'assets/app/mode-atlas-date.js',
     'assets/app/mode-atlas-progress.js',
     'assets/app/mode-atlas-progress-ui.js',
@@ -271,6 +273,7 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-kana-metrics.js',
     'assets/app/mode-atlas-study-plan.js',
     'assets/ui/mode-atlas-rewards-ui.js',
+    'assets/ui/mode-atlas-shop-ui.js',
     'assets/platform/mode-atlas-native-engagement.js',
     'assets/achievements/mode-atlas-achievements-ui.js',
 )
@@ -286,6 +289,7 @@ ACCOUNT_SCRIPTS = (
     'assets/app/mode-atlas-notification-rules.js',
     'assets/platform/mode-atlas-notifications.js',
     'assets/app/mode-atlas-reward-access.js',
+    'assets/app/mode-atlas-shop.js',
     'assets/ui/mode-atlas-social-ui.js',
     'assets/app/mode-atlas-account-notices.js',
     'assets/ui/mode-atlas-profile-menu.js',

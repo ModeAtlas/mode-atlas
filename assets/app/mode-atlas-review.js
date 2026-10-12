@@ -61,6 +61,9 @@
       ...[2,3].map(stage=>{const r=requirements[stage];return [labels[stage],`At least ${r.attempts} unassisted attempts in the last 12 answers, ${r.accuracy*100}% accuracy, independent recall on ${r.days} days, and ${r.level} spaced recall steps. Return when a review is due to advance the schedule.`];}),
       ['Reading, Writing & Both','Each direction has its own stage. Both reaches Reviewing or Mastered only when both directions do. Speed is shown separately. Earlier practice retains its legacy stage until new recall evidence is recorded.']];
   }
+  function dueHelp(){
+    return '“Due” means kana you’ve practised are ready to revisit. Spacing reviews out helps you remember them. Reading and Writing have separate schedules. The number counts kana, not questions; a short session may repeat them. These are suggestions, not deadlines—waiting won’t remove XP or break your study streak.';
+  }
   function answer(input,event,stats={},time=0){
     const row=normalize(input,stats,time), at=number(event.at), id=String(event.id||'');
     if(!id||!at||row.recent.some(x=>x.id===id))return {entry:row,duplicate:true,reviewed:false,milestone:0};
@@ -94,5 +97,5 @@
   function due(map={},chars=Object.keys(map),at=Date.now()){
     return chars.filter(kana=>map[kana]?.reviewVersion===1&&map[kana].level>=2&&map[kana].due<=at).sort((a,b)=>map[a].due-map[b].due||a.localeCompare(b));
   }
-  return Object.freeze({intervals,labels,requirements,legacyStage,timeMilliseconds,combinedStage,normalize,stage,guidance,help,answer,merge,mergeMaps,due});
+  return Object.freeze({intervals,labels,requirements,legacyStage,timeMilliseconds,combinedStage,normalize,stage,guidance,help,dueHelp,answer,merge,mergeMaps,due});
 });

@@ -417,7 +417,7 @@
     const grants=root.ModeAtlasRewardAccess?.current()?.grants||[];if(!grants.length)return;
     const state=ensureSeeded({sync:false,emit:false});let changed=false;
     for(const rewards of Object.values(root.ModeAtlasRewardRules.catalogue))for(const reward of rewards){
-      if(reward.grant&&grants.includes(reward.grant)&&!state.collections[reward.grant]){state.collections[reward.grant]=reward.kind==='event'?'event':'exclusive';changed=true;}
+      if(reward.grant&&reward.kind!=='shop'&&grants.includes(reward.grant)&&!state.collections[reward.grant]){state.collections[reward.grant]=reward.kind==='event'?'event':'exclusive';changed=true;}
     }
     if(changed)persistState(state,{source:'reward.received'});
   }

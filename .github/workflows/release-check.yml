@@ -273,7 +273,7 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Info.plist")" = "$expected_version"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")" = "$expected_build"
           test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$app_path/Info.plist")" = "18.0"
-          for icon in Grove Summit Horizon; do
+          for icon in $(node -p "require('./assets/app/mode-atlas-reward-rules.js').icons.filter(item=>item.icon).map(item=>item.icon).join(' ')"); do
             test "$(/usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundleAlternateIcons:$icon:CFBundleIconName" "$app_path/Info.plist")" = "$icon"
           done
           test -d "$app_path/Metadata.appintents"

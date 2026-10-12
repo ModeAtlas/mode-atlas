@@ -72,7 +72,7 @@ test('rules preserve owner-only profile/app-data access and deny every direct so
     await assertFails(getDoc(doc(mine,path)));
     await assertFails(setDoc(doc(mine,path),{}));
   }
-  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices']){
+  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','commerceAccounts','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));
   }
@@ -459,6 +459,39 @@ test('custom rewards need no Friends enrolment and never trust forged tokens or 
   await auth.deleteUser(a.uid);await service.cleanupAccount(a.uid);assert.equal((await db.doc(`rewardEntitlements/${a.uid}`).get()).exists,false);
 });
 
+test('shop wallet is account-bound, read-only and preserved on social opt-out; deletion removes it',async()=>{
+  const a=await learner('ShopLearner'),b=await learner('ShopViewer');
+  await a.call('leave');
+  assert.deepEqual(await a.call('shop'),{version:1,currency:'atlas-tokens',balance:0,purchasesEnabled:false});
+  const ref=db.doc(`commerceAccounts/${a.uid}`);
+  await ref.set({version:1,currency:'atlas-tokens',balance:250});
+  await ref.collection('transactions').doc('verified-example').set({amount:250});
+  const forged=save(999);forged.sections.progress.data.state.wallet={balance:999999};forged.sections.progress.data.state.appearance={landmark:'sakura',banner:'sakura',at:10,bannerAt:10};
+  await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(forged);
+  assert.equal((await a.call('shop')).balance,250);assert.equal((await b.call('shop')).balance,0);
+  assert.deepEqual((await a.call('rewards')).grants,[]);
+  await assert.rejects(a.call('shop',{uid:b.uid}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('shop',{},b.uid),{code:'UNAUTHENTICATED'});
+  await assert.rejects(a.call('shop',{balance:1000}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('purchase',{product:'sakura'}),{code:'INVALID_ARGUMENT'});
+  await ref.update({balance:-1});await assert.rejects(a.call('shop'),{code:'FAILED_PRECONDITION'});
+  await ref.update({balance:250});
+  await a.call('leave');assert.equal((await a.call('shop')).balance,250);
+  await auth.deleteUser(a.uid);await service.cleanupAccount(a.uid);
+  assert.equal((await ref.get()).exists,false);assert.equal((await ref.collection('transactions').get()).empty,true);
+});
+test('shop cosmetics require private grants and never project a wallet into social profiles',async()=>{
+  const a=await learner('ShopOwner'),b=await learner('ShopFriend');await friend(a,b);
+  const saved=save(20);saved.sections.progress.data.state.appearance={landmark:'sakura',banner:'sakura',at:10,bannerAt:10};
+  await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(saved);
+  assert.equal((await a.call('state')).profile.banner,'plain');
+  await db.doc(`rewardEntitlements/${a.uid}`).set({grants:{'shop-sakura':{}}});
+  await db.doc(`commerceAccounts/${a.uid}`).set({version:1,currency:'atlas-tokens',balance:500});
+  const own=(await a.call('state')).profile;assert.equal(own.banner,'sakura');assert.equal(own.frame,'sakura');assert.equal(own.stats.xp,20);
+  const other=(await b.call('list')).rows.find(row=>row.uid===a.uid);assert.equal(other.banner,'sakura');assert.equal(other.balance,undefined);assert.equal(other.wallet,undefined);
+  await db.doc(`rewardEntitlements/${a.uid}`).set({grants:{'shop-sakura':{revoked:true}}});
+  assert.equal((await b.call('list')).rows.find(row=>row.uid===a.uid).banner,'plain');
+});
 test('weekly callables require explicit participation and never accept client scores',async()=>{
   const a=await learner('Weekly Transport',7003);
   assert.equal((await a.call('weeklyState')).enabled,false);

@@ -23,6 +23,57 @@ async function correct(page,mode){
   await expect.poll(()=>page.evaluate(()=>!locked)).toBe(true);
   await page.evaluate(mode=>mode==='reading'?handleCorrect(getAnswerForCurrentChar()):handleChoiceAnswer(currentChar,document.querySelector('.choice-btn')),mode);
 }
+for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'light',width:320},{native:false,theme:'dark',width:1280}]){
+  test(`shop preview and review help ${view.native?'iOS':'web'} ${view.width} ${view.theme}`,async({page},testInfo)=>{
+    await prepare(page,view);await page.setViewportSize({width:view.width,height:852});await open(page,'/progress/?tab=shop');
+    const shop=page.getByRole('tabpanel',{name:'Shop',exact:true});await expect(shop).toBeVisible();
+    await expect(shop).toContainText('Purchases aren’t available yet.');
+    await expect(shop.locator('[data-ma-token-balance]')).toHaveText('Sign in to view your balance');
+    const before=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),appearance:ModeAtlasProgress.readState().appearance}));
+    await shop.getByRole('button',{name:'Preview Sakura collection'}).click();
+    await expect(page.locator('.ma-dialog__title')).toHaveText('Sakura');
+    await expect(page.getByRole('button',{name:'Use banner & frame'})).toHaveCount(0);
+    await expect(page.locator('.ma-shop-includes img')).toBeVisible();
+    expect(await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),appearance:ModeAtlasProgress.readState().appearance}))).toEqual(before);
+    await page.screenshot({path:testInfo.outputPath('shop-preview.png')});
+    await page.keyboard.press('Escape');await expect(shop.getByRole('button',{name:'Preview Sakura collection'})).toBeFocused();
+    await shop.getByRole('button',{name:'About Atlas Tokens'}).click();await expect(page.locator('.ma-dialog__message')).toContainText('separate from earned XP');await page.getByRole('button',{name:'Got it',exact:true}).click();
+    await page.screenshot({path:testInfo.outputPath('shop.png'),fullPage:true});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+    if(view.width===393){
+      await page.evaluate(()=>{
+        ModeAtlasRewardAccess={current:()=>({grants:['shop-sakura']}),refresh:async()=>{},status:()=> 'ready'};
+        ModeAtlasShop={current:()=>({status:'ready',balance:250}),refresh:async()=>{}};
+        dispatchEvent(new CustomEvent('modeAtlasRewardAccessChanged'));dispatchEvent(new CustomEvent('modeAtlasShopChanged'));
+      });
+      await expect(shop.locator('[data-ma-token-balance]')).toHaveText('250 tokens');
+      await shop.getByRole('button',{name:'Preview Sakura collection'}).click();await page.getByRole('button',{name:'Use banner & frame'}).click();
+      expect(await page.evaluate(()=>ModeAtlasProgress.readState().appearance.banner)).toBe('sakura');
+      expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(before.xp);
+      await page.getByRole('button',{name:'Use app icon',exact:true}).click();expect(await page.evaluate(()=>iconCalls.at(-1))).toEqual({name:'Sakura'});
+      await page.keyboard.press('Escape');
+      await page.getByRole('tab',{name:'Goals',exact:true}).click();
+      await page.evaluate(()=>{
+        const due={reviewVersion:1,level:2,due:Date.now()-1000,lastSeen:Date.now()-86400000};
+        ModeAtlasStorage.writeModeJSON('reading','srs',Object.fromEntries([... 'あいうえおかき'].map(k=>[k,due])));
+        ModeAtlasStorage.writeModeJSON('writing','srs',{'ア':due,'イ':due});dispatchEvent(new CustomEvent('modeAtlasCloudDataChanged'));
+      });
+      await expect(page.getByRole('link',{name:'Review Reading · 7 due',exact:true})).toBeVisible();
+      await expect(page.getByRole('link',{name:'Review Writing · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
+      const help=page.getByRole('button',{name:'About due reviews'});await help.click();
+      await expect(page.locator('.ma-dialog__message')).toContainText('Reading and Writing have separate schedules');
+      await expect(page.locator('.ma-dialog__message')).toContainText('not deadlines');await page.screenshot({path:testInfo.outputPath('review-help.png')});
+      await page.keyboard.press('Escape');await expect(help).toBeFocused();
+      await page.evaluate(()=>{ModeAtlasStorage.writeModeJSON('reading','srs',{});dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));});
+      await expect(page.getByRole('link',{name:'Review Reading · 7 due',exact:true})).toHaveCount(0);
+      await page.getByRole('tab',{name:'Shop',exact:true}).click();
+    }
+    await page.evaluate(()=>{document.documentElement.dataset.maLargeText='true';document.documentElement.style.fontSize='24px';});
+    await expect(shop.getByRole('button',{name:'Preview Midnight collection'})).toBeVisible();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+    await page.screenshot({path:testInfo.outputPath('shop-large-text.png'),fullPage:true});
+  });
+}
 test.describe('local midnight',()=>{
 test.use({timezoneId:'Australia/Melbourne'});
 for(const mode of ['reading','writing'])test(`${mode}: a guided session crossing midnight credits completion to the finish date`,async({page})=>{
@@ -407,5 +458,5 @@ test('goal shortcuts and weekly recap expose recorded activity without inventing
   await expect(page.locator('.ma-recap-grid')).toContainText('Reading correct');await expect(page.locator('.ma-recap-grid')).toContainText('0 / 7');
   await page.getByRole('button',{name:'Last week',exact:true}).click();await expect(page.locator('.ma-atlas-recap')).toContainText('No dated practice');
   await expect(page.getByRole('link',{name:'View weekly ranking',exact:true})).toHaveAttribute('href','/friends/?ranking=weekly');
-  await page.getByRole('tab',{name:'Recap',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toHaveAttribute('aria-selected','true');
+  await page.getByRole('tab',{name:'Recap',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByRole('tab',{name:'Shop',exact:true})).toHaveAttribute('aria-selected','true');await page.keyboard.press('ArrowRight');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toHaveAttribute('aria-selected','true');
 });
