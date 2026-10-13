@@ -6,7 +6,7 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.95.0
+Version: 2.96.0
 
 Development and release requirements for both platforms: [Web and iOS architecture](docs/ios-web-architecture.md).
 Moonlit Midnight, Skyline collection and mixed-theme contrast: [2.95.0](docs/development-2.95.0.md).

@@ -7,6 +7,28 @@ const createProgress=require('../assets/app/mode-atlas-progress.js');
 const dates=require('../assets/app/mode-atlas-date.js');
 const wallet=(balance,extra={})=>({version:2,currency:'atlas-coins',balance,coinPurchasesEnabled:false,offers:catalogue.products.map(p=>catalogue.offer(p)),owned:[],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,checkedAt:1000,...extra});
 
+test('level coin milestones start after level one and remain cumulative through level 999',()=>{
+  for(const [level,total]of [[1,0],[2,20],[5,130],[10,280],[15,430],[19,510],[20,580],[999,29910]])assert.equal(catalogue.levelCoins.total(level),total);
+  assert.equal(catalogue.levelCoins.total(5)-catalogue.levelCoins.total(4),70);
+  assert.equal(catalogue.levelCoins.total(21)-catalogue.levelCoins.total(20),20);
+});
+test('character options are bounded, earned clothing follows level and old collection grants include new wardrobe items',()=>{
+  const characters=require('../assets/app/mode-atlas-avatar-rules.js'),art=require('../assets/ui/mode-atlas-avatar-art.js');
+  assert.equal(characters.valid({...characters.defaults,skin:'<script>'}),false);
+  assert.equal(characters.valid({...characters.defaults,extra:'no'}),false);
+  assert.equal(characters.allowed({...characters.defaults,outfit:'grove'},4,{}),false);
+  assert.equal(characters.allowed({...characters.defaults,outfit:'grove'},5,{}),true);
+  for(const id of ['sakura','midnight','skyline']){
+    const look={...characters.defaults,outfit:id,headwear:id};
+    assert.equal(characters.allowed(look,999,{allCustom:true}),false);
+    assert.equal(characters.allowed(look,1,{grants:['shop-'+id]}),true);
+    assert.equal(characters.visible(look,1,{}).outfit,'everyday');
+    assert.match(art.svg(look),/^<svg/);
+  }
+  for(const [slot,items]of Object.entries(characters.choices))for(const item of items)assert.ok(!art.svg({...characters.defaults,[slot]:item.id}).includes('undefined'));
+  assert.ok(!art.svg({skin:'<script>alert(1)</script>'}).includes('<script>'));
+});
+
 test('catalogue has stable priced products and themes; paid ownership does not come from admin preview access',()=>{
   assert.equal(catalogue.coinPurchasesEnabled,false);assert.equal(catalogue.currency.expires,false);
   assert.equal(new Set(catalogue.products.map(p=>p.id)).size,catalogue.products.length);

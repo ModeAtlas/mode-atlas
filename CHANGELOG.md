@@ -1,3 +1,12 @@
+## 2.96.0 — Level coins and your own avatar
+
+- Award 20 Atlas Coins per level gained after level 1, plus 50 at every fifth level. Existing accounts receive their current-curve catch-up once; a server high-water mark and receipts prevent repeat awards when saves reset or requests retry.
+- A resumable background sweep covers existing verified accounts, including learners outside Friends. Opening Shop and syncing learning also reconcile rewards. Existing balances, purchases and streak items remain intact.
+- Add an original illustrated character creator in Profile and Progress → Rewards, shared with the Friends editor. Free appearance options, milestone clothing and one private, account-bound selection feed every portrait.
+- Sakura, Midnight and Skyline owners receive matching outfits and headwear automatically. Studio headphones and round glasses use the existing shop, permanent grants and rotation policy.
+- Server checks wardrobe ownership and edit revisions; account changes clear private caches, moderation resets the canonical selection and account deletion removes it.
+- Public version 2.96.0, iOS build 2080018. Deployment, economy trust limits, validation and the complete Mac command: `docs/development-2.96.0.md`.
+
 ## 2.95.0 — Moonlight, Skyline and readable collection surfaces
 
 - Midnight gains moonlit vector artwork with a detailed moon, stars and distant ridges. The illustration keeps its proportions on the right of the banner.

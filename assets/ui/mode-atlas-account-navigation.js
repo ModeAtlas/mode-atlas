@@ -23,7 +23,7 @@
       for(const [key,tab]of tabs){tab.setAttribute('aria-selected',String(key===name));tab.tabIndex=key===name?0:-1;}
       document.getElementById('maAccountTitle').textContent=sections.find(section=>section[0]===name)[1];
       if(name==='settings')root.ModeAtlasNativeSettings?.refresh?.();
-      if(name==='shop'){root.ModeAtlasShopUI.refresh();void root.ModeAtlasShop.refresh();void root.ModeAtlasRewardAccess?.refresh();}
+      if(name==='shop'){root.ModeAtlasShopUI.refresh();void root.ModeAtlasShop.refresh(true);void root.ModeAtlasRewardAccess?.refresh();}
     }
     syncVisibility();
     if(focus)tabs.get(name).focus({preventScroll:true});

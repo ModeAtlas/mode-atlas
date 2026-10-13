@@ -72,7 +72,7 @@ test('rules preserve owner-only profile/app-data access and deny every direct so
     await assertFails(getDoc(doc(mine,path)));
     await assertFails(setDoc(doc(mine,path),{}));
   }
-  for(const collection of ['socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','commerceAccounts','shopCatalogue','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices']){
+  for(const collection of ['avatarProfiles','commerceMigrations','socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','commerceAccounts','shopCatalogue','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));
   }
@@ -335,7 +335,7 @@ test('reporting is scoped, deduplicated and private; only the verified admin can
   await stranger.call('reportProfile',{uid:b.uid,reason:'other',code:(await b.call('state')).code});
   records=await db.collection('socialReports').where('target','==',b.uid).where('state','==','open').get();
   await adminCall('reviewReport',{id:records.docs[0].id,decision:'reset'});
-  const changed=await b.call('state');assert.match(changed.profile.displayName,/^Learner /);assert.equal(changed.preferences.requiresNameChange,true);
+  const changed=await b.call('state');assert.match(changed.profile.displayName,/^Learner /);assert.equal(changed.preferences.requiresNameChange,true);assert.equal((await b.call('avatarState')).avatar,'kana');
   assert.equal((await db.doc(`users/${b.uid}/appData/kanaTrainer`).get()).data().sections.progress.data.state.sources.device['kana.reading.correct'],20);
 });
 
@@ -468,7 +468,7 @@ test('shop wallet is account-bound, read-only and preserved on social opt-out; d
   await ref.collection('transactions').doc('verified-example').set({amount:250});
   const forged=save(999);forged.sections.progress.data.state.wallet={balance:999999};forged.sections.progress.data.state.appearance={landmark:'sakura',banner:'sakura',at:10,bannerAt:10};
   await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(forged);
-  assert.equal((await a.call('shop')).balance,250);assert.equal((await b.call('shop')).balance,0);
+  assert.equal((await a.call('shop')).balance,380,'Only 130 legitimate level coins are added; the embedded wallet is ignored');assert.equal((await b.call('shop')).balance,0);
   assert.deepEqual((await a.call('rewards')).grants,[]);
   await assert.rejects(a.call('shop',{uid:b.uid}),{code:'INVALID_ARGUMENT'});
   await assert.rejects(a.call('shop',{},b.uid),{code:'UNAUTHENTICATED'});
@@ -766,4 +766,70 @@ test('account alert timezone survives device reconnects until explicitly changed
   await n.configure(user.uid,{preferences,token:'timezone-first-device-12345',timeZone:'UTC'});
   assert.equal((await n.state(user.uid)).timeZone,'Australia/Melbourne');
   await assert.rejects(n.configure(user.uid,{preferences,token:'',timeZone:'UTC',updateTimeZone:'yes'}),{code:'invalid-argument'});
+});
+
+test('level catch-up uses the current curve, preserves an existing wallet and cannot repeat after retries or a progress reset',async()=>{
+  const a=await learner('CoinCatchup'),ref=db.doc('commerceAccounts/'+a.uid),saveRef=db.doc(`users/${a.uid}/appData/kanaTrainer`),timeZone='UTC';
+  await ref.set({version:1,currency:'atlas-tokens',balance:73});
+  const old=save(7003);old.sections.progress.data.state.version=4;old.sections.progress.data.state.curveCredit=999999;
+  await saveRef.set(old);
+  const wallets=await Promise.all(Array.from({length:4},()=>a.call('shop',{version:2,timeZone})));
+  for(const wallet of wallets){assert.equal(wallet.balance,393);assert.equal(wallet.levelRewards.throughLevel,12);assert.equal(wallet.levelRewards.total,320);}
+  assert.equal((await ref.collection('operations').where('action','==','levelReward').get()).size,1);
+  const spend={requestId:crypto.randomUUID(),productId:'round-glasses',coinPrice:150,timeZone};
+  await a.call('shopPurchase',spend);await a.call('shopPurchase',spend);
+  await saveRef.set(save(0));assert.equal((await a.call('shop',{version:2,timeZone})).balance,243);
+  await saveRef.set(save(7003));assert.equal((await a.call('shop',{version:2,timeZone})).balance,243);
+  await saveRef.set(save(10000));const increased=await a.call('shop',{version:2,timeZone});assert.equal(increased.balance,283);assert.equal(increased.levelRewards.throughLevel,14);
+  await assert.rejects(a.call('shop',{version:2,timeZone,level:999}),{code:'INVALID_ARGUMENT'});
+});
+test('a resumed coin backfill reaches accounts outside Friends and checkpoints pages without re-awarding coins',async()=>{
+  const a=await learner('DormantCoins'),b=await learner('DormantCoinsTwo');await a.call('leave');await b.call('leave');
+  await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(7003));await db.doc(`users/${b.uid}/appData/kanaTrainer`).set(save(10000));
+  const records=await Promise.all([auth.getUser(a.uid),auth.getUser(b.uid)]),marker=db.doc('commerceMigrations/level-coins-v1');await marker.delete();
+  let failOnce=true,pages=0;
+  const {createCommerce}=require('../functions/commerce.cjs');
+  const commerce=createCommerce({db,auth:{getUser:uid=>auth.getUser(uid),listUsers:async(limit,token)=>{assert.equal(limit,50);pages++;if(!token)return {users:[records[0]],pageToken:'page-two'};assert.equal(token,'page-two');if(failOnce){failOnce=false;throw Error('temporary failure');}return {users:[records[1]]};}}});
+  try{
+    await commerce.backfillLevels();assert.equal((await marker.get()).data().pageToken,'page-two');
+    await assert.rejects(commerce.backfillLevels(),/temporary failure/);assert.equal((await marker.get()).data().pageToken,'page-two');
+    await commerce.backfillLevels();assert.equal((await marker.get()).data().complete,true);await commerce.backfillLevels();assert.equal(pages,3);
+    assert.equal((await a.call('shop',{version:2,timeZone:'UTC'})).balance,320);assert.equal((await b.call('shop',{version:2,timeZone:'UTC'})).balance,360);
+    assert.equal((await a.call('state')).active,false);
+  }finally{await marker.delete();}
+});
+test('learning save triggers award coins without Friends; deletion barriers prevent stale triggers recreating wallets',async()=>{
+  const a=await learner('TriggerCoins');await a.call('leave');const ref=db.doc('commerceAccounts/'+a.uid);
+  await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(7003));
+  if(directService)await service.refreshSummary(a.uid);
+  await until(async()=> (await ref.get()).data()?.levelRewards?.throughLevel===12);
+  assert.equal((await ref.get()).data().balance,320);
+  await db.doc('accountDeletions/'+a.uid).set({state:'committing'});await ref.delete();
+  await service.refreshSummary(a.uid);assert.equal((await ref.get()).exists,false);
+});
+test('character saves stay private without Friends, synchronize public portraits, enforce ownership and reject stale edits',async()=>{
+  const a=await learner('AvatarOwner'),b=await learner('AvatarViewer'),defaults=require('../functions/shared/mode-atlas-avatar-rules.js').defaults;
+  let state=await a.call('avatarState');assert.equal(state.avatar,'kana');
+  await a.call('leave');
+  const value={avatar:'character',character:{...defaults,skin:'cocoa',hair:'coils',outfit:'linen'},revision:state.revision};
+  state=await a.call('avatarUpdate',value);assert.equal((await a.call('state')).active,false);assert.equal(state.character.skin,'cocoa');
+  await assert.rejects(a.call('avatarUpdate',value),{code:'ABORTED'});
+  await assert.rejects(a.call('avatarUpdate',{...value,revision:state.revision,character:{...defaults,outfit:'grove'}}),{code:'PERMISSION_DENIED'});
+  await assert.rejects(a.call('avatarUpdate',{...value,revision:state.revision,character:{...defaults,skin:'<script>'}}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('avatarUpdate',{...value,revision:state.revision,character:{...defaults,outfit:'sakura'}}),{code:'PERMISSION_DENIED'});
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-sakura':{source:'shop'}}});
+  const look={...defaults,outfit:'sakura',headwear:'sakura'};state=await a.call('avatarUpdate',{avatar:'character',character:look,revision:state.revision});
+  await a.call('updateProfile',{displayName:'AvatarOwner',avatar:'character',character:look,avatarRevision:state.revision,timeZone:'UTC'});
+  const profile=(await b.call('lookup',{code:(await a.call('state')).code})).profile;assert.equal(profile.character.outfit,'sakura');assert.equal(profile.revision,undefined);assert.equal(profile.accountPhoto,undefined);
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-sakura':{revoked:true}}});
+  assert.equal((await b.call('lookup',{code:(await a.call('state')).code})).profile.character.outfit,'everyday');
+  state=await a.call('avatarState');assert.equal(state.character.headwear,'none');
+  await a.call('updateProfile',{displayName:'AvatarOwner',avatar:'emoji:🦊',timeZone:'UTC'});assert.equal((await a.call('avatarState')).avatar,'emoji:🦊');
+  await db.doc('accountDeletions/'+a.uid).set({state:'committing'});await assert.rejects(a.call('avatarState'),{code:'UNAUTHENTICATED'});
+});
+test('simultaneous avatar edits use revisions and account deletion removes the private character',async()=>{
+  const a=await learner('AvatarRace'),defaults=require('../functions/shared/mode-atlas-avatar-rules.js').defaults,state=await a.call('avatarState');
+  const results=await Promise.allSettled(['crop','bob'].map(hair=>a.call('avatarUpdate',{avatar:'character',character:{...defaults,hair},revision:state.revision})));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.find(r=>r.status==='rejected').reason.code,'ABORTED');
+  await a.call('deleteAccount');assert.equal((await db.doc('avatarProfiles/'+a.uid).get()).exists,false);
 });

@@ -1,5 +1,22 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
+
+test('private avatar cache and pending requests never cross accounts; stale revisions reach the server unchanged',async()=>{
+  const createAvatar=require('../assets/app/mode-atlas-avatar.js'),rules=require('../assets/app/mode-atlas-avatar-rules.js');
+  const value={version:1,revision:3,avatar:'character',character:{...rules.defaults},level:1};
+  let uid='alice',cache=null,resolve,calls=[];
+  const owner=createAvatar({user:()=>uid,online:()=>true,valid:v=>rules.valid(v.character),read:()=>cache,write:v=>{cache=v;},
+    call:(action,data,expected)=>{calls.push({action,data,expected});return new Promise(done=>{resolve=done;});}});
+  const pending=owner.refresh();const shared=owner.refresh();assert.equal(calls.length,1);resolve(value);await Promise.all([pending,shared]);assert.equal(owner.current().avatar,'character');
+  const saving=owner.save({avatar:'emoji:🦊',character:value.character},3);await new Promise(r=>setImmediate(r));assert.equal(calls[1].data.revision,3);
+  uid='bob';owner.clear();resolve({...value,revision:4,avatar:'emoji:🦊'});await assert.rejects(saving,/account changed/);assert.equal(owner.current(),null);assert.equal(cache,null);
+  const delayed=owner.refresh();uid='carol';owner.clear();resolve(value);assert.equal(await delayed,null);assert.equal(owner.current(),null);
+});
+test('avatar save waits for learning sync and cannot overwrite a draft after a failed sync',async()=>{
+  const createAvatar=require('../assets/app/mode-atlas-avatar.js'),rules=require('../assets/app/mode-atlas-avatar-rules.js');let calls=0;
+  const owner=createAvatar({user:()=> 'alice',online:()=>true,valid:()=>true,sync:async()=>false,call:async()=>{calls++;}});
+  await assert.rejects(owner.save({avatar:'character',character:rules.defaults},0),/could not sync/);assert.equal(calls,0);
+});
 const createSocial=require('../assets/app/mode-atlas-social.js');
 test('social requests reject disabled, signed-out and offline use without contacting the backend',async()=>{
   let enabled=false,uid='first',online=true,calls=0;

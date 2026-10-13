@@ -4,7 +4,7 @@
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
   const button=(label,cls='ma-button ma-button--ghost')=>{const node=el('button',cls,label);node.type='button';return node;};
   const catalogue=root.ModeAtlasShopCatalogue,rules=root.ModeAtlasRewardRules;
-  const owned=product=>!!product.grant&&rules.unlocked(rules.item('banners',product.id),root.ModeAtlasProgress.getSummary().level,root.ModeAtlasRewardAccess?.current());
+  const owned=product=>!!product.grant&&rules.unlocked(rules.item(product.rewards[0].type,product.rewards[0].id),root.ModeAtlasProgress.getSummary().level,root.ModeAtlasRewardAccess?.current());
   const state=()=>root.ModeAtlasShop?.current()||{status:'guest',balance:null,offers:null,inventory:{},owned:[]};
   function icon(name){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS(svg.namespaceURI,'use');svg.classList.add('ma-icon');svg.setAttribute('aria-hidden','true');use.setAttribute('href','/assets/mode-atlas-icons.svg#icon-'+name);svg.append(use);return svg;}
   function appIcon(product){const image=el('img');image.src='/assets/rewards/'+rules.item('icons',product.id).icon+'.svg';image.alt=product.name+' app icon';image.width=96;image.height=96;return image;}
@@ -20,17 +20,18 @@
   async function purchase(product){
     const wallet=state(),account=root.KanaCloudSync?.getUser?.()?.uid;
     if(wallet.status==='guest'){root.ModeAtlasDialog.close();root.ModeAtlasAccountNavigation.open('profile');return;}
+    if(product.grant&&(owned(product)||wallet.owned?.includes(product.id))){openRewards();return;}
     const offer=wallet.offers?.find(item=>item.id===product.id);if(!offer||wallet.busy)return;
     root.ModeAtlasDialog.close();
     if(wallet.balance<offer.coinPrice){await root.ModeAtlasDialog.alert({title:'A few more coins',message:`You need ${(offer.coinPrice-wallet.balance).toLocaleString()} more Atlas Coins for ${product.name}.`,confirmLabel:'Got it'});return;}
     const confirmed=await root.ModeAtlasDialog.confirm({title:`Buy ${product.name}?`,message:`${offer.coinPrice.toLocaleString()} Atlas Coins · Balance after purchase: ${(wallet.balance-offer.coinPrice).toLocaleString()}.`,confirmLabel:'Buy item'});
     if(!confirmed||account!==root.KanaCloudSync?.getUser?.()?.uid)return;
-    try{await root.ModeAtlasShop.purchase(product.id);root.ModeAtlasFeedback.toast(product.kind==='collection'?product.name+' is in your Rewards.':product.name+' added.','success');}
+    try{await root.ModeAtlasShop.purchase(product.id);root.ModeAtlasFeedback.toast(product.grant?product.name+' is in your Rewards.':product.name+' added.','success');}
     catch(error){await root.ModeAtlasDialog.alert({title:'Purchase could not finish',message:root.ModeAtlasShop.message(error),confirmLabel:'Got it'});void root.ModeAtlasShop.refresh(true);}
   }
   function preview(product){
     const content=el('div','ma-shop-detail');content.dataset.maShopDetail=product.id;content.append(look(product));
-    const includes=el('div','ma-shop-includes'),copy=el('div');copy.append(el('strong','','The complete collection'),el('p','','An app-wide theme, profile banner, title and frame, plus an iOS app icon.'));includes.append(appIcon(product),copy);content.append(includes,themePreview(product));
+    const includes=el('div','ma-shop-includes'),copy=el('div');copy.append(el('strong','','The complete collection'),el('p','','An app-wide theme, profile banner, title and frame, iOS app icon, plus a matching avatar outfit and headwear.'));includes.append(appIcon(product),copy);const outfit=el('div','ma-shop-outfit-preview');root.ModeAtlasAvatarArt.render(outfit,{...root.ModeAtlasAvatarRules.defaults,outfit:product.id,headwear:product.id});outfit.setAttribute('role','img');outfit.setAttribute('aria-label',product.name+' avatar outfit and headwear');content.append(includes,outfit,themePreview(product));
     const note=el('p','ma-atlas-rewards__note');note.dataset.maShopDetailStatus='';content.append(note);
     const buy=button('','ma-button ma-button--primary');buy.dataset.maShopBuy=product.id;buy.addEventListener('click',()=>void purchase(product));
     const rewards=button('Open Rewards','ma-button ma-button--primary');rewards.dataset.maShopOwnedAction='';rewards.addEventListener('click',openRewards);content.append(buy,rewards);
@@ -88,11 +89,12 @@
     host.dataset.maShop='';host.classList.add('ma-shop');
     const wallet=el('section','ma-shop-wallet');wallet.setAttribute('aria-label','Atlas Coins wallet');
     const coin=el('span','ma-shop-coin');coin.append(icon('star'));
-    const copy=el('div','ma-shop-wallet__copy'),value=el('p','ma-shop-wallet__balance');value.dataset.maCoinBalance='';value.setAttribute('role','status');copy.append(el('strong','',catalogue.currency.name),value);
+    const copy=el('div','ma-shop-wallet__copy'),value=el('p','ma-shop-wallet__balance');value.dataset.maCoinBalance='';value.setAttribute('role','status');copy.append(el('strong','',catalogue.currency.name),value,el('p','ma-shop-wallet__balance','Earn 20 coins each level · +50 every fifth level'));
     const topup=button('Purchase Atlas Coins','ma-button ma-button--primary ma-button--small');topup.dataset.maPurchaseCoins='';topup.addEventListener('click',()=>void coinPrompt());
     const retry=button('Refresh balance','ma-button ma-button--ghost ma-button--small');retry.dataset.maShopRefresh='';retry.hidden=true;retry.addEventListener('click',()=>void root.ModeAtlasShop.refresh(true));wallet.append(coin,copy,topup,retry);
     const intro=el('div','ma-shop-intro');intro.append(el('h3','','Make it yours.'),el('p','','A new look. A little breathing room. Your Atlas.'));
     const collections=el('section','ma-shop-products');collections.dataset.maShopGroup='collections';
+    const wardrobe=el('section','ma-shop-essentials');wardrobe.dataset.maShopGroup='wardrobe';wardrobe.append(el('h3','','The finishing touches'));
     const essentials=el('section','ma-shop-essentials');essentials.dataset.maShopGroup='essentials';essentials.append(el('h3','','Streak essentials'));
     for(const product of catalogue.products){
       const collection=product.kind==='collection',item=button('',collection?'ma-shop-product ma-profile-banner':'ma-shop-essential');item.dataset.maShopProduct=product.id;
@@ -103,13 +105,14 @@
         const scene=el('span','ma-shop-scene');scene.setAttribute('aria-hidden','true');scene.append(appIcon(product),frame(product));item.append(text,scene);
       }else{
         const symbol=el('span','ma-shop-essential__symbol',product.id==='streak-freeze'?'❄':'↺');symbol.setAttribute('aria-hidden','true');
+        if(product.kind==='cosmetic'){symbol.classList.add('ma-shop-wardrobe-portrait');root.ModeAtlasAvatarArt.render(symbol,{...root.ModeAtlasAvatarRules.defaults,[product.rewards[0].type==='headwear'?'headwear':'accessory']:product.id},{portrait:true});}
         const copy=el('span','ma-shop-essential__copy');copy.append(el('strong','',product.name),el('span','',product.description));item.append(symbol,copy);
       }
       const footer=el('span',collection?'ma-shop-product__footer':'ma-shop-essential__footer'),availability=el('span');availability.dataset.maShopAvailability='';footer.append(availability,icon('arrow'));item.append(footer);
-      item.addEventListener('click',()=>collection?preview(product):void purchase(product));(collection?collections:essentials).append(item);
+      item.addEventListener('click',()=>collection?preview(product):void purchase(product));(collection?collections:product.kind==='cosmetic'?wardrobe:essentials).append(item);
     }
-    const rewards=button('','ma-shop-rewards-link'),label=el('span');label.append(el('strong','','Your rewards'),el('span','','Your collections, themes and streak items.'));rewards.append(icon('achievement'),label,icon('arrow'));rewards.addEventListener('click',openRewards);
-    host.replaceChildren(wallet,intro,collections,essentials,rewards);refresh();
+    const rewards=button('','ma-shop-rewards-link'),label=el('span');label.append(el('strong','','Your rewards'),el('span','','Your collections, wardrobe, themes and streak items.'));rewards.append(icon('achievement'),label,icon('arrow'));rewards.addEventListener('click',openRewards);
+    host.replaceChildren(wallet,intro,collections,wardrobe,essentials,rewards);refresh();
   }
   for(const event of ['modeAtlasShopChanged','modeAtlasRewardAccessChanged','modeAtlasProgressChanged'])root.addEventListener(event,refresh);
   root.ModeAtlasShopUI=Object.freeze({mount,refresh,renderInventory});

@@ -69,7 +69,10 @@ function createModeration({db,identities,staff,now=Date.now}){
       if(data.decision==='reset'&&a?.active&&!a.deleting){
         const name='Learner '+hash(report.target+data.id).slice(0,12);
         const profile={displayName:name,nameKey:policy.nameKey(name),avatar:'kana',timeZone:a.profile.timeZone,requiresNameChange:true};
-        const claim=await identities.claim(tx,report.target,profile,a.profile);claim();tx.update(target,{profile});
+        const claim=await identities.claim(tx,report.target,profile,a.profile);
+        const avatarRef=db.doc('avatarProfiles/'+report.target),avatar=(await tx.get(avatarRef)).data();
+        claim();tx.update(target,{profile});
+        tx.set(avatarRef,{version:1,avatar:'kana',revision:(Number.isSafeInteger(avatar?.revision)?avatar.revision:0)+1,updatedAt:now()});
       }
       if(data.decision==='restrict'){
         tx.set(restrictions.doc(report.target),{restricted:true,at:now(),report:data.id});
