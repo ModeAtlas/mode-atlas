@@ -3,8 +3,8 @@ const {test,expect}=require('@playwright/test');
 for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'light',width:320},{native:false,theme:'dark',width:1280}])test(`character creator saves one portrait across profile and progress ${layout.native?'iOS':'web'} ${layout.theme}`,async({page},info)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,layout);await page.setViewportSize({width:layout.width,height:900});await open(page,'/progress/');
   await page.evaluate(async()=>{
-    window.avatarFixture={version:1,revision:0,avatar:'kana',character:{...ModeAtlasAvatarRules.defaults},level:1};
-    window.avatarUser={uid:'character-owner'};window.avatarSaves=[];KanaCloudSync.getUser=()=>avatarUser;KanaCloudSync.syncNow=async()=>true;
+    window.avatarFixture={version:1,revision:0,avatar:'kana',character:{...ModeAtlasAvatarRules.defaults},level:1,accountPhoto:'https://lh3.googleusercontent.com/a/fixture'};
+    window.avatarUser={uid:'character-owner'};window.avatarSaves=[];KanaCloudSync.getUser=()=>avatarUser;KanaCloudSync.syncNow=()=>new Promise(()=>{});
   });
   await page.evaluate(async()=>{
     window.ModeAtlasSocial={...ModeAtlasSocial,call:async(action,data)=>{
@@ -30,9 +30,39 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
   await expect(page.locator('[data-ma-selected-avatar] svg')).toHaveCount(1);await expect(page.locator('#topProfileDot svg')).toHaveCount(1);
   await page.evaluate(()=>ModeAtlasAccountNavigation.open('profile'));await expect(page.locator('#profileAvatar svg')).toBeVisible();
   await page.locator('#maAccount-profile [data-ma-avatar-open]').click();await expect(dialog.getByRole('button',{name:'Character',exact:true})).toHaveAttribute('aria-pressed','true');
-  await dialog.getByRole('button',{name:'Emoji',exact:true}).click();await dialog.getByRole('button',{name:'Use 🦊',exact:true}).click();await dialog.getByRole('button',{name:'Save avatar',exact:true}).click();await expect(page.locator('[data-ma-selected-avatar]')).toHaveText('🦊');
+  await expect(dialog.locator('[data-avatar-mode=emoji],[data-avatar-mode=atlas]')).toHaveCount(0);
+  await dialog.getByRole('button',{name:'Account photo',exact:true}).click();await dialog.getByRole('button',{name:'Save avatar',exact:true}).click();await expect(dialog).toBeHidden();expect(await page.evaluate(()=>avatarSaves.at(-1).avatar)).toBe('account');
+  await expect(page.locator('[data-ma-avatar-open]')).toHaveCount(1);
   await page.evaluate(()=>{avatarUser=null;dispatchEvent(new Event('modeAtlasAccountSignedOut'));});await expect(page.locator('[data-ma-selected-avatar]')).toHaveText('あ');
   expect(errors).toEqual([]);
+});
+
+test('expanded wardrobe stays exclusive and a failed save keeps the draft for retry',async({page},info)=>{
+  await prepare(page,{native:true,theme:'light'});await open(page,'/progress/');
+  await page.evaluate(()=>{
+    const value={version:1,revision:0,avatar:'character',character:ModeAtlasAvatarRules.defaults,level:1};
+    window.wardrobeGrants=[];window.avatarAttempts=0;KanaCloudSync.getUser=()=>({uid:'wardrobe'});
+    ModeAtlasRewardAccess={...ModeAtlasRewardAccess,current:()=>({grants:wardrobeGrants})};
+    ModeAtlasAvatar={...ModeAtlasAvatar,refresh:async()=>value,save:async()=>{if(++avatarAttempts===1)throw Error('Unavailable');return value;}};
+    ModeAtlasAccountNavigation.open('profile');
+  });
+  await page.locator('[data-ma-avatar-open]').click();const dialog=page.getByRole('dialog',{name:'Your avatar'});
+  await expect(dialog.locator('[data-avatar-slot=skin]')).toHaveCount(11);
+  await expect(dialog.locator('[data-avatar-slot=hair]')).toHaveCount(14);
+  await dialog.getByRole('button',{name:'Ivory',exact:true}).click();await dialog.getByRole('button',{name:'Twin braids',exact:true}).click();
+  await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();await expect(dialog.getByRole('button',{name:'Hunny jumper',exact:true})).toHaveCount(0);
+  await page.evaluate(()=>{wardrobeGrants=['hunny-tester'];});
+  await dialog.getByRole('button',{name:'Appearance',exact:true}).click();await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();
+  for(const name of ['Hunny jumper','Hunny bear ears','Hunny pendant'])await dialog.getByRole('button',{name,exact:true}).click();
+  await dialog.getByRole('button',{name:'Save avatar',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('could not be saved');
+  await expect(dialog.getByRole('button',{name:'Hunny jumper',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(dialog.getByRole('button',{name:'Save avatar',exact:true})).toBeEnabled();
+  await dialog.locator('.ma-avatar-studio').scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('hunny-wardrobe.png'),animations:'disabled'});
+  await dialog.getByRole('button',{name:'Save avatar',exact:true}).click();await expect(dialog).toBeHidden();
+  await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.locator('[data-reward-category=wardrobe] > summary').click();
+  await expect(page.locator('[data-ma-wardrobe-item=hunny]')).toHaveCount(3);
+  await expect(page.locator('.ma-atlas-panel [data-ma-avatar-open]')).toHaveCount(0);
 });
 
 test('guest character preview offers sign-in and account changes discard an open editor',async({page})=>{

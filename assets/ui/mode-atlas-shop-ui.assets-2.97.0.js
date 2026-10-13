@@ -105,7 +105,7 @@
         const scene=el('span','ma-shop-scene');scene.setAttribute('aria-hidden','true');scene.append(appIcon(product),frame(product));item.append(text,scene);
       }else{
         const symbol=el('span','ma-shop-essential__symbol',product.id==='streak-freeze'?'❄':'↺');symbol.setAttribute('aria-hidden','true');
-        if(product.kind==='cosmetic'){symbol.classList.add('ma-shop-wardrobe-portrait');root.ModeAtlasAvatarArt.render(symbol,{...root.ModeAtlasAvatarRules.defaults,[product.rewards[0].type==='headwear'?'headwear':'accessory']:product.id},{portrait:true});}
+        if(product.kind==='cosmetic'){symbol.classList.add('ma-shop-wardrobe-portrait');root.ModeAtlasAvatarArt.render(symbol,{...root.ModeAtlasAvatarRules.defaults,[Object.keys(root.ModeAtlasAvatarRules.slots).find(key=>root.ModeAtlasAvatarRules.slots[key]===product.rewards[0].type)]:product.rewards[0].id},{portrait:product.rewards[0].type!=='outfits'});}
         const copy=el('span','ma-shop-essential__copy');copy.append(el('strong','',product.name),el('span','',product.description));item.append(symbol,copy);
       }
       const footer=el('span',collection?'ma-shop-product__footer':'ma-shop-essential__footer'),availability=el('span');availability.dataset.maShopAvailability='';footer.append(availability,icon('arrow'));item.append(footer);

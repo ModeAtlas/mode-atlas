@@ -4,6 +4,7 @@
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
   const ranks={plain:'Original',grove:'Bronze',bridge:'Silver',summit:'Gold',lantern:'Amethyst',horizon:'Diamond'};
   const rules=root.ModeAtlasRewardRules;
+  const wardrobeItems=Object.entries(root.ModeAtlasAvatarRules.slots).flatMap(([slot,type])=>rules.catalogue[type].filter(item=>item.grant||item.level>1).map(item=>({...item,slot,type})));
   const access=()=>root.ModeAtlasRewardAccess?.current()||{};
   const button=(label,cls='ma-button ma-button--ghost')=>{const node=el('button',cls,label);node.type='button';return node;};
   function appearance(){
@@ -18,7 +19,7 @@
     const item=appearance(),selectedBanner=banner(),summary=root.ModeAtlasProgress.getSummary(),routine=root.ModeAtlasProgress.routine();
     const title=document.getElementById('profileAtlasTitle');if(title)title.textContent=item.title;
     document.querySelectorAll('#profileAvatar,#topProfileDot,[data-ma-selected-avatar]').forEach(node=>{node.dataset.maFrame=item.frame;});
-    document.querySelectorAll('[data-ma-selected-avatar],[data-ma-wardrobe-avatar]').forEach(renderAvatar);
+    document.querySelectorAll('[data-ma-selected-avatar]').forEach(renderAvatar);
     document.querySelectorAll('[data-ma-selected-title]').forEach(node=>{node.textContent=item.title;});
     document.querySelectorAll('[data-ma-selected-banner]').forEach(node=>{node.dataset.maBanner=selectedBanner.id;});
     document.querySelectorAll('.ma-atlas-banner-choice').forEach(node=>{
@@ -40,9 +41,14 @@
       node.setAttribute('aria-label',unlocked?`Use ${node.dataset.appIcon} app icon`:`${node.dataset.appIcon} app icon, unlocks at level ${node.dataset.rewardLevel}`);
       node.querySelector('small').hidden=unlocked;
     });
+    for(const node of document.querySelectorAll('[data-ma-wardrobe-item]')){
+      const item=rules.item(node.dataset.wardrobeType,node.dataset.maWardrobeItem),available=rules.unlocked(item,summary.level,access());
+      node.hidden=!rules.visible(item,summary.level,access());
+      node.querySelector('small').textContent=available?'In your wardrobe':`Level ${item.level}`;
+    }
     for(const section of document.querySelectorAll('[data-reward-category]')){
-      const type=section.dataset.rewardCategory,items=rules.catalogue[type].filter(item=>rules.visible(item,summary.level,access()));
-      if(type==='themes')section.hidden=!items.length;
+      const type=section.dataset.rewardCategory,items=(type==='wardrobe'?wardrobeItems:rules.catalogue[type]).filter(item=>rules.visible(item,summary.level,access()));
+      if(['themes','wardrobe'].includes(type))section.hidden=!items.length;
       const selected=type==='banners'?selectedBanner.name:type==='frames'?item.title:'';
       section.querySelector('.ma-reward-category__meta').textContent=[selected,`${items.filter(item=>rules.unlocked(item,summary.level,access())).length} available`].filter(Boolean).join(' · ');
     }
@@ -134,9 +140,6 @@
     const panel=el('div','ma-atlas-panel');
     const notice=el('div','ma-reward-access');notice.hidden=true;notice.setAttribute('role','status');
     const retry=button('Refresh');retry.addEventListener('click',()=>{void root.ModeAtlasRewardAccess?.refresh(true);});notice.append(el('span'),retry);panel.append(notice);
-    const wardrobe=el('section','ma-avatar-wardrobe-link'),portrait=el('span','ma-portrait');portrait.dataset.maWardrobeAvatar='';renderAvatar(portrait);
-    const wardrobeCopy=el('div');wardrobeCopy.append(el('strong','','Your wardrobe'),el('p','','Outfits, headwear and accessories. More looks unlock as you level up.'));
-    const editAvatar=button('Edit avatar');editAvatar.dataset.maAvatarOpen='';wardrobe.append(portrait,wardrobeCopy,editAvatar);panel.append(wardrobe);
     const inventory=el('section');root.ModeAtlasShopUI?.renderInventory(inventory);panel.append(inventory);
     const themesSection=category('themes','App themes','A new look throughout Mode Atlas.'),themes=el('div','ma-owned-themes');
     for(const theme of rules.themes){const choose=button(theme.name,'ma-button ma-theme-collection-choice');choose.dataset.maThemeChoice=theme.id;choose.dataset.maThemeSample=theme.id;themes.append(choose);}
@@ -149,6 +152,13 @@
       choose.addEventListener('click',()=>{if(root.ModeAtlasProgress.selectBanner(item.id))refresh();});banners.append(choose);
     }
     bannersSection.content.append(banners);panel.append(bannersSection.section);
+    const wardrobeSection=category('wardrobe','Wardrobe collection','Wear these in Profile → Edit avatar.'),wardrobe=el('div','ma-avatar-collection');
+    for(const item of wardrobeItems){
+      const tile=el('article','ma-avatar-collectible'),art=el('span','ma-avatar-item__art');tile.dataset.maWardrobeItem=item.id;tile.dataset.wardrobeType=item.type;
+      root.ModeAtlasAvatarArt.render(art,{...root.ModeAtlasAvatarRules.defaults,[item.slot]:item.id},{portrait:item.slot!=='outfit'});
+      tile.append(art,el('strong','',item.name),el('small'));wardrobe.append(tile);
+    }
+    wardrobeSection.content.append(wardrobe);panel.append(wardrobeSection.section);
     const framesSection=category('frames','Titles & frames','Choose a look for your profile. Unlock more as you level up.'),collection=el('div','ma-atlas-collection');
     for(const item of rules.landmarks){
       const choose=button('','ma-atlas-landmark');choose.dataset.landmark=item.id;

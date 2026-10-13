@@ -433,6 +433,8 @@ test('reward policy verifies the audience, admin role, event windows and revocat
   assert.deepEqual(entitlement(other,{grants:{'hunny-tester':{startsAt:at,expiresAt:at+100}}},at),{allCustom:false,grants:['hunny-tester'],validUntil:at+100});
   assert.equal(entitlement({...account,email:'admin@mode-atlas.com'}, {},at).allCustom,true);
   assert.equal(entitlement({...account,email:'admin@mode-atlas.com',emailVerified:false}, {},at).allCustom,false);
+  const characters=require('../functions/shared/mode-atlas-avatar-rules.js'),look={...characters.defaults,outfit:'hunny',headwear:'hunny',accessory:'hunny'};
+  for(const [user,allowed]of [[account,true],[{...account,email:'ordinary@example.test'},false],[{...account,emailVerified:false},false],[{...account,disabled:true},false],[{...account,email:'admin@mode-atlas.com'},true]])assert.equal(characters.allowed(look,1,entitlement(user,{},at,audience)),allowed);
 });
 
 test('custom rewards need no Friends enrolment and never trust forged tokens or save grants',async()=>{
@@ -647,11 +649,16 @@ test('weekly prizes settle once, honor ties and preserve private saves without f
     const saved=(await db.doc(`users/${p.uid}/appData/kanaTrainer`).get()).data();
     assert.equal(projectSave(saved).xp,base+prize);assert.equal(saved.sections.wordBank.data.items[0].english,'private word');
     const status=await weekly.state(p.uid);assert.equal(status.score,0);assert.equal(status.awards[0].xp,prize);assert.equal(status.awards[0].rank,rank);assert.deepEqual(status.results[0],status.awards[0]);
+    const coins=rank===1?100:0;assert.equal(status.awards[0].coins,coins);
+    const wallet=(await db.doc('commerceAccounts/'+p.uid).get()).data();
+    assert.equal((wallet?.balance||0)-(wallet?.levelRewards?.total||0),coins);
+    const receipt=await db.doc(`commerceAccounts/${p.uid}/operations/weekly-v1-${period.id}`).get();
+    assert.equal(receipt.exists,rank===1);if(receipt.exists)assert.equal(receipt.data().amount,100);
   }
   const next=policy.period(at);await db.doc('weeklyCompetitions/'+next.id).set({...next,settled:false});
   await db.doc(`weeklyCompetitions/${next.id}/entries/${a.uid}`).set({uid:a.uid,active:true,score:100});at=next.endAt+300001;
   await weekly.settle(next.id);assert.equal((await db.doc('weeklyCompetitions/'+next.id).get()).data().reason,'minimum-players');
-  assert.equal((await weekly.state(a.uid)).results[0].xp,0);assert.equal((await weekly.state(a.uid)).results[0].rank,1);
+  assert.equal((await weekly.state(a.uid)).results[0].xp,0);assert.equal((await weekly.state(a.uid)).results[0].coins,0);assert.equal((await weekly.state(a.uid)).results[0].rank,1);
   await weekly.preference(a.uid,{enabled:false});await weekly.syncAccount(a.uid);assert.equal((await weekly.state(a.uid)).results[0].score,100);
 });
 
@@ -832,4 +839,40 @@ test('simultaneous avatar edits use revisions and account deletion removes the p
   const results=await Promise.allSettled(['crop','bob'].map(hair=>a.call('avatarUpdate',{avatar:'character',character:{...defaults,hair},revision:state.revision})));
   assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(results.find(r=>r.status==='rejected').reason.code,'ABORTED');
   await a.call('deleteAccount');assert.equal((await db.doc('avatarProfiles/'+a.uid).get()).exists,false);
+});
+
+test('name-only Friends edits preserve the canonical character and new wardrobe access is enforced',async()=>{
+  const a=await learner('WardrobeOwner'),b=await learner('WardrobeViewer'),defaults=require('../functions/shared/mode-atlas-avatar-rules.js').defaults;
+  let state=await a.call('avatarState');
+  const select=character=>a.call('avatarUpdate',{avatar:'character',character,revision:state.revision});
+  state=await select({...defaults,hair:'curtains',skin:'ivory',outfit:'crewneck'});
+  await a.call('updateProfile',{displayName:'WardrobeRenamed',timeZone:'UTC'});
+  assert.deepEqual((await a.call('avatarState')).character,state.character);
+  assert.deepEqual((await b.call('lookup',{code:a.code})).profile.character,state.character);
+  for(const character of [{...defaults,hair:'textured-fade'},{...defaults,hair:'ribbon-waves'},{...defaults,outfit:'varsity'},{...defaults,outfit:'hunny'},{...defaults,headwear:'hunny'},{...defaults,accessory:'hunny'}]){
+    state=await a.call('avatarState');await assert.rejects(select(character),{code:'PERMISSION_DENIED'});
+  }
+  await db.doc('commerceAccounts/'+a.uid).set({version:1,currency:'atlas-tokens',balance:500});
+  await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'textured-fade',coinPrice:180,timeZone:'UTC'});
+  state=await select({...defaults,hair:'textured-fade'});
+  await db.doc('shopCatalogue/current').set({offers:{'textured-fade':{enabled:false}}});
+  try{state=await select({...defaults,hair:'textured-fade',skin:'apricot'});assert.equal(state.character.hair,'textured-fade');}
+  finally{await db.doc('shopCatalogue/current').delete();}
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-textured-fade':{revoked:true}}});
+  assert.equal((await b.call('lookup',{code:a.code})).profile.character.hair,'sweep');
+});
+
+test('weekly coins migrate a legacy wallet, keep purchases and do not backfill settled prizes',async()=>{
+  const {createWeekly}=require('../functions/weekly.cjs'),policy=require('../functions/shared/mode-atlas-weekly-rules.js');
+  let at=Date.parse('2098-04-03T12:00:00Z');const weekly=createWeekly({db,now:()=>at}),period=policy.period(at);
+  const a=await learner('LegacyWinner',0),b=await learner('LegacyRunner',0);
+  await db.doc('commerceAccounts/'+a.uid).set({version:1,currency:'atlas-tokens',balance:250,purchases:{sakura:{at:1,price:500}}});
+  await db.doc('weeklyCompetitions/'+period.id).set({...period,settled:false});
+  for(const [p,score]of [[a,200],[b,100]]){await weekly.preference(p.uid,{enabled:true});await db.doc(`weeklyCompetitions/${period.id}/entries/${p.uid}`).set({uid:p.uid,active:true,score,days:{}});}
+  at=period.endAt+300001;await Promise.all([weekly.settle(period.id),weekly.settle(period.id)]);
+  let w=(await db.doc('commerceAccounts/'+a.uid).get()).data();
+  assert.equal(w.version,2);assert.equal(w.currency,'atlas-coins');assert.equal(w.balance-w.levelRewards.total,350);assert.deepEqual(w.purchases,{sakura:{at:1,price:500}});
+  const past=policy.period(period.startAt-86400000);await db.doc('weeklyCompetitions/'+past.id).set({...past,settled:true});
+  await db.doc(`weeklyCompetitions/${past.id}/awards/${a.uid}`).set({xp:500,rank:1,week:past.id});
+  await weekly.settle(past.id);assert.equal((await db.doc(`commerceAccounts/${a.uid}/operations/weekly-v1-${past.id}`).get()).exists,false);
 });

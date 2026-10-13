@@ -86,3 +86,17 @@ test('protected days bridge a study streak without counting as study days or inv
   assert.equal(progress.studyStreak(['2026-10-01','2026-10-02'],'2026-10-05',['2026-10-03']),0);
   assert.equal(progress.studyStreak([],'2026-10-04',['2026-10-03']),0);
 });
+
+test('expanded styles preserve old IDs and exclusive Hunny access covers every matching piece',()=>{
+  const characters=require('../assets/app/mode-atlas-avatar-rules.js'),art=require('../assets/ui/mode-atlas-avatar-art.js');
+  for(const id of ['crop','sweep','bob','waves','long','coils','bun','shaved','curtains','quiff','short-curls','ponytail','braids','pixie'])assert.equal(characters.allowed({...characters.defaults,hair:id},1,{}),true);
+  assert.equal(characters.choices.skin.length,11);
+  for(const id of ['textured-fade','ribbon-waves']){
+    const value={...characters.defaults,hair:id};assert.equal(characters.allowed(value,999,{allCustom:true}),false);
+    assert.equal(characters.allowed(value,1,{grants:['shop-'+id]}),true);assert.equal(characters.visible(value,1,{}).hair,'sweep');
+  }
+  const look={...characters.defaults,outfit:'hunny',headwear:'hunny',accessory:'hunny'};
+  assert.equal(characters.allowed(look,999,{}),false);assert.equal(characters.allowed(look,1,{grants:['hunny-tester']}),true);assert.equal(characters.allowed(look,1,{allCustom:true}),true);
+  assert.equal(catalogue.products.some(p=>p.grant==='hunny-tester'),false);
+  for(const [slot,type]of Object.entries(characters.slots))for(const item of rules.catalogue[type])assert.ok(!art.svg({...characters.defaults,[slot]:item.id}).includes('undefined'));
+});

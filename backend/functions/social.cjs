@@ -34,13 +34,13 @@ function validateProfile(data,user){
   if(identity.objectionableName(displayName))fail('invalid-argument','Choose a display name without abusive or offensive language.');
   if(!mayUseName(displayName,user))fail('invalid-argument','That name is reserved. Choose another display name.');
   const avatar=identity.avatar(data.avatar);
-  if(!avatar)fail('invalid-argument','Choose an avatar or a single emoji.');
+  if(data.avatar!==undefined&&!avatar)fail('invalid-argument','Choose a valid avatar.');
   const avatarURL=avatar==='account'?accountPhoto(user):null;
-  if(avatar==='account'&&!avatarURL)fail('failed-precondition','Your linked Google account has no available photo. Choose an emoji or an Atlas avatar.');
+  if(avatar==='account'&&!avatarURL)fail('failed-precondition','Your linked Google account has no available photo. Choose a character in Profile.');
   const timeZone=String(data.timeZone||'');
   if(timeZone.length>64)fail('invalid-argument','Choose a valid time zone.');
   try{new Intl.DateTimeFormat('en',{timeZone}).format();}catch{fail('invalid-argument','Choose a valid time zone.');}
-  return {displayName,nameKey:identity.nameKey(displayName),avatar,timeZone,...(avatarURL?{avatarURL}:{})};
+  return {displayName,nameKey:identity.nameKey(displayName),...(avatar?{avatar}:{}),timeZone,...(avatarURL?{avatarURL}:{})};
 }
 function emptyAccount(){return {active:false,profile:null,code:null,friends:{},incoming:{},outgoing:{},blockedCount:0};}
 function requireActive(account){
@@ -66,7 +66,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
   const rewards=createRewards({db,now});
   const commerce=createCommerce({db,auth,now});
   const avatars=createAvatars({db,now});
-  const weekly=createWeekly({db,now});
+  const weekly=createWeekly({db,now,commerce});
   const notifications=createNotifications({db,messaging,weekly,now});
   async function decorate(profiles){
     profiles=profiles.filter(Boolean);if(!profiles.length)return;

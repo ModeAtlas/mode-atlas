@@ -1,3 +1,13 @@
+## 2.97.0 — Your look, in one place
+
+- Avatar saves are independent of learning-history sync and background avatar reads; late reads cannot replace a newer saved look.
+- Profile → Edit avatar is the single editor. Friends edits names without resubmitting portraits; Rewards has a collapsed, read-only wardrobe collection. New edits offer Character and Account photo; existing legacy portraits continue to display.
+- First place earns 100 Atlas Coins alongside 500 XP. Ties share the same prize; wallet, XP and result commit atomically with retry-safe receipts. Previously settled weeks are unchanged.
+- Six earned banners gain subtle rank-coloured illustrations. Premium scenes keep their richer full-colour treatment.
+- Six new free hairstyles, four intermediate lighter skin tones, Cosy jumper and Striped tee; shop adds Textured fade (180), Ribbon waves (200), Varsity jacket (250) and Cable knit (250).
+- The existing Hunny exclusive grant includes a jumper, bear ears and pendant, with developer preview access. No public shop listing.
+- Public version 2.97.0, iOS build 2080019. Update and validation details: `docs/development-2.97.0.md`.
+
 ## 2.96.0 — Level coins and your own avatar
 
 - Award 20 Atlas Coins per level gained after level 1, plus 50 at every fifth level. Existing accounts receive their current-curve catch-up once; a server high-water mark and receipts prevent repeat awards when saves reset or requests retry.
