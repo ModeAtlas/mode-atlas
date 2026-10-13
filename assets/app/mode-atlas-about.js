@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'Your progress. Your character.';
+  const WHATS_NEW_COPY = 'More ways to make it yours.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Earn 20 Atlas Coins each level, plus 50 every fifth level. Your earlier levels count too.',
-    'Create your own avatar with free hairstyles, colours and clothing, then unlock more as you learn.',
-    'Sakura, Midnight and Skyline now include matching outfits and headwear. Find them in your wardrobe.'
+    'Edit your character or account photo in one place: Profile → Edit avatar. Saving no longer waits for your study history to sync.',
+    'Discover more free hairstyles, lighter skin tones, cosy clothing and new shop looks. Earned banners have fresh artwork too.',
+    'Finish first in the weekly ladder to earn 100 Atlas Coins alongside your XP prize.'
   ];
 
   function storeGet(key, fallback = '') {

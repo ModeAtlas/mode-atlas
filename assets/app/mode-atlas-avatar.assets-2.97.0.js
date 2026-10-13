@@ -4,7 +4,7 @@
   const key='modeAtlasAvatarProfile';
   const owner=factory({user:()=>root.KanaCloudSync?.getUser?.()?.uid||'',online:()=>navigator.onLine!==false,
     read:()=>root.ModeAtlasStorage.json(key,null),write:value=>value?root.ModeAtlasStorage.setJSON(key,value):root.ModeAtlasStorage.remove(key),
-    call:(action,data,uid)=>root.ModeAtlasSocial.call(action,data,uid),sync:()=>root.KanaCloudSync.syncNow(),
+    call:(action,data,uid)=>root.ModeAtlasSocial.call(action,data,uid),
     valid:value=>root.ModeAtlasSocialIdentity.avatar(value?.avatar)&&root.ModeAtlasAvatarRules.valid(value?.character),
     changed:()=>root.dispatchEvent(new CustomEvent('modeAtlasAvatarChanged'))});
   root.ModeAtlasAvatar=owner;
@@ -14,8 +14,8 @@
   void root.KanaCloudSync?.ready?.then(()=>owner.refresh()).catch(()=>{});
 })(typeof window!=='undefined'?window:globalThis,function(dependencies){
   'use strict';
-  const {user,online,call,sync=async()=>true,valid,read=()=>null,write=()=>{},changed=()=>{},now=Date.now}=dependencies;
-  let uid=user(),epoch=0,pending=null,busy=false,cached=read();
+  const {user,online,call,valid,read=()=>null,write=()=>{},changed=()=>{},now=Date.now}=dependencies;
+  let uid=user(),epoch=0,readEpoch=0,pending=null,busy=false,cached=read();
   const acceptable=value=>value?.version===1&&Number.isSafeInteger(value.revision)&&value.revision>=0&&valid(value);
   if(cached?.uid!==uid||!acceptable(cached?.value))cached=null;
   function current(){return user()&&uid===user()&&cached?.uid===uid&&cached.checkedAt<=now()&&now()-cached.checkedAt<86400000?cached.value:null;}
@@ -27,20 +27,20 @@
     const active=account();if(!active||!online())return current();
     if(pending)return pending;if(busy)return current();
     if(!force&&current()&&now()-cached.checkedAt<60000)return current();
-    const ticket=epoch;
-    pending=call('avatarState',{},active).then(value=>ticket===epoch&&active===user()?accept(value):null).finally(()=>{if(ticket===epoch)pending=null;});
+    const ticket=epoch,reading=++readEpoch;
+    pending=call('avatarState',{},active).then(value=>ticket===epoch&&reading===readEpoch&&active===user()?accept(value):null).finally(()=>{if(ticket===epoch&&reading===readEpoch)pending=null;});
     return pending;
   }
   async function save(selection,revision){
     const active=account();if(!active)throw error('unauthenticated','Sign in to save your avatar.');
     if(!online())throw error('offline','Connect to save your avatar.');
     if(busy)throw error('failed-precondition','Your avatar is still saving.');
-    if(pending)await pending;
     const ticket=epoch;if(active!==user())throw error('account-changed','The signed-in account changed.');
-    busy=true;
+    // Saving the small private profile must not wait for a learning-save upload
+    // or a background avatar read. The server checks its own level/entitlements.
+    // Invalidate older reads so a late response cannot replace the saved look.
+    busy=true;readEpoch++;pending=null;
     try{
-      if(await sync()===false)throw error('unavailable','Your progress could not sync. Try again to save your avatar.');
-      if(ticket!==epoch||active!==user())throw error('account-changed','The signed-in account changed.');
       const value=await call('avatarUpdate',{...selection,revision},active);
       if(ticket!==epoch||active!==user())throw error('account-changed','The signed-in account changed.');
       return accept(value);

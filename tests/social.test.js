@@ -12,10 +12,23 @@ test('private avatar cache and pending requests never cross accounts; stale revi
   uid='bob';owner.clear();resolve({...value,revision:4,avatar:'emoji:🦊'});await assert.rejects(saving,/account changed/);assert.equal(owner.current(),null);assert.equal(cache,null);
   const delayed=owner.refresh();uid='carol';owner.clear();resolve(value);assert.equal(await delayed,null);assert.equal(owner.current(),null);
 });
-test('avatar save waits for learning sync and cannot overwrite a draft after a failed sync',async()=>{
-  const createAvatar=require('../assets/app/mode-atlas-avatar.js'),rules=require('../assets/app/mode-atlas-avatar-rules.js');let calls=0;
-  const owner=createAvatar({user:()=> 'alice',online:()=>true,valid:()=>true,sync:async()=>false,call:async()=>{calls++;}});
-  await assert.rejects(owner.save({avatar:'character',character:rules.defaults},0),/could not sync/);assert.equal(calls,0);
+test('avatar save bypasses stalled learning sync and reads; late reads cannot replace the new look',async()=>{
+  const createAvatar=require('../assets/app/mode-atlas-avatar.js'),rules=require('../assets/app/mode-atlas-avatar-rules.js');
+  const old={version:1,revision:0,avatar:'character',character:{...rules.defaults},level:1},next={...old,revision:1,character:{...rules.defaults,hair:'quiff'}};
+  let readDone,saveDone,syncCalls=0;
+  const owner=createAvatar({user:()=> 'alice',online:()=>true,valid:()=>true,sync:()=>{syncCalls++;return new Promise(()=>{});},
+    call:action=>new Promise(done=>{if(action==='avatarState')readDone=done;else saveDone=done;})});
+  const reading=owner.refresh(),saving=owner.save({avatar:'character',character:next.character},0);
+  await assert.rejects(owner.save({avatar:'character',character:old.character},0),{code:'failed-precondition'});
+  saveDone(next);assert.equal((await saving).revision,1);readDone(old);assert.equal(await reading,null);
+  assert.equal(owner.current().character.hair,'quiff');assert.equal(syncCalls,0);
+});
+test('failed avatar saves release the save lock and keep the previous portrait for retry',async()=>{
+  const createAvatar=require('../assets/app/mode-atlas-avatar.js'),rules=require('../assets/app/mode-atlas-avatar-rules.js');
+  const value={version:1,revision:0,avatar:'character',character:rules.defaults};let fail=true;
+  const owner=createAvatar({user:()=> 'alice',online:()=>true,valid:()=>true,call:async action=>{if(action==='avatarUpdate'&&fail)throw Object.assign(Error('Timed out'),{code:'deadline-exceeded'});return value;}});
+  await owner.refresh();await assert.rejects(owner.save(value,0),{code:'deadline-exceeded'});assert.equal(owner.current().revision,0);
+  fail=false;assert.deepEqual(await owner.save(value,0),value);
 });
 const createSocial=require('../assets/app/mode-atlas-social.js');
 test('social requests reject disabled, signed-out and offline use without contacting the backend',async()=>{

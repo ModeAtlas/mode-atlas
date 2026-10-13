@@ -7,6 +7,7 @@ const kana=require('./shared/mode-atlas-kana-data.js');
 const rewards=require('./shared/mode-atlas-reward-rules.js');
 const progress=require('./shared/mode-atlas-progress.js')({ModeAtlasRewardRules:rewards});
 const {publicProfile}=require('./projection.cjs');
+const {createCommerce}=require('./commerce.cjs');
 const map=Object.assign({},...Object.values(kana.maps));
 const fail=(code,message)=>{throw new HttpsError(code,message);};
 function fields(data,allowed){if(!data||typeof data!=='object'||Array.isArray(data)||Object.keys(data).some(key=>!allowed.includes(key)))fail('invalid-argument','Unsupported weekly competition request.');}
@@ -34,7 +35,7 @@ function scoreAnswers(run,answers,at){
   }
   return {index,elapsed,seen:[...seen],score};
 }
-function createWeekly({db,now=Date.now}){
+function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
   const account=uid=>db.doc('socialAccounts/'+uid),weeks=db.collection('weeklyCompetitions');
   const entries=week=>weeks.doc(week).collection('entries');
   const runs=db.collection('weeklyRuns');
@@ -88,7 +89,7 @@ function createWeekly({db,now=Date.now}){
   }
   async function state(uid){
     const period=policy.period(now()),[self,awards,place]=await Promise.all([account(uid).get(),db.doc('weeklyAwards/'+uid).get(),rank(uid,period.id)]);
-    return {enabled:active(self.data()),period,...(place||{score:0,rank:null}),prizes:policy.prizes,minimumScore:policy.minimumScore,minimumPlayers:policy.minimumPlayers,
+    return {enabled:active(self.data()),period,...(place||{score:0,rank:null}),prizes:policy.prizes,coinPrizes:policy.coinPrizes,minimumScore:policy.minimumScore,minimumPlayers:policy.minimumPlayers,
       awards:Object.values(awards.data()?.weeks||{}).sort((a,b)=>b.week.localeCompare(a.week)).slice(0,8),
       results:Object.values({...awards.data()?.weeks,...awards.data()?.results}).sort((a,b)=>b.week.localeCompare(a.week)).slice(0,8)};
   }
@@ -175,9 +176,11 @@ function createWeekly({db,now=Date.now}){
         if(barrier.exists||!self.exists||!current.exists||receipt.data()?.results?.[week])return;
         const awardPrize=eligiblePrize&&active(self.data())&&!existing.exists;
         const save=awardPrize?await tx.get(saveRef):null;
-        const xp=existing.data()?.xp||(awardPrize?policy.prizes[place-1]:0),result={week,rank:place,xp,score,at:now()};
+        const coinAward=awardPrize&&policy.coinPrizes[place-1]?await commerce.prepareWeeklyPrize(tx,uid,week,policy.coinPrizes[place-1]):null;
+        const xp=existing.data()?.xp||(awardPrize?policy.prizes[place-1]:0),coins=coinAward?.amount||existing.data()?.coins||0,result={week,rank:place,xp,coins,score,at:now()};
         const previous=receipt.data()||{},results={...previous.results,[week]:result},awards={...previous.weeks};
         if(awardPrize){
+          coinAward?.commit();
           const value=save.data()||{},state=progress.normalizeState(value.sections?.progress?.data?.state||{legacySeeded:true});
           state.claims[`v5:weekly:${week}:prize`]=xp;state.updatedAt=now();
           awards[week]=result;

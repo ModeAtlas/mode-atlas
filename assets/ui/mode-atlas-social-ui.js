@@ -160,8 +160,8 @@
         const history=el('details','ma-weekly-rules');history.append(el('summary','','Past results'));
         const results=weekly.results||weekly.awards||[];
         if(!results.length)history.append(el('p','ma-social-note','Your place and score will appear here after your first weekly finish.'));
-        for(const result of results)history.append(el('p','ma-social-note',`Week of ${result.week} · #${number(result.rank)} · ${number(result.score)} weekly XP${result.xp?` · +${number(result.xp)} personal XP`:' · No prize'}`));
-        const details=el('details','ma-weekly-rules');details.append(el('summary','','Rules & prizes'),el('p','ma-social-note','Everyone resets together on Monday at 00:00 UTC. At least two learners must earn 100 weekly XP. First, second and third receive 500, 300 and 150 personal XP. Ties share the same place and prize.'),el('p','ma-social-note','Online Reading and Writing answers are checked by the server. Broader practice earns more as you cover different kana in a session; hints reduce the rate. Completion and goal bonuses, old saves and prizes count only towards personal XP. Submit before the reset; interrupted connections can retry within the same one-hour session. The daily safety limit is 20,000 weekly XP.'));
+        for(const result of results)history.append(el('p','ma-social-note',`Week of ${result.week} · #${number(result.rank)} · ${number(result.score)} weekly XP${result.xp?` · +${number(result.xp)} personal XP${result.coins?` · +${number(result.coins)} Atlas Coins`:''}`:' · No prize'}`));
+        const details=el('details','ma-weekly-rules');details.append(el('summary','','Rules & prizes'),el('p','ma-social-note','Everyone resets together on Monday at 00:00 UTC. At least two learners must earn 100 weekly XP. First, second and third receive 500, 300 and 150 personal XP. First place also earns 100 Atlas Coins. Ties share the same place and prize.'),el('p','ma-social-note','Online Reading and Writing answers are checked by the server. Broader practice earns more as you cover different kana in a session; hints reduce the rate. Completion and goal bonuses, old saves and prizes count only towards personal XP. Submit before the reset; interrupted connections can retry within the same one-hour session. The daily safety limit is 20,000 weekly XP.'));
         if(weekly.enabled)details.append(button('Leave weekly competition',()=>confirmAction('Leave the weekly competition?','Your profile will disappear from the weekly board. Your personal XP and Friends stay available. Rejoining this week restores your existing weekly score.','Leave competition','weeklyPreference',{enabled:false},home,home)));
         const extra=el('div','ma-weekly-details');extra.append(details,history);
         if(!weekly.enabled){
@@ -183,19 +183,16 @@
     }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');list.append(button('Try again',home));}}
   }
   async function editProfile(){
-    const ticket=screen();let privateAvatar;try{privateAvatar=await root.ModeAtlasAvatar.refresh(true);}catch{}if(!alive(ticket))return;
+    screen();
     const editing=state?.active;if(editing)back('Friends',home);
     body.append(el('h3','',editing?'Your friends profile':'Create your friends profile'),el('p','ma-social-note','People with your code can see your name, avatar, level and title. Accepted friends can also see your study streak, mastery and learning totals.'));
     const form=el('form','ma-social-form'),label=el('label','ma-social-field','Display name'),input=el('input');input.name='displayName';input.autocomplete='nickname';input.maxLength=48;input.required=true;input.value=state?.preferences?.displayName||'';input.placeholder='Choose a name';label.append(input);form.append(label);
     const hint=el('p','ma-social-note','2–24 characters. Display names are unique.');hint.id='maSocialNameHelp';input.setAttribute('aria-describedby',hint.id);form.append(hint);
-    const editor=root.ModeAtlasAvatarUI.picker({...state?.preferences,...privateAvatar,accountPhoto:privateAvatar?.accountPhoto||state?.accountPhoto});form.append(editor.node);
     if(!editing){const consent=el('label','ma-social-consent'),check=el('input');check.type='checkbox';check.required=true;check.name='consent';consent.append(check,el('span','','Share my profile through Friends'));form.append(consent);}
     const submit=button(editing?'Save profile':'Create profile',null,'ma-button ma-button--primary');submit.type='submit';form.append(submit);
-    form.addEventListener('submit',event=>{event.preventDefault();const selection=editor.value();if(!selection||!form.reportValidity())return;const uid=owner;run(async()=>{
-      await root.KanaCloudSync?.syncNow?.();
+    form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;const uid=owner;run(async()=>{
       if(root.KanaCloudSync?.getUser?.()?.uid!==uid)throw Object.assign(new Error('The account changed.'),{code:'account-changed'});
-      const result=await root.ModeAtlasSocial.call('updateProfile',{displayName:input.value,...selection,...(privateAvatar?{avatarRevision:privateAvatar.revision}:{}),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'});
-      await root.ModeAtlasAvatar.refresh(true).catch(()=>{});return result;
+      return root.ModeAtlasSocial.call('updateProfile',{displayName:input.value,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'});
     },load);});body.append(form);
     if(editing)body.append(button('Leave Friends',()=>confirmAction('Leave Friends?','Your friends profile, code, connections, requests and blocked list will be removed. Your learning progress stays saved.','Leave Friends','leave',{},()=>editProfile()),'ma-button ma-button--danger'));
   }

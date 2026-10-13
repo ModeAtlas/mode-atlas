@@ -15,18 +15,18 @@ function createAvatars({db,now=Date.now}){
   const reference=uid=>db.doc('avatarProfiles/'+uid);
   function record(value,legacy,user){
     return {version:1,revision:Number.isSafeInteger(value?.revision)&&value.revision>=0?value.revision:0,
-      avatar:identity.avatar(value?.avatar)||identity.avatar(legacy?.avatar)||(accountPhoto(user)?'account':'kana'),
+      avatar:identity.avatar(value?.avatar)||identity.avatar(legacy?.avatar)||(accountPhoto(user)?'account':'character'),
       character:characters.normalize(value?.character||legacy?.character)};
   }
   function projection(value,user,level,access){
-    const avatar=value.avatar==='account'&&!accountPhoto(user)?'kana':value.avatar;
+    const avatar=value.avatar==='account'&&!accountPhoto(user)?'character':value.avatar;
     return {...value,avatar,character:characters.visible(value.character,level,access),level,
       accountPhoto:accountPhoto(user),...(avatar==='account'?{avatarURL:accountPhoto(user)}:{})};
   }
   async function prepare(tx,user,data,{legacy,level,access}){
     const ref=reference(user.uid),snapshot=await tx.get(ref),previous=record(snapshot.data(),legacy,user);
     if(data.revision!==undefined&&data.revision!==previous.revision)fail('aborted','Your avatar changed on another device. Reopen the editor to use the latest look.');
-    const avatar=identity.avatar(data.avatar),character=data.character===undefined?characters.visible(previous.character,level,access):data.character;
+    const avatar=identity.avatar(data.avatar===undefined?projection(previous,user,level,access).avatar:data.avatar),character=data.character===undefined?characters.visible(previous.character,level,access):data.character;
     if(!avatar||!characters.valid(character))fail('invalid-argument','Choose a valid avatar and wardrobe items.');
     if(avatar==='account'&&!accountPhoto(user))fail('failed-precondition','Your linked Google account has no available photo.');
     if(rewards.item('avatars',avatar)&&!rewards.allowed('avatars',avatar,level,access)||!characters.allowed(character,level,access))fail('permission-denied','One of these avatar items is not available for your account.');

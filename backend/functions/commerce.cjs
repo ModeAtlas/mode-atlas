@@ -51,6 +51,17 @@ function streakStatus(record,save,zone,at){
 }
 function createCommerce({db,auth,now=Date.now}){
   const reference=uid=>db.doc('commerceAccounts/'+uid);
+  // Weekly settlement owns eligibility. This owner alone migrates/writes wallets;
+  // return a deferred write so the caller can finish all transaction reads first.
+  async function prepareWeeklyPrize(tx,uid,week,amount){
+    const ref=reference(uid),receipt=ref.collection('operations').doc('weekly-v1-'+week);
+    const [record,previous]=await tx.getAll(ref,receipt);
+    if(previous.exists)return {amount:previous.data().amount,commit:()=>{}};
+    const w=wallet(record.data());
+    if(!Number.isSafeInteger(amount)||amount<=0||w.balance+amount>1_000_000_000)fail('failed-precondition','Your weekly coins could not be awarded.');
+    w.balance+=amount;
+    return {amount,commit:()=>{tx.set(ref,w);tx.create(receipt,{action:'weeklyReward',week,amount,at:now(),balanceAfter:w.balance});}};
+  }
   function creditLevels(tx,ref,w,save,at){
     const previous=w.levelRewards;
     if(previous?.version!==1||!Number.isInteger(previous.throughLevel)||previous.throughLevel<1||previous.throughLevel>999||previous.total!==catalogue.levelCoins.total(previous.throughLevel))
@@ -156,6 +167,6 @@ function createCommerce({db,auth,now=Date.now}){
         protection:Object.keys(w.covered).sort(),repairDay:repairDay(w,days,today),timeZone:zone,checkedAt:at,developer:isAdmin(user)};
     });
   }
-  return {run,awardLevels,backfillLevels,erase:uid=>db.recursiveDelete(reference(uid))};
+  return {run,awardLevels,backfillLevels,prepareWeeklyPrize,erase:uid=>db.recursiveDelete(reference(uid))};
 }
 module.exports={createCommerce,reconcile,repairDay,streakStatus};

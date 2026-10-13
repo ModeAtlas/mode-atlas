@@ -9,12 +9,17 @@
     total(level){const n=Number.isFinite(level)?Math.max(1,Math.min(999,Math.floor(level))):1;return (n-1)*20+Math.floor(n/5)*50;}});
   const collection=(id,name,description)=>Object.freeze({id,name,description,kind:'collection',grant:'shop-'+id,
     coinPrice:500,rewards:Object.freeze(['banners','frames','icons','themes','outfits','headwear'].map(type=>Object.freeze({type,id})))});
+  const cosmetic=(id,name,description,coinPrice,type)=>Object.freeze({id,name,description,coinPrice,kind:'cosmetic',grant:'shop-'+id,rewards:Object.freeze([Object.freeze({type,id})])});
   const products=Object.freeze([
     collection('sakura','Sakura','Cherry blossom pinks for a fresh perspective.'),
     collection('midnight','Midnight','Silver moonlight and quiet skies for your next chapter.'),
     collection('skyline','Skyline','Warm windows, tall towers and the city after dark.'),
     Object.freeze({id:'studio-headphones',name:'Studio headphones',description:'A little music for your next chapter.',kind:'cosmetic',grant:'shop-studio-headphones',coinPrice:200,rewards:Object.freeze([{type:'headwear',id:'studio-headphones'}])}),
     Object.freeze({id:'round-glasses',name:'Round glasses',description:'A classic finishing touch for your avatar.',kind:'cosmetic',grant:'shop-round-glasses',coinPrice:150,rewards:Object.freeze([{type:'accessories',id:'round-glasses'}])}),
+    cosmetic('textured-fade','Textured fade','Sculpted curls with a clean, tapered finish.',180,'hairstyles'),
+    cosmetic('ribbon-waves','Ribbon waves','Long flowing waves tied with a rose ribbon.',200,'hairstyles'),
+    cosmetic('varsity','Varsity jacket','Cream sleeves, forest green and a stitched Atlas crest.',250,'outfits'),
+    cosmetic('cable-knit','Cable knit','A warm oatmeal knit with a woven cable pattern.',250,'outfits'),
     Object.freeze({id:'streak-freeze',name:'Streak Freeze',kind:'consumable',coinPrice:150,limit:2,
       description:'Automatically covers a missed study day. Keep up to two ready.'}),
     Object.freeze({id:'streak-repair',name:'Streak Repair',kind:'consumable',coinPrice:250,limit:3,

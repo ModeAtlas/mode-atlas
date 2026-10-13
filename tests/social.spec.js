@@ -39,7 +39,7 @@ async function prepare(page,{active=true,...layout}={}){
         return response;
       }
       if(action==='profile')return {profile:input.uid==='self'?data.self:data.friend};
-      if(action==='updateProfile'){data.active=true;data.self.displayName=input.displayName;data.self.avatar=input.avatar;return {ok:true};}
+      if(action==='updateProfile'){data.active=true;data.self.displayName=input.displayName;if(input.avatar)data.self.avatar=input.avatar;return {ok:true};}
       if(action==='lookup')return {profile:pending,relationship:'none'};
       if(action==='sendRequest'){data.outgoing=[pending];return {ok:true};}
       if(action==='accept'){data.incoming=[];data.friends.push(pending);return {ok:true};}
@@ -165,20 +165,15 @@ test('pending requests stay visible outside their list and Refresh shares the My
   await badge.click();await expect(page.getByRole('combobox',{name:'Friends list'})).toHaveValue('incoming');await expect(badge).toHaveCount(0);
   await page.getByRole('button',{name:'Accept',exact:true}).click();await expect(page.locator('.ma-social-request-badge')).toHaveCount(0);
 });
-test('Friends avatar picker supports single emojis and an explicit account-photo choice',async({page},info)=>{
+test('Friends edits only the display name and leaves avatar editing in Profile',async({page})=>{
   await prepare(page);await page.getByRole('button',{name:'Edit',exact:true}).click();
-  await page.getByRole('button',{name:'Emoji',exact:true}).click();await page.getByRole('textbox',{name:'Your emoji',exact:true}).fill('👩🏽‍🚀');
-  await expect(page.getByRole('button',{name:'Emoji',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(page.locator('[data-avatar-mode="atlas"]')).toHaveAttribute('aria-pressed','false');
-  await page.screenshot({path:info.outputPath('emoji-picker.png'),animations:'disabled'});
+  await expect(page.locator('.ma-social-body .ma-avatar-editor')).toHaveCount(0);
+  await page.getByRole('textbox',{name:'Display name'}).fill('Jack Atlas');
   await page.getByRole('button',{name:'Save profile',exact:true}).click();
-  expect(await page.evaluate(()=>socialCalls.filter(item=>item.action==='updateProfile').at(-1).input.avatar)).toBe('emoji:👩🏽‍🚀');
-  await page.getByRole('button',{name:'Edit',exact:true}).click();await page.getByRole('button',{name:'Account photo',exact:true}).click();
-  await expect(page.getByText('Use your linked Google account photo.',{exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'Save profile',exact:true}).click();
-  const data=await page.evaluate(()=>socialCalls.filter(item=>item.action==='updateProfile').at(-1).input);expect(data.avatar).toBe('account');expect(data.avatarURL).toBeUndefined();
+  const data=await page.evaluate(()=>socialCalls.filter(item=>item.action==='updateProfile').at(-1).input);
+  expect(data.displayName).toBe('Jack Atlas');expect(data.avatar).toBeUndefined();expect(data.character).toBeUndefined();
+  await expect(page.locator('[data-ma-avatar-open]')).toHaveCount(1);
 });
-
 
 test('reporting fits a small phone and moderation actions require confirmation',async({page},info)=>{
   await prepare(page,{native:true,width:320,theme:'light'});
@@ -415,7 +410,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     }));expect(tabLines).toEqual([1,1]);
     await fits(page);await page.screenshot({path:info.outputPath('weekly-large-text.png'),animations:'disabled'});
     await page.getByText('Rules & prizes',{exact:true}).click();
-    await expect(page.getByText(/Everyone resets together on Monday/)).toBeVisible();await fits(page);
+    await expect(page.getByText(/Everyone resets together on Monday/)).toBeVisible();await expect(page.getByText(/First place also earns 100 Atlas Coins/)).toBeVisible();await fits(page);
     await page.getByRole('button',{name:'Leave weekly competition',exact:true}).click();
     await page.getByRole('button',{name:'Leave competition',exact:true}).click();
     await expect(page.getByRole('button',{name:'Join weekly competition',exact:true})).toBeVisible();
