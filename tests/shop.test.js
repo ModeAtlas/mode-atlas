@@ -97,8 +97,6 @@ test('expanded styles preserve old IDs and exclusive Hunny access covers every m
   }
   const look={...characters.defaults,outfit:'hunny',headwear:'hunny',accessory:'hunny'};
   assert.equal(characters.allowed(look,999,{}),false);assert.equal(characters.allowed(look,1,{grants:['hunny-tester']}),true);assert.equal(characters.allowed(look,1,{allCustom:true}),true);
-  const {entitlement}=require('../backend/functions/rewards.cjs'),{createHash}=require('node:crypto'),email='exclusive@example.test',hash=createHash('sha256').update(email).digest('hex');
-  for(const [user,allowed]of [[{email,emailVerified:true},true],[{email:'someone@example.test',emailVerified:true},false],[{email,emailVerified:false},false],[{email,emailVerified:true,disabled:true},false],[{email:'admin@mode-atlas.com',emailVerified:true},true]])assert.equal(characters.allowed(look,1,entitlement(user,{},1000,hash)),allowed);
   assert.equal(catalogue.products.some(p=>p.grant==='hunny-tester'),false);
   for(const [slot,type]of Object.entries(characters.slots))for(const item of rules.catalogue[type])assert.ok(!art.svg({...characters.defaults,[slot]:item.id}).includes('undefined'));
 });

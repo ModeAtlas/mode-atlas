@@ -433,6 +433,8 @@ test('reward policy verifies the audience, admin role, event windows and revocat
   assert.deepEqual(entitlement(other,{grants:{'hunny-tester':{startsAt:at,expiresAt:at+100}}},at),{allCustom:false,grants:['hunny-tester'],validUntil:at+100});
   assert.equal(entitlement({...account,email:'admin@mode-atlas.com'}, {},at).allCustom,true);
   assert.equal(entitlement({...account,email:'admin@mode-atlas.com',emailVerified:false}, {},at).allCustom,false);
+  const characters=require('../functions/shared/mode-atlas-avatar-rules.js'),look={...characters.defaults,outfit:'hunny',headwear:'hunny',accessory:'hunny'};
+  for(const [user,allowed]of [[account,true],[{...account,email:'ordinary@example.test'},false],[{...account,emailVerified:false},false],[{...account,disabled:true},false],[{...account,email:'admin@mode-atlas.com'},true]])assert.equal(characters.allowed(look,1,entitlement(user,{},at,audience)),allowed);
 });
 
 test('custom rewards need no Friends enrolment and never trust forged tokens or save grants',async()=>{
