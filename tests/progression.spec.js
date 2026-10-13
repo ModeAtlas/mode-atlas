@@ -17,6 +17,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
   });
   await page.locator('#maAccount-profile [data-ma-avatar-open]').click();
   const dialog=page.getByRole('dialog',{name:'Your avatar'});await expect(dialog.getByRole('img',{name:'Your character preview'})).toBeVisible();
+  const selectedType=dialog.getByRole('button',{name:'Character',exact:true});await readable(selectedType,await selectedType.evaluate(node=>getComputedStyle(node).backgroundColor));
   await dialog.getByRole('button',{name:'Cocoa',exact:true}).click();await dialog.getByRole('button',{name:'Coils',exact:true}).click();
   await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();
   await expect(dialog.getByRole('button',{name:'Grove cardigan · Level 5',exact:true})).toBeDisabled();

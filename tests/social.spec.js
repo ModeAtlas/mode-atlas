@@ -56,6 +56,18 @@ async function prepare(page,{active=true,...layout}={}){
   await expect(page.locator('.ma-hub-header h1')).toHaveText('Friends');
   await expect(page.getByText(active?'Jack · You':'Create your friends profile',{exact:true})).toBeVisible();
 }
+test('a saved character refreshes the open Friends portrait and renders in weekly rankings',async({page})=>{
+  await prepare(page);
+  await page.evaluate(()=>{
+    const character={...ModeAtlasAvatarRules.defaults,hair:'waves'};
+    window.ModeAtlasAvatar={...ModeAtlasAvatar,current:()=>({avatar:'character',character})};
+    socialFixture.friend.avatar='character';socialFixture.friend.character={...character,skin:'cocoa'};socialFixture.weeklyEnabled=true;
+    dispatchEvent(new Event('modeAtlasAvatarChanged'));
+  });
+  await expect(page.locator('[data-ma-social-self-avatar] svg')).toHaveCount(1);
+  await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+  await expect(page.locator('.ma-social-row .ma-social-avatar svg')).toHaveCount(2);
+});
 for(const native of [false,true])test(`${native?'iOS':'web'}: released Friends entry directs guests to the existing sign-in screen`,async({page})=>{
   const socialRequests=[];
   page.on('request',request=>{
@@ -162,7 +174,7 @@ test('Friends avatar picker supports single emojis and an explicit account-photo
   await page.getByRole('button',{name:'Save profile',exact:true}).click();
   expect(await page.evaluate(()=>socialCalls.filter(item=>item.action==='updateProfile').at(-1).input.avatar)).toBe('emoji:👩🏽‍🚀');
   await page.getByRole('button',{name:'Edit',exact:true}).click();await page.getByRole('button',{name:'Account photo',exact:true}).click();
-  await expect(page.getByText('Use your linked Google account photo in Friends.',{exact:true})).toBeVisible();
+  await expect(page.getByText('Use your linked Google account photo.',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Save profile',exact:true}).click();
   const data=await page.evaluate(()=>socialCalls.filter(item=>item.action==='updateProfile').at(-1).input);expect(data.avatar).toBe('account');expect(data.avatarURL).toBeUndefined();
 });

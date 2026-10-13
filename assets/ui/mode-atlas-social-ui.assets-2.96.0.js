@@ -23,7 +23,9 @@
   function status(message,tone='info'){if(notice){notice.textContent=message;notice.dataset.tone=tone;notice.hidden=!message;}}
   function avatar(profile){
     const node=el('span','ma-atlas-avatar ma-social-avatar');node.dataset.maFrame=profile.frame||'plain';node.setAttribute('aria-hidden','true');
-    root.ModeAtlasPortrait.render(node,profile);return node;
+    if(profile.uid&&profile.uid===owner){node.dataset.maSocialSelfAvatar='';root.ModeAtlasPortrait.render(node,root.ModeAtlasAvatar?.current()||profile);}
+    else root.ModeAtlasPortrait.render(node,profile);
+    return node;
   }
   function identity(profile){const copy=el('span','ma-social-identity'),name=el('span','ma-social-name');name.append(el('strong','',profile.displayName+(profile.uid===owner?' · You':'')));if(['admin','moderator'].includes(profile.role))name.append(el('span','ma-official-badge',profile.role==='admin'?'✓ Admin':'✓ Moderator'));copy.append(name,el('small','',`Level ${number(profile.level)} · ${profile.title}`));return copy;}
   async function run(action,onSuccess){
@@ -354,6 +356,10 @@
   function open(){root.ModeAtlasAccountNavigation?.open('friends');}
   root.addEventListener('kanaCloudSyncStatusChanged',()=>{
     if(host && owner!==root.KanaCloudSync?.getUser?.()?.uid){owner=root.KanaCloudSync?.getUser?.()?.uid;generation++;state=null;void load();}
+  });
+  root.addEventListener('modeAtlasAvatarChanged',()=>{
+    const profile=root.ModeAtlasAvatar.current();if(!profile||owner!==root.KanaCloudSync?.getUser?.()?.uid)return;
+    host?.querySelectorAll('[data-ma-social-self-avatar]').forEach(node=>root.ModeAtlasPortrait.render(node,profile));
   });
   root.ModeAtlasSocialUI=Object.freeze({open,mount});
 })(window);

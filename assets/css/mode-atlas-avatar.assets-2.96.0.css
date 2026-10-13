@@ -5,7 +5,7 @@
 .ma-avatar-form,.ma-avatar-editor{display:grid;gap:18px;min-width:0;}
 .ma-avatar-modes,.ma-avatar-tabs{display:flex;flex-wrap:wrap;gap:6px;}
 .ma-avatar-modes .ma-button,.ma-avatar-tabs .ma-button{flex:1 1 auto;font-size:.76rem;}
-.ma-avatar-modes [aria-pressed="true"],.ma-avatar-tabs [aria-pressed="true"]{background:var(--ma-atlas);color:var(--ma-on-atlas,#fff);border-color:transparent;}
+.ma-avatar-modes [aria-pressed="true"],.ma-avatar-tabs [aria-pressed="true"]{--ma-button-bg:var(--ma-atlas);--ma-button-bg-hover:var(--ma-atlas);--ma-button-color:var(--ma-collection-on-accent,var(--ma-native-primary-text,var(--ma-app-bg)));background:var(--ma-button-bg);color:var(--ma-button-color);border-color:transparent;}
 .ma-avatar-editor__body{display:grid;gap:18px;min-width:0;}
 .ma-avatar-studio{display:flex;align-items:center;justify-content:center;gap:22px;min-height:248px;padding:12px 24px;border-radius:24px;background:radial-gradient(ellipse at 30% 40%,#fcf5e5,#e2e9e3);color:#294941;overflow:hidden;}
 .ma-avatar-studio__figure{flex:0 0 152px;width:152px;height:232px;}
