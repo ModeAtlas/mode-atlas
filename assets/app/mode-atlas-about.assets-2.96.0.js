@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'A more consistent Atlas.';
+  const WHATS_NEW_COPY = 'Your progress. Your character.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Mastery now checks your overall accuracy and response time alongside spaced recall.',
-    'Your chosen theme and profile image follow you between pages, with new Sakura banner artwork.',
-    'Practice navigation stays in view on web, and widget streak countdowns use minutes instead of seconds.'
+    'Earn 20 Atlas Coins each level, plus 50 every fifth level. Your earlier levels count too.',
+    'Create your own avatar with free hairstyles, colours and clothing, then unlock more as you learn.',
+    'Sakura, Midnight and Skyline now include matching outfits and headwear. Find them in your wardrobe.'
   ];
 
   function storeGet(key, fallback = '') {

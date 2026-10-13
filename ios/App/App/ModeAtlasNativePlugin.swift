@@ -243,12 +243,12 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     }
 
     @objc func setAppearance(_ call: CAPPluginCall) {
-        guard let preference = call.getString("preference"), ["dark", "light", "system", "sakura", "midnight"].contains(preference) else {
+        guard let preference = call.getString("preference"), (["dark", "light", "system"] + ModeAtlasAppearance.collections).contains(preference) else {
             call.reject("Unknown appearance preference")
             return
         }
         let canvas = call.getString("canvas")
-        if ["sakura", "midnight"].contains(preference) && (canvas == nil || ModeAtlasAppearance.color(canvas!) == nil) {
+        if ModeAtlasAppearance.collections.contains(preference) && (canvas == nil || ModeAtlasAppearance.color(canvas!) == nil) {
             call.reject("A collection appearance needs its canvas colour")
             return
         }

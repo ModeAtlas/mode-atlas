@@ -136,5 +136,5 @@ html[data-ma-runtime="ios"] .ma-account-sheet{
 
 .ma-owned-themes{display:flex;flex-wrap:wrap;gap:8px;grid-column:1/-1;width:100%;}
 .ma-theme-panel{flex-wrap:wrap;}
-.ma-theme-collection-choice{--ma-control:var(--ma-theme-sample-bg);--ma-control-hover:var(--ma-theme-sample-card);--ma-control-text:var(--ma-theme-sample-ink);background:var(--ma-control);color:var(--ma-control-text);border-color:color-mix(in srgb,var(--ma-theme-sample-ink) 35%,transparent);}
+.ma-theme-collection-choice{--ma-control:var(--ma-theme-sample-bg);--ma-control-hover:var(--ma-theme-sample-card);--ma-control-active:var(--ma-theme-sample-card);--ma-control-active-text:var(--ma-theme-sample-ink);--ma-control-text:var(--ma-theme-sample-ink);background:var(--ma-control);color:var(--ma-control-text);border-color:color-mix(in srgb,var(--ma-theme-sample-ink) 35%,transparent);}
 .ma-theme-collection-choice[aria-pressed="true"]{outline:2px solid var(--ma-theme-sample-ink);outline-offset:2px;}

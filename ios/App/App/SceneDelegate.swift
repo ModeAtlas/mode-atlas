@@ -8,6 +8,7 @@ import UserNotifications
 // the bundled document loads. The launch storyboard itself follows the OS.
 enum ModeAtlasAppearance {
     static let preferenceKey = "modeAtlasAppearance"
+    static let collections = ["sakura", "midnight", "skyline"]
     static var style: UIUserInterfaceStyle {
         switch UserDefaults.standard.string(forKey: preferenceKey) ?? "dark" {
         case "light", "sakura": return .light
@@ -17,7 +18,7 @@ enum ModeAtlasAppearance {
     }
     static let canvasKey = "modeAtlasAppearanceCanvas"
     static var canvas: UIColor {
-        if let preference = UserDefaults.standard.string(forKey: preferenceKey), ["sakura", "midnight"].contains(preference),
+        if let preference = UserDefaults.standard.string(forKey: preferenceKey), collections.contains(preference),
            let value = UserDefaults.standard.string(forKey: canvasKey), let color = color(value) { return color }
         return UIColor(named: "AppCanvas") ?? .systemBackground
     }

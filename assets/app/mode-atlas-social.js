@@ -55,7 +55,7 @@
   }
   function message(error){
     const code=String(error?.code||'').replace(/^functions\//,'');
-    if(['offline','account-changed','unauthenticated','invalid-argument','already-exists','not-found','permission-denied','failed-precondition','resource-exhausted'].includes(code))return error.message;
+    if(['aborted','offline','account-changed','unauthenticated','invalid-argument','already-exists','not-found','permission-denied','failed-precondition','resource-exhausted'].includes(code))return error.message;
     if(code==='unavailable'&&error.message?.startsWith('Friends is updating.'))return error.message;
     return 'Friends could not be reached. Check your connection and try again.';
   }

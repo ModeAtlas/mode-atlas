@@ -1,8 +1,8 @@
 /* Shared identity policy. The server alone reserves names and supplies account photos. */
 (function(root,factory){
-  if(typeof module==='object'&&module.exports)module.exports=factory(require('./mode-atlas-reward-rules.js'));
-  else root.ModeAtlasSocialIdentity=factory(root.ModeAtlasRewardRules);
-})(typeof window!=='undefined'?window:globalThis,function(rewards){
+  if(typeof module==='object'&&module.exports)module.exports=factory(require('./mode-atlas-reward-rules.js'),require('./mode-atlas-avatar-rules.js'));
+  else root.ModeAtlasSocialIdentity=factory(root.ModeAtlasRewardRules,root.ModeAtlasAvatarRules);
+})(typeof window!=='undefined'?window:globalThis,function(rewards,characters){
   'use strict';
   const avatars=Object.freeze(Object.fromEntries(rewards.avatars.map(item=>[item.id,Object.freeze([item.symbol,item.name])])));
   const emojis=Object.freeze(['🌸','🌙','🍵','🍙','🍜','🍣','🍪','🍓','🦊','🐱','🐶','🐼','🐸','🦋','🐉','🌻','🍀','⭐','🔥','🌈','🎮','🎧','📚','🧠']);
@@ -29,7 +29,7 @@
   }
   function avatar(value){
     if(typeof value!=='string')return null;
-    if(Object.hasOwn(avatars,value)||value==='account')return value;
+    if(Object.hasOwn(avatars,value)||value==='account'||value==='character')return value;
     const symbol=typeof value==='string'&&value.startsWith('emoji:')?emoji(value.slice(6)):null;
     return symbol?'emoji:'+symbol:null;
   }
@@ -38,6 +38,7 @@
   }
   function presentation(profile,user){
     const selected=avatar(profile?.avatar),accountPhoto=photoURL(user?.photoURL)||photoURL(user?.providerData?.find(provider=>provider.providerId==='google.com')?.photoURL);
+    if(selected==='character')return {symbol:'あ',url:null,character:characters.normalize(profile.character)};
     const url=selected==='account'?(photoURL(profile.avatarURL)||accountPhoto):selected?null:accountPhoto;
     const symbol=selected?.startsWith('emoji:')?selected.slice(6):avatars[selected]?.[0]||'あ';
     return {symbol,url};

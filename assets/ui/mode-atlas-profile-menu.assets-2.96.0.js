@@ -9,7 +9,7 @@
       return `
           <section class="ma-card ma-card--soft ma-profile-card ma-account-card ma-profile-banner" data-ma-selected-banner aria-label="Mode Atlas account">
             <div class="ma-account-user">
-              <img class="ma-account-avatar" id="profileAvatar" alt="" />
+              <span class="ma-account-avatar" id="profileAvatar" aria-hidden="true"></span>
               <div class="ma-account-copy">
                 <div class="ma-account-name" id="profileName">Guest</div>
                 <div class="ma-account-email" id="profileEmail">Not signed in</div>
@@ -17,6 +17,7 @@
               </div>
             </div>
             <div class="ma-auth-actions">
+              <button class="ma-button ma-button--ghost ma-button--wide" data-ma-avatar-open type="button">Edit avatar</button>
               <button class="ma-button ma-button--primary ma-button--wide" id="profileAuthBtn" data-profile-auth type="button">
                 <span data-profile-auth-label>Sign in with Google</span>
               </button>

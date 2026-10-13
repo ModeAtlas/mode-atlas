@@ -2,7 +2,7 @@
 (function ModeAtlasSocialUI(root){
   'use strict';
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=text;return node;};
-  const identityPolicy=root.ModeAtlasSocialIdentity,avatars=identityPolicy.avatars;
+  const identityPolicy=root.ModeAtlasSocialIdentity;
   const number=value=>Number(value||0).toLocaleString();
   let host=null,body=null,notice=null,state=null,owner=null,generation=0,tab='friends',kind='friends',metric='weekly',lifetimeMetric='xp',weeklyScope='global';
   const alive=ticket=>!!host?.isConnected && ticket===generation && owner===root.KanaCloudSync?.getUser?.()?.uid;
@@ -22,9 +22,9 @@
   }
   function status(message,tone='info'){if(notice){notice.textContent=message;notice.dataset.tone=tone;notice.hidden=!message;}}
   function avatar(profile){
-    const {symbol,url}=identityPolicy.presentation(profile);
-    const node=el('span','ma-atlas-avatar ma-social-avatar',symbol);node.dataset.maFrame=profile.frame||'plain';node.setAttribute('aria-hidden','true');
-    if(url){const image=el('img');image.src=url;image.alt='';image.referrerPolicy='no-referrer';image.addEventListener('error',()=>{node.textContent='あ';},{once:true});node.replaceChildren(image);}
+    const node=el('span','ma-atlas-avatar ma-social-avatar');node.dataset.maFrame=profile.frame||'plain';node.setAttribute('aria-hidden','true');
+    if(profile.uid&&profile.uid===owner){node.dataset.maSocialSelfAvatar='';root.ModeAtlasPortrait.render(node,root.ModeAtlasAvatar?.current()||profile);}
+    else root.ModeAtlasPortrait.render(node,profile);
     return node;
   }
   function identity(profile){const copy=el('span','ma-social-identity'),name=el('span','ma-social-name');name.append(el('strong','',profile.displayName+(profile.uid===owner?' · You':'')));if(['admin','moderator'].includes(profile.role))name.append(el('span','ma-official-badge',profile.role==='admin'?'✓ Admin':'✓ Moderator'));copy.append(name,el('small','',`Level ${number(profile.level)} · ${profile.title}`));return copy;}
@@ -182,51 +182,20 @@
       if(result.nextCursor){const more=button('Load more',()=>{more.remove();void loadWeekly(list,result.nextCursor);});list.append(more);}
     }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');list.append(button('Try again',home));}}
   }
-  function editProfile(){
-    screen();const editing=state?.active;if(editing)back('Friends',home);
+  async function editProfile(){
+    const ticket=screen();let privateAvatar;try{privateAvatar=await root.ModeAtlasAvatar.refresh(true);}catch{}if(!alive(ticket))return;
+    const editing=state?.active;if(editing)back('Friends',home);
     body.append(el('h3','',editing?'Your friends profile':'Create your friends profile'),el('p','ma-social-note','People with your code can see your name, avatar, level and title. Accepted friends can also see your study streak, mastery and learning totals.'));
     const form=el('form','ma-social-form'),label=el('label','ma-social-field','Display name'),input=el('input');input.name='displayName';input.autocomplete='nickname';input.maxLength=48;input.required=true;input.value=state?.preferences?.displayName||'';input.placeholder='Choose a name';label.append(input);form.append(label);
     const hint=el('p','ma-social-note','2–24 characters. Display names are unique.');hint.id='maSocialNameHelp';input.setAttribute('aria-describedby',hint.id);form.append(hint);
-    const choices=el('fieldset','ma-social-avatar-picker');choices.append(el('legend','','Avatar'));
-    const modes=el('div','ma-social-avatar-modes'),options=el('div','ma-social-avatar-options');
-    let selected=state?.preferences?.avatar||'kana',avatarMode=selected==='account'?'account':selected.startsWith('emoji:')?'emoji':'atlas';
-    let selectedAtlas=Object.hasOwn(avatars,selected)?selected:'kana',selectedEmoji=selected.startsWith('emoji:')?selected.slice(6):'🌸';
-    let emojiInput=null;
-    const photo=identityPolicy.photoURL(state?.accountPhoto);
-    const controls=[];
-    function renderAvatars(){
-      for(const control of controls)control.setAttribute('aria-pressed',String(control.dataset.avatarMode===avatarMode));
-      options.replaceChildren();emojiInput=null;
-      if(avatarMode==='account'){
-        selected='account';const preview=el('div','ma-social-photo-choice');preview.append(avatar({avatar:'account',avatarURL:photo,frame:state?.profile?.frame}),el('p','ma-social-note','Use your linked Google account photo in Friends.'));options.append(preview);return;
-      }
-      const grid=el('div','ma-social-avatar-choices');
-      if(avatarMode==='atlas'){
-        selected=selectedAtlas;
-        for(const item of root.ModeAtlasRewardRules.avatars){
-          if(!root.ModeAtlasRewardRules.visible(item,root.ModeAtlasProgress.getSummary().level,root.ModeAtlasRewardAccess?.current()))continue;
-          const {id,symbol,name}=item;
-          const choice=button(symbol,()=>{selectedAtlas=id;renderAvatars();options.querySelector(`[data-avatar="${id}"]`).focus();},'ma-button ma-social-avatar-choice');choice.dataset.avatar=id;choice.disabled=!root.ModeAtlasRewardRules.unlocked(item,root.ModeAtlasProgress.getSummary().level,root.ModeAtlasRewardAccess?.current());choice.setAttribute('aria-label',name);choice.setAttribute('aria-pressed',String(id===selected));grid.append(choice);
-        }
-      }else{
-        selected='emoji:'+selectedEmoji;
-        const label=el('label','ma-social-field','Your emoji');emojiInput=el('input');emojiInput.name='emoji';emojiInput.autocomplete='off';emojiInput.maxLength=40;emojiInput.value=selectedEmoji;emojiInput.setAttribute('aria-describedby','maSocialEmojiHelp');
-        emojiInput.addEventListener('input',()=>{emojiInput.setCustomValidity('');selectedEmoji=emojiInput.value;selected='emoji:'+selectedEmoji;grid.querySelectorAll('button').forEach(node=>node.setAttribute('aria-pressed',String(node.textContent===selectedEmoji)));});label.append(emojiInput);options.append(label);
-        for(const symbol of identityPolicy.emojis){const choice=button(symbol,()=>{selectedEmoji=symbol;selected='emoji:'+symbol;emojiInput.value=symbol;emojiInput.setCustomValidity('');grid.querySelectorAll('button').forEach(node=>node.setAttribute('aria-pressed',String(node.textContent===symbol)));},'ma-button ma-social-avatar-choice');choice.setAttribute('aria-label','Use '+symbol);choice.setAttribute('aria-pressed',String(symbol===selectedEmoji));grid.append(choice);}
-        const help=el('p','ma-social-note','Choose one below or enter one using your emoji keyboard.');help.id='maSocialEmojiHelp';options.append(help);
-      }
-      options.append(grid);
-    }
-    for(const [mode,title]of [['atlas','Atlas'],['emoji','Emoji'],['account','Account photo']]){
-      const control=button(title,()=>{avatarMode=mode;renderAvatars();},'ma-button ma-button--ghost');control.dataset.avatarMode=mode;control.disabled=mode==='account'&&!photo;controls.push(control);modes.append(control);
-    }
-    choices.append(modes,options);form.append(choices);renderAvatars();
+    const editor=root.ModeAtlasAvatarUI.picker({...state?.preferences,...privateAvatar,accountPhoto:privateAvatar?.accountPhoto||state?.accountPhoto});form.append(editor.node);
     if(!editing){const consent=el('label','ma-social-consent'),check=el('input');check.type='checkbox';check.required=true;check.name='consent';consent.append(check,el('span','','Share my profile through Friends'));form.append(consent);}
     const submit=button(editing?'Save profile':'Create profile',null,'ma-button ma-button--primary');submit.type='submit';form.append(submit);
-    form.addEventListener('submit',event=>{event.preventDefault();if(emojiInput){const symbol=identityPolicy.emoji(emojiInput.value);emojiInput.setCustomValidity(symbol?'':'Choose a single emoji.');if(symbol)selected='emoji:'+symbol;}if(!form.reportValidity())return;const uid=owner;run(async()=>{
+    form.addEventListener('submit',event=>{event.preventDefault();const selection=editor.value();if(!selection||!form.reportValidity())return;const uid=owner;run(async()=>{
       await root.KanaCloudSync?.syncNow?.();
       if(root.KanaCloudSync?.getUser?.()?.uid!==uid)throw Object.assign(new Error('The account changed.'),{code:'account-changed'});
-      return root.ModeAtlasSocial.call('updateProfile',{displayName:input.value,avatar:selected,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'});
+      const result=await root.ModeAtlasSocial.call('updateProfile',{displayName:input.value,...selection,...(privateAvatar?{avatarRevision:privateAvatar.revision}:{}),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'});
+      await root.ModeAtlasAvatar.refresh(true).catch(()=>{});return result;
     },load);});body.append(form);
     if(editing)body.append(button('Leave Friends',()=>confirmAction('Leave Friends?','Your friends profile, code, connections, requests and blocked list will be removed. Your learning progress stays saved.','Leave Friends','leave',{},()=>editProfile()),'ma-button ma-button--danger'));
   }
@@ -387,6 +356,10 @@
   function open(){root.ModeAtlasAccountNavigation?.open('friends');}
   root.addEventListener('kanaCloudSyncStatusChanged',()=>{
     if(host && owner!==root.KanaCloudSync?.getUser?.()?.uid){owner=root.KanaCloudSync?.getUser?.()?.uid;generation++;state=null;void load();}
+  });
+  root.addEventListener('modeAtlasAvatarChanged',()=>{
+    const profile=root.ModeAtlasAvatar.current();if(!profile||owner!==root.KanaCloudSync?.getUser?.()?.uid)return;
+    host?.querySelectorAll('[data-ma-social-self-avatar]').forEach(node=>root.ModeAtlasPortrait.render(node,profile));
   });
   root.ModeAtlasSocialUI=Object.freeze({open,mount});
 })(window);

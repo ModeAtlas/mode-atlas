@@ -246,6 +246,12 @@ html[data-ma-collection-theme="midnight"]{
   --ma-collection-secondary:#c0b2d8;--ma-collection-border:#605272;--ma-collection-hover:#44385d;
   --ma-collection-selected:#4a3667;--ma-collection-accent:#d0b7ff;--ma-collection-on-accent:#25133e;
 }
+html[data-ma-collection-theme="skyline"]{
+  --ma-collection-page:#101b25;--ma-collection-surface:#192936;--ma-collection-elevated:#213543;
+  --ma-collection-inset:#293f4d;--ma-collection-text:#eaf2f6;--ma-collection-heading:#ffffff;
+  --ma-collection-secondary:#b8cedb;--ma-collection-border:#526f81;--ma-collection-hover:#354d5c;
+  --ma-collection-selected:#4a402c;--ma-collection-accent:#ffd38a;--ma-collection-on-accent:#302310;
+}
 html[data-ma-collection-theme]{
   --ma-app-bg:var(--ma-collection-page);--ma-app-bg-soft:var(--ma-collection-surface);
   --ma-page-bg:var(--ma-collection-page);--ma-page-bg-atlas:var(--ma-collection-page);
@@ -428,8 +434,8 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) button:hover, h
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .btn.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .toggle-btn.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .toggle-btn[aria-pressed="true"], html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .tab-button.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-display-option.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-sound-toggle.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-theme-choice-btn.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) [data-ma-theme-choice].active{
   background:var(--ma-control-active);
   border-color:var(--ma-control-active-border);
-  color:#102e57;
-  -webkit-text-fill-color:#102e57;
+  color:var(--ma-control-active-text,#102e57);
+  -webkit-text-fill-color:var(--ma-control-active-text,#102e57);
   box-shadow:0 0 0 4px var(--ma-focus-ring),0 16px 34px rgba(38,95,165,.14);
 }
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-reading-page .bottom-shell .toggle-btn.active,
@@ -444,8 +450,8 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-writing
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-writing-page .bottom-shell .toggle-btn[aria-pressed="true"]{
   background:linear-gradient(180deg,#cfe0f4,#9fbee2);
   border-color:rgba(29,85,152,.48);
-  color:#102e57;
-  -webkit-text-fill-color:#102e57;
+  color:var(--ma-control-active-text,#102e57);
+  -webkit-text-fill-color:var(--ma-control-active-text,#102e57);
   box-shadow:0 0 0 4px rgba(29,85,152,.16),0 16px 34px rgba(29,85,152,.13);
 }
 
@@ -812,8 +818,8 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-tabs 
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over .primary{
   background:var(--ma-control-active);
   border-color:var(--ma-control-active-border);
-  color:#102e57;
-  -webkit-text-fill-color:#102e57;
+  color:var(--ma-control-active-text,#102e57);
+  -webkit-text-fill-color:var(--ma-control-active-text,#102e57);
 }
 
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .tag.reading,

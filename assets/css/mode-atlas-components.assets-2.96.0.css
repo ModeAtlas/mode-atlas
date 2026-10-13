@@ -45,9 +45,9 @@
 .ma-button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
 .ma-button:disabled, .ma-button[aria-disabled="true"]{opacity:.48;cursor:not-allowed;transform:none;box-shadow:none;}
 .ma-button--primary{
-  --ma-button-color:var(--ma-native-primary-text,var(--ma-control-text));
-  --ma-button-bg:var(--ma-native-primary,linear-gradient(180deg,color-mix(in srgb,var(--ma-writing) 30%,var(--ma-card-2)),color-mix(in srgb,var(--ma-writing) 18%,var(--ma-card-3))));
-  --ma-button-bg-hover:var(--ma-native-primary,linear-gradient(180deg,color-mix(in srgb,var(--ma-writing) 38%,var(--ma-card-2)),color-mix(in srgb,var(--ma-writing) 24%,var(--ma-card-3))));
+  --ma-button-color:var(--ma-primary-text,var(--ma-native-primary-text,var(--ma-control-text)));
+  --ma-button-bg:var(--ma-primary,var(--ma-native-primary,linear-gradient(180deg,color-mix(in srgb,var(--ma-writing) 30%,var(--ma-card-2)),color-mix(in srgb,var(--ma-writing) 18%,var(--ma-card-3)))));
+  --ma-button-bg-hover:var(--ma-primary,var(--ma-native-primary,linear-gradient(180deg,color-mix(in srgb,var(--ma-writing) 38%,var(--ma-card-2)),color-mix(in srgb,var(--ma-writing) 24%,var(--ma-card-3)))));
   --ma-button-border:color-mix(in srgb,var(--ma-writing) 52%,var(--ma-border));
 }
 .ma-button--danger{

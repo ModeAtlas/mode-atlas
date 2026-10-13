@@ -60,7 +60,7 @@
 
   function normalizeThemePreference(value){
     value = String(value || '').toLowerCase();
-    return /^(dark|light|system|sakura|midnight)$/.test(value) ? value : 'dark';
+    return /^(dark|light|system|sakura|midnight|skyline)$/.test(value) ? value : 'dark';
   }
 
   function systemPrefersLight(){
@@ -71,7 +71,7 @@
   function applyEarlyTheme(){
     try {
       var preference = normalizeThemePreference(safeStorageGet(THEME_KEY) || 'dark');
-      var effective = preference==='sakura'?'light':preference==='midnight'?'dark':preference === 'system' ? (systemPrefersLight() ? 'light' : 'dark') : preference;
+      var effective = preference === 'system' ? (systemPrefersLight() ? 'light' : 'dark') : ['light','sakura'].includes(preference) ? 'light' : 'dark';
       document.documentElement.dataset.maTheme = effective;
       document.documentElement.dataset.maThemePreference = preference;
     } catch(e) {}

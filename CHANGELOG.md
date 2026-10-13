@@ -1,3 +1,20 @@
+## 2.96.0 — Level coins and your own avatar
+
+- Award 20 Atlas Coins per level gained after level 1, plus 50 at every fifth level. Existing accounts receive their current-curve catch-up once; a server high-water mark and receipts prevent repeat awards when saves reset or requests retry.
+- A resumable background sweep covers existing verified accounts, including learners outside Friends. Opening Shop and syncing learning also reconcile rewards. Existing balances, purchases and streak items remain intact.
+- Add an original illustrated character creator in Profile and Progress → Rewards, shared with the Friends editor. Free appearance options, milestone clothing and one private, account-bound selection feed every portrait.
+- Sakura, Midnight and Skyline owners receive matching outfits and headwear automatically. Studio headphones and round glasses use the existing shop, permanent grants and rotation policy.
+- Server checks wardrobe ownership and edit revisions; account changes clear private caches, moderation resets the canonical selection and account deletion removes it.
+- Public version 2.96.0, iOS build 2080018. Deployment, economy trust limits, validation and the complete Mac command: `docs/development-2.96.0.md`.
+
+## 2.95.0 — Moonlight, Skyline and readable collection surfaces
+
+- Midnight gains moonlit vector artwork with a detailed moon, stars and distant ridges. The illustration keeps its proportions on the right of the banner.
+- Add Skyline for 500 Atlas Coins: illuminated skyscraper tops, a gold frame, City Dreamer title, matching dark theme and iOS app icon. Stable product/grant IDs retain ownership while the collection rotates out of sale.
+- Illustrated banners and theme previews own their full text/control palette. Sakura previews and Hunny sign-in/sign-out buttons remain readable under Light, Dark and all collection themes.
+- Theme selection, first-paint restoration, UIKit appearance and widget validation recognize Skyline. The icon generator can render one new collection without rewriting existing artwork.
+- Public version 2.95.0, iOS build 2080017. Backend catalogue deployment and complete Mac update command: `docs/development-2.95.0.md`.
+
 ## 2.94.0 — Consistent mastery, appearance and practice navigation
 
 - Widget streak countdowns use days, hours and minutes, with a final-minute label and boundary-driven timelines; no per-second timer or app polling.

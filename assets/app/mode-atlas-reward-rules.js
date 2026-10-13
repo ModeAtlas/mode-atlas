@@ -99,7 +99,8 @@
     {id:'lantern',level:35,title:'Lantern Keeper',name:'Lantern passage',symbol:'✧',frame:'lantern',icon:null},
     {id:'horizon',level:50,title:'Horizon Explorer',name:'Open horizon',symbol:'◎',frame:'horizon',icon:'Horizon'},
     {id:'sakura',title:'Blossom Wanderer',name:'Sakura',symbol:'桜',frame:'sakura',icon:'Sakura',grant:'shop-sakura',kind:'shop'},
-    {id:'midnight',title:'Midnight Voyager',name:'Midnight',symbol:'月',frame:'midnight',icon:'Midnight',grant:'shop-midnight',kind:'shop'}
+    {id:'midnight',title:'Midnight Voyager',name:'Midnight',symbol:'月',frame:'midnight',icon:'Midnight',grant:'shop-midnight',kind:'shop'},
+    {id:'skyline',title:'City Dreamer',name:'Skyline',symbol:'街',frame:'skyline',icon:'Skyline',grant:'shop-skyline',kind:'shop'}
   ].map(Object.freeze));
   // A grant may unlock one item or a coordinated event set across categories.
   // Audience rules and award windows belong to the server, never this catalogue.
@@ -113,9 +114,26 @@
   ].map(Object.freeze));
   const themes=Object.freeze([
     {id:'sakura',name:'Sakura',appearance:'light',grant:'shop-sakura',kind:'shop'},
-    {id:'midnight',name:'Midnight',appearance:'dark',grant:'shop-midnight',kind:'shop'}
+    {id:'midnight',name:'Midnight',appearance:'dark',grant:'shop-midnight',kind:'shop'},
+    {id:'skyline',name:'Skyline',appearance:'dark',grant:'shop-skyline',kind:'shop'}
   ].map(Object.freeze));
-  const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes});
+  const outfits=Object.freeze([
+    {id:'everyday',name:'Everyday tee',level:1},{id:'sport',name:'Track top',level:1},{id:'linen',name:'Linen shirt',level:1},
+    {id:'grove',name:'Grove cardigan',level:5},{id:'bridge',name:'Explorer jacket',level:10},{id:'summit',name:'Summit coat',level:20},
+    ...['sakura','midnight','skyline'].map(id=>({id,name:{sakura:'Blossom jacket',midnight:'Moonlight hoodie',skyline:'City bomber'}[id],grant:'shop-'+id,kind:'shop'}))
+  ].map(Object.freeze));
+  const headwear=Object.freeze([
+    {id:'none',name:'No headwear',level:1},{id:'trail-cap',name:'Trail cap',level:5},{id:'summit-beanie',name:'Summit beanie',level:20},
+    {id:'sakura',name:'Blossom clip',grant:'shop-sakura',kind:'shop'},
+    {id:'midnight',name:'Moon pin',grant:'shop-midnight',kind:'shop'},
+    {id:'skyline',name:'City cap',grant:'shop-skyline',kind:'shop'},
+    {id:'studio-headphones',name:'Studio headphones',grant:'shop-studio-headphones',kind:'shop'}
+  ].map(Object.freeze));
+  const accessories=Object.freeze([
+    {id:'none',name:'No accessory',level:1},{id:'trail-scarf',name:'Trail scarf',level:10},{id:'atlas-pin',name:'Atlas pin',level:35},
+    {id:'round-glasses',name:'Round glasses',grant:'shop-round-glasses',kind:'shop'}
+  ].map(Object.freeze));
+  const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes,outfits,headwear,accessories});
   function item(type,id){return catalogue[type]?.find(reward=>reward.id===id)||null;}
   function unlocked(reward,level,access={}){
     if(!reward)return false;
@@ -125,5 +143,5 @@
   function allowed(type,id,level,access){return unlocked(item(type,id),level,access);}
   function appearance(id,level,access){const reward=item('frames',id);return unlocked(reward,level,access)?reward:landmarks[0];}
   function banner(id,level,access){const reward=item('banners',id);return unlocked(reward,level,access)?reward:banners[0];}
-  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,catalogue,item,unlocked,visible,allowed});
+  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,outfits,headwear,accessories,catalogue,item,unlocked,visible,allowed});
 });

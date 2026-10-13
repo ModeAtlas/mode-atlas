@@ -190,8 +190,7 @@
         signInLabel: window.ModeAtlasEnv?.isNativeApp ? 'Sign in' : '',
         statusEl: null,
         nameEl: document.getElementById('profileName'),
-        emailEl: document.getElementById('profileEmail'),
-        photoEl: document.getElementById('profileAvatar')
+        emailEl: document.getElementById('profileEmail')
       });
       return !!profileCloudBinding;
     } catch (error) {
@@ -278,20 +277,7 @@
   }
 
   function updateProfileDot(){
-    const user = window.KanaCloudSync?.getUser?.();
-    document.querySelectorAll('#topProfileDot').forEach((dot) => {
-      if (!dot) return;
-      if (user?.photoURL) {
-        const image = document.createElement('img');
-        image.src = user.photoURL;
-        image.alt = '';
-        dot.replaceChildren(image);
-      }
-      else {
-        const label = (user?.displayName || user?.email || 'M').trim();
-        dot.textContent = (label[0] || 'M').toUpperCase();
-      }
-    });
+    document.querySelectorAll('#topProfileDot,#profileAvatar').forEach(node=>window.ModeAtlasPortrait?.render(node));
   }
 
   function updateProgressStatus(){
@@ -385,6 +371,8 @@
     if (!profileCloudBinding) bindCloudUi();
     updateSyncStatus();
   });
+  window.addEventListener('modeAtlasAvatarChanged', updateProfileDot);
+  window.addEventListener('modeAtlasSelfProfileChanged', updateProfileDot);
   window.addEventListener('modeAtlasProgressChanged', updateProgressStatus);
   window.addEventListener('modeAtlasCloudDataChanged', (event) => {
     const sections = Array.isArray(event.detail?.sections) ? event.detail.sections : [];

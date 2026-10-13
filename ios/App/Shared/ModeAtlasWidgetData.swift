@@ -65,7 +65,7 @@ struct ModeAtlasWidgetSnapshot: Codable {
         if let activity = lastActivityAt, !activity.isFinite || activity < 0 || activity > updatedAt + 300_000 { return false }
         if schemaVersion >= 3 {
             guard let title, !title.isEmpty, title.count <= 60, let frame,
-                  ["plain", "grove", "bridge", "summit", "lantern", "horizon", "sakura", "midnight"].contains(frame),
+                  ["plain", "grove", "bridge", "summit", "lantern", "horizon", "sakura", "midnight", "skyline"].contains(frame),
                   let studyStreak, (0...100000).contains(studyStreak), let localDay, Self.validDay(localDay),
                   let goals, goals.allSatisfy(\.isValid), Set(goals.map(\.id)).count == goals.count else { return false }
             if schemaVersion == 3 && Set(goals.map(\.id)) != Set(["recall", "balance", "review", "week"]) { return false }

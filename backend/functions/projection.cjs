@@ -8,6 +8,7 @@ const kana = require('./shared/mode-atlas-kana-data.js');
 const progress = createProgress({ModeAtlasDates: dates, ModeAtlasRewardRules: rewards});
 const review = createReview({ModeAtlasDates: dates});
 const identity = require('./shared/mode-atlas-social-identity.js');
+const characters = require('./shared/mode-atlas-avatar-rules.js');
 const PROJECTION_VERSION=3;
 
 function progressOwner(save = {}, timeZone = 'UTC') {
@@ -27,6 +28,7 @@ function progressOwner(save = {}, timeZone = 'UTC') {
     ModeAtlasDates:{...dates,localDateKey:value=>dates.dateKeyInTimeZone(value,timeZone)}});
 }
 function studyDaysFromSave(save,timeZone='UTC'){const owner=progressOwner(save,timeZone);return owner.studyDays(owner.ensureSeeded({sync:false,emit:false}));}
+function levelFromSave(save){const owner=progressOwner(save);return owner.getSummary(owner.ensureSeeded({sync:false,emit:false})).level;}
 function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
   const sections=save.sections||{},data=name=>sections[name]?.data||{};
   const owner=progressOwner(save,timeZone);
@@ -57,6 +59,7 @@ function publicProfile(uid, account, now = Date.now(), full = true) {
   if(out.avatar==='account'){
     const url=identity.photoURL(account.profile.avatarURL);if(url)out.avatarURL=url;else out.avatar='kana';
   }
+  if(out.avatar==='character')out.character=characters.visible(account.profile.character,summary.level,account.rewardAccess);
   if(full)out.stats={xp:summary.xp,totalCorrect:summary.totalCorrect,
     streak:progress.studyStreak(summary.studyDays,dates.dateKeyInTimeZone(now,account.profile.timeZone)),
     readingMastered:summary.readingMastered,writingMastered:summary.writingMastered,
@@ -73,4 +76,4 @@ function rankProfiles(profiles,metric) {
   let rank=0,previous;
   return rows.map((row,index)=>{if(row.score!==previous)rank=index+1;previous=row.score;return {...row,rank};});
 }
-module.exports={projectSave,publicProfile,rankProfiles,PROJECTION_VERSION,studyDaysFromSave,studyStreak:progress.studyStreak,protectStreak:progress.protectStreak};
+module.exports={projectSave,publicProfile,rankProfiles,PROJECTION_VERSION,levelFromSave,studyDaysFromSave,studyStreak:progress.studyStreak,protectStreak:progress.protectStreak};
