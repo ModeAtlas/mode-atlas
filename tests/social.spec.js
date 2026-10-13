@@ -106,7 +106,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
 }
 test('profile opt-in, code preview and request controls use the shared screen',async({page})=>{
   await prepare(page,{active:false,theme:'light'});
-  await page.getByLabel('Display name',{exact:true}).fill('Jack Wright');await page.getByRole('button',{name:'Book',exact:true}).click();
+  await page.getByLabel('Display name',{exact:true}).fill('Jack Wright');await expect(page.locator('.ma-social-form .ma-avatar-editor')).toHaveCount(0);
   await page.getByRole('button',{name:'Create profile',exact:true}).click();expect(await page.evaluate(()=>socialCalls.some(call=>call.action==='updateProfile'))).toBe(false);
   await page.getByLabel('Share my profile through Friends').check();await page.getByRole('button',{name:'Create profile',exact:true}).click();
   await expect(page.getByText('Jack Wright · You',{exact:true})).toBeVisible();
