@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'A more consistent Atlas.';
+  const WHATS_NEW_COPY = 'Your Atlas, after dark.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Mastery now checks your overall accuracy and response time alongside spaced recall.',
-    'Your chosen theme and profile image follow you between pages, with new Sakura banner artwork.',
-    'Practice navigation stays in view on web, and widget streak countdowns use minutes instead of seconds.'
+    'Midnight has a new moonlit banner, with silver skies and distant mountain ridges.',
+    'Discover Skyline: glowing city windows, a warm gold frame and a matching theme and app icon.',
+    'Collection previews and profile buttons stay readable across light and dark themes.'
   ];
 
   function storeGet(key, fallback = '') {

@@ -22,18 +22,17 @@
 
   function normalizePreference(pref){
     pref = String(pref || '').toLowerCase();
-    return /^(dark|light|system|sakura|midnight)$/.test(pref) ? pref : 'dark';
+    return /^(dark|light|system)$/.test(pref) || collection(pref) ? pref : 'dark';
   }
 
   function getEffective(pref){
     pref = normalizePreference(pref || getPreference());
-    if(pref==='sakura')return 'light';
-    if(pref==='midnight')return 'dark';
+    const selected=collection(pref);if(selected)return selected.appearance;
     return pref === 'system' ? (systemPrefersLight() ? 'light' : 'dark') : pref;
   }
 
   function collection(pref){return window.ModeAtlasRewardRules?.item('themes',pref);}
-  function available(pref){return !['sakura','midnight'].includes(pref)||window.ModeAtlasRewardRules?.allowed('themes',pref,1,window.ModeAtlasRewardAccess?.presentation?.()||window.ModeAtlasRewardAccess?.current());}
+  function available(pref){return !collection(pref)||window.ModeAtlasRewardRules.allowed('themes',pref,1,window.ModeAtlasRewardAccess?.presentation?.()||window.ModeAtlasRewardAccess?.current());}
   function updateButtons(){
     for(const host of document.querySelectorAll('[data-ma-owned-themes]')){
       const themes=(window.ModeAtlasRewardRules?.themes||[]).filter(item=>available(item.id));
@@ -73,7 +72,7 @@
     // The platform adapter mirrors this preference for UIKit, not another theme
     // controller. Pass System through so a native override cannot pin the OS mode.
     if (window.AtlasPlatform?.isNative) {
-      window.AtlasPlatform.setAppearance(usable?pref:['sakura','midnight'].includes(pref)?effective:pref,usable?nativeCanvas:undefined).catch(function(error){
+      window.AtlasPlatform.setAppearance(usable?pref:selected?effective:pref,usable?nativeCanvas:undefined).catch(function(error){
         console.warn('Native appearance unavailable', error);
       });
     }

@@ -517,22 +517,22 @@ test('coin purchases are atomic, retry-safe and reject forged prices, insufficie
   await assert.rejects(a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'UNAUTHENTICATED'});
   assert.equal((await ref.get()).data().balance,200);
 });
-test('rotating a collection out blocks new sales while existing cosmetic and theme ownership survives',async()=>{
-  const a=await learner('RotationOwner'),b=await learner('RotationNew'),timeZone='UTC';
+for(const productId of ['midnight','skyline'])test(`rotating ${productId} out blocks new sales while existing cosmetic and theme ownership survives`,async()=>{
+  const a=await learner('Owner '+productId),b=await learner('New '+productId),timeZone='UTC';
   for(const user of [a,b])await db.doc('commerceAccounts/'+user.uid).set({version:1,currency:'atlas-tokens',balance:1000});
-  await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone});
+  await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone});
   const listing=db.doc('shopCatalogue/current');
   try{
-    await listing.set({offers:{midnight:{enabled:false}}});
-    const state=await a.call('shop',{version:2,timeZone});assert.ok(!state.offers.some(p=>p.id==='midnight'));assert.ok(state.owned.includes('midnight'));
-    const grants=await a.call('rewards'),rules=require('../functions/shared/mode-atlas-reward-rules.js');assert.equal(rules.allowed('themes','midnight',1,grants),true);
-    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
-    await listing.set({offers:{midnight:{startsAt:Date.now()+86400000}}});
-    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
-    await listing.set({offers:{midnight:{endsAt:Date.now()-1000}}});
-    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
-    await listing.set({offers:{midnight:{enabled:true}}});
-    assert.ok((await b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone})).owned.includes('midnight'));
+    await listing.set({offers:{[productId]:{enabled:false}}});
+    const state=await a.call('shop',{version:2,timeZone});assert.ok(!state.offers.some(p=>p.id===productId));assert.ok(state.owned.includes(productId));
+    const grants=await a.call('rewards'),rules=require('../functions/shared/mode-atlas-reward-rules.js');assert.equal(rules.allowed('themes',productId,1,grants),true);
+    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
+    await listing.set({offers:{[productId]:{startsAt:Date.now()+86400000}}});
+    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
+    await listing.set({offers:{[productId]:{endsAt:Date.now()-1000}}});
+    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
+    await listing.set({offers:{[productId]:{enabled:true}}});
+    assert.ok((await b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone})).owned.includes(productId));
   }finally{await listing.delete();}
 });
 test('developer coin credits and purchase reset use actual Auth role, keep earned/event rewards and audit retries',async()=>{

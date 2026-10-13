@@ -99,7 +99,8 @@
     {id:'lantern',level:35,title:'Lantern Keeper',name:'Lantern passage',symbol:'✧',frame:'lantern',icon:null},
     {id:'horizon',level:50,title:'Horizon Explorer',name:'Open horizon',symbol:'◎',frame:'horizon',icon:'Horizon'},
     {id:'sakura',title:'Blossom Wanderer',name:'Sakura',symbol:'桜',frame:'sakura',icon:'Sakura',grant:'shop-sakura',kind:'shop'},
-    {id:'midnight',title:'Midnight Voyager',name:'Midnight',symbol:'月',frame:'midnight',icon:'Midnight',grant:'shop-midnight',kind:'shop'}
+    {id:'midnight',title:'Midnight Voyager',name:'Midnight',symbol:'月',frame:'midnight',icon:'Midnight',grant:'shop-midnight',kind:'shop'},
+    {id:'skyline',title:'City Dreamer',name:'Skyline',symbol:'街',frame:'skyline',icon:'Skyline',grant:'shop-skyline',kind:'shop'}
   ].map(Object.freeze));
   // A grant may unlock one item or a coordinated event set across categories.
   // Audience rules and award windows belong to the server, never this catalogue.
@@ -113,7 +114,8 @@
   ].map(Object.freeze));
   const themes=Object.freeze([
     {id:'sakura',name:'Sakura',appearance:'light',grant:'shop-sakura',kind:'shop'},
-    {id:'midnight',name:'Midnight',appearance:'dark',grant:'shop-midnight',kind:'shop'}
+    {id:'midnight',name:'Midnight',appearance:'dark',grant:'shop-midnight',kind:'shop'},
+    {id:'skyline',name:'Skyline',appearance:'dark',grant:'shop-skyline',kind:'shop'}
   ].map(Object.freeze));
   const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes});
   function item(type,id){return catalogue[type]?.find(reward=>reward.id===id)||null;}

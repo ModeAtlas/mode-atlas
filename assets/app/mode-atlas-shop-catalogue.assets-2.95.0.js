@@ -9,7 +9,8 @@
     coinPrice:500,rewards:Object.freeze(['banners','frames','icons','themes'].map(type=>Object.freeze({type,id})))});
   const products=Object.freeze([
     collection('sakura','Sakura','Cherry blossom pinks for a fresh perspective.'),
-    collection('midnight','Midnight','A starry indigo world for your next chapter.'),
+    collection('midnight','Midnight','Silver moonlight and quiet skies for your next chapter.'),
+    collection('skyline','Skyline','Warm windows, tall towers and the city after dark.'),
     Object.freeze({id:'streak-freeze',name:'Streak Freeze',kind:'consumable',coinPrice:150,limit:2,
       description:'Automatically covers a missed study day. Keep up to two ready.'}),
     Object.freeze({id:'streak-repair',name:'Streak Repair',kind:'consumable',coinPrice:250,limit:3,

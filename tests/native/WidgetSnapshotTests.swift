@@ -51,6 +51,9 @@ struct WidgetSnapshotTests {
                        ModeAtlasWidgetGoal(id: "review", label: "Recall 5 due kana today", value: 1, target: 5),
                        ModeAtlasWidgetGoal(id: "week", label: "Practise on 4 days this week", value: 2, target: 4)]
         assert(atlas.isValid)
+        atlas.frame = "skyline"; atlas.title = "City Dreamer"
+        assert(atlas.isValid, "An owned Skyline frame must not invalidate the study widget")
+        atlas.frame = "plain"; atlas.title = "Trail Finder"
         let decodedAtlas = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONEncoder().encode(atlas))
         assert(decodedAtlas.title == "Trail Finder" && decodedAtlas.goals(at: now).first!.value == 20)
         assert(decodedAtlas.goals(at: tomorrow).first!.value == 0, "Yesterday's completed daily goals must reset")

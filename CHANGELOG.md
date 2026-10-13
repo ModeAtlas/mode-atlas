@@ -1,3 +1,11 @@
+## 2.95.0 — Moonlight, Skyline and readable collection surfaces
+
+- Midnight gains moonlit vector artwork with a detailed moon, stars and distant ridges. The illustration keeps its proportions on the right of the banner.
+- Add Skyline for 500 Atlas Coins: illuminated skyscraper tops, a gold frame, City Dreamer title, matching dark theme and iOS app icon. Stable product/grant IDs retain ownership while the collection rotates out of sale.
+- Illustrated banners and theme previews own their full text/control palette. Sakura previews and Hunny sign-in/sign-out buttons remain readable under Light, Dark and all collection themes.
+- Theme selection, first-paint restoration, UIKit appearance and widget validation recognize Skyline. The icon generator can render one new collection without rewriting existing artwork.
+- Public version 2.95.0, iOS build 2080017. Backend catalogue deployment and complete Mac update command: `docs/development-2.95.0.md`.
+
 ## 2.94.0 — Consistent mastery, appearance and practice navigation
 
 - Widget streak countdowns use days, hours and minutes, with a final-minute label and boundary-driven timelines; no per-second timer or app polling.

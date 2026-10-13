@@ -6,9 +6,10 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.94.0
+Version: 2.95.0
 
 Development and release requirements for both platforms: [Web and iOS architecture](docs/ios-web-architecture.md).
+Moonlit Midnight, Skyline collection and mixed-theme contrast: [2.95.0](docs/development-2.95.0.md).
 Mastery, theme, profile, web layout and widget corrections: [2.94.0](docs/development-2.94.0.md). Coin shop, themes, streak items and widget update: [2.93.0](docs/development-2.93.0.md). Account shop redesign and update steps: [2.92.0](docs/development-2.92.0.md). Widgets, review help and shop framework: [2.91.0](docs/development-2.91.0.md). Learn page redesign and update steps: [2.90.0](docs/development-2.90.0.md). Native routing correction: [2.89.1](docs/development-2.89.1.md). Learning hub, goals and account alert timing: [2.89.0](docs/development-2.89.0.md).
 Friends and Rankings layout, with the weekly ladder up front: [2.88.0](docs/development-2.88.0.md).
 Mastery, targeted practice, weekly results and notification timing: [2.87.0](docs/development-2.87.0.md).
