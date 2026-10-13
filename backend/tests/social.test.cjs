@@ -518,7 +518,7 @@ test('coin purchases are atomic, retry-safe and reject forged prices, insufficie
   assert.equal((await ref.get()).data().balance,200);
 });
 for(const productId of ['midnight','skyline'])test(`rotating ${productId} out blocks new sales while existing cosmetic and theme ownership survives`,async()=>{
-  const a=await learner('Owner '+productId),b=await learner('New '+productId),timeZone='UTC';
+  const a=await learner('Collector '+productId),b=await learner('Visitor '+productId),timeZone='UTC';
   for(const user of [a,b])await db.doc('commerceAccounts/'+user.uid).set({version:1,currency:'atlas-tokens',balance:1000});
   await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone});
   const listing=db.doc('shopCatalogue/current');
