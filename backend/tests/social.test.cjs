@@ -13,6 +13,7 @@ const {createService}=require('../functions/service.cjs');
 const {createAccounts}=require('../functions/accounts.cjs');
 const {projectSave,publicProfile}=require('../functions/projection.cjs');
 const config=require('../functions/shared/mode-atlas-social-config.js');
+const catalogue=require('../functions/shared/mode-atlas-shop-catalogue.js');
 const projectId='demo-mode-atlas';
 if(!process.env.FIRESTORE_EMULATOR_HOST || !process.env.FIREBASE_AUTH_EMULATOR_HOST)throw new Error('These tests require Firebase emulators.');
 const app=initializeApp({projectId}),db=getFirestore(app),auth=getAuth(app),service=createService({db,auth});
@@ -478,7 +479,7 @@ test('shop wallet is account-bound, read-only and preserved on social opt-out; d
   await ref.collection('transactions').doc('verified-example').set({amount:250});
   const forged=save(999);forged.sections.progress.data.state.wallet={balance:999999};forged.sections.progress.data.state.appearance={landmark:'sakura',banner:'sakura',at:10,bannerAt:10};
   await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(forged);
-  assert.equal((await a.call('shop')).balance,380,'Only 130 legitimate level coins are added; the embedded wallet is ignored');assert.equal((await b.call('shop')).balance,0);
+  assert.equal((await a.call('shop')).balance,250,'No coin milestone is reached; the embedded wallet is ignored');assert.equal((await b.call('shop')).balance,0);
   assert.deepEqual((await a.call('rewards')).grants,[]);
   await assert.rejects(a.call('shop',{uid:b.uid}),{code:'INVALID_ARGUMENT'});
   await assert.rejects(a.call('shop',{},b.uid),{code:'UNAUTHENTICATED'});
@@ -504,11 +505,11 @@ test('shop cosmetics require private grants and never project a wallet into soci
 });
 test('coin purchases are atomic, retry-safe and reject forged prices, insufficient funds and direct writes',async()=>{
   const a=await learner('CoinBuyer'),b=await learner('CoinOther'),timeZone='Australia/Melbourne';
-  const ref=db.doc('commerceAccounts/'+a.uid);await ref.set({version:1,currency:'atlas-tokens',balance:1000});
-  const request={requestId:crypto.randomUUID(),productId:'sakura',coinPrice:500,timeZone};
+  const ref=db.doc('commerceAccounts/'+a.uid);await ref.set({version:1,currency:'atlas-tokens',balance:1500});
+  const request={requestId:crypto.randomUUID(),productId:'sakura',coinPrice:catalogue.item('sakura').coinPrice,timeZone};
   const results=await Promise.all([a.call('shopPurchase',request),a.call('shopPurchase',request)]);
-  for(const result of results){assert.equal(result.balance,500);assert.deepEqual(result.owned,['sakura']);}
-  assert.equal((await ref.collection('operations').get()).size,1);
+  for(const result of results){assert.equal(result.balance,750);assert.deepEqual(result.owned,['sakura']);}
+  assert.equal((await ref.collection('operations').where('action','==','shopPurchase').get()).size,1);
   assert.deepEqual((await a.call('rewards')).grants,['shop-sakura']);
   await assert.rejects(a.call('shopPurchase',{...request,requestId:crypto.randomUUID()}),{code:'ALREADY_EXISTS'});
   await assert.rejects(a.call('shopPurchase',{...request,productId:'midnight'}),{code:'INVALID_ARGUMENT'});
@@ -516,33 +517,33 @@ test('coin purchases are atomic, retry-safe and reject forged prices, insufficie
   await assert.rejects(b.call('shopPurchase',{...request,requestId:crypto.randomUUID()}),{code:'FAILED_PRECONDITION'});
   await assert.rejects(a.call('shopPurchase',{...request,uid:b.uid}),{code:'INVALID_ARGUMENT'});
   await assert.rejects(a.call('shopPurchase',request,b.uid),{code:'UNAUTHENTICATED'});
-  const freeze=()=>a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-freeze',coinPrice:100,timeZone});
+  const freeze=()=>a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-freeze',coinPrice:catalogue.item('streak-freeze').coinPrice,timeZone});
   await Promise.all([freeze(),freeze()]);const wallet=await a.call('shop',{version:2,timeZone});
-  assert.equal(wallet.balance,300);assert.equal(wallet.inventory['streak-freeze'],2);
+  assert.equal(wallet.balance,450);assert.equal(wallet.inventory['streak-freeze'],2);
   await assert.rejects(freeze(),{code:'FAILED_PRECONDITION'});
   const mine=rules.authenticatedContext(a.uid).firestore();
   await assertFails(setDoc(doc(mine,'commerceAccounts/'+a.uid+'/operations/forged'),{balanceAfter:999999}));
   await assertFails(setDoc(doc(mine,'shopCatalogue/current'),{offers:{sakura:{coinPrice:0}}}));
   await db.doc('accountDeletions/'+a.uid).set({state:'committing'});
-  await assert.rejects(a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'UNAUTHENTICATED'});
-  assert.equal((await ref.get()).data().balance,300);
+  await assert.rejects(a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:catalogue.item('midnight').coinPrice,timeZone}),{code:'UNAUTHENTICATED'});
+  assert.equal((await ref.get()).data().balance,450);
 });
 for(const productId of ['midnight','skyline','evergreen'])test(`rotating ${productId} out blocks new sales while existing cosmetic and theme ownership survives`,async()=>{
   const a=await learner('Collector '+productId),b=await learner('Visitor '+productId),timeZone='UTC';
   for(const user of [a,b])await db.doc('commerceAccounts/'+user.uid).set({version:1,currency:'atlas-tokens',balance:1000});
-  await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone});
+  await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:catalogue.item(productId).coinPrice,timeZone});
   const listing=db.doc('shopCatalogue/current');
   try{
     await listing.set({offers:{[productId]:{enabled:false}}});
     const state=await a.call('shop',{version:2,timeZone});assert.ok(!state.offers.some(p=>p.id===productId));assert.ok(state.owned.includes(productId));
     const grants=await a.call('rewards'),rules=require('../functions/shared/mode-atlas-reward-rules.js');assert.equal(rules.allowed('themes',productId,1,grants),true);
-    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
+    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:catalogue.item(productId).coinPrice,timeZone}),{code:'FAILED_PRECONDITION'});
     await listing.set({offers:{[productId]:{startsAt:Date.now()+86400000}}});
-    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
+    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:catalogue.item(productId).coinPrice,timeZone}),{code:'FAILED_PRECONDITION'});
     await listing.set({offers:{[productId]:{endsAt:Date.now()-1000}}});
-    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone}),{code:'FAILED_PRECONDITION'});
+    await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:catalogue.item(productId).coinPrice,timeZone}),{code:'FAILED_PRECONDITION'});
     await listing.set({offers:{[productId]:{enabled:true}}});
-    assert.ok((await b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone})).owned.includes(productId));
+    assert.ok((await b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:catalogue.item(productId).coinPrice,timeZone})).owned.includes(productId));
   }finally{await listing.delete();}
 });
 test('developer coin credits and purchase reset use actual Auth role, keep earned/event rewards and audit retries',async()=>{
@@ -559,13 +560,13 @@ test('developer coin credits and purchase reset use actual Auth role, keep earne
   await db.doc('rewardEntitlements/'+uid).set({grants:{'hunny-tester':{}}});
   await db.doc('commerceAccounts/'+uid).delete();
   await Promise.all([call('shopDeveloper',credit),call('shopDeveloper',credit)]);assert.equal((await call('shop',{version:2,timeZone})).balance,2000);
-  await call('shopPurchase',{requestId:crypto.randomUUID(),productId:'sakura',coinPrice:500,timeZone});
-  await call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-repair',coinPrice:200,timeZone});
+  await call('shopPurchase',{requestId:crypto.randomUUID(),productId:'sakura',coinPrice:catalogue.item('sakura').coinPrice,timeZone});
+  await call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-repair',coinPrice:catalogue.item('streak-repair').coinPrice,timeZone});
   const reset={requestId:crypto.randomUUID(),operation:'resetPurchases',timeZone};
-  await call('shopDeveloper',reset);const after=await call('shopDeveloper',reset);assert.equal(after.balance,1300);assert.deepEqual(after.owned,[]);assert.equal(after.inventory['streak-repair'],0);
+  await call('shopDeveloper',reset);const after=await call('shopDeveloper',reset);assert.equal(after.balance,950);assert.deepEqual(after.owned,[]);assert.equal(after.inventory['streak-repair'],0);
   const grants=await call('rewards',{});assert.deepEqual(grants.grants,['hunny-tester']);assert.equal(grants.allCustom,true);
   assert.equal(require('../functions/shared/mode-atlas-reward-rules.js').allowed('themes','sakura',99,grants),false);
-  await call('shopDeveloper',credit);assert.equal((await call('shop',{version:2,timeZone})).balance,1300,'An old credit receipt cannot mint coins after a reset');
+  await call('shopDeveloper',credit);assert.equal((await call('shop',{version:2,timeZone})).balance,950,'An old credit receipt cannot mint coins after a reset');
 });
 test('streak inventory uses local calendar boundaries, refunds late offline practice and repairs an eligible gap',async()=>{
   const a=await learner('StreakItems'),{createCommerce}=require('../functions/commerce.cjs'),timeZone='Australia/Melbourne';
@@ -573,7 +574,7 @@ test('streak inventory uses local calendar boundaries, refunds late offline prac
   const ref=db.doc('commerceAccounts/'+a.uid),saveRef=db.doc('users/'+a.uid+'/appData/kanaTrainer');
   const studied=days=>{const data=save(100);data.sections.reading.data.dailyChallengeHistory=Object.fromEntries(days.map(day=>[day,{}]));return data;};
   await saveRef.set(studied(['2026-10-01','2026-10-02','2026-10-03']));await ref.set({version:1,currency:'atlas-tokens',balance:2000});
-  const buy=productId=>commerce.run(user,'shopPurchase',{requestId:crypto.randomUUID(),productId,coinPrice:productId==='streak-freeze'?100:200,timeZone});
+  const buy=productId=>commerce.run(user,'shopPurchase',{requestId:crypto.randomUUID(),productId,coinPrice:catalogue.item(productId).coinPrice,timeZone});
   await buy('streak-freeze');await buy('streak-repair');
   clock=Date.parse('2026-10-05T00:00:00+11:00');
   const state=()=>commerce.run(user,'shop',{version:2,timeZone});let value=await state();assert.deepEqual(value.protection,['2026-10-04']);assert.equal(value.inventory['streak-freeze'],0);
@@ -762,7 +763,7 @@ test('cached mastery projections refresh on Friends views without waiting for an
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.readingMastered':2,'summary.combinedMastered':1});
   const result=await a.call('list',{kind:'rankings',metric:'mastery'}),peer=result.rows.find(row=>row.uid===b.uid);
   assert.equal(peer.stats.readingMastered,0);assert.equal(peer.stats.writingMastered,0);assert.equal(peer.stats.combinedMastered,0);
-  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,3);
+  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,4);
   const saved=(await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis();
   await a.call('list',{kind:'friends'});assert.equal((await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis(),saved);
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.combinedMastered':1});
@@ -789,19 +790,19 @@ test('level catch-up uses the current curve, preserves an existing wallet and ca
   const old=save(7003);old.sections.progress.data.state.version=4;old.sections.progress.data.state.curveCredit=999999;
   await saveRef.set(old);
   const wallets=await Promise.all(Array.from({length:4},()=>a.call('shop',{version:2,timeZone})));
-  for(const wallet of wallets){assert.equal(wallet.balance,393);assert.equal(wallet.levelRewards.throughLevel,12);assert.equal(wallet.levelRewards.total,320);}
+  for(const wallet of wallets){assert.equal(wallet.balance,98);assert.equal(wallet.levelRewards.throughLevel,12);assert.equal(wallet.levelRewards.total,25);}
   assert.equal((await ref.collection('operations').where('action','==','levelReward').get()).size,1);
-  const spend={requestId:crypto.randomUUID(),productId:'round-glasses',coinPrice:150,timeZone};
+  const spend={requestId:crypto.randomUUID(),productId:'quiff',coinPrice:catalogue.item('quiff').coinPrice,timeZone};
   await a.call('shopPurchase',spend);await a.call('shopPurchase',spend);
-  await saveRef.set(save(0));assert.equal((await a.call('shop',{version:2,timeZone})).balance,243);
-  await saveRef.set(save(7003));assert.equal((await a.call('shop',{version:2,timeZone})).balance,243);
-  await saveRef.set(save(10000));const increased=await a.call('shop',{version:2,timeZone});assert.equal(increased.balance,283);assert.equal(increased.levelRewards.throughLevel,14);
+  await saveRef.set(save(0));assert.equal((await a.call('shop',{version:2,timeZone})).balance,48);
+  await saveRef.set(save(7003));assert.equal((await a.call('shop',{version:2,timeZone})).balance,48);
+  await saveRef.set(save(10000));const increased=await a.call('shop',{version:2,timeZone});assert.equal(increased.balance,48);assert.equal(increased.levelRewards.throughLevel,14);
   await assert.rejects(a.call('shop',{version:2,timeZone,level:999}),{code:'INVALID_ARGUMENT'});
 });
 test('a resumed coin backfill reaches accounts outside Friends and checkpoints pages without re-awarding coins',async()=>{
   const a=await learner('DormantCoins'),b=await learner('DormantCoinsTwo');await a.call('leave');await b.call('leave');
   await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(7003));await db.doc(`users/${b.uid}/appData/kanaTrainer`).set(save(10000));
-  const records=await Promise.all([auth.getUser(a.uid),auth.getUser(b.uid)]),marker=db.doc('commerceMigrations/level-coins-v1');await marker.delete();
+  const records=await Promise.all([auth.getUser(a.uid),auth.getUser(b.uid)]),marker=db.doc('commerceMigrations/study-currency-v2');await marker.delete();
   let failOnce=true,pages=0;
   const {createCommerce}=require('../functions/commerce.cjs');
   const commerce=createCommerce({db,auth:{getUser:uid=>auth.getUser(uid),listUsers:async(limit,token)=>{assert.equal(limit,50);pages++;if(!token)return {users:[records[0]],pageToken:'page-two'};assert.equal(token,'page-two');if(failOnce){failOnce=false;throw Error('temporary failure');}return {users:[records[1]]};}}});
@@ -809,7 +810,7 @@ test('a resumed coin backfill reaches accounts outside Friends and checkpoints p
     await commerce.backfillLevels();assert.equal((await marker.get()).data().pageToken,'page-two');
     await assert.rejects(commerce.backfillLevels(),/temporary failure/);assert.equal((await marker.get()).data().pageToken,'page-two');
     await commerce.backfillLevels();assert.equal((await marker.get()).data().complete,true);await commerce.backfillLevels();assert.equal(pages,3);
-    assert.equal((await a.call('shop',{version:2,timeZone:'UTC'})).balance,320);assert.equal((await b.call('shop',{version:2,timeZone:'UTC'})).balance,360);
+    assert.equal((await a.call('shop',{version:2,timeZone:'UTC'})).balance,25);assert.equal((await b.call('shop',{version:2,timeZone:'UTC'})).balance,25);
     assert.equal((await a.call('state')).active,false);
   }finally{await marker.delete();}
 });
@@ -818,7 +819,7 @@ test('learning save triggers award coins without Friends; deletion barriers prev
   await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(7003));
   if(directService)await service.refreshSummary(a.uid);
   await until(async()=> (await ref.get()).data()?.levelRewards?.throughLevel===12);
-  assert.equal((await ref.get()).data().balance,320);
+  assert.equal((await ref.get()).data().balance,25);
   await db.doc('accountDeletions/'+a.uid).set({state:'committing'});await ref.delete();
   await service.refreshSummary(a.uid);assert.equal((await ref.get()).exists,false);
 });
@@ -883,6 +884,7 @@ test('name-only Friends edits preserve the canonical character and new wardrobe 
   const a=await learner('WardrobeOwner'),b=await learner('WardrobeViewer'),defaults=require('../functions/shared/mode-atlas-avatar-rules.js').defaults;
   let state=await a.call('avatarState');
   const select=character=>a.call('avatarUpdate',{avatar:'character',character,revision:state.revision});
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-curtains':{},'shop-crewneck':{}}});
   state=await select({...defaults,hair:'curtains',skin:'ivory',outfit:'crewneck'});
   await a.call('updateProfile',{displayName:'WardrobeRenamed',timeZone:'UTC'});
   assert.deepEqual((await a.call('avatarState',{characterVersion:3})).character,state.character);
@@ -891,7 +893,7 @@ test('name-only Friends edits preserve the canonical character and new wardrobe 
     state=await a.call('avatarState');await assert.rejects(select(character),{code:'PERMISSION_DENIED'});
   }
   await db.doc('commerceAccounts/'+a.uid).set({version:1,currency:'atlas-tokens',balance:500});
-  await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'textured-fade',coinPrice:180,timeZone:'UTC'});
+  await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'textured-fade',coinPrice:catalogue.item('textured-fade').coinPrice,timeZone:'UTC'});
   state=await select({...defaults,hair:'textured-fade'});
   await db.doc('shopCatalogue/current').set({offers:{'textured-fade':{enabled:false}}});
   try{state=await select({...defaults,hair:'textured-fade',skin:'apricot'});assert.equal(state.character.hair,'textured-fade');}
@@ -903,7 +905,7 @@ test('name-only Friends edits preserve the canonical character and new wardrobe 
 test('moderation preserves the reported character and members cannot read the report queue',async()=>{
   const a=await learner('AvatarReported'),b=await learner('AvatarReporter');
   const defaults=require('../functions/shared/mode-atlas-avatar-rules.js').defaults;
-  const avatar=await a.call('avatarState'),original={...defaults,hair:'braids',outfit:'striped'};
+  const avatar=await a.call('avatarState'),original={...defaults,hair:'coils',outfit:'linen'};
   const saved=await a.call('avatarUpdate',{avatar:'character',character:original,revision:avatar.revision});
   await b.call('reportProfile',{uid:a.uid,reason:'avatar',note:'Please review this look.',code:a.code});
   await a.call('avatarUpdate',{avatar:'character',character:{...defaults,hair:'crop'},revision:saved.revision});
@@ -918,19 +920,19 @@ test('moderation preserves the reported character and members cannot read the re
   assert.equal(report.reporter,undefined);assert.ok(!JSON.stringify(report).includes(a.email));
 });
 
-test('Hunny offers require eligibility and separate ten-coin purchases, with atomic retries and revocation',async()=>{
+test('Hunny offers require eligibility and separate priced purchases, with atomic retries and revocation',async()=>{
   const a=await learner('HunnyEligible'),b=await learner('HunnyOther');
   const defaults=require('../functions/shared/mode-atlas-avatar-rules.js').defaults;
   await db.doc('rewardEntitlements/'+a.uid).set({grants:{'hunny-tester':{}}});
-  await db.doc('commerceAccounts/'+a.uid).set({version:1,currency:'atlas-tokens',balance:20});
+  await db.doc('commerceAccounts/'+a.uid).set({version:1,currency:'atlas-tokens',balance:30});
   const before=await a.call('shop',{version:2,timeZone:'UTC'});
-  assert.deepEqual(before.offers.filter(p=>p.id.startsWith('hunny-')).map(p=>p.coinPrice),[10,10]);
+  assert.deepEqual(before.offers.filter(p=>p.id.startsWith('hunny-')).map(p=>p.coinPrice),[15,15]);
   assert.equal((await b.call('shop',{version:2,timeZone:'UTC'})).offers.some(p=>p.id.startsWith('hunny-')),false);
-  for(const id of ['hunny-jumper','hunny-pendant'])await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:id,coinPrice:10,timeZone:'UTC'}),{code:'FAILED_PRECONDITION'});
+  for(const id of ['hunny-jumper','hunny-pendant'])await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:id,coinPrice:catalogue.item(id).coinPrice,timeZone:'UTC'}),{code:'FAILED_PRECONDITION'});
   let avatar=await a.call('avatarState');
   await assert.rejects(a.call('avatarUpdate',{avatar:'character',character:{...defaults,outfit:'hunny'},revision:avatar.revision}),{code:'PERMISSION_DENIED'});
-  const buy={requestId:crypto.randomUUID(),productId:'hunny-jumper',coinPrice:10,timeZone:'UTC'};
-  await a.call('shopPurchase',buy);assert.equal((await a.call('shopPurchase',buy)).balance,before.balance-10);
+  const buy={requestId:crypto.randomUUID(),productId:'hunny-jumper',coinPrice:catalogue.item('hunny-jumper').coinPrice,timeZone:'UTC'};
+  await a.call('shopPurchase',buy);assert.equal((await a.call('shopPurchase',buy)).balance,before.balance-15);
   await a.call('shopPurchase',{...buy,requestId:crypto.randomUUID(),productId:'hunny-pendant'});
   avatar=await a.call('avatarUpdate',{avatar:'character',character:{...defaults,outfit:'hunny',accessory:'hunny',headwear:'hunny'},revision:avatar.revision});
   assert.equal(avatar.character.outfit,'hunny');assert.equal(avatar.character.accessory,'hunny');
@@ -951,7 +953,7 @@ test('weekly coins migrate a legacy wallet, keep purchases and do not backfill s
   for(const [p,score]of [[a,200],[b,100]]){await weekly.preference(p.uid,{enabled:true});await db.doc(`weeklyCompetitions/${period.id}/entries/${p.uid}`).set({uid:p.uid,active:true,score,days:{}});}
   at=period.endAt+300001;await Promise.all([weekly.settle(period.id),weekly.settle(period.id)]);
   let w=(await db.doc('commerceAccounts/'+a.uid).get()).data();
-  assert.equal(w.version,2);assert.equal(w.currency,'atlas-coins');assert.equal(w.balance-w.levelRewards.total,350);assert.deepEqual(w.purchases,{sakura:{at:1,price:500}});
+  assert.equal(w.version,3);assert.equal(w.currency,'atlas-coins');assert.equal(w.balance-w.levelRewards.total,350);assert.deepEqual(w.purchases,{sakura:{at:1,price:500}});
   const past=policy.period(period.startAt-86400000);await db.doc('weeklyCompetitions/'+past.id).set({...past,settled:true});
   await db.doc(`weeklyCompetitions/${past.id}/awards/${a.uid}`).set({xp:500,rank:1,week:past.id});
   await weekly.settle(past.id);assert.equal((await db.doc(`commerceAccounts/${a.uid}/operations/weekly-v1-${past.id}`).get()).exists,false);
@@ -1009,7 +1011,7 @@ test('one repair bridges three dates atomically; partial and complete offline ca
   const studied=days=>{const data=save(100);data.sections.reading.data.dailyChallengeHistory=Object.fromEntries(days.map(day=>[day,{}]));return data;};
   const original=['2026-10-01','2026-10-02','2026-10-06','2026-10-07'];
   await saveRef.set(studied(original));await ref.set({version:1,currency:'atlas-tokens',balance:1000});
-  await commerce.run(user,'shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-repair',coinPrice:200,timeZone});
+  await commerce.run(user,'shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-repair',coinPrice:catalogue.item('streak-repair').coinPrice,timeZone});
   const request={requestId:crypto.randomUUID(),productId:'streak-repair',timeZone};
   await Promise.all([commerce.run(user,'shopUse',request),commerce.run(user,'shopUse',request)]);
   const state=()=>commerce.run(user,'shop',{version:2,timeZone});let result=await state();
@@ -1067,4 +1069,57 @@ test('verified tester receives Shiro once, with no client email authority or for
   current=await a.call('avatarUpdate',{revision,character:{...chars.defaults,pet:'none'}});assert.equal((await a.call('avatarState',{characterVersion:3})).character.pet,'none');assert.equal(current.petNames['japanese-spitz'],'Shiro');
   await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-japanese-spitz':{revoked:true}}});assert.ok(!(await a.call('rewards')).grants.includes('shop-japanese-spitz'));
   await auth.updateUser(a.uid,{email:a.email});
+});
+
+test('two currencies debit independently and reject mixed, stale and repeated payments',async()=>{
+  const a=await learner('TwoWallets',0),ref=db.doc('commerceAccounts/'+a.uid),timeZone='UTC';
+  await ref.set({version:3,currency:'atlas-coins',balance:1000,tokenBalance:10000});
+  const initial=await a.call('shop',{version:3,timeZone});assert.equal(initial.tokenBalance,10000);
+  const item=catalogue.item('quiff'),pay={requestId:crypto.randomUUID(),productId:item.id,currency:'study-tokens',price:item.tokenPrice,timeZone};
+  const bought=await Promise.all([a.call('shopPurchase',pay),a.call('shopPurchase',pay)]);
+  for(const wallet of bought){assert.equal(wallet.balance,1000);assert.equal(wallet.tokenBalance,9700);assert.ok(wallet.owned.includes(item.id));}
+  await assert.rejects(a.call('shopPurchase',{...pay,currency:'atlas-coins',price:item.coinPrice}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('shopPurchase',{...pay,requestId:crypto.randomUUID(),currency:'atlas-coins',price:item.coinPrice}),{code:'ALREADY_EXISTS'});
+  for(const patch of [{productId:'sakura',price:1},{productId:'crewneck',price:1},{productId:'crewneck',currency:'forged'},{productId:'crewneck',coinPrice:90}])await assert.rejects(a.call('shopPurchase',{...pay,requestId:crypto.randomUUID(),...patch}));
+  let state=await a.call('shop',{version:3,timeZone});assert.equal(state.balance,1000);assert.equal(state.tokenBalance,9700);
+  state=await a.call('shopPurchase',{...pay,requestId:crypto.randomUUID(),productId:'sakura',currency:'atlas-coins',price:catalogue.item('sakura').coinPrice});
+  assert.equal(state.balance,250);assert.equal(state.tokenBalance,9700);
+  const mine=rules.authenticatedContext(a.uid).firestore();await assertFails(setDoc(doc(mine,'commerceAccounts/'+a.uid),{tokenBalance:999999}));
+  await a.call('leave');assert.equal((await a.call('shop',{version:3,timeZone})).tokenBalance,9700);
+});
+
+test('Study Tokens catch up weighted answers, levels and streaks without replay or reset awards',async()=>{
+  const a=await learner('StudyEarnings',0),user=await auth.getUser(a.uid),ref=db.doc('commerceAccounts/'+a.uid),saved=db.doc('users/'+a.uid+'/appData/kanaTrainer');
+  const {createCommerce}=require('../functions/commerce.cjs'),commerce=createCommerce({db,now:()=>Date.parse('2026-10-15T12:00:00Z')}),state=()=>commerce.run(user,'shop',{version:3,timeZone:'UTC'});
+  await ref.set({version:2,currency:'atlas-coins',balance:333,levelRewards:{version:1,throughLevel:12,total:320}});
+  const data=save(80);data.sections.progress.data.state.version=5;data.sections.progress.data.state.credits={device:{answer:0}};
+  data.sections.reading.data.dailyChallengeHistory=Object.fromEntries([...Array.from({length:8},(_,i)=>`2026-10-${String(i+1).padStart(2,'0')}`),'2099-01-01'].map(day=>[day,{}]));
+  await saved.set(data);let first=await state();assert.equal(first.balance,333);assert.equal(first.tokenRewards.answers,10);assert.equal(first.tokenRewards.streaks,85);
+  data.sections.progress.data.state.credits.device.answer=240;await saved.set(data);const broad=await state();assert.equal(broad.tokenRewards.answers,40);assert.ok(broad.tokenBalance>=first.tokenBalance+30);assert.equal(broad.balance,333);
+  assert.equal(broad.tokenRewards.levels,catalogue.studyTokens.levelTotal(require('../functions/projection.cjs').levelFromSave(data)));
+  const before=broad.tokenBalance;await saved.set(save(0));assert.equal((await state()).tokenBalance,before);await saved.set(data);
+  const retries=await Promise.all([state(),state(),state()]);for(const value of retries)assert.equal(value.tokenBalance,before);
+  data.sections.progress.data.state.credits.device.completion=500;await saved.set(data);const completion=await state();assert.equal(completion.tokenRewards.answers,40);
+});
+
+test('wardrobe migration keeps eligible equipped items and gifts, respects revocations and runs only once',async()=>{
+  const a=await learner('EquippedMigration',10000),chars=require('../functions/shared/mode-atlas-avatar-rules.js'),ref=db.doc('rewardEntitlements/'+a.uid);
+  const look={...chars.defaults,hair:'curtains',outfit:'grove',pet:'shiba',petName:'Mochi',accessory:'trail-scarf'};
+  await db.doc('avatarProfiles/'+a.uid).set({version:1,revision:1,avatar:'character',character:look});
+  await ref.set({grants:{'shop-sakura':{source:'shop'},'shop-japanese-spitz':{source:'gift'},'shop-trail-scarf':{revoked:true}}});
+  const access=await a.call('rewards');for(const grant of ['shop-curtains','shop-grove','shop-shiba','shop-sakura','shop-japanese-spitz'])assert.ok(access.grants.includes(grant),grant);
+  assert.ok(!access.grants.includes('shop-trail-scarf'));assert.ok(!access.grants.includes('shop-calico'));
+  assert.equal((await ref.get()).data().grants['shop-shiba'].source,'equipped-migration');
+  await db.doc('avatarProfiles/'+a.uid).update({character:{...look,pet:'crane',hair:'quiff'}});await a.call('rewards');
+  const after=(await ref.get()).data();assert.equal(after.wardrobeMigration,1);assert.equal(after.grants['shop-quiff'],undefined);assert.equal(after.grants['shop-crane'],undefined);
+  const fresh=await learner('StarterWardrobe',0);assert.deepEqual((await fresh.call('rewards')).grants,[]);
+});
+
+test('owned profile themes are public while learning stats stay private and revocation removes the theme',async()=>{
+  const a=await learner('ThemeOwner'),b=await learner('ThemeVisitor');for(const user of [a,b])await user.call('weeklyPreference',{enabled:true});
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-evergreen':{source:'shop'}}});
+  const data=save(20);data.sections.progress.data.state.appearance={theme:'evergreen',themeAt:100};await db.doc('users/'+a.uid+'/appData/kanaTrainer').set(data);await a.call('state');
+  let result=await b.call('profile',{uid:a.uid});assert.equal(result.profile.theme,'evergreen');assert.equal(result.profile.stats,undefined);assert.equal(result.profile.tokenBalance,undefined);
+  await friend(a,b);result=await b.call('profile',{uid:a.uid});assert.equal(result.profile.theme,'evergreen');assert.equal(result.profile.stats.xp,20);
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-evergreen':{revoked:true}}});assert.equal((await b.call('profile',{uid:a.uid})).profile.theme,'');
 });

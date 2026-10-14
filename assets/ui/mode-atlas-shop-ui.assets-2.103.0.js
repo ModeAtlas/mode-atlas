@@ -17,35 +17,57 @@
     const heading=el('div');heading.append(el('span','','あ'),el('strong','',product.name+' theme'));
     const body=el('div');body.append(el('span','','Your next chapter'),el('span','ma-shop-theme-preview__pill','Continue learning →'));sample.append(heading,body);return sample;
   }
-  async function purchase(product){
+  function productArt(product,large=false){
+    const art=el('div',large?'ma-shop-item-preview':'ma-shop-wardrobe-portrait');
+    art.setAttribute('role','img');art.setAttribute('aria-label',product.name+' preview');
+    if(product.kind==='consumable'){art.textContent=product.id==='streak-freeze'?'❄':'↺';return art;}
+    const reward=product.rewards[0],slot=Object.keys(root.ModeAtlasAvatarRules.slots).find(key=>root.ModeAtlasAvatarRules.slots[key]===reward.type);
+    const current=large?root.ModeAtlasPortrait?.self?.().character:null;
+    const character={...root.ModeAtlasAvatarRules.defaults,...current,pet:'none',[slot]:reward.id};
+    if(['hairstyles','hairColours'].includes(reward.type))character.headwear='none';
+    root.ModeAtlasAvatarArt.render(art,character,{portrait:!['outfits','pants','pets'].includes(reward.type),petOnly:reward.type==='pets'});
+    return art;
+  }
+  async function purchase(product,currency){
     const wallet=state(),account=root.KanaCloudSync?.getUser?.()?.uid;
     if(wallet.status==='guest'){root.ModeAtlasDialog.close();root.ModeAtlasAccountNavigation.open('profile');return;}
     if(product.grant&&(owned(product)||wallet.owned?.includes(product.id))){openRewards();return;}
     const offer=wallet.offers?.find(item=>item.id===product.id);if(!offer||wallet.busy)return;
-    root.ModeAtlasDialog.close();
-    if(wallet.balance<offer.coinPrice){await root.ModeAtlasDialog.alert({title:'A few more coins',message:`You need ${(offer.coinPrice-wallet.balance).toLocaleString()} more Atlas Coins for ${product.name}.`,confirmLabel:'Got it'});return;}
-    const confirmed=await root.ModeAtlasDialog.confirm({title:`Buy ${product.name}?`,message:`${offer.coinPrice.toLocaleString()} Atlas Coins · Balance after purchase: ${(wallet.balance-offer.coinPrice).toLocaleString()}.`,confirmLabel:'Buy item'});
-    if(!confirmed||account!==root.KanaCloudSync?.getUser?.()?.uid)return;
-    try{await root.ModeAtlasShop.purchase(product.id);root.ModeAtlasFeedback.toast(product.grant?product.name+' is in your Rewards.':product.name+' added.','success');}
-    catch(error){await root.ModeAtlasDialog.alert({title:'Purchase could not finish',message:root.ModeAtlasShop.message(error),confirmLabel:'Got it'});void root.ModeAtlasShop.refresh(true);}
+    const tokens=currency===catalogue.earnedCurrency.id,price=tokens?offer.tokenPrice:offer.coinPrice,balance=tokens?wallet.tokenBalance:wallet.balance;
+    if(wallet.status!=='ready'||!Number.isSafeInteger(price)||balance===null||balance<price)return;
+    const detail=document.querySelector('[data-ma-shop-detail]');if(detail)delete detail.dataset.error;
+    // The enlarged preview and explicitly labelled payment button form the
+    // confirmation. Keep the item visible while the server completes the purchase.
+    try{await root.ModeAtlasShop.purchase(product.id,currency);if(account!==root.KanaCloudSync?.getUser?.()?.uid)return;root.ModeAtlasDialog.close();root.ModeAtlasFeedback.toast(product.grant?product.name+' is in your Rewards.':product.name+' added.','success');}
+    catch(error){if(account!==root.KanaCloudSync?.getUser?.()?.uid)return;const status=document.querySelector('[data-ma-shop-detail-status]');if(status){status.textContent=root.ModeAtlasShop.message(error);status.closest('[data-ma-shop-detail]').dataset.error=status.textContent;}void root.ModeAtlasShop.refresh(true);}
   }
   function preview(product){
-    const content=el('div','ma-shop-detail');content.dataset.maShopDetail=product.id;content.append(look(product));
-    const includes=el('div','ma-shop-includes'),copy=el('div');copy.append(el('strong','','The complete collection'),el('p','','An app-wide theme, profile banner, title and frame, iOS app icon, plus matching avatar clothing, pants and headwear.'));includes.append(appIcon(product),copy);const outfit=el('div','ma-shop-outfit-preview');root.ModeAtlasAvatarArt.render(outfit,{...root.ModeAtlasAvatarRules.defaults,outfit:product.id,pants:product.id,headwear:product.id});outfit.setAttribute('role','img');outfit.setAttribute('aria-label',product.name+' avatar outfit and headwear');content.append(includes,outfit,themePreview(product));
-    const note=el('p','ma-atlas-rewards__note');note.dataset.maShopDetailStatus='';content.append(note);
-    const buy=button('','ma-button ma-button--primary');buy.dataset.maShopBuy=product.id;buy.addEventListener('click',()=>void purchase(product));
-    const rewards=button('Open Rewards','ma-button ma-button--primary');rewards.dataset.maShopOwnedAction='';rewards.addEventListener('click',openRewards);content.append(buy,rewards);
-    void root.ModeAtlasDialog.feature({title:product.name,kicker:'Collection',contentNode:content});refresh();
+    const content=el('div','ma-shop-detail');content.dataset.maShopDetail=product.id;
+    if(product.kind==='collection'){
+      content.append(look(product));
+      const includes=el('div','ma-shop-includes'),copy=el('div');copy.append(el('strong','','The complete collection'),el('p','','An app-wide theme, profile banner, title and frame, iOS app icon, plus matching avatar clothing, pants and headwear.'));includes.append(appIcon(product),copy);
+      const outfit=el('div','ma-shop-outfit-preview');root.ModeAtlasAvatarArt.render(outfit,{...root.ModeAtlasAvatarRules.defaults,outfit:product.id,pants:product.id,headwear:product.id});outfit.setAttribute('role','img');outfit.setAttribute('aria-label',product.name+' avatar outfit and headwear');content.append(includes,outfit,themePreview(product));
+    }else content.append(productArt(product,true),el('p','ma-shop-detail__description',product.description));
+    const note=el('p','ma-atlas-rewards__note');note.dataset.maShopDetailStatus='';note.setAttribute('role','status');content.append(note);
+    const payment=el('div','ma-shop-payment');
+    for(const currency of [catalogue.currency,...(product.tokenPrice===null?[]:[catalogue.earnedCurrency])]){
+      const option=el('div','ma-shop-payment__option'),buy=button('','ma-button ma-button--primary'),after=el('small');buy.dataset.maShopBuy=product.id;buy.dataset.maShopCurrency=currency.id;after.dataset.maShopAfter=currency.id;
+      buy.addEventListener('click',()=>void purchase(product,currency.id));option.append(buy,after);payment.append(option);
+    }
+    const rewards=button('Open Rewards','ma-button ma-button--primary');rewards.dataset.maShopOwnedAction='';rewards.addEventListener('click',openRewards);content.append(payment,rewards);
+    void root.ModeAtlasDialog.feature({title:product.name,kicker:product.kind==='collection'?'Collection':'Your next find',contentNode:content});refresh();
   }
   function availability(product,wallet){
     if(owned(product)||wallet.owned?.includes(product.id))return 'In your Rewards';
     const offer=wallet.offers?.find(item=>item.id===product.id);
-    return offer?offer.coinPrice.toLocaleString()+' coins':wallet.offers===null?product.coinPrice.toLocaleString()+' coins':'Out of rotation';
+    const price=offer||(!wallet.offers?product:null);
+    return price?price.coinPrice.toLocaleString()+' Atlas Coins'+(price.tokenPrice?' · '+price.tokenPrice.toLocaleString()+' Study Tokens':''):'Out of rotation';
   }
   function refresh(){
     const wallet=state();
     for(const host of document.querySelectorAll('[data-ma-shop]')){
-      const balance=host.querySelector('[data-ma-coin-balance]');balance.textContent=wallet.balance!==null?wallet.balance.toLocaleString()+' coins':wallet.status==='guest'?'Sign in to view your balance':wallet.status==='loading'?'Checking balance…':wallet.status==='offline'?'Connect to view your balance':'Couldn’t load your balance';
+      const balance=host.querySelector('[data-ma-coin-balance]');balance.textContent=wallet.balance!==null?wallet.balance.toLocaleString():wallet.status==='guest'?'Sign in to view your balance':wallet.status==='loading'?'Checking balance…':wallet.status==='offline'?'Connect to view your balance':'Couldn’t load your balance';
+      const tokens=host.querySelector('[data-ma-token-balance]');tokens.textContent=wallet.tokenBalance!==null&&wallet.tokenBalance!==undefined?wallet.tokenBalance.toLocaleString():wallet.status==='guest'?'Sign in':wallet.status==='loading'?'Checking…':'—';
       host.querySelector('[data-ma-shop-refresh]').hidden=!['unavailable','offline'].includes(wallet.status);
       for(const product of catalogue.products){
         const item=host.querySelector('[data-ma-shop-product="'+product.id+'"]');
@@ -58,7 +80,7 @@
         item.dataset.owned=String(isOwned);
         const ending=item.querySelector('[data-ma-shop-ends]');
         if(ending){ending.hidden=!offer?.endsAt;ending.textContent=offer?.endsAt?'Until '+new Date(offer.endsAt).toLocaleDateString(undefined,{month:'short',day:'numeric'}):'';}
-        if(product.kind!=='collection')item.disabled=wallet.busy||product.kind==='consumable'&&(wallet.inventory?.[product.id]||0)>=product.limit||wallet.status!=='guest'&&wallet.status!=='ready';
+        item.disabled=false;
       }
       for(const group of host.querySelectorAll('[data-ma-shop-group]')){
         const visible=[...group.querySelectorAll('[data-ma-shop-product]')].filter(item=>!item.hidden);
@@ -66,17 +88,26 @@
         visible.slice(limit).forEach(item=>{item.hidden=true;});
         group.hidden=!visible.length;
       }
+      for(const art of host.querySelectorAll('[data-ma-shop-product]:not([hidden]) [data-ma-shop-art]'))if(!art.dataset.rendered){const product=catalogue.item(art.dataset.maShopArt);art.replaceChildren(...productArt(product).childNodes);art.dataset.rendered='true';art.setAttribute('aria-hidden','true');}
       const empty=host.querySelector('[data-ma-shop-empty]');
       if(empty)empty.hidden=!!host.querySelector('[data-ma-shop-product]:not([hidden])')||host.dataset.category==='coins';
     }
-    // Account changes must also update an already open collection dialog.
-    for(const product of catalogue.products.filter(p=>p.kind==='collection')){
-      const detail=document.querySelector('[data-ma-shop-detail="'+product.id+'"]');if(!detail)continue;
-      const isOwned=owned(product)||wallet.owned?.includes(product.id),offer=wallet.offers?.find(p=>p.id===product.id),buy=detail.querySelector('[data-ma-shop-buy]');
-      detail.querySelector('[data-ma-shop-detail-status]').textContent=isOwned?'Yours to keep. Choose your look in Rewards.':offer?.endsAt?'Available until '+new Date(offer.endsAt).toLocaleDateString()+'. Yours to keep once purchased.':'';
-      detail.querySelector('[data-ma-shop-owned-action]').hidden=!isOwned;buy.hidden=isOwned;
-      buy.textContent=wallet.status==='guest'?'Sign in to buy':wallet.busy?'Finishing purchase…':offer?'Buy for '+offer.coinPrice.toLocaleString()+' coins':'Out of rotation';
-      buy.disabled=wallet.busy||wallet.status!=='guest'&&(!offer||wallet.status!=='ready');
+    // A sign-out, purchase or rotation change also updates an open preview.
+    for(const detail of document.querySelectorAll('[data-ma-shop-detail]')){
+      const product=catalogue.item(detail.dataset.maShopDetail);if(!product)continue;
+      const isOwned=owned(product)||wallet.owned?.includes(product.id),offer=wallet.offers?.find(p=>p.id===product.id);
+      detail.querySelector('[data-ma-shop-owned-action]').hidden=!isOwned;
+      const note=detail.querySelector('[data-ma-shop-detail-status]');
+      if(!wallet.busy)note.textContent=detail.dataset.error|| (isOwned?'In your Rewards':offer?.endsAt?'Available until '+new Date(offer.endsAt).toLocaleDateString():'');
+      const full=product.kind==='consumable'&&(wallet.inventory?.[product.id]||0)>=product.limit;
+      for(const buy of detail.querySelectorAll('[data-ma-shop-buy]')){
+        const tokens=buy.dataset.maShopCurrency===catalogue.earnedCurrency.id,currency=tokens?catalogue.earnedCurrency:catalogue.currency,price=tokens?offer?.tokenPrice:offer?.coinPrice,balance=tokens?wallet.tokenBalance:wallet.balance;
+        buy.parentElement.hidden=isOwned||wallet.status==='guest'&&tokens;
+        buy.textContent=wallet.status==='guest'?'Sign in to buy':wallet.busy?'Finishing purchase…':full?'Fully stocked':price?'Buy for '+price.toLocaleString()+' '+currency.name:'Out of rotation';
+        buy.disabled=wallet.busy||full||wallet.status!=='guest'&&(wallet.status!=='ready'||!price||balance==null||balance<price);
+        const after=detail.querySelector('[data-ma-shop-after="'+currency.id+'"]');
+        after.textContent=wallet.status==='ready'&&price&&balance!=null?(balance>=price?'After purchase: '+(balance-price).toLocaleString():'Need '+(price-balance).toLocaleString()+' more')+' '+currency.name:'';
+      }
     }
     for(const host of document.querySelectorAll('[data-ma-shop-inventory]'))renderInventory(host);
   }
@@ -114,15 +145,11 @@
       text.append(el('span','ma-shop-eyebrow','Theme + profile collection'),el('strong','ma-shop-product__name',product.name),el('span','ma-shop-product__description',product.description),ends);
       const scene=el('span','ma-shop-scene');scene.setAttribute('aria-hidden','true');scene.append(appIcon(product),frame(product));item.append(text,scene);
     }else{
-      const symbol=el('span','ma-shop-essential__symbol',product.id==='streak-freeze'?'❄':'↺');symbol.setAttribute('aria-hidden','true');
-      if(product.kind==='cosmetic'){
-        symbol.classList.add('ma-shop-wardrobe-portrait');
-        root.ModeAtlasAvatarArt.render(symbol,{...root.ModeAtlasAvatarRules.defaults,[Object.keys(root.ModeAtlasAvatarRules.slots).find(key=>root.ModeAtlasAvatarRules.slots[key]===product.rewards[0].type)]:product.rewards[0].id},{portrait:!['outfits','pants','pets'].includes(product.rewards[0].type),petOnly:product.rewards[0].type==='pets'});
-      }
+      const symbol=el('div','ma-shop-wardrobe-portrait ma-shop-essential__symbol');symbol.dataset.maShopArt=product.id;
       const copy=el('span','ma-shop-essential__copy');copy.append(el('strong','',product.name),el('span','',product.description));item.append(symbol,copy);
     }
     const footer=el('span',collection?'ma-shop-product__footer':'ma-shop-essential__footer'),availability=el('span');availability.dataset.maShopAvailability='';footer.append(availability,icon('arrow'));item.append(footer);
-    item.addEventListener('click',()=>collection?preview(product):void purchase(product));return item;
+    item.setAttribute('aria-haspopup','dialog');item.addEventListener('click',()=>preview(product));return item;
   }
   function section(host,category,title,kind,limit=0){
     const group=el('section','ma-shop-section');group.dataset.maShopGroup=category;group.dataset.limit=String(limit);
@@ -167,11 +194,12 @@
   function mount(host,{full=false}={}){
     host.dataset.maShop=full?'full':'preview';host.classList.add('ma-shop',full?'ma-shop-full':'ma-shop-preview');
     const requested=new URLSearchParams(location.search).get('category');host.dataset.category=full&&categories.some(([id])=>id===requested)?requested:'featured';
-    const header=el('div','ma-shop-header'),wallet=el('section','ma-shop-wallet');wallet.setAttribute('aria-label','Atlas Coins wallet');
+    const header=el('div','ma-shop-header'),wallet=el('section','ma-shop-wallet');wallet.setAttribute('aria-label','Your balances');
     const coin=el('span','ma-shop-coin');coin.append(icon('star'));
     const copy=el('div','ma-shop-wallet__copy'),value=el('p','ma-shop-wallet__balance');value.dataset.maCoinBalance='';value.setAttribute('role','status');copy.append(el('strong','',catalogue.currency.name),value);
+    const tokenCopy=el('div','ma-shop-wallet__copy ma-shop-wallet__tokens'),tokenValue=el('p','ma-shop-wallet__balance');tokenValue.dataset.maTokenBalance='';tokenValue.setAttribute('role','status');const tokenHelp=button(catalogue.earnedCurrency.name,'ma-shop-wallet__help');tokenHelp.setAttribute('aria-label','How to earn Study Tokens');tokenHelp.addEventListener('click',()=>void root.ModeAtlasDialog.alert({title:'Study Tokens',message:'Earn tokens through correct answers, level-ups and consistent study days. Wider kana practice earns more, and hints reduce the rate. Your tokens arrive when your progress syncs.',confirmLabel:'Got it'}));tokenCopy.append(tokenHelp,tokenValue);
     const topup=button('Buy 500 coins','ma-button ma-button--primary ma-button--small');topup.dataset.maPurchaseCoins='';topup.addEventListener('click',()=>void coinPrompt());
-    const retry=button('Refresh balance','ma-button ma-button--ghost ma-button--small');retry.dataset.maShopRefresh='';retry.hidden=true;retry.addEventListener('click',()=>void root.ModeAtlasShop.refresh(true));wallet.append(coin,copy,topup,retry);header.append(wallet);
+    const retry=button('Refresh balance','ma-button ma-button--ghost ma-button--small');retry.dataset.maShopRefresh='';retry.hidden=true;retry.addEventListener('click',()=>void root.ModeAtlasShop.refresh(true));wallet.append(coin,copy,tokenCopy,topup,retry);header.append(wallet);
     if(!full){const link=shopLink('See full shop','featured','ma-button ma-button--ghost ma-shop-open');link.append(icon('arrow'));header.append(link);}
     else{
       const tabs=el('div','ma-shop-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Shop categories');

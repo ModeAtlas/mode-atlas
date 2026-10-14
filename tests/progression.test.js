@@ -133,7 +133,7 @@ test('shop collections never award achievement progress or XP and need an actual
 });
 test('banner rewards migrate safely and stay independent of titles, frames and XP',()=>{
   const e=load({modeAtlasProgress:{version:3,legacySeeded:true,sources:{old:{'kana.reading.correct':700}},appearance:{landmark:'grove',at:10}}}),p=e.progress;
-  assert.deepEqual(plain(p.readState().appearance),{landmark:'grove',at:10,banner:'plain',bannerAt:0});
+  assert.deepEqual(plain(p.readState().appearance),{landmark:'grove',at:10,banner:'plain',bannerAt:0,theme:'',themeAt:0});
   const xp=p.getXP();
   assert.equal(p.selectBanner('summit'),false);assert.equal(p.selectBanner('<script>'),false);
   assert.equal(p.selectBanner('grove'),true);assert.equal(p.selectAppearance('trail'),true);
@@ -146,7 +146,7 @@ test('offline banner and frame changes merge independently in either order, incl
   const p=load().progress;
   const left={appearance:{landmark:'summit',at:30,banner:'grove',bannerAt:10}},right={appearance:{landmark:'trail',at:5,banner:'bridge',bannerAt:20}};
   const merged=p.mergeStates(left,right);
-  assert.deepEqual(plain(merged.appearance),{landmark:'summit',at:30,banner:'bridge',bannerAt:20});
+  assert.deepEqual(plain(merged.appearance),{landmark:'summit',at:30,banner:'bridge',bannerAt:20,theme:'',themeAt:0});
   assert.deepEqual(plain(merged),plain(p.mergeStates(right,left)));
   assert.deepEqual(plain(merged),plain(p.mergeStates(merged,merged)));
   const reset=p.mergeStates(merged,{appearance:{banner:'plain',bannerAt:21}});
@@ -343,4 +343,13 @@ test('conflicting offline goal assignments converge and cannot multiply period r
   assert.equal(p.getXP(merged),60);assert.equal(p.achievementStats(merged).dailyGoals,1);
   const legacy={claims:{'v4:daily:2026-09-30:goal:read-20':40}};
   assert.equal(p.getXP(p.mergeStates(merged,legacy)),60);
+});
+
+test('profile themes require ownership and merge independently of the banner and title',()=>{
+  const e=load(),p=e.progress;e.root.ModeAtlasRewardAccess={current:()=>({grants:[]})};
+  assert.equal(p.selectTheme('sakura'),false);assert.equal(p.readState().appearance.theme,'');
+  e.root.ModeAtlasRewardAccess.current=()=>({grants:['shop-sakura']});assert.equal(p.selectTheme('sakura'),true);
+  const selected=p.readState(),changed=structuredClone(selected);changed.appearance.banner='grove';changed.appearance.bannerAt=selected.appearance.themeAt+1;changed.appearance.theme='';changed.appearance.themeAt=0;
+  const merged=p.mergeStates(selected,changed);assert.equal(merged.appearance.theme,'sakura');assert.equal(merged.appearance.banner,'grove');
+  assert.equal(p.selectTheme(''),true);assert.equal(p.readState().appearance.theme,'');assert.ok(p.readState().appearance.themeAt>selected.appearance.themeAt);
 });

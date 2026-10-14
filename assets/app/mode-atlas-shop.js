@@ -29,15 +29,16 @@
   let cached=read();if(cached?.uid!==uid)cached=null;
   const blank=()=>({offers:null,owned:[],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,developer:false});
   function valid(value){
-    return value?.version===2&&value.currency==='atlas-coins'&&Number.isSafeInteger(value.balance)&&value.balance>=0&&value.balance<=1_000_000_000
-      &&Array.isArray(value.offers)&&value.offers.every(o=>typeof o.id==='string'&&Number.isSafeInteger(o.coinPrice)&&o.coinPrice>0&&(o.endsAt===null||Number.isFinite(o.endsAt)))
+    return [2,3].includes(value?.version)&&value.currency==='atlas-coins'&&Number.isSafeInteger(value.balance)&&value.balance>=0&&value.balance<=1_000_000_000
+      &&(value.version===2&&value.tokenBalance===undefined||Number.isSafeInteger(value.tokenBalance)&&value.tokenBalance>=0&&value.tokenBalance<=1_000_000_000)
+      &&Array.isArray(value.offers)&&value.offers.every(o=>typeof o.id==='string'&&Number.isSafeInteger(o.coinPrice)&&o.coinPrice>0&&(o.tokenPrice===undefined||o.tokenPrice===null||Number.isSafeInteger(o.tokenPrice)&&o.tokenPrice>0)&&(o.endsAt===null||Number.isFinite(o.endsAt)))
       &&Array.isArray(value.owned)&&value.owned.every(id=>typeof id==='string')&&value.inventory&&['streak-freeze','streak-repair'].every(id=>Number.isSafeInteger(value.inventory[id])&&value.inventory[id]>=0)
       &&Array.isArray(value.protection)&&value.protection.every(day=>/^\d{4}-\d{2}-\d{2}$/.test(day))&&Number.isFinite(value.checkedAt);
   }
   if(cached&&!valid(cached.state))cached=null;
   function current(){
     const active=!!user()&&uid===user(),state=active&&cached?.uid===uid?project(cached.state):blank();
-    return {...state,status:!user()?'guest':!active?'idle':status,balance:active&&status==='ready'?state.balance??null:null,busy:mutating};
+    return {...state,status:!user()?'guest':!active?'idle':status,balance:active&&status==='ready'?state.balance??null:null,tokenBalance:active&&status==='ready'?state.tokenBalance??null:null,busy:mutating};
   }
   function protection(){return current().protection||[];}
   function clear(){epoch++;uid='';cached=null;status='idle';pending=null;mutating=false;checkedAt=0;write(null);changed();}
@@ -50,7 +51,7 @@
     if(!force&&checkedAt&&now()-checkedAt<60000)return current();
     const ticket=epoch;status='loading';changed();checkedAt=now();
     pending=(async()=>{
-      try{const result=await call('shop',{version:2,timeZone:timeZone()},active);if(ticket===epoch&&active===user())accept(result);}
+      try{const result=await call('shop',{version:3,timeZone:timeZone()},active);if(ticket===epoch&&active===user())accept(result);}
       catch{if(ticket===epoch&&active===user())status='unavailable';}
       finally{if(ticket===epoch){pending=null;changed();}}
       return current();
@@ -64,7 +65,7 @@
     if(pending)await pending;
     if(active!==user())throw error('The signed-in account changed.','account-changed');
     const ticket=epoch;mutating=true;changed();
-    const key=JSON.stringify([action,data.productId||'',data.operation||'',data.amount||0,data.coinPrice||0]);
+    const key=JSON.stringify([action,data.productId||'',data.operation||'',data.amount||0,data.coinPrice||0,data.currency||'',data.price||0]);
     cached||={uid:active,state:blank(),requests:{}};cached.requests||={};
     const id=cached.requests[key]||requestId();cached.requests[key]=id;write(cached);
     try{
@@ -80,14 +81,17 @@
       throw failure;
     }finally{if(ticket===epoch){mutating=false;changed();}}
   }
-  function purchase(productId){
+  function purchase(productId,currency='atlas-coins'){
     const offer=current().offers?.find(item=>item.id===productId);if(!offer)throw error('Refresh the shop to view this item.');
-    return mutate('shopPurchase',{productId,coinPrice:offer.coinPrice});
+    if(!['atlas-coins','study-tokens'].includes(currency))throw error('Choose a valid currency.','invalid-argument');
+    const price=currency==='study-tokens'?offer.tokenPrice:offer.coinPrice;
+    if(!Number.isSafeInteger(price)||price<=0)throw error('This currency is not available for this item.');
+    return mutate('shopPurchase',{productId,currency,price});
   }
   function message(failure){
     const code=String(failure?.code||'').replace(/^functions\//,'');
     return ['offline','account-changed','unauthenticated','invalid-argument','already-exists','not-found','permission-denied','failed-precondition','resource-exhausted'].includes(code)?failure.message:'The shop could not be reached. Check your connection and try again.';
   }
   return Object.freeze({current,protection,refresh,clear,purchase,useRepair:()=>mutate('shopUse',{productId:'streak-repair'}),
-    developer:(operation,amount)=>mutate('shopDeveloper',{operation,...(amount===undefined?{}:{amount})}),message});
+    developer:(operation,amount,currency='atlas-coins')=>mutate('shopDeveloper',{operation,...(amount===undefined?{}:{amount,currency})}),message});
 });

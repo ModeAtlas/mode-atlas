@@ -234,31 +234,31 @@ html[data-ma-theme="light"]{
 }
 
 /* Collection palettes share the same semantic interface as system appearances. */
-html[data-ma-collection-theme="sakura"]{
+:is(html[data-ma-collection-theme="sakura"],[data-ma-profile-theme="sakura"]) {
   --ma-collection-page:#e9bfd1;--ma-collection-surface:#f1cede;--ma-collection-elevated:#f6dce7;
   --ma-collection-inset:#dfadc4;--ma-collection-text:#43232f;--ma-collection-heading:#341a27;
   --ma-collection-secondary:#65364b;--ma-collection-border:#bc829c;--ma-collection-hover:#e5b7cd;
   --ma-collection-selected:#d99eb9;--ma-collection-accent:#78193f;--ma-collection-on-accent:#ffffff;
 }
-html[data-ma-collection-theme="midnight"]{
+:is(html[data-ma-collection-theme="midnight"],[data-ma-profile-theme="midnight"]) {
   --ma-collection-page:#181628;--ma-collection-surface:#242139;--ma-collection-elevated:#302947;
   --ma-collection-inset:#39314f;--ma-collection-text:#ece6ff;--ma-collection-heading:#faf7ff;
   --ma-collection-secondary:#c0b2d8;--ma-collection-border:#605272;--ma-collection-hover:#44385d;
   --ma-collection-selected:#4a3667;--ma-collection-accent:#d0b7ff;--ma-collection-on-accent:#25133e;
 }
-html[data-ma-collection-theme="skyline"]{
+:is(html[data-ma-collection-theme="skyline"],[data-ma-profile-theme="skyline"]) {
   --ma-collection-page:#101b25;--ma-collection-surface:#192936;--ma-collection-elevated:#213543;
   --ma-collection-inset:#293f4d;--ma-collection-text:#eaf2f6;--ma-collection-heading:#ffffff;
   --ma-collection-secondary:#b8cedb;--ma-collection-border:#526f81;--ma-collection-hover:#354d5c;
   --ma-collection-selected:#4a402c;--ma-collection-accent:#ffd38a;--ma-collection-on-accent:#302310;
 }
-html[data-ma-collection-theme="evergreen"]{
+:is(html[data-ma-collection-theme="evergreen"],[data-ma-profile-theme="evergreen"]) {
   --ma-collection-page:#091a13;--ma-collection-surface:#10271d;--ma-collection-elevated:#163324;
   --ma-collection-inset:#1d3c2c;--ma-collection-text:#e7f0de;--ma-collection-heading:#f5f4df;
   --ma-collection-secondary:#bfd1b9;--ma-collection-border:#476953;--ma-collection-hover:#244735;
   --ma-collection-selected:#304b2c;--ma-collection-accent:#b5cd83;--ma-collection-on-accent:#152716;
 }
-html[data-ma-collection-theme]{
+:is(html[data-ma-collection-theme],[data-ma-profile-theme]){
   --ma-app-bg:var(--ma-collection-page);--ma-app-bg-soft:var(--ma-collection-surface);
   --ma-page-bg:var(--ma-collection-page);--ma-page-bg-atlas:var(--ma-collection-page);
   --ma-page-bg-kana:var(--ma-collection-page);--ma-page-bg-results:var(--ma-collection-page);--ma-page-bg-words:var(--ma-collection-page);

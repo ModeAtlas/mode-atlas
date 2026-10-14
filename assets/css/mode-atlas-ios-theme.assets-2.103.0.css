@@ -140,7 +140,8 @@ html[data-ma-runtime="ios"][data-ma-theme="light"]{
   --ma-native-key-pressed-shadow:inset 0 3px 7px rgba(0,0,0,.15);
 }
 
-html[data-ma-runtime="ios"][data-ma-collection-theme]{
+html[data-ma-runtime="ios"][data-ma-collection-theme],
+html[data-ma-runtime="ios"] [data-ma-profile-theme]{
   --ma-native-page:var(--ma-collection-page);--ma-native-surface:var(--ma-collection-surface);--ma-native-elevated:var(--ma-collection-elevated);
   --ma-native-inset:var(--ma-collection-inset);--ma-native-text:var(--ma-collection-text);--ma-native-heading:var(--ma-collection-heading);
   --ma-native-secondary:var(--ma-collection-secondary);--ma-native-border:var(--ma-collection-border);

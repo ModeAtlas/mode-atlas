@@ -36,7 +36,7 @@
     catch(error){root.ModeAtlasDiagnostics?.record('friends',error);if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
     finally{if(alive(ticket))host.removeAttribute('aria-busy');controls.forEach(node=>{node.disabled=node.dataset.wasDisabled==='true';delete node.dataset.wasDisabled;});}
   }
-  function screen(){generation++;status('');if(body.contains(document.activeElement))document.activeElement.blur();body.replaceChildren();body.classList.remove('ma-social-home');root.scrollTo({top:0,behavior:'instant'});host.removeAttribute('aria-busy');return generation;}
+  function screen(){generation++;status('');if(body.contains(document.activeElement))document.activeElement.blur();body.replaceChildren();body.classList.remove('ma-social-home','ma-social-profile');delete body.dataset.maProfileTheme;root.scrollTo({top:0,behavior:'instant'});host.removeAttribute('aria-busy');return generation;}
   function empty(title,description){const card=el('div','ma-social-empty');card.append(el('h3','',title),el('p','',description));body.append(card);return card;}
   function focusTitle(){const title=body.querySelector('h3');if(title){title.tabIndex=-1;title.focus({preventScroll:true});}}
   function back(label,action){body.append(button('← '+label,action,'ma-button ma-button--ghost ma-social-back'));}
@@ -238,12 +238,12 @@
     const ticket=screen();back(tab==='rankings'?'Rankings':'Friends',load);
     try{
       const result=await root.ModeAtlasSocial.call('profile',{uid});if(!alive(ticket))return;
-      const profile=result.profile,card=profileCard(profile,'ma-social-self');card.append(avatar(profile),identity(profile));body.append(card);
+      const profile=result.profile;body.classList.add('ma-social-profile');if(root.ModeAtlasRewardRules.item('themes',profile.theme))body.dataset.maProfileTheme=profile.theme;const card=profileCard(profile,'ma-social-self');card.append(avatar(profile),identity(profile));body.append(card);
       const layout=el('div','ma-social-profile-content'),stage=el('section','ma-social-character'),figure=el('div','ma-social-character__figure'),speech=el('p','ma-social-character__speech');
-      stage.classList.toggle('ma-social-character--visitor',!result.friend);stage.setAttribute('aria-label',profile.displayName+'’s avatar');figure.setAttribute('aria-hidden','true');root.ModeAtlasAvatarArt.render(figure,profile.character);
+      stage.classList.toggle('ma-social-character--visitor',!result.friend);stage.setAttribute('aria-label',profile.displayName+'’s avatar');root.ModeAtlasAvatarArt.render(figure,profile.character);figure.querySelector('svg')?.setAttribute('aria-hidden','true');
       speech.textContent=result.friend?(profile.greeting||'A little progress every day. Let’s keep learning!'):'We aren’t friends yet. Want to learn together?';
       stage.append(speech,figure);
-      if(profile.character?.pet&&profile.character.pet!=='none'){const pet=root.ModeAtlasRewardRules.item('pets',profile.character.pet);if(pet)stage.append(el('span','ma-social-pet-name',profile.character.petName||pet.name));}
+      if(profile.character?.pet&&profile.character.pet!=='none'){const pet=root.ModeAtlasRewardRules.item('pets',profile.character.pet);if(pet){figure.dataset.companion='true';figure.append(el('span','ma-social-pet-name',profile.character.petName||pet.name));}}
       layout.append(stage);body.append(layout);
       if(uid!==owner){
         const connection=el('div','ma-social-tools ma-social-connection');
