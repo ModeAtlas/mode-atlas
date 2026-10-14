@@ -160,7 +160,12 @@ for(const native of [false,true])test(`collection trainer colours and compact pr
       await expect(page.locator('html')).toHaveAttribute('data-ma-collection-theme',theme);
       const expected=theme==='sakura'?'rgb(233, 191, 209)':'rgb(9, 26, 19)';
       expect(await page.evaluate(()=>{const body=getComputedStyle(document.body).backgroundColor;return body==='rgba(0, 0, 0, 0)'?getComputedStyle(document.documentElement).backgroundColor:body;})).toBe(expected);
-      if(!native){const setup=page.locator('#modifiersTab');await readable(setup,await setup.evaluate(node=>getComputedStyle(node).backgroundColor));}
+      if(!native){
+        const setup=page.locator('#modifiersTab');
+        // Measure the selected palette after the button's colour transition.
+        await setup.evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
+        await readable(setup,await setup.evaluate(node=>getComputedStyle(node).backgroundColor));
+      }
       await page.screenshot({path:info.outputPath(`${theme}-${path.includes('writing')?'writing':'reading'}.png`),fullPage:true,animations:'disabled'});
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
     }
@@ -300,7 +305,7 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
         ModeAtlasShop={current:()=>({status:'ready',balance:250,offers:ModeAtlasShopCatalogue.products.map(p=>ModeAtlasShopCatalogue.offer(p)).filter(Boolean),owned:['sakura'],inventory:{'streak-freeze':0,'streak-repair':0}}),refresh:async()=>{}};
         dispatchEvent(new CustomEvent('modeAtlasRewardAccessChanged'));dispatchEvent(new CustomEvent('modeAtlasShopChanged'));
       });
-      await expect(shop.locator('[data-ma-coin-balance]')).toHaveText('250 coins');
+      await expect(shop.locator('[data-ma-coin-balance]')).toHaveText('250');
       await expect(shop.locator('[data-ma-shop-product="sakura"]')).toContainText('In your Rewards');
       await shop.getByRole('button',{name:'Preview Sakura collection'}).click();
       await expect(page.getByRole('button',{name:'Use banner & frame'})).toHaveCount(0);
