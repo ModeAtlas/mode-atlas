@@ -1,6 +1,24 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 
+test('returning pages paint the bound avatar cache before auth without another request; switches clear it',async()=>{
+  const createAvatar=require('../assets/app/mode-atlas-avatar.js'),rules=require('../assets/app/mode-atlas-avatar-rules.js');
+  const value={version:1,revision:4,avatar:'character',character:{...rules.defaults,hairColor:'walnut',pants:'denim'},level:5};
+  let uid='',restoring=true,last='alice',calls=0,clock=10000,cache={uid:'alice',value,checkedAt:9000};
+  const owner=createAvatar({user:()=>uid,restoring:()=>restoring,restoredUser:()=>last,online:()=>true,now:()=>clock,read:()=>cache,write:v=>{cache=v;},valid:v=>rules.valid(v.character),call:async()=>{calls++;return value;}});
+  assert.equal(owner.current(),null);assert.deepEqual(owner.presentation(),value);await owner.refresh();assert.equal(calls,0);
+  uid='alice';restoring=false;assert.deepEqual(await owner.refresh(),value);assert.equal(calls,0);
+  uid='bob';assert.equal(owner.current(),null);assert.equal(owner.presentation(),null);owner.clear();assert.equal(cache,null);
+  uid='';last='guest';restoring=true;assert.equal(owner.presentation(),null);
+});
+test('avatar restoration cannot paint an expired, future or differently bound cache',()=>{
+  const createAvatar=require('../assets/app/mode-atlas-avatar.js'),rules=require('../assets/app/mode-atlas-avatar-rules.js');
+  const value={version:1,revision:0,avatar:'character',character:rules.defaults};
+  for(const [uid,checkedAt]of [['other',99999],['alice',1],['alice',100000001]]){
+    const owner=createAvatar({user:()=>'',restoring:()=>true,restoredUser:()=> 'alice',online:()=>false,now:()=>100000000,read:()=>({uid,checkedAt,value}),valid:()=>true});assert.equal(owner.presentation(),null);
+  }
+});
+
 test('private avatar cache and pending requests never cross accounts; stale revisions reach the server unchanged',async()=>{
   const createAvatar=require('../assets/app/mode-atlas-avatar.js'),rules=require('../assets/app/mode-atlas-avatar-rules.js');
   const value={version:1,revision:3,avatar:'character',character:{...rules.defaults},level:1};

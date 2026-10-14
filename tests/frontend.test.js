@@ -828,7 +828,7 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   assert.doesNotMatch(kanaHtml, /kana-hub-hero[^\n]*ma-card/,
     'Kana hero should remain an open orientation section rather than a shared card surface');
   assert.match(kanaHtml, /kana-hero-actions ma-action-row/);
-  assert.match(kanaHtml, /kana-head-actions ma-action-row/);
+  assert.match(kanaHtml, /kana-head-actions ma-action-grid/);
   assert.match(kanaJs, /kana-next-card kana-next-card--recommended primary/);
   assert.match(kanaJs, /kana-stage-card/);
   assert.match(kanaJs, /kana-record-card/);

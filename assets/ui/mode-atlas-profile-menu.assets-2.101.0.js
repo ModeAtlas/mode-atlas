@@ -16,7 +16,7 @@
                 <div class="ma-profile-title" id="profileAtlasTitle">Trail Finder</div>
               </div>
             </div>
-            <div class="ma-auth-actions">
+            <div class="ma-auth-actions ma-action-grid">
               <button class="ma-button ma-button--ghost" data-ma-avatar-open type="button">${icon(href,'edit')}<span>Edit avatar</span></button>
               <button class="ma-button ma-button--primary" id="profileAuthBtn" data-profile-auth type="button">
                 ${icon(href,'user')}

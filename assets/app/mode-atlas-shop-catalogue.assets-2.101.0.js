@@ -13,7 +13,7 @@
   const levelCoins=Object.freeze({perLevel:20,bonusEvery:5,bonus:50,
     total(level){const n=Number.isFinite(level)?Math.max(1,Math.min(999,Math.floor(level))):1;return (n-1)*20+Math.floor(n/5)*50;}});
   const collection=(id,name,description)=>Object.freeze({id,name,description,kind:'collection',grant:'shop-'+id,
-    coinPrice:500,rewards:Object.freeze(['banners','frames','icons','themes','outfits','headwear'].map(type=>Object.freeze({type,id})))});
+    coinPrice:500,rewards:Object.freeze(['banners','frames','icons','themes','outfits','pants','headwear'].map(type=>Object.freeze({type,id})))});
   const cosmetic=(id,name,description,coinPrice,type)=>Object.freeze({id,name,description,coinPrice,kind:'cosmetic',grant:'shop-'+id,rewards:Object.freeze([Object.freeze({type,id})])});
   const products=Object.freeze([
     collection('sakura','Sakura','Cherry blossom pinks for a fresh perspective.'),
@@ -26,6 +26,11 @@
     cosmetic('ribbon-waves','Ribbon waves','Long flowing waves tied with a rose ribbon.',200,'hairstyles'),
     cosmetic('sculpted-pompadour','Sculpted pompadour','A high swept crest with carved texture and tapered sides.',220,'hairstyles'),
     cosmetic('braided-undercut','Braided undercut','Intricate crown braids, close-cut sides and a tied finish.',240,'hairstyles'),
+    cosmetic('amber-ombre','Amber ombré','Deep brunette roots melt into warm amber ends. Works with every hairstyle.',100,'hairColours'),
+    cosmetic('rose-gold','Rose gold','Soft rose, warm gold and luminous tips. Works with every hairstyle.',120,'hairColours'),
+    cosmetic('moonlit-silver','Moonlit silver','Smoky roots and icy silver tips. Works with every hairstyle.',120,'hairColours'),
+    cosmetic('pinstripe','Tailored pinstripes','Fine chalk stripes, sharp creases and a tailored finish.',220,'pants'),
+    cosmetic('aurora','Aurora joggers','Midnight fabric, iridescent side panels and reflective cuffs.',240,'pants'),
     cosmetic('varsity','Varsity jacket','Cream sleeves, forest green and a stitched Atlas crest.',250,'outfits'),
     cosmetic('cable-knit','Cable knit','A warm oatmeal knit with a woven cable pattern.',250,'outfits'),
     Object.freeze({...cosmetic('hunny-jumper','Hunny jumper','A little bear to keep you company.',10,'outfits'),audience:'hunny-tester',rewards:Object.freeze([{type:'outfits',id:'hunny'}])}),

@@ -27,7 +27,7 @@ function codeValue(value){
   return code;
 }
 function validateProfile(data,user){
-  fields(data,['displayName','avatar','character','avatarRevision','timeZone']);
+  fields(data,['displayName','avatar','character','avatarRevision','timeZone','greeting']);
   const displayName=identity.cleanName(data.displayName);
   if(!identity.validName(displayName))
     fail('invalid-argument','Use 2–24 letters or numbers for your name.');
@@ -40,7 +40,9 @@ function validateProfile(data,user){
   const timeZone=String(data.timeZone||'');
   if(timeZone.length>64)fail('invalid-argument','Choose a valid time zone.');
   try{new Intl.DateTimeFormat('en',{timeZone}).format();}catch{fail('invalid-argument','Choose a valid time zone.');}
-  return {displayName,nameKey:identity.nameKey(displayName),...(avatar?{avatar}:{}),timeZone,...(avatarURL?{avatarURL}:{})};
+  const greeting=identity.cleanGreeting(data.greeting);
+  if(data.greeting!==undefined&&(typeof data.greeting!=='string'||!identity.validGreeting(greeting)))fail('invalid-argument','Keep your avatar message friendly and under 120 characters, with no markup.');
+  return {displayName,nameKey:identity.nameKey(displayName),...(avatar?{avatar}:{}),timeZone,...(avatarURL?{avatarURL}:{}),...(data.greeting===undefined?{}:{greeting})};
 }
 function emptyAccount(){return {active:false,profile:null,code:null,friends:{},incoming:{},outgoing:{},blockedCount:0};}
 function requireActive(account){
@@ -99,6 +101,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
       if(restriction.exists)fail('permission-denied','Friends access is restricted. Contact support@mode-atlas.com to appeal.');
       rejectDeleted(marker,createdAt);
       const account=self.data()||emptyAccount();
+      if(profile.greeting===undefined&&account.profile?.greeting)profile.greeting=account.profile.greeting;
       if(account.deleting)requireActive(account);
       const code=account.code||candidate,lookup=codes.doc(hash(code)),existing=await tx.get(lookup);
       if(existing.exists && existing.data().uid!==uid)fail('aborted','Please try creating your code again.');
@@ -255,6 +258,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
       const friend=uid===data.uid||(has(a.friends,data.uid)&&has(b?.friends,uid));
       if(blocked.exists||(!friend&&!(weeklyActive(a)&&weeklyActive(b))))fail('permission-denied','This profile is available to accepted friends or weekly competitors.');
       const value=publicProfile(data.uid,b,now(),friend);if(!value)fail('not-found','This profile is no longer available.');
+      value.character=await avatars.publicCharacter(tx,data.uid,b.profile,value.level,b.rewardAccess);
       const relationship=uid===data.uid?'self':friend?'friend':has(a.incoming,data.uid)?'incoming':has(a.outgoing,data.uid)?'outgoing':'none';
       return {profile:value,friend,relationship,canRequest:relationship==='none'&&weeklyActive(a)&&weeklyActive(b),stale:friend&&b.summary?.projectionVersion!==PROJECTION_VERSION};
     });

@@ -6,7 +6,6 @@
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text)node.textContent=text;return node;};
   if(kind==='progress'){
     root.ModeAtlasRewardsUI.mount(host);
-    const achievements=el('button','ma-button ma-button--ghost','View achievements');achievements.type='button';achievements.dataset.maAchievementsOpen='';host.append(achievements);
   }else if(kind==='shop'){
     root.ModeAtlasShopUI.mount(host,{full:true});
   }else if(kind==='friends'){

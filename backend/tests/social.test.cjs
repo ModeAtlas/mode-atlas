@@ -842,6 +842,36 @@ test('character saves stay private without Friends, synchronize public portraits
   await a.call('updateProfile',{displayName:'AvatarOwner',avatar:'emoji:🦊',timeZone:'UTC'});assert.equal((await a.call('avatarState')).avatar,'emoji:🦊');
   await db.doc('accountDeletions/'+a.uid).set({state:'committing'});await assert.rejects(a.call('avatarState'),{code:'UNAUTHENTICATED'});
 });
+test('pants and dyes enforce ownership, remain compatible with older clients and survive name-only edits',async()=>{
+  const a=await learner('NewWardrobe'),chars=require('../functions/shared/mode-atlas-avatar-rules.js');
+  let current=await a.call('avatarState',{characterVersion:2});assert.equal(current.character.version,2);assert.equal(current.character.pants,'classic');
+  const update=look=>a.call('avatarUpdate',{avatar:'character',character:look,revision:current.revision});
+  for(const look of [{...chars.defaults,pants:'pinstripe'},{...chars.defaults,pants:'trail'},{...chars.defaults,hairColor:'rose-gold'}])await assert.rejects(update(look),{code:'PERMISSION_DENIED'});
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-pinstripe':{source:'shop'},'shop-rose-gold':{source:'shop'},'shop-evergreen':{source:'shop'}}});
+  current=await update({...chars.defaults,pants:'pinstripe',hairColor:'rose-gold'});
+  const older=await a.call('avatarState');assert.equal(older.character.version,1);assert.equal(older.character.pants,undefined);assert.equal(older.character.hairColor,'rose');
+  await a.call('avatarUpdate',{avatar:'character',character:{...older.character,hair:'bob'},revision:older.revision});
+  current=await a.call('avatarState',{characterVersion:2});assert.equal(current.character.pants,'pinstripe');assert.equal(current.character.hairColor,'rose-gold');assert.equal(current.character.hair,'bob');
+  await a.call('updateProfile',{displayName:'NewWardrobeName',timeZone:'UTC'});const renamed=await a.call('avatarState',{characterVersion:2});assert.deepEqual(renamed.character,current.character);current=renamed;
+  current=await update({...current.character,pants:'evergreen'});assert.equal(current.character.pants,'evergreen');
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{}});current=await a.call('avatarState',{characterVersion:2});assert.equal(current.character.pants,'classic');assert.equal(current.character.hairColor,'espresso');
+  const revoked=await a.call('avatarState');await a.call('avatarUpdate',{avatar:'character',character:{...revoked.character,hair:'sweep'},revision:revoked.revision});current=await a.call('avatarState',{characterVersion:2});assert.equal(current.character.pants,'classic');assert.equal(current.character.hairColor,'espresso');
+});
+test('avatar messages are bounded, friends-only, preserved by old edits and available as moderation evidence',async()=>{
+  const a=await learner('GreetingOwner'),b=await learner('GreetingFriend');
+  for(const person of [a,b])await person.call('weeklyPreference',{enabled:true});
+  const message='A little progress every day! 🌱';await a.call('updateProfile',{displayName:'GreetingOwner',timeZone:'UTC',greeting:message});
+  for(const greeting of ['x'.repeat(121),'<img onerror=alert(1)>','hello\u202eworld',42])await assert.rejects(a.call('updateProfile',{displayName:'GreetingOwner',timeZone:'UTC',greeting}),{code:'INVALID_ARGUMENT'});
+  assert.equal((await b.call('lookup',{code:a.code})).profile.greeting,undefined);
+  let shown=await b.call('profile',{uid:a.uid});assert.equal(shown.profile.greeting,undefined);assert.equal(shown.profile.character.version,2);assert.equal(shown.profile.stats,undefined);
+  await b.call('sendRequest',{uid:a.uid});assert.equal((await b.call('profile',{uid:a.uid})).profile.greeting,undefined);await a.call('accept',{uid:b.uid});
+  assert.equal((await b.call('profile',{uid:a.uid})).profile.greeting,message);
+  await a.call('updateProfile',{displayName:'GreetingChanged',timeZone:'UTC'});assert.equal((await b.call('profile',{uid:a.uid})).profile.greeting,message);
+  await b.call('reportProfile',{uid:a.uid,reason:'greeting',note:'Message review'});
+  const report=(await db.collection('socialReports').where('target','==',a.uid).get()).docs[0].data();assert.equal(report.snapshot.greeting,message);
+  await a.call('updateProfile',{displayName:'GreetingChanged',timeZone:'UTC',greeting:''});assert.equal((await b.call('profile',{uid:a.uid})).profile.greeting,undefined);
+  await a.call('updateProfile',{displayName:'GreetingChanged',timeZone:'UTC',greeting:message});await b.call('remove',{uid:a.uid});assert.equal((await b.call('profile',{uid:a.uid})).profile.greeting,undefined);
+});
 test('simultaneous avatar edits use revisions and account deletion removes the private character',async()=>{
   const a=await learner('AvatarRace'),defaults=require('../functions/shared/mode-atlas-avatar-rules.js').defaults,state=await a.call('avatarState');
   const results=await Promise.allSettled(['crop','bob'].map(hair=>a.call('avatarUpdate',{avatar:'character',character:{...defaults,hair},revision:state.revision})));
@@ -855,7 +885,7 @@ test('name-only Friends edits preserve the canonical character and new wardrobe 
   const select=character=>a.call('avatarUpdate',{avatar:'character',character,revision:state.revision});
   state=await select({...defaults,hair:'curtains',skin:'ivory',outfit:'crewneck'});
   await a.call('updateProfile',{displayName:'WardrobeRenamed',timeZone:'UTC'});
-  assert.deepEqual((await a.call('avatarState')).character,state.character);
+  assert.deepEqual((await a.call('avatarState',{characterVersion:2})).character,state.character);
   assert.deepEqual((await b.call('lookup',{code:a.code})).profile.character,state.character);
   for(const character of [{...defaults,hair:'textured-fade'},{...defaults,hair:'ribbon-waves'},{...defaults,outfit:'varsity'},{...defaults,outfit:'hunny'},{...defaults,headwear:'hunny'},{...defaults,accessory:'hunny'}]){
     state=await a.call('avatarState');await assert.rejects(select(character),{code:'PERMISSION_DENIED'});

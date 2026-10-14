@@ -7,6 +7,8 @@
   const avatars=Object.freeze(Object.fromEntries(rewards.avatars.map(item=>[item.id,Object.freeze([item.symbol,item.name])])));
   const emojis=Object.freeze(['🌸','🌙','🍵','🍙','🍜','🍣','🍪','🍓','🦊','🐱','🐶','🐼','🐸','🦋','🐉','🌻','🍀','⭐','🔥','🌈','🎮','🎧','📚','🧠']);
   const cleanName=value=>(typeof value==='string'?value:'').normalize('NFKC').trim().replace(/\s+/g,' ');
+  const cleanGreeting=value=>(typeof value==='string'?value:'').normalize('NFKC').trim().replace(/\s+/g,' ');
+  function validGreeting(value){return typeof value==='string'&&[...value].length<=120&&!/[<>\p{Cc}\u202a-\u202e\u2066-\u2069]/u.test(value)&&!objectionableName(value);}
   const nameKey=value=>cleanName(value).normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/ß/g,'ss').replace(/[ ._'’\-]/g,'');
   function validName(value){const name=cleanName(value);return [...name].length>=2&&[...name].length<=24&&/^[\p{L}\p{N} ._'’\-]+$/u.test(name)&&/[\p{L}\p{N}]/u.test(name);}
   const confusables={'а':'a','ɑ':'a','α':'a','е':'e','ε':'e','і':'i','ι':'i','ı':'i','ӏ':'l','о':'o','ο':'o','р':'p','ρ':'p','с':'c','ϲ':'c','ѕ':'s','т':'t','τ':'t','υ':'u','ν':'v','х':'x','χ':'x','у':'y','0':'o','1':'i','3':'e','4':'a','5':'s','7':'t'};
@@ -43,5 +45,5 @@
     const symbol=selected?.startsWith('emoji:')?selected.slice(6):avatars[selected]?.[0]||'あ';
     return {symbol,url};
   }
-  return Object.freeze({avatars,emojis,cleanName,nameKey,validName,reservedName,objectionableName,emoji,avatar,photoURL,presentation});
+  return Object.freeze({avatars,emojis,cleanName,nameKey,validName,reservedName,objectionableName,cleanGreeting,validGreeting,emoji,avatar,photoURL,presentation});
 });

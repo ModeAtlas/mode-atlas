@@ -5,12 +5,14 @@
   function self(){
     const user=root.KanaCloudSync?.getUser?.(),profile=user?root.ModeAtlasSocial?.selfProfile?.():null;
     const name=String(profile?.displayName||user?.displayName||'').trim().split(/\s+/)[0].slice(0,32);
-    const character=root.ModeAtlasAvatarRules.visible(user?(root.ModeAtlasAvatar?.current()?.character||profile?.character):null,root.ModeAtlasProgress.getSummary().level,root.ModeAtlasRewardAccess?.current());
+    const saved=root.ModeAtlasAvatar?.presentation?.()||(user?root.ModeAtlasAvatar?.current?.():null);
+    const access=user?root.ModeAtlasRewardAccess?.current():root.ModeAtlasRewardAccess?.presentation?.();
+    const character=root.ModeAtlasAvatarRules.visible(saved?.character||profile?.character,saved?.level||root.ModeAtlasProgress.getSummary().level,access);
     return {name,character};
   }
   function render(node,profile,user){
     if(!node)return;
-    if(profile===undefined){profile=root.ModeAtlasAvatar?.current()||root.ModeAtlasSocial?.selfProfile?.();user=root.KanaCloudSync?.getUser?.();}
+    if(profile===undefined){profile=root.ModeAtlasAvatar?.presentation?.()||root.ModeAtlasAvatar?.current()||root.ModeAtlasSocial?.selfProfile?.();user=root.KanaCloudSync?.getUser?.();}
     const view=root.ModeAtlasSocialIdentity.presentation(profile,user),signature=JSON.stringify(view);
     if(node.dataset.portrait===signature)return;node.dataset.portrait=signature;
     node.classList.add('ma-portrait');node.classList.toggle('ma-portrait--character',!!view.character);

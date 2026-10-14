@@ -42,10 +42,7 @@ html[data-ma-runtime="ios"][data-ma-large-text] .ma-account-header #maAccountClo
 .ma-account-view .ma-card,.ma-account-view .ma-setting-list,.ma-account-view .ma-setting-row,
 .ma-account-copy,.ma-profile-card-head>div{min-width:0;max-width:100%;}
 .ma-sync-detail{width:100%;max-width:100%;white-space:normal;}
-.ma-auth-actions{margin-top:14px;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;}
-.ma-auth-actions .ma-button{min-width:0;min-height:64px;padding:9px 6px;flex-direction:column;gap:6px;font-size:.75rem;line-height:1.25;white-space:normal;text-align:center;}
-.ma-auth-actions .ma-icon{width:20px;height:20px;flex:none;}
-.ma-auth-actions .ma-button span{overflow-wrap:anywhere;}
+.ma-auth-actions{margin-top:14px;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);}
 .ma-profile-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .ma-profile-card-title{margin-top:3px;font-size:1.03rem;font-weight:900;color:var(--ma-text-strong);}
 .ma-sync-status-line{display:flex;align-items:center;gap:10px;margin-top:4px;}

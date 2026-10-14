@@ -20,23 +20,24 @@
         for(const [id,label]of [['look','Appearance'],['wardrobe','Wardrobe']]){const control=button(label,()=>{tab=id;paint();body.querySelector('[aria-pressed="true"]')?.focus();});control.setAttribute('aria-pressed',String(tab===id));tabs.append(control);}body.append(tabs);
         const options=el('div','ma-avatar-options');
         function choices(key,title,items,type){
-          const field=el('fieldset','ma-avatar-field');field.append(el('legend','',title));const grid=el('div',type?'ma-avatar-items':'ma-avatar-swatches');
+          const swatches=items.every(item=>item.value),field=el('fieldset','ma-avatar-field');field.append(el('legend','',title));const grid=el('div',swatches?'ma-avatar-swatches':'ma-avatar-items');
           for(const item of items){
             if(type&&!rewards.visible(item,level(),access()))continue;
             const available=!type||rewards.unlocked(item,level(),access());
-            const choice=button('',()=>{character={...character,[key]:item.id};paint();body.querySelector(`[data-avatar-slot="${key}"][data-avatar-choice="${item.id}"]`)?.focus();},type?'ma-avatar-item':'ma-avatar-swatch');
+            const choice=button('',()=>{character={...character,[key]:item.id};paint();body.querySelector(`[data-avatar-slot="${key}"][data-avatar-choice="${item.id}"]`)?.focus();},swatches?'ma-avatar-swatch':'ma-avatar-item');
             choice.dataset.avatarSlot=key;choice.dataset.avatarChoice=item.id;choice.disabled=!available;choice.setAttribute('aria-pressed',String(character[key]===item.id));choice.setAttribute('aria-label',item.name+(available?'':` · Level ${item.level}`));
-            if(item.value){choice.style.setProperty('--avatar-swatch',item.value);choice.title=item.name;choice.append(el('span','ma-avatar-swatch__fill'));}
-            else{const mini=el('span','ma-avatar-item__art');root.ModeAtlasAvatarArt.render(mini,{...character,[key]:item.id},{portrait:key!=='outfit'});choice.append(mini,el('span','',item.name));if(!available)choice.append(el('small','',`Level ${item.level}`));}
+            if(item.value){choice.style.setProperty('--avatar-swatch',item.tones?'linear-gradient(160deg,'+item.tones.join(',')+')':item.value);choice.title=item.name;choice.append(el('span','ma-avatar-swatch__fill'));}
+            else{const mini=el('span','ma-avatar-item__art');root.ModeAtlasAvatarArt.render(mini,{...character,[key]:item.id},{portrait:!['outfit','pants'].includes(key)});choice.append(mini,el('span','',item.name));if(!available)choice.append(el('small','',`Level ${item.level}`));}
             grid.append(choice);
           }field.append(grid);options.append(field);
         }
         if(tab==='look'){
           choices('skin','Skin tone',rules.choices.skin);choices('hair','Hairstyle',rewards.hairstyles,'hairstyles');
-          choices('hairColor','Hair colour',rules.choices.hairColor);choices('eyes','Eye colour',rules.choices.eyes);
+          choices('hairColor','Hair colour',rules.choices.hairColor,'hairColours');choices('eyes','Eye colour',rules.choices.eyes);
         }else{
           choices('outfit','Outfit',rewards.outfits,'outfits');
           if(['everyday','sport','linen','crewneck','striped'].includes(character.outfit))choices('outfitColor','Clothing colour',rules.choices.outfitColor);
+          choices('pants','Pants',rewards.pants,'pants');
           choices('headwear','Headwear',rewards.headwear,'headwear');choices('accessory','Accessories',rewards.accessories,'accessories');
           const shop=button('Explore the shop →',()=>{root.ModeAtlasDialog.close();root.ModeAtlasAccountNavigation.open('shop');});options.append(shop);
         }
