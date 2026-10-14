@@ -121,7 +121,8 @@ for(const native of [false,true])test(`home restores the saved avatar before aut
   await page.addInitScript(()=>{
     if(localStorage.getItem('avatar-return-seeded'))return;
     localStorage.setItem('avatar-return-seeded','true');localStorage.setItem('modeAtlasLastUserId','returning');
-    localStorage.setItem('modeAtlasAvatarProfile',JSON.stringify({uid:'returning',checkedAt:Date.now(),value:{version:1,revision:4,avatar:'character',level:1,character:{version:3,skin:'cocoa',hair:'side-part',hairColor:'walnut',eyes:'brown',outfit:'everyday',outfitColor:'teal',headwear:'none',accessory:'none',pants:'denim'}}}));
+    // Exercise an existing account's valid pre-companion cache during upgrade.
+    localStorage.setItem('modeAtlasAvatarProfile',JSON.stringify({uid:'returning',checkedAt:Date.now(),value:{version:1,revision:4,avatar:'character',level:1,character:{version:2,skin:'cocoa',hair:'side-part',hairColor:'walnut',eyes:'brown',outfit:'everyday',outfitColor:'teal',headwear:'none',accessory:'none',pants:'denim'}}}));
   });
   await page.route('**/cloud-sync.assets-*.js',route=>route.fulfill({contentType:'text/javascript',body:`
     let testUser=null,testResolved=false,readyResolve;
