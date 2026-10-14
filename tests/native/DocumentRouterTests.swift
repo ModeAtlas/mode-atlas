@@ -18,7 +18,7 @@ struct DocumentRouterTests {
         // Enumerate the shipped documents instead of copying a page allowlist.
         let enumerator = files.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey])!
         let documents = enumerator.compactMap { $0 as? URL }.filter { $0.lastPathComponent == "index.html" }.sorted { $0.path < $1.path }
-        for required in ["learn", "progress", "friends", "kana", "reading", "writing", "results", "wordbank", "privacy", "terms"] {
+        for required in ["learn", "progress", "friends", "shop", "kana", "reading", "writing", "results", "wordbank", "privacy", "terms"] {
             precondition(documents.contains { $0.path == root.appendingPathComponent(required + "/index.html").path }, "Missing bundled page: \(required)")
         }
         let references = try NSRegularExpression(pattern: #"(?:src|href)\s*=\s*["']([^"']+\.(?:css|js)(?:\?[^"']*)?)["']"#, options: [.caseInsensitive])

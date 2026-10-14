@@ -14,7 +14,7 @@
   var destinations = Object.freeze({
     atlas: '/', learn: '/learn/', progress: '/progress/', yourAtlas: '/progress/', friends: '/friends/', weekly: '/friends/?ranking=weekly', kana: '/kana/', reading: '/reading/', writing: '/writing/',
     daily: '/reading/?mode=daily', review: '/reading/?mode=review',
-    results: '/results/', wordBank: '/wordbank/'
+    results: '/results/', wordBank: '/wordbank/', shop: '/shop/'
   });
 
   function destinationPath(destination){
@@ -30,7 +30,7 @@
       } else if (url.protocol === 'https:' && (url.hostname === 'mode-atlas.app' || url.hostname === 'www.mode-atlas.app')) {
         path = url.pathname;
       } else return '';
-      var pages = { '/':'atlas', '/learn/':'learn', '/progress/':'progress', '/friends/':'friends', '/kana/':'kana', '/reading/':'reading', '/writing/':'writing', '/results/':'results', '/wordbank/':'wordBank' };
+      var pages = { '/':'atlas', '/learn/':'learn', '/progress/':'progress', '/friends/':'friends', '/kana/':'kana', '/reading/':'reading', '/writing/':'writing', '/results/':'results', '/wordbank/':'wordBank', '/shop/':'shop' };
       if (path !== '/' && !path.endsWith('/')) path += '/';
       var key = pages[path];
       if (!key) return '';

@@ -5,6 +5,10 @@
 })(typeof window!=='undefined'?window:globalThis,function(){
   'use strict';
   const currency=Object.freeze({id:'atlas-coins',name:'Atlas Coins',expires:false});
+  // Quantities are presentation data. Localised prices and payment authority
+  // will come from the platform store; no guessed currency amounts are shown.
+  const coinPacks=Object.freeze([500,1200,2500,6000].map(coins=>Object.freeze({id:'coins-'+coins,coins})));
+  const featured=Object.freeze(['sakura','midnight','skyline','hunny-jumper','hunny-pendant','varsity','studio-headphones','ribbon-waves','streak-freeze','streak-repair']);
   const levelCoins=Object.freeze({perLevel:20,bonusEvery:5,bonus:50,
     total(level){const n=Number.isFinite(level)?Math.max(1,Math.min(999,Math.floor(level))):1;return (n-1)*20+Math.floor(n/5)*50;}});
   const collection=(id,name,description)=>Object.freeze({id,name,description,kind:'collection',grant:'shop-'+id,
@@ -37,5 +41,5 @@
     if(startsAt!==null&&at<startsAt||endsAt!==null&&at>=endsAt)return null;
     return {id:product.id,coinPrice:product.coinPrice,endsAt};
   }
-  return Object.freeze({version:2,currency,levelCoins,products,item,offer,coinPurchasesEnabled:false});
+  return Object.freeze({version:2,currency,coinPacks,featured,levelCoins,products,item,offer,coinPurchasesEnabled:false});
 });

@@ -143,7 +143,7 @@ for html_path in iter_project_html():
 # query parameters such as ?starter=advanced or ?focusWeak=1.
 APP_PAGE_PATHS = {
     '/', '/kana/', '/reading/', '/writing/', '/results/', '/wordbank/',
-    '/learn/', '/progress/', '/friends/', '/privacy/', '/terms/', '/index.html', '/kana.html', '/default.html',
+    '/learn/', '/progress/', '/friends/', '/shop/', '/privacy/', '/terms/', '/index.html', '/kana.html', '/default.html',
     '/reverse.html', '/test.html', '/wordbank.html'
 }
 HREF_RE = re.compile(r'(?P<open><a\b[^>]*?\bhref=["\'])(?P<url>[^"\']+)(?P<suffix>["\'])', re.I)

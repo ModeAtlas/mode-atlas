@@ -151,18 +151,16 @@ async function readable(locator,background){
   expect(result.ratio,JSON.stringify(result)).toBeGreaterThanOrEqual(4.5);
 }
 for(const native of [false,true])test(`mixed collection surfaces keep readable previews and account actions ${native?'iOS':'web'}`,async({page},testInfo)=>{
-  test.setTimeout(60000);const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,{native});await open(page,'/progress/');
+  test.setTimeout(60000);const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,{native});await open(page,'/shop/');
   await page.evaluate(()=>{
     const access={allCustom:true,grants:ModeAtlasRewardRules.themes.map(t=>t.grant)};
     ModeAtlasRewardAccess={...ModeAtlasRewardAccess,current:()=>access,presentation:()=>access,status:()=> 'ready',refresh:async()=>{}};
   });
-  await page.locator('#profileOpenBtn').click();
   for(const theme of ['dark','light','sakura','midnight','skyline']){
     await page.evaluate(theme=>ModeAtlasTheme.set(theme,{toast:false}),theme);
-    await page.getByRole('tab',{name:'Shop',exact:true}).click();
     if(theme==='dark')await page.screenshot({path:testInfo.outputPath(`${native?'ios':'web'}-shop.png`),animations:'disabled'});
     for(const id of ['sakura','midnight','skyline']){
-      const product=page.locator(`[data-ma-shop-product="${id}"]`);await product.scrollIntoViewIfNeeded();
+      const product=page.locator(`.ma-shop-full [data-ma-shop-product="${id}"]`);await product.scrollIntoViewIfNeeded();
       const canvas=await product.evaluate(node=>getComputedStyle(node,'::before').backgroundColor);
       for(const text of await product.locator('.ma-shop-product__name,.ma-shop-product__description,[data-ma-shop-availability]').all())await readable(text,canvas);
       await product.click();const sample=page.locator('.ma-shop-theme-preview');
@@ -173,7 +171,7 @@ for(const native of [false,true])test(`mixed collection surfaces keep readable p
       if(theme==='dark')await page.screenshot({path:testInfo.outputPath(`${native?'ios':'web'}-${id}-collection.png`),animations:'disabled'});
       await page.keyboard.press('Escape');await expect(page.locator('.ma-dialog-layer')).toBeHidden();
     }
-    await page.getByRole('tab',{name:'Profile',exact:true}).click();
+    await page.locator('#profileOpenBtn').click();
     for(const banner of ['hunny','sakura','midnight','skyline']){
       await page.evaluate(banner=>ModeAtlasProgress.selectBanner(banner),banner);
       const card=page.locator('.ma-account-card');await expect(card).toHaveAttribute('data-ma-banner',banner);
@@ -185,6 +183,7 @@ for(const native of [false,true])test(`mixed collection surfaces keep readable p
         if(theme==='dark'&&banner==='hunny'&&signedIn)await page.screenshot({path:testInfo.outputPath(`${native?'ios':'web'}-hunny-profile.png`),animations:'disabled'});
       }
     }
+    await page.locator('#maAccountClose').click();
   }
   expect(errors).toEqual([]);
 });
@@ -199,7 +198,7 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
     await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
     const shop=page.getByRole('tabpanel',{name:'Shop',exact:true});await expect(shop).toBeVisible();
     await expect(shop).not.toContainText('Purchases aren’t available yet.');
-    await expect(shop.getByRole('button',{name:'Purchase Atlas Coins',exact:true})).toBeVisible();
+    await expect(shop.getByRole('button',{name:'Buy 500 coins',exact:true})).toBeVisible();
     await expect(shop.locator('[data-ma-coin-balance]')).toHaveText('Sign in to view your balance');
     for(const tile of await shop.locator('.ma-shop-product').all()){
       expect(await tile.evaluate(node=>getComputedStyle(node,'::before').backgroundImage)).not.toBe('none');
@@ -219,7 +218,7 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
     await page.screenshot({path:testInfo.outputPath('shop-preview.png'),animations:'disabled'});
     await page.keyboard.press('Escape');await expect(shop.getByRole('button',{name:'Preview Sakura collection'})).toBeFocused();
     await expect(page.locator('#maAccountSheet')).toHaveJSProperty('inert',false);
-    await shop.getByRole('button',{name:'Purchase Atlas Coins',exact:true}).click();await expect(page.locator('.ma-dialog__message')).toContainText('Coin purchases are coming soon');await page.getByRole('button',{name:'Got it',exact:true}).click();
+    await shop.getByRole('button',{name:'Buy 500 coins',exact:true}).click();await expect(page.locator('.ma-dialog__message')).toContainText('Coin purchases are coming soon');await page.getByRole('button',{name:'Got it',exact:true}).click();
     await page.screenshot({path:testInfo.outputPath('shop.png'),fullPage:true});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
     if(view.width===393){

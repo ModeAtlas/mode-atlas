@@ -119,3 +119,12 @@ test('cached friend profiles recalculate legacy levels immediately, before their
   const profile=publicProfile('cached',{active:true,profile:{displayName:'Cached',avatar:'kana',timeZone:'UTC'},summary:{xp:7003,level:21,landmark:'bridge',studyDays:[]}});
   assert.equal(profile.level,12);assert.equal(profile.stats.xp,7003);
 });
+
+test('identical social reads share one request but never survive an account epoch change',async()=>{
+  let uid='alice',calls=0,finish;
+  const client=createSocial({enabled:()=>true,user:()=>({uid}),online:()=>true,transport:()=>{calls++;return new Promise(resolve=>{finish=resolve;});}});
+  const first=client.call('state',{listKind:'friends'}),second=client.call('state',{listKind:'friends'});
+  assert.equal(calls,1);finish({active:true,profile:{uid:'alice'},list:{rows:[]}});await Promise.all([first,second]);
+  const stale=client.call('list',{kind:'friends'});client.clearProfile();uid='bob';uid='alice';finish({rows:[{uid:'private-friend'}]});
+  await assert.rejects(stale,{code:'account-changed'});
+});

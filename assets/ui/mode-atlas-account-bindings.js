@@ -33,18 +33,6 @@
     return 'bronze';
   }
 
-  function formatTime(ts){
-    const n = Number(ts || 0);
-    if (!n) return 'Never synced';
-    const date = new Date(n);
-    if (Number.isNaN(date.getTime())) return 'Never synced';
-    const diff = Math.max(0, Date.now() - n);
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return Math.round(diff / 60000) + 'm ago';
-    if (diff < 86400000) return Math.round(diff / 3600000) + 'h ago';
-    return date.toLocaleString([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-  }
-
   let nativeBuild = '';
   function appVersionLabel(){
     return String(window.ModeAtlasVersion || window.MODE_ATLAS_VERSION || 'dev-local')+(nativeBuild?' · Build '+nativeBuild:'');
@@ -317,16 +305,20 @@
     const meta = document.getElementById('profileSyncMeta');
     const dot = document.getElementById('profileSyncDot');
     if (summary) summary.textContent = status.text || 'Progress saves on this device';
-    if (detail) detail.textContent = !status.user?'Sign in whenever you want to keep progress across devices.':({offline:'You can keep practising. Sync resumes when your connection returns.',paused:status.canRetry?'Your cloud save could not be updated. Check your connection and try again.':'Free some device storage, then reopen Mode Atlas.',pending:'Changes will sync automatically. You can keep practising.',cloud:'Your latest changes are saved to your account.'}[status.state]||'Cloud sync updates automatically when progress changes.');
+    if (detail) detail.textContent = status.detail || 'Sign in to save your progress to your account and use it on other devices.';
     const retry=document.getElementById('profileSyncRetry');
-    if(retry)retry.hidden=!status.canRetry;
-    if (meta) meta.textContent = 'Last cloud sync: ' + formatTime(status.lastSync || storageGet('modeAtlasLastCloudSyncAt', '0'));
+    if(retry){
+      retry.hidden=!status.canRetry&&!['syncing','slow'].includes(status.phase);
+      retry.disabled=['syncing','slow'].includes(status.phase);
+      retry.textContent=retry.disabled?'Syncing…':status.state==='cloud'?'Sync now':'Retry sync';
+    }
+    if (meta){meta.hidden=!status.user;meta.textContent='Last confirmed cloud save: '+(status.lastSyncLabel||'No cloud save confirmed yet');}
     if (dot) dot.className = 'ma-sync-dot ' + tone;
     const chip = document.getElementById('profileSyncChip');
     if (chip) {
       const normalizedTone = ['ok','cloud','success'].includes(tone) ? 'success' : ['warning','offline'].includes(tone) ? 'warning' : ['error','danger'].includes(tone) ? 'danger' : 'info';
       chip.className = 'ma-status-chip ma-status-chip--' + normalizedTone;
-      chip.textContent = status.user ? (normalizedTone === 'success' ? 'Synced' : ({pending:'Pending',paused:'Paused',offline:'Offline'}[status.state]||'Cloud')) : 'Local only';
+      chip.textContent = status.user ? (normalizedTone === 'success' ? 'Synced' : ({syncing:'Syncing',slow:'Slow connection',loading:'Checking',studying:'On device',queued:'Waiting'}[status.phase]||{pending:'Not confirmed',paused:'Paused',offline:'Offline'}[status.state]||'Cloud')) : 'On device';
     }
     const native = window.ModeAtlasEnv?.isNativeApp === true;
     const link = document.getElementById('profileLinkBtn');

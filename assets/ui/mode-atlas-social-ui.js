@@ -49,13 +49,16 @@
     }
     empty('Loading your circle…','');
     try{
-      const [result]=await Promise.all([root.ModeAtlasSocial.call('state'),root.ModeAtlasRewardAccess?.refresh()]);if(!alive(ticket))return;state=result;
+      // The account response includes the first list page. Cosmetic refresh is
+      // independent: a slow entitlement request must never hold Friends open.
+      void root.ModeAtlasRewardAccess?.refresh();
+      const result=await root.ModeAtlasSocial.call('state',tab==='friends'?{listKind:kind}:{});if(!alive(ticket))return;state=result;
       if(result.restricted){screen();empty('Friends access is restricted','Contact support@mode-atlas.com if you think this is a mistake. Your learning progress is still available.');return;}
       if(result.deleting){screen();empty('Removing your friends profile','Please try again shortly.');return;}
-      if(!result.active)editProfile();else home();
+      if(!result.active)editProfile();else home(result.list);
     }catch(error){if(alive(ticket)){screen();empty('Friends is unavailable',root.ModeAtlasSocial.message(error)).append(button('Try again',load));}}
   }
-  function home(){
+  function home(firstPage){
     if(!state?.active)return void load();
     screen();
     body.classList.add('ma-social-home');
@@ -72,7 +75,6 @@
     });body.append(tabs);
     const tools=el('div','ma-social-tools');
     if(tab==='friends'){
-      const self=profileCard(state.profile,'ma-social-self');self.append(avatar(state.profile),identity(state.profile),button('Edit',()=>editProfile()));body.append(self);
       if(state.preferences?.requiresNameChange){const note=el('div','ma-social-name-notice');note.append(el('p','','Your previous name is unavailable. Choose a new display name.'),button('Choose name',()=>editProfile()));body.append(note);}
       tools.classList.add('ma-social-home-tools');tools.dataset.staff=String(!!state.canModerate);
       const label=el('div','ma-social-filter'),select=el('select');select.setAttribute('aria-label','Friends list');
@@ -103,6 +105,7 @@
     }
     const list=el('div','ma-social-list');list.id='maSocialList';list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby','maSocialTab-'+tab);body.append(list);
     if(tab==='rankings'&&metric==='weekly')void loadWeekly(list);
+    else if(tab==='friends'&&firstPage?.kind===kind)renderPage(list,firstPage,null);
     else void loadPage(list,null);
   }
   function score(row){
@@ -137,11 +140,14 @@
     try{
       const result=await root.ModeAtlasSocial.call('list',{kind:tab==='rankings'?'rankings':kind,...(tab==='rankings'?{metric}:{}),...(cursor?{cursor}:{})});
       if(!alive(ticket))return;loading.remove();
-      if(!result.rows.length && !cursor)list.append(el('p','ma-social-empty',kind==='incoming'?'You’re all caught up. New requests will appear here.':kind==='outgoing'?'No requests waiting for a reply.':kind==='blocked'?'No blocked profiles.':'Your circle starts here. Add a friend using their code.'));
-      for(const profile of result.rows)list.append(row(profile,tab==='rankings'));
-      if(tab==='rankings' && result.total===1)list.append(el('p','ma-social-note','Add a friend to compare your progress.'));
-      if(result.nextCursor){const more=button('Load more',()=>{more.remove();void loadPage(list,result.nextCursor);});list.append(more);}
+      renderPage(list,result,cursor);
     }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');}}
+  }
+  function renderPage(list,result,cursor){
+    if(!result.rows.length && !cursor)list.append(el('p','ma-social-empty',kind==='incoming'?'You’re all caught up. New requests will appear here.':kind==='outgoing'?'No requests waiting for a reply.':kind==='blocked'?'No blocked profiles.':'Your circle starts here. Add a friend using their code.'));
+    for(const profile of result.rows)list.append(row(profile,tab==='rankings'));
+    if(tab==='rankings' && result.total===1)list.append(el('p','ma-social-note','Add a friend to compare your progress.'));
+    if(result.nextCursor){const more=button('Load more',()=>{more.remove();void loadPage(list,result.nextCursor);});list.append(more);}
   }
   async function loadWeekly(list,cursor=null){
     const ticket=generation,loading=el('p','ma-social-note','Loading this week…');list.append(loading);
@@ -198,6 +204,7 @@
   }
   function myCode(){
     screen();back('Friends',home);body.append(el('h3','','Your friend code'),el('p','ma-social-note','Share this code with someone you want to add. You choose which requests to accept.'));
+    const name=el('div','ma-social-code-name');name.append(el('strong','',state.profile.displayName),button('Edit name',()=>editProfile()));body.append(name);
     const input=el('input','ma-social-code');input.readOnly=true;input.setAttribute('aria-label','Your friend code');input.value=state.code.match(/.{1,4}/g).join('-');input.addEventListener('click',()=>input.select());body.append(input);
     const actions=el('div','ma-social-tools');
     if(root.AtlasPlatform.getCapabilities().friendSharing){

@@ -347,7 +347,7 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-button:hove
 .ma-dialog__title{margin:3px 0 0;font-size:clamp(1.35rem,3vw,1.75rem);line-height:1.08;letter-spacing:-.02em;}
 .ma-dialog__close{flex:0 0 auto;}
 .ma-dialog__close--icon{--ma-button-padding:0;width:var(--ma-control-height-sm);min-width:var(--ma-control-height-sm);height:var(--ma-control-height-sm);font-size:1.25rem;line-height:1;}
-.ma-dialog__message{margin:0;color:var(--ma-muted);line-height:1.55;}
+.ma-dialog__message{margin:0;color:var(--ma-muted);line-height:1.55;white-space:pre-line;}
 .ma-dialog__content{margin-top:16px;}
 .ma-dialog__content[hidden]{display:none;}
 .ma-dialog__actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}

@@ -4,6 +4,9 @@
 .ma-social-home .ma-social-list{gap:10px;}
 .ma-social h3,.ma-social p{margin:0;}
 .ma-social-self{display:flex;align-items:center;gap:14px;min-width:0;padding:12px 14px;border:1px solid var(--ma-border);border-radius:18px;background:var(--ma-surface-strong);}
+.ma-social-code-name{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0;padding-block:8px;}
+.ma-social-code-name>strong{min-width:0;overflow-wrap:anywhere;}
+.ma-social-code-name>.ma-button{flex:none;}
 .ma-social-avatar{flex:0 0 42px;width:42px;height:42px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",var(--ma-font-jp);}
 .ma-social-identity{display:grid;gap:4px;min-width:0;flex:1;text-align:left;overflow-wrap:anywhere;}
 .ma-social-name{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;}
