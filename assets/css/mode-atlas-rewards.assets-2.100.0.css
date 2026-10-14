@@ -76,6 +76,7 @@
 [data-ma-frame="horizon"]{--ma-frame-color:var(--ma-rank-5);}
 [data-ma-frame="sakura"]{--ma-frame-color:color-mix(in srgb,#c8588b 70%,var(--ma-text-strong));}
 [data-ma-frame="midnight"]{--ma-frame-color:color-mix(in srgb,#8378ce 70%,var(--ma-text-strong));}
+[data-ma-frame="evergreen"]{--ma-frame-color:#bacd88;}
 [data-ma-frame="skyline"]{--ma-frame-color:#d4a65d;}
 [data-ma-frame]:not([data-ma-frame="plain"]){box-shadow:0 0 0 2px var(--ma-card),0 0 0 4px var(--ma-frame-color);}
 .ma-atlas-icons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
@@ -91,7 +92,7 @@
 .ma-profile-banner::before,.ma-account-card[data-ma-banner="hunny"] .ma-account-user::before{content:"";position:absolute;inset:1px;border-radius:inherit;z-index:-1;pointer-events:none;box-sizing:border-box;padding-inline-start:var(--ma-banner-art-inset,0);background-color:var(--ma-banner-canvas,transparent);background-image:var(--ma-banner-art,none);background-origin:content-box;background-size:var(--ma-banner-fit,auto);background-position:var(--ma-banner-position,center);background-repeat:var(--ma-banner-repeat,repeat);}
 /* Illustrated surfaces own a complete palette. App appearance never supplies
    half of a text/control pair inside a differently coloured banner. */
-.ma-profile-banner:is([data-ma-banner="hunny"],[data-ma-banner="sakura"],[data-ma-banner="midnight"],[data-ma-banner="skyline"]){
+.ma-profile-banner:is([data-ma-banner="hunny"],[data-ma-banner="sakura"],[data-ma-banner="midnight"],[data-ma-banner="skyline"],[data-ma-banner="evergreen"]){
   --ma-card:var(--ma-banner-canvas);--ma-card-2:var(--ma-banner-control);--ma-card-3:var(--ma-banner-control);
   --ma-surface:var(--ma-banner-canvas);--ma-surface-soft:var(--ma-banner-canvas);--ma-surface-strong:var(--ma-banner-control);--ma-surface-inset:var(--ma-banner-control);
   --ma-text:var(--ma-banner-ink);--ma-text-strong:var(--ma-banner-ink);--ma-text-soft:var(--ma-banner-muted);--ma-muted:var(--ma-banner-muted);
@@ -137,3 +138,5 @@ html[data-ma-large-text] .ma-atlas-banners{grid-template-columns:1fr;}
 html[data-ma-large-text] .ma-routine-goals{grid-template-columns:1fr;}
 html[data-ma-large-text] .ma-atlas-icons{grid-template-columns:repeat(2,minmax(0,1fr));}
 html[data-ma-large-text] .ma-atlas-landmark{flex-wrap:wrap;}
+
+[data-ma-banner="evergreen"]{--ma-banner-art:url('../rewards/evergreen-banner.svg');--ma-banner-canvas:#10291f;--ma-banner-fit:auto 100%;--ma-banner-position:right center;--ma-banner-repeat:no-repeat;--ma-banner-ink:#f1f3df;--ma-banner-muted:#bdceb4;--ma-banner-control:#284936;--ma-banner-hover:#355b43;--ma-banner-edge:#55765d;--ma-banner-accent:#d4df9a;--ma-banner-on-accent:#20301b;}

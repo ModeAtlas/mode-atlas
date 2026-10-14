@@ -60,7 +60,7 @@
 
   function normalizeThemePreference(value){
     value = String(value || '').toLowerCase();
-    return /^(dark|light|system|sakura|midnight|skyline)$/.test(value) ? value : 'dark';
+    return /^(dark|light|system|sakura|midnight|skyline|evergreen)$/.test(value) ? value : 'dark';
   }
 
   function systemPrefersLight(){

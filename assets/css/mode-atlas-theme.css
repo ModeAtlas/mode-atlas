@@ -235,8 +235,8 @@ html[data-ma-theme="light"]{
 
 /* Collection palettes share the same semantic interface as system appearances. */
 html[data-ma-collection-theme="sakura"]{
-  --ma-collection-page:#fff3f7;--ma-collection-surface:#fffdfd;--ma-collection-elevated:#ffffff;
-  --ma-collection-inset:#f8e4ec;--ma-collection-text:#422834;--ma-collection-heading:#38202c;
+  --ma-collection-page:#f6dce7;--ma-collection-surface:#fae8ef;--ma-collection-elevated:#fceef3;
+  --ma-collection-inset:#efd0de;--ma-collection-text:#422834;--ma-collection-heading:#38202c;
   --ma-collection-secondary:#7c5064;--ma-collection-border:#dec0ce;--ma-collection-hover:#f0d4e1;
   --ma-collection-selected:#f7d5e4;--ma-collection-accent:#a83268;--ma-collection-on-accent:#ffffff;
 }
@@ -251,6 +251,12 @@ html[data-ma-collection-theme="skyline"]{
   --ma-collection-inset:#293f4d;--ma-collection-text:#eaf2f6;--ma-collection-heading:#ffffff;
   --ma-collection-secondary:#b8cedb;--ma-collection-border:#526f81;--ma-collection-hover:#354d5c;
   --ma-collection-selected:#4a402c;--ma-collection-accent:#ffd38a;--ma-collection-on-accent:#302310;
+}
+html[data-ma-collection-theme="evergreen"]{
+  --ma-collection-page:#10291f;--ma-collection-surface:#19382b;--ma-collection-elevated:#244635;
+  --ma-collection-inset:#2b503c;--ma-collection-text:#e7f0de;--ma-collection-heading:#f5f4df;
+  --ma-collection-secondary:#c1d7bb;--ma-collection-border:#55765d;--ma-collection-hover:#355e46;
+  --ma-collection-selected:#405c36;--ma-collection-accent:#d4df9a;--ma-collection-on-accent:#20301b;
 }
 html[data-ma-collection-theme]{
   --ma-app-bg:var(--ma-collection-page);--ma-app-bg-soft:var(--ma-collection-surface);

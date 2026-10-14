@@ -46,7 +46,8 @@ test('shared navigation is generated consistently across all public pages', () =
   for (const rel of APP_PAGES) {
     const html = read(rel);
     assert.ok(html.indexOf('mode-atlas-date.') < html.indexOf('mode-atlas-progress.'), `${rel} restores saved goal dates only after the date owner loads`);
-    assert.equal(count(html, /data-profile-open/g), 1, `${rel} shared profile action`);
+    const nav = html.slice(html.indexOf('<!-- MODE_ATLAS_NAV_START -->'),html.indexOf('<!-- MODE_ATLAS_NAV_END -->'));
+    assert.equal(count(nav, /data-profile-open/g), 1, `${rel} shared profile action`);
     assert.equal(count(html, /data-settings-open/g), 1, `${rel} shared settings action`);
   }
   for (const rel of LEGAL_PAGES) {
@@ -1129,18 +1130,19 @@ test('2.33.2 Kana setup is destination-owned and persisted as app state', () => 
 test('primary destinations and in-page Kana navigation share their build-time owner',()=>{
   for(const rel of ['index.html','learn/index.html','progress/index.html','friends/index.html','kana/index.html','reading/index.html','writing/index.html','results/index.html','wordbank/index.html']){
     const html=read(rel);
-    assert.equal(count(html,/data-ma-nav-scope="product"/g),4,rel);
+    assert.equal(count(html,/data-ma-nav-scope="product"/g),5,rel);
     assert.doesNotMatch(html,/maKanaMenu|data-ma-kana-menu-trigger/,rel);
-    for(const label of ['atlas','learn','progress','friends'])assert.ok(html.includes(`data-ma-nav-item="${label}"`),rel+': '+label);
+    for(const label of ['atlas','learn','progress','friends','shop'])assert.ok(html.includes(`data-ma-nav-item="${label}"`),rel+': '+label);
   }
   for(const rel of ['kana/index.html','reading/index.html','writing/index.html','results/index.html'])assert.match(read(rel),/class="ma-kana-navigation" aria-label="Kana sections"/);
 });
 
-test('2.35 Atlas homepage stays editorial, product-led, and free of learner stats', () => {
+test('Atlas homepage keeps visitor orientation and adds a personal returning dashboard', () => {
   const home = read('index.html');
   const css = read('assets/css/mode-atlas-home-page.css');
   assert.match(home, /Build Japanese skills that stick\./);
-  assert.match(home, /class="atlas-showcase"/);
+  assert.match(home, /class="atlas-home-character"/);
+  assert.match(home, /class="atlas-home-dashboard" data-ma-home-user hidden/);
   assert.match(home, /class="atlas-product atlas-product--kana"/);
   assert.match(home, /class="atlas-product atlas-product--words"/);
   assert.match(home, /id="homeContinueCard"/);
@@ -1149,7 +1151,7 @@ test('2.35 Atlas homepage stays editorial, product-led, and free of learner stat
   assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Accuracy|Mastered|Daily Challenge|Study status/);
   assert.doesNotMatch(home, /class="constellation"|class="branch-grid"|class="branch kana"|class="branch words"/);
   assert.match(css, /\.atlas-hero__stage\{/);
-  assert.match(css, /\.atlas-preview--reading\{/);
+  assert.match(css, /\.atlas-home-character\{/);
   assert.match(css, /\.atlas-product\{/);
   assert.doesNotMatch(css, /\.constellation\{|\.branch-grid\{|\.branch\.kana/);
 });

@@ -31,11 +31,11 @@ async function geometry(page){
     };
   });
 }
-async function expectCompact(page){
+async function expectHomeFlow(page){
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   await expect.poll(async()=>{
     const g=await geometry(page);
-    return g.overflow<=1 && g.gap>=12 && g.gap<=24 && g.header>=59 && g.horizontal<=1 && Math.abs(g.actual-g.measured)<1 ? null : g;
+    return g.overflow>0 && g.header>=59 && g.horizontal<=1 && Math.abs(g.actual-g.measured)<1 ? null : g;
   }).toBeNull();
 }
 
@@ -59,54 +59,57 @@ async function seedRecommendation(page,kind,{complete=false}={}){
   },{kind,complete});
 }
 
-for(const theme of ['dark','light'])test(`iOS ${theme}: returning suggestions and completed goals fit above the dock`,async({page},testInfo)=>{
+for(const theme of ['dark','light'])test(`iOS ${theme}: returning suggestions and completed goals scroll behind a fixed dock`,async({page},testInfo)=>{
   await prepare(page,theme);
   await page.goto('/');
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.evaluate(()=>document.fonts.ready);
   const suggestions={'new':'Start small','reading':'Build your reading','writing':'Build your recall',
     'weak-reading':'Read tricky kana','weak-writing':'Recall tricky kana','cross-mode':'Try writing','due':'Time to revisit'};
-  // Keep the larger 59px notch inset even on the narrower phone: verify spare
-  // space, not just one exact screen with fresh/empty account content.
+  // Keep the larger 59px notch inset on narrower phones and check real suggestions.
   for(const viewport of [{width:393,height:852},{width:390,height:844},{width:375,height:812},{width:430,height:932}]){
     await page.setViewportSize(viewport);
     for(const [kind,title] of Object.entries(suggestions)){
       await seedRecommendation(page,kind);
       await expect(page.locator('#iosHomeContinueTitle')).toHaveText(title);
-      await expectCompact(page);
+      await expectHomeFlow(page);
     }
     await seedRecommendation(page,'weak-writing',{complete:true});
     await expect(page.locator('#iosHomeCorrect')).toHaveText('123,456');
     await expect(page.locator('#iosHomeGoals [data-complete="true"]')).toHaveCount(3);
-    await expectCompact(page);
+    await expectHomeFlow(page);
     const fits=await page.evaluate(()=>[...document.querySelectorAll('.atlas-ios-home__continue,.atlas-ios-home__cta,.atlas-ios-home__routine .ma-button,#iosHomeGoals strong,#iosHomeGoals span')].every(node=>node.scrollWidth<=node.clientWidth+1));
     expect(fits).toBe(true);
+    await expect(page.locator('.atlas-ios-home [data-ma-home-avatar] svg')).toHaveAttribute('viewBox','0 0 240 340');
+    await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+    await expect.poll(()=>page.evaluate(()=>document.querySelector('.atlas-home-week').getBoundingClientRect().bottom<=document.querySelector('.ma-ios-tabs').getBoundingClientRect().top-12)).toBe(true);
+    await page.evaluate(()=>window.scrollTo(0,0));
   }
   await page.setViewportSize({width:393,height:852});
-  await expectCompact(page);
+  await expectHomeFlow(page);
   await expect(page.locator('.ma-toast')).toHaveCount(0,{timeout:15000});
   await page.screenshot({path:testInfo.outputPath(`returning-goals-${theme}.png`)});
   await page.locator('.atlas-ios-home__routine [data-ma-rewards-open]').click();
   await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   await page.locator('.ma-ios-tab[href="/"]').click();
   await expect(page.locator('.atlas-ios-home')).toBeVisible();
-  await expectCompact(page);
+  await expectHomeFlow(page);
 });
 
-for(const theme of ['dark','light'])test(`iOS ${theme}: cold launch, safe-area change and return to Atlas have the same fit`,async({page},testInfo)=>{
+for(const theme of ['dark','light'])test(`iOS ${theme}: cold launch, safe-area change and return to Atlas keep natural scrolling`,async({page},testInfo)=>{
   const device=await prepare(page,theme);
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-ma-native-warm','false');
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
   console.log('Cold home geometry',await geometry(page));
-  await expectCompact(page);
+  await expectHomeFlow(page);
   // Simulate cloud progress arriving after the first document paint.
   await page.evaluate(()=>{
     window.ModeAtlasProgress={...window.ModeAtlasProgress,getSummary:()=>({level:15,lifetimeCorrect:6214,levelXp:264,levelRequirement:800,progress:.33})};
     window.dispatchEvent(new Event('modeAtlasProgressChanged'));
   });
   await expect(page.locator('#iosHomeCorrect')).toHaveText('6,214');
-  await expectCompact(page);
+  await expectHomeFlow(page);
   await expect.poll(()=>page.evaluate(()=>{
     const toast=document.querySelector('.ma-toast-wrap');
     return !toast || toast.getBoundingClientRect().bottom<=document.querySelector('.ma-ios-tabs').getBoundingClientRect().top-12;
@@ -115,19 +118,19 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: cold launch, safe-area c
   await page.screenshot({path:testInfo.outputPath(`home-safe-area-${theme}.png`)});
   // WKWebView safe areas can settle without a viewport resize or body-class change.
   await device.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:21,left:0,right:0}});
-  await expectCompact(page);
+  await expectHomeFlow(page);
   await device.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}});
-  await expectCompact(page);
+  await expectHomeFlow(page);
   await page.locator('.ma-ios-tabs__links a[href="/learn/"]').click();
   await page.waitForURL('**/learn/');
   await page.locator('.ma-ios-tabs__links a[href="/"]').click();
   await page.waitForURL('**/');
   await expect(page.locator('html')).toHaveAttribute('data-ma-native-warm','true');
-  await expectCompact(page);
+  await expectHomeFlow(page);
   expect((await geometry(page)).scrollY).toBe(0);
   await page.evaluate(()=>window.ModeAtlas.openAbout());
   await page.locator('.ma-dialog__close').click();
-  await expectCompact(page);
+  await expectHomeFlow(page);
 });
 
 test('iOS Atlas keeps the final actions reachable with larger text and a short viewport',async({page})=>{
@@ -139,8 +142,39 @@ test('iOS Atlas keeps the final actions reachable with larger text and a short v
   await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollHeight>innerHeight)).toBe(true);
   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
   await expect.poll(()=>page.evaluate(()=>{
-    const last=document.querySelector('.atlas-ios-home__routine').getBoundingClientRect();
+    const last=document.querySelector('.atlas-ios-home .atlas-home-week').getBoundingClientRect();
     const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
     return last.top>=0 && last.bottom<=dock.top-12 && scrollY>0;
   })).toBe(true);
+});
+
+
+test('web home shows the full owned character, shared study data and a direct Shop link, then clears identity',async({page},info)=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.setViewportSize({width:1440,height:1000});
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await page.addInitScript(()=>{for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');localStorage.setItem('modeAtlasSound','off');localStorage.setItem('maWhatsNewSeen','personal-home');});
+  await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.evaluate(()=>{
+    window.homeUser={uid:'alice',displayName:'Alice'};KanaCloudSync.getUser=()=>homeUser;
+    window.ModeAtlasSocial={...ModeAtlasSocial,selfProfile:()=>null};
+    window.ModeAtlasAvatar={...ModeAtlasAvatar,current:()=>homeUser?.uid==='alice'?{character:{...ModeAtlasAvatarRules.defaults,hair:'side-part',outfit:'evergreen',headwear:'evergreen'}}:null};
+    window.ModeAtlasRewardAccess={...ModeAtlasRewardAccess,current:()=>homeUser?{grants:['shop-evergreen']}:null};
+    ModeAtlasStorage.writeModeJSON('reading','srs',{'あ':{reviewVersion:1,level:2,due:Date.now()-1000,lastSeen:Date.now()-86400000,recent:[],days:[],peak:1}});
+    dispatchEvent(new Event('modeAtlasAvatarChanged'));
+  });
+  await expect(page.locator('#atlasReturningTitle')).toHaveText('Good to see you, Alice.');
+  await expect(page.locator('.atlas-home-character [data-ma-home-avatar]')).toHaveAttribute('data-character',/"outfit":"evergreen"/);
+  await expect(page.locator('.atlas-home-character svg')).toHaveAttribute('viewBox','0 0 240 340');
+  await expect(page.locator('#homeGoals .ma-routine-goal')).toHaveCount(3);
+  await expect(page.locator('.atlas-home-dashboard .atlas-home-review-link')).toHaveText('Reading1 due →');
+  await page.locator('.atlas-home-dashboard [data-ma-home-review-help]').click();await expect(page.locator('.ma-dialog__title')).toContainText('due');await page.keyboard.press('Escape');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.screenshot({path:info.outputPath('web-personal-home.png'),fullPage:true});
+  await page.evaluate(()=>{homeUser=null;dispatchEvent(new Event('modeAtlasAccountSignedOut'));});
+  await expect(page.locator('#atlasReturningTitle')).toHaveText('Good to see you.');
+  await expect(page.locator('.atlas-home-character [data-ma-home-avatar]')).not.toHaveAttribute('data-character',/evergreen/);
+  await page.locator('.atlas-home-dashboard').getByRole('link',{name:'Your recap'}).click();await expect(page.locator('.ma-atlas-recap')).toBeVisible();
+  const shop=page.locator('.ma-nav').getByRole('link',{name:'Shop',exact:true});await expect(shop).toBeVisible();await shop.click();await expect(page).toHaveURL(/\/shop\/$/);await expect(page.locator('.ma-nav a[aria-current="page"]')).toHaveText('Shop');
+  expect(errors).toEqual([]);
 });

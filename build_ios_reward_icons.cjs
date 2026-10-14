@@ -2,7 +2,7 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const {chromium}=require('@playwright/test');
-const palettes={Grove:['#438d79','#80bb92','#74a3b0'],Summit:['#d5a260','#c87965','#9685bd'],Horizon:['#334d79','#627bc1','#4babad'],Sakura:['#733257','#b45f8e','#cc8eac'],Midnight:['#161b42','#464477','#70639b'],Skyline:['#101b25','#294554','#496375']};
+const palettes={Grove:['#438d79','#80bb92','#74a3b0'],Summit:['#d5a260','#c87965','#9685bd'],Horizon:['#334d79','#627bc1','#4babad'],Sakura:['#733257','#b45f8e','#cc8eac'],Midnight:['#161b42','#464477','#70639b'],Skyline:['#101b25','#294554','#496375'],Evergreen:['#102c23','#36624a','#8a9a65']};
 async function main(){
   const mark=fs.readFileSync(path.join(__dirname,'assets/brand/mode-atlas-mark.svg'),'utf8').match(/<g id="mark">([\s\S]*)<\/g>/)[1];
   const svgOnly=process.argv.includes('--svg-only');

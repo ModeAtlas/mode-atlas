@@ -6,8 +6,10 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.99.0
+Version: 2.100.0
 
+Personal home, Evergreen, weekly friend discovery and streak balance: [2.100.0](docs/development-2.100.0.md).
+Friends, sync and full shop: [2.99.0](docs/development-2.99.0.md).
 Development and release requirements for both platforms: [Web and iOS architecture](docs/ios-web-architecture.md).
 Avatar saving, wardrobe expansion and weekly coins: [2.97.0](docs/development-2.97.0.md).
 Level coin catch-up and character avatars: [2.96.0](docs/development-2.96.0.md).

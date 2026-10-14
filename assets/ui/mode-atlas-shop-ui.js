@@ -80,9 +80,16 @@
     }
     for(const host of document.querySelectorAll('[data-ma-shop-inventory]'))renderInventory(host);
   }
+  function repairDescription(wallet){
+    const gap=wallet.repair,days=gap?.days||[wallet.repairDay].filter(Boolean);
+    const date=value=>{const [year,month,day]=value.split('-').map(Number);return new Date(year,month-1,day,12).toLocaleDateString(undefined,{month:'short',day:'numeric'});};
+    if(!days.length)return 'Restore up to three consecutive missed days, within seven days of the last missed day. You can keep studying before using it.';
+    const range=days.length===1?date(days[0]):`${date(days[0])} – ${date(days.at(-1))}`;
+    return `Restore ${days.length===1?'one missed day':`${days.length} missed days`} (${range}) with one repair.${gap?.expiresOn?` Use by ${date(gap.expiresOn)}.`:''}`;
+  }
   async function useRepair(){
     const wallet=state(),account=root.KanaCloudSync?.getUser?.()?.uid;if(wallet.busy||!wallet.repairDay)return;
-    if(!await root.ModeAtlasDialog.confirm({title:'Repair your streak?',message:'Use one Streak Repair to reconnect yesterday with your previous study days.',confirmLabel:'Use repair'}))return;
+    if(!await root.ModeAtlasDialog.confirm({title:'Repair your streak?',message:repairDescription(wallet)+' Covered days preserve your streak without adding study days or XP.',confirmLabel:'Use repair'}))return;
     if(account!==root.KanaCloudSync?.getUser?.()?.uid)return;
     try{await root.ModeAtlasShop.useRepair();root.ModeAtlasFeedback.toast('Your study streak is reconnected.','success');}
     catch(error){await root.ModeAtlasDialog.alert({title:'Streak repair',message:root.ModeAtlasShop.message(error),confirmLabel:'Got it'});}
@@ -90,10 +97,10 @@
   function renderInventory(host){
     const wallet=state(),freezes=wallet.inventory?.['streak-freeze']||0,repairs=wallet.inventory?.['streak-repair']||0;
     host.dataset.maShopInventory='';host.classList.add('ma-streak-items');host.hidden=!freezes&&!repairs;
-    const signature=JSON.stringify([freezes,repairs,wallet.repairDay,wallet.busy,wallet.status]);if(host.dataset.state===signature)return;host.dataset.state=signature;
+    const signature=JSON.stringify([freezes,repairs,wallet.repairDay,wallet.repair,wallet.busy,wallet.status]);if(host.dataset.state===signature)return;host.dataset.state=signature;
     host.replaceChildren(el('h3','','Streak essentials'));
     if(freezes)host.append(el('p','',`${freezes} Streak ${freezes===1?'Freeze':'Freezes'} ready · Used automatically for a missed day.`));
-    if(repairs){const row=el('div','ma-streak-items__row'),use=button('Use repair','ma-button ma-button--primary');use.dataset.maUseRepair='';use.disabled=wallet.busy||wallet.status!=='ready'||!wallet.repairDay;use.addEventListener('click',()=>void useRepair());row.append(el('span','',`${repairs} Streak ${repairs===1?'Repair':'Repairs'}`),use);host.append(row);if(!wallet.repairDay)host.append(el('p','ma-atlas-rewards__note','Ready if you miss a day. Use it the following day to reconnect your streak.'));}
+    if(repairs){const row=el('div','ma-streak-items__row'),use=button('Use repair','ma-button ma-button--primary');use.dataset.maUseRepair='';use.disabled=wallet.busy||wallet.status!=='ready'||!wallet.repairDay;use.addEventListener('click',()=>void useRepair());row.append(el('span','',`${repairs} Streak ${repairs===1?'Repair':'Repairs'}`),use);host.append(row);host.append(el('p','ma-atlas-rewards__note',repairDescription(wallet)));}
   }
   const categories=[['featured','Featured'],['wardrobe','Wardrobe'],['themes','Theme packs'],['streak','Streak items'],['coins','Atlas Coins']];
   function shopLink(label,category='featured',cls='ma-button ma-button--ghost'){
@@ -140,7 +147,7 @@
       select.addEventListener('change',refresh);filters.append(select);content.append(filters);section(content,'wardrobe','Find your look','cosmetic');
     }else if(category==='themes')section(content,'themes','A whole new atmosphere','collection');
     else if(category==='streak'){
-      const intro=el('div','ma-shop-intro');intro.append(el('h3','','A little breathing room'),el('p','','Keep a freeze ready, or use a repair after a missed day.'));content.append(intro);section(content,'streak','Streak essentials','consumable');
+      const intro=el('div','ma-shop-intro');intro.append(el('h3','','A little breathing room'),el('p','','A freeze covers one missed day automatically. A repair reconnects a break of up to three days, even after you’ve returned.'));content.append(intro);section(content,'streak','Streak essentials','consumable');
     }else if(category==='coins'){
       const intro=el('div','ma-shop-intro');intro.append(el('h3','','Choose your coin pack'),el('p','','A new outfit, a favourite collection, or something for later.'));content.append(intro);
       const packs=el('div','ma-shop-coin-packs');

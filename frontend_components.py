@@ -81,6 +81,7 @@ PRIMARY_LINKS = (
     ('learn', 'Learn', '/learn/'),
     ('progress', 'Progress', '/progress/'),
     ('friends', 'Friends', '/friends/'),
+    ('shop', 'Shop', '/shop/'),
 )
 
 KANA_LINKS = (

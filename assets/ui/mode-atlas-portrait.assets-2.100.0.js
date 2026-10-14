@@ -1,6 +1,13 @@
 /* The same portrait renderer serves self, Friends and weekly rankings. */
 (function(root){
   'use strict';
+  // Read-only self presentation; consumers never own auth or fetch a profile.
+  function self(){
+    const user=root.KanaCloudSync?.getUser?.(),profile=user?root.ModeAtlasSocial?.selfProfile?.():null;
+    const name=String(profile?.displayName||user?.displayName||'').trim().split(/\s+/)[0].slice(0,32);
+    const character=root.ModeAtlasAvatarRules.visible(user?(root.ModeAtlasAvatar?.current()?.character||profile?.character):null,root.ModeAtlasProgress.getSummary().level,root.ModeAtlasRewardAccess?.current());
+    return {name,character};
+  }
   function render(node,profile,user){
     if(!node)return;
     if(profile===undefined){profile=root.ModeAtlasAvatar?.current()||root.ModeAtlasSocial?.selfProfile?.();user=root.KanaCloudSync?.getUser?.();}
@@ -11,5 +18,5 @@
     node.textContent=view.symbol;
     if(view.url){const image=document.createElement('img');image.src=view.url;image.alt='';image.referrerPolicy='no-referrer';image.addEventListener('error',()=>{if(node.dataset.portrait===signature)node.textContent=view.symbol;},{once:true});node.replaceChildren(image);}
   }
-  root.ModeAtlasPortrait=Object.freeze({render});
+  root.ModeAtlasPortrait=Object.freeze({render,self});
 })(window);

@@ -27,22 +27,36 @@ function timeZone(value){
 // Rebuild freeze use from server-owned units and synced study days. Late offline
 // study refunds/reassigns a freeze instead of permanently spending it in error.
 function reconcile(w,days,today,zone){
-  const learned=new Set(days),units=[...(w.inventory['streak-freeze']||[])],covered={};
+  const learned=new Set(days),units=[...(w.inventory['streak-freeze']||[])],covered={},repairs=new Map();
   for(const [day,entry]of Object.entries(w.covered||{})){
     if(entry.kind==='freeze')units.push(entry.unit);
-    else if(learned.has(day))w.inventory['streak-repair'].push(entry.unit);
-    else covered[day]=entry;
+    else{
+      const group=repairs.get(entry.unit.id)||{unit:entry.unit,needed:false};
+      if(!learned.has(day)){covered[day]=entry;group.needed=true;}
+      repairs.set(entry.unit.id,group);
+    }
   }
+  // One repair can bridge several dates. A late offline save refunds that unit
+  // once, and only after none of its covered dates still need protection.
+  for(const {unit,needed}of repairs.values())if(!needed&&!w.inventory['streak-repair'].some(item=>item.id===unit.id))w.inventory['streak-repair'].push(unit);
   const result=protectStreak(days,today,Object.keys(covered),units.map(unit=>({...unit,day:dates.dateKeyInTimeZone(unit.at,zone)})));
   const original=unit=>({id:unit.id,at:unit.at});
   for(const [day,unit]of Object.entries(result.used))covered[day]={kind:'freeze',unit:original(unit)};
   w.inventory['streak-freeze']=result.remaining.map(original);w.covered=covered;
 }
-function repairDay(w,days,today){
-  const yesterday=dates.shiftDateKey(today,-1),prior=dates.shiftDateKey(today,-2);
-  return !days.includes(yesterday)&&!Object.hasOwn(w.covered,yesterday)&&studyStreak(days,prior,Object.keys(w.covered))>0
-    &&(days.includes(prior)||Object.hasOwn(w.covered,prior))?yesterday:null;
+function repairGap(w,days,today){
+  const learned=new Set(days),covered=new Set(Object.keys(w.covered||{})),present=day=>learned.has(day)||covered.has(day);
+  let end=null;
+  for(let offset=1;offset<=catalogue.streakRepair.windowDays;offset++){
+    const day=dates.shiftDateKey(today,-offset);if(!present(day)){end=day;break;}
+  }
+  if(!end)return null;
+  const missed=[];let day=end;
+  while(!present(day)&&missed.length<=catalogue.streakRepair.maxMissedDays){missed.unshift(day);day=dates.shiftDateKey(day,-1);}
+  if(missed.length>catalogue.streakRepair.maxMissedDays||!present(day)||studyStreak(days,day,[...covered])===0)return null;
+  return {days:missed,expiresOn:dates.shiftDateKey(end,catalogue.streakRepair.windowDays)};
 }
+const repairDay=(w,days,today)=>repairGap(w,days,today)?.days.at(-1)||null;
 // Read-only projection for reminders; consuming inventory remains transactional.
 function streakStatus(record,save,zone,at){
   const w=wallet(record?structuredClone(record):null),today=dates.dateKeyInTimeZone(at,zone),days=studyDaysFromSave(save,zone);
@@ -141,10 +155,10 @@ function createCommerce({db,auth,now=Date.now}){
         }else if(action==='shopUse'){
           fields(data,['requestId','productId','timeZone']);
           if(data.productId!=='streak-repair')fail('invalid-argument','Choose a Streak Repair.');
-          const day=repairDay(w,days,today);
-          if(!day)fail('failed-precondition','There is no missed day to repair. A repair can reconnect a streak broken yesterday.');
+          const gap=repairGap(w,days,today);
+          if(!gap)fail('failed-precondition','There is no eligible break to repair. Restore up to three consecutive missed days within seven days of the last missed day.');
           const unit=w.inventory['streak-repair'].shift();if(!unit)fail('failed-precondition','You do not have a Streak Repair.');
-          w.covered[day]={kind:'repair',unit};
+          for(const day of gap.days)w.covered[day]={kind:'repair',unit};
         }else if(action==='shopDeveloper'){
           fields(data,['requestId','operation','amount','timeZone']);
           if(data.operation==='credit'){
@@ -160,14 +174,14 @@ function createCommerce({db,auth,now=Date.now}){
       }
       if(JSON.stringify(w)!==original||record.data()?.version===1)tx.set(ref,w);
       if(accessChanged)tx.set(accessRef,access);
-      const owned=entitlement(user,access,at).grants;
+      const owned=entitlement(user,access,at).grants,repair=repairGap(w,days,today);
       return {version:2,currency:catalogue.currency.id,balance:w.balance,coinPurchasesEnabled:false,offers,
         levelRewards:w.levelRewards,
         owned:catalogue.products.filter(p=>p.grant&&owned.includes(p.grant)).map(p=>p.id),
         inventory:Object.fromEntries(consumables.map(p=>[p.id,w.inventory[p.id].length])),
-        protection:Object.keys(w.covered).sort(),repairDay:repairDay(w,days,today),timeZone:zone,checkedAt:at,developer:isAdmin(user)};
+        protection:Object.keys(w.covered).sort(),repairDay:repair?.days.at(-1)||null,repair,timeZone:zone,checkedAt:at,developer:isAdmin(user)};
     });
   }
   return {run,awardLevels,backfillLevels,prepareWeeklyPrize,erase:uid=>db.recursiveDelete(reference(uid))};
 }
-module.exports={createCommerce,reconcile,repairDay,streakStatus};
+module.exports={createCommerce,reconcile,repairDay,repairGap,streakStatus};
