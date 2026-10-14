@@ -106,7 +106,7 @@ html[data-ma-large-text] .ma-social-moderation-tabs{grid-template-columns:repeat
 .ma-social-character__figure svg{display:block;width:100%;height:100%;}
 .ma-social-character__speech{position:relative;max-width:280px;margin:0;padding:14px 18px;border:1px solid var(--ma-border);border-radius:18px;background:var(--ma-card-2);color:var(--ma-text-strong);font-size:.88rem;line-height:1.55;overflow-wrap:anywhere;}
 .ma-social-character__speech::after{content:'';position:absolute;left:40%;bottom:-7px;width:12px;height:12px;background:var(--ma-card-2);border-right:1px solid var(--ma-border);border-bottom:1px solid var(--ma-border);transform:rotate(45deg);}
-.ma-social-pet-name{font-size:.8rem;font-weight:700;color:var(--ma-text-strong);}
+.ma-social-pet-name{max-width:100%;overflow-wrap:anywhere;text-align:center;font-size:.8rem;font-weight:700;color:var(--ma-text-strong);}
 .ma-social-privacy{margin-top:24px;color:var(--ma-muted);font-size:.8rem;}
 .ma-social-privacy summary{cursor:pointer;min-height:44px;display:flex;align-items:center;}
 .ma-social-character--visitor{min-height:330px;}

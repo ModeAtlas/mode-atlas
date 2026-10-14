@@ -485,7 +485,7 @@ for(const native of [true,false])test(`global weekly profile can request, cancel
   await expect(page.locator('.ma-social-character__speech')).toHaveText('See you at the summit!');
   await expect(page.locator('.ma-social-pet-name')).toHaveText('Shiro');
   expect(await page.locator('.ma-social-character').evaluate(node=>node.querySelector('.ma-social-character__speech').getBoundingClientRect().bottom<=node.querySelector('.ma-social-character__figure').getBoundingClientRect().top)).toBe(true);
-  await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.dataset.maLargeText='true';});
+  await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.dataset.maLargeText='true';document.querySelector('.ma-social-pet-name').textContent='W'.repeat(24);});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:info.outputPath('friend-avatar-large-text.png'),fullPage:true});
 });
