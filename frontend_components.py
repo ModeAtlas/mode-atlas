@@ -66,6 +66,7 @@ NAV_CONFIGS: dict[str, NavConfig] = {
     'learn/index.html': NavConfig('learn', '学', 'Mode Atlas', 'Learn'),
     'progress/index.html': NavConfig('progress', '記', 'Mode Atlas', 'Progress'),
     'friends/index.html': NavConfig('friends', '友', 'Mode Atlas', 'Friends'),
+    'shop/index.html': NavConfig('shop', '店', 'Mode Atlas', 'Atlas Shop'),
     'kana/index.html': NavConfig('kana', 'かな', 'Mode Atlas', 'Kana Trainer', accent='kana'),
     'reading/index.html': NavConfig('reading', '読', 'Kana Trainer', 'Reading Practice', brand_href='/kana/', accent='reading', hideable=True),
     'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Writing Practice', brand_href='/kana/', accent='writing', hideable=True),
@@ -343,6 +344,10 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
         body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-hub-page.js',)),
     ),
     'friends/index.html': FrontendAssetConfig(
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-hub-page.css',),
+        body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-hub-page.js',)),
+    ),
+    'shop/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-hub-page.css',),
         body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-hub-page.js',)),
     ),

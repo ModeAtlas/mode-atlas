@@ -855,6 +855,9 @@ let cloudSyncPromise = null;
 let cloudSyncPending = false;
 let accountEpoch = 0;
 let confirmedAccountData = null;
+let syncStartedAt = 0;
+let syncSlowTimer = null;
+let signingOut = false;
 let syncTimeout = null;
 let sessionCloudPauseActive = false;
 let deferredSessionSync = false;
@@ -879,6 +882,7 @@ const SECTION_LABELS = {
 function invalidateAccountWork(){
   accountEpoch++;
   confirmedAccountData=null;
+  clearTimeout(syncSlowTimer);syncSlowTimer=null;syncStartedAt=0;
   clearTimeout(syncTimeout);syncTimeout=null;
   cloudSyncPending=false;cloudSyncPromise=null;
   cloudHydrationPromise=null;cloudHydrationUserId=null;
@@ -911,18 +915,21 @@ function getSyncStatus() {
   const lastSync = normalizeTimestamp(storeGet(LAST_CLOUD_SYNC_KEY, '0'));
   const online = typeof navigator === 'undefined' ? true : navigator.onLine !== false;
   const state = storeGet(CLOUD_STATE_KEY, '') || '';
-  if (!CONFIG_READY) {
-    return { state: 'local', tone: 'neutral', text: 'Progress saves on this device', lastSync, user };
+  const lastSyncLabel = lastSync ? new Date(lastSync).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'No cloud save confirmed yet';
+  const value=(state,tone,text,detail,extra={})=>({state,tone,text,detail,lastSync,lastSyncLabel,user,...extra});
+  if (!CONFIG_READY || !user) return value('local','neutral','Saved on this device','Sign in to save your progress to your account and use it on other devices.');
+  if (!accountSaveReady) return value('paused','warning','Account switch paused','Free some device storage, then reopen Mode Atlas.');
+  if (!online) return value('offline','warning','Offline · saved on this device','Keep practising. Your changes will sync when the connection returns.');
+  if (cloudSyncPromise) {
+    const slow=syncStartedAt&&Date.now()-syncStartedAt>=6000;
+    return value('pending',slow?'warning':'neutral',slow?'Sync is taking longer than usual':'Syncing your progress…',slow?'Your changes are still on this device. Check your connection; this sync will finish when the server responds.':'Your changes are saved on this device while the cloud save is updated.',{phase:slow?'slow':'syncing'});
   }
-  if (!user) {
-    return { state: 'local', tone: 'neutral', text: 'Progress saves on this device · sign in to sync', lastSync, user };
-  }
-  if (!accountSaveReady) return {state:'paused',tone:'warning',text:'Account switch paused · free device storage and reopen the app',lastSync,user};
-  if (!online) return {state:'offline',tone:'warning',text:'Offline · saved on this device',lastSync,user};
-  if (cloudSyncPromise || syncTimeout || deferredSessionSync) return {state:'pending',tone:'neutral',text:'Saved on this device · sync pending',lastSync,user};
-  if (state === 'offline') return {state:'paused',tone:'warning',text:'Sync paused · saved on this device',lastSync,user,canRetry:true};
-  if (hydratedForUserId !== user.uid) return {state:'pending',tone:'neutral',text:'Loading your cloud save…',lastSync,user};
-  return { state: 'cloud', tone: 'ok', text: 'Synced across devices', lastSync, user };
+  if (deferredSessionSync) return value('pending','neutral','Saved on this device','Cloud sync resumes when you pause or finish this session.',{phase:'studying'});
+  if (syncTimeout) return value('pending','neutral','Waiting to sync','Your latest changes are saved on this device and will sync shortly.',{phase:'queued'});
+  if (state === 'offline') return value('paused','warning','Cloud sync needs attention','Your changes are saved on this device. Check your connection and try again.',{canRetry:true});
+  if (hydratedForUserId !== user.uid) return value('pending','neutral','Checking your cloud save…','Your device save stays available while we check your account.',{phase:'loading'});
+  if (!confirmedAccountData) return value('pending','neutral','Cloud save not yet confirmed','Your progress is on this device. Sync now to confirm it is saved to your account.',{canRetry:true});
+  return value('cloud','ok','All changes saved','Your latest progress is confirmed in your cloud account.',{canRetry:true});
 }
 
 function statusText() {
@@ -977,11 +984,13 @@ function updateUiBinding(binding) {
   if (binding.signOutBtn) setCloudElementVisible(binding.signOutBtn, !!user);
   if (binding.authBtn) {
     const label = binding.authBtn.querySelector('[data-profile-auth-label]');
-    const text = user ? 'Sign out' : (binding.signInLabel || 'Sign in with Google');
+    const text = user ? (signingOut ? 'Signing out…' : 'Sign out') : (binding.signInLabel || 'Sign in with Google');
     if (label) label.textContent = text;
     else binding.authBtn.textContent = text;
     binding.authBtn.classList.toggle('ma-button--primary', !user);
     binding.authBtn.setAttribute('aria-label', text);
+    binding.authBtn.disabled = !!accountActionPromise;
+    binding.authBtn.setAttribute('aria-busy',String(signingOut));
   }
   if (binding.signedInEls) binding.signedInEls.forEach((el) => setCloudElementVisible(el, !!user));
   if (binding.signedOutEls) binding.signedOutEls.forEach((el) => setCloudElementVisible(el, !user));
@@ -1188,12 +1197,15 @@ async function hydrateFromCloud(force = false) {
           localBaseline: hydrationBaseline
         });
         hydratedForUserId = uid;
-        setCloudState(true);
+        // A cache hit or a merged local change is not a confirmed cloud save.
+        // Stamp the time only for matching server data or an acknowledged write.
+        const matches=!localPreferred&&!hasLocalImportGuard()&&!snap.metadata?.fromCache&&!snap.metadata?.hasPendingWrites
+          &&snapshotData(snap.data())===snapshotData(buildLocalSnapshot());
+        if(matches){confirmedAccountData=snapshotData(buildLocalSnapshot());setCloudState(true);}
         emitCloudDataChanged('hydrate', changedSections);
-        if (localPreferred || hasLocalImportGuard()) scheduleSync(250);
+        if (!matches) scheduleSync(250);
       } else {
         hydratedForUserId = uid;
-        setCloudState(true);
         scheduleSync(250);
       }
       return true;
@@ -1277,7 +1289,8 @@ async function nativeProviderCredential(providerId) {
 let accountActionPromise = null;
 function runAccountAction(action) {
   if (accountActionPromise) return Promise.resolve(false);
-  accountActionPromise = Promise.resolve().then(action).finally(() => { accountActionPromise = null; });
+  accountActionPromise = Promise.resolve().then(action).finally(() => { accountActionPromise = null;signingOut=false;emitStatus(); });
+  emitStatus();
   return accountActionPromise;
 }
 function signInWithProvider(providerId = 'google.com') {
@@ -1496,21 +1509,36 @@ function signOutUser() {
 }
 async function performSignOut() {
   if (!auth || !currentUser) return false;
-  const uid=currentUser.uid;
+  const uid=currentUser.uid,epoch=accountEpoch;
   // End the active run without manufacturing completion rewards. Its answered
   // questions are already saved and can now be flushed before clearing the device.
   window.suspendTrainerForAccountChange?.();
   setSessionCloudPause(false);
-  const synced=navigator.onLine!==false&&await waitWithTimeout(syncNow(),8000,'Sign-out sync')
-    &&confirmedAccountData===snapshotData(buildLocalSnapshot());
-  if(currentUser?.uid!==uid)return false;
-  if(!synced){
-    const discard=await window.ModeAtlasFeedback?.confirm?.({title:'Sign out without syncing?',
-      message:'Your latest progress could not be confirmed in the cloud. Signing out removes this account’s data from this device. Unsynced work will be lost.',
-      confirmLabel:'Sign out and clear',cancelLabel:'Keep studying',tone:'warning'});
-    if(!discard||currentUser?.uid!==uid)return false;
-  }
+  const confirmed=()=>sameAccount(uid,epoch)&&confirmedAccountData!==null&&confirmedAccountData===snapshotData(buildLocalSnapshot());
+  let update=null,open=true;
+  const prompt=()=>{
+    const status=getSyncStatus(),saved=confirmed();
+    return {confirmLabel:saved?'Sign out':'Sign out and clear',message:[
+      saved?'Your latest progress is saved to your account.':status.state==='cloud'?'Checking your latest changes…':status.text.replace(/[.…]+$/,'')+'.',
+      'Last confirmed cloud save: '+status.lastSyncLabel+'.',
+      'Signing out clears this account’s data from this device. Your cloud save stays in your account.',
+      saved?'':'Any changes that have not synced will be lost if you sign out now.'
+    ].filter(Boolean).join('\n\n')};
+  };
+  const changed=()=>{if(open&&sameAccount(uid,epoch))update?.(prompt());};
+  window.addEventListener('kanaCloudSyncStatusChanged',changed);
+  let proceed=false;
   try{
+    // Open immediately. Sync runs behind the visible, cancellable confirmation;
+    // no network deadline stands between the tap and an explanation.
+    const choice=window.ModeAtlasFeedback?.confirm?.({title:'Sign out?',...prompt(),cancelLabel:'Keep studying',tone:'danger',
+      onOpen:handle=>{update=handle.update;changed();}});
+    if(!confirmed()&&navigator.onLine!==false)void syncNow().catch(()=>{});
+    proceed=await choice;
+  }finally{open=false;window.removeEventListener?.('kanaCloudSyncStatusChanged',changed);}
+  if(!proceed||!sameAccount(uid,epoch))return false;
+  try{
+    signingOut=true;emitStatus();
     // Notification cleanup may be offline. It must not hold account sign-out open.
     void window.ModeAtlasNotifications?.signOut?.();
     await signOut(auth);
@@ -1651,6 +1679,9 @@ function syncNow() {
   }
 
   const epoch=accountEpoch;
+  syncStartedAt=Date.now();
+  clearTimeout(syncSlowTimer);
+  syncSlowTimer=setTimeout(()=>{if(epoch===accountEpoch&&cloudSyncPromise)emitStatus();},6000);
   const run = (async () => {
     let result = false;
     do {
@@ -1661,7 +1692,7 @@ function syncNow() {
   })();
 
   cloudSyncPromise = run.finally(() => {
-    if(epoch===accountEpoch){cloudSyncPromise = null;emitStatus();}
+    if(epoch===accountEpoch){cloudSyncPromise = null;clearTimeout(syncSlowTimer);syncSlowTimer=null;syncStartedAt=0;emitStatus();}
   });
   emitStatus();
   return cloudSyncPromise;

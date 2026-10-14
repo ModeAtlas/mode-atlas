@@ -31,6 +31,7 @@ class EventTargetMock {
     list.push(listener);
     this.listeners.set(type, list);
   }
+  removeEventListener(type, listener) { this.listeners.set(type,(this.listeners.get(type)||[]).filter(item=>item!==listener)); }
   dispatchEvent(event) {
     this.events.push(event);
     for (const listener of this.listeners.get(event.type) || []) listener.call(this, event);
@@ -1013,14 +1014,14 @@ test('online logout flushes the save and a failed Auth sign-out keeps it availab
     GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,callback)=>{changed=callback;},
     getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>false}),setDoc:async(_ref,data)=>{lastWrite=data;},
     signOut:async()=>{if(fail)throw Error('Auth unavailable');changed(null);}};
-  window.ModeAtlasFeedback={confirm:async()=>{questions++;return false;},alert:async()=>{}};
+  window.ModeAtlasFeedback={confirm:async options=>{questions++;assert.match(options.message,/Last confirmed cloud save:/);await window.KanaCloudSync.syncNow();return true;},alert:async()=>{}};
   vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!changed;i++)await delay(1);
   changed({uid:'save-A'});await window.KanaCloudSync.waitForInitialHydration();
   localStorage.setItem('charStats',JSON.stringify({'あ':{correct:8,wrong:0}}));
   assert.equal(await window.KanaCloudSync.signOut(),false);assert.equal(window.KanaCloudSync.getUser().uid,'save-A');
   assert.equal(JSON.parse(localStorage.getItem('charStats'))['あ'].correct,8);
   fail=false;assert.equal(await window.KanaCloudSync.signOut(),true);
-  assert.equal(lastWrite.sections.reading.data.stats['あ'].correct,8);assert.equal(questions,0);
+  assert.equal(lastWrite.sections.reading.data.stats['あ'].correct,8);assert.equal(questions,2);
   assert.equal(localStorage.getItem('charStats'),null);
 });
 
@@ -1075,4 +1076,43 @@ test('sync retry recovers failed database startup and initial cloud hydration',a
   fail='';assert.equal(await window.KanaCloudSync.syncNow(),true);
   assert.equal(window.KanaCloudSync.getSyncStatus().state,'cloud');assert.equal(await window.KanaCloudSync.waitForInitialHydration(),true);
   assert.equal(JSON.parse(localStorage.getItem('charStats'))['あ'].correct,7);
+});
+
+test('sign-out explains the last confirmed save immediately while sync is stalled and cancellation keeps local work',async()=>{
+  const {context,window,localStorage}=createBaseContext({configured:true});vm.runInContext(STORAGE_SOURCE,context);
+  let changed,stall=null,prompt,answer,updates=0,signouts=0;
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,
+    GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,callback)=>{changed=callback;},
+    getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:()=>stall?stall.promise:Promise.resolve({exists:()=>false}),setDoc:async()=>{},
+    signOut:async()=>{signouts++;changed(null);}};
+  window.ModeAtlasFeedback={confirm:options=>{prompt=options;options.onOpen?.({update:()=>{updates++;}});return new Promise(resolve=>{answer=resolve;});}};
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!changed;i++)await delay(1);
+  changed({uid:'learner'});await window.KanaCloudSync.waitForInitialHydration();await window.KanaCloudSync.syncNow();
+  const lastSync=window.KanaCloudSync.getSyncStatus().lastSync;
+  localStorage.setItem('kanaWordBank',JSON.stringify([{kana:'ねこ',english:'Unsent note'}]));stall=deferred();
+  const leaving=window.KanaCloudSync.signOut();await delay(0);
+  assert.ok(prompt,'confirmation must open before the stalled network read resolves');
+  assert.match(prompt.message,/Last confirmed cloud save:/);assert.ok(prompt.message.includes(window.KanaCloudSync.getSyncStatus().lastSyncLabel));
+  assert.match(prompt.message,/Any changes that have not synced will be lost/);assert.equal(prompt.confirmLabel,'Sign out and clear');
+  assert.equal(window.KanaCloudSync.getSyncStatus().lastSync,lastSync);
+  answer(false);assert.equal(await leaving,false);assert.equal(signouts,0);assert.match(localStorage.getItem('kanaWordBank'),/Unsent note/);
+  const before=updates;stall.resolve({exists:()=>false});stall=null;await window.KanaCloudSync.syncNow();
+  assert.equal(updates,before,'a cancelled prompt must stop observing sync');
+});
+
+test('missing or cached cloud reads never advance the last confirmed save time',async()=>{
+  const {context,window}=createBaseContext({configured:true});let changed,write=deferred(),saved=null,cached=false;
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,
+    GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,callback)=>{changed=callback;},
+    getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>!!saved,data:()=>saved,metadata:{fromCache:cached}}),
+    setDoc:async(_ref,data)=>{if(write)await write.promise;saved=data;}};
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!changed;i++)await delay(1);
+  changed({uid:'learner'});await window.KanaCloudSync.waitForInitialHydration();
+  assert.equal(window.KanaCloudSync.getSyncStatus().lastSync,0);
+  const pending=window.KanaCloudSync.syncNow();await delay(0);assert.equal(window.KanaCloudSync.getSyncStatus().lastSync,0);
+  write.resolve();await pending;write=null;const confirmed=window.KanaCloudSync.getSyncStatus().lastSync;assert.ok(confirmed>0);
+  await delay(2);cached=true;await window.KanaCloudSync.hydrateFromCloud(true);
+  assert.equal(window.KanaCloudSync.getSyncStatus().lastSync,confirmed,'a cache read is not a new cloud confirmation');
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'pending');
+  cached=false;await window.KanaCloudSync.syncNow();
 });

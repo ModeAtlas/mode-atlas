@@ -27,8 +27,9 @@
   'use strict';
   const {enabled,user,online,transport,readProfile=()=>null,writeProfile=()=>{},profileChanged=()=>{},now=Date.now}=dependencies;
   let profilePending=null,profileEpoch=0;
+  const readPending=new Map(),sharedReads=new Set(['state','list','profile','weeklyState','weeklyList']);
   function selfProfile(){const cached=readProfile();return user()?.uid&&cached?.uid===user().uid&&cached.checkedAt<=now()&&now()-cached.checkedAt<86400000?cached.profile:null;}
-  function clearProfile(){profileEpoch++;profilePending=null;writeProfile(null);profileChanged();}
+  function clearProfile(){profileEpoch++;profilePending=null;readPending.clear();writeProfile(null);profileChanged();}
   async function refreshProfile(){
     const uid=user()?.uid,cached=readProfile();
     if(!uid||!enabled()||!online())return selfProfile();
@@ -45,8 +46,18 @@
     if(!uid)throw error('unauthenticated','Sign in to use Friends.');
     if(uid!==expectedUid)throw error('account-changed','The signed-in account changed. Try again.');
     if(!online())throw error('offline','Connect to the internet to use Friends.');
-    const ticket=profileEpoch,result=await transport(action,data,uid);
-    if(user()?.uid!==uid&&!(accountAction&&!user()&&result.deleted))throw error('account-changed','The signed-in account changed. Try again.');
+    const ticket=profileEpoch,key=JSON.stringify([uid,ticket,action,data]);
+    let request=sharedReads.has(action)?readPending.get(key):null;
+    if(!request){
+      request=Promise.resolve(transport(action,data,uid));
+      if(sharedReads.has(action)){
+        readPending.set(key,request);
+        const release=()=>{if(readPending.get(key)===request)readPending.delete(key);};
+        request.then(release,release);
+      }
+    }
+    const result=await request;
+    if((user()?.uid!==uid||ticket!==profileEpoch)&&!(accountAction&&!user()&&result.deleted))throw error('account-changed','The signed-in account changed. Try again.');
     if(action==='state'&&ticket===profileEpoch){
       const profile=result.active&&result.profile?.uid===uid?result.profile:null;
       writeProfile({uid,checkedAt:now(),profile});profileChanged();

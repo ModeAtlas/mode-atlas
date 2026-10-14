@@ -17,11 +17,12 @@
               </div>
             </div>
             <div class="ma-auth-actions">
-              <button class="ma-button ma-button--ghost ma-button--wide" data-ma-avatar-open type="button">Edit avatar</button>
-              <button class="ma-button ma-button--primary ma-button--wide" id="profileAuthBtn" data-profile-auth type="button">
+              <button class="ma-button ma-button--ghost" data-ma-avatar-open type="button">${icon(href,'edit')}<span>Edit avatar</span></button>
+              <button class="ma-button ma-button--primary" id="profileAuthBtn" data-profile-auth type="button">
+                ${icon(href,'user')}
                 <span data-profile-auth-label>Sign in with Google</span>
               </button>
-              <button class="ma-button ma-button--ghost ma-button--wide" id="profileLinkBtn" type="button" hidden>Sign-in methods</button>
+              <button class="ma-button ma-button--ghost" id="profileLinkBtn" type="button" hidden>${icon(href,'shield')}<span>Sign-in methods</span></button>
             </div>
           </section>
 
@@ -63,7 +64,7 @@
               <strong id="profileSyncSummary">Checking sync status…</strong>
             </div>
             <div class="ma-sync-detail" id="profileSyncDetail">Your current save status will appear here.</div>
-            <div class="ma-sync-meta" id="profileSyncMeta">Last cloud sync: Never synced</div>
+            <div class="ma-sync-meta" id="profileSyncMeta">No cloud save confirmed yet</div>
             <button class="ma-button ma-button--ghost" id="profileSyncRetry" type="button" hidden>Retry sync</button>
           </section>
         `;

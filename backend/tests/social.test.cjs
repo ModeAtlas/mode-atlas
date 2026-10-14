@@ -106,6 +106,11 @@ test('profiles are opt-in, projected from the save and never expose private fiel
   await assert.rejects(a.call('lookup',{code:a.code}),{code:'INVALID_ARGUMENT'});
   await assert.rejects(a.call('leave',{},b.uid),{code:'UNAUTHENTICATED'});
   assert.equal((await a.call('state')).active,true);
+  await friend(a,b);
+  const home=await a.call('state',{listKind:'friends'});
+  assert.equal(home.list.kind,'friends');assert.equal(home.list.rows.length,1);assert.equal(home.list.rows[0].uid,b.uid);
+  assert.ok(!JSON.stringify(home.list).includes('private word'));assert.ok(!JSON.stringify(home.list).includes(b.email));
+  await assert.rejects(a.call('state',{listKind:'reports'}),{code:'INVALID_ARGUMENT'});
 });
 test('recipient-only acceptance, duplicate requests and crossed requests keep both sides consistent',async()=>{
   const a=await learner('Charlie'),b=await learner('Dylan'),c=await learner('Evelyn');
@@ -326,6 +331,7 @@ test('reporting is scoped, deduplicated and private; only the verified admin can
   await assert.rejects(a.call('reviewReport',{id:records.docs[0].id,decision:'restrict'}),{code:'PERMISSION_DENIED'});
   await adminCall('reviewReport',{id:records.docs[0].id,decision:'restrict'});
   assert.equal((await b.call('state')).restricted,true);
+  assert.equal((await b.call('state',{listKind:'friends'})).list,undefined,'restricted accounts cannot obtain an embedded friends list');
   assert.equal((await a.call('list')).rows.length,0,'restricted profiles disappear from friends and rankings');
   await b.call('leave');await assert.rejects(b.call('updateProfile',{displayName:'Back Again',avatar:'kana',timeZone:'UTC'}),{code:'PERMISSION_DENIED'});
   const restricted=await adminCall('listRestrictions');assert.ok(restricted.rows.some(row=>row.uid===b.uid));

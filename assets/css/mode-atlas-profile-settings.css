@@ -42,7 +42,10 @@ html[data-ma-runtime="ios"][data-ma-large-text] .ma-account-header #maAccountClo
 .ma-account-view .ma-card,.ma-account-view .ma-setting-list,.ma-account-view .ma-setting-row,
 .ma-account-copy,.ma-profile-card-head>div{min-width:0;max-width:100%;}
 .ma-sync-detail{width:100%;max-width:100%;white-space:normal;}
-.ma-auth-actions{margin-top:14px;display:grid;grid-template-columns:1fr;gap:10px;}
+.ma-auth-actions{margin-top:14px;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;}
+.ma-auth-actions .ma-button{min-width:0;min-height:64px;padding:9px 6px;flex-direction:column;gap:6px;font-size:.75rem;line-height:1.25;white-space:normal;text-align:center;}
+.ma-auth-actions .ma-icon{width:20px;height:20px;flex:none;}
+.ma-auth-actions .ma-button span{overflow-wrap:anywhere;}
 .ma-profile-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .ma-profile-card-title{margin-top:3px;font-size:1.03rem;font-weight:900;color:var(--ma-text-strong);}
 .ma-sync-status-line{display:flex;align-items:center;gap:10px;margin-top:4px;}
@@ -51,6 +54,7 @@ html[data-ma-runtime="ios"][data-ma-large-text] .ma-account-header #maAccountClo
 .ma-sync-dot.warning,.ma-sync-dot.offline{background:var(--ma-warning);box-shadow:0 0 0 4px color-mix(in srgb,var(--ma-warning) 18%,transparent);}
 .ma-sync-dot.error,.ma-sync-dot.danger{background:var(--ma-danger);box-shadow:0 0 0 4px color-mix(in srgb,var(--ma-danger) 18%,transparent);}
 .ma-sync-meta{margin-top:8px;font-size:12px;color:var(--ma-muted);}
+.ma-sync-card>.ma-button{margin-top:12px;}
 .ma-achievement-summary{display:flex;align-items:baseline;gap:8px;margin:8px 0 14px;}
 .ma-achievement-summary strong{font-size:32px;line-height:1;color:var(--ma-text-strong);}
 .ma-achievement-summary span{color:var(--ma-muted);font-size:13px;font-weight:800;}

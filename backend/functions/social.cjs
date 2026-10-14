@@ -191,8 +191,9 @@ function createSocial({db,auth,messaging,now=Date.now}){
     });
   }
   async function state(uid,user){
-    const doc=await accountRef(uid).get(),a=doc.data(),role=await staff.current(user),canModerate=role!=='member';
-    if(await moderation.restriction(uid))return {active:false,restricted:true,canModerate};
+    const [doc,role,restricted]=await Promise.all([accountRef(uid).get(),staff.current(user),moderation.restriction(uid)]);
+    const a=doc.data(),canModerate=role!=='member';
+    if(restricted)return {active:false,restricted:true,canModerate};
     if(a?.deleting)return {active:false,deleting:true};
     if(!a?.active)return {active:false,accountPhoto:accountPhoto(user),canModerate,role};
     return {active:true,canModerate,role,profile:publicProfile(uid,a,now()),preferences:a.profile,accountPhoto:accountPhoto(user),code:a.code,
@@ -330,7 +331,11 @@ function createSocial({db,auth,messaging,now=Date.now}){
     const {action,data={}}=request.data;
     const actions=['avatarState','avatarUpdate','shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
-    if(['rewards','state','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
+    if(['rewards','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
+    if(action==='state'){
+      fields(data,['listKind']);
+      if(data.listKind!==undefined&&!['friends','incoming','outgoing','blocked'].includes(data.listKind))fail('invalid-argument','Choose a friends list.');
+    }
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
     if(action==='rewards')return rewards.read(user);
@@ -359,7 +364,17 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(action==='weeklyStart')return weekly.start(uid,data);
     if(action==='weeklySubmit')return weekly.submit(uid,data);
     if(action==='weeklyList'){const result=await weekly.list(uid,data);await decorate(result.rows);return result;}
-    if(action==='state'){await refreshSummary(uid,user);const result=await state(uid,user);if(result.profile){result.profile.role=result.role;rewards.sanitize(result.profile,await rewards.read(user));}return result;}
+    if(action==='state'){
+      await refreshSummary(uid,user);
+      const result=await state(uid,user);
+      if(result.profile){
+        result.profile.role=result.role;
+        const [access,firstPage]=await Promise.all([rewards.read(user),data.listKind?list(uid,{kind:data.listKind}):null]);
+        rewards.sanitize(result.profile,access);
+        if(firstPage){await decorate(firstPage.rows);result.list={kind:data.listKind,...firstPage};}
+      }
+      return result;
+    }
     if(action==='updateProfile')return updateProfile(uid,data,createdAt,user);
     if(action==='rotateCode')return rotateCode(uid);
     if(action==='lookup'){const result=await lookup(uid,data);await decorate(result.rows||[result.profile]);return result;}

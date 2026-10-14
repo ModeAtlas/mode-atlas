@@ -189,6 +189,19 @@
     };
 
     active = { ...request, layer, previousFocus, onKeydown };
+    // A live confirmation can report work without waiting to open. Its handle
+    // belongs to this request, so a late result cannot update the next dialog.
+    const owner = active;
+    const update = (value = {}) => {
+      if (active !== owner) return false;
+      if (typeof value.message === 'string') {
+        message.textContent = value.message; message.hidden = !value.message;
+        if (value.message) panel.setAttribute('aria-describedby', message.id);
+        else panel.removeAttribute('aria-describedby');
+      }
+      if (confirm && typeof value.confirmLabel === 'string') confirm.textContent = value.confirmLabel;
+      return true;
+    };
     announceState();
     document.addEventListener('keydown', onKeydown, true);
 
@@ -215,6 +228,7 @@
       const preferred = opts.kind === 'feature' ? close : (opts.kind === 'confirm' && opts.tone === 'danger' ? cancel : confirm);
       try { (preferred || confirm || close || panel).focus({ preventScroll: true }); } catch {}
     });
+    opts.onOpen?.({ update });
   }
 
   function enqueue(input, kind){

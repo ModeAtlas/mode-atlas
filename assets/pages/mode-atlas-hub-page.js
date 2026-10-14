@@ -7,6 +7,8 @@
   if(kind==='progress'){
     root.ModeAtlasRewardsUI.mount(host);
     const achievements=el('button','ma-button ma-button--ghost','View achievements');achievements.type='button';achievements.dataset.maAchievementsOpen='';host.append(achievements);
+  }else if(kind==='shop'){
+    root.ModeAtlasShopUI.mount(host,{full:true});
   }else if(kind==='friends'){
     if(root.ModeAtlasSocial?.isEnabled())root.ModeAtlasSocialUI.mount(host);
     else host.append(el('p','ma-hub-note','Friends is not available yet. Your learning progress is still saved.'));

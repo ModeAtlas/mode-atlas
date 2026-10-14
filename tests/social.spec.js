@@ -27,7 +27,7 @@ async function prepare(page,{active=true,...layout}={}){
     window.ModeAtlasSocial={...original,isEnabled:()=>true,call:async(action,input={})=>{
       window.socialCalls.push({action,input});
       if(window.socialOffline)throw Object.assign(new Error('Connect to the internet to use Friends.'),{code:'offline'});
-      if(action==='state')return window.socialUser==='self'?{active:data.active,profile:data.self,preferences:{displayName:data.self.displayName,avatar:data.self.avatar},accountPhoto:'https://lh3.googleusercontent.com/a/fixture',code:'ABCDEF0123456789ABCD',counts:{friends:data.friends.length,incoming:data.incoming.length,outgoing:data.outgoing.length,blocked:data.blocked.length}}:{active:false};
+      if(action==='state')return window.socialUser==='self'?{active:data.active,profile:data.self,preferences:{displayName:data.self.displayName,avatar:data.self.avatar},accountPhoto:'https://lh3.googleusercontent.com/a/fixture',code:'ABCDEF0123456789ABCD',counts:{friends:data.friends.length,incoming:data.incoming.length,outgoing:data.outgoing.length,blocked:data.blocked.length},...(input.listKind?{list:{kind:input.listKind,rows:structuredClone(data[input.listKind]),total:data[input.listKind].length,nextCursor:null}}:{})}:{active:false};
       if(action==='weeklyState')return {enabled:!!data.weeklyEnabled,period:ModeAtlasWeeklyRules.period(),score:1200,rank:2,prizes:[500,300,150],minimumScore:100,minimumPlayers:2,awards:[]};
       if(action==='weeklyPreference'){data.weeklyEnabled=input.enabled;return {enabled:input.enabled};}
       if(action==='weeklyList')return {rows:(input.scope==='friends'?[{...data.self,rank:1,score:1200}]:[{...data.friend,rank:1,score:1400},{...data.self,rank:2,score:1200}]).map(({stats,...row})=>row),nextCursor:null};
@@ -54,9 +54,9 @@ async function prepare(page,{active=true,...layout}={}){
     ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
   },active);
   await expect(page.locator('.ma-hub-header h1')).toHaveText('Friends');
-  await expect(page.getByText(active?'Jack · You':'Create your friends profile',{exact:true})).toBeVisible();
+  await expect(active?page.getByRole('button',{name:'My code',exact:true}):page.getByText('Create your friends profile',{exact:true})).toBeVisible();
 }
-test('a saved character refreshes the open Friends portrait and renders in weekly rankings',async({page})=>{
+test('a saved character renders in weekly rankings without a duplicate self banner',async({page})=>{
   await prepare(page);
   await page.evaluate(()=>{
     const character={...ModeAtlasAvatarRules.defaults,hair:'waves'};
@@ -64,7 +64,7 @@ test('a saved character refreshes the open Friends portrait and renders in weekl
     socialFixture.friend.avatar='character';socialFixture.friend.character={...character,skin:'cocoa'};socialFixture.weeklyEnabled=true;
     dispatchEvent(new Event('modeAtlasAvatarChanged'));
   });
-  await expect(page.locator('[data-ma-social-self-avatar] svg')).toHaveCount(1);
+  await expect(page.locator('.ma-social-home>.ma-social-self')).toHaveCount(0);
   await page.getByRole('tab',{name:'Rankings',exact:true}).click();
   await expect(page.locator('.ma-social-row .ma-social-avatar svg')).toHaveCount(2);
 });
@@ -109,7 +109,7 @@ test('profile opt-in, code preview and request controls use the shared screen',a
   await page.getByLabel('Display name',{exact:true}).fill('Jack Wright');await expect(page.locator('.ma-social-form .ma-avatar-editor')).toHaveCount(0);
   await page.getByRole('button',{name:'Create profile',exact:true}).click();expect(await page.evaluate(()=>socialCalls.some(call=>call.action==='updateProfile'))).toBe(false);
   await page.getByLabel('Share my profile through Friends').check();await page.getByRole('button',{name:'Create profile',exact:true}).click();
-  await expect(page.getByText('Jack Wright · You',{exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'My code',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'My code',exact:true}).click();await expect(page.getByLabel('Your friend code',{exact:true})).toHaveValue('ABCD-EF01-2345-6789-ABCD');await fits(page);
   await page.getByRole('button',{name:'← Friends',exact:true}).click();await page.getByRole('button',{name:'Add friend',exact:true}).click();
   await page.getByLabel('Friend code',{exact:true}).fill('1234-5678-90AB-CDEF-1234');await page.getByRole('button',{name:'Find profile',exact:true}).click();
@@ -126,7 +126,7 @@ test('block and opt-out require confirmation; cancelling preserves the current v
   await page.getByLabel('Friends list',{exact:true}).selectOption('blocked');
   await expect(page.locator('.ma-social-row')).toContainText('Blocked profile');
   await expect(page.locator('.ma-social-row')).not.toContainText('Level');
-  await page.getByRole('button',{name:'Edit',exact:true}).click();await page.getByRole('button',{name:'Leave Friends',exact:true}).click();
+  await page.getByRole('button',{name:'My code',exact:true}).click();await page.getByRole('button',{name:'Edit name',exact:true}).click();await page.getByRole('button',{name:'Leave Friends',exact:true}).click();
   await expect(page.getByText(/Your learning progress stays saved/)).toBeVisible();await page.getByRole('button',{name:'Leave Friends',exact:true}).click();
   await expect(page.getByText('Create your friends profile',{exact:true})).toBeVisible();
 });
@@ -153,7 +153,7 @@ test('leaving Friends discards a delayed response without changing the next acco
   await expect(page.locator('.ma-social')).toHaveCount(0);
   await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
   await prepare(page);
-  await expect(page.getByText('Jack · You',{exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'My code',exact:true})).toBeVisible();
 });
 
 
@@ -166,7 +166,7 @@ test('pending requests stay visible outside their list and Refresh shares the My
   await page.getByRole('button',{name:'Accept',exact:true}).click();await expect(page.locator('.ma-social-request-badge')).toHaveCount(0);
 });
 test('Friends edits only the display name and leaves avatar editing in Profile',async({page})=>{
-  await prepare(page);await page.getByRole('button',{name:'Edit',exact:true}).click();
+  await prepare(page);await page.getByRole('button',{name:'My code',exact:true}).click();await page.getByRole('button',{name:'Edit name',exact:true}).click();
   await expect(page.locator('.ma-social-body .ma-avatar-editor')).toHaveCount(0);
   await page.getByRole('textbox',{name:'Display name'}).fill('Jack Atlas');
   await page.getByRole('button',{name:'Save profile',exact:true}).click();
@@ -361,7 +361,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
   test(`weekly opt-in, reset, prizes and filters fit ${layout.native?'iOS':'web'} ${layout.theme} ${layout.width}`,async({page},info)=>{
     await prepare(page,layout);
     expect(await page.locator('.ma-social-body').evaluate(body=>body.firstElementChild.getAttribute('aria-label'))).toBe('Friends and rankings');
-    await expect(page.locator('.ma-social-self').getByRole('button',{name:'Edit',exact:true})).toBeVisible();
+    await expect(page.getByRole('button',{name:'My code',exact:true})).toBeVisible();await expect(page.locator('.ma-social-home>.ma-social-self')).toHaveCount(0);
     await page.getByRole('tab',{name:'Rankings',exact:true}).click();
     await expect(page.getByRole('button',{name:'This week',exact:true})).toHaveAttribute('aria-pressed','true');
     await expect(page.locator('.ma-social-self')).toHaveCount(0);
@@ -388,7 +388,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await page.locator('#maSocialList').getByRole('button',{name:'Friends',exact:true}).click();
     await expect(page.locator('.ma-social-rank')).toHaveText(['1']);
     await page.locator('#maSocialTab-friends').click();
-    await expect(page.locator('.ma-social-self').getByRole('button',{name:'Edit',exact:true})).toBeVisible();
+    await expect(page.getByRole('button',{name:'My code',exact:true})).toBeVisible();await expect(page.locator('.ma-social-home>.ma-social-self')).toHaveCount(0);
     await expect(page.locator('.ma-social-row')).toHaveCount(1);await expect(page.locator('.ma-social-status')).toBeHidden();
     for(const kind of ['incoming','outgoing','blocked','friends']){
       await page.getByLabel('Friends list',{exact:true}).selectOption(kind);
@@ -437,5 +437,19 @@ test('weekly deep links open the ladder and delayed weekly rows cannot replace F
   await expect.poll(()=>page.evaluate(()=>typeof finishWeekly)).toBe('function');
   await page.locator('#maSocialTab-friends').click();await page.evaluate(()=>finishWeekly());
   await expect(page.locator('.ma-social-row')).toHaveCount(1);await expect(page.locator('.ma-weekly-summary')).toHaveCount(0);
-  await expect(page.locator('.ma-social-self').getByRole('button',{name:'Edit',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'My code',exact:true})).toBeVisible();await expect(page.locator('.ma-social-home>.ma-social-self')).toHaveCount(0);
+});
+
+test('Friends opens from one bundled response without waiting for rewards; name editing lives beside the code',async({page})=>{
+  await prepare(page);
+  await page.evaluate(()=>{
+    window.ModeAtlasRewardAccess={...ModeAtlasRewardAccess,refresh:()=>new Promise(()=>{})};
+    socialCalls=[];ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
+  });
+  await expect(page.locator('#maSocialList .ma-social-row')).toHaveCount(1,{timeout:1000});
+  expect(await page.evaluate(()=>socialCalls.filter(call=>['state','list'].includes(call.action)))).toEqual([{action:'state',input:{listKind:'friends'}}]);
+  await expect(page.locator('.ma-social-home>.ma-social-self')).toHaveCount(0);
+  await page.getByRole('button',{name:'My code',exact:true}).click();await expect(page.locator('.ma-social-code-name')).toContainText('Jack');
+  await page.getByRole('button',{name:'Edit name',exact:true}).click();await page.getByLabel('Display name',{exact:true}).fill('Jack Atlas');await page.getByRole('button',{name:'Save profile',exact:true}).click();
+  await page.getByRole('button',{name:'My code',exact:true}).click();await expect(page.locator('.ma-social-code-name')).toContainText('Jack Atlas');
 });
