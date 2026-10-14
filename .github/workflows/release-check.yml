@@ -16,8 +16,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  release-check:
-    name: Audit, regressions, browser smoke, and native web bundle
+  release-validation:
+    name: Audit, website smoke, and native web bundle
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -70,23 +70,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-layout-${{ github.sha }}
-          path: test-results/**/*.png
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Fetch website colour baseline
-        run: git fetch --no-tags --depth=1 origin "$(cat tests/fixtures/web-theme-baseline.txt)"
-
-      - name: Run web and iOS polish matrix
-        env:
-          MODE_ATLAS_TEST_REPORT: .build/test-reports/polish.json
-        run: npm run test:polish -- --project=desktop-chromium
-
-      - name: Upload polish layout evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: polish-layout-${{ github.sha }}
           path: test-results/**/*.png
           if-no-files-found: ignore
           retention-days: 7
@@ -145,6 +128,60 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+
+  polish-check:
+    name: Web and iOS polish (${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Fetch website colour baseline
+        run: git fetch --no-tags --depth=1 origin "$(cat tests/fixtures/web-theme-baseline.txt)"
+      - name: Prepare offline fonts for simulated iOS
+        run: python3 build_ios_fonts.py
+      - name: Run web and iOS polish shard
+        env:
+          MODE_ATLAS_TEST_REPORT: .build/test-reports/polish-${{ matrix.shard }}.json
+        run: npm run test:polish -- --project=desktop-chromium --shard=${{ matrix.shard }}/3
+      - name: Upload polish evidence and timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: polish-${{ matrix.shard }}-${{ github.sha }}
+          path: |
+            test-results/**/*.png
+            .build/test-reports/*.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  release-check:
+    # Preserve the existing required status. It cannot pass if any isolated
+    # shard fails or is cancelled; publication continues to depend on this gate.
+    name: Audit, regressions, browser smoke, and native web bundle
+    needs: [release-validation, polish-check]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every browser and source check
+        env:
+          VALIDATION: ${{ needs.release-validation.result }}
+          POLISH: ${{ needs.polish-check.result }}
+        run: test "$VALIDATION" = success && test "$POLISH" = success
 
   social-backend-check:
     name: Social backend, access rules, callable functions, and deletion triggers

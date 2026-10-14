@@ -119,3 +119,15 @@ test('expanded styles preserve old IDs and exclusive Hunny access covers every m
   assert.equal(catalogue.products.some(p=>p.grant==='hunny-tester'),false);
   for(const [slot,type]of Object.entries(characters.slots))for(const item of rules.catalogue[type])assert.ok(!art.svg({...characters.defaults,[slot]:item.id}).includes('undefined'));
 });
+
+test('companion milestones, dress ownership and old-client projections stay bounded',()=>{
+  const rules=require('../assets/app/mode-atlas-avatar-rules.js'),rewards=require('../assets/app/mode-atlas-reward-rules.js');
+  for(const [pet,level]of [['shiba',10],['calico',15],['rabbit',20],['tanuki',40],['crane',50]]){
+    assert.equal(rules.allowed({...rules.defaults,pet},level-1,{}),false);assert.equal(rules.allowed({...rules.defaults,pet},level,{}),true);
+  }
+  const look={...rules.defaults,outfit:'seigaiha-kimono',outfitColor:'navy',pants:'starfall-skirt',pantsColor:'plum',pet:'japanese-spitz',petName:'Shiro'};
+  assert.equal(rules.allowed(look,99,{}),false);
+  assert.equal(rules.allowed(look,1,{grants:['shop-seigaiha-kimono','shop-starfall-skirt','shop-japanese-spitz']}),true);
+  assert.equal(rules.valid({...look,outfitColor:'coral'}),false);assert.equal(rules.valid({...look,petName:'<script>'}),false);assert.equal(rules.valid({...look,petName:'x'.repeat(25)}),false);
+  for(const version of [1,2]){const older=rules.compatible(look,version);assert.equal(older.version,version);assert.equal(older.pet,undefined);assert.equal(older.outfit,'everyday');assert.equal(rules.valid(older),true);}
+});

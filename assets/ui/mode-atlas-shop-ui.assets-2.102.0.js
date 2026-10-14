@@ -102,7 +102,7 @@
     if(freezes)host.append(el('p','',`${freezes} Streak ${freezes===1?'Freeze':'Freezes'} ready · Used automatically for a missed day.`));
     if(repairs){const row=el('div','ma-streak-items__row'),use=button('Use repair','ma-button ma-button--primary');use.dataset.maUseRepair='';use.disabled=wallet.busy||wallet.status!=='ready'||!wallet.repairDay;use.addEventListener('click',()=>void useRepair());row.append(el('span','',`${repairs} Streak ${repairs===1?'Repair':'Repairs'}`),use);host.append(row);host.append(el('p','ma-atlas-rewards__note',repairDescription(wallet)));}
   }
-  const categories=[['featured','Featured'],['wardrobe','Wardrobe'],['themes','Theme packs'],['streak','Streak items'],['coins','Atlas Coins']];
+  const categories=[['featured','Featured'],['wardrobe','Wardrobe'],['pets','Pets'],['themes','Theme packs'],['streak','Streak items'],['coins','Atlas Coins']];
   function shopLink(label,category='featured',cls='ma-button ma-button--ghost'){
     const link=el('a',cls,label);link.href='/shop/'+(category==='featured'?'':'?category='+category);return link;
   }
@@ -117,7 +117,7 @@
       const symbol=el('span','ma-shop-essential__symbol',product.id==='streak-freeze'?'❄':'↺');symbol.setAttribute('aria-hidden','true');
       if(product.kind==='cosmetic'){
         symbol.classList.add('ma-shop-wardrobe-portrait');
-        root.ModeAtlasAvatarArt.render(symbol,{...root.ModeAtlasAvatarRules.defaults,[Object.keys(root.ModeAtlasAvatarRules.slots).find(key=>root.ModeAtlasAvatarRules.slots[key]===product.rewards[0].type)]:product.rewards[0].id},{portrait:!['outfits','pants'].includes(product.rewards[0].type)});
+        root.ModeAtlasAvatarArt.render(symbol,{...root.ModeAtlasAvatarRules.defaults,[Object.keys(root.ModeAtlasAvatarRules.slots).find(key=>root.ModeAtlasAvatarRules.slots[key]===product.rewards[0].type)]:product.rewards[0].id},{portrait:!['outfits','pants','pets'].includes(product.rewards[0].type),petOnly:product.rewards[0].type==='pets'});
       }
       const copy=el('span','ma-shop-essential__copy');copy.append(el('strong','',product.name),el('span','',product.description));item.append(symbol,copy);
     }
@@ -129,7 +129,7 @@
     const head=el('div','ma-shop-section-heading');head.append(el('h3','',title));
     if(limit)head.append(shopLink('See all',category,'ma-shop-section-link'));
     const grid=el('div',kind==='collection'?'ma-shop-products':'ma-shop-essentials');
-    const products=catalogue.products.filter(product=>product.kind===kind);
+    const products=catalogue.products.filter(product=>product.kind===kind&&(kind!=='cosmetic'||(category==='pets')===(product.rewards[0].type==='pets')));
     if(limit)products.sort((a,b)=>{const rank=id=>{const n=catalogue.featured.indexOf(id);return n<0?Infinity:n;};return rank(a.id)-rank(b.id);});
     for(const product of products)grid.append(productTile(product));
     group.append(head,grid);host.append(group);
@@ -140,12 +140,14 @@
       const intro=el('div','ma-shop-intro');intro.append(el('h3','',full?'Make it yours.':'Top picks'),el('p','',full?'A new look. A little breathing room. Your Atlas.':'Fresh looks and favourites for your next chapter.'));content.append(intro);
       section(content,'themes','Featured collections','collection',full?3:2);
       section(content,'wardrobe','The finishing touches','cosmetic',full?4:2);
+      section(content,'pets','Meet your companion','cosmetic',2);
       section(content,'streak','Streak essentials','consumable',2);
     }else if(category==='wardrobe'){
       const filters=el('label','ma-shop-filter','Explore your wardrobe'),select=el('select');select.dataset.maWardrobeFilter='';select.setAttribute('aria-label','Wardrobe type');
-      for(const [value,label]of [['all','All styles'],['hairstyles','Hair'],['hairColours','Hair colours'],['outfits','Tops'],['pants','Pants'],['headwear','Headwear'],['accessories','Accessories']]){const option=el('option','',label);option.value=value;select.append(option);}
+      for(const [value,label]of [['all','All styles'],['hairstyles','Hair'],['hairColours','Hair colours'],['outfits','Tops & dresses'],['pants','Pants & skirts'],['headwear','Headwear'],['accessories','Accessories']]){const option=el('option','',label);option.value=value;select.append(option);}
       select.addEventListener('change',refresh);filters.append(select);content.append(filters);section(content,'wardrobe','Find your look','cosmetic');
-    }else if(category==='themes')section(content,'themes','A whole new atmosphere','collection');
+    }else if(category==='pets')section(content,'pets','A friend for every chapter','cosmetic');
+    else if(category==='themes')section(content,'themes','A whole new atmosphere','collection');
     else if(category==='streak'){
       const intro=el('div','ma-shop-intro');intro.append(el('h3','','A little breathing room'),el('p','','A freeze covers one missed day automatically. A repair reconnects a break of up to three days, even after you’ve returned.'));content.append(intro);section(content,'streak','Streak essentials','consumable');
     }else if(category==='coins'){

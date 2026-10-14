@@ -80,9 +80,8 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
       await reminder.evaluate(el=>{el.checked=true;});
       await expect(reminder).toHaveCSS('background-color',theme==='light'?'rgb(36, 95, 206)':'rgb(155, 192, 255)');
       await reminder.evaluate(el=>{el.checked=false;});
-      await expect(page.locator(`#maAccount-settings [data-ma-theme-choice="${theme}"]`)).toHaveCSS('background-color',theme==='light'?'rgb(225, 235, 255)':'rgb(38, 59, 91)');
-      await page.locator(`#maAccount-settings [data-ma-theme-choice="${theme}"]`).hover();
-      await expect(page.locator(`#maAccount-settings [data-ma-theme-choice="${theme}"]`)).toHaveCSS('background-color',theme==='light'?'rgb(225, 235, 255)':'rgb(38, 59, 91)');
+      await expect(page.locator('#maAccount-settings [data-ma-theme-choice]')).toHaveCount(0);
+      await expect(page.getByRole('button',{name:'Themes & rewards',exact:true})).toBeVisible();
       await page.screenshot({path:testInfo.outputPath(`settings-${theme}.png`)});
       await page.evaluate(()=>{window.ModeAtlasSettings.close();window.ModeAtlasProfile.open();});
       await page.screenshot({path:testInfo.outputPath(`profile-${theme}.png`)});

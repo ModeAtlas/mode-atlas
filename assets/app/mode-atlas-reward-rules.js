@@ -130,6 +130,9 @@
   const outfits=Object.freeze([
     {id:'everyday',name:'Everyday tee',level:1},{id:'sport',name:'Track top',level:1},{id:'linen',name:'Linen shirt',level:1},
     {id:'crewneck',name:'Cosy jumper',level:1},{id:'striped',name:'Striped tee',level:1},
+    {id:'day-dress',name:'Everyday dress',level:1},{id:'pinafore',name:'Pinafore dress',level:1},
+    {id:'meadow-dress',name:'Meadow dress',grant:'shop-meadow-dress',kind:'shop'},
+    {id:'seigaiha-kimono',name:'Ocean waves kimono',grant:'shop-seigaiha-kimono',kind:'shop'},
     {id:'varsity',name:'Varsity jacket',grant:'shop-varsity',kind:'shop'},{id:'cable-knit',name:'Cable knit',grant:'shop-cable-knit',kind:'shop'},
     {id:'hunny',name:'Hunny jumper',grant:'shop-hunny-jumper',audience:'hunny-tester',kind:'exclusive'},
     {id:'grove',name:'Grove cardigan',level:5},{id:'bridge',name:'Explorer jacket',level:10},{id:'summit',name:'Summit coat',level:20},
@@ -144,6 +147,8 @@
   ].map(item=>Object.freeze({...item,...(item.tones?{tones:Object.freeze(item.tones)}:{})})));
   const pants=Object.freeze([
     {id:'classic',name:'Classic trousers',level:1},{id:'denim',name:'Everyday jeans',level:1},{id:'chinos',name:'Sand chinos',level:1},{id:'joggers',name:'Soft joggers',level:1},
+    {id:'a-line',name:'A-line skirt',level:1},{id:'pleated-skirt',name:'Pleated skirt',level:1},
+    {id:'starfall-skirt',name:'Starfall skirt',grant:'shop-starfall-skirt',kind:'shop'},
     {id:'trail',name:'Trail trousers',level:5},{id:'cargo',name:'Explorer cargos',level:10},{id:'alpine',name:'Alpine trousers',level:20},
     {id:'pinstripe',name:'Tailored pinstripes',grant:'shop-pinstripe',kind:'shop'},
     {id:'aurora',name:'Aurora joggers',grant:'shop-aurora',kind:'shop'},
@@ -161,7 +166,16 @@
     {id:'none',name:'No accessory',level:1},{id:'hunny',name:'Hunny pendant',grant:'shop-hunny-pendant',audience:'hunny-tester',kind:'exclusive'},{id:'trail-scarf',name:'Trail scarf',level:10},{id:'atlas-pin',name:'Atlas pin',level:35},
     {id:'round-glasses',name:'Round glasses',grant:'shop-round-glasses',kind:'shop'}
   ].map(Object.freeze));
-  const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories});
+  const pets=Object.freeze([
+    {id:'none',name:'No companion',level:1},
+    {id:'shiba',name:'Shiba inu',level:10},{id:'calico',name:'Calico cat',level:15},
+    {id:'rabbit',name:'Rabbit',level:20},{id:'tanuki',name:'Tanuki',level:40},
+    {id:'crane',name:'Red-crowned crane',level:50},
+    {id:'japanese-spitz',name:'Japanese Spitz',grant:'shop-japanese-spitz',kind:'shop'},
+    {id:'moon-fox',name:'Moon fox',grant:'shop-moon-fox',kind:'shop'},
+    {id:'koi',name:'Golden koi',grant:'shop-koi',kind:'shop'}
+  ].map(Object.freeze));
+  const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,pets});
   function item(type,id){return catalogue[type]?.find(reward=>reward.id===id)||null;}
   function unlocked(reward,level,access={}){
     if(!reward)return false;
@@ -171,5 +185,5 @@
   function allowed(type,id,level,access){return unlocked(item(type,id),level,access);}
   function appearance(id,level,access){const reward=item('frames',id);return unlocked(reward,level,access)?reward:landmarks[0];}
   function banner(id,level,access){const reward=item('banners',id);return unlocked(reward,level,access)?reward:banners[0];}
-  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,catalogue,item,unlocked,visible,allowed});
+  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,pets,catalogue,item,unlocked,visible,allowed});
 });

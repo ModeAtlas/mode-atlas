@@ -67,7 +67,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
   const moderation=createModeration({db,identities,staff,now});
   const rewards=createRewards({db,now});
   const commerce=createCommerce({db,auth,now});
-  const avatars=createAvatars({db,now});
+  const avatars=createAvatars({db,identities,now});
   const weekly=createWeekly({db,now,commerce});
   const notifications=createNotifications({db,messaging,weekly,now});
   async function decorate(profiles){
@@ -108,7 +108,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
       const commitName=await identities.claim(tx,uid,profile,account.profile);
       const rewardAccess=await rewards.read(user,tx);
       const summary=projectSave(save.data(),profile.timeZone,save.updateTime?.toMillis()||0,rewardAccess);
-      const avatar=await avatars.prepare(tx,user,{avatar:profile.avatar,...(data.character===undefined?{}:{character:data.character}),...(data.avatarRevision===undefined?{}:{revision:data.avatarRevision})},{legacy:account.profile,level:summary.level,access:rewardAccess});
+      const avatar=await avatars.prepare(tx,user,{avatar:profile.avatar,displayName:profile.displayName,...(profile.greeting===undefined?{}:{greeting:profile.greeting}),...(data.character===undefined?{}:{character:data.character}),...(data.avatarRevision===undefined?{}:{revision:data.avatarRevision})},{legacy:account.profile,level:summary.level,access:rewardAccess});
       delete profile.avatarURL;Object.assign(profile,avatar.profile);avatar.commit();
       commitName();
       tx.set(ref,{...account,active:true,profile,code,summary,rewardAccess,updatedAt:now()});
@@ -356,7 +356,10 @@ function createSocial({db,auth,messaging,now=Date.now}){
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
     if(action==='rewards')return rewards.read(user);
-    if(action==='avatarState'||action==='avatarUpdate')return avatars.run(user,action,data);
+    if(action==='avatarState'||action==='avatarUpdate'){
+      if(action==='avatarUpdate'&&data.displayName!==undefined)await identities.ensureReady();
+      return avatars.run(user,action,data);
+    }
     if(['shop','shopPurchase','shopUse','shopDeveloper'].includes(action))return commerce.run(user,action,data);
     if(action==='notificationState')return notifications.state(uid);
     if(action==='configureNotifications')return notifications.configure(uid,data);

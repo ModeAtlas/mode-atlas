@@ -107,6 +107,9 @@
     if(tab==='rankings'&&metric==='weekly')void loadWeekly(list);
     else if(tab==='friends'&&firstPage?.kind===kind)renderPage(list,firstPage,null);
     else void loadPage(list,null);
+    if(tab==='friends'){
+      const privacy=el('details','ma-social-privacy');privacy.append(el('summary','','Friends privacy'),el('p','ma-social-note','Leaving removes your friends profile, code, connections and requests. Your learning progress stays saved.'),button('Leave Friends',()=>confirmAction('Leave Friends?','Your friends profile, code, connections, requests and blocked list will be removed. Your learning progress stays saved.','Leave Friends','leave',{},load),'ma-button ma-button--danger'));body.append(privacy);
+    }
   }
   function score(row){
     if(metric==='xp'||metric==='weekly')return `${number(row.score)} XP`;
@@ -189,25 +192,20 @@
     }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');list.append(button('Try again',home));}}
   }
   async function editProfile(){
+    if(state?.active){void root.ModeAtlasAvatarUI.open();return;}
     screen();
-    const editing=state?.active;if(editing)back('Friends',home);
-    body.append(el('h3','',editing?'Your friends profile':'Create your friends profile'),el('p','ma-social-note','People with your code can see your name, avatar, level and title. Accepted friends can also see your study streak, mastery and learning totals.'));
-    const form=el('form','ma-social-form'),label=el('label','ma-social-field','Display name'),input=el('input');input.name='displayName';input.autocomplete='nickname';input.maxLength=48;input.required=true;input.value=state?.preferences?.displayName||'';input.placeholder='Choose a name';label.append(input);form.append(label);
+    body.append(el('h3','','Create your friends profile'),el('p','ma-social-note','People with your code can see your name, avatar, level and title. Accepted friends can also see your study streak, mastery and learning totals.'));
+    const form=el('form','ma-social-form'),label=el('label','ma-social-field','Display name'),input=el('input');input.name='displayName';input.autocomplete='nickname';input.maxLength=48;input.required=true;input.value=root.ModeAtlasAvatar.current()?.displayName||'';input.placeholder='Choose a name';label.append(input);form.append(label);
     const hint=el('p','ma-social-note','2–24 characters. Display names are unique.');hint.id='maSocialNameHelp';input.setAttribute('aria-describedby',hint.id);form.append(hint);
-    const greetingLabel=el('label','ma-social-field','Your avatar’s message'),greeting=el('input');greeting.name='greeting';greeting.maxLength=240;greeting.value=state?.preferences?.greeting||'';greeting.placeholder='A little progress every day!';greetingLabel.append(greeting);
-    const greetingHelp=el('p','ma-social-note','Up to 120 characters. Only accepted friends see your message.');greetingHelp.id='maSocialGreetingHelp';greeting.setAttribute('aria-describedby',greetingHelp.id);
-    greeting.addEventListener('input',()=>greeting.setCustomValidity(root.ModeAtlasSocialIdentity.validGreeting(root.ModeAtlasSocialIdentity.cleanGreeting(greeting.value))?'':'Use a friendly message of up to 120 characters.'));form.append(greetingLabel,greetingHelp);
-    if(!editing){const consent=el('label','ma-social-consent'),check=el('input');check.type='checkbox';check.required=true;check.name='consent';consent.append(check,el('span','','Share my profile through Friends'));form.append(consent);}
-    const submit=button(editing?'Save profile':'Create profile',null,'ma-button ma-button--primary');submit.type='submit';form.append(submit);
+    {const consent=el('label','ma-social-consent'),check=el('input');check.type='checkbox';check.required=true;check.name='consent';consent.append(check,el('span','','Share my profile through Friends'));form.append(consent);}
+    const submit=button('Create profile',null,'ma-button ma-button--primary');submit.type='submit';form.append(submit);
     form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;const uid=owner;run(async()=>{
       if(root.KanaCloudSync?.getUser?.()?.uid!==uid)throw Object.assign(new Error('The account changed.'),{code:'account-changed'});
-      return root.ModeAtlasSocial.call('updateProfile',{displayName:input.value,greeting:greeting.value,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'});
+      return root.ModeAtlasSocial.call('updateProfile',{displayName:input.value,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'});
     },load);});body.append(form);
-    if(editing)body.append(button('Leave Friends',()=>confirmAction('Leave Friends?','Your friends profile, code, connections, requests and blocked list will be removed. Your learning progress stays saved.','Leave Friends','leave',{},()=>editProfile()),'ma-button ma-button--danger'));
   }
   function myCode(){
     screen();back('Friends',home);body.append(el('h3','','Your friend code'),el('p','ma-social-note','Share this code with someone you want to add. You choose which requests to accept.'));
-    const name=el('div','ma-social-code-name');name.append(el('strong','',state.profile.displayName),button('Edit profile',()=>editProfile()));body.append(name);
     const input=el('input','ma-social-code');input.readOnly=true;input.setAttribute('aria-label','Your friend code');input.value=state.code.match(/.{1,4}/g).join('-');input.addEventListener('click',()=>input.select());body.append(input);
     const actions=el('div','ma-social-tools');
     if(root.AtlasPlatform.getCapabilities().friendSharing){
@@ -244,7 +242,9 @@
       const layout=el('div','ma-social-profile-content'),stage=el('section','ma-social-character'),figure=el('div','ma-social-character__figure'),speech=el('p','ma-social-character__speech');
       stage.classList.toggle('ma-social-character--visitor',!result.friend);stage.setAttribute('aria-label',profile.displayName+'’s avatar');figure.setAttribute('aria-hidden','true');root.ModeAtlasAvatarArt.render(figure,profile.character);
       speech.textContent=result.friend?(profile.greeting||'A little progress every day. Let’s keep learning!'):'We aren’t friends yet. Want to learn together?';
-      stage.append(figure,speech);layout.append(stage);body.append(layout);
+      stage.append(speech,figure);
+      if(profile.character?.pet&&profile.character.pet!=='none'){const pet=root.ModeAtlasRewardRules.item('pets',profile.character.pet);if(pet)stage.append(el('span','ma-social-pet-name',profile.character.petName||pet.name));}
+      layout.append(stage);body.append(layout);
       if(uid!==owner){
         const connection=el('div','ma-social-tools ma-social-connection');
         if(result.canRequest)connection.append(button('Add friend',()=>run(()=>root.ModeAtlasSocial.call('sendRequest',{uid}),()=>showProfile(uid)),'ma-button ma-button--primary'));

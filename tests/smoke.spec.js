@@ -233,6 +233,8 @@ test.describe('Mode Atlas core smoke tests', () => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/kana/');
       await page.locator('[data-settings-open]:visible').first().click();
+      await page.getByRole('button',{name:'Themes & rewards',exact:true}).click();
+      await page.locator('[data-reward-category=themes] summary').click();
       await page.locator('[data-ma-theme-choice="light"]').click();
       await expect(page.locator('html')).toHaveAttribute('data-ma-theme', 'light');
 
