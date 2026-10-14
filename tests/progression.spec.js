@@ -48,7 +48,9 @@ test('expanded wardrobe stays exclusive and a failed save keeps the draft for re
   });
   await page.locator('[data-ma-avatar-open]').click();const dialog=page.getByRole('dialog',{name:'Your avatar'});
   await expect(dialog.locator('[data-avatar-slot=skin]')).toHaveCount(11);
-  await expect(dialog.locator('[data-avatar-slot=hair]')).toHaveCount(14);
+  await expect(dialog.locator('[data-avatar-slot=hair]')).toHaveCount(20);
+  for(const name of ['Classic side part','French crop','Messy fringe','Slick back','Medium flow','Bald'])await expect(dialog.getByRole('button',{name,exact:true})).toBeVisible();
+  for(const name of ['Sculpted pompadour','Braided undercut'])await expect(dialog.getByRole('button',{name,exact:true})).toHaveCount(0);
   await dialog.getByRole('button',{name:'Ivory',exact:true}).click();await dialog.getByRole('button',{name:'Twin braids',exact:true}).click();
   await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();await expect(dialog.getByRole('button',{name:'Hunny jumper',exact:true})).toHaveCount(0);
   await page.evaluate(()=>{wardrobeGrants=['hunny-tester','shop-hunny-jumper','shop-hunny-pendant'];});
@@ -262,8 +264,8 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
       await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
     }
     await page.evaluate(()=>{document.documentElement.dataset.maLargeText='true';document.documentElement.style.fontSize='24px';});
-    await shop.getByRole('button',{name:'Preview Midnight collection'}).scrollIntoViewIfNeeded();
-    await expect(shop.getByRole('button',{name:'Preview Midnight collection'})).toBeVisible();
+    await shop.getByRole('button',{name:'Preview Sakura collection'}).scrollIntoViewIfNeeded();
+    await expect(shop.getByRole('button',{name:'Preview Sakura collection'})).toBeVisible();
     expect(await shop.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
     expect(await shop.evaluate(node=>{
       const last=node.querySelector('.ma-shop-product:last-child').getBoundingClientRect();

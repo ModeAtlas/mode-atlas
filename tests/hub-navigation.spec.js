@@ -10,8 +10,9 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   },{native,theme});
   if(native){const device=await page.context().newCDPSession(page);await device.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}});}
   const nav=()=>page.locator(native?'.ma-ios-tabs':'.ma-nav__links');
+  const destinations=native?['Atlas','Learn','Progress','Friends']:['Atlas','Learn','Progress','Friends','Shop'];
   await page.goto('/learn/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
-  await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(['Atlas','Learn','Progress','Friends']);
+  await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(destinations);
   await expect(page.getByRole('link',{name:'Open Word Bank',exact:true})).toBeVisible();
   for(const [name,href] of [['Reading','/reading/'],['Writing','/writing/'],['Results','/results/'],['Kana overview','/kana/'],['Open Word Bank','/wordbank/']]){
     const link=page.getByRole('link',{name,exact:true});await expect(link).toHaveAttribute('href',href);
@@ -55,7 +56,7 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
     await expect(page.locator('.ma-hub-header h1')).toHaveText('Learn');
   }
   await page.getByRole('link',{name:'Reading',exact:true}).click();
-  await expect(page).toHaveURL(/\/reading\/$/);await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(['Atlas','Learn','Progress','Friends']);
+  await expect(page).toHaveURL(/\/reading\/$/);await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(destinations);
   await nav().getByRole('link',{name:'Progress',exact:true}).click();
   await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   await expect(page.locator('.ma-routine-goal')).toHaveCount(5);
