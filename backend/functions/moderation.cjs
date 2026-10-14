@@ -3,10 +3,13 @@ const {createHash}=require('node:crypto');
 const {FieldPath}=require('firebase-admin/firestore');
 const {HttpsError}=require('firebase-functions/v2/https');
 const policy=require('./shared/mode-atlas-social-identity.js');
+const characters=require('./shared/mode-atlas-avatar-rules.js');
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const fail=(code,message)=>{throw new HttpsError(code,message);};
 const reasons=new Set(['name','avatar','harassment','other']);
 function fields(data,allowed){if(!data||typeof data!=='object'||Array.isArray(data)||Object.keys(data).some(key=>!allowed.includes(key)))fail('invalid-argument','Unsupported report request.');}
+function portrait(profile){return {displayName:profile.displayName,avatar:profile.avatar,avatarURL:profile.avatarURL||null,
+  ...(profile.avatar==='character'?{character:characters.normalize(profile.character)}:{})};}
 function createModeration({db,identities,staff,now=Date.now}){
   const reports=db.collection('socialReports'),restrictions=db.collection('socialRestrictions');
   const account=uid=>db.doc('socialAccounts/'+uid);
@@ -26,7 +29,7 @@ function createModeration({db,identities,staff,now=Date.now}){
       const code=typeof data.code==='string'?data.code.replace(/[\s-]/g,'').toUpperCase():'';
       const competitors=a.weekly?.enabled===true&&b.weekly?.enabled===true&&!b.restricted;
       if(!connected&&!competitors&&!blocked.data()?.by?.includes(uid)&&!(code&&code===b.code))fail('permission-denied','Report a profile you have encountered in Friends.');
-      const snapshot={displayName:b.profile.displayName,avatar:b.profile.avatar,avatarURL:b.profile.avatarURL||null};
+      const snapshot=portrait(b.profile);
       const ref=reports.doc(hash(uid+':'+target+':'+JSON.stringify(snapshot))),existing=await tx.get(ref);
       if(existing.exists)return {ok:true};
       const at=now(),old=limitDoc.data(),window=old&&at-old.at<3600000?old:{at,count:0};
@@ -47,7 +50,7 @@ function createModeration({db,identities,staff,now=Date.now}){
       const target=await staff.user(report.target),access=await db.runTransaction(tx=>staff.read(tx,user,target));
       staff.requireStaff(access);
       rows.push({id:doc.id,target:report.target,canAct:access.canAct,role:access.targetRole,reason:report.reason,note:report.note,snapshot:report.snapshot,createdAt:report.createdAt,
-        current:current?.profile?{displayName:current.profile.displayName,avatar:current.profile.avatar,avatarURL:current.profile.avatarURL||null,restricted:current.restricted===true}:null});
+        current:current?.profile?{...portrait(current.profile),restricted:current.restricted===true}:null});
     }
     return {rows,nextCursor:found.size===20?found.docs.at(-1).id:null};
   }

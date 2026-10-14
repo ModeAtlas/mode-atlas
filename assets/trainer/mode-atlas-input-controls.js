@@ -25,7 +25,7 @@
       const c8 = byId('choice8Btn');
       setElementVisible(keyboardWrapEl, keyboard);
       setElementHidden(choiceGridEl, keyboard);
-      inputEl.placeholder = keyboard && settings.keyboardInputType === 'romaji' ? 'Type romaji, then press Enter' : 'Type kana…';
+      inputEl.placeholder = keyboard && settings.keyboardInputType === 'romaji' ? 'Convert to kana, then press Enter' : 'Type kana…';
       if(keyboardNoteEl) keyboardNoteEl.textContent = !keyboard
         ? 'Choose the matching kana, or switch to Keyboard in Practice setup.'
         : settings.keyboardInputType === 'romaji'

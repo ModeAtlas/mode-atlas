@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import tempfile
 from build_ios_fonts import build_fonts
+from public_runtime import is_public_runtime_file
 
 ROOT = Path(__file__).resolve().parent
 VERSION_FILE = ROOT / "assets/app/mode-atlas-version.js"
@@ -49,7 +50,11 @@ def is_revisioned_runtime_asset(path: Path, revision: str) -> bool:
 
 def copy_tree_runtime(source: Path, destination: Path, revision: str) -> None:
     for path in sorted(source.rglob("*")):
+        if path.is_symlink():
+            raise ValueError(f"Symbolic links cannot be bundled: {path.relative_to(ROOT)}")
         if not path.is_file() or path.name == ".DS_Store":
+            continue
+        if not is_public_runtime_file(path.relative_to(source.parent)):
             continue
         if not is_revisioned_runtime_asset(path, revision):
             continue

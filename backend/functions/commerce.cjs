@@ -118,7 +118,8 @@ function createCommerce({db,auth,now=Date.now}){
       const [record,awards,save,rotation,deleting,deleted,prior]=await tx.getAll(...refs);
       if(deleting.exists||deleted.exists&&(Date.parse(user.metadata?.creationTime)||0)<=deleted.data().at)fail('unauthenticated','This account is being deleted.');
       const w=wallet(record.data()),access={...(awards.data()||{}),grants:{...(awards.data()?.grants||{})}};
-      const original=JSON.stringify(w),days=studyDaysFromSave(save.data(),zone),offers=catalogue.products.map(p=>catalogue.offer(p,rotation.data()?.offers,at)).filter(Boolean);
+      const original=JSON.stringify(w),days=studyDaysFromSave(save.data(),zone),eligibility=entitlement(user,access,at);
+      const offers=catalogue.products.map(p=>catalogue.offer(p,rotation.data()?.offers,at,eligibility)).filter(Boolean);
       creditLevels(tx,ref,w,save.data(),at);
       if(legacy){if(JSON.stringify(w)!==original||record.data()?.version===1)tx.set(ref,w);return {version:1,currency:'atlas-tokens',balance:w.balance,purchasesEnabled:false};}
       reconcile(w,days,today,zone);

@@ -6,7 +6,7 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.97.0
+Version: 2.98.0
 
 Development and release requirements for both platforms: [Web and iOS architecture](docs/ios-web-architecture.md).
 Avatar saving, wardrobe expansion and weekly coins: [2.97.0](docs/development-2.97.0.md).

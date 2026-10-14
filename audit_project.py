@@ -544,8 +544,8 @@ def main() -> int:
         fail(errors, "cloud-sync does not expose auth-owned initial hydration readiness")
     if "cloudSyncPromise" not in cloud or "performSyncOnce" not in cloud:
         fail(errors, "cloud writes do not have a single in-flight sync owner")
-    if cloud.count("currentUser.uid !== uid") < 3:
-        fail(errors, "cloud operations are missing account-change guards")
+    if len(re.findall(r"if\s*\(!sameAccount\(uid,\s*epoch\)\)\s*return false", cloud)) < 5 or "currentUser?.uid===uid&&accountEpoch===epoch&&accountSaveReady" not in cloud:
+        fail(errors, "cloud operations are missing account and session-generation guards")
     if "snap.exists() && !hasLocalImportGuard()" not in cloud:
         fail(errors, "cloud sync does not protect authoritative manual imports from remote merge races")
     if "const localSection = snapshotSectionFixed(name);" not in cloud or "snapshot.sections[name] = localSection;" not in cloud:

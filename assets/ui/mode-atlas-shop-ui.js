@@ -50,7 +50,7 @@
       for(const product of catalogue.products){
         const item=host.querySelector('[data-ma-shop-product="'+product.id+'"]');
         const isOwned=owned(product)||wallet.owned?.includes(product.id),offer=wallet.offers?.find(p=>p.id===product.id);
-        item.hidden=wallet.offers!==null&&!offer;
+        item.hidden=!!product.audience&&!offer||wallet.offers!==null&&!offer;
         item.querySelector('[data-ma-shop-availability]').textContent=product.kind==='consumable'?`${availability(product,wallet)} · ${wallet.inventory?.[product.id]||0} ready`:availability(product,wallet);
         item.dataset.owned=String(isOwned);
         const ending=item.querySelector('[data-ma-shop-ends]');

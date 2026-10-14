@@ -434,7 +434,9 @@ test('reward policy verifies the audience, admin role, event windows and revocat
   assert.equal(entitlement({...account,email:'admin@mode-atlas.com'}, {},at).allCustom,true);
   assert.equal(entitlement({...account,email:'admin@mode-atlas.com',emailVerified:false}, {},at).allCustom,false);
   const characters=require('../functions/shared/mode-atlas-avatar-rules.js'),look={...characters.defaults,outfit:'hunny',headwear:'hunny',accessory:'hunny'};
-  for(const [user,allowed]of [[account,true],[{...account,email:'ordinary@example.test'},false],[{...account,emailVerified:false},false],[{...account,disabled:true},false],[{...account,email:'admin@mode-atlas.com'},true]])assert.equal(characters.allowed(look,1,entitlement(user,{},at,audience)),allowed);
+  const bought={grants:{'shop-hunny-jumper':{},'shop-hunny-pendant':{}}};
+  assert.equal(characters.allowed(look,1,entitlement(account,{},at,audience)),false);
+  for(const [user,allowed]of [[account,true],[{...account,email:'ordinary@example.test'},false],[{...account,emailVerified:false},false],[{...account,disabled:true},false],[{...account,email:'admin@mode-atlas.com'},true]])assert.equal(characters.allowed(look,1,entitlement(user,bought,at,audience)),allowed);
 });
 
 test('custom rewards need no Friends enrolment and never trust forged tokens or save grants',async()=>{
@@ -860,6 +862,48 @@ test('name-only Friends edits preserve the canonical character and new wardrobe 
   finally{await db.doc('shopCatalogue/current').delete();}
   await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-textured-fade':{revoked:true}}});
   assert.equal((await b.call('lookup',{code:a.code})).profile.character.hair,'sweep');
+});
+
+test('moderation preserves the reported character and members cannot read the report queue',async()=>{
+  const a=await learner('AvatarReported'),b=await learner('AvatarReporter');
+  const defaults=require('../functions/shared/mode-atlas-avatar-rules.js').defaults;
+  const avatar=await a.call('avatarState'),original={...defaults,hair:'braids',outfit:'striped'};
+  const saved=await a.call('avatarUpdate',{avatar:'character',character:original,revision:avatar.revision});
+  await b.call('reportProfile',{uid:a.uid,reason:'avatar',note:'Please review this look.',code:a.code});
+  await a.call('avatarUpdate',{avatar:'character',character:{...defaults,hair:'crop'},revision:saved.revision});
+  await assert.rejects(b.call('listReports'),{code:'PERMISSION_DENIED'});
+  let cursor,report;
+  do{
+    const result=await service.call({auth:{uid:'legacy-admin'},data:{action:'listReports',data:cursor?{cursor}:{},expectedUid:'legacy-admin'}});
+    report=result.rows.find(row=>row.target===a.uid);cursor=result.nextCursor;
+  }while(!report&&cursor);
+  assert.ok(report);
+  assert.deepEqual(report.snapshot.character,original);assert.equal(report.current.character.hair,'crop');
+  assert.equal(report.reporter,undefined);assert.ok(!JSON.stringify(report).includes(a.email));
+});
+
+test('Hunny offers require eligibility and separate ten-coin purchases, with atomic retries and revocation',async()=>{
+  const a=await learner('HunnyEligible'),b=await learner('HunnyOther');
+  const defaults=require('../functions/shared/mode-atlas-avatar-rules.js').defaults;
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'hunny-tester':{}}});
+  await db.doc('commerceAccounts/'+a.uid).set({version:1,currency:'atlas-tokens',balance:20});
+  const before=await a.call('shop',{version:2,timeZone:'UTC'});
+  assert.deepEqual(before.offers.filter(p=>p.id.startsWith('hunny-')).map(p=>p.coinPrice),[10,10]);
+  assert.equal((await b.call('shop',{version:2,timeZone:'UTC'})).offers.some(p=>p.id.startsWith('hunny-')),false);
+  for(const id of ['hunny-jumper','hunny-pendant'])await assert.rejects(b.call('shopPurchase',{requestId:crypto.randomUUID(),productId:id,coinPrice:10,timeZone:'UTC'}),{code:'FAILED_PRECONDITION'});
+  let avatar=await a.call('avatarState');
+  await assert.rejects(a.call('avatarUpdate',{avatar:'character',character:{...defaults,outfit:'hunny'},revision:avatar.revision}),{code:'PERMISSION_DENIED'});
+  const buy={requestId:crypto.randomUUID(),productId:'hunny-jumper',coinPrice:10,timeZone:'UTC'};
+  await a.call('shopPurchase',buy);assert.equal((await a.call('shopPurchase',buy)).balance,before.balance-10);
+  await a.call('shopPurchase',{...buy,requestId:crypto.randomUUID(),productId:'hunny-pendant'});
+  avatar=await a.call('avatarUpdate',{avatar:'character',character:{...defaults,outfit:'hunny',accessory:'hunny',headwear:'hunny'},revision:avatar.revision});
+  assert.equal(avatar.character.outfit,'hunny');assert.equal(avatar.character.accessory,'hunny');
+  await db.doc('shopCatalogue/current').set({offers:{'hunny-jumper':{enabled:false}}});
+  try{assert.equal((await a.call('avatarState')).character.outfit,'hunny');}
+  finally{await db.doc('shopCatalogue/current').delete();}
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'hunny-tester':{revoked:true},'shop-hunny-jumper':{},'shop-hunny-pendant':{}}});
+  assert.equal((await a.call('avatarState')).character.outfit,'everyday');
+  assert.equal((await b.call('lookup',{code:a.code})).profile.character.accessory,'none');
 });
 
 test('weekly coins migrate a legacy wallet, keep purchases and do not backfill settled prizes',async()=>{
