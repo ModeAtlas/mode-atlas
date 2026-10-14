@@ -863,7 +863,7 @@ test('avatar messages are bounded, friends-only, preserved by old edits and avai
   const message='A little progress every day! 🌱';await a.call('updateProfile',{displayName:'GreetingOwner',timeZone:'UTC',greeting:message});
   for(const greeting of ['x'.repeat(121),'<img onerror=alert(1)>','hello\u202eworld',42])await assert.rejects(a.call('updateProfile',{displayName:'GreetingOwner',timeZone:'UTC',greeting}),{code:'INVALID_ARGUMENT'});
   assert.equal((await b.call('lookup',{code:a.code})).profile.greeting,undefined);
-  let shown=await b.call('profile',{uid:a.uid});assert.equal(shown.profile.greeting,undefined);assert.equal(shown.profile.character.version,2);assert.equal(shown.profile.stats,undefined);
+  let shown=await b.call('profile',{uid:a.uid});assert.equal(shown.profile.greeting,undefined);assert.equal(shown.profile.character.version,3);assert.equal(shown.profile.stats,undefined);
   await b.call('sendRequest',{uid:a.uid});assert.equal((await b.call('profile',{uid:a.uid})).profile.greeting,undefined);await a.call('accept',{uid:b.uid});
   assert.equal((await b.call('profile',{uid:a.uid})).profile.greeting,message);
   await a.call('updateProfile',{displayName:'GreetingChanged',timeZone:'UTC'});assert.equal((await b.call('profile',{uid:a.uid})).profile.greeting,message);
@@ -885,7 +885,7 @@ test('name-only Friends edits preserve the canonical character and new wardrobe 
   const select=character=>a.call('avatarUpdate',{avatar:'character',character,revision:state.revision});
   state=await select({...defaults,hair:'curtains',skin:'ivory',outfit:'crewneck'});
   await a.call('updateProfile',{displayName:'WardrobeRenamed',timeZone:'UTC'});
-  assert.deepEqual((await a.call('avatarState',{characterVersion:2})).character,state.character);
+  assert.deepEqual((await a.call('avatarState',{characterVersion:3})).character,state.character);
   assert.deepEqual((await b.call('lookup',{code:a.code})).profile.character,state.character);
   for(const character of [{...defaults,hair:'textured-fade'},{...defaults,hair:'ribbon-waves'},{...defaults,outfit:'varsity'},{...defaults,outfit:'hunny'},{...defaults,headwear:'hunny'},{...defaults,accessory:'hunny'}]){
     state=await a.call('avatarState');await assert.rejects(select(character),{code:'PERMISSION_DENIED'});
@@ -1020,4 +1020,51 @@ test('one repair bridges three dates atomically; partial and complete offline ca
   await saveRef.set(studied([...original,'2026-10-03','2026-10-04','2026-10-05']));result=await state();assert.equal(result.inventory['streak-repair'],1);assert.deepEqual(result.protection,[]);
   result=await state();assert.equal(result.inventory['streak-repair'],1);const balance=result.balance;
   await commerce.run(user,'shopUse',request);result=await state();assert.equal(result.inventory['streak-repair'],1);assert.equal(result.balance,balance);
+});
+
+test('pets and coloured dresses enforce ownership, survive older saves and revoke cleanly',async()=>{
+  const a=await learner('PetOwner'),chars=require('../functions/shared/mode-atlas-avatar-rules.js');
+  let current=await a.call('avatarState',{characterVersion:3});
+  const update=character=>a.call('avatarUpdate',{avatar:'character',character,revision:current.revision});
+  for(const item of [{pet:'shiba'},{pet:'japanese-spitz'},{outfit:'meadow-dress'},{outfit:'seigaiha-kimono'},{pants:'starfall-skirt'}])await assert.rejects(update({...chars.defaults,...item}),{code:'PERMISSION_DENIED'});
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-japanese-spitz':{},'shop-seigaiha-kimono':{},'shop-starfall-skirt':{}}});
+  current=await update({...chars.defaults,pet:'japanese-spitz',petName:'雪',outfit:'seigaiha-kimono',outfitColor:'navy',pants:'starfall-skirt',pantsColor:'plum'});
+  for(const version of [1,2]){
+    const older=await a.call('avatarState',{characterVersion:version});assert.equal(older.character.pet,undefined);assert.equal(older.character.outfit,'everyday');
+    await a.call('avatarUpdate',{avatar:'character',character:{...older.character,hair:'bob',outfitColor:'coral'},revision:older.revision});
+    current=await a.call('avatarState',{characterVersion:3});assert.equal(current.character.petName,'雪');assert.equal(current.character.outfit,'seigaiha-kimono');assert.equal(current.character.pants,'starfall-skirt');assert.equal(current.character.pantsColor,'plum');
+  }
+  for(const petName of ['<script>','x'.repeat(25),'fuck'])await assert.rejects(update({...current.character,petName}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('avatarUpdate',{revision:current.revision,petNames:{'moon-fox':'Silver'}}),{code:'PERMISSION_DENIED'});
+  await assert.rejects(a.call('avatarUpdate',{revision:current.revision,petNames:{'japanese-spitz':'<script>'}}),{code:'INVALID_ARGUMENT'});
+  current=await a.call('avatarUpdate',{revision:current.revision,character:current.character,petNames:{'japanese-spitz':'雪'}});assert.equal(current.petNames['japanese-spitz'],'雪');
+  await assert.rejects(update({...current.character,outfitColor:'coral'}),{code:'INVALID_ARGUMENT'});
+  await db.doc('shopCatalogue/current').set({offers:{'japanese-spitz':{enabled:false}}});
+  try{current=await update({...current.character,petName:'Snow'});assert.equal(current.character.pet,'japanese-spitz');}finally{await db.doc('shopCatalogue/current').delete();}
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{}});current=await a.call('avatarState',{characterVersion:3});assert.equal(current.character.pet,'none');assert.equal(current.character.petName,'');assert.deepEqual(current.petNames,{});
+  current=await update(current.character);assert.equal(current.character.outfit,'everyday');
+});
+test('avatar identity edits are atomic, unique and private until Friends opt-in',async()=>{
+  const a=await learner('UnifiedOwner'),b=await learner('UnifiedTaken'),chars=require('../functions/shared/mode-atlas-avatar-rules.js');
+  const current=await a.call('avatarState',{characterVersion:3});
+  await assert.rejects(a.call('avatarUpdate',{revision:current.revision,character:{...chars.defaults,hair:'bob'},displayName:'UnifiedTaken'}),{code:'ALREADY_EXISTS'});
+  assert.equal((await a.call('avatarState',{characterVersion:3})).revision,current.revision);
+  const next=await a.call('avatarUpdate',{revision:current.revision,character:{...chars.defaults,hair:'bob'},displayName:'UnifiedNew',greeting:'Hello, friends!'});
+  const preview=(await b.call('lookup',{code:a.code})).profile;assert.equal(preview.displayName,'UnifiedNew');assert.equal(preview.greeting,undefined);assert.equal(preview.petNames,undefined);
+  await b.call('sendRequest',{code:a.code});await a.call('accept',{uid:b.uid});assert.equal((await b.call('profile',{uid:a.uid})).profile.greeting,'Hello, friends!');
+  await a.call('leave');const privateState=await a.call('avatarState',{characterVersion:3});
+  await a.call('avatarUpdate',{revision:privateState.revision,character:next.character,displayName:'PrivateName',greeting:'Saved for later'});assert.equal((await a.call('state')).active,false);
+  await a.call('updateProfile',{displayName:'PrivateName',timeZone:'UTC'});assert.equal((await a.call('state')).preferences.greeting,'Saved for later');
+  await db.doc('socialRestrictions/'+a.uid).set({restricted:true});const locked=await a.call('avatarState',{characterVersion:3});
+  await assert.rejects(a.call('avatarUpdate',{revision:locked.revision,displayName:'AnotherName'}),{code:'PERMISSION_DENIED'});
+});
+test('verified tester receives Shiro once, with no client email authority or forced re-equipping',async()=>{
+  const a=await learner('SpitzTester'),chars=require('../functions/shared/mode-atlas-avatar-rules.js');
+  await auth.updateUser(a.uid,{email:'evelyn.chelsea24@gmail.com',emailVerified:true});
+  let current=await a.call('avatarState',{characterVersion:3});assert.equal(current.character.pet,'japanese-spitz');assert.equal(current.character.petName,'Shiro');
+  assert.ok((await a.call('rewards')).grants.includes('shop-japanese-spitz'));
+  const revision=current.revision;assert.equal((await a.call('avatarState',{characterVersion:3})).revision,revision);
+  current=await a.call('avatarUpdate',{revision,character:{...chars.defaults,pet:'none'}});assert.equal((await a.call('avatarState',{characterVersion:3})).character.pet,'none');assert.equal(current.petNames['japanese-spitz'],'Shiro');
+  await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-japanese-spitz':{revoked:true}}});assert.ok(!(await a.call('rewards')).grants.includes('shop-japanese-spitz'));
+  await auth.updateUser(a.uid,{email:a.email});
 });

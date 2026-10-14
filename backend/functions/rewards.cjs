@@ -6,6 +6,7 @@ const rules=require('./shared/mode-atlas-reward-rules.js');
 const characters=require('./shared/mode-atlas-avatar-rules.js');
 const grants=new Set(Object.values(rules.catalogue).flat().map(item=>item.grant).filter(Boolean));
 const testerEmailHash='bbb008ea1efa3915c64bb4ab722966728c871dcdc66e1abd2a901287b5565777';
+const isTester=user=>user?.emailVerified===true&&!user.disabled&&createHash('sha256').update((user.email||'').trim().toLowerCase()).digest('hex')===testerEmailHash;
 const validTime=value=>value==null||typeof value==='number'&&Number.isFinite(value)&&value>=0;
 function entitlement(user,record={},now=Date.now(),audienceHash=testerEmailHash){
   const empty={allCustom:false,grants:[],validUntil:now+86400000};
@@ -19,6 +20,7 @@ function entitlement(user,record={},now=Date.now(),audienceHash=testerEmailHash)
   }
   const email=typeof user.email==='string'?user.email.trim().toLowerCase():'';
   if(createHash('sha256').update(email).digest('hex')===audienceHash&&awards['hunny-tester']?.revoked!==true)allowed.add('hunny-tester');
+  if(isTester(user)&&awards['shop-japanese-spitz']?.revoked!==true)allowed.add('shop-japanese-spitz');
   return {allCustom,grants:[...allowed].sort(),validUntil};
 }
 function createRewards({db,now=Date.now}){
@@ -41,4 +43,4 @@ function createRewards({db,now=Date.now}){
   }
   return {read,key,hasCustom,sanitize,erase:uid=>db.doc('rewardEntitlements/'+uid).delete()};
 }
-module.exports={createRewards,entitlement};
+module.exports={createRewards,entitlement,isTester};

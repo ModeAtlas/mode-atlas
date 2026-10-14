@@ -31,10 +31,11 @@ for(const layout of [{native:true,width:320,theme:'light'},{native:true,width:39
     await preview.evaluate(node=>{node.scrollTop=node.scrollHeight;});await expect(fullLink).toBeInViewport();
     await fullLink.click();await expect(page).toHaveURL(/\/shop\/$/);
     const full=page.locator('.ma-shop-full');await expect(full).toBeVisible();
-    await expect(full.getByRole('tab')).toHaveText(['Featured','Wardrobe','Theme packs','Streak items','Atlas Coins']);
+    await expect(full.getByRole('tab')).toHaveText(['Featured','Wardrobe','Pets','Theme packs','Streak items','Atlas Coins']);
     await full.getByRole('tab',{name:'Wardrobe',exact:true}).click();await full.getByLabel('Wardrobe type').selectOption('hairstyles');
     await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(4);
     await expect(full.locator('[data-ma-shop-product="hunny-jumper"]')).toBeHidden();
+    await full.getByRole('tab',{name:'Pets',exact:true}).click();await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(3);await expect(full.locator('[data-ma-shop-product=japanese-spitz] .ma-shop-essential__symbol svg')).toHaveAttribute('viewBox','0 -14 120 140');
     await full.getByRole('tab',{name:'Theme packs',exact:true}).click();await expect(full.locator('.ma-shop-product:visible')).toHaveCount(4);
     await full.getByRole('button',{name:'Preview Skyline collection'}).click();await expect(page.locator('.ma-dialog__title')).toHaveText('Skyline');await page.keyboard.press('Escape');
     await full.getByRole('tab',{name:'Streak items',exact:true}).click();await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(2);

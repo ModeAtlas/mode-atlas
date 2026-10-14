@@ -70,9 +70,13 @@ whole release workflow must succeed before handoff or merge. This removes an
 unnecessary dependency without skipping any checks. In the 2.83.0 reference run,
 the browser job took 530 seconds, Firebase 96 seconds and Xcode 359 seconds; Xcode
 previously waited for both other jobs. Browser workers remain at their existing
-setting, including the isolated native-payload preparation. Deliberate timing
-assertions are retained. CI stores per-test JSON results in `browser-results-*`
-artifacts so later reviews can compare durations without transferring full logs.
+setting, including the isolated native-payload preparation. From 2.102.0 the
+polish suite runs in three file-based shards on separate runners/checkouts, in
+parallel with source, shell and website checks. Every test still runs once and
+timing assertions remain intact. The existing required browser status aggregates
+all shards, and publication still requires it, Firebase and Xcode to pass. CI
+stores per-test JSON results in `browser-results-*` and `polish-*-*` artifacts so
+later reviews can compare durations without transferring full logs.
 
 When a release adds a callable action or server projection, deploy the compatible
 backend before releasing either client. Record any device-only checks separately

@@ -34,15 +34,6 @@
   function collection(pref){return window.ModeAtlasRewardRules?.item('themes',pref);}
   function available(pref){return !collection(pref)||window.ModeAtlasRewardRules.allowed('themes',pref,1,window.ModeAtlasRewardAccess?.presentation?.()||window.ModeAtlasRewardAccess?.current());}
   function updateButtons(){
-    for(const host of document.querySelectorAll('[data-ma-owned-themes]')){
-      const themes=(window.ModeAtlasRewardRules?.themes||[]).filter(item=>available(item.id));
-      host.hidden=!themes.length;
-      const signature=themes.map(item=>item.id).join(',');
-      if(host.dataset.items!==signature){
-        host.dataset.items=signature;host.replaceChildren();
-        for(const item of themes){const choice=document.createElement('button');choice.type='button';choice.className='ma-button ma-theme-collection-choice';choice.dataset.maThemeChoice=item.id;choice.dataset.maThemeSample=item.id;choice.textContent=item.name;host.append(choice);}
-      }
-    }
     var pref = normalizePreference(getPreference());
     document.querySelectorAll('[data-ma-theme-choice], .ma-theme-choice-btn').forEach(function(btn){
       var val = btn.getAttribute('data-ma-theme-choice') || btn.dataset.theme || (btn.textContent || '').trim().toLowerCase();

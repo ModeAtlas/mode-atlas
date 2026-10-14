@@ -34,7 +34,7 @@
     if(pending)return pending;if(busy)return current();
     if(!force&&current()&&now()-cached.checkedAt<60000)return current();
     const ticket=epoch,reading=++readEpoch;
-    pending=call('avatarState',{characterVersion:2},active).then(value=>ticket===epoch&&reading===readEpoch&&active===user()?accept(value):null).finally(()=>{if(ticket===epoch&&reading===readEpoch)pending=null;});
+    pending=call('avatarState',{characterVersion:3},active).then(value=>ticket===epoch&&reading===readEpoch&&active===user()?accept(value):null).finally(()=>{if(ticket===epoch&&reading===readEpoch)pending=null;});
     return pending;
   }
   async function save(selection,revision){
@@ -52,6 +52,6 @@
       return accept(value);
     }finally{if(ticket===epoch)busy=false;}
   }
-  function message(failure){const code=String(failure?.code||'').replace(/^functions\//,'');return ['aborted','offline','account-changed','unauthenticated','invalid-argument','permission-denied','failed-precondition','resource-exhausted'].includes(code)?failure.message:'Your avatar could not be saved. Check your connection and try again.';}
+  function message(failure){const code=String(failure?.code||'').replace(/^functions\//,'');return ['already-exists','aborted','offline','account-changed','unauthenticated','invalid-argument','permission-denied','failed-precondition','resource-exhausted'].includes(code)?failure.message:'Your avatar could not be saved. Check your connection and try again.';}
   return Object.freeze({current,presentation,refresh,save,clear,message});
 });

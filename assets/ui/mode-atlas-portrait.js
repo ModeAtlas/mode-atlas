@@ -4,8 +4,8 @@
   // Read-only self presentation; consumers never own auth or fetch a profile.
   function self(){
     const user=root.KanaCloudSync?.getUser?.(),profile=user?root.ModeAtlasSocial?.selfProfile?.():null;
-    const name=String(profile?.displayName||user?.displayName||'').trim().split(/\s+/)[0].slice(0,32);
     const saved=root.ModeAtlasAvatar?.presentation?.()||(user?root.ModeAtlasAvatar?.current?.():null);
+    const name=String(user?(saved?.displayName||profile?.displayName||user.displayName||''):'').trim().split(/\s+/)[0].slice(0,32);
     const access=user?root.ModeAtlasRewardAccess?.current():root.ModeAtlasRewardAccess?.presentation?.();
     const character=root.ModeAtlasAvatarRules.visible(saved?.character||profile?.character,saved?.level||root.ModeAtlasProgress.getSummary().level,access);
     return {name,character};

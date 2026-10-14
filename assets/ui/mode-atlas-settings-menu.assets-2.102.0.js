@@ -42,12 +42,7 @@
                 <div class="ma-setting-row__copy">
                   <div class="ma-setting-row__label">Appearance</div>
                 </div>
-                <div class="ma-setting-row__control ma-segmented ma-settings-segmented" style="--ma-segment-count:3">
-                  <button class="ma-button ma-theme-choice-btn" type="button" data-ma-theme-choice="dark">Dark</button>
-                  <button class="ma-button ma-theme-choice-btn" type="button" data-ma-theme-choice="light">Light</button>
-                  <button class="ma-button ma-theme-choice-btn" type="button" data-ma-theme-choice="system">System</button>
-                </div>
-                <div class="ma-owned-themes" data-ma-owned-themes role="group" aria-label="Collection themes" hidden></div>
+                <button class="ma-button ma-button--ghost" type="button" data-ma-rewards-open="rewards">Themes & rewards</button>
               </div>
             </div>
           </section>

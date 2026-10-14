@@ -9,7 +9,7 @@
   // will come from the platform store; no guessed currency amounts are shown.
   const coinPacks=Object.freeze([500,1200,2500,6000].map(coins=>Object.freeze({id:'coins-'+coins,coins})));
   const streakRepair=Object.freeze({maxMissedDays:3,windowDays:7});
-  const featured=Object.freeze(['evergreen','sakura','midnight','skyline','sculpted-pompadour','braided-undercut','hunny-jumper','hunny-pendant','varsity','studio-headphones','ribbon-waves','streak-freeze','streak-repair']);
+  const featured=Object.freeze(['evergreen','sakura','midnight','skyline','japanese-spitz','seigaiha-kimono','meadow-dress','hunny-jumper','hunny-pendant','moon-fox','streak-freeze','streak-repair']);
   const levelCoins=Object.freeze({perLevel:20,bonusEvery:5,bonus:50,
     total(level){const n=Number.isFinite(level)?Math.max(1,Math.min(999,Math.floor(level))):1;return (n-1)*20+Math.floor(n/5)*50;}});
   const collection=(id,name,description)=>Object.freeze({id,name,description,kind:'collection',grant:'shop-'+id,
@@ -31,6 +31,12 @@
     cosmetic('moonlit-silver','Moonlit silver','Smoky roots and icy silver tips. Works with every hairstyle.',120,'hairColours'),
     cosmetic('pinstripe','Tailored pinstripes','Fine chalk stripes, sharp creases and a tailored finish.',220,'pants'),
     cosmetic('aurora','Aurora joggers','Midnight fabric, iridescent side panels and reflective cuffs.',240,'pants'),
+    cosmetic('starfall-skirt','Starfall skirt','Layered fabric with embroidered stars and a scalloped hem. Choose your colour.',240,'pants'),
+    cosmetic('meadow-dress','Meadow dress','A flowing dress with embroidered vines, a waist bow and your choice of colour.',280,'outfits'),
+    cosmetic('seigaiha-kimono','Ocean waves kimono','Layered wave motifs, wide sleeves and a woven obi. Choose jade, navy, ivory or charcoal.',350,'outfits'),
+    cosmetic('japanese-spitz','Japanese Spitz','A bright white coat, a curled tail and a friend for every chapter. Give them a name of their own.',450,'pets'),
+    cosmetic('moon-fox','Moon fox','An ivory fox with midnight paws, silver markings and a crescent charm.',500,'pets'),
+    cosmetic('koi','Golden koi','A golden companion swimming through a little floating water garden.',350,'pets'),
     cosmetic('varsity','Varsity jacket','Cream sleeves, forest green and a stitched Atlas crest.',250,'outfits'),
     cosmetic('cable-knit','Cable knit','A warm oatmeal knit with a woven cable pattern.',250,'outfits'),
     Object.freeze({...cosmetic('hunny-jumper','Hunny jumper','A little bear to keep you company.',10,'outfits'),audience:'hunny-tester',rewards:Object.freeze([{type:'outfits',id:'hunny'}])}),

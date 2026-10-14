@@ -967,7 +967,7 @@ function setCloudElementVisible(el, visible = true) {
 function updateUiBinding(binding) {
   const user = currentUser;
   if (binding.statusEl) binding.statusEl.textContent = binding.customStatus || lastStatus;
-  if (binding.nameEl) binding.nameEl.textContent = user?.displayName || user?.email || 'Guest';
+  if (binding.nameEl) binding.nameEl.textContent = (user && window.ModeAtlasAvatar?.current?.()?.displayName) || user?.displayName || user?.email || 'Guest';
   if (binding.emailEl) binding.emailEl.textContent = user?.email || (CONFIG_READY ? 'Not signed in' : 'Cloud sync unavailable');
   if (binding.photoEl) {
     if (user?.photoURL) {
@@ -996,6 +996,8 @@ function updateUiBinding(binding) {
   if (binding.signedOutEls) binding.signedOutEls.forEach((el) => setCloudElementVisible(el, !user));
 }
 
+
+window.addEventListener('modeAtlasAvatarChanged',()=>uiBindings.forEach(updateUiBinding));
 
 function findUiBinding(options = {}) {
   const signInBtn = options.signInBtn || null;

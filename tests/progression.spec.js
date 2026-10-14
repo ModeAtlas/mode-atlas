@@ -16,8 +16,8 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await ModeAtlasRewardAccess.refresh(true);await ModeAtlasAvatar.refresh(true);ModeAtlasAccountNavigation.open('profile');
   });
   await page.locator('#maAccount-profile [data-ma-avatar-open]').click();
-  const dialog=page.getByRole('dialog',{name:'Your avatar'});await expect(dialog.getByRole('img',{name:'Your character preview'})).toBeVisible();
-  const selectedType=dialog.getByRole('button',{name:'Character',exact:true});await readable(selectedType,await selectedType.evaluate(node=>getComputedStyle(node).backgroundColor));
+  const dialog=page.getByRole('dialog',{name:'Your avatar & pet'});await expect(dialog.getByRole('img',{name:'Your character and pet preview'})).toBeVisible();
+  const selectedType=dialog.getByRole('button',{name:'Character portrait',exact:true});await readable(selectedType,await selectedType.evaluate(node=>getComputedStyle(node).backgroundColor));
   await dialog.getByRole('button',{name:'Cocoa',exact:true}).click();await dialog.getByRole('button',{name:'Coils',exact:true}).click();
   await expect(dialog.locator('[data-avatar-slot=hairColor]')).toHaveCount(16);
   await expect(dialog.getByRole('button',{name:'Rose gold',exact:true})).toHaveCount(0);
@@ -31,14 +31,14 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
   await dialog.getByRole('button',{name:'Blossom pleats',exact:true}).click();
   await page.screenshot({path:info.outputPath('character-wardrobe.png'),animations:'disabled'});
   expect(await dialog.evaluate(node=>[...node.querySelectorAll('button,fieldset')].filter(el=>el.getClientRects().length).some(el=>{const b=el.getBoundingClientRect();return b.left<0||b.right>innerWidth+1;}))).toBe(false);
-  await dialog.getByRole('button',{name:'Save avatar',exact:true}).click();await expect(dialog).toBeHidden();
-  expect(await page.evaluate(()=>avatarSaves)).toEqual([expect.objectContaining({avatar:'character',revision:0,character:expect.objectContaining({version:2,skin:'cocoa',hair:'coils',hairColor:'honey-blonde',outfit:'sakura',headwear:'sakura',pants:'sakura'})})]);
+  await dialog.getByRole('button',{name:'Save changes',exact:true}).click();await expect(dialog).toBeHidden();
+  expect(await page.evaluate(()=>avatarSaves)).toEqual([expect.objectContaining({avatar:'character',revision:0,character:expect.objectContaining({version:3,skin:'cocoa',hair:'coils',hairColor:'honey-blonde',outfit:'sakura',headwear:'sakura',pants:'sakura'})})]);
   await expect(page.locator('[data-ma-selected-avatar] svg')).toHaveCount(1);await expect(page.locator('#topProfileDot svg')).toHaveCount(1);
   await page.evaluate(()=>ModeAtlasAccountNavigation.open('profile'));await expect(page.locator('#profileAvatar svg')).toBeVisible();
-  await page.locator('#maAccount-profile [data-ma-avatar-open]').click();await expect(dialog.getByRole('button',{name:'Character',exact:true})).toHaveAttribute('aria-pressed','true');
+  await page.locator('#maAccount-profile [data-ma-avatar-open]').click();await expect(dialog.getByRole('button',{name:'Character portrait',exact:true})).toHaveAttribute('aria-pressed','true');
   await expect(dialog.locator('[data-avatar-mode=emoji],[data-avatar-mode=atlas]')).toHaveCount(0);
-  await dialog.getByRole('button',{name:'Account photo',exact:true}).click();await dialog.getByRole('button',{name:'Save avatar',exact:true}).click();await expect(dialog).toBeHidden();expect(await page.evaluate(()=>avatarSaves.at(-1).avatar)).toBe('account');
-  await expect(page.locator('[data-ma-avatar-open]')).toHaveCount(1);
+  await dialog.getByRole('button',{name:'Account photo',exact:true}).click();await dialog.getByRole('button',{name:'Save changes',exact:true}).click();await expect(dialog).toBeHidden();expect(await page.evaluate(()=>avatarSaves.at(-1).avatar)).toBe('account');
+  await expect(page.locator('[data-ma-avatar-open]')).toHaveCount(2);
   await page.evaluate(()=>{avatarUser=null;dispatchEvent(new Event('modeAtlasAccountSignedOut'));});await expect(page.locator('[data-ma-selected-avatar]')).toHaveText('あ');
   expect(errors).toEqual([]);
 });
@@ -52,7 +52,7 @@ test('expanded wardrobe stays exclusive and a failed save keeps the draft for re
     ModeAtlasAvatar={...ModeAtlasAvatar,refresh:async()=>value,save:async()=>{if(++avatarAttempts===1)throw Error('Unavailable');return value;}};
     ModeAtlasAccountNavigation.open('profile');
   });
-  await page.locator('[data-ma-avatar-open]').click();const dialog=page.getByRole('dialog',{name:'Your avatar'});
+  await page.locator('#maAccount-profile [data-ma-avatar-open]').click();const dialog=page.getByRole('dialog',{name:'Your avatar & pet'});
   await expect(dialog.locator('[data-avatar-slot=skin]')).toHaveCount(11);
   await expect(dialog.locator('[data-avatar-slot=hair]')).toHaveCount(20);
   for(const name of ['Classic side part','French crop','Messy fringe','Slick back','Medium flow','Bald'])await expect(dialog.getByRole('button',{name,exact:true})).toBeVisible();
@@ -64,20 +64,20 @@ test('expanded wardrobe stays exclusive and a failed save keeps the draft for re
   await expect(dialog.locator('.ma-avatar-studio svg linearGradient')).toHaveCount(1);
   await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();await dialog.getByRole('button',{name:'Tailored pinstripes',exact:true}).click();
   for(const name of ['Hunny jumper','Hunny bear ears','Hunny pendant'])await dialog.getByRole('button',{name,exact:true}).click();
-  await dialog.getByRole('button',{name:'Save avatar',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('could not be saved');
+  await dialog.getByRole('button',{name:'Save changes',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('could not be saved');
   await expect(dialog.getByRole('button',{name:'Hunny jumper',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(dialog.getByRole('button',{name:'Save avatar',exact:true})).toBeEnabled();
+  await expect(dialog.getByRole('button',{name:'Save changes',exact:true})).toBeEnabled();
   await dialog.locator('.ma-avatar-studio').scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('hunny-wardrobe.png'),animations:'disabled'});
-  await dialog.getByRole('button',{name:'Save avatar',exact:true}).click();await expect(dialog).toBeHidden();
+  await dialog.getByRole('button',{name:'Save changes',exact:true}).click();await expect(dialog).toBeHidden();
   await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.locator('[data-reward-category=wardrobe] > summary').click();
   await expect(page.locator('[data-ma-wardrobe-item=hunny]')).toHaveCount(3);
-  await expect(page.locator('.ma-atlas-panel [data-ma-avatar-open]')).toHaveCount(0);
+  await expect(page.locator('.ma-atlas-panel [data-ma-avatar-open]')).toHaveCount(1);
 });
 
 test('guest character preview offers sign-in and account changes discard an open editor',async({page})=>{
   await prepare(page);await open(page,'/progress/');await page.evaluate(()=>ModeAtlasAvatarUI.open());
-  const dialog=page.getByRole('dialog',{name:'Your avatar'});await expect(dialog.getByRole('button',{name:'Sign in to save',exact:true})).toBeVisible();
+  const dialog=page.getByRole('dialog',{name:'Your avatar & pet'});await expect(dialog.getByRole('button',{name:'Sign in to save',exact:true})).toBeVisible();
   await dialog.getByRole('button',{name:'Sign in to save',exact:true}).click();await expect(page.locator('#maAccount-profile')).toHaveAttribute('aria-hidden','false');
   await page.locator('#maAccount-profile [data-ma-avatar-open]').click();await expect(dialog).toBeVisible();
   await page.evaluate(()=>dispatchEvent(new Event('modeAtlasAccountWillChange')));await expect(dialog).toBeHidden();
@@ -121,7 +121,7 @@ for(const native of [false,true])test(`home restores the saved avatar before aut
   await page.addInitScript(()=>{
     if(localStorage.getItem('avatar-return-seeded'))return;
     localStorage.setItem('avatar-return-seeded','true');localStorage.setItem('modeAtlasLastUserId','returning');
-    localStorage.setItem('modeAtlasAvatarProfile',JSON.stringify({uid:'returning',checkedAt:Date.now(),value:{version:1,revision:4,avatar:'character',level:1,character:{version:2,skin:'cocoa',hair:'side-part',hairColor:'walnut',eyes:'brown',outfit:'everyday',outfitColor:'teal',headwear:'none',accessory:'none',pants:'denim'}}}));
+    localStorage.setItem('modeAtlasAvatarProfile',JSON.stringify({uid:'returning',checkedAt:Date.now(),value:{version:1,revision:4,avatar:'character',level:1,character:{version:3,skin:'cocoa',hair:'side-part',hairColor:'walnut',eyes:'brown',outfit:'everyday',outfitColor:'teal',headwear:'none',accessory:'none',pants:'denim'}}}));
   });
   await page.route('**/cloud-sync.assets-*.js',route=>route.fulfill({contentType:'text/javascript',body:`
     let testUser=null,testResolved=false,readyResolve;
@@ -764,7 +764,7 @@ for(const native of [true,false])test(`coin purchase, owned themes and rotation 
   await expect(page.locator('body')).toHaveCSS('background-color','rgb(233, 191, 209)');
   await page.screenshot({path:testInfo.outputPath('sakura-rewards.png'),fullPage:true,animations:'disabled'});
   await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Settings',exact:true}).click();
-  await expect(page.locator('[data-ma-owned-themes] [data-ma-theme-choice="sakura"]')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#maAccount-settings [data-ma-theme-choice]')).toHaveCount(0);await expect(page.getByRole('button',{name:'Themes & rewards',exact:true})).toBeVisible();
   await page.screenshot({path:testInfo.outputPath('sakura-settings.png'),fullPage:true,animations:'disabled'});
   await page.getByRole('tab',{name:'Shop',exact:true}).click();
   await shop.locator('[data-ma-shop-product="streak-freeze"]').click();await page.getByRole('button',{name:'Buy item',exact:true}).click();
@@ -780,7 +780,9 @@ for(const native of [true,false])test(`coin purchase, owned themes and rotation 
   await page.screenshot({path:testInfo.outputPath('midnight-rewards.png'),fullPage:true,animations:'disabled'});
   await page.evaluate(async()=>{shopFixture.owned=[];await ModeAtlasRewardAccess.refresh(true);});
   await expect(page.locator('html')).not.toHaveAttribute('data-ma-collection-theme');
-  await expect(page.locator('[data-reward-category="themes"]')).toBeHidden();
+  await expect(page.locator('[data-reward-category="themes"] [data-ma-theme-choice="sakura"]')).toBeHidden();
+  await expect(page.locator('[data-reward-category="themes"] [data-ma-theme-choice="dark"]')).toBeVisible();
+  await expect(page.locator('[data-reward-category="themes"] .ma-reward-category__meta')).toContainText('3 available');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 
@@ -803,4 +805,29 @@ test('developer shop reset clears paid selections and uses the signed-in account
   await page.locator('.ma-dialog').getByRole('button',{name:'Reset purchases',exact:true}).click();
   await expect(page.locator('[data-ma-dev-shop-status]')).toContainText('Shop purchases reset');
   expect(await page.evaluate(()=>({balance:ModeAtlasShop.current().balance,banner:ModeAtlasProgress.readState().appearance.banner,frame:ModeAtlasProgress.readState().appearance.landmark,theme:ModeAtlasTheme.getPreference(),grants:ModeAtlasRewardAccess.current().grants,operations:devShopOperations.map(item=>item.operation)}))).toEqual({balance:1500,banner:'plain',frame:'trail',theme:'light',grants:['hunny-tester'],operations:['credit','resetPurchases']});
+});
+
+for(const layout of [{native:true,theme:'light',width:320},{native:true,theme:'dark',width:393},{native:false,theme:'light',width:1280}])test(`wardrobe colours, named pets and identity share one editor ${layout.native?'iOS':'web'} ${layout.theme}`,async({page},info)=>{
+  await prepare(page,layout);await page.setViewportSize({width:layout.width,height:900});await open(page,'/progress/');
+  await page.evaluate(()=>{
+    KanaCloudSync.getUser=()=>({uid:'companion-owner'});
+    window.companionState={version:1,revision:1,avatar:'character',displayName:'Atlas Learner',greeting:'Learning with Shiro',character:{...ModeAtlasAvatarRules.defaults,pet:'japanese-spitz',petName:'Shiro'},petNames:{'japanese-spitz':'Shiro'},level:15};
+    ModeAtlasRewardAccess={...ModeAtlasRewardAccess,current:()=>({grants:['shop-japanese-spitz','shop-seigaiha-kimono','shop-meadow-dress','shop-starfall-skirt']})};
+    ModeAtlasAvatar={...ModeAtlasAvatar,refresh:async()=>structuredClone(companionState),save:async(selection,revision)=>{window.companionSaved={...selection,revision};companionState={...companionState,...selection,revision:revision+1};return companionState;}};
+  });
+  await page.getByRole('tab',{name:'Rewards',exact:true}).click();await page.locator('.ma-atlas-panel [data-ma-avatar-open]').click();
+  const editor=page.getByRole('dialog',{name:'Your avatar & pet'});
+  await editor.getByRole('button',{name:'Edit avatar message',exact:true}).click();await editor.getByLabel('Your avatar’s message',{exact:true}).fill('A new chapter with my companion.');await editor.getByLabel('Display name',{exact:true}).fill('Atlas Explorer');
+  await editor.getByRole('button',{name:'Wardrobe',exact:true}).click();await editor.getByRole('button',{name:'A-line skirt',exact:true}).click();await editor.locator('[data-avatar-slot=pantsColor][data-avatar-choice=coral]').click();
+  await editor.getByRole('button',{name:'Everyday dress',exact:true}).click();await expect(editor.locator('[data-avatar-slot=pants]')).toHaveCount(0);
+  await editor.getByRole('button',{name:'Ocean waves kimono',exact:true}).click();await expect(editor.locator('[data-avatar-slot=outfitColor]')).toHaveCount(4);await expect(editor.locator('[data-avatar-slot=outfitColor][data-avatar-choice=coral]')).toHaveCount(0);
+  await editor.locator('[data-avatar-slot=outfitColor][data-avatar-choice=navy]').click();
+  await editor.getByRole('button',{name:'Pet',exact:true}).click();await expect(editor.getByRole('button',{name:'Rabbit · Level 20',exact:true})).toBeDisabled();await expect(editor.getByRole('button',{name:'Moon fox',exact:true})).toHaveCount(0);
+  await editor.getByRole('button',{name:'Calico cat',exact:true}).click();await editor.getByLabel('Pet name',{exact:true}).fill('Mochi');await editor.getByRole('button',{name:'Japanese Spitz',exact:true}).click();await expect(editor.getByLabel('Pet name',{exact:true})).toHaveValue('Shiro');
+  await editor.getByRole('button',{name:'Edit avatar message',exact:true}).click();await editor.locator('.ma-avatar-studio').scrollIntoViewIfNeeded();
+  await page.screenshot({path:info.outputPath('kimono-and-shiro.png'),animations:'disabled'});
+  if(layout.native&&layout.theme==='dark'){await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.dataset.maLargeText='true';});await page.screenshot({path:info.outputPath('avatar-large-text.png'),animations:'disabled'});}
+  expect(await editor.evaluate(node=>[...node.querySelectorAll('button,input,fieldset')].filter(el=>el.getClientRects().length).some(el=>{const b=el.getBoundingClientRect();return b.left<0||b.right>innerWidth+1;}))).toBe(false);
+  await editor.getByRole('button',{name:'Save changes',exact:true}).click();await expect(editor).toBeHidden();
+  expect(await page.evaluate(()=>companionSaved)).toMatchObject({revision:1,displayName:'Atlas Explorer',greeting:'A new chapter with my companion.',petNames:{calico:'Mochi','japanese-spitz':'Shiro'},character:{version:3,outfit:'seigaiha-kimono',outfitColor:'navy',pants:'a-line',pantsColor:'coral',pet:'japanese-spitz',petName:'Shiro'}});
 });

@@ -58,9 +58,9 @@
     }
     for(const section of document.querySelectorAll('[data-reward-category]')){
       const type=section.dataset.rewardCategory,items=(type==='wardrobe'?wardrobeItems:rules.catalogue[type]).filter(item=>rules.visible(item,summary.level,access()));
-      if(['themes','wardrobe'].includes(type))section.hidden=!items.length;
+      if(type==='wardrobe')section.hidden=!items.length;
       const selected=type==='banners'?selectedBanner.name:type==='frames'?item.title:'';
-      section.querySelector('.ma-reward-category__meta').textContent=[selected,`${items.filter(item=>rules.unlocked(item,summary.level,access())).length} available`].filter(Boolean).join(' · ');
+      section.querySelector('.ma-reward-category__meta').textContent=[selected,`${items.filter(item=>rules.unlocked(item,summary.level,access())).length+(type==='themes'?3:0)} available`].filter(Boolean).join(' · ');
     }
     root.ModeAtlasTheme?.updateButtons();
     const notice=document.querySelector('.ma-reward-access');
@@ -150,7 +150,9 @@
     const notice=el('div','ma-reward-access');notice.hidden=true;notice.setAttribute('role','status');
     const retry=button('Refresh');retry.addEventListener('click',()=>{void root.ModeAtlasRewardAccess?.refresh(true);});notice.append(el('span'),retry);panel.append(notice);
     const inventory=el('section');root.ModeAtlasShopUI?.renderInventory(inventory);panel.append(inventory);
+    const edit=button('Edit avatar & pet','ma-button ma-button--primary');edit.dataset.maAvatarOpen='';panel.append(edit);
     const themesSection=category('themes','App themes','A new look throughout Mode Atlas.'),themes=el('div','ma-owned-themes');
+    for(const [id,name]of [['dark','Dark'],['light','Light'],['system','System']]){const choose=button(name);choose.dataset.maThemeChoice=id;themes.append(choose);}
     for(const theme of rules.themes){const choose=button(theme.name,'ma-button ma-theme-collection-choice');choose.dataset.maThemeChoice=theme.id;choose.dataset.maThemeSample=theme.id;themes.append(choose);}
     themesSection.content.append(themes);panel.append(themesSection.section);
     const bannersSection=category('banners','Profile banners','A background for your profile and Friends cards.',true),banners=el('div','ma-atlas-banners');
@@ -161,10 +163,10 @@
       choose.addEventListener('click',()=>{if(root.ModeAtlasProgress.selectBanner(item.id))refresh();});banners.append(choose);
     }
     bannersSection.content.append(banners);panel.append(bannersSection.section);
-    const wardrobeSection=category('wardrobe','Wardrobe collection','Wear these in Profile → Edit avatar.'),wardrobe=el('div','ma-avatar-collection');
+    const wardrobeSection=category('wardrobe','Wardrobe & companions','Choose your favourites in Edit avatar & pet.'),wardrobe=el('div','ma-avatar-collection');
     for(const item of wardrobeItems){
       const tile=el('article','ma-avatar-collectible'),art=el('span','ma-avatar-item__art');tile.dataset.maWardrobeItem=item.id;tile.dataset.wardrobeType=item.type;
-      root.ModeAtlasAvatarArt.render(art,{...root.ModeAtlasAvatarRules.defaults,[item.slot]:item.id},{portrait:!['outfit','pants'].includes(item.slot)});
+      root.ModeAtlasAvatarArt.render(art,{...root.ModeAtlasAvatarRules.defaults,[item.slot]:item.id},{portrait:!['outfit','pants','pet'].includes(item.slot),petOnly:item.slot==='pet'});
       tile.append(art,el('strong','',item.name),el('small'));wardrobe.append(tile);
     }
     wardrobeSection.content.append(wardrobe);panel.append(wardrobeSection.section);
@@ -226,7 +228,7 @@
     if(location.pathname==='/progress/'){root.ModeAtlasAccountNavigation?.close();const tab=document.getElementById(section==='rewards'?'atlasTab1':'atlasTab0');tab?.click();tab?.focus();return;}
     root.ModeAtlasVersionFile.navigate('/progress/'+(section==='rewards'?'?tab=rewards':''));
   }
-  document.addEventListener('click',event=>{if(event.target.closest('[data-ma-rewards-open]'))open();});
+  document.addEventListener('click',event=>{const control=event.target.closest('[data-ma-rewards-open]');if(control)open(control.dataset.maRewardsOpen||'goals');});
   for(const event of ['modeAtlasAvatarChanged','modeAtlasShopChanged','modeAtlasRewardAccessChanged','modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady','modeAtlasSelfProfileChanged','modeAtlasAccountSignedOut'])root.addEventListener(event,refresh);
   root.addEventListener('kanaCloudSyncStatusChanged',()=>{refresh();if(document.querySelector('[data-ma-selected-avatar]'))void root.ModeAtlasSocial?.refreshProfile?.();});
   document.addEventListener('ma:ui-refresh',refresh);
