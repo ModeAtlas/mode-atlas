@@ -235,10 +235,10 @@ html[data-ma-theme="light"]{
 
 /* Collection palettes share the same semantic interface as system appearances. */
 html[data-ma-collection-theme="sakura"]{
-  --ma-collection-page:#f6dce7;--ma-collection-surface:#fae8ef;--ma-collection-elevated:#fceef3;
-  --ma-collection-inset:#efd0de;--ma-collection-text:#422834;--ma-collection-heading:#38202c;
-  --ma-collection-secondary:#7c5064;--ma-collection-border:#dec0ce;--ma-collection-hover:#f0d4e1;
-  --ma-collection-selected:#f7d5e4;--ma-collection-accent:#a83268;--ma-collection-on-accent:#ffffff;
+  --ma-collection-page:#e9bfd1;--ma-collection-surface:#f1cede;--ma-collection-elevated:#f6dce7;
+  --ma-collection-inset:#dfadc4;--ma-collection-text:#43232f;--ma-collection-heading:#341a27;
+  --ma-collection-secondary:#65364b;--ma-collection-border:#bc829c;--ma-collection-hover:#e5b7cd;
+  --ma-collection-selected:#d99eb9;--ma-collection-accent:#78193f;--ma-collection-on-accent:#ffffff;
 }
 html[data-ma-collection-theme="midnight"]{
   --ma-collection-page:#181628;--ma-collection-surface:#242139;--ma-collection-elevated:#302947;
@@ -253,10 +253,10 @@ html[data-ma-collection-theme="skyline"]{
   --ma-collection-selected:#4a402c;--ma-collection-accent:#ffd38a;--ma-collection-on-accent:#302310;
 }
 html[data-ma-collection-theme="evergreen"]{
-  --ma-collection-page:#10291f;--ma-collection-surface:#19382b;--ma-collection-elevated:#244635;
-  --ma-collection-inset:#2b503c;--ma-collection-text:#e7f0de;--ma-collection-heading:#f5f4df;
-  --ma-collection-secondary:#c1d7bb;--ma-collection-border:#55765d;--ma-collection-hover:#355e46;
-  --ma-collection-selected:#405c36;--ma-collection-accent:#d4df9a;--ma-collection-on-accent:#20301b;
+  --ma-collection-page:#091a13;--ma-collection-surface:#10271d;--ma-collection-elevated:#163324;
+  --ma-collection-inset:#1d3c2c;--ma-collection-text:#e7f0de;--ma-collection-heading:#f5f4df;
+  --ma-collection-secondary:#bfd1b9;--ma-collection-border:#476953;--ma-collection-hover:#244735;
+  --ma-collection-selected:#304b2c;--ma-collection-accent:#b5cd83;--ma-collection-on-accent:#152716;
 }
 html[data-ma-collection-theme]{
   --ma-app-bg:var(--ma-collection-page);--ma-app-bg-soft:var(--ma-collection-surface);
@@ -270,6 +270,8 @@ html[data-ma-collection-theme]{
   --ma-control:var(--ma-collection-inset);--ma-control-hover:var(--ma-collection-hover);--ma-control-active:var(--ma-collection-selected);
   --ma-control-text:var(--ma-collection-text);--ma-control-active-border:var(--ma-collection-accent);
   --ma-focus-ring:var(--ma-collection-accent);--ma-atlas:var(--ma-collection-accent);--ma-link:var(--ma-collection-accent);
+  --ma-primary:var(--ma-collection-accent);--ma-primary-text:var(--ma-collection-on-accent);
+  --ma-surface-inset:var(--ma-collection-inset);
 }
 
 body{background:var(--ma-page-bg);color:var(--ma-text);}
@@ -284,149 +286,149 @@ html[data-ma-theme="light"] body.ma-wordbank-page{background:var(--ma-page-bg-wo
 
 /* Light mode readability: page-level CSS may have dark-mode defaults; theme owns
    the final light palette through tokens and scoped component rules. */
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) header.glass, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .toolbar{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) header.glass, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toolbar{
   background:linear-gradient(135deg,rgba(225,237,249,.94),rgba(204,222,240,.90) 58%,rgba(218,211,235,.90));
   border-color:var(--ma-border);
   color:var(--ma-text);
   box-shadow:var(--ma-shadow-soft);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .landing-hero,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .glass,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .modal-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .popup,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .bottom-shell,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .drawer-content,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .modifier-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .options-stack>div,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-pro-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-stat,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-plan>div,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-speed-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-mastery-breakdown>div,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-mini-result-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-result-filter-bar,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .test-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .stats-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) #statsPanel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .scores-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .scoreboard,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .about-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .about-point,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-shared-profile-drawer,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-shared-settings-drawer,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-profile-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-settings-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-account-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-sync-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-branch-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-achievement-card-summary,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-save-section,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-settings-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-result-insights,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-pro-feature-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-path-step,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-preset-track,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .legal-card{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .landing-hero,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .glass,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .modal-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .popup,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .bottom-shell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .drawer-content,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .modifier-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .options-stack>div,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pro-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-stat,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-plan>div,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-speed-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-breakdown>div,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mini-result-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-result-filter-bar,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .test-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stats-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) #statsPanel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .scores-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .scoreboard,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .about-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .about-point,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-shared-profile-drawer,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-shared-settings-drawer,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-profile-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-account-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-sync-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-branch-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement-card-summary,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-save-section,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-result-insights,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-pro-feature-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-path-step,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-preset-track,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .legal-card{
   background:var(--ma-surface);
   border-color:var(--ma-border);
   color:var(--ma-text);
   box-shadow:var(--ma-shadow);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .launch-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .future-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .test-tile{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .test-tile{
   background:linear-gradient(145deg,#e8f1fa 0%,#dce8f4 72%,#cfddea 100%);
   border-color:var(--ma-border);
   color:var(--ma-text);
   box-shadow:var(--ma-shadow);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch.kana,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .launch-card.reading,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .reading-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-action-card.reading{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch.kana,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-card.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .reading-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-action-card.reading{
   background:radial-gradient(circle at 12% 12%,rgba(17,112,77,.18),transparent 38%),linear-gradient(135deg,#e6f2ed 0%,#cfe5da 100%);
   border-color:rgba(17,112,77,.28);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch.words,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .launch-card.writing,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .writing-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-action-card.writing{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch.words,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-card.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .writing-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-action-card.writing{
   background:radial-gradient(circle at 12% 12%,rgba(29,85,152,.18),transparent 38%),linear-gradient(135deg,#e8f0fa 0%,#caddef 100%);
   border-color:rgba(29,85,152,.28);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch.future,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .future-tile{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch.future,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-tile{
   background:linear-gradient(145deg,rgba(222,233,244,.84),rgba(202,216,231,.82));
   color:var(--ma-text);
   opacity:1;
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch-bottom,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .launch-bottom{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-bottom,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-bottom{
   background:transparent;
   border-top-color:rgba(42,59,88,.18);
   color:var(--ma-text);
   box-shadow:none;
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch-arrow,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .launch-arrow,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch-chip,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .launch-badge,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .pill,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .badge,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-pill,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .chip{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-arrow,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-arrow,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-chip,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-badge,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pill,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .badge,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pill,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .chip{
   background:linear-gradient(180deg,rgba(221,232,244,.92),rgba(199,214,229,.86));
   border-color:var(--ma-border);
   color:var(--ma-text);
   box-shadow:var(--ma-shadow-control);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) h1, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) h2, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) h3, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) h4, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) h5, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .main-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .launch-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .section-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .card-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-card-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-account-name, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-pro-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .stat-value, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .metric-value, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-value, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .kana-character, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .prompt-character, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .question-character, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) strong{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) h1, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) h2, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) h3, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) h4, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) h5, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .main-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .section-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .card-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-card-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-account-name, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pro-title, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stat-value, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric-value, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-value, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .kana-character, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .prompt-character, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .question-character, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) strong{
   color:var(--ma-text-strong);
   -webkit-text-fill-color:var(--ma-text-strong);
   text-shadow:none;
   opacity:1;
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) p,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) small,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .subtitle,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .subtext,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .muted,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-copy,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-line,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-tagline,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .card-sub,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch-copy,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .launch-copy,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .section-note,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-pro-sub,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-stat .hint,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-account-email,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-sync-detail,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-sync-meta,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-save-note,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-settings-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hint,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .meta,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .caption{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) p,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) small,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .subtitle,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .subtext,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .muted,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-line,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-tagline,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .card-sub,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .section-note,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pro-sub,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-stat .hint,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-account-email,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-sync-detail,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-sync-meta,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-save-note,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hint,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .meta,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .caption{
   color:var(--ma-muted);
   -webkit-text-fill-color:var(--ma-muted);
   text-shadow:none;
   opacity:1;
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) a{color:var(--ma-link);}
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .btn, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .toggle-btn, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .tab-button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-menu-action, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-settings-choice, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-action-row a, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-action-row button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-result-filter-bar button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-dev-btn{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) a{color:var(--ma-link);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .btn, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toggle-btn, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tab-button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-menu-action, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-choice, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-action-row a, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-action-row button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-result-filter-bar button, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-dev-btn{
   background:var(--ma-control);
   color:var(--ma-control-text);
   -webkit-text-fill-color:var(--ma-control-text);
@@ -434,26 +436,26 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .btn, html[data
   box-shadow:var(--ma-shadow-control);
   text-shadow:none;
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) button:hover, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .toggle-btn:hover, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-menu-action:hover, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-settings-choice:hover{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) button:hover, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toggle-btn:hover, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-menu-action:hover, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-choice:hover{
   background:var(--ma-control-hover);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .btn.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .toggle-btn.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .toggle-btn[aria-pressed="true"], html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .tab-button.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-display-option.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-sound-toggle.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-theme-choice-btn.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) [data-ma-theme-choice].active{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .btn.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toggle-btn.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toggle-btn[aria-pressed="true"], html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tab-button.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-display-option.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-sound-toggle.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-theme-choice-btn.active, html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) [data-ma-theme-choice].active{
   background:var(--ma-control-active);
   border-color:var(--ma-control-active-border);
   color:var(--ma-control-active-text,#102e57);
   -webkit-text-fill-color:var(--ma-control-active-text,#102e57);
   box-shadow:0 0 0 4px var(--ma-focus-ring),0 16px 34px rgba(38,95,165,.14);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-reading-page .bottom-shell .toggle-btn.active,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-reading-page .bottom-shell .toggle-btn[aria-pressed="true"]{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-reading-page .bottom-shell .toggle-btn.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-reading-page .bottom-shell .toggle-btn[aria-pressed="true"]{
   background:linear-gradient(180deg,#cce9d9,#9fd4bc);
   border-color:rgba(17,112,77,.48);
   color:#083421;
   -webkit-text-fill-color:#083421;
   box-shadow:0 0 0 4px rgba(17,112,77,.16),0 16px 34px rgba(17,112,77,.13);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-writing-page .bottom-shell .toggle-btn.active,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-writing-page .bottom-shell .toggle-btn[aria-pressed="true"]{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .bottom-shell .toggle-btn.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .bottom-shell .toggle-btn[aria-pressed="true"]{
   background:linear-gradient(180deg,#cfe0f4,#9fbee2);
   border-color:rgba(29,85,152,.48);
   color:var(--ma-control-active-text,#102e57);
@@ -461,257 +463,257 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-writing
   box-shadow:0 0 0 4px rgba(29,85,152,.16),0 16px 34px rgba(29,85,152,.13);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-score,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-score.average{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score.average{
   background:radial-gradient(circle at 92% 0%,rgba(202,150,44,.18),transparent 38%),linear-gradient(135deg,#ebe1c5 0%,#d8c78f 48%,#ece5d3 100%);
   border-color:rgba(132,92,24,.28);
   color:var(--ma-text);
   box-shadow:0 20px 50px rgba(120,85,25,.13);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-score.reading{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score.reading{
   background:radial-gradient(circle at 92% 0%,rgba(17,112,77,.18),transparent 38%),linear-gradient(135deg,#dceee5,#bfdccc);
   border-color:rgba(17,112,77,.25);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-score.writing{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score.writing{
   background:radial-gradient(circle at 92% 0%,rgba(29,85,152,.19),transparent 38%),linear-gradient(135deg,#ddeaf7,#bdd1e9);
   border-color:rgba(29,85,152,.25);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-toast{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-toast{
   background:linear-gradient(180deg,rgba(222,234,247,.98),rgba(198,215,232,.96));
   color:var(--ma-text);
   border-color:var(--ma-border);
   box-shadow:var(--ma-shadow-soft);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) input,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) textarea,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) select{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) input,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) textarea,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) select{
   background:linear-gradient(180deg,#e4edf7,#d3e1ee);
   color:var(--ma-text);
   -webkit-text-fill-color:var(--ma-text);
   border-color:var(--ma-border);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) input::placeholder,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) textarea::placeholder{color:#6e7f99;-webkit-text-fill-color:#6e7f99;opacity:1;}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) input::placeholder,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) textarea::placeholder{color:#6e7f99;-webkit-text-fill-color:#6e7f99;opacity:1;}
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .progress,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-progress,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .meter,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .bar-track{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .progress,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-progress,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .meter,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .bar-track{
   background:rgba(85,105,132,.16);
 }
 /* Keep branch identity on labels/chips only. Do not colour entire .reading/.writing
    containers, because those classes are also used as card/page wrappers. */
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-pill.reading,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .reading-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .reading-accent,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .is-reading{color:var(--ma-reading);}
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-pill.writing,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .writing-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .writing-accent,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .is-writing{color:var(--ma-writing);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pill.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .reading-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .reading-accent,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .is-reading{color:var(--ma-reading);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pill.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .writing-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .writing-accent,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .is-writing{color:var(--ma-writing);}
 
 /* Light mode contrast pass: central theme ownership for legacy dark page surfaces.
    These rules replace old dark-page backgrounds/text with tinted light surfaces so
    branch pages do not need separate light-mode patches. */
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .atlas-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .constellation,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .node,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .main,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .side-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .panel-content,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .score-block,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mini-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .quick-compare,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .status-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .metric,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mini-stat,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .meta-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-inline-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-doughnut-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-tooltip,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-view-toggle,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-kana-stat,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.reference,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .table-row,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .word-row{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .atlas-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .constellation,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .node,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .main,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .side-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel-content,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-block,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .quick-compare,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .status-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-stat,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .meta-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-doughnut-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-tooltip,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-view-toggle,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.reference,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .table-row,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .word-row{
   background:var(--ma-surface);
   border-color:var(--ma-border);
   color:var(--ma-text);
   box-shadow:var(--ma-shadow-soft);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .main{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .main{
   background:radial-gradient(circle at 14% 0%,rgba(17,112,77,.14),transparent 34%),
              linear-gradient(180deg,rgba(225,237,249,.98),rgba(202,219,236,.94));
   border-color:rgba(17,112,77,.28);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-writing-page .main{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .main{
   background:radial-gradient(circle at 14% 0%,rgba(29,85,152,.15),transparent 34%),
              linear-gradient(180deg,rgba(226,237,249,.98),rgba(199,216,235,.94));
   border-color:rgba(29,85,152,.28);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.test-mode-active .main,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.daily-challenge-active .main{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.test-mode-active .main,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.daily-challenge-active .main{
   background:radial-gradient(circle at 50% 0%,rgba(202,150,44,.15),transparent 34%),
              linear-gradient(180deg,rgba(228,238,248,.98),rgba(204,220,236,.94));
   border-color:rgba(118,81,15,.26);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .atlas-card{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .atlas-card{
   background:radial-gradient(circle at 82% 16%,rgba(38,95,165,.16),transparent 32%),
              radial-gradient(circle at 12% 84%,rgba(17,112,77,.12),transparent 28%),
              linear-gradient(145deg,rgba(229,239,249,.96),rgba(203,218,235,.92));
   border-color:rgba(42,59,88,.22);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .atlas-card::before{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .atlas-card::before{
   background:linear-gradient(135deg,rgba(255,255,255,.30),transparent 34%),
              radial-gradient(circle at 68% 44%,rgba(202,150,44,.13),transparent 28%);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .constellation{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .constellation{
   background:radial-gradient(circle at 50% 46%,rgba(38,95,165,.12),transparent 10%),
              radial-gradient(circle at 20% 26%,rgba(29,85,152,.18),transparent 10%),
              radial-gradient(circle at 80% 22%,rgba(130,100,190,.14),transparent 10%),
              radial-gradient(circle at 28% 78%,rgba(17,112,77,.13),transparent 10%),
              linear-gradient(145deg,rgba(224,235,247,.74),rgba(194,210,229,.66));
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .constellation::before{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .constellation::before{
   background:linear-gradient(32deg,transparent 0 22%,rgba(42,59,88,.18) 22.2%,transparent 22.6% 100%),
              linear-gradient(148deg,transparent 0 20%,rgba(42,59,88,.13) 20.2%,transparent 20.55% 100%),
              linear-gradient(78deg,transparent 0 43%,rgba(42,59,88,.16) 43.2%,transparent 43.55% 100%),
              linear-gradient(118deg,transparent 0 62%,rgba(42,59,88,.13) 62.2%,transparent 62.55% 100%);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .node{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .node{
   background:linear-gradient(180deg,rgba(231,240,249,.94),rgba(203,218,234,.86));
   border-color:rgba(42,59,88,.24);
   color:var(--ma-text-strong);
   box-shadow:var(--ma-shadow-control);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .panel-header,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .drawer-content,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .bottom-shell,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .bottom-shell.ma-modifiers-only{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel-header,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .drawer-content,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .bottom-shell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .bottom-shell.ma-modifiers-only{
   background:linear-gradient(180deg,rgba(222,235,247,.97),rgba(198,215,233,.95));
   border-color:var(--ma-border);
   color:var(--ma-text);
   box-shadow:var(--ma-shadow-soft);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-title,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-line,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-lead,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .subline,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .score-row,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .panel-header,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-performance-head,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-doughnut-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-doughnut-value,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-tooltip,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .heatmap-row-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-kana-stat .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-kana-stat .value,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .metric .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .metric .value,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-value,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.reference,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.reference .cell-char,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.reference .cell-time,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .branch-bottom,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .future-tile strong,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .future-tile span,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over-answer{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-line,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-lead,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .subline,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-row,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel-header,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-performance-head,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-doughnut-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-doughnut-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-tooltip,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap-row-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat .value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric .value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.reference,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.reference .cell-char,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.reference .cell-time,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-bottom,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-tile strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-tile span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-answer{
   color:var(--ma-text);
   -webkit-text-fill-color:var(--ma-text);
   text-shadow:none;
   opacity:1;
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-line,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hero-lead,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .subline,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .score-row span:first-child,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .metric .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-doughnut-value,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-kana-stat .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .node span,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .future-tile span{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-line,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-lead,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .subline,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-row span:first-child,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-doughnut-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .node span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-tile span{
   color:var(--ma-muted);
   -webkit-text-fill-color:var(--ma-muted);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) button.cell,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .heatmap .cell,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .heatmap .cell-char,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .heatmap .cell-time{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) button.cell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap .cell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap .cell-char,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap .cell-time{
   color:#0f1c31;
   -webkit-text-fill-color:#0f1c31;
   text-shadow:none;
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.correct,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.good,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.green{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.correct,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.good,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.green{
   background:linear-gradient(180deg,#5fc879,#2f8f45);
   border-color:rgba(19,95,44,.42);
   color:#06151c;
   -webkit-text-fill-color:#06151c;
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.wrong,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.bad,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.red{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.wrong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.bad,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.red{
   background:linear-gradient(180deg,#ee7d7d,#c94949);
   border-color:rgba(150,34,34,.42);
   color:#06151c;
   -webkit-text-fill-color:#06151c;
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.slow,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell.yellow{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.slow,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.yellow{
   background:linear-gradient(180deg,#e5bd51,#c8992e);
   border-color:rgba(128,84,18,.42);
   color:#06151c;
   -webkit-text-fill-color:#06151c;
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell-badge.fastest,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-flag.best{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell-badge.fastest,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-flag.best{
   color:#0b6b45;
   -webkit-text-fill-color:#0b6b45;
   background:rgba(17,112,77,.12);
   border-color:rgba(17,112,77,.26);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .cell-badge.slowest,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-flag.slowest{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell-badge.slowest,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-flag.slowest{
   color:#76510f;
   -webkit-text-fill-color:#76510f;
   background:rgba(202,150,44,.14);
   border-color:rgba(202,150,44,.30);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-flag.worst{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-flag.worst{
   color:#9b2631;
   -webkit-text-fill-color:#9b2631;
   background:rgba(155,38,49,.10);
   border-color:rgba(155,38,49,.28);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .btn-start,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .button.primary{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .btn-start,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .button.primary{
   background:linear-gradient(180deg,#e8f3ff,#c9def4);
   color:#10223a;
   -webkit-text-fill-color:#10223a;
   border-color:rgba(38,95,165,.25);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over-title{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-title{
   color:#9b2631;
   -webkit-text-fill-color:#9b2631;
 }
 
 @media (prefers-contrast: more){
-  html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])){
+  html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])){
     --ma-text:#071226;
     --ma-text-strong:#020817;
     --ma-muted:#354760;
@@ -723,17 +725,17 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over-titl
 /* === Light mode component integration: final contrast cleanup ===
    Remaining branch components now resolve to shared theme tokens in light mode.
    This keeps light mode tinted and readable without changing dark-mode styling. */
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])){
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])){
   --ma-light-panel:linear-gradient(180deg,rgba(225,236,247,.96),rgba(202,217,234,.92));
   --ma-light-panel-strong:linear-gradient(180deg,rgba(232,241,250,.98),rgba(203,219,236,.96));
   --ma-light-panel-soft:linear-gradient(180deg,rgba(219,232,245,.90),rgba(196,213,232,.84));
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .session-list,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .session-end-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .session-summary{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-list,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-end-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-summary{
   background:var(--ma-light-panel-strong);
   border-color:var(--ma-border);
   color:var(--ma-text);
@@ -741,30 +743,30 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .session-summar
   box-shadow:var(--ma-shadow);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-hero,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-section,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-table>div,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-list li,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .stat-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-kana-stat,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .metric,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mini-panel,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .duo-chip,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-inline-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .score-block,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .score-pill,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .score-row,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .panel-row,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-detail-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .detail-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .selected-result,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-summary-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-achievement,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-achievement-section,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-mastery-summary span,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-mastery-cell{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-hero,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-section,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-table>div,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-list li,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stat-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .duo-chip,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-block,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-pill,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-row,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel-row,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-detail-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .detail-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .selected-result,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-summary-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement-section,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-summary span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-cell{
   background:var(--ma-light-panel-soft);
   border-color:rgba(42,59,88,.20);
   color:var(--ma-text);
@@ -772,142 +774,142 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-mastery-cel
   box-shadow:var(--ma-shadow-soft);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .session-summary *,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over *{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-summary *,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over *{
   text-shadow:none;
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-card strong,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-section h3,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-table strong,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .stat-card .value,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .session-list h3,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over-title,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over h2,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over h3,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-title,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .section-title,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-achievement strong,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-mastery-summary b,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-achievement-detail strong,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-ach-info-body h3{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-card strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-section h3,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-table strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stat-card .value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-list h3,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over h2,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over h3,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .section-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-summary b,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement-detail strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-ach-info-body h3{
   color:var(--ma-text-strong);
   -webkit-text-fill-color:var(--ma-text-strong);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-kicker,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-hero p,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-card span,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-card small,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-section p,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-table span,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .stat-card .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .result-kana-stat .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over-answer,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-achievement span,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-mastery-legend span{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-kicker,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-hero p,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-card span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-card small,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-section p,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-table span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stat-card .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-answer,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-legend span{
   color:var(--ma-muted);
   -webkit-text-fill-color:var(--ma-muted);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-tabs button,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over button,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over .btn,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-mastery-open-btn{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-tabs button,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over button,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over .btn,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-open-btn{
   background:var(--ma-control);
   border-color:var(--ma-border);
   color:var(--ma-control-text);
   -webkit-text-fill-color:var(--ma-control-text);
   box-shadow:var(--ma-shadow-control);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-about-tabs button.active,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .game-over .primary{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-tabs button.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over .primary{
   background:var(--ma-control-active);
   border-color:var(--ma-control-active-border);
   color:var(--ma-control-active-text,#102e57);
   -webkit-text-fill-color:var(--ma-control-active-text,#102e57);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .tag.reading,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mode-tag.reading,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mini-label.reading,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-mode.reading,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-inline-card.reading .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .metric.reading .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .reading-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .is-reading{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tag.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mode-tag.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-label.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-mode.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card.reading .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric.reading .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .reading-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .is-reading{
   color:var(--ma-reading);
   -webkit-text-fill-color:var(--ma-reading);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .tag.writing,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mode-tag.writing,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mini-label.writing,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-mode.writing,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-inline-card.writing .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .metric.writing .label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .writing-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .is-writing{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tag.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mode-tag.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-label.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-mode.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card.writing .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric.writing .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .writing-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .is-writing{
   color:var(--ma-writing);
   -webkit-text-fill-color:var(--ma-writing);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .tag.reading,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mode-tag.reading{background:var(--ma-reading-soft);border-color:rgba(17,112,77,.24);}
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .tag.writing,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mode-tag.writing{background:var(--ma-writing-soft);border-color:rgba(29,85,152,.24);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tag.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mode-tag.reading{background:var(--ma-reading-soft);border-color:rgba(17,112,77,.24);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tag.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mode-tag.writing{background:var(--ma-writing-soft);border-color:rgba(29,85,152,.24);}
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .pulse-mode-box,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .pulse-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .quick-compare,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .today-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .status-box,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-kana-dashboard-card{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .quick-compare,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .today-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .status-box,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-dashboard-card{
   background:var(--ma-light-panel);
   border-color:rgba(42,59,88,.20);
   color:var(--ma-text);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .pulse-mode-box.reading{background:radial-gradient(circle at 8% 4%,rgba(17,112,77,.12),transparent 34%),var(--ma-light-panel);}
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .pulse-mode-box.writing{background:radial-gradient(circle at 8% 4%,rgba(29,85,152,.13),transparent 34%),var(--ma-light-panel);}
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .pulse-mode-box .pulse-copy,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .pulse-mode-box .mode-copy,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .today-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .quick-compare span{color:var(--ma-muted);-webkit-text-fill-color:var(--ma-muted);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box.reading{background:radial-gradient(circle at 8% 4%,rgba(17,112,77,.12),transparent 34%),var(--ma-light-panel);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box.writing{background:radial-gradient(circle at 8% 4%,rgba(29,85,152,.13),transparent 34%),var(--ma-light-panel);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box .pulse-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box .mode-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .today-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .quick-compare span{color:var(--ma-muted);-webkit-text-fill-color:var(--ma-muted);}
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-score .mega-kicker,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-score .mega-sub,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .heatmap-row-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-performance-head,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .row-help,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .hover-help{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score .mega-kicker,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score .mega-sub,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap-row-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-performance-head,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-help,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hover-help{
   color:var(--ma-muted);
   -webkit-text-fill-color:var(--ma-muted);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-score .mega-value,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-value,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .summary-label,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .mega-inline-card .value,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .metric .value{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score .mega-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card .value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric .value{
   color:var(--ma-text-strong);
   -webkit-text-fill-color:var(--ma-text-strong);
 }
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-loading-screen{background:rgba(215,230,243,.76);}
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-loading-card{background:var(--ma-light-panel-strong);border-color:var(--ma-border);color:var(--ma-text);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-loading-screen{background:rgba(215,230,243,.76);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-loading-card{background:var(--ma-light-panel-strong);border-color:var(--ma-border);color:var(--ma-text);}
 
 
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-preset-toggle{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-preset-toggle{
   color:var(--ma-text,#10203a);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-preset-toggle small{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-preset-toggle small{
   color:var(--ma-muted,#5f728d);
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-reading-page .ma-preset-toggle.active,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-reading-page .ma-preset-toggle[aria-pressed="true"]{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-reading-page .ma-preset-toggle.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-reading-page .ma-preset-toggle[aria-pressed="true"]{
   background:linear-gradient(180deg,rgba(40,166,112,.20),rgba(40,166,112,.09));
   border-color:rgba(28,140,91,.58);
   color:#103322;
 }
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-writing-page .ma-preset-toggle.active,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) body.ma-writing-page .ma-preset-toggle[aria-pressed="true"]{
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .ma-preset-toggle.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .ma-preset-toggle[aria-pressed="true"]{
   background:linear-gradient(180deg,rgba(66,133,224,.20),rgba(66,133,224,.08));
   border-color:rgba(57,108,190,.58);
   color:#102a4d;

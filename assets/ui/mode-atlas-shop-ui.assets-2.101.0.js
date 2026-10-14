@@ -31,7 +31,7 @@
   }
   function preview(product){
     const content=el('div','ma-shop-detail');content.dataset.maShopDetail=product.id;content.append(look(product));
-    const includes=el('div','ma-shop-includes'),copy=el('div');copy.append(el('strong','','The complete collection'),el('p','','An app-wide theme, profile banner, title and frame, iOS app icon, plus a matching avatar outfit and headwear.'));includes.append(appIcon(product),copy);const outfit=el('div','ma-shop-outfit-preview');root.ModeAtlasAvatarArt.render(outfit,{...root.ModeAtlasAvatarRules.defaults,outfit:product.id,headwear:product.id});outfit.setAttribute('role','img');outfit.setAttribute('aria-label',product.name+' avatar outfit and headwear');content.append(includes,outfit,themePreview(product));
+    const includes=el('div','ma-shop-includes'),copy=el('div');copy.append(el('strong','','The complete collection'),el('p','','An app-wide theme, profile banner, title and frame, iOS app icon, plus matching avatar clothing, pants and headwear.'));includes.append(appIcon(product),copy);const outfit=el('div','ma-shop-outfit-preview');root.ModeAtlasAvatarArt.render(outfit,{...root.ModeAtlasAvatarRules.defaults,outfit:product.id,pants:product.id,headwear:product.id});outfit.setAttribute('role','img');outfit.setAttribute('aria-label',product.name+' avatar outfit and headwear');content.append(includes,outfit,themePreview(product));
     const note=el('p','ma-atlas-rewards__note');note.dataset.maShopDetailStatus='';content.append(note);
     const buy=button('','ma-button ma-button--primary');buy.dataset.maShopBuy=product.id;buy.addEventListener('click',()=>void purchase(product));
     const rewards=button('Open Rewards','ma-button ma-button--primary');rewards.dataset.maShopOwnedAction='';rewards.addEventListener('click',openRewards);content.append(buy,rewards);
@@ -117,7 +117,7 @@
       const symbol=el('span','ma-shop-essential__symbol',product.id==='streak-freeze'?'❄':'↺');symbol.setAttribute('aria-hidden','true');
       if(product.kind==='cosmetic'){
         symbol.classList.add('ma-shop-wardrobe-portrait');
-        root.ModeAtlasAvatarArt.render(symbol,{...root.ModeAtlasAvatarRules.defaults,[Object.keys(root.ModeAtlasAvatarRules.slots).find(key=>root.ModeAtlasAvatarRules.slots[key]===product.rewards[0].type)]:product.rewards[0].id},{portrait:product.rewards[0].type!=='outfits'});
+        root.ModeAtlasAvatarArt.render(symbol,{...root.ModeAtlasAvatarRules.defaults,[Object.keys(root.ModeAtlasAvatarRules.slots).find(key=>root.ModeAtlasAvatarRules.slots[key]===product.rewards[0].type)]:product.rewards[0].id},{portrait:!['outfits','pants'].includes(product.rewards[0].type)});
       }
       const copy=el('span','ma-shop-essential__copy');copy.append(el('strong','',product.name),el('span','',product.description));item.append(symbol,copy);
     }
@@ -143,7 +143,7 @@
       section(content,'streak','Streak essentials','consumable',2);
     }else if(category==='wardrobe'){
       const filters=el('label','ma-shop-filter','Explore your wardrobe'),select=el('select');select.dataset.maWardrobeFilter='';select.setAttribute('aria-label','Wardrobe type');
-      for(const [value,label]of [['all','All styles'],['hairstyles','Hair'],['outfits','Clothing'],['headwear','Headwear'],['accessories','Accessories']]){const option=el('option','',label);option.value=value;select.append(option);}
+      for(const [value,label]of [['all','All styles'],['hairstyles','Hair'],['hairColours','Hair colours'],['outfits','Tops'],['pants','Pants'],['headwear','Headwear'],['accessories','Accessories']]){const option=el('option','',label);option.value=value;select.append(option);}
       select.addEventListener('change',refresh);filters.append(select);content.append(filters);section(content,'wardrobe','Find your look','cosmetic');
     }else if(category==='themes')section(content,'themes','A whole new atmosphere','collection');
     else if(category==='streak'){

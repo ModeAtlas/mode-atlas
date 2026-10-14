@@ -2,12 +2,12 @@
    styling live in mode-atlas-study-shared.css / mode-atlas-components.css. */
 body.ma-writing-page{
   --ma-active-rgb:102,168,255;
-  --ma-active-text:var(--ma-native-selected-text,#d8e8ff);
-  --ma-accent:var(--ma-writing);
-  --ma-trainer-accent:var(--ma-writing);
-  --ma-trainer-soft:var(--ma-writing-soft);
-  --ma-trainer-active-text:var(--ma-native-selected-text,#d8e8ff);
-  --ma-trainer-test-bg:var(--ma-native-page,#13233c);
+  --ma-active-text:var(--ma-collection-text,var(--ma-native-selected-text,#d8e8ff));
+  --ma-accent:var(--ma-collection-accent,var(--ma-writing));
+  --ma-trainer-accent:var(--ma-collection-accent,var(--ma-writing));
+  --ma-trainer-soft:var(--ma-collection-inset,var(--ma-writing-soft));
+  --ma-trainer-active-text:var(--ma-collection-text,var(--ma-native-selected-text,#d8e8ff));
+  --ma-trainer-test-bg:var(--ma-collection-page,var(--ma-native-page,#13233c));
 }
 
 .prompt-wrap{

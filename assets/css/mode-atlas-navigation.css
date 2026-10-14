@@ -1,7 +1,7 @@
 /* Shared Mode Atlas navigation.
    All static page navigation is rendered from frontend_components.py. */
 .ma-nav{
-  --ma-nav-accent:var(--ma-writing);
+  --ma-nav-accent:var(--ma-collection-accent,var(--ma-writing));
   position:sticky;
   top:max(12px,env(safe-area-inset-top,0px));
   z-index:70;
@@ -20,8 +20,8 @@
   -webkit-backdrop-filter:blur(18px);
 }
 .shell > .ma-nav,.wrap > .ma-nav{width:100%;}
-.ma-nav--reading{--ma-nav-accent:var(--ma-reading);}
-.ma-nav--writing{--ma-nav-accent:var(--ma-writing);}
+.ma-nav--reading{--ma-nav-accent:var(--ma-collection-accent,var(--ma-reading));}
+.ma-nav--writing{--ma-nav-accent:var(--ma-collection-accent,var(--ma-writing));}
 .ma-nav--results{--ma-nav-accent:var(--ma-results);}
 .ma-nav--kana{--ma-nav-accent:var(--ma-kana);}
 .ma-nav--words{--ma-nav-accent:var(--ma-words);}

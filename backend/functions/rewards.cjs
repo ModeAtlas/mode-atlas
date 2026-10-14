@@ -29,7 +29,7 @@ function createRewards({db,now=Date.now}){
   }
   function key(access){return JSON.stringify([access.allCustom,access.grants]);}
   function hasCustom(profile){
-    return !!(rules.item('banners',profile.banner)?.grant||rules.landmarks.find(item=>item.frame===profile.frame&&item.title===profile.title)?.grant||rules.item('avatars',profile.avatar)?.grant||profile.avatar==='character'&&Object.entries(characters.slots).some(([slot,type])=>rules.item(type,profile.character?.[slot])?.grant));
+    return !!(rules.item('banners',profile.banner)?.grant||rules.landmarks.find(item=>item.frame===profile.frame&&item.title===profile.title)?.grant||rules.item('avatars',profile.avatar)?.grant||!!profile.character&&Object.entries(characters.slots).some(([slot,type])=>rules.item(type,profile.character?.[slot])?.grant));
   }
   function sanitize(profile,access){
     const frame=rules.landmarks.find(item=>item.frame===profile.frame&&item.title===profile.title);
@@ -37,7 +37,7 @@ function createRewards({db,now=Date.now}){
     profile.frame=appearance.frame;profile.title=appearance.title;
     profile.banner=rules.banner(profile.banner,profile.level,access).id;
     if(rules.item('avatars',profile.avatar)&&!rules.allowed('avatars',profile.avatar,profile.level,access))profile.avatar='kana';
-    if(profile.avatar==='character')profile.character=characters.visible(profile.character,profile.level,access);
+    if(profile.character)profile.character=characters.visible(profile.character,profile.level,access);
   }
   return {read,key,hasCustom,sanitize,erase:uid=>db.doc('rewardEntitlements/'+uid).delete()};
 }

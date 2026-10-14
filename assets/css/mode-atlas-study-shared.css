@@ -572,11 +572,11 @@ body[data-display-mode="mobile"] .main {
   
 }
 
-.bottom-shell.ma-modifiers-only{background:var(--ma-native-surface,linear-gradient(180deg,rgba(11,14,20,.96),rgba(5,6,10,.98)));border-top:1px solid var(--ma-native-border,rgba(255,255,255,.08));box-shadow:var(--ma-native-shadow,0 -18px 50px rgba(0,0,0,.38))}
+.bottom-shell.ma-modifiers-only{background:var(--ma-collection-surface,var(--ma-native-surface,linear-gradient(180deg,rgba(11,14,20,.96),rgba(5,6,10,.98))));border-top:1px solid var(--ma-collection-border,var(--ma-native-border,rgba(255,255,255,.08)));box-shadow:var(--ma-native-shadow,0 -18px 50px rgba(0,0,0,.38))}
 
 .bottom-shell.ma-modifiers-only .tab-row{grid-template-columns:1fr;width:min(520px,100%);margin:0 auto}
 
-.bottom-shell.ma-modifiers-only .tab-button{border-right:0;min-height:54px;font-size:18px;letter-spacing:-.01em;background:var(--ma-native-control,linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015)))}
+.bottom-shell.ma-modifiers-only .tab-button{border-right:0;min-height:54px;font-size:18px;letter-spacing:-.01em;background:var(--ma-collection-inset,var(--ma-native-control,linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))))}
 
 @media(max-width:760px){
 }
@@ -1041,7 +1041,7 @@ body[data-effective-display-mode="phone"] #trialTimerPill:not([hidden]) {
    Reading and Writing page styles. */
 body.ma-reading-page,
 body.ma-writing-page{
-  --ma-trainer-heatmap-neutral:var(--ma-native-inset,#555);
+  --ma-trainer-heatmap-neutral:var(--ma-collection-inset,var(--ma-native-inset,#555));
   --ma-trainer-heatmap-wrong:var(--ma-native-danger-bg,#b23b3b);
   --ma-trainer-heatmap-correct:var(--ma-native-success-bg,#2e7d32);
   --ma-trainer-heatmap-even:var(--ma-native-warning-bg,#9a8c25);
@@ -1050,8 +1050,8 @@ body.ma-writing-page{
   min-height:100vh;
   color:var(--ma-text);
   background:
-    var(--ma-native-page,radial-gradient(circle at top,color-mix(in srgb,var(--ma-trainer-accent) 22%,transparent) 0%,transparent 34%),
-    radial-gradient(circle at top,#242424 0%,var(--ma-bg) 55%));
+    var(--ma-collection-page,var(--ma-native-page,radial-gradient(circle at top,color-mix(in srgb,var(--ma-trainer-accent) 22%,transparent) 0%,transparent 34%),
+    radial-gradient(circle at top,#242424 0%,var(--ma-bg) 55%)));
   display:flex;
   flex-direction:column;
   justify-content:flex-start;

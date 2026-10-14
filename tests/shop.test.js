@@ -7,6 +7,18 @@ const createProgress=require('../assets/app/mode-atlas-progress.js');
 const dates=require('../assets/app/mode-atlas-date.js');
 const wallet=(balance,extra={})=>({version:2,currency:'atlas-coins',balance,coinPurchasesEnabled:false,offers:catalogue.products.map(p=>catalogue.offer(p)).filter(Boolean),owned:[],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,checkedAt:1000,...extra});
 
+test('pants and dyes migrate old characters and enforce level and permanent purchase access',()=>{
+  const chars=require('../assets/app/mode-atlas-avatar-rules.js'),art=require('../assets/ui/mode-atlas-avatar-art.js');
+  const old=chars.legacy({...chars.defaults,hair:'flow',hairColor:'amber-ombre',pants:'pinstripe'});
+  assert.equal(old.version,1);assert.equal(old.pants,undefined);assert.equal(old.hairColor,'chestnut');assert.ok(chars.valid(old));assert.equal(chars.normalize(old).pants,'classic');
+  assert.equal(chars.valid({...old,pants:'classic'}),false);assert.equal(chars.valid({...chars.defaults,pants:'made-up'}),false);
+  for(const [id,level]of [['trail',5],['cargo',10],['alpine',20]]){assert.equal(chars.allowed({...chars.defaults,pants:id},level-1,{}),false);assert.equal(chars.allowed({...chars.defaults,pants:id},level,{}),true);}
+  for(const [slot,id]of [['pants','pinstripe'],['pants','aurora'],['hairColor','amber-ombre'],['hairColor','rose-gold'],['hairColor','moonlit-silver']]){
+    const look={...chars.defaults,[slot]:id};assert.equal(chars.allowed(look,999,{}),false);assert.equal(chars.allowed(look,1,{grants:['shop-'+id]}),true);assert.equal(chars.visible(look,1,{})[slot],chars.defaults[slot]);assert.ok(!art.svg(look).includes('undefined'));
+  }
+  const a=art.svg({...chars.defaults,hairColor:'rose-gold'}),b=art.svg({...chars.defaults,hairColor:'rose-gold'});assert.notEqual(a.match(/id="([^"]+)"/)[1],b.match(/id="([^"]+)"/)[1]);
+});
+
 test('level coin milestones start after level one and remain cumulative through level 999',()=>{
   for(const [level,total]of [[1,0],[2,20],[5,130],[10,280],[15,430],[19,510],[20,580],[999,29910]])assert.equal(catalogue.levelCoins.total(level),total);
   assert.equal(catalogue.levelCoins.total(5)-catalogue.levelCoins.total(4),70);

@@ -7,6 +7,16 @@
   const wardrobeItems=Object.entries(root.ModeAtlasAvatarRules.slots).flatMap(([slot,type])=>rules.catalogue[type].filter(item=>item.grant||item.level>1).map(item=>({...item,slot,type})));
   const access=()=>root.ModeAtlasRewardAccess?.current()||{};
   const button=(label,cls='ma-button ma-button--ghost')=>{const node=el('button',cls,label);node.type='button';return node;};
+  function pageActions(items=[]){
+    const host=el('div','ma-action-grid');host.setAttribute('aria-label','Explore your progress');
+    for(const item of [...items,{label:'View achievements',short:'Achievements',icon:'achievement',achievements:true}]){
+      const control=item.href?el('a','ma-button ma-button--ghost'):button('');
+      if(item.href)control.href=item.href;if(item.action)control.addEventListener('click',item.action);if(item.achievements)control.dataset.maAchievementsOpen='';
+      control.setAttribute('aria-label',item.label);
+      const icon=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS(icon.namespaceURI,'use');icon.classList.add('ma-icon');icon.setAttribute('aria-hidden','true');use.setAttribute('href','/assets/mode-atlas-icons.svg#icon-'+item.icon);icon.append(use);
+      control.append(icon,el('span','',item.short||item.label));host.append(control);
+    }return host;
+  }
   function appearance(){
     const state=root.ModeAtlasProgress.readState(),level=root.ModeAtlasProgress.getSummary(state).level;
     return root.ModeAtlasRewardRules.appearance(state.appearance.landmark,level,access());
@@ -101,8 +111,7 @@
     const grid=el('div','ma-recap-grid');
     for(const [label,value]of [['Study days',`${data.studyDays} / 7`],['Reading correct',data.reading],['Writing correct',data.writing],['Different kana',data.variety],['Daily goals completed',data.dailyGoals],['Weekly goals completed',data.weeklyGoals]]){const card=el('div');card.append(el('strong','',Number.isFinite(value)?value.toLocaleString():value),el('span','',label));grid.append(card);}
     host.append(grid,el('p','ma-atlas-rewards__note',data.reading+data.writing?'Each study day needs five correct answers across your practice. These totals use saved, dated activity; older undated practice is not estimated.':'No dated practice is recorded for this week yet. A short session is a good place to start.'));
-    const link=el('a','ma-button ma-button--ghost','Start a short session');link.href='/reading/?practice=10';host.append(link);
-    const ranking=el('a','ma-button ma-button--ghost','View weekly ranking');ranking.href=root.AtlasPlatform.destinationPath('weekly');host.append(ranking);
+    host.append(pageActions([{label:'Start a short session',short:'Practise',icon:'play',href:'/reading/?practice=10'},{label:'View weekly ranking',short:'Rankings',icon:'chart',href:root.AtlasPlatform.destinationPath('weekly')} ]));
   }
   function renderReviews(reviewActions){
     if(!reviewActions)return;
@@ -125,7 +134,7 @@
     heading.append(title,help);
     const reviewActions=el('div','ma-atlas-rewards__actions');reviewActions.dataset.maDueReviews='';renderReviews(reviewActions);
     reviews.append(heading,reviewActions);panel.append(reviews);
-    const mastery=button('Open Mastery Map');mastery.addEventListener('click',()=>root.ModeAtlasFeatures.openMasteryMap());panel.append(mastery);
+    panel.append(pageActions([{label:'Open Mastery Map',short:'Mastery Map',icon:'book',action:()=>root.ModeAtlasFeatures.openMasteryMap()}]));
     return panel;
   }
   function category(type,title,note,open=false){
@@ -155,7 +164,7 @@
     const wardrobeSection=category('wardrobe','Wardrobe collection','Wear these in Profile → Edit avatar.'),wardrobe=el('div','ma-avatar-collection');
     for(const item of wardrobeItems){
       const tile=el('article','ma-avatar-collectible'),art=el('span','ma-avatar-item__art');tile.dataset.maWardrobeItem=item.id;tile.dataset.wardrobeType=item.type;
-      root.ModeAtlasAvatarArt.render(art,{...root.ModeAtlasAvatarRules.defaults,[item.slot]:item.id},{portrait:item.slot!=='outfit'});
+      root.ModeAtlasAvatarArt.render(art,{...root.ModeAtlasAvatarRules.defaults,[item.slot]:item.id},{portrait:!['outfit','pants'].includes(item.slot)});
       tile.append(art,el('strong','',item.name),el('small'));wardrobe.append(tile);
     }
     wardrobeSection.content.append(wardrobe);panel.append(wardrobeSection.section);
@@ -185,6 +194,7 @@
       }
       iconsSection.content.append(icons);panel.append(iconsSection.section);
     }
+    panel.append(pageActions());
     return panel;
   }
   function mount(host){

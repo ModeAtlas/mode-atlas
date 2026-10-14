@@ -26,23 +26,30 @@ function createAvatars({db,now=Date.now}){
   async function prepare(tx,user,data,{legacy,level,access}){
     const ref=reference(user.uid),snapshot=await tx.get(ref),previous=record(snapshot.data(),legacy,user);
     if(data.revision!==undefined&&data.revision!==previous.revision)fail('aborted','Your avatar changed on another device. Reopen the editor to use the latest look.');
-    const avatar=identity.avatar(data.avatar===undefined?projection(previous,user,level,access).avatar:data.avatar),character=data.character===undefined?characters.visible(previous.character,level,access):data.character;
-    if(!avatar||!characters.valid(character))fail('invalid-argument','Choose a valid avatar and wardrobe items.');
+    const avatar=identity.avatar(data.avatar===undefined?projection(previous,user,level,access).avatar:data.avatar),selection=data.character===undefined?characters.visible(previous.character,level,access):data.character;
+    if(!avatar||!characters.valid(selection))fail('invalid-argument','Choose a valid avatar and wardrobe items.');
+    const character=characters.normalize(selection);
+    // Older clients cannot edit pants or new dyes. Preserve those choices when
+    // they send back the compatible view supplied to them.
+    if(selection.version===1){const previousVisible=characters.visible(previous.character,level,access);character.pants=previousVisible.pants;if(selection.hairColor===characters.legacy(previousVisible).hairColor)character.hairColor=previousVisible.hairColor;}
     if(avatar==='account'&&!accountPhoto(user))fail('failed-precondition','Your linked Google account has no available photo.');
     if(rewards.item('avatars',avatar)&&!rewards.allowed('avatars',avatar,level,access)||!characters.allowed(character,level,access))fail('permission-denied','One of these avatar items is not available for your account.');
     const value={version:1,revision:previous.revision+1,avatar,character:{...character}},out=projection(value,user,level,access);
-    const profile={avatar,...(avatar==='character'?{character:out.character}:{}),...(avatar==='account'?{avatarURL:out.avatarURL}:{})};
+    const profile={avatar,character:out.character,...(avatar==='account'?{avatarURL:out.avatarURL}:{})};
     return {value:out,profile,commit:()=>tx.set(ref,{...value,updatedAt:now()})};
   }
   async function run(user,action,data){
-    const keys=action==='avatarState'?[]:['avatar','character','revision'];
+    const keys=action==='avatarState'?['characterVersion']:['avatar','character','revision'];
     if(!data||typeof data!=='object'||Array.isArray(data)||Object.keys(data).some(key=>!keys.includes(key)))fail('invalid-argument','The avatar request contains unsupported fields.');
     if(action==='avatarUpdate'&&(!Number.isSafeInteger(data.revision)||data.revision<0))fail('invalid-argument','Reopen the avatar editor and try again.');
+    if(action==='avatarState'&&data.characterVersion!==undefined&&![1,2].includes(data.characterVersion))fail('invalid-argument','Unsupported character version.');
+    const requested=action==='avatarState'?data.characterVersion:data.character?.version;
+    const response=value=>requested===2?value:{...value,character:characters.legacy(value.character)};
     return db.runTransaction(async tx=>{
       const socialRef=db.doc('socialAccounts/'+user.uid),[social,save,awards,deleting,deleted]=await tx.getAll(socialRef,db.doc('users/'+user.uid+'/appData/kanaTrainer'),db.doc('rewardEntitlements/'+user.uid),db.doc('accountDeletions/'+user.uid),db.doc('socialDeleted/'+hash(user.uid)));
       if(deleting.exists||deleted.exists&&(Date.parse(user.metadata?.creationTime)||0)<=deleted.data().at)fail('unauthenticated','This account is being deleted.');
       const account=social.data(),level=levelFromSave(save.data()),access=entitlement(user,awards.data(),now());
-      if(action==='avatarState')return projection(record((await tx.get(reference(user.uid))).data(),account?.profile,user),user,level,access);
+      if(action==='avatarState')return response(projection(record((await tx.get(reference(user.uid))).data(),account?.profile,user),user,level,access));
       const update=await prepare(tx,user,data,{legacy:account?.profile,level,access});
       update.commit();
       if(account?.active&&!account.deleting){
@@ -50,9 +57,10 @@ function createAvatars({db,now=Date.now}){
         Object.assign(profile,update.profile);
         tx.update(socialRef,{profile,rewardAccess:access,summary:projectSave(save.data(),profile.timeZone,save.updateTime?.toMillis()||0,access),updatedAt:now()});
       }
-      return update.value;
+      return response(update.value);
     });
   }
-  return {prepare,run,erase:uid=>reference(uid).delete()};
+  async function publicCharacter(tx,uid,legacy,level,access){return characters.visible((await tx.get(reference(uid))).data()?.character||legacy?.character,level,access);}
+  return {prepare,run,publicCharacter,erase:uid=>reference(uid).delete()};
 }
 module.exports={createAvatars};

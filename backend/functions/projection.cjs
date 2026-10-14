@@ -60,6 +60,7 @@ function publicProfile(uid, account, now = Date.now(), full = true) {
     const url=identity.photoURL(account.profile.avatarURL);if(url)out.avatarURL=url;else out.avatar='kana';
   }
   if(out.avatar==='character')out.character=characters.visible(account.profile.character,summary.level,account.rewardAccess);
+  if(full&&identity.validGreeting(account.profile.greeting)&&account.profile.greeting)out.greeting=account.profile.greeting;
   if(full)out.stats={xp:summary.xp,totalCorrect:summary.totalCorrect,
     streak:progress.studyStreak(summary.studyDays,dates.dateKeyInTimeZone(now,account.profile.timeZone)),
     readingMastered:summary.readingMastered,writingMastered:summary.writingMastered,

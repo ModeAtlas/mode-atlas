@@ -5,9 +5,13 @@
   else root.ModeAtlasAvatarArt=factory(root.ModeAtlasAvatarRules);
 })(typeof window!=='undefined'?window:globalThis,function(rules){
   'use strict';
+  let serial=0;
   const palettes={evergreen:['#416c4e','#244534','#c5ce94'],grove:['#4f8067','#b7c6a3','#eee2c9'],bridge:['#b38359','#77573f','#e6c899'],summit:['#7194ad','#3b576e','#edf1ea'],sakura:['#e6adc1','#a96180','#fff1eb'],midnight:['#444763','#272e47','#b4bee5'],skyline:['#354f60','#233644','#e7bf7b'],hunny:['#c8493d','#993b33','#edbf62'],varsity:['#426654','#284b3a','#f0e3cb'],'cable-knit':['#d4bea0','#a68b69','#f1e5cf']};
   function svg(value,{portrait=false}={}){
-    const v=rules.normalize(value),skin=rules.colour('skin',v.skin),hair=rules.colour('hairColor',v.hairColor),eye=rules.colour('eyes',v.eyes);
+    const v=rules.normalize(value),skin=rules.colour('skin',v.skin),dye=rules.choices.hairColor.find(item=>item.id===v.hairColor),eye=rules.colour('eyes',v.eyes),id=++serial;
+    const hair=dye.tones?`url(#ma-avatar-dye-${id})`:dye.value;
+    const longHair=['long','waves','bob','coils','ponytail','braids','ribbon-waves','flow'].includes(v.hair);
+    const definitions=(dye.tones?`<linearGradient id="ma-avatar-dye-${id}" gradientUnits="userSpaceOnUse" x1="0" y1="24" x2="0" y2="${longHair?155:86}">${dye.tones.map((colour,i)=>`<stop offset="${i*50}%" stop-color="${colour}"/>`).join('')}</linearGradient>`:'')+(v.pants==='aurora'?`<linearGradient id="ma-avatar-pants-${id}" gradientUnits="userSpaceOnUse" x1="84" y1="244" x2="154" y2="307"><stop stop-color="#6abeb4"/><stop offset=".5" stop-color="#a89fdd"/><stop offset="1" stop-color="#d6b8c9"/></linearGradient>`:'');
     const [cloth,edge,accent]=palettes[v.outfit]||[rules.colour('outfitColor',v.outfitColor),'#344454','#f2e9d9'];
     const path=(d,fill,extra='')=>`<path d="${d}" fill="${fill}" ${extra}/>`;
     const stroke=(d,c='#283441',w=2.4)=>path(d,'none',`stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`);
@@ -84,15 +88,27 @@
     if(v.accessory==='trail-scarf')accessory=path('M96 132Q120 146 145 132L143 151Q119 164 96 149Z','#cfaa6d')+path('m126 150 12 2 7 40-17 4Z','#bd8f53')+stroke('m130 185 12-3m-12 10 13-3','#ead4ad',2);
     if(v.accessory==='atlas-pin')accessory=path('m148 179 8 5v10l-8 5-8-5v-10Z','#e6bf67')+stroke('m144 191 4-7 4 7m-7-2h6','#65512c',1.5);
     if(v.accessory==='hunny')accessory=stroke('M99 147Q106 158 120 162Q135 158 142 147','#edcd76',2)+path('M115 162h10l1 7q0 5-6 5t-6-5Z','#c19149')+path('M114 163h12v3q-3-2-5 1t-4-1-3 0Z','#f6d073')+stroke('M115 161h10','#f6d073',2)+circle(120,169,1.6,'#ffe5a3');
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${portrait?'34 8 172 178':'0 0 240 340'}" fill="none" aria-hidden="true">`
+    const trouserPalette={classic:['#364553','#202c3a','#84949e'],denim:['#53738d','#334f67','#a7b6bc'],chinos:['#c3a47c','#8b7358','#e0cbae'],joggers:['#626773','#424957','#b1b4bc'],trail:['#697a59','#43573f','#a3b48b'],cargo:['#93815f','#615940','#c3b18a'],alpine:['#3e5d70','#243e51','#95bac2'],pinstripe:['#343649','#222535','#a6adbd'],aurora:['#33354d','#23263b','#a89fdd'],sakura:['#b67d97','#85566f','#edbcd0'],midnight:['#3c3c59','#26283e','#b4b9dd'],skyline:['#354957','#22333f','#bda577'],evergreen:['#3f5b43','#263f30','#a5b683']};
+    const [fabric,seam,trim]=trouserPalette[v.pants];
+    let trousers=path('M86 232h69l-4 74h-26l-5-50-6 50H88Z',fabric)+stroke('M121 255V237',seam,2);
+    if(['denim','chinos','skyline','pinstripe'].includes(v.pants))trousers+=stroke('M90 243q3 16 16 16m43-16q-3 16-13 16',seam,1.4)+stroke('m94 264-1 36m51-36 1 36',trim,1.1);
+    if(v.pants==='denim')trousers+=stroke('M89 299h25m13 0h24',trim,5)+stroke('M92 301h19m20 0h17',seam,1.2);
+    if(['joggers','aurora','midnight'].includes(v.pants))trousers+=stroke('M88 300h25m14 0h24',seam,7)+stroke('m114 245-3 18m15-18 3 18',trim,1.5);
+    if(['trail','cargo','evergreen'].includes(v.pants))trousers+=path('M88 263h21v19H89Zm43 0h21l-1 19h-20Z',seam)+stroke('M89 267h18m26 0h17',trim,1.5)+circle(98,270,1.4,trim)+circle(141,270,1.4,trim);
+    if(v.pants==='alpine')trousers+=path('m90 268 21 2-1 17-21-2Zm40 2 21-2 1 17-21 2Z',seam)+stroke('m90 292 20 2m20 0 21-2',trim,2.6);
+    if(v.pants==='pinstripe')trousers+=[96,103,109,132,139,146].map(x=>stroke(`M${x} 253v46`,trim,.8)).join('')+stroke('M92 302h19m19 0h19',seam,3);
+    if(v.pants==='aurora')trousers+=path('m87 245 8 1-1 51-6-1Zm58 1 8-1-2 51-6 1Z',`url(#ma-avatar-pants-${id})`)+stroke('M90 302h22m17 0h19','#b7e1db',1.6);
+    if(v.pants==='sakura')trousers+=stroke('m95 249-3 51m12-51-1 51m33-51 1 51m9-51 1 51',trim,1.5);
+    if(v.pants==='midnight')trousers+=path('M146 268a5 5 0 1 1-4-7 5 5 0 0 0 4 7Z',trim);
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${portrait?'34 8 172 178':'0 0 240 340'}" fill="none" aria-hidden="true">`+(definitions?`<defs>${definitions}</defs>`:'')
       +(!portrait?`<ellipse cx="120" cy="324" rx="49" ry="7" fill="#14212b" opacity=".12"/>`:'')+back
-      +path('M86 232h69l-4 74h-26l-5-50-6 50H88Z','#364553')+stroke('M121 255V237','#202c3a',2)
+      +trousers
       +path('M87 299h28v21H77q-2-10 10-12Zm38 0h27l9 12q4 9-4 9h-32Z','#eee9dd')+stroke('M79 318h34m14 0h31','#9eaaa8',2)
       +path('M104 120h33l3 31q-21 14-39 0Z',skin)
       +path('M52 223 48 240q0 13 10 13 9-1 11-12l2-12m99-6 1 17q2 12 11 12 9-2 8-13l-2-15',skin)+garment
       +`<ellipse cx="76" cy="92" rx="8" ry="12" fill="${skin}"/><ellipse cx="164" cy="92" rx="8" ry="12" fill="${skin}"/><path d="M77 73Q77 33 120 33Q164 33 164 74V95Q161 132 121 142Q80 135 77 99Z" fill="${skin}"/>`
       +`<ellipse cx="92" cy="106" rx="9" ry="5" fill="#db857b" opacity=".28"/><ellipse cx="148" cy="106" rx="9" ry="5" fill="#db857b" opacity=".28"/>`
-      +stroke('M94 77q8-5 16-1m20 0q8-4 16 1',hair,2.7)
+      +stroke('M94 77q8-5 16-1m20 0q8-4 16 1',dye.value,2.7)
       +`<ellipse cx="103" cy="91" rx="5.6" ry="6.5" fill="#faf5ee"/><ellipse cx="137" cy="91" rx="5.6" ry="6.5" fill="#faf5ee"/>`
       +circle(104,91,4,eye)+circle(136,91,4,eye)+circle(105,89,1.4,'#fff')+circle(137,89,1.4,'#fff')
       +stroke('m120 94-3 10 5 1','#6d493e',1.3)+stroke('M109 115q11 8 22-1','#623f36',2)+front+hat+accessory+'</svg>';

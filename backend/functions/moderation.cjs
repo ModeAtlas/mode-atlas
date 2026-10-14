@@ -6,9 +6,9 @@ const policy=require('./shared/mode-atlas-social-identity.js');
 const characters=require('./shared/mode-atlas-avatar-rules.js');
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const fail=(code,message)=>{throw new HttpsError(code,message);};
-const reasons=new Set(['name','avatar','harassment','other']);
+const reasons=new Set(['name','avatar','greeting','harassment','other']);
 function fields(data,allowed){if(!data||typeof data!=='object'||Array.isArray(data)||Object.keys(data).some(key=>!allowed.includes(key)))fail('invalid-argument','Unsupported report request.');}
-function portrait(profile){return {displayName:profile.displayName,avatar:profile.avatar,avatarURL:profile.avatarURL||null,
+function portrait(profile){return {displayName:profile.displayName,avatar:profile.avatar,avatarURL:profile.avatarURL||null,greeting:profile.greeting||'',
   ...(profile.avatar==='character'?{character:characters.normalize(profile.character)}:{})};}
 function createModeration({db,identities,staff,now=Date.now}){
   const reports=db.collection('socialReports'),restrictions=db.collection('socialRestrictions');

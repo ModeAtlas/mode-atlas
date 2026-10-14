@@ -135,6 +135,20 @@
     {id:'grove',name:'Grove cardigan',level:5},{id:'bridge',name:'Explorer jacket',level:10},{id:'summit',name:'Summit coat',level:20},
     ...['sakura','midnight','skyline','evergreen'].map(id=>({id,name:{sakura:'Blossom jacket',midnight:'Moonlight hoodie',skyline:'City bomber',evergreen:'Woodland field jacket'}[id],grant:'shop-'+id,kind:'shop'}))
   ].map(Object.freeze));
+  const hairColours=Object.freeze([
+    ...[['ink','Ink','#24222b'],['espresso','Espresso','#49332c'],['chestnut','Chestnut','#87523c'],['copper','Copper','#bc7149'],['gold','Golden','#d0aa65'],['silver','Silver','#c3c5cf'],['rose','Rose','#ba6380'],['ocean','Ocean','#4a7489']].map(([id,name,value])=>({id,name,value,level:1,legacy:id})),
+    ...[['dark-chocolate','Dark chocolate','#35251f','espresso'],['walnut','Walnut brown','#604435','espresso'],['mocha','Mocha brown','#725344','chestnut'],['ash-brown','Ash brown','#81715f','chestnut'],['caramel','Caramel brunette','#a5784b','chestnut'],['dark-blonde','Dark blonde','#ab8e60','gold'],['honey-blonde','Honey blonde','#d8b678','gold'],['champagne-blonde','Champagne blonde','#e4d0a0','gold']].map(([id,name,value,legacy])=>({id,name,value,legacy,level:1})),
+    {id:'amber-ombre',name:'Amber ombré',value:'#b67d42',tones:['#493024','#a76836','#edc47b'],legacy:'chestnut',grant:'shop-amber-ombre',kind:'shop'},
+    {id:'rose-gold',name:'Rose gold',value:'#c78e96',tones:['#785268','#c58b92','#f2cfad'],legacy:'rose',grant:'shop-rose-gold',kind:'shop'},
+    {id:'moonlit-silver',name:'Moonlit silver',value:'#aab6cd',tones:['#414c69','#a0b0ce','#e3e9ed'],legacy:'silver',grant:'shop-moonlit-silver',kind:'shop'}
+  ].map(item=>Object.freeze({...item,...(item.tones?{tones:Object.freeze(item.tones)}:{})})));
+  const pants=Object.freeze([
+    {id:'classic',name:'Classic trousers',level:1},{id:'denim',name:'Everyday jeans',level:1},{id:'chinos',name:'Sand chinos',level:1},{id:'joggers',name:'Soft joggers',level:1},
+    {id:'trail',name:'Trail trousers',level:5},{id:'cargo',name:'Explorer cargos',level:10},{id:'alpine',name:'Alpine trousers',level:20},
+    {id:'pinstripe',name:'Tailored pinstripes',grant:'shop-pinstripe',kind:'shop'},
+    {id:'aurora',name:'Aurora joggers',grant:'shop-aurora',kind:'shop'},
+    ...['sakura','midnight','skyline','evergreen'].map(id=>({id,name:{sakura:'Blossom pleats',midnight:'Moonlight trousers',skyline:'City tailored trousers',evergreen:'Woodland cargos'}[id],grant:'shop-'+id,kind:'shop'}))
+  ].map(Object.freeze));
   const headwear=Object.freeze([
     {id:'none',name:'No headwear',level:1},{id:'hunny',name:'Hunny bear ears',grant:'hunny-tester',kind:'exclusive'},{id:'trail-cap',name:'Trail cap',level:5},{id:'summit-beanie',name:'Summit beanie',level:20},
     {id:'sakura',name:'Blossom clip',grant:'shop-sakura',kind:'shop'},
@@ -147,7 +161,7 @@
     {id:'none',name:'No accessory',level:1},{id:'hunny',name:'Hunny pendant',grant:'shop-hunny-pendant',audience:'hunny-tester',kind:'exclusive'},{id:'trail-scarf',name:'Trail scarf',level:10},{id:'atlas-pin',name:'Atlas pin',level:35},
     {id:'round-glasses',name:'Round glasses',grant:'shop-round-glasses',kind:'shop'}
   ].map(Object.freeze));
-  const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes,hairstyles,outfits,headwear,accessories});
+  const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories});
   function item(type,id){return catalogue[type]?.find(reward=>reward.id===id)||null;}
   function unlocked(reward,level,access={}){
     if(!reward)return false;
@@ -157,5 +171,5 @@
   function allowed(type,id,level,access){return unlocked(item(type,id),level,access);}
   function appearance(id,level,access){const reward=item('frames',id);return unlocked(reward,level,access)?reward:landmarks[0];}
   function banner(id,level,access){const reward=item('banners',id);return unlocked(reward,level,access)?reward:banners[0];}
-  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,outfits,headwear,accessories,catalogue,item,unlocked,visible,allowed});
+  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,catalogue,item,unlocked,visible,allowed});
 });
