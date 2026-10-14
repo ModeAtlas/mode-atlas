@@ -288,7 +288,7 @@ test('native trainer page background follows the app theme after the splash', as
   }
 });
 
-test('native safe-area insets survive phone trainer styles and keep the home above the dock', async ({page}, testInfo) => {
+test('native safe-area insets survive phone trainer styles and clear the dock after home scrolling', async ({page}, testInfo) => {
   await page.setViewportSize({width:393,height:852});
   const device=await page.context().newCDPSession(page);
   await device.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}});
@@ -315,7 +315,13 @@ test('native safe-area insets survive phone trainer styles and keep the home abo
   await expect.poll(()=>page.evaluate(()=>{
     const home=document.querySelector('.atlas-ios-home').getBoundingClientRect();
     const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
-    return home.bottom<=dock.top && dock.top-home.bottom<32 && document.documentElement.scrollHeight<=innerHeight+1;
+    return home.top>=59 && dock.bottom<=innerHeight && document.documentElement.scrollHeight>innerHeight;
+  })).toBe(true);
+  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+  await expect.poll(()=>page.evaluate(()=>{
+    const home=document.querySelector('.atlas-ios-home').getBoundingClientRect();
+    const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
+    return home.bottom<=dock.top-12 && dock.top-home.bottom<32 && scrollY>0;
   })).toBe(true);
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.screenshot({path:testInfo.outputPath('native-home.png')});
