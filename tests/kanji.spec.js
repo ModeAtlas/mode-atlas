@@ -1,11 +1,13 @@
 const {test,expect}=require('@playwright/test');
+// Each case owns its browser context, mocks and output paths; shard them independently.
+test.describe.configure({mode:'parallel'});
 async function setup(page,native=false,width=1280,theme='light'){
   await page.setViewportSize({width,height:900});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
   await page.addInitScript(({native,theme})=>{
     if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
-    localStorage.setItem('maWhatsNewSeen','kanji');localStorage.setItem('modeAtlasThemePreference',theme);
+    localStorage.setItem('maWhatsNewSeen','kanji');if(!localStorage.getItem('modeAtlasThemePreference'))localStorage.setItem('modeAtlasThemePreference',theme);
   },{native,theme});
 }
 async function ready(page,url='/kanji/'){
@@ -81,4 +83,20 @@ test('Kanji due reviews appear in Progress and open the correct skill session',a
   await setup(page);await ready(page,'/kanji/?char=水&mode=meaning');await answer(page);await page.getByRole('button',{name:'Finish set',exact:true}).click();
   await page.evaluate(()=>{const s=ModeAtlasKanjiState.read();for(const source of Object.values(s.sources))source['水'].meaning[6]=Date.now()-1000;ModeAtlasKanjiState.save(s);});
   await page.goto('/progress/');const review=page.getByRole('link',{name:'Kanji N5 · Meaning · 1 due',exact:true});await expect(review).toBeVisible();await review.click();await expect(page.locator('.ma-kanji-glyph')).toHaveText('水');await expect(page.getByLabel('Your English answer')).toBeVisible();
+});
+
+test('shared Results switch is readable, reachable and keeps the chosen theme on web and iOS',async({page})=>{
+  await setup(page);
+  for(const native of [false,true]){
+    await page.addInitScript(native=>{if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};},native);
+    await page.setViewportSize({width:native?393:1280,height:900});
+    for(const theme of ['dark','light']){
+      await page.goto('/results/kanji/');await expect(page.locator('#maLoadingScreen')).toBeHidden();await page.evaluate(theme=>ModeAtlasTheme.set(theme,{toast:false}),theme);
+      const nav=page.getByRole('navigation',{name:'Results branch'});await expect(nav.getByRole('link')).toHaveText(['Kana','Kanji']);await expect(nav.getByRole('link',{name:'Kanji',exact:true})).toHaveAttribute('aria-current','page');
+      for(const link of await nav.getByRole('link').all()){await expect(link).toBeVisible();expect((await link.boundingBox()).height).toBeGreaterThanOrEqual(44);}
+      const colours=await nav.getByRole('link',{name:'Kanji',exact:true}).evaluate(el=>{const s=getComputedStyle(el);return {text:s.color,background:s.backgroundColor};});expect(colours.text).not.toBe(colours.background);expect(colours.background).not.toBe('rgba(0, 0, 0, 0)');
+      await nav.getByRole('link',{name:'Kana',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-ma-theme',theme);await expect(page.getByRole('navigation',{name:'Results branch'}).getByRole('link',{name:'Kana',exact:true})).toHaveAttribute('aria-current','page');
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+    }
+  }
 });

@@ -88,7 +88,7 @@ shared Results and mastery navigation, due-review links, and small/large layouts
 Firebase checks exercise real Auth/Firestore rules and the Kanji receipt service.
 The required exact-commit GitHub release gate also covers existing app regression
 suites, callable transport, native intents, simulator builds and an unsigned
-Release archive. Final check counts and measured workflow time are in the handoff.
+Release archive. Final check counts and measured workflow time are in the handoff. Independent progression and Kanji browser cases are sharded individually to reduce the measured imbalance between regression workers; all checks are retained.
 
 Deploy Firebase before installing updated clients, so live Kanji competition and
 shared reward rules are available. There are no new Apple entitlements, signing
