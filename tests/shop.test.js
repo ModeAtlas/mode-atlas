@@ -5,14 +5,14 @@ const rules=require('../assets/app/mode-atlas-reward-rules.js');
 const createShop=require('../assets/app/mode-atlas-shop.js');
 const createProgress=require('../assets/app/mode-atlas-progress.js');
 const dates=require('../assets/app/mode-atlas-date.js');
-const wallet=(balance,extra={})=>({version:2,currency:'atlas-coins',balance,coinPurchasesEnabled:false,offers:catalogue.products.map(p=>catalogue.offer(p)).filter(Boolean),owned:[],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,checkedAt:1000,...extra});
+const wallet=(balance,extra={})=>({version:3,currency:'atlas-coins',balance,tokenBalance:1500,coinPurchasesEnabled:false,offers:catalogue.products.map(p=>catalogue.offer(p)).filter(Boolean),owned:[],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,checkedAt:1000,...extra});
 
 test('pants and dyes migrate old characters and enforce level and permanent purchase access',()=>{
   const chars=require('../assets/app/mode-atlas-avatar-rules.js'),art=require('../assets/ui/mode-atlas-avatar-art.js');
   const old=chars.legacy({...chars.defaults,hair:'flow',hairColor:'amber-ombre',pants:'pinstripe'});
   assert.equal(old.version,1);assert.equal(old.pants,undefined);assert.equal(old.hairColor,'chestnut');assert.ok(chars.valid(old));assert.equal(chars.normalize(old).pants,'classic');
   assert.equal(chars.valid({...old,pants:'classic'}),false);assert.equal(chars.valid({...chars.defaults,pants:'made-up'}),false);
-  for(const [id,level]of [['trail',5],['cargo',10],['alpine',20]]){assert.equal(chars.allowed({...chars.defaults,pants:id},level-1,{}),false);assert.equal(chars.allowed({...chars.defaults,pants:id},level,{}),true);}
+  for(const [id,level]of [['trail',5],['cargo',10],['alpine',20]]){assert.equal(chars.allowed({...chars.defaults,pants:id},level-1,{}),false);assert.equal(chars.allowed({...chars.defaults,pants:id},999,{}),false);assert.equal(chars.allowed({...chars.defaults,pants:id},1,{grants:['shop-'+id]}),true);}
   for(const [slot,id]of [['pants','pinstripe'],['pants','aurora'],['hairColor','amber-ombre'],['hairColor','rose-gold'],['hairColor','moonlit-silver']]){
     const look={...chars.defaults,[slot]:id};assert.equal(chars.allowed(look,999,{}),false);assert.equal(chars.allowed(look,1,{grants:['shop-'+id]}),true);assert.equal(chars.visible(look,1,{})[slot],chars.defaults[slot]);assert.ok(!art.svg(look).includes('undefined'));
   }
@@ -20,16 +20,16 @@ test('pants and dyes migrate old characters and enforce level and permanent purc
 });
 
 test('level coin milestones start after level one and remain cumulative through level 999',()=>{
-  for(const [level,total]of [[1,0],[2,20],[5,130],[10,280],[15,430],[19,510],[20,580],[999,29910]])assert.equal(catalogue.levelCoins.total(level),total);
-  assert.equal(catalogue.levelCoins.total(5)-catalogue.levelCoins.total(4),70);
-  assert.equal(catalogue.levelCoins.total(21)-catalogue.levelCoins.total(20),20);
+  for(const [level,total]of [[1,0],[2,0],[5,0],[10,25],[15,25],[19,25],[20,65],[35,125],[50,225],[75,325],[999,3925]])assert.equal(catalogue.levelCoins.total(level),total);
+  assert.equal(catalogue.levelCoins.total(10)-catalogue.levelCoins.total(9),25);
+  assert.equal(catalogue.levelCoins.total(21)-catalogue.levelCoins.total(20),0);
 });
 test('character options are bounded, earned clothing follows level and old collection grants include new wardrobe items',()=>{
   const characters=require('../assets/app/mode-atlas-avatar-rules.js'),art=require('../assets/ui/mode-atlas-avatar-art.js');
   assert.equal(characters.valid({...characters.defaults,skin:'<script>'}),false);
   assert.equal(characters.valid({...characters.defaults,extra:'no'}),false);
   assert.equal(characters.allowed({...characters.defaults,outfit:'grove'},4,{}),false);
-  assert.equal(characters.allowed({...characters.defaults,outfit:'grove'},5,{}),true);
+  assert.equal(characters.allowed({...characters.defaults,outfit:'grove'},5,{grants:['shop-grove']}),true);
   for(const id of ['sakura','midnight','skyline','evergreen']){
     const look={...characters.defaults,outfit:id,headwear:id};
     assert.equal(characters.allowed(look,999,{allCustom:true}),false);
@@ -101,7 +101,7 @@ test('protected days bridge a study streak without counting as study days or inv
 
 test('expanded styles preserve old IDs and exclusive Hunny access covers every matching piece',()=>{
   const characters=require('../assets/app/mode-atlas-avatar-rules.js'),art=require('../assets/ui/mode-atlas-avatar-art.js');
-  for(const id of ['crop','sweep','bob','waves','long','coils','bun','shaved','curtains','quiff','short-curls','ponytail','braids','pixie','side-part','french-crop','messy-fringe','slick-back','flow','bald'])assert.equal(characters.allowed({...characters.defaults,hair:id},1,{}),true);
+  for(const id of ['crop','sweep','bob','waves','long','coils','bun','shaved','curtains','quiff','short-curls','ponytail','braids','pixie','side-part','french-crop','messy-fringe','slick-back','flow','bald'])assert.equal(characters.allowed({...characters.defaults,hair:id},1,{}),rules.starter.hairstyles.includes(id));
   assert.equal(characters.choices.skin.length,11);
   for(const id of ['textured-fade','ribbon-waves','sculpted-pompadour','braided-undercut']){
     const value={...characters.defaults,hair:id};assert.equal(characters.allowed(value,999,{allCustom:true}),false);
@@ -113,21 +113,48 @@ test('expanded styles preserve old IDs and exclusive Hunny access covers every m
   assert.equal(characters.allowed(look,1,{grants:['shop-hunny-jumper','shop-hunny-pendant']}),false);
   for(const id of ['hunny-jumper','hunny-pendant']){
     const item=catalogue.item(id);assert.equal(catalogue.offer(item),null);
-    assert.equal(catalogue.offer(item,{},0,{grants:['hunny-tester']}).coinPrice,10);
-    assert.equal(catalogue.offer(item,{},0,{allCustom:true}).coinPrice,10);
+    assert.equal(catalogue.offer(item,{},0,{grants:['hunny-tester']}).coinPrice,15);
+    assert.equal(catalogue.offer(item,{},0,{allCustom:true}).coinPrice,15);
   }
   assert.equal(catalogue.products.some(p=>p.grant==='hunny-tester'),false);
   for(const [slot,type]of Object.entries(characters.slots))for(const item of rules.catalogue[type])assert.ok(!art.svg({...characters.defaults,[slot]:item.id}).includes('undefined'));
 });
 
-test('companion milestones, dress ownership and old-client projections stay bounded',()=>{
+test('companion purchases, dress ownership and old-client projections stay bounded',()=>{
   const rules=require('../assets/app/mode-atlas-avatar-rules.js'),rewards=require('../assets/app/mode-atlas-reward-rules.js');
   for(const [pet,level]of [['shiba',10],['calico',15],['rabbit',20],['tanuki',40],['crane',50]]){
-    assert.equal(rules.allowed({...rules.defaults,pet},level-1,{}),false);assert.equal(rules.allowed({...rules.defaults,pet},level,{}),true);
+    assert.equal(rules.allowed({...rules.defaults,pet},level-1,{}),false);assert.equal(rules.allowed({...rules.defaults,pet},999,{}),false);assert.equal(rules.allowed({...rules.defaults,pet},1,{grants:['shop-'+pet]}),true);
   }
   const look={...rules.defaults,outfit:'seigaiha-kimono',outfitColor:'navy',pants:'starfall-skirt',pantsColor:'plum',pet:'japanese-spitz',petName:'Shiro'};
   assert.equal(rules.allowed(look,99,{}),false);
   assert.equal(rules.allowed(look,1,{grants:['shop-seigaiha-kimono','shop-starfall-skirt','shop-japanese-spitz']}),true);
   assert.equal(rules.valid({...look,outfitColor:'coral'}),false);assert.equal(rules.valid({...look,petName:'<script>'}),false);assert.equal(rules.valid({...look,petName:'x'.repeat(25)}),false);
   for(const version of [1,2]){const older=rules.compatible(look,version);assert.equal(older.version,version);assert.equal(older.pet,undefined);assert.equal(older.outfit,'everyday');assert.equal(rules.valid(older),true);}
+});
+
+test('both currencies have explicit alternatives; only theme packs require Atlas Coins',()=>{
+  for(const product of catalogue.products){
+    if(product.kind==='collection')assert.equal(product.tokenPrice,null);
+    else assert.ok(Number.isSafeInteger(product.tokenPrice)&&product.tokenPrice>product.coinPrice);
+  }
+  for(const skin of require('../assets/app/mode-atlas-avatar-rules.js').choices.skin)assert.ok(!skin.grant);
+  for(const [type,ids]of Object.entries(rules.starter))for(const reward of rules.catalogue[type]){
+    if(ids.includes(reward.id))assert.ok(rules.unlocked(reward,1,{}));
+    else assert.equal(rules.unlocked(reward,999,{}),false);
+  }
+  assert.equal(catalogue.studyTokens.levelTotal(1),0);
+  assert.equal(catalogue.studyTokens.levelTotal(5),390);
+  assert.equal(catalogue.studyTokens.streakDay(1),10);assert.equal(catalogue.studyTokens.streakDay(8),15);assert.equal(catalogue.studyTokens.streakDay(100),30);
+});
+test('payment currency is part of the retry receipt and theme tokens cannot be spent',async()=>{
+  const requests=[];let serial=0;
+  const shop=createShop({user:()=> 'buyer',online:()=>true,requestId:()=> 'payment-receipt-'+(++serial),call:async(action,data)=>{
+    if(action==='shop')return wallet(2000);
+    requests.push(data);throw Object.assign(Error('network'),{code:'deadline-exceeded'});
+  }});
+  await shop.refresh();assert.throws(()=>shop.purchase('crop','study-tokens'),/Refresh/);
+  await assert.rejects(shop.purchase('quiff','study-tokens'));await assert.rejects(shop.purchase('quiff','atlas-coins'));
+  assert.notEqual(requests[0].requestId,requests[1].requestId);assert.equal(requests[0].currency,'study-tokens');assert.equal(requests[1].currency,'atlas-coins');
+  assert.throws(()=>shop.purchase('sakura','study-tokens'),/not available/);
+  assert.equal(shop.current().tokenBalance,1500);assert.equal(shop.current().balance,2000);
 });

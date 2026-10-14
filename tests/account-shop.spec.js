@@ -1,5 +1,6 @@
 const {test,expect}=require('@playwright/test');
 const fs=require('node:fs');
+const catalogue=require('../assets/app/mode-atlas-shop-catalogue.js');
 const source=fs.readFileSync(require.resolve('../cloud-sync.js'),'utf8');
 async function prepare(page,{native=true,width=393,height=852,theme='dark',auth=false}={}){
   await page.setViewportSize({width,height});
@@ -33,9 +34,11 @@ for(const layout of [{native:true,width:320,theme:'light'},{native:true,width:39
     const full=page.locator('.ma-shop-full');await expect(full).toBeVisible();
     await expect(full.getByRole('tab')).toHaveText(['Featured','Wardrobe','Pets','Theme packs','Streak items','Atlas Coins']);
     await full.getByRole('tab',{name:'Wardrobe',exact:true}).click();await full.getByLabel('Wardrobe type').selectOption('hairstyles');
-    await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(4);
+    await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(catalogue.products.filter(p=>p.rewards?.[0]?.type==='hairstyles').length);
     await expect(full.locator('[data-ma-shop-product="hunny-jumper"]')).toBeHidden();
-    await full.getByRole('tab',{name:'Pets',exact:true}).click();await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(3);await expect(full.locator('[data-ma-shop-product=japanese-spitz] .ma-shop-essential__symbol svg')).toHaveAttribute('viewBox','0 -14 120 140');
+    await full.getByRole('tab',{name:'Pets',exact:true}).click();await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(8);await expect(full.locator('[data-ma-shop-product=japanese-spitz] .ma-shop-essential__symbol svg')).toHaveAttribute('viewBox','0 -14 120 140');
+    await full.locator('[data-ma-shop-product=japanese-spitz]').click();await expect(page.locator('.ma-dialog__title')).toHaveText('Japanese Spitz');
+    const large=await page.locator('.ma-shop-detail .ma-shop-item-preview').boundingBox();expect(large.height).toBeGreaterThan(190);await page.keyboard.press('Escape');
     await full.getByRole('tab',{name:'Theme packs',exact:true}).click();await expect(full.locator('.ma-shop-product:visible')).toHaveCount(4);
     await full.getByRole('button',{name:'Preview Skyline collection'}).click();await expect(page.locator('.ma-dialog__title')).toHaveText('Skyline');await page.keyboard.press('Escape');
     await full.getByRole('tab',{name:'Streak items',exact:true}).click();await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(2);
@@ -85,4 +88,29 @@ test('repair inventory previews the entire eligible gap and its calendar expiry'
   await expect(page.locator('#repairFixture')).toContainText('Use by');
   await page.getByRole('button',{name:'Use repair',exact:true}).click();await expect(page.locator('.ma-dialog__message')).toContainText('without adding study days or XP');
   await page.locator('.ma-dialog').getByRole('button',{name:'Use repair',exact:true}).click();expect(await page.evaluate(()=>repairUses)).toBe(1);
+});
+
+test('large purchase preview keeps the item visible, retries errors and spends the chosen currency',async({page},info)=>{
+  await prepare(page,{width:393});await page.goto('/shop/?category=wardrobe');await expect(page.locator('.ma-shop-full')).toBeVisible();
+  await page.evaluate(async()=>{
+    KanaCloudSync.getUser=()=>({uid:'preview-buyer'});KanaCloudSync.syncNow=async()=>true;
+    window.previewWallet={balance:1000,tokenBalance:2000,owned:[]};window.previewPayments=[];window.failPreviewPurchase=true;
+    ModeAtlasSocial={...ModeAtlasSocial,call:async(action,data)=>{
+      const w=previewWallet;
+      if(action==='rewards')return {allCustom:false,grants:w.owned.map(id=>'shop-'+id),validUntil:Date.now()+86400000};
+      if(action==='shopPurchase'){
+        previewPayments.push(data);if(failPreviewPurchase){failPreviewPurchase=false;throw Object.assign(Error('Try again'),{code:'unavailable'});}
+        w[data.currency==='study-tokens'?'tokenBalance':'balance']-=data.price;w.owned.push(data.productId);
+      }
+      return {version:3,currency:'atlas-coins',earnedCurrency:'study-tokens',...w,inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,offers:ModeAtlasShopCatalogue.products.map(p=>ModeAtlasShopCatalogue.offer(p)).filter(Boolean),checkedAt:Date.now()};
+    }};await ModeAtlasRewardAccess.refresh(true);await ModeAtlasShop.refresh(true);
+  });
+  await page.locator('.ma-shop-full [data-ma-shop-product=crewneck]').click();const detail=page.locator('[data-ma-shop-detail]');await expect(detail.locator('.ma-shop-item-preview svg')).toBeVisible();
+  await expect(detail.getByRole('button',{name:'Buy for 90 Atlas Coins',exact:true})).toBeEnabled();await detail.getByRole('button',{name:'Buy for 550 Study Tokens',exact:true}).click();
+  await expect(detail.locator('[data-ma-shop-detail-status]')).not.toBeEmpty();await expect(detail.locator('.ma-shop-item-preview')).toBeVisible();
+  await expect(detail.getByRole('button',{name:'Buy for 550 Study Tokens',exact:true})).toBeEnabled();await page.screenshot({path:info.outputPath('purchase-preview.png')});
+  await detail.getByRole('button',{name:'Buy for 550 Study Tokens',exact:true}).click();await expect(detail).toHaveCount(0);
+  await expect(page.locator('.ma-shop-full [data-ma-token-balance]')).toHaveText('1,450');await expect(page.locator('.ma-shop-full [data-ma-coin-balance]')).toHaveText('1,000');
+  expect(await page.evaluate(()=>previewPayments.map(p=>[p.currency,p.price]))).toEqual([['study-tokens',550],['study-tokens',550]]);
+  await page.getByRole('tab',{name:'Theme packs',exact:true}).click();await page.locator('.ma-shop-full [data-ma-shop-product=sakura]').click();await expect(page.locator('[data-ma-shop-buy]')).toHaveCount(1);await expect(page.locator('[data-ma-shop-buy]')).toHaveText('Buy for 750 Atlas Coins');
 });

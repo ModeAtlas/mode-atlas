@@ -85,7 +85,7 @@ test('theme owner updates native chrome and charts while System remains live', a
 test('collection text and controls keep readable contrast across the app palette',()=>{
   const css=read('assets/css/mode-atlas-theme.css');
   for(const {id:name} of require('../assets/app/mode-atlas-reward-rules.js').themes){
-    const block=css.match(new RegExp('html\\[data-ma-collection-theme="'+name+'"\\]\\{([^}]+)\\}'))[1];
+    const block=css.match(new RegExp('[^{]*\\[data-ma-collection-theme="'+name+'"\\][^{]*\\{([^}]+)\\}'))[1];
     const p=Object.fromEntries([...block.matchAll(/--ma-collection-([\w-]+):([^;]+);/g)].map(match=>[match[1],match[2].trim()]));
     for(const bg of ['page','surface','elevated','inset','hover'])for(const fg of ['text','heading','secondary'])assert.ok(contrast(p[fg],p[bg])>=4.5,`${name} ${fg}/${bg} ${contrast(p[fg],p[bg])}`);
     assert.ok(contrast(p.accent,p.selected)>=4.5);assert.ok(contrast(p['on-accent'],p.accent)>=4.5);

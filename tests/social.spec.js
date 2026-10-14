@@ -467,7 +467,7 @@ test('Friends opens from one bundled response without waiting for rewards; name 
 
 
 for(const native of [true,false])test(`global weekly profile can request, cancel and accept a friendship without a code ${native?'iOS':'web'}`,async({page},info)=>{
-  await prepare(page,{native,width:native?320:1280});await page.evaluate(()=>{socialFixture.friends=[];socialFixture.incoming=[];socialFixture.weeklyEnabled=true;socialFixture.friend.greeting='See you at the summit!';socialFixture.friend.character={...ModeAtlasAvatarRules.defaults,hair:'side-part',hairColor:'walnut',pants:'cargo',pet:'japanese-spitz',petName:'Shiro'};});
+  await prepare(page,{native,width:native?320:1280});await page.evaluate(()=>{socialFixture.friends=[];socialFixture.incoming=[];socialFixture.weeklyEnabled=true;socialFixture.friend.theme='sakura';socialFixture.friend.greeting='See you at the summit!';socialFixture.friend.character={...ModeAtlasAvatarRules.defaults,hair:'side-part',hairColor:'walnut',pants:'cargo',pet:'japanese-spitz',petName:'Shiro'};});
   await page.getByRole('tab',{name:'Rankings',exact:true}).click();
   await page.locator('.ma-social-person').filter({hasText:'桜の道'}).click();
   await expect(page.getByRole('button',{name:'Add friend',exact:true})).toBeVisible();
@@ -484,6 +484,8 @@ for(const native of [true,false])test(`global weekly profile can request, cancel
   await expect(page.locator('.ma-social-stats')).toBeVisible();await expect(page.getByRole('button',{name:'Add friend',exact:true})).toHaveCount(0);
   await expect(page.locator('.ma-social-character__speech')).toHaveText('See you at the summit!');
   await expect(page.locator('.ma-social-pet-name')).toHaveText('Shiro');
+  await expect(page.locator('.ma-social-profile')).toHaveAttribute('data-ma-profile-theme','sakura');await expect(page.locator('html')).not.toHaveAttribute('data-ma-collection-theme','sakura');
+  expect(await page.locator('.ma-social-character__figure').evaluate(node=>{const svg=node.querySelector('svg').getBoundingClientRect(),name=node.querySelector('.ma-social-pet-name').getBoundingClientRect();return Math.abs(name.x+name.width/2-(svg.x+svg.width*258.5/320));})).toBeLessThan(2);
   expect(await page.locator('.ma-social-character').evaluate(node=>node.querySelector('.ma-social-character__speech').getBoundingClientRect().bottom<=node.querySelector('.ma-social-character__figure').getBoundingClientRect().top)).toBe(true);
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.dataset.maLargeText='true';document.querySelector('.ma-social-pet-name').textContent='W'.repeat(24);});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

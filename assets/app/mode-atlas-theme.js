@@ -68,6 +68,8 @@
       });
     }
     updateButtons();
+    const appearance=window.ModeAtlasProgress?.readState?.().appearance;
+    if(window.KanaCloudSync?.getUser?.()&&appearance&&!appearance.themeAt&&(!selected||usable))window.ModeAtlasProgress.selectTheme(usable?pref:'');
     if (lastEffective !== effective+':'+(usable?pref:'')) {
       lastEffective = effective+':'+(usable?pref:'');
       document.dispatchEvent(new CustomEvent('ma:theme-changed', {detail:{effective:effective, preference:pref}}));
@@ -83,6 +85,7 @@
       else localStorage.setItem(THEME_KEY, pref);
     } catch(e) {}
     apply();
+    if(window.KanaCloudSync?.getUser?.())window.ModeAtlasProgress?.selectTheme(pref);
     if (!opts || opts.toast !== false) {
       var label = pref === 'system' ? 'System' : pref.charAt(0).toUpperCase() + pref.slice(1);
       try { window.ModeAtlas && window.ModeAtlas.toast && window.ModeAtlas.toast(label + ' appearance applied.'); } catch(e) {}

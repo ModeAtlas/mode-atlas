@@ -2,6 +2,7 @@
 // Private account entitlements. Client saves and token email never award access.
 const {createHash}=require('node:crypto');
 const {isAdmin}=require('./identity.cjs');
+const {levelFromSave}=require('./projection.cjs');
 const rules=require('./shared/mode-atlas-reward-rules.js');
 const characters=require('./shared/mode-atlas-avatar-rules.js');
 const grants=new Set(Object.values(rules.catalogue).flat().map(item=>item.grant).filter(Boolean));
@@ -24,16 +25,33 @@ function entitlement(user,record={},now=Date.now(),audienceHash=testerEmailHash)
   return {allCustom,grants:[...allowed].sort(),validUntil};
 }
 function createRewards({db,now=Date.now}){
+  async function retainEquipped(user,existing){
+    if(!user||user.disabled||!user.emailVerified)return;
+    const ref=db.doc('rewardEntitlements/'+user.uid);existing||=await ref.get();
+    if(existing.data()?.wardrobeMigration===1)return;
+    await db.runTransaction(async tx=>{
+      const [awards,avatar,social,save,deleting,deleted]=await tx.getAll(ref,db.doc('avatarProfiles/'+user.uid),db.doc('socialAccounts/'+user.uid),db.doc('users/'+user.uid+'/appData/kanaTrainer'),db.doc('accountDeletions/'+user.uid),db.doc('socialDeleted/'+createHash('sha256').update(user.uid).digest('hex')));
+      if(awards.data()?.wardrobeMigration===1||deleting.exists||deleted.exists&&(Date.parse(user.metadata?.creationTime)||0)<=deleted.data().at)return;
+      const record=awards.data()||{},granted={...(record.grants||{})},look=avatar.data()?.character||social.data()?.profile?.character,level=levelFromSave(save.data());
+      if(characters.valid(look))for(const [slot,type]of Object.entries(characters.slots)){
+        const item=rules.item(type,look[slot]);
+        if(item?.legacyLevel&&level>=item.legacyLevel&&!Object.hasOwn(granted,item.grant))granted[item.grant]={awardedAt:now(),source:'equipped-migration'};
+      }
+      tx.set(ref,{...record,grants:granted,wardrobeMigration:1});
+    });
+  }
   async function read(user,tx){
     if(!user)return entitlement(null,{},now());
-    const ref=db.doc('rewardEntitlements/'+user.uid),record=tx?await tx.get(ref):await ref.get();
+    const ref=db.doc('rewardEntitlements/'+user.uid);let record=tx?await tx.get(ref):await ref.get();
+    if(!tx&&record.data()?.wardrobeMigration!==1){await retainEquipped(user,record);record=await ref.get();}
     return entitlement(user,record.data(),now());
   }
   function key(access){return JSON.stringify([access.allCustom,access.grants]);}
   function hasCustom(profile){
-    return !!(rules.item('banners',profile.banner)?.grant||rules.landmarks.find(item=>item.frame===profile.frame&&item.title===profile.title)?.grant||rules.item('avatars',profile.avatar)?.grant||!!profile.character&&Object.entries(characters.slots).some(([slot,type])=>rules.item(type,profile.character?.[slot])?.grant));
+    return !!(rules.item('themes',profile.theme)?.grant||rules.item('banners',profile.banner)?.grant||rules.landmarks.find(item=>item.frame===profile.frame&&item.title===profile.title)?.grant||rules.item('avatars',profile.avatar)?.grant||!!profile.character&&Object.entries(characters.slots).some(([slot,type])=>rules.item(type,profile.character?.[slot])?.grant));
   }
   function sanitize(profile,access){
+    if(!rules.allowed('themes',profile.theme,profile.level,access))profile.theme='';
     const frame=rules.landmarks.find(item=>item.frame===profile.frame&&item.title===profile.title);
     const appearance=rules.appearance(frame?.id,profile.level,access);
     profile.frame=appearance.frame;profile.title=appearance.title;
@@ -41,6 +59,6 @@ function createRewards({db,now=Date.now}){
     if(rules.item('avatars',profile.avatar)&&!rules.allowed('avatars',profile.avatar,profile.level,access))profile.avatar='kana';
     if(profile.character)profile.character=characters.visible(profile.character,profile.level,access);
   }
-  return {read,key,hasCustom,sanitize,erase:uid=>db.doc('rewardEntitlements/'+uid).delete()};
+  return {read,retainEquipped,key,hasCustom,sanitize,erase:uid=>db.doc('rewardEntitlements/'+uid).delete()};
 }
 module.exports={createRewards,entitlement,isTester};

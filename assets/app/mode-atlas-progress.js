@@ -211,11 +211,12 @@
   function normalizeRuns(input){
     return Object.fromEntries(Object.entries(object(input)).filter(([id,row])=>safeKey(id)&&id.length<100&&row&&finiteCount(row.at)).sort((a,b)=>b[1].at-a[1].at||a[0].localeCompare(b[0])).slice(0,64).map(([id,row])=>[id,{answers:finiteCount(row.answers),done:!!row.done,at:finiteCount(row.at)}]));
   }
-  function normalizeAppearance(input={}){return {landmark:String(scalar(input?.landmark)||'trail').slice(0,24),at:finiteCount(input?.at),banner:String(scalar(input?.banner)||'plain').slice(0,24),bannerAt:finiteCount(input?.bannerAt)};}
+  function normalizeAppearance(input={}){return {landmark:String(scalar(input?.landmark)||'trail').slice(0,24),at:finiteCount(input?.at),banner:String(scalar(input?.banner)||'plain').slice(0,24),bannerAt:finiteCount(input?.bannerAt),theme:String(scalar(input?.theme)||'').slice(0,24),themeAt:finiteCount(input?.themeAt)};}
   function mergeAppearance(a,b){
     const title=a.at>b.at||(a.at===b.at&&a.landmark>b.landmark)?a:b;
     const banner=a.bannerAt>b.bannerAt||(a.bannerAt===b.bannerAt&&a.banner>b.banner)?a:b;
-    return {landmark:title.landmark,at:title.at,banner:banner.banner,bannerAt:banner.bannerAt};
+    const theme=a.themeAt>b.themeAt||(a.themeAt===b.themeAt&&a.theme>b.theme)?a:b;
+    return {landmark:title.landmark,at:title.at,banner:banner.banner,bannerAt:banner.bannerAt,theme:theme.theme,themeAt:theme.themeAt};
   }
   const dayKey=at=>root.ModeAtlasDates.localDateKey(new Date(at||Date.now()));
   function activityTotals(state,day){
@@ -444,6 +445,13 @@
     if(!root.ModeAtlasRewardRules.unlocked(item,getSummary(state).level,root.ModeAtlasRewardAccess?.current()))return false;
     state.appearance={...state.appearance,landmark:id,at:Math.max(Date.now(),state.appearance.at+1)};persistState(state,{source:'appearance'});return true;
   }
+  function selectTheme(id){
+    const state=readState(),theme=root.ModeAtlasRewardRules.item('themes',id);
+    if(theme&&!root.ModeAtlasRewardRules.unlocked(theme,getSummary(state).level,root.ModeAtlasRewardAccess?.current()))return false;
+    const selected=theme?id:'';if(state.appearance.theme===selected&&state.appearance.themeAt)return true;
+    state.appearance={...state.appearance,theme:selected,themeAt:Math.max(Date.now(),state.appearance.themeAt+1)};
+    persistState(state,{source:'appearance'});return true;
+  }
   function selectBanner(id){
     const state=readState(),item=root.ModeAtlasRewardRules.banners.find(x=>x.id===id);
     if(!root.ModeAtlasRewardRules.unlocked(item,getSummary(state).level,root.ModeAtlasRewardAccess?.current()))return false;
@@ -633,7 +641,7 @@
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
-    award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, levelRequirement,
+    award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, selectTheme, levelRequirement,
     getXP, getLifetimeCorrect, getLevelFromXP, getSummary
   });
 

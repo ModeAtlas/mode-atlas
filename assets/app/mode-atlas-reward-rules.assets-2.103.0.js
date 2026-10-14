@@ -119,6 +119,19 @@
     {id:'skyline',name:'Skyline',appearance:'dark',grant:'shop-skyline',kind:'shop'},
     {id:'evergreen',name:'Evergreen',appearance:'dark',grant:'shop-evergreen',kind:'shop'}
   ].map(Object.freeze));
+  // This is the complete starter wardrobe. Other wardrobe choices use a
+  // durable shop grant; legacyLevel records the former policy for migration.
+  const starter=Object.freeze({
+    hairstyles:['crop','sweep','bob','long','coils','bald'],
+    outfits:['everyday','linen','day-dress'],pants:['classic','denim','a-line'],
+    hairColours:['ink','espresso','chestnut','copper','gold','silver'],
+    headwear:['none'],accessories:['none'],pets:['none']
+  });
+  function wardrobe(type,item){
+    if(item.grant||starter[type].includes(item.id))return Object.freeze(item);
+    const {level,...value}=item;
+    return Object.freeze({...value,legacyLevel:level,grant:'shop-'+item.id,kind:'shop'});
+  }
   const hairstyles=Object.freeze([
     ...[['crop','Short crop'],['sweep','Side sweep'],['bob','Bob'],['waves','Waves'],['long','Long hair'],['coils','Coils'],['bun','High bun'],['shaved','Shaved'],
       ['curtains','Curtains'],['quiff','Quiff'],['short-curls','Short curls'],['ponytail','Ponytail'],['braids','Twin braids'],['pixie','Pixie'],['side-part','Classic side part'],['french-crop','French crop'],['messy-fringe','Messy fringe'],['slick-back','Slick back'],['flow','Medium flow'],['bald','Bald']].map(([id,name])=>({id,name,level:1})),
@@ -126,7 +139,7 @@
     {id:'ribbon-waves',name:'Ribbon waves',grant:'shop-ribbon-waves',kind:'shop'},
     {id:'sculpted-pompadour',name:'Sculpted pompadour',grant:'shop-sculpted-pompadour',kind:'shop'},
     {id:'braided-undercut',name:'Braided undercut',grant:'shop-braided-undercut',kind:'shop'}
-  ].map(Object.freeze));
+  ].map(item=>wardrobe('hairstyles',item)));
   const outfits=Object.freeze([
     {id:'everyday',name:'Everyday tee',level:1},{id:'sport',name:'Track top',level:1},{id:'linen',name:'Linen shirt',level:1},
     {id:'crewneck',name:'Cosy jumper',level:1},{id:'striped',name:'Striped tee',level:1},
@@ -137,14 +150,14 @@
     {id:'hunny',name:'Hunny jumper',grant:'shop-hunny-jumper',audience:'hunny-tester',kind:'exclusive'},
     {id:'grove',name:'Grove cardigan',level:5},{id:'bridge',name:'Explorer jacket',level:10},{id:'summit',name:'Summit coat',level:20},
     ...['sakura','midnight','skyline','evergreen'].map(id=>({id,name:{sakura:'Blossom jacket',midnight:'Moonlight hoodie',skyline:'City bomber',evergreen:'Woodland field jacket'}[id],grant:'shop-'+id,kind:'shop'}))
-  ].map(Object.freeze));
+  ].map(item=>wardrobe('outfits',item)));
   const hairColours=Object.freeze([
     ...[['ink','Ink','#24222b'],['espresso','Espresso','#49332c'],['chestnut','Chestnut','#87523c'],['copper','Copper','#bc7149'],['gold','Golden','#d0aa65'],['silver','Silver','#c3c5cf'],['rose','Rose','#ba6380'],['ocean','Ocean','#4a7489']].map(([id,name,value])=>({id,name,value,level:1,legacy:id})),
     ...[['dark-chocolate','Dark chocolate','#35251f','espresso'],['walnut','Walnut brown','#604435','espresso'],['mocha','Mocha brown','#725344','chestnut'],['ash-brown','Ash brown','#81715f','chestnut'],['caramel','Caramel brunette','#a5784b','chestnut'],['dark-blonde','Dark blonde','#ab8e60','gold'],['honey-blonde','Honey blonde','#d8b678','gold'],['champagne-blonde','Champagne blonde','#e4d0a0','gold']].map(([id,name,value,legacy])=>({id,name,value,legacy,level:1})),
     {id:'amber-ombre',name:'Amber ombré',value:'#b67d42',tones:['#493024','#a76836','#edc47b'],legacy:'chestnut',grant:'shop-amber-ombre',kind:'shop'},
     {id:'rose-gold',name:'Rose gold',value:'#c78e96',tones:['#785268','#c58b92','#f2cfad'],legacy:'rose',grant:'shop-rose-gold',kind:'shop'},
     {id:'moonlit-silver',name:'Moonlit silver',value:'#aab6cd',tones:['#414c69','#a0b0ce','#e3e9ed'],legacy:'silver',grant:'shop-moonlit-silver',kind:'shop'}
-  ].map(item=>Object.freeze({...item,...(item.tones?{tones:Object.freeze(item.tones)}:{})})));
+  ].map(item=>wardrobe('hairColours',{...item,...(item.tones?{tones:Object.freeze(item.tones)}:{})})));
   const pants=Object.freeze([
     {id:'classic',name:'Classic trousers',level:1},{id:'denim',name:'Everyday jeans',level:1},{id:'chinos',name:'Sand chinos',level:1},{id:'joggers',name:'Soft joggers',level:1},
     {id:'a-line',name:'A-line skirt',level:1},{id:'pleated-skirt',name:'Pleated skirt',level:1},
@@ -153,7 +166,7 @@
     {id:'pinstripe',name:'Tailored pinstripes',grant:'shop-pinstripe',kind:'shop'},
     {id:'aurora',name:'Aurora joggers',grant:'shop-aurora',kind:'shop'},
     ...['sakura','midnight','skyline','evergreen'].map(id=>({id,name:{sakura:'Blossom pleats',midnight:'Moonlight trousers',skyline:'City tailored trousers',evergreen:'Woodland cargos'}[id],grant:'shop-'+id,kind:'shop'}))
-  ].map(Object.freeze));
+  ].map(item=>wardrobe('pants',item)));
   const headwear=Object.freeze([
     {id:'none',name:'No headwear',level:1},{id:'hunny',name:'Hunny bear ears',grant:'hunny-tester',kind:'exclusive'},{id:'trail-cap',name:'Trail cap',level:5},{id:'summit-beanie',name:'Summit beanie',level:20},
     {id:'sakura',name:'Blossom clip',grant:'shop-sakura',kind:'shop'},
@@ -161,11 +174,11 @@
     {id:'skyline',name:'City cap',grant:'shop-skyline',kind:'shop'},
     {id:'evergreen',name:'Laurel circlet',grant:'shop-evergreen',kind:'shop'},
     {id:'studio-headphones',name:'Studio headphones',grant:'shop-studio-headphones',kind:'shop'}
-  ].map(Object.freeze));
+  ].map(item=>wardrobe('headwear',item)));
   const accessories=Object.freeze([
     {id:'none',name:'No accessory',level:1},{id:'hunny',name:'Hunny pendant',grant:'shop-hunny-pendant',audience:'hunny-tester',kind:'exclusive'},{id:'trail-scarf',name:'Trail scarf',level:10},{id:'atlas-pin',name:'Atlas pin',level:35},
     {id:'round-glasses',name:'Round glasses',grant:'shop-round-glasses',kind:'shop'}
-  ].map(Object.freeze));
+  ].map(item=>wardrobe('accessories',item)));
   const pets=Object.freeze([
     {id:'none',name:'No companion',level:1},
     {id:'shiba',name:'Shiba inu',level:10},{id:'calico',name:'Calico cat',level:15},
@@ -174,7 +187,7 @@
     {id:'japanese-spitz',name:'Japanese Spitz',grant:'shop-japanese-spitz',kind:'shop'},
     {id:'moon-fox',name:'Moon fox',grant:'shop-moon-fox',kind:'shop'},
     {id:'koi',name:'Golden koi',grant:'shop-koi',kind:'shop'}
-  ].map(Object.freeze));
+  ].map(item=>wardrobe('pets',item)));
   const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,pets});
   function item(type,id){return catalogue[type]?.find(reward=>reward.id===id)||null;}
   function unlocked(reward,level,access={}){
@@ -185,5 +198,5 @@
   function allowed(type,id,level,access){return unlocked(item(type,id),level,access);}
   function appearance(id,level,access){const reward=item('frames',id);return unlocked(reward,level,access)?reward:landmarks[0];}
   function banner(id,level,access){const reward=item('banners',id);return unlocked(reward,level,access)?reward:banners[0];}
-  return Object.freeze({accuracy,kanaRate,levelRequirement,session,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,pets,catalogue,item,unlocked,visible,allowed});
+  return Object.freeze({accuracy,kanaRate,levelRequirement,session,starter,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,pets,catalogue,item,unlocked,visible,allowed});
 });

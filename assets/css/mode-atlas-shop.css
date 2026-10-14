@@ -1,13 +1,18 @@
 /* Storefront presentation. Shared rewards still own the actual banner/frame art. */
 .ma-shop{display:flex;flex-direction:column;gap:20px;}
 .ma-shop>*{flex:none;}
-.ma-shop-wallet{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:8px 10px;padding-block:0 14px;}
+.ma-shop-wallet{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(0,1fr);align-items:center;gap:8px 10px;padding-block:0 14px;}
 .ma-shop-coin{display:grid;place-items:center;width:34px;height:34px;border:1px solid #e4bf67;border-radius:50%;background:linear-gradient(135deg,#fff1c5,#eac465);color:#6a4517;box-shadow:inset 0 0 0 3px #ffffff55;}
 .ma-shop-coin .ma-icon{width:19px;height:19px;}
 .ma-shop-wallet__copy{min-width:0;}
 .ma-shop-wallet__copy strong{font-size:.78rem;line-height:1.4;color:var(--ma-text-strong);}
 .ma-shop-wallet__balance{margin:2px 0 0;font-size:.73rem;line-height:1.45;color:var(--ma-muted);overflow-wrap:anywhere;}
+.ma-shop-wallet>[data-ma-purchase-coins]{grid-column:2/-1;justify-self:start;}
 .ma-shop-wallet>[data-ma-shop-refresh]{grid-column:2/-1;justify-self:start;}
+.ma-shop-wallet__tokens{padding-left:12px;border-left:1px solid var(--ma-border);}
+.ma-shop-wallet__help{padding:0;border:0;background:none;color:var(--ma-text-strong);font:700 .78rem/1.4 var(--ma-font-ui);text-align:left;cursor:help;}
+.ma-shop-wallet__help::after{content:" ⓘ";font-weight:400;}
+.ma-shop-wallet__help:focus-visible{outline:2px solid var(--ma-focus-ring);outline-offset:3px;}
 .ma-shop-intro{display:grid;gap:5px;}
 .ma-shop-intro h3{margin:0;font:800 1.65rem/1.2 var(--ma-font-display);letter-spacing:-.04em;color:var(--ma-text-strong);}
 .ma-shop-intro p{margin:0;font-size:.8rem;line-height:1.5;color:var(--ma-muted);}
@@ -32,6 +37,13 @@
 .ma-shop-rewards-link>.ma-icon{flex:none;width:22px;height:22px;color:var(--ma-atlas);}
 .ma-shop-rewards-link:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;border-radius:6px;}
 .ma-shop-detail{display:grid;gap:18px;}
+.ma-shop-item-preview{display:grid;place-items:center;width:100%;height:300px;max-height:40dvh;min-height:200px;border-radius:20px;background:var(--ma-surface-inset);color:var(--ma-atlas);font-size:6rem;}
+.ma-shop-item-preview svg{display:block;width:100%;height:100%;}
+.ma-shop-detail__description{margin:0;color:var(--ma-muted);font-size:.85rem;line-height:1.5;}
+.ma-shop-payment{position:sticky;bottom:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px;padding:12px 0;background:var(--ma-surface-strong);}
+.ma-shop-payment__option{display:grid;gap:6px;min-width:0;}
+.ma-shop-payment__option .ma-button{white-space:normal;min-height:48px;line-height:1.4;}
+.ma-shop-payment__option small{font-size:.72rem;line-height:1.4;color:var(--ma-muted);text-align:center;}
 .ma-shop-look{display:flex;align-items:center;gap:16px;min-height:116px;min-width:0;padding:20px;border-radius:16px;background:var(--ma-surface-inset);color:var(--ma-text-strong);box-sizing:border-box;}
 .ma-shop-look__copy{display:grid;gap:5px;min-width:0;}
 .ma-shop-look__copy strong{font-size:.9rem;line-height:1.4;}
@@ -101,7 +113,8 @@ html[data-ma-large-text] .ma-shop-scene{justify-self:end;}
 .ma-shop-coin-pack__action{margin-top:12px;padding-top:14px;width:100%;border-top:1px solid var(--ma-border);color:var(--ma-atlas);font-weight:750;}
 .ma-shop-coin-pack:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
 .ma-shop-empty{margin:0;color:var(--ma-muted);line-height:1.5;}
-@media(max-width:380px){.ma-shop-wallet{grid-template-columns:30px minmax(0,1fr);}.ma-shop-wallet>[data-ma-purchase-coins]{grid-column:1/-1;justify-self:stretch;}.ma-shop-wallet .ma-shop-coin{width:28px;height:28px;}}
-html[data-ma-large-text] .ma-shop-wallet{grid-template-columns:36px minmax(0,1fr);}
+@media(max-width:380px){.ma-shop-wallet{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);}.ma-shop-wallet>[data-ma-purchase-coins]{grid-column:1/-1;justify-self:stretch;}.ma-shop-wallet .ma-shop-coin{width:28px;height:28px;}}
+html[data-ma-large-text] .ma-shop-wallet{grid-template-columns:28px minmax(0,1fr);}
+html[data-ma-large-text] .ma-shop-wallet__tokens{grid-column:2;padding-left:0;border-left:0;}
 html[data-ma-large-text] .ma-shop-wallet>[data-ma-purchase-coins]{grid-column:1/-1;}
 html[data-ma-large-text] .ma-shop-preview .ma-shop-product{grid-template-columns:minmax(0,1fr);}

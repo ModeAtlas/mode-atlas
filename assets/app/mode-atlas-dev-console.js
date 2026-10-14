@@ -332,10 +332,12 @@
     panel.append(devEl('h3','','Shop testing'),devEl('p','','Changes apply only to the signed-in developer account. Test coins are server credited and use the normal purchase flow.'));
     const controls=devEl('div','ma-dev-progress-controls'),label=devEl('label','ma-dev-progress-field'),input=devEl('input','ma-dev-progress-input');
     input.type='number';input.min='1';input.max='100000';input.step='1';input.value='2000';input.dataset.maDevCoins='';
-    label.append(devEl('span','','Atlas Coins to add'),input);
-    const credit=devButton('Add coins','maDevShopCredit','action'),reset=devButton('Reset purchases','maDevShopReset','action');
+    label.append(devEl('span','','Amount to add'),input);
+    const currency=devEl('select');currency.setAttribute('aria-label','Test currency');currency.dataset.maDevCurrency='';
+    for(const [value,name]of [['atlas-coins','Atlas Coins'],['study-tokens','Study Tokens']]){const option=devEl('option','',name);option.value=value;currency.append(option);}
+    const credit=devButton('Add currency','maDevShopCredit','action'),reset=devButton('Reset purchases','maDevShopReset','action');
     const status=devEl('p');status.dataset.maDevShopStatus='';status.setAttribute('role','status');
-    function refresh(){const wallet=window.ModeAtlasShop.current();credit.disabled=reset.disabled=!wallet.developer||wallet.busy;status.textContent=wallet.developer?`${wallet.balance??'…'} Atlas Coins · ${wallet.owned.length} collections owned`:'Sign in to the verified developer account to test purchases.';}
+    function refresh(){const wallet=window.ModeAtlasShop.current();credit.disabled=reset.disabled=!wallet.developer||wallet.busy;status.textContent=wallet.developer?`${wallet.balance??'…'} Atlas Coins · ${wallet.tokenBalance??'…'} Study Tokens · ${wallet.owned.length} items owned`:'Sign in to the verified developer account to test purchases.';}
     async function perform(operation){
       if(!canUseDevTools()||!account||account!==window.KanaCloudSync?.getUser?.()?.uid)return;
       const amount=Number(input.value);if(operation==='credit'&&(!Number.isSafeInteger(amount)||amount<1||amount>100000)){status.textContent='Enter between 1 and 100,000 coins.';return;}
@@ -345,7 +347,7 @@
       }
       credit.disabled=reset.disabled=true;
       try{
-        await window.ModeAtlasShop.developer(operation,operation==='credit'?amount:undefined);
+        await window.ModeAtlasShop.developer(operation,operation==='credit'?amount:undefined,currency.value);
         if(account!==window.KanaCloudSync?.getUser?.()?.uid)return;
         if(operation==='resetPurchases'){
           const theme=window.ModeAtlasTheme.getPreference();
@@ -358,11 +360,11 @@
             if(account===window.KanaCloudSync?.getUser?.()?.uid&&window.ModeAtlasRewardRules.icons.some(item=>item.kind==='shop'&&item.icon===icon))await window.AtlasPlatform.setAppIcon(null);
           }
         }
-        refresh();status.textContent=operation==='credit'?`${amount.toLocaleString()} coins added. Balance: ${window.ModeAtlasShop.current().balance.toLocaleString()}.`:'Shop purchases reset. Earned and exclusive rewards kept.';
+        refresh();status.textContent=operation==='credit'?`${amount.toLocaleString()} ${currency.selectedOptions[0].textContent} added.`:'Shop purchases reset. Earned and exclusive rewards kept.';
       }catch(error){refresh();status.textContent=window.ModeAtlasShop.message(error);}
     }
     credit.addEventListener('click',()=>void perform('credit'));reset.addEventListener('click',()=>void perform('resetPurchases'));
-    controls.append(label,credit,reset);panel.append(controls,status);refresh();void window.ModeAtlasShop.refresh(true).then(()=>{if(panel.isConnected&&account===window.KanaCloudSync?.getUser?.()?.uid)refresh();});return panel;
+    controls.append(currency,label,credit,reset);panel.append(controls,status);refresh();void window.ModeAtlasShop.refresh(true).then(()=>{if(panel.isConnected&&account===window.KanaCloudSync?.getUser?.()?.uid)refresh();});return panel;
   }
 
   function adjustDevXp(backdrop, direction){

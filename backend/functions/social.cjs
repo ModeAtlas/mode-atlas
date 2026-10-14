@@ -260,10 +260,10 @@ function createSocial({db,auth,messaging,now=Date.now}){
       const value=publicProfile(data.uid,b,now(),friend);if(!value)fail('not-found','This profile is no longer available.');
       value.character=await avatars.publicCharacter(tx,data.uid,b.profile,value.level,b.rewardAccess);
       const relationship=uid===data.uid?'self':friend?'friend':has(a.incoming,data.uid)?'incoming':has(a.outgoing,data.uid)?'outgoing':'none';
-      return {profile:value,friend,relationship,canRequest:relationship==='none'&&weeklyActive(a)&&weeklyActive(b),stale:friend&&b.summary?.projectionVersion!==PROJECTION_VERSION};
+      return {profile:value,friend,relationship,canRequest:relationship==='none'&&weeklyActive(a)&&weeklyActive(b),stale:b.summary?.projectionVersion!==PROJECTION_VERSION};
     });
     if(result.stale){await refreshSummary(data.uid,null,true);return profile(uid,data);}
-    delete result.stale;return result;
+    delete result.stale;await decorate([result.profile]);return result;
   }
   async function refreshSummary(uid,user,cachedAccess=false){
     if(!validUid(uid))return;
@@ -355,6 +355,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     }
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
+    if(['avatarState','avatarUpdate','updateProfile','shop','shopPurchase','shopDeveloper'].includes(action))await rewards.retainEquipped(user);
     if(action==='rewards')return rewards.read(user);
     if(action==='avatarState'||action==='avatarUpdate'){
       if(action==='avatarUpdate'&&data.displayName!==undefined)await identities.ensureReady();

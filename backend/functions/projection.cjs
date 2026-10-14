@@ -9,7 +9,7 @@ const progress = createProgress({ModeAtlasDates: dates, ModeAtlasRewardRules: re
 const review = createReview({ModeAtlasDates: dates});
 const identity = require('./shared/mode-atlas-social-identity.js');
 const characters = require('./shared/mode-atlas-avatar-rules.js');
-const PROJECTION_VERSION=3;
+const PROJECTION_VERSION=4;
 
 function progressOwner(save = {}, timeZone = 'UTC') {
   const sections = save.sections || {};
@@ -29,6 +29,14 @@ function progressOwner(save = {}, timeZone = 'UTC') {
 }
 function studyDaysFromSave(save,timeZone='UTC'){const owner=progressOwner(save,timeZone);return owner.studyDays(owner.ensureSeeded({sync:false,emit:false}));}
 function levelFromSave(save){const owner=progressOwner(save);return owner.getSummary(owner.ensureSeeded({sync:false,emit:false})).level;}
+function earningEvidence(save,timeZone='UTC'){
+  const owner=progressOwner(save,timeZone),state=owner.ensureSeeded({sync:false,emit:false});
+  const correct=owner.getSummary(state).lifetimeCorrect;
+  const weighted=Object.values(state.credits).reduce((total,row)=>total+row.answer,correct);
+  // Answer credits already contain the shared pool/hint multiplier. Session,
+  // goal and developer XP are never counted as correct-answer earnings.
+  return {level:owner.getSummary(state).level,answerUnits:Math.min(correct*8,weighted),days:owner.studyDays(state)};
+}
 function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
   const sections=save.sections||{},data=name=>sections[name]?.data||{};
   const owner=progressOwner(save,timeZone);
@@ -45,7 +53,7 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
   }
   return {version:progress.STATE_VERSION,projectionVersion:PROJECTION_VERSION,xp:summary.xp,level:summary.level,totalCorrect:summary.lifetimeCorrect,
     readingMastered,writingMastered,combinedMastered,kanaCount:kana.collections.all.length,
-    landmark:selected.id,banner:rewards.banner(seeded.appearance.banner,summary.level,access).id,studyDays:owner.studyDays(seeded),syncedAt};
+    theme:rewards.allowed('themes',seeded.appearance.theme,summary.level,access)?seeded.appearance.theme:'',landmark:selected.id,banner:rewards.banner(seeded.appearance.banner,summary.level,access).id,studyDays:owner.studyDays(seeded),syncedAt};
 }
 
 function publicProfile(uid, account, now = Date.now(), full = true) {
@@ -54,7 +62,7 @@ function publicProfile(uid, account, now = Date.now(), full = true) {
   // A cached profile must not keep a legacy level until its owner studies again.
   const summary={...saved,level:progress.getLevelFromXP(saved.xp).level};
   const landmark=rewards.appearance(summary.landmark,summary.level,account.rewardAccess);
-  const out={uid,displayName:account.profile.displayName,avatar:account.profile.avatar,
+  const out={uid,theme:rewards.allowed('themes',summary.theme,summary.level,account.rewardAccess)?summary.theme:'',displayName:account.profile.displayName,avatar:account.profile.avatar,
     frame:landmark.frame,title:landmark.title,banner:rewards.banner(summary.banner,summary.level,account.rewardAccess).id,level:summary.level};
   if(out.avatar==='account'){
     const url=identity.photoURL(account.profile.avatarURL);if(url)out.avatarURL=url;else out.avatar='kana';
@@ -77,4 +85,4 @@ function rankProfiles(profiles,metric) {
   let rank=0,previous;
   return rows.map((row,index)=>{if(row.score!==previous)rank=index+1;previous=row.score;return {...row,rank};});
 }
-module.exports={projectSave,publicProfile,rankProfiles,PROJECTION_VERSION,levelFromSave,studyDaysFromSave,studyStreak:progress.studyStreak,protectStreak:progress.protectStreak};
+module.exports={projectSave,publicProfile,rankProfiles,PROJECTION_VERSION,levelFromSave,earningEvidence,studyDaysFromSave,studyStreak:progress.studyStreak,protectStreak:progress.protectStreak};
