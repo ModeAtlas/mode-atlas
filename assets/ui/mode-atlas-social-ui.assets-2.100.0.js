@@ -234,10 +234,17 @@
     });});body.append(form,preview);
   }
   async function showProfile(uid){
-    const ticket=screen();back(tab==='rankings'?'Rankings':'Friends',home);
+    const ticket=screen();back(tab==='rankings'?'Rankings':'Friends',load);
     try{
       const result=await root.ModeAtlasSocial.call('profile',{uid});if(!alive(ticket))return;
       const profile=result.profile,card=profileCard(profile,'ma-social-self');card.append(avatar(profile),identity(profile));body.append(card);
+      if(uid!==owner){
+        const connection=el('div','ma-social-tools ma-social-connection');
+        if(result.canRequest)connection.append(button('Add friend',()=>run(()=>root.ModeAtlasSocial.call('sendRequest',{uid}),()=>showProfile(uid)),'ma-button ma-button--primary'));
+        else if(result.relationship==='outgoing')connection.append(el('span','ma-social-note','Friend request sent'),button('Cancel request',()=>run(()=>root.ModeAtlasSocial.call('cancel',{uid}),()=>showProfile(uid))));
+        else if(result.relationship==='incoming')connection.append(button('Accept request',()=>run(()=>root.ModeAtlasSocial.call('accept',{uid}),()=>showProfile(uid)),'ma-button ma-button--primary'),button('Decline',()=>run(()=>root.ModeAtlasSocial.call('decline',{uid}),()=>showProfile(uid))));
+        if(connection.childNodes.length)body.append(connection);
+      }
       if(state.canModerate)body.append(button('Moderation & warnings',()=>staffProfile(uid)));
       const stats=profile.stats,grid=el('div','ma-social-stats');
       if(stats){

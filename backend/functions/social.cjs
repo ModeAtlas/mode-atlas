@@ -141,9 +141,21 @@ function createSocial({db,auth,messaging,now=Date.now}){
     });
   }
   async function sendRequest(uid,data){
-    fields(data,['code']);const code=codeValue(data.code);
+    fields(data,['code','uid']);
+    const byCode=Object.hasOwn(data,'code');
+    if(byCode===Object.hasOwn(data,'uid'))fail('invalid-argument','Choose a friend code or a weekly profile.');
+    const code=byCode?codeValue(data.code):null;
+    if(!byCode&&(!validUid(data.uid)||data.uid===uid))fail('invalid-argument','Choose another profile.');
     return db.runTransaction(async tx=>{
-      const {target,a,b}=await codeTarget(tx,uid,code);
+      let target,a,b;
+      if(byCode)({target,a,b}=await codeTarget(tx,uid,code));
+      else{
+        target=data.uid;
+        const [self,other,block]=await tx.getAll(accountRef(uid),accountRef(target),blockRef(uid,target));
+        a=self.data();b=other.data();requireActive(a);
+        // A guessed UID does not bypass discovery, opt-out or either side's block.
+        if(block.exists||!weeklyActive(a)||!weeklyActive(b))fail('not-found','This weekly profile is no longer available.');
+      }
       if(has(a.friends,target) || has(a.outgoing,target))return {ok:true};
       if(has(a.incoming,target))return {ok:true,incoming:true};
       if(keys(a.outgoing).length>=LIMITS.requests || keys(b.incoming).length>=LIMITS.requests)fail('resource-exhausted','There are too many pending requests. Try again later.');
@@ -243,7 +255,8 @@ function createSocial({db,auth,messaging,now=Date.now}){
       const friend=uid===data.uid||(has(a.friends,data.uid)&&has(b?.friends,uid));
       if(blocked.exists||(!friend&&!(weeklyActive(a)&&weeklyActive(b))))fail('permission-denied','This profile is available to accepted friends or weekly competitors.');
       const value=publicProfile(data.uid,b,now(),friend);if(!value)fail('not-found','This profile is no longer available.');
-      return {profile:value,friend,stale:friend&&b.summary?.projectionVersion!==PROJECTION_VERSION};
+      const relationship=uid===data.uid?'self':friend?'friend':has(a.incoming,data.uid)?'incoming':has(a.outgoing,data.uid)?'outgoing':'none';
+      return {profile:value,friend,relationship,canRequest:relationship==='none'&&weeklyActive(a)&&weeklyActive(b),stale:friend&&b.summary?.projectionVersion!==PROJECTION_VERSION};
     });
     if(result.stale){await refreshSummary(data.uid,null,true);return profile(uid,data);}
     delete result.stale;return result;

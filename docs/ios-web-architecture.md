@@ -23,7 +23,7 @@ authorization revocation, avoiding a second native Firebase session.
 | Web-only transport and installation | Web platform adapter, PWA and update modules | Web |
 | Native sign-in chooser and app links | Native platform adapter and Capacitor plugins | iOS |
 | Account UID, provider linking, cloud save and deletion | `cloud-sync.js`, shared Profile drawer | Both |
-| Compact Atlas home | `index.html`, `assets/pages/mode-atlas-home-page.js`, native-gated home CSS | iOS |
+| Personal Atlas home | `index.html`, `assets/pages/mode-atlas-home-page.js`, native-gated home CSS | iOS |
 | Bottom dock, setup drawer placement and native transition | `assets/platform/mode-atlas-ios-chrome.js`, `assets/css/mode-atlas-ios-chrome.css` | iOS |
 | Reading letter pad and touch feedback | `assets/platform/mode-atlas-ios-keyboard.js`, native CSS, Capacitor Haptics; shared Reading handler scores the input event | iOS |
 | Cold launch handoff | Static `LaunchScreen.storyboard`, shared early loader timing, native loading styles | iOS |
@@ -86,9 +86,10 @@ Anonymous local storage belongs to each installation and is not shared across
 web and iOS. Shipping new bundled UI or logic requires a version bump,
 validated native bundle and a new signed iOS release.
 
-The Atlas route remains one document. iOS displays its compact Today/Continue
-composition from the same home controller, progress summary and Kana metrics as
-the website. The web composition is hidden only under the native runtime flag.
+The Atlas route remains one document. iOS displays its scrolling Today/Continue composition from the same home
+controller and shared progress, goals, reviews and identity presentation as the
+website. Version 2.100.0 replaces the former no-scroll phone layout with a full
+character and weekly recap; safe areas and dock clearance still have one owner. The web composition is hidden only under the native runtime flag.
 
 Apple and Google are separate Firebase users until a signed-in user explicitly
 links the second credential. Profile offers that link while retaining the

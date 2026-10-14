@@ -48,7 +48,9 @@ test('expanded wardrobe stays exclusive and a failed save keeps the draft for re
   });
   await page.locator('[data-ma-avatar-open]').click();const dialog=page.getByRole('dialog',{name:'Your avatar'});
   await expect(dialog.locator('[data-avatar-slot=skin]')).toHaveCount(11);
-  await expect(dialog.locator('[data-avatar-slot=hair]')).toHaveCount(14);
+  await expect(dialog.locator('[data-avatar-slot=hair]')).toHaveCount(20);
+  for(const name of ['Classic side part','French crop','Messy fringe','Slick back','Medium flow','Bald'])await expect(dialog.getByRole('button',{name,exact:true})).toBeVisible();
+  for(const name of ['Sculpted pompadour','Braided undercut'])await expect(dialog.getByRole('button',{name,exact:true})).toHaveCount(0);
   await dialog.getByRole('button',{name:'Ivory',exact:true}).click();await dialog.getByRole('button',{name:'Twin braids',exact:true}).click();
   await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();await expect(dialog.getByRole('button',{name:'Hunny jumper',exact:true})).toHaveCount(0);
   await page.evaluate(()=>{wardrobeGrants=['hunny-tester','shop-hunny-jumper','shop-hunny-pendant'];});
@@ -73,11 +75,11 @@ test('guest character preview offers sign-in and account changes discard an open
   await page.evaluate(()=>dispatchEvent(new Event('modeAtlasAccountWillChange')));await expect(dialog).toBeHidden();
 });
 
-for(const native of [false,true])for(const collection of ['sakura','midnight','skyline'])test(`collection first paint survives slow auth and page changes ${native?'iOS':'web'} ${collection}`,async({page})=>{
+for(const native of [false,true])for(const collection of ['sakura','midnight','skyline','evergreen'])test(`collection first paint survives slow auth and page changes ${native?'iOS':'web'} ${collection}`,async({page})=>{
   await prepare(page,{native,theme:collection});
   await page.addInitScript(()=>{
     localStorage.setItem('modeAtlasLastUserId','theme-owner');
-    localStorage.setItem('modeAtlasRewardAccess',JSON.stringify({uid:'theme-owner',checkedAt:Date.now(),access:{grants:['shop-sakura','shop-midnight','shop-skyline'],validUntil:Date.now()+86400000}}));
+    localStorage.setItem('modeAtlasRewardAccess',JSON.stringify({uid:'theme-owner',checkedAt:Date.now(),access:{grants:['shop-sakura','shop-midnight','shop-skyline','shop-evergreen'],validUntil:Date.now()+86400000}}));
   });
   await page.route('**/cloud-sync.assets-*.js',route=>route.fulfill({contentType:'text/javascript',body:`
     let testUser=null,testResolved=false,readyResolve;
@@ -152,14 +154,15 @@ async function readable(locator,background){
 }
 for(const native of [false,true])test(`mixed collection surfaces keep readable previews and account actions ${native?'iOS':'web'}`,async({page},testInfo)=>{
   test.setTimeout(60000);const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,{native});await open(page,'/shop/');
+  await page.locator('.ma-shop-full').getByRole('tab',{name:'Theme packs',exact:true}).click();
   await page.evaluate(()=>{
     const access={allCustom:true,grants:ModeAtlasRewardRules.themes.map(t=>t.grant)};
     ModeAtlasRewardAccess={...ModeAtlasRewardAccess,current:()=>access,presentation:()=>access,status:()=> 'ready',refresh:async()=>{}};
   });
-  for(const theme of ['dark','light','sakura','midnight','skyline']){
+  for(const theme of ['dark','light','sakura','midnight','skyline','evergreen']){
     await page.evaluate(theme=>ModeAtlasTheme.set(theme,{toast:false}),theme);
     if(theme==='dark')await page.screenshot({path:testInfo.outputPath(`${native?'ios':'web'}-shop.png`),animations:'disabled'});
-    for(const id of ['sakura','midnight','skyline']){
+    for(const id of ['sakura','midnight','skyline','evergreen']){
       const product=page.locator(`.ma-shop-full [data-ma-shop-product="${id}"]`);await product.scrollIntoViewIfNeeded();
       const canvas=await product.evaluate(node=>getComputedStyle(node,'::before').backgroundColor);
       for(const text of await product.locator('.ma-shop-product__name,.ma-shop-product__description,[data-ma-shop-availability]').all())await readable(text,canvas);
@@ -172,7 +175,7 @@ for(const native of [false,true])test(`mixed collection surfaces keep readable p
       await page.keyboard.press('Escape');await expect(page.locator('.ma-dialog-layer')).toBeHidden();
     }
     await page.locator('#profileOpenBtn').click();
-    for(const banner of ['hunny','sakura','midnight','skyline']){
+    for(const banner of ['hunny','sakura','midnight','skyline','evergreen']){
       await page.evaluate(banner=>ModeAtlasProgress.selectBanner(banner),banner);
       const card=page.locator('.ma-account-card');await expect(card).toHaveAttribute('data-ma-banner',banner);
       for(const signedIn of [false,true]){
@@ -261,8 +264,8 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
       await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
     }
     await page.evaluate(()=>{document.documentElement.dataset.maLargeText='true';document.documentElement.style.fontSize='24px';});
-    await shop.getByRole('button',{name:'Preview Midnight collection'}).scrollIntoViewIfNeeded();
-    await expect(shop.getByRole('button',{name:'Preview Midnight collection'})).toBeVisible();
+    await shop.getByRole('button',{name:'Preview Sakura collection'}).scrollIntoViewIfNeeded();
+    await expect(shop.getByRole('button',{name:'Preview Sakura collection'})).toBeVisible();
     expect(await shop.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
     expect(await shop.evaluate(node=>{
       const last=node.querySelector('.ma-shop-product:last-child').getBoundingClientRect();
@@ -689,14 +692,14 @@ for(const native of [true,false])test(`coin purchase, owned themes and rotation 
   await shop.getByRole('button',{name:'Preview Sakura collection'}).click();await page.getByRole('button',{name:'Open Rewards',exact:true}).click();
   await page.locator('[data-reward-category="themes"] summary').click();await page.locator('[data-reward-category="themes"] [data-ma-theme-choice="sakura"]').click();
   await expect(page.locator('html')).toHaveAttribute('data-ma-collection-theme','sakura');await expect(page.locator('html')).toHaveAttribute('data-ma-theme','light');
-  await expect(page.locator('body')).toHaveCSS('background-color','rgb(255, 243, 247)');
+  await expect(page.locator('body')).toHaveCSS('background-color','rgb(246, 220, 231)');
   await page.screenshot({path:testInfo.outputPath('sakura-rewards.png'),fullPage:true,animations:'disabled'});
   await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Settings',exact:true}).click();
   await expect(page.locator('[data-ma-owned-themes] [data-ma-theme-choice="sakura"]')).toHaveAttribute('aria-pressed','true');
   await page.screenshot({path:testInfo.outputPath('sakura-settings.png'),fullPage:true,animations:'disabled'});
   await page.getByRole('tab',{name:'Shop',exact:true}).click();
   await shop.locator('[data-ma-shop-product="streak-freeze"]').click();await page.getByRole('button',{name:'Buy item',exact:true}).click();
-  await expect(shop.locator('[data-ma-coin-balance]')).toHaveText('1,350 coins');await expect(shop.locator('[data-ma-shop-product="streak-freeze"]')).toContainText('1 ready');
+  await expect(shop.locator('[data-ma-coin-balance]')).toHaveText('1,400 coins');await expect(shop.locator('[data-ma-shop-product="streak-freeze"]')).toContainText('1 ready');
   await page.evaluate(async()=>{shopFixture.hidden=['sakura'];await ModeAtlasShop.refresh(true);});
   await expect(shop.locator('[data-ma-shop-product="sakura"]')).toBeHidden();
   await shop.getByRole('button',{name:'Your rewards Your collections, wardrobe, themes and streak items.'}).click();

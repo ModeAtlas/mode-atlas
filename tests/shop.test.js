@@ -18,7 +18,7 @@ test('character options are bounded, earned clothing follows level and old colle
   assert.equal(characters.valid({...characters.defaults,extra:'no'}),false);
   assert.equal(characters.allowed({...characters.defaults,outfit:'grove'},4,{}),false);
   assert.equal(characters.allowed({...characters.defaults,outfit:'grove'},5,{}),true);
-  for(const id of ['sakura','midnight','skyline']){
+  for(const id of ['sakura','midnight','skyline','evergreen']){
     const look={...characters.defaults,outfit:id,headwear:id};
     assert.equal(characters.allowed(look,999,{allCustom:true}),false);
     assert.equal(characters.allowed(look,1,{grants:['shop-'+id]}),true);
@@ -89,9 +89,9 @@ test('protected days bridge a study streak without counting as study days or inv
 
 test('expanded styles preserve old IDs and exclusive Hunny access covers every matching piece',()=>{
   const characters=require('../assets/app/mode-atlas-avatar-rules.js'),art=require('../assets/ui/mode-atlas-avatar-art.js');
-  for(const id of ['crop','sweep','bob','waves','long','coils','bun','shaved','curtains','quiff','short-curls','ponytail','braids','pixie'])assert.equal(characters.allowed({...characters.defaults,hair:id},1,{}),true);
+  for(const id of ['crop','sweep','bob','waves','long','coils','bun','shaved','curtains','quiff','short-curls','ponytail','braids','pixie','side-part','french-crop','messy-fringe','slick-back','flow','bald'])assert.equal(characters.allowed({...characters.defaults,hair:id},1,{}),true);
   assert.equal(characters.choices.skin.length,11);
-  for(const id of ['textured-fade','ribbon-waves']){
+  for(const id of ['textured-fade','ribbon-waves','sculpted-pompadour','braided-undercut']){
     const value={...characters.defaults,hair:id};assert.equal(characters.allowed(value,999,{allCustom:true}),false);
     assert.equal(characters.allowed(value,1,{grants:['shop-'+id]}),true);assert.equal(characters.visible(value,1,{}).hair,'sweep');
   }

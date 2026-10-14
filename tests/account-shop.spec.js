@@ -33,9 +33,9 @@ for(const layout of [{native:true,width:320,theme:'light'},{native:true,width:39
     const full=page.locator('.ma-shop-full');await expect(full).toBeVisible();
     await expect(full.getByRole('tab')).toHaveText(['Featured','Wardrobe','Theme packs','Streak items','Atlas Coins']);
     await full.getByRole('tab',{name:'Wardrobe',exact:true}).click();await full.getByLabel('Wardrobe type').selectOption('hairstyles');
-    await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(2);
+    await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(4);
     await expect(full.locator('[data-ma-shop-product="hunny-jumper"]')).toBeHidden();
-    await full.getByRole('tab',{name:'Theme packs',exact:true}).click();await expect(full.locator('.ma-shop-product:visible')).toHaveCount(3);
+    await full.getByRole('tab',{name:'Theme packs',exact:true}).click();await expect(full.locator('.ma-shop-product:visible')).toHaveCount(4);
     await full.getByRole('button',{name:'Preview Skyline collection'}).click();await expect(page.locator('.ma-dialog__title')).toHaveText('Skyline');await page.keyboard.press('Escape');
     await full.getByRole('tab',{name:'Streak items',exact:true}).click();await expect(full.locator('[data-ma-shop-product]:visible')).toHaveCount(2);
     await full.getByRole('tab',{name:'Atlas Coins',exact:true}).click();await expect(full.locator('[data-ma-coin-pack]')).toHaveCount(4);
@@ -71,4 +71,17 @@ test('a cancelled sign-out cannot update the next dialog when its sync finishes'
   await page.evaluate(()=>{void ModeAtlasDialog.alert({title:'Another dialog',message:'Leave this message alone.',confirmLabel:'Got it'});stallCloud=false;finishCloud();});
   await expect(page.locator('.ma-dialog__title')).toHaveText('Another dialog');await expect(page.locator('.ma-dialog__message')).toHaveText('Leave this message alone.');
   await expect(page.getByRole('button',{name:'Got it',exact:true})).toBeVisible();
+});
+
+test('repair inventory previews the entire eligible gap and its calendar expiry',async({page})=>{
+  await prepare(page);await page.evaluate(()=>{
+    const wallet={status:'ready',balance:0,inventory:{'streak-freeze':0,'streak-repair':1},repairDay:'2026-10-05',repair:{days:['2026-10-03','2026-10-04','2026-10-05'],expiresOn:'2026-10-12'}};
+    window.repairUses=0;KanaCloudSync.getUser=()=>({uid:'repair-owner'});
+    window.ModeAtlasShop={...ModeAtlasShop,current:()=>wallet,useRepair:async()=>{repairUses++;}};
+    const host=document.createElement('section');host.id='repairFixture';document.querySelector('.atlas-ios-home').append(host);ModeAtlasShopUI.renderInventory(host);
+  });
+  await expect(page.locator('#repairFixture')).toContainText('Restore 3 missed days');
+  await expect(page.locator('#repairFixture')).toContainText('Use by');
+  await page.getByRole('button',{name:'Use repair',exact:true}).click();await expect(page.locator('.ma-dialog__message')).toContainText('without adding study days or XP');
+  await page.locator('.ma-dialog').getByRole('button',{name:'Use repair',exact:true}).click();expect(await page.evaluate(()=>repairUses)).toBe(1);
 });

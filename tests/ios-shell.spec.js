@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('Atlas home is compact on iOS and retains the website layout in the browser', async ({ page }) => {
+test('Atlas home uses its native composition and the wider website layout', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.atlas-hero')).toBeVisible();
   await expect(page.locator('.atlas-ios-home')).toBeHidden();
@@ -24,7 +24,7 @@ test('Atlas home is compact on iOS and retains the website layout in the browser
   expect(await page.evaluate(() => settings.hiraganaRows)).toEqual(['h_a']);
 });
 
-test('iOS home fits portrait phones and keeps its last action above the dock', async ({ page }) => {
+test('iOS home scrolls on portrait phones and keeps its last action above the dock', async ({ page }) => {
   await page.addInitScript(() => {
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
   });
@@ -32,20 +32,13 @@ test('iOS home fits portrait phones and keeps its last action above the dock', a
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   for (const size of [{width:375,height:667}, {width:393,height:852}, {width:430,height:932}]) {
     await page.setViewportSize(size);
-    console.log('Native home geometry', await page.evaluate(() => ({
-      viewport:innerHeight, scroll:document.documentElement.scrollHeight,
-      body:document.body.getBoundingClientRect().toJSON(),
-      padding:getComputedStyle(document.body).padding,
-      main:document.querySelector('.atlas-home').getBoundingClientRect().toJSON(),
-      home:document.querySelector('.atlas-ios-home').getBoundingClientRect().toJSON(),
-      dock:document.querySelector('.ma-ios-tabs').getBoundingClientRect().toJSON()
-    })));
+    await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
     await expect.poll(() => page.evaluate(() => ({
-      fits: document.documentElement.scrollHeight <= innerHeight + 1,
+      scrolls: document.documentElement.scrollHeight > innerHeight && scrollY > 0,
       clear: document.querySelector('.atlas-ios-home').getBoundingClientRect().bottom
         <= document.querySelector('.ma-ios-tabs').getBoundingClientRect().top,
       width: document.documentElement.scrollWidth <= innerWidth
-    }))).toEqual({fits:true,clear:true,width:true});
+    }))).toEqual({scrolls:true,clear:true,width:true});
   }
 });
 
@@ -295,7 +288,7 @@ test('native trainer page background follows the app theme after the splash', as
   }
 });
 
-test('native safe-area insets survive phone trainer styles and keep the home above the dock', async ({page}, testInfo) => {
+test('native safe-area insets survive phone trainer styles and clear the dock after home scrolling', async ({page}, testInfo) => {
   await page.setViewportSize({width:393,height:852});
   const device=await page.context().newCDPSession(page);
   await device.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}});
@@ -322,7 +315,13 @@ test('native safe-area insets survive phone trainer styles and keep the home abo
   await expect.poll(()=>page.evaluate(()=>{
     const home=document.querySelector('.atlas-ios-home').getBoundingClientRect();
     const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
-    return home.bottom<=dock.top && dock.top-home.bottom<32 && document.documentElement.scrollHeight<=innerHeight+1;
+    return home.top>=59 && dock.bottom<=innerHeight && document.documentElement.scrollHeight>innerHeight;
+  })).toBe(true);
+  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+  await expect.poll(()=>page.evaluate(()=>{
+    const home=document.querySelector('.atlas-ios-home').getBoundingClientRect();
+    const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
+    return home.bottom<=dock.top-12 && dock.top-home.bottom<32 && scrollY>0;
   })).toBe(true);
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.screenshot({path:testInfo.outputPath('native-home.png')});

@@ -38,11 +38,15 @@ async function prepare(page,{active=true,...layout}={}){
         if(window.socialDelayList)return new Promise(resolve=>{window.finishSocialList=()=>resolve(response);});
         return response;
       }
-      if(action==='profile')return {profile:input.uid==='self'?data.self:data.friend};
+      if(action==='profile'){
+        const relationship=input.uid==='self'?'self':data.friends.some(p=>p.uid===input.uid)?'friend':data.incoming.some(p=>p.uid===input.uid)?'incoming':data.outgoing.some(p=>p.uid===input.uid)?'outgoing':'none';
+        const profile=input.uid==='self'?data.self:{...data.friend};if(!['self','friend'].includes(relationship))delete profile.stats;
+        return {profile,relationship,friend:['self','friend'].includes(relationship),canRequest:relationship==='none'&&!!data.weeklyEnabled};
+      }
       if(action==='updateProfile'){data.active=true;data.self.displayName=input.displayName;if(input.avatar)data.self.avatar=input.avatar;return {ok:true};}
       if(action==='lookup')return {profile:pending,relationship:'none'};
-      if(action==='sendRequest'){data.outgoing=[pending];return {ok:true};}
-      if(action==='accept'){data.incoming=[];data.friends.push(pending);return {ok:true};}
+      if(action==='sendRequest'){data.outgoing=[input.uid===data.friend.uid?data.friend:pending];return {ok:true};}
+      if(action==='accept'){const person=data.incoming.find(p=>p.uid===input.uid);data.incoming=[];if(person)data.friends.push(person);return {ok:true};}
       if(action==='decline'){data.incoming=[];return {ok:true};}
       if(action==='cancel'){data.outgoing=[];return {ok:true};}
       if(action==='block'){data.blocked=[data.friend];data.friends=[];return {ok:true};}
@@ -452,4 +456,20 @@ test('Friends opens from one bundled response without waiting for rewards; name 
   await page.getByRole('button',{name:'My code',exact:true}).click();await expect(page.locator('.ma-social-code-name')).toContainText('Jack');
   await page.getByRole('button',{name:'Edit name',exact:true}).click();await page.getByLabel('Display name',{exact:true}).fill('Jack Atlas');await page.getByRole('button',{name:'Save profile',exact:true}).click();
   await page.getByRole('button',{name:'My code',exact:true}).click();await expect(page.locator('.ma-social-code-name')).toContainText('Jack Atlas');
+});
+
+
+for(const native of [true,false])test(`global weekly profile can request, cancel and accept a friendship without a code ${native?'iOS':'web'}`,async({page})=>{
+  await prepare(page,{native,width:native?393:1280});await page.evaluate(()=>{socialFixture.friends=[];socialFixture.incoming=[];socialFixture.weeklyEnabled=true;});
+  await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+  await page.locator('.ma-social-person').filter({hasText:'桜の道'}).click();
+  await expect(page.getByRole('button',{name:'Add friend',exact:true})).toBeVisible();
+  await expect(page.locator('.ma-social-stats')).toHaveCount(0);
+  await page.getByRole('button',{name:'Add friend',exact:true}).click();await expect(page.getByText('Friend request sent',{exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>socialCalls.filter(c=>c.action==='sendRequest').at(-1).input)).toEqual({uid:'friend'});
+  await page.getByRole('button',{name:'Cancel request',exact:true}).click();await expect(page.getByRole('button',{name:'Add friend',exact:true})).toBeVisible();
+  await page.evaluate(()=>{socialFixture.incoming=[socialFixture.friend];});
+  await page.getByRole('button',{name:'← Rankings',exact:true}).click();await page.locator('.ma-social-person').filter({hasText:'桜の道'}).click();
+  await page.getByRole('button',{name:'Accept request',exact:true}).click();await expect(page.getByRole('button',{name:'Remove friend',exact:true})).toBeVisible();
+  await expect(page.locator('.ma-social-stats')).toBeVisible();await expect(page.getByRole('button',{name:'Add friend',exact:true})).toHaveCount(0);
 });

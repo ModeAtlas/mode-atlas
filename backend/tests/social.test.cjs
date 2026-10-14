@@ -516,18 +516,18 @@ test('coin purchases are atomic, retry-safe and reject forged prices, insufficie
   await assert.rejects(b.call('shopPurchase',{...request,requestId:crypto.randomUUID()}),{code:'FAILED_PRECONDITION'});
   await assert.rejects(a.call('shopPurchase',{...request,uid:b.uid}),{code:'INVALID_ARGUMENT'});
   await assert.rejects(a.call('shopPurchase',request,b.uid),{code:'UNAUTHENTICATED'});
-  const freeze=()=>a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-freeze',coinPrice:150,timeZone});
+  const freeze=()=>a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-freeze',coinPrice:100,timeZone});
   await Promise.all([freeze(),freeze()]);const wallet=await a.call('shop',{version:2,timeZone});
-  assert.equal(wallet.balance,200);assert.equal(wallet.inventory['streak-freeze'],2);
+  assert.equal(wallet.balance,300);assert.equal(wallet.inventory['streak-freeze'],2);
   await assert.rejects(freeze(),{code:'FAILED_PRECONDITION'});
   const mine=rules.authenticatedContext(a.uid).firestore();
   await assertFails(setDoc(doc(mine,'commerceAccounts/'+a.uid+'/operations/forged'),{balanceAfter:999999}));
   await assertFails(setDoc(doc(mine,'shopCatalogue/current'),{offers:{sakura:{coinPrice:0}}}));
   await db.doc('accountDeletions/'+a.uid).set({state:'committing'});
   await assert.rejects(a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:'midnight',coinPrice:500,timeZone}),{code:'UNAUTHENTICATED'});
-  assert.equal((await ref.get()).data().balance,200);
+  assert.equal((await ref.get()).data().balance,300);
 });
-for(const productId of ['midnight','skyline'])test(`rotating ${productId} out blocks new sales while existing cosmetic and theme ownership survives`,async()=>{
+for(const productId of ['midnight','skyline','evergreen'])test(`rotating ${productId} out blocks new sales while existing cosmetic and theme ownership survives`,async()=>{
   const a=await learner('Collector '+productId),b=await learner('Visitor '+productId),timeZone='UTC';
   for(const user of [a,b])await db.doc('commerceAccounts/'+user.uid).set({version:1,currency:'atlas-tokens',balance:1000});
   await a.call('shopPurchase',{requestId:crypto.randomUUID(),productId:productId,coinPrice:500,timeZone});
@@ -560,20 +560,20 @@ test('developer coin credits and purchase reset use actual Auth role, keep earne
   await db.doc('commerceAccounts/'+uid).delete();
   await Promise.all([call('shopDeveloper',credit),call('shopDeveloper',credit)]);assert.equal((await call('shop',{version:2,timeZone})).balance,2000);
   await call('shopPurchase',{requestId:crypto.randomUUID(),productId:'sakura',coinPrice:500,timeZone});
-  await call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-repair',coinPrice:250,timeZone});
+  await call('shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-repair',coinPrice:200,timeZone});
   const reset={requestId:crypto.randomUUID(),operation:'resetPurchases',timeZone};
-  await call('shopDeveloper',reset);const after=await call('shopDeveloper',reset);assert.equal(after.balance,1250);assert.deepEqual(after.owned,[]);assert.equal(after.inventory['streak-repair'],0);
+  await call('shopDeveloper',reset);const after=await call('shopDeveloper',reset);assert.equal(after.balance,1300);assert.deepEqual(after.owned,[]);assert.equal(after.inventory['streak-repair'],0);
   const grants=await call('rewards',{});assert.deepEqual(grants.grants,['hunny-tester']);assert.equal(grants.allCustom,true);
   assert.equal(require('../functions/shared/mode-atlas-reward-rules.js').allowed('themes','sakura',99,grants),false);
-  await call('shopDeveloper',credit);assert.equal((await call('shop',{version:2,timeZone})).balance,1250,'An old credit receipt cannot mint coins after a reset');
+  await call('shopDeveloper',credit);assert.equal((await call('shop',{version:2,timeZone})).balance,1300,'An old credit receipt cannot mint coins after a reset');
 });
-test('streak inventory uses local calendar boundaries, refunds late offline practice and repairs only yesterday',async()=>{
+test('streak inventory uses local calendar boundaries, refunds late offline practice and repairs an eligible gap',async()=>{
   const a=await learner('StreakItems'),{createCommerce}=require('../functions/commerce.cjs'),timeZone='Australia/Melbourne';
   let clock=Date.parse('2026-10-03T23:00:00+10:00');const commerce=createCommerce({db,now:()=>clock}),user=await auth.getUser(a.uid);
   const ref=db.doc('commerceAccounts/'+a.uid),saveRef=db.doc('users/'+a.uid+'/appData/kanaTrainer');
   const studied=days=>{const data=save(100);data.sections.reading.data.dailyChallengeHistory=Object.fromEntries(days.map(day=>[day,{}]));return data;};
   await saveRef.set(studied(['2026-10-01','2026-10-02','2026-10-03']));await ref.set({version:1,currency:'atlas-tokens',balance:2000});
-  const buy=productId=>commerce.run(user,'shopPurchase',{requestId:crypto.randomUUID(),productId,coinPrice:productId==='streak-freeze'?150:250,timeZone});
+  const buy=productId=>commerce.run(user,'shopPurchase',{requestId:crypto.randomUUID(),productId,coinPrice:productId==='streak-freeze'?100:200,timeZone});
   await buy('streak-freeze');await buy('streak-repair');
   clock=Date.parse('2026-10-05T00:00:00+11:00');
   const state=()=>commerce.run(user,'shop',{version:2,timeZone});let value=await state();assert.deepEqual(value.protection,['2026-10-04']);assert.equal(value.inventory['streak-freeze'],0);
@@ -583,7 +583,7 @@ test('streak inventory uses local calendar boundaries, refunds late offline prac
   const request={requestId:crypto.randomUUID(),productId:'streak-repair',timeZone};await commerce.run(user,'shopUse',request);value=await commerce.run(user,'shopUse',request);
   assert.equal(value.inventory['streak-repair'],0);assert.deepEqual(value.protection,['2026-10-05','2026-10-06']);
   assert.deepEqual((await saveRef.get()).data(),studied(['2026-10-01','2026-10-02','2026-10-03','2026-10-04']),'Using items must not write learning data or XP');
-  clock=Date.parse('2026-10-10T00:00:00+11:00');await buy('streak-repair');assert.equal((await state()).repairDay,null);
+  clock=Date.parse('2026-10-11T00:00:00+11:00');await buy('streak-repair');assert.equal((await state()).repairDay,null);
   await assert.rejects(commerce.run(user,'shopUse',{...request,requestId:crypto.randomUUID()}),{code:'failed-precondition'});
 });
 
@@ -925,4 +925,69 @@ test('weekly coins migrate a legacy wallet, keep purchases and do not backfill s
   const past=policy.period(period.startAt-86400000);await db.doc('weeklyCompetitions/'+past.id).set({...past,settled:true});
   await db.doc(`weeklyCompetitions/${past.id}/awards/${a.uid}`).set({xp:500,rank:1,week:past.id});
   await weekly.settle(past.id);assert.equal((await db.doc(`commerceAccounts/${a.uid}/operations/weekly-v1-${past.id}`).get()).exists,false);
+});
+
+
+test('weekly profile requests require both opt-ins, retain private stats until acceptance and are idempotent',async()=>{
+  const a=await learner('ForestWalker'),b=await learner('ForestReader');
+  await assert.rejects(a.call('sendRequest',{uid:b.uid}),{code:'NOT_FOUND'});
+  await a.call('weeklyPreference',{enabled:true});
+  await assert.rejects(a.call('sendRequest',{uid:b.uid}),{code:'NOT_FOUND'});
+  await b.call('weeklyPreference',{enabled:true});
+  let preview=await a.call('profile',{uid:b.uid});assert.equal(preview.canRequest,true);assert.equal(preview.relationship,'none');assert.equal(preview.profile.stats,undefined);
+  await assert.rejects(a.call('sendRequest',{uid:a.uid}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('sendRequest',{uid:b.uid,code:b.code}),{code:'INVALID_ARGUMENT'});
+  await assert.rejects(a.call('sendRequest',{}),{code:'INVALID_ARGUMENT'});
+  await Promise.all([a.call('sendRequest',{uid:b.uid}),a.call('sendRequest',{uid:b.uid})]);
+  preview=await a.call('profile',{uid:b.uid});assert.equal(preview.relationship,'outgoing');assert.equal(preview.canRequest,false);assert.equal(preview.profile.stats,undefined);
+  assert.equal((await b.call('profile',{uid:a.uid})).relationship,'incoming');
+  await b.call('sendRequest',{uid:a.uid});assert.equal((await b.call('state')).counts.incoming,1);
+  await b.call('accept',{uid:a.uid});preview=await a.call('profile',{uid:b.uid});assert.equal(preview.relationship,'friend');assert.equal(preview.friend,true);assert.ok(preview.profile.stats);
+  assert.equal((await a.call('state')).counts.friends,1);
+});
+
+test('weekly UID requests respect blocks, restriction, opt-out and the shared lookup rate limit',async()=>{
+  const a=await learner('RequestSender'),b=await learner('RequestReceiver');
+  for(const user of [a,b])await user.call('weeklyPreference',{enabled:true});
+  await b.call('block',{uid:a.uid});await assert.rejects(a.call('sendRequest',{uid:b.uid}),{code:'NOT_FOUND'});
+  await assert.rejects(b.call('sendRequest',{uid:a.uid}),{code:'NOT_FOUND'});await b.call('unblock',{uid:a.uid});
+  await db.doc('socialAccounts/'+b.uid).update({restricted:true});await assert.rejects(a.call('sendRequest',{uid:b.uid}),{code:'NOT_FOUND'});
+  await db.doc('socialAccounts/'+b.uid).update({restricted:false});await b.call('weeklyPreference',{enabled:false});
+  await assert.rejects(a.call('sendRequest',{uid:b.uid}),{code:'NOT_FOUND'});await b.call('weeklyPreference',{enabled:true});
+  await db.doc('socialLimits/'+a.uid).delete();
+  for(let i=0;i<6;i++){await a.call('lookup',{code:b.code});await a.call('sendRequest',{uid:b.uid});}
+  await assert.rejects(a.call('sendRequest',{uid:b.uid}),{code:'RESOURCE_EXHAUSTED'});
+  assert.equal((await b.call('state')).counts.incoming,1);
+});
+
+test('repair policy covers one to three missed days and expires after seven calendar days without penalising resumed study',()=>{
+  const {repairGap}=require('../functions/commerce.cjs'),w={covered:{}};
+  assert.deepEqual(repairGap(w,['2026-10-01','2026-10-02','2026-10-06'],'2026-10-07'),{days:['2026-10-03','2026-10-04','2026-10-05'],expiresOn:'2026-10-12'});
+  assert.equal(repairGap(w,['2026-10-01','2026-10-02'],'2026-10-07'),null);
+  const resumed=['2026-10-01',...Array.from({length:7},(_,i)=>`2026-10-${String(i+3).padStart(2,'0')}`)];
+  assert.deepEqual(repairGap(w,resumed,'2026-10-09'),{days:['2026-10-02'],expiresOn:'2026-10-09'});
+  assert.equal(repairGap(w,resumed,'2026-10-10'),null);
+  assert.equal(repairGap(w,[],'2026-10-07'),null);
+  assert.equal(repairGap(w,['2026-10-07'],'2026-10-07'),null);
+  assert.equal(repairGap({covered:{'2026-10-05':{},'2026-10-06':{}}},[],'2026-10-07'),null);
+});
+
+test('one repair bridges three dates atomically; partial and complete offline catch-up never duplicate the item',async()=>{
+  const a=await learner('LongRepair'),{createCommerce}=require('../functions/commerce.cjs'),timeZone='UTC';
+  const commerce=createCommerce({db,now:()=>Date.parse('2026-10-07T12:00:00Z')}),user=await auth.getUser(a.uid);
+  const ref=db.doc('commerceAccounts/'+a.uid),saveRef=db.doc('users/'+a.uid+'/appData/kanaTrainer');
+  const studied=days=>{const data=save(100);data.sections.reading.data.dailyChallengeHistory=Object.fromEntries(days.map(day=>[day,{}]));return data;};
+  const original=['2026-10-01','2026-10-02','2026-10-06','2026-10-07'];
+  await saveRef.set(studied(original));await ref.set({version:1,currency:'atlas-tokens',balance:1000});
+  await commerce.run(user,'shopPurchase',{requestId:crypto.randomUUID(),productId:'streak-repair',coinPrice:200,timeZone});
+  const request={requestId:crypto.randomUUID(),productId:'streak-repair',timeZone};
+  await Promise.all([commerce.run(user,'shopUse',request),commerce.run(user,'shopUse',request)]);
+  const state=()=>commerce.run(user,'shop',{version:2,timeZone});let result=await state();
+  assert.equal(result.inventory['streak-repair'],0);assert.deepEqual(result.protection,['2026-10-03','2026-10-04','2026-10-05']);
+  const record=(await ref.get()).data();assert.equal(new Set(Object.values(record.covered).map(entry=>entry.unit.id)).size,1);
+  assert.deepEqual((await saveRef.get()).data(),studied(original));
+  await saveRef.set(studied([...original,'2026-10-03']));result=await state();assert.equal(result.inventory['streak-repair'],0);assert.deepEqual(result.protection,['2026-10-04','2026-10-05']);
+  await saveRef.set(studied([...original,'2026-10-03','2026-10-04','2026-10-05']));result=await state();assert.equal(result.inventory['streak-repair'],1);assert.deepEqual(result.protection,[]);
+  result=await state();assert.equal(result.inventory['streak-repair'],1);const balance=result.balance;
+  await commerce.run(user,'shopUse',request);result=await state();assert.equal(result.inventory['streak-repair'],1);assert.equal(result.balance,balance);
 });

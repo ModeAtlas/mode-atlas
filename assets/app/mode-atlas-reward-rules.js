@@ -100,7 +100,8 @@
     {id:'horizon',level:50,title:'Horizon Explorer',name:'Open horizon',symbol:'◎',frame:'horizon',icon:'Horizon'},
     {id:'sakura',title:'Blossom Wanderer',name:'Sakura',symbol:'桜',frame:'sakura',icon:'Sakura',grant:'shop-sakura',kind:'shop'},
     {id:'midnight',title:'Midnight Voyager',name:'Midnight',symbol:'月',frame:'midnight',icon:'Midnight',grant:'shop-midnight',kind:'shop'},
-    {id:'skyline',title:'City Dreamer',name:'Skyline',symbol:'街',frame:'skyline',icon:'Skyline',grant:'shop-skyline',kind:'shop'}
+    {id:'skyline',title:'City Dreamer',name:'Skyline',symbol:'街',frame:'skyline',icon:'Skyline',grant:'shop-skyline',kind:'shop'},
+    {id:'evergreen',title:'Forest Wanderer',name:'Evergreen',symbol:'森',frame:'evergreen',icon:'Evergreen',grant:'shop-evergreen',kind:'shop'}
   ].map(Object.freeze));
   // A grant may unlock one item or a coordinated event set across categories.
   // Audience rules and award windows belong to the server, never this catalogue.
@@ -115,13 +116,16 @@
   const themes=Object.freeze([
     {id:'sakura',name:'Sakura',appearance:'light',grant:'shop-sakura',kind:'shop'},
     {id:'midnight',name:'Midnight',appearance:'dark',grant:'shop-midnight',kind:'shop'},
-    {id:'skyline',name:'Skyline',appearance:'dark',grant:'shop-skyline',kind:'shop'}
+    {id:'skyline',name:'Skyline',appearance:'dark',grant:'shop-skyline',kind:'shop'},
+    {id:'evergreen',name:'Evergreen',appearance:'dark',grant:'shop-evergreen',kind:'shop'}
   ].map(Object.freeze));
   const hairstyles=Object.freeze([
     ...[['crop','Short crop'],['sweep','Side sweep'],['bob','Bob'],['waves','Waves'],['long','Long hair'],['coils','Coils'],['bun','High bun'],['shaved','Shaved'],
-      ['curtains','Curtains'],['quiff','Quiff'],['short-curls','Short curls'],['ponytail','Ponytail'],['braids','Twin braids'],['pixie','Pixie']].map(([id,name])=>({id,name,level:1})),
+      ['curtains','Curtains'],['quiff','Quiff'],['short-curls','Short curls'],['ponytail','Ponytail'],['braids','Twin braids'],['pixie','Pixie'],['side-part','Classic side part'],['french-crop','French crop'],['messy-fringe','Messy fringe'],['slick-back','Slick back'],['flow','Medium flow'],['bald','Bald']].map(([id,name])=>({id,name,level:1})),
     {id:'textured-fade',name:'Textured fade',grant:'shop-textured-fade',kind:'shop'},
-    {id:'ribbon-waves',name:'Ribbon waves',grant:'shop-ribbon-waves',kind:'shop'}
+    {id:'ribbon-waves',name:'Ribbon waves',grant:'shop-ribbon-waves',kind:'shop'},
+    {id:'sculpted-pompadour',name:'Sculpted pompadour',grant:'shop-sculpted-pompadour',kind:'shop'},
+    {id:'braided-undercut',name:'Braided undercut',grant:'shop-braided-undercut',kind:'shop'}
   ].map(Object.freeze));
   const outfits=Object.freeze([
     {id:'everyday',name:'Everyday tee',level:1},{id:'sport',name:'Track top',level:1},{id:'linen',name:'Linen shirt',level:1},
@@ -129,13 +133,14 @@
     {id:'varsity',name:'Varsity jacket',grant:'shop-varsity',kind:'shop'},{id:'cable-knit',name:'Cable knit',grant:'shop-cable-knit',kind:'shop'},
     {id:'hunny',name:'Hunny jumper',grant:'shop-hunny-jumper',audience:'hunny-tester',kind:'exclusive'},
     {id:'grove',name:'Grove cardigan',level:5},{id:'bridge',name:'Explorer jacket',level:10},{id:'summit',name:'Summit coat',level:20},
-    ...['sakura','midnight','skyline'].map(id=>({id,name:{sakura:'Blossom jacket',midnight:'Moonlight hoodie',skyline:'City bomber'}[id],grant:'shop-'+id,kind:'shop'}))
+    ...['sakura','midnight','skyline','evergreen'].map(id=>({id,name:{sakura:'Blossom jacket',midnight:'Moonlight hoodie',skyline:'City bomber',evergreen:'Woodland field jacket'}[id],grant:'shop-'+id,kind:'shop'}))
   ].map(Object.freeze));
   const headwear=Object.freeze([
     {id:'none',name:'No headwear',level:1},{id:'hunny',name:'Hunny bear ears',grant:'hunny-tester',kind:'exclusive'},{id:'trail-cap',name:'Trail cap',level:5},{id:'summit-beanie',name:'Summit beanie',level:20},
     {id:'sakura',name:'Blossom clip',grant:'shop-sakura',kind:'shop'},
     {id:'midnight',name:'Moon pin',grant:'shop-midnight',kind:'shop'},
     {id:'skyline',name:'City cap',grant:'shop-skyline',kind:'shop'},
+    {id:'evergreen',name:'Laurel circlet',grant:'shop-evergreen',kind:'shop'},
     {id:'studio-headphones',name:'Studio headphones',grant:'shop-studio-headphones',kind:'shop'}
   ].map(Object.freeze));
   const accessories=Object.freeze([

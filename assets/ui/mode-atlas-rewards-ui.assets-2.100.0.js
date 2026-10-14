@@ -208,7 +208,7 @@
       const target=event.key==='ArrowRight'?(index+1)%controls.length:event.key==='ArrowLeft'?(index+controls.length-1)%controls.length:event.key==='Home'?0:event.key==='End'?controls.length-1:-1;
       if(target>=0){event.preventDefault();selectTab(target);controls[target].focus();}
     });
-    const requested=new URLSearchParams(location.search).get('tab');selectTab(requested==='rewards'?1:0);content.append(tabs,...panels);
+    const requested=new URLSearchParams(location.search).get('tab');selectTab(requested==='rewards'?1:requested==='recap'?2:0);content.append(tabs,...panels);
     host.replaceChildren(content);refresh();void root.ModeAtlasRewardAccess?.refresh();void root.ModeAtlasShop?.refresh();void root.ModeAtlasSocial?.refreshProfile?.();
     return ()=>content.remove();
   }
