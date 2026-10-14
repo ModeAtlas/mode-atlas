@@ -6,7 +6,8 @@
 .ma-kanji-main h2{font:750 clamp(1.3rem,3vw,1.7rem)/1.2 var(--ma-font-display);margin:0 0 16px;}
 .ma-kanji-main p{line-height:1.6;}
 .ma-kanji-main button,.ma-kanji-main input,.ma-kanji-main select{font:inherit;}
-.ma-kanji-readings dd,.ma-kanji-example>span,.ma-kanji-mode__mark,.ma-kanji-feedback p,.ma-kanji-result-answers{font-family:var(--ma-font-jp);}
+.ma-kanji-readings dd,.ma-kanji-example>span,.ma-kanji-mode__mark,.ma-kanji-feedback p,.ma-kanji-result-answers,.ma-kanji-description,.ma-kanji-caption{font-family:var(--ma-font-jp);}
+.ma-kanji-other-meanings{font-size:.85rem;color:var(--ma-text-soft);margin-bottom:12px;}.ma-kanji-other-meanings summary{cursor:pointer;padding:8px 0;}
 .ma-kanji-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:16px;}
 .ma-kanji-eyebrow{color:var(--ma-muted);font-size:.72rem;font-weight:750;letter-spacing:.1em;text-transform:uppercase;}
 .ma-kanji-path{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;}

@@ -64,7 +64,8 @@
   function learn(entry){
     const roman=state.read().settings.romaji,layout=el('div','ma-kanji-lesson');
     const glyph=el('div','ma-kanji-glyph',entry.char);glyph.lang='ja';
-    const details=el('div','ma-kanji-lesson-copy');details.append(heading(entry.meanings.join(' · ')));
+    const details=el('div','ma-kanji-lesson-copy');details.append(heading(entry.meanings[0]));
+    if(entry.meanings.length>1){const more=el('details','ma-kanji-other-meanings');more.append(el('summary','','More meanings'),el('p','',entry.meanings.slice(1).join(' · ')));details.append(more);}
     const toggle=button(roman?'Show kana':'Show romaji',()=>{state.settings({romaji:!roman});showSession();},'ma-kanji-text-button');toggle.setAttribute('aria-pressed',String(roman));details.append(toggle,readings(entry,roman));
     details.append(button('About these readings',()=>root.ModeAtlasDialog.alert({title:'One character, several readings',message:'On’yomi are readings used in many compound words. Kun’yomi are readings used in Japanese words, often followed by kana. The word decides which reading fits. Pronunciation practice shows a real word, or asks explicitly for one on’yomi reading.',confirmLabel:'Got it'}),'ma-kanji-text-button'));
     const description=content.description(entry),jp=el('p','ma-kanji-description',roman?content.romaji(description.ja):description.ja);jp.lang=roman?'ja-Latn':'ja';details.append(jp,el('p','ma-kanji-description',description.en));
