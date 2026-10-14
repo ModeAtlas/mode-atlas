@@ -207,7 +207,7 @@ function isKanaKeyboardMode() {
 
 function getPromptForCurrentChar(chars) {
     if (!chars) return "";
-    return isRomajiKeyboardMode() ? chars : getRomajiForChars(chars);
+    return getRomajiForChars(chars);
 }
 
 function getRomajiForChars(chars) {
@@ -881,6 +881,7 @@ inputEl.addEventListener("compositionstart", () => {
 
 inputEl.addEventListener("compositionend", () => {
     keyboardIsComposing = false;
+    evaluateKanaKeyboardAnswer();
 });
 
 inputEl.addEventListener("keydown", (event) => {
@@ -898,7 +899,8 @@ inputEl.addEventListener("keydown", (event) => {
     }
 });
 
-inputEl.addEventListener("input", () => {
+function evaluateKanaKeyboardAnswer(event) {
+    if(keyboardIsComposing||event?.isComposing)return;
     if (!sessionStarted || locked || !settings.keyboardMode || !isKanaKeyboardMode() || isElementVisible(gameOverEl)) return;
 
     const value = inputEl.value.trim();
@@ -917,7 +919,8 @@ inputEl.addEventListener("input", () => {
     if (hasMismatch) {
         handleWrong();
     }
-});
+}
+inputEl.addEventListener("input", evaluateKanaKeyboardAnswer);
 
 function startSession(recovery = null) {
     if (sessionStarted) return;

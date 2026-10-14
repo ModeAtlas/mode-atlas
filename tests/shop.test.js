@@ -5,7 +5,7 @@ const rules=require('../assets/app/mode-atlas-reward-rules.js');
 const createShop=require('../assets/app/mode-atlas-shop.js');
 const createProgress=require('../assets/app/mode-atlas-progress.js');
 const dates=require('../assets/app/mode-atlas-date.js');
-const wallet=(balance,extra={})=>({version:2,currency:'atlas-coins',balance,coinPurchasesEnabled:false,offers:catalogue.products.map(p=>catalogue.offer(p)),owned:[],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,checkedAt:1000,...extra});
+const wallet=(balance,extra={})=>({version:2,currency:'atlas-coins',balance,coinPurchasesEnabled:false,offers:catalogue.products.map(p=>catalogue.offer(p)).filter(Boolean),owned:[],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,checkedAt:1000,...extra});
 
 test('level coin milestones start after level one and remain cumulative through level 999',()=>{
   for(const [level,total]of [[1,0],[2,20],[5,130],[10,280],[15,430],[19,510],[20,580],[999,29910]])assert.equal(catalogue.levelCoins.total(level),total);
@@ -35,8 +35,8 @@ test('catalogue has stable priced products and themes; paid ownership does not c
   for(const product of catalogue.products){
     assert.ok(Number.isSafeInteger(product.coinPrice)&&product.coinPrice>0);
     for(const reference of product.rewards||[]){
-      const item=rules.item(reference.type,reference.id);assert.ok(item);assert.equal(item.kind,'shop');assert.equal(item.grant,product.grant);
-      assert.equal(rules.unlocked(item,999,{}),false);assert.equal(rules.unlocked(item,1,{grants:[product.grant]}),true);assert.equal(rules.unlocked(item,1,{allCustom:true}),false);
+      const item=rules.item(reference.type,reference.id);assert.ok(item);assert.equal(item.kind,product.audience?'exclusive':'shop');assert.equal(item.grant,product.grant);
+      assert.equal(rules.unlocked(item,999,{}),false);assert.equal(rules.unlocked(item,1,{grants:[product.grant,...(product.audience?[product.audience]:[])]}),true);assert.equal(rules.unlocked(item,1,{allCustom:true}),!!product.audience);
     }
   }
   for(const [id,level]of [['trail',1],['grove',5],['bridge',10],['summit',20],['lantern',35],['horizon',50]])assert.equal(rules.allowed('frames',id,level,{}),true);
@@ -96,7 +96,14 @@ test('expanded styles preserve old IDs and exclusive Hunny access covers every m
     assert.equal(characters.allowed(value,1,{grants:['shop-'+id]}),true);assert.equal(characters.visible(value,1,{}).hair,'sweep');
   }
   const look={...characters.defaults,outfit:'hunny',headwear:'hunny',accessory:'hunny'};
-  assert.equal(characters.allowed(look,999,{}),false);assert.equal(characters.allowed(look,1,{grants:['hunny-tester']}),true);assert.equal(characters.allowed(look,1,{allCustom:true}),true);
+  assert.equal(characters.allowed(look,999,{}),false);assert.equal(characters.allowed(look,1,{grants:['hunny-tester']}),false);assert.equal(characters.allowed(look,1,{allCustom:true}),true);
+  assert.equal(characters.allowed(look,1,{grants:['hunny-tester','shop-hunny-jumper','shop-hunny-pendant']}),true);
+  assert.equal(characters.allowed(look,1,{grants:['shop-hunny-jumper','shop-hunny-pendant']}),false);
+  for(const id of ['hunny-jumper','hunny-pendant']){
+    const item=catalogue.item(id);assert.equal(catalogue.offer(item),null);
+    assert.equal(catalogue.offer(item,{},0,{grants:['hunny-tester']}).coinPrice,10);
+    assert.equal(catalogue.offer(item,{},0,{allCustom:true}).coinPrice,10);
+  }
   assert.equal(catalogue.products.some(p=>p.grant==='hunny-tester'),false);
   for(const [slot,type]of Object.entries(characters.slots))for(const item of rules.catalogue[type])assert.ok(!art.svg({...characters.defaults,[slot]:item.id}).includes('undefined'));
 });

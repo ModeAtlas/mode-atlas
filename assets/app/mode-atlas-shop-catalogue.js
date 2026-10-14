@@ -20,13 +20,16 @@
     cosmetic('ribbon-waves','Ribbon waves','Long flowing waves tied with a rose ribbon.',200,'hairstyles'),
     cosmetic('varsity','Varsity jacket','Cream sleeves, forest green and a stitched Atlas crest.',250,'outfits'),
     cosmetic('cable-knit','Cable knit','A warm oatmeal knit with a woven cable pattern.',250,'outfits'),
+    Object.freeze({...cosmetic('hunny-jumper','Hunny jumper','A little bear to keep you company.',10,'outfits'),audience:'hunny-tester',rewards:Object.freeze([{type:'outfits',id:'hunny'}])}),
+    Object.freeze({...cosmetic('hunny-pendant','Hunny pendant','A golden drop of sweetness.',10,'accessories'),audience:'hunny-tester',rewards:Object.freeze([{type:'accessories',id:'hunny'}])}),
     Object.freeze({id:'streak-freeze',name:'Streak Freeze',kind:'consumable',coinPrice:150,limit:2,
       description:'Automatically covers a missed study day. Keep up to two ready.'}),
     Object.freeze({id:'streak-repair',name:'Streak Repair',kind:'consumable',coinPrice:250,limit:3,
       description:'Reconnect a streak after one missed day. Use it the following day.'})
   ]);
   const item=id=>products.find(product=>product.id===id)||null;
-  function offer(product,overrides={},at=Date.now()){
+  function offer(product,overrides={},at=Date.now(),access={}){
+    if(product.audience&&!access.allCustom&&!access.grants?.includes(product.audience))return null;
     const config=Object.hasOwn(overrides,product.id)?overrides[product.id]:{};
     if(!config||config.enabled===false)return null;
     const {startsAt=null,endsAt=null}=config;

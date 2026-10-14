@@ -111,6 +111,89 @@ test('Writing single-item Combo cannot hang while trying to manufacture eight un
   const choices=await page.evaluate(()=>{settings.comboKana=true;settings.choiceCount=8;charMap={'あ':'a'};activeChars=['あ'];currentChar='ああ';return buildChoiceOptionStrings(currentChar);});
   expect(choices).toEqual(['ああ']);
 });
+
+for(const native of [false,true])for(const mode of ['reading','writing'])for(const preset of ['starter','intermediate','advanced','pro'])test(`review matrix ${native?'iOS':'web'} ${mode}: ${preset} across all seven sessions`,async({page})=>{
+  test.setTimeout(90000);await setup(page,mode,{native});await page.clock.install();
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  const sessions=['guided','free','endless','speedRun','timeTrial','dailyChallenge','testMode'];
+  for(const [index,selected]of sessions.entries()){
+    const variant=(index+['starter','intermediate','advanced','pro'].indexOf(preset))%5;
+    const pool=await page.evaluate(({preset,selected,variant,mode})=>{
+      ModeAtlasTrainerControls.applyPreset(preset);ModeAtlasTrainerControls.selectMode(selected);
+      if(mode==='writing')Object.assign(settings,{keyboardMode:variant>=3,keyboardInputType:variant===3?'kana':'romaji',choiceCount:[4,6,8][variant%3]});
+      onSettingsChanged();return {active:activeChars.length,hint:settings.hint,selected:ModeAtlasPracticeModes.selected(settings)};
+    },{preset,selected,variant,mode});
+    expect(pool.selected).toBe(selected);expect(pool.active).toBe({starter:5,intermediate:46,advanced:142,pro:240}[preset]);
+    if(['dailyChallenge','testMode'].includes(selected))expect(pool.hint).toBe(false);
+    if(await page.locator('#practiceSetupDialog').isVisible())await page.locator('#practiceSetupDone').click();
+    await page.locator('#startBtn').click();expect(await page.evaluate(()=>sessionStarted)).toBe(true);
+    const answer=await page.evaluate(()=>typeof getAnswerForCurrentChar==='function'?getAnswerForCurrentChar():currentChar);
+    if(mode==='reading'&&native){for(const key of answer)await page.locator(`.ma-ios-reading-keyboard [data-key="${key}"]`).click();}
+    else if(mode==='reading')await page.locator('#input').fill(answer);
+    else if(variant>=3){await page.locator('#input').fill(answer);if(variant===4)await page.locator('#input').press('Enter');}
+    else await page.locator('#choiceGrid').getByRole('button',{name:answer,exact:true}).click();
+    expect(await page.evaluate(()=>({correct:sessionStats.correct,wrong:sessionStats.wrong}))).toEqual({correct:1,wrong:0});
+    await page.clock.runFor(600);
+    if(mode==='reading'&&native){for(const key of 'zzz'){await page.locator(`.ma-ios-reading-keyboard [data-key="${key}"]`).click();if(await page.evaluate(()=>locked))break;}}
+    else if(mode==='reading')await page.locator('#input').fill('zzzzzzzzzz');
+    else if(variant>=3){await page.locator('#input').fill('違');if(variant===4)await page.locator('#input').press('Enter');}
+    else {
+      const wrong=await page.evaluate(()=>currentChoices.find(value=>!getAcceptedAnswersForCurrentChar().includes(value)));
+      expect(wrong).toBeTruthy();await page.locator('#choiceGrid').getByRole('button',{name:wrong,exact:true}).click();
+    }
+    expect(await page.evaluate(()=>({correct:sessionStats.correct,wrong:sessionStats.wrong}))).toEqual({correct:1,wrong:1});
+    if(await page.locator('#studyFeedbackContinue').isVisible())await page.locator('#studyFeedbackContinue').click();
+    await page.clock.runFor(600);await page.locator('#endSessionBtn').click();
+    await expect(page.locator('.ma-study-summary')).toBeVisible();await page.getByRole('button',{name:'Done',exact:true}).click();
+  }
+  expect(errors).toEqual([]);
+});
+
+for(const native of [false,true])test(`review keyboard ${native?'iOS':'web'}: IME drafts do not score and both Writing keyboards recall from a romaji cue`,async({page})=>{
+  await setup(page,'writing',{native});await page.clock.install();
+  await page.evaluate(()=>{settings.keyboardMode=true;settings.keyboardInputType='kana';onSettingsChanged();});
+  if(await page.locator('#practiceSetupDialog').isVisible())await page.locator('#practiceSetupDone').click();
+  await page.locator('#startBtn').click();
+  const answer=await page.evaluate(()=>currentChar);
+  await page.evaluate(()=>{inputEl.dispatchEvent(new CompositionEvent('compositionstart'));inputEl.value='k';inputEl.dispatchEvent(new InputEvent('input',{data:'k',isComposing:true}));});
+  expect(await page.evaluate(()=>sessionStats.answered)).toBe(0);
+  await page.evaluate(answer=>{inputEl.value=answer;inputEl.dispatchEvent(new CompositionEvent('compositionend',{data:answer}));inputEl.dispatchEvent(new InputEvent('input',{data:answer}));},answer);
+  expect(await page.evaluate(()=>sessionStats.correct)).toBe(1);
+  await page.clock.runFor(600);await page.locator('#endSessionBtn').click();await page.getByRole('button',{name:'Done',exact:true}).click();
+  await page.evaluate(()=>{settings.keyboardInputType='romaji';onSettingsChanged();});await page.locator('#startBtn').click();
+  const state=await page.evaluate(()=>({answer:currentChar,prompt:currentPrompt,romaji:getRomajiForChars(currentChar)}));expect(state.prompt).toBe(state.romaji);expect(state.prompt).not.toBe(state.answer);
+  await page.locator('#input').fill(state.answer);expect(await page.evaluate(()=>sessionStats.answered)).toBe(0);
+  await page.locator('#input').press('Enter');expect(await page.evaluate(()=>sessionStats.correct)).toBe(1);
+});
+
+for(const native of [false,true])for(const mode of ['reading','writing'])test(`review modifiers ${native?'iOS':'web'} ${mode}: empty rows, mixed scripts, Combo tiers, hints and repetition`,async({page})=>{
+  await setup(page,mode,{native});
+  await page.evaluate(()=>{settings.hiraganaRows=[];settings.katakanaRows=[];onSettingsChanged();});
+  await page.locator('#startBtn').click();expect(await page.evaluate(()=>sessionStarted)).toBe(false);await expect(page.locator('#hint')).toContainText('Select at least one row');
+  await page.evaluate(()=>{
+    ModeAtlasTrainerControls.applyPreset('pro');ModeAtlasTrainerControls.toggleMode('comboKana');
+    Object.assign(settings,{focusWeak:true,srs:true,hint:true,choiceCount:8});onSettingsChanged();
+  });
+  if(await page.locator('#practiceSetupDialog').isVisible())await page.locator('#practiceSetupDone').click();
+  await page.locator('#startBtn').click();
+  const samples=await page.evaluate(()=>{
+    const samples=[];
+    for(const comboMode of ['same_row','random'])for(const tier of [0,10,25])for(let i=0;i<10;i++){
+      settings.comboMode=comboMode;streak=tier;nextCharacter();const units=getCurrentKanaUnits();
+      samples.push({comboMode,tier,units,rows:units.map(getRowKeyForChar),answer:typeof getAnswerForCurrentChar==='function'?getAnswerForCurrentChar():getRomajiForChars(currentChar),valid:units.every(kana=>!!getAnswerMapForCurrentMode()[kana]),
+        choices:typeof currentChoices==='undefined'?null:currentChoices,correct:currentChar});
+    }
+    return samples;
+  });
+  for(const row of samples){
+    expect(row.valid).toBe(true);expect(row.answer).not.toBe('');expect(row.units).toHaveLength(row.tier===25?4:row.tier===10?3:2);
+    if(row.comboMode==='same_row')expect(new Set(row.rows).size).toBe(1);
+    if(row.choices){expect(row.choices).toContain(row.correct);expect(new Set(row.choices).size).toBe(row.choices.length);expect(row.choices.length).toBeLessThanOrEqual(8);}
+  }
+  await page.evaluate(()=>{localStorage.removeItem('modeAtlasPracticeCheckpoint:'+ (document.body.classList.contains('ma-writing-page')?'writing':'reading'));dispatchEvent(new Event('modeAtlasAccountWillChange'));});
+  expect(await page.evaluate(()=>sessionStarted)).toBe(false);
+  expect(await page.evaluate(mode=>localStorage.getItem('modeAtlasPracticeCheckpoint:'+mode),mode)).toBe(null);
+});
 for(const theme of ['light','dark'])test(`iOS ${theme}: setup and incorrect feedback fit large text and small screens`,async({page},info)=>{
   await setup(page,'reading',{native:true,theme});await page.setViewportSize({width:375,height:667});
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});

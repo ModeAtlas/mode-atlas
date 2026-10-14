@@ -6,6 +6,7 @@ website serves the same release as the shared source used by the iOS builder.
 from argparse import ArgumentParser
 from pathlib import Path
 import shutil
+from public_runtime import is_public_runtime_file
 
 
 ROOT = Path(__file__).resolve().parent
@@ -30,7 +31,7 @@ def public_files(root: Path) -> list[Path]:
                 continue
             if path.is_symlink():
                 raise ValueError(f"Symbolic links cannot be published: {path.relative_to(root)}")
-            if path.is_file():
+            if path.is_file() and is_public_runtime_file(path.relative_to(root)):
                 files.add(path)
     for path in files:
         if path.is_symlink() or not path.is_file():

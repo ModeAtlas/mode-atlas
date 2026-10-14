@@ -773,10 +773,10 @@ function beginTrainerSessionEnd() {
 // Identity changes suspend a run before cloud sync replaces the local save.
 // Already-earned answers/checkpoints stay with the old owner; no completion
 // result or reward is manufactured by changing accounts.
-function suspendTrainerForAccountChange() {
+function suspendTrainerForAccountChange({saveCheckpoint = true} = {}) {
     if (!sessionStarted) return;
     window.ModeAtlasSessionControls?.pause();
-    trainerController.captureSession();
+    if(saveCheckpoint)trainerController.captureSession();
     window.ModeAtlasSessionControls?.reset();
     sessionStarted = false;
     sessionStats.active = false;

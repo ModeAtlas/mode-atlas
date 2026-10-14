@@ -89,12 +89,24 @@ function refreshProfileShell() {
     };
 
     let wordBank = loadWordBank();
+    let accountRevision = 0;
     const expandedEntries = new Set();
 
     function loadWordBank() {
       try {
         const parsed = window.ModeAtlasStorage.json(STORAGE_KEY, []);
-        return Array.isArray(parsed) ? parsed : [];
+        if(!Array.isArray(parsed))return [];
+        const ids=new Set();
+        return parsed.flatMap((entry,index)=>{
+          if(!entry||typeof entry!=='object'||typeof entry.kana!=='string')return [];
+          const kana=normalizeKana(entry.kana);if(!kana)return [];
+          let id=typeof entry.id==='string'&&entry.id.length<=128?entry.id:'';
+          if(!id||ids.has(id))id='wb_recovered_'+index;
+          while(ids.has(id))id+='_';ids.add(id);
+          const text=key=>typeof entry[key]==='string'?entry[key]:'';
+          return [{id,kana,romaji:getRomajiForKana(kana),english:text('english'),notes:text('notes'),favorite:entry.favorite===true,
+            createdAt:text('createdAt'),updatedAt:text('updatedAt')}];
+        });
       } catch {
         return [];
       }
@@ -113,7 +125,7 @@ function refreshProfileShell() {
     }
 
     function normalizeKana(value) {
-      return (value || '').trim().replace(/\s+/g, '');
+      return String(value || '').normalize('NFKC').trim().replace(/\s+/g, '');
     }
 
     function getTimestamp() {
@@ -160,6 +172,9 @@ function refreshProfileShell() {
         } else {
           chunk = baseMap[char] || char;
         }
+
+        // Keep syllabic n distinct from the next vowel/ya-row syllable.
+        if((char==='ん'||char==='ン')&&/^[aeiouy]/.test(yoonMap[next+(kana[i+2]||'')]||baseMap[next]||next))chunk="n'";
 
         if (geminate && chunk) {
           const consonant = getLeadingConsonant(chunk);
@@ -258,6 +273,7 @@ function refreshProfileShell() {
     }
 
     async function deleteEntry(id) {
+      const revision=accountRevision;
       const entry = wordBank.find(item => item.id === id);
       if (!entry) return;
       const confirmed = await window.ModeAtlasFeedback?.confirm?.({
@@ -268,7 +284,7 @@ function refreshProfileShell() {
         cancelLabel: 'Keep word',
         tone: 'danger'
       });
-      if (!confirmed) return;
+      if (!confirmed || revision!==accountRevision) return;
       const nextWordBank = wordBank.filter(item => item.id !== id);
       if (!saveWordBank(nextWordBank)) {
         showStatus('Could not delete this word. Please try again.', 'error');
@@ -279,6 +295,7 @@ function refreshProfileShell() {
     }
 
     async function clearAllWords() {
+      const revision=accountRevision;
       if (!wordBank.length) {
         window.ModeAtlasFeedback?.toast?.('Your Word Bank is already empty.', 'warning');
         window.ModeAtlasDialog?.close?.(true);
@@ -292,7 +309,7 @@ function refreshProfileShell() {
         cancelLabel: 'Keep words',
         tone: 'danger'
       });
-      if (!confirmed) return;
+      if (!confirmed || revision!==accountRevision) return;
       if (!saveWordBank([])) {
         window.ModeAtlasFeedback?.toast?.('Could not clear the Word Bank. Please try again.', 'error', 4200);
         return;
@@ -663,9 +680,10 @@ function refreshProfileShell() {
       }
 
       if (action === 'save') {
-        const kanaField = document.querySelector(`[data-field="kana"][data-id="${id}"]`);
-        const englishField = document.querySelector(`[data-field="english"][data-id="${id}"]`);
-        const notesField = document.querySelector(`[data-field="notes"][data-id="${id}"]`);
+        const row=button.closest('.wordbank-entry');
+        const kanaField = row.querySelector('[data-field="kana"]');
+        const englishField = row.querySelector('[data-field="english"]');
+        const notesField = row.querySelector('[data-field="notes"]');
         const nextKana = normalizeKana(kanaField?.value || '');
         if (!nextKana) {
           showStatus('Kana cannot be empty.', 'error');
@@ -698,6 +716,13 @@ function refreshProfileShell() {
       renderEntries();
       refreshProfileShell();
     };
+
+    window.addEventListener('modeAtlasAccountWillChange',()=>{
+      accountRevision++;
+      expandedEntries.clear();elements.kanaInput.value='';elements.searchInput.value='';clearStatus();
+      window.ModeAtlasDialog?.close?.(false);
+    });
+    window.addEventListener('modeAtlasDataCleared',refreshWordBankFromStorage);
 
     window.addEventListener('modeAtlasCloudDataChanged', (event) => {
       const sections = Array.isArray(event.detail?.sections) ? event.detail.sections : [];

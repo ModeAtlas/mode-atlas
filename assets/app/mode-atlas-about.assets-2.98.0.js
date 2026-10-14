@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'More ways to make it yours.';
+  const WHATS_NEW_COPY = 'A clearer space for your learning.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Edit your character or account photo in one place: Profile → Edit avatar. Saving no longer waits for your study history to sync.',
-    'Discover more free hairstyles, lighter skin tones, cosy clothing and new shop looks. Earned banners have fresh artwork too.',
-    'Finish first in the weekly ladder to earn 100 Atlas Coins alongside your XP prize.'
+    'Signing out returns this device to guest mode and removes your account’s local data. Stay signed in to keep studying offline.',
+    'Japanese keyboard practice waits for completed input. Word Bank handles half-width kana and syllabic n more clearly.',
+    'More reliable account switching and small improvements across practice and your wardrobe.'
   ];
 
   function storeGet(key, fallback = '') {

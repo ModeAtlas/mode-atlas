@@ -400,6 +400,7 @@ test('Apple links to the current Firebase UID and revokes authorization on accou
 
 test('cloud-sync discards stale-account hydration and serializes sync bursts', async () => {
   const { context, window, localStorage } = createBaseContext({ configured: true });
+  vm.runInContext(STORAGE_SOURCE,context);
   let authCallback = null;
   const reads = new Map();
   let activeWrites = 0;
@@ -973,53 +974,69 @@ test('outgoing sync merges independent rewards and recall evidence, and reset cl
 });
 
 
-test('account switches preserve offline saves without uploading one account into another',async()=>{
-  const {context,window,localStorage}=createBaseContext({configured:true});
+test('signed-in offline work stays available; explicit logout clears private device saves only after consent',async()=>{
+  const {context,window,localStorage,sessionStorage}=createBaseContext({configured:true});
   vm.runInContext(STORAGE_SOURCE,context);
-  let changed;const writes=[];
+  let changed,confirm=false,signouts=0;const writes=[];
   context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,
     GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,callback)=>{changed=callback;},
-    getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>false}),setDoc:async(ref,data)=>writes.push({ref,data})};
+    getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>false}),setDoc:async(ref,data)=>writes.push({ref,data}),
+    signOut:async()=>{signouts++;changed(null);}};
+  window.ModeAtlasFeedback={confirm:async()=>confirm};
   vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);
   for(let i=0;i<50&&!changed;i++)await delay(1);
-  // First sign-in adopts genuine guest work.
-  localStorage.setItem('charStats',JSON.stringify({'あ':{correct:3,wrong:0}}));
   changed({uid:'save-A'});await window.KanaCloudSync.waitForInitialHydration();await window.KanaCloudSync.syncNow();
-  assert.equal(writes.at(-1).data.sections.reading.data.stats['あ'].correct,3);
   context.navigator.onLine=false;
   localStorage.setItem('charStats',JSON.stringify({'あ':{correct:8,wrong:0}}));
-  localStorage.setItem('kanaWordBank',JSON.stringify([{english:'private A note'}]));
-  changed(null);changed({uid:'save-B'});await window.KanaCloudSync.waitForInitialHydration();
-  assert.equal(localStorage.getItem('charStats'),null);
-  assert.equal(localStorage.getItem('kanaWordBank'),null);
-  localStorage.setItem('charStats',JSON.stringify({'い':{correct:2,wrong:0}}));
-  context.navigator.onLine=true;await window.KanaCloudSync.syncNow();
+  localStorage.setItem('kanaWordBank',JSON.stringify([{kana:'あ',english:'private A note'}]));
+  localStorage.setItem('modeAtlasAccountSave:old-account','private legacy save');
+  localStorage.setItem('modeAtlasAvatarProfile','private avatar');
+  sessionStorage.setItem('modeAtlasDiagnostics','private old log');
+  localStorage.setItem('unrelated','keep');
+  assert.equal(await window.KanaCloudSync.signOut(),false);
+  assert.equal(signouts,0);assert.equal(window.KanaCloudSync.getSyncStatus().state,'offline');
+  assert.equal(JSON.parse(localStorage.getItem('charStats'))['あ'].correct,8);
+  confirm=true;assert.equal(await window.KanaCloudSync.signOut(),true);assert.equal(signouts,1);
+  for(const key of ['charStats','kanaWordBank','modeAtlasAccountSave:old-account','modeAtlasAvatarProfile'])assert.equal(localStorage.getItem(key),null,key);
+  assert.equal(sessionStorage.getItem('modeAtlasDiagnostics'),null);assert.equal(localStorage.getItem('unrelated'),'keep');
+  assert.equal(localStorage.getItem('modeAtlasLocalSaveOwner'),'guest');assert.equal(window.KanaCloudSync.getUser(),null);
+  changed({uid:'save-B'});context.navigator.onLine=true;await window.KanaCloudSync.syncNow();
   assert.equal(writes.at(-1).ref,'users/save-B/appData/kanaTrainer');
-  assert.equal(writes.at(-1).data.sections.reading.data.stats['あ'],undefined);
   assert.ok(!JSON.stringify(writes.at(-1).data).includes('private A note'));
-  context.navigator.onLine=false;changed({uid:'save-A'});await window.KanaCloudSync.waitForInitialHydration();
-  assert.equal(JSON.parse(localStorage.getItem('charStats'))['あ'].correct,8,'unsynced A progress survives account switching');
-  assert.match(localStorage.getItem('kanaWordBank'),/private A note/);
-  assert.equal(window.KanaCloudSync.getSyncStatus().state,'offline');
-  // A quota failure partway through restoring B leaves a recoverable journal,
-  // preserves A's cache and never permits the partial B save to sync.
-  const setItem=localStorage.setItem.bind(localStorage);
-  localStorage.setItem=(key,value)=>{if(key==='charStats')throw new Error('Storage quota');setItem(key,value);};
-  changed({uid:'save-B'});await window.KanaCloudSync.waitForInitialHydration();
-  assert.equal(window.KanaCloudSync.getSyncStatus().state,'paused');
-  assert.ok(localStorage.getItem('modeAtlasPracticeTransaction'));
-  const pendingJournal=localStorage.getItem('modeAtlasPracticeTransaction');
-  assert.throws(()=>window.ModeAtlasStorage.transaction(()=>window.ModeAtlasStorage.set('modeAtlasLastMode','writing')),/Storage quota/);
-  assert.equal(localStorage.getItem('modeAtlasPracticeTransaction'),pendingJournal,'later practice must not overwrite an incomplete account restore');
-  const previousWrites=writes.length;context.navigator.onLine=true;
-  await window.KanaCloudSync.syncNow();assert.equal(writes.length,previousWrites);
-  assert.equal(JSON.parse(localStorage.getItem('modeAtlasAccountSave:save-A')).snapshot.sections.reading.data.stats['あ'].correct,8);
-  localStorage.setItem=setItem;
-  vm.runInContext(STORAGE_SOURCE,context); // Reopening replays the existing journal.
-  assert.equal(localStorage.getItem('modeAtlasPracticeTransaction'),null);
-  changed({uid:'save-B'});await window.KanaCloudSync.waitForInitialHydration();await window.KanaCloudSync.syncNow();
-  assert.equal(writes.at(-1).data.sections.reading.data.stats['い'].correct,2);
   assert.equal(writes.at(-1).data.sections.reading.data.stats['あ'],undefined);
+});
+
+test('online logout flushes the save and a failed Auth sign-out keeps it available',async()=>{
+  const {context,window,localStorage}=createBaseContext({configured:true});vm.runInContext(STORAGE_SOURCE,context);
+  let changed,fail=true,lastWrite,questions=0;
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,
+    GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,callback)=>{changed=callback;},
+    getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>false}),setDoc:async(_ref,data)=>{lastWrite=data;},
+    signOut:async()=>{if(fail)throw Error('Auth unavailable');changed(null);}};
+  window.ModeAtlasFeedback={confirm:async()=>{questions++;return false;},alert:async()=>{}};
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!changed;i++)await delay(1);
+  changed({uid:'save-A'});await window.KanaCloudSync.waitForInitialHydration();
+  localStorage.setItem('charStats',JSON.stringify({'あ':{correct:8,wrong:0}}));
+  assert.equal(await window.KanaCloudSync.signOut(),false);assert.equal(window.KanaCloudSync.getUser().uid,'save-A');
+  assert.equal(JSON.parse(localStorage.getItem('charStats'))['あ'].correct,8);
+  fail=false;assert.equal(await window.KanaCloudSync.signOut(),true);
+  assert.equal(lastWrite.sections.reading.data.stats['あ'].correct,8);assert.equal(questions,0);
+  assert.equal(localStorage.getItem('charStats'),null);
+});
+
+test('leaving an account detaches a stalled sync and rejects late results even after the same account signs in again',async()=>{
+  const {context,window,localStorage}=createBaseContext({configured:true});vm.runInContext(STORAGE_SOURCE,context);
+  let changed,stalled=null;const writes=[];
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,
+    GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,callback)=>{changed=callback;},
+    getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>stalled?stalled.promise:({exists:()=>false}),setDoc:async(ref,data)=>writes.push({ref,data})};
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!changed;i++)await delay(1);
+  changed({uid:'save-A'});await window.KanaCloudSync.waitForInitialHydration();await window.KanaCloudSync.syncNow();
+  stalled=deferred();const old=window.KanaCloudSync.syncNow();await delay(0);const finish=stalled;
+  changed(null);stalled=null;changed({uid:'save-A'});await window.KanaCloudSync.waitForInitialHydration();
+  await window.KanaCloudSync.syncNow();const count=writes.length;
+  finish.resolve({exists:()=>true,data:()=>remoteReading('あ',999,Date.now())});assert.equal(await old,false);
+  assert.equal(writes.length,count);assert.equal(JSON.parse(localStorage.getItem('charStats')||'{}')['あ'],undefined);
 });
 
 test('save status remains pending through the debounce and upload, and failures are retryable',async()=>{

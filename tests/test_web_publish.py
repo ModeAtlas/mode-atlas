@@ -9,6 +9,7 @@ from urllib.parse import unquote, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from build_web import ROOT, PUBLIC_DIRS, PUBLIC_FILES, build
+from public_runtime import is_public_runtime_file
 
 
 class ResourceParser(HTMLParser):
@@ -27,6 +28,15 @@ class ResourceParser(HTMLParser):
 
 
 class WebsitePublishTests(unittest.TestCase):
+    def test_shared_runtime_allowlist_excludes_private_files_and_canonical_duplicates(self):
+        for name in ('assets/app/secret.json', 'assets/.env', 'assets/notes.md', 'assets/debug.log',
+                     'assets/app/example.js.map', 'assets/app/example.js', 'reading/backup.json'):
+            self.assertFalse(is_public_runtime_file(Path(name)), name)
+        for name in ('assets/app/example.assets-2.98.0.js', 'assets/css/theme.assets-2.98.0.css',
+                     'assets/fonts/inter-LICENSE.txt', 'assets/icons/apple-sign-in-license.rtf',
+                     'assets/avatar.png', 'assets/app/mode-atlas-version.js', 'reading/index.html'):
+            self.assertTrue(is_public_runtime_file(Path(name)), name)
+
     def test_publication_requires_all_release_jobs_for_the_same_commit(self):
         gate = (ROOT / '.github/workflows/release-check.yml').read_text()
         publication = (ROOT / '.github/workflows/deploy-pages.yml').read_text()
@@ -46,6 +56,7 @@ class WebsitePublishTests(unittest.TestCase):
             count = build(output)
             files = [path for path in output.rglob("*") if path.is_file()]
             self.assertEqual(len(files), count)
+            self.assertTrue((output / 'assets/app/mode-atlas-version.js').is_file())
             for path in files:
                 relative = path.relative_to(output)
                 self.assertFalse(path.is_symlink(), str(relative))
@@ -116,10 +127,10 @@ class WebsitePublishTests(unittest.TestCase):
                 (root / name).write_text("fixture", encoding="utf-8")
             for name in PUBLIC_DIRS:
                 (root / name).mkdir()
-            os.link(root / "index.html", root / "assets/copy.html")
+            os.link(root / "index.html", root / "assets/copy.png")
             output = Path(temporary) / "site"
             build(output, root)
-            for name in ("index.html", "assets/copy.html"):
+            for name in ("index.html", "assets/copy.png"):
                 self.assertEqual((output / name).stat().st_nlink, 1)
                 self.assertEqual((output / name).read_text(encoding="utf-8"), "fixture")
 

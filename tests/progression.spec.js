@@ -51,7 +51,7 @@ test('expanded wardrobe stays exclusive and a failed save keeps the draft for re
   await expect(dialog.locator('[data-avatar-slot=hair]')).toHaveCount(14);
   await dialog.getByRole('button',{name:'Ivory',exact:true}).click();await dialog.getByRole('button',{name:'Twin braids',exact:true}).click();
   await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();await expect(dialog.getByRole('button',{name:'Hunny jumper',exact:true})).toHaveCount(0);
-  await page.evaluate(()=>{wardrobeGrants=['hunny-tester'];});
+  await page.evaluate(()=>{wardrobeGrants=['hunny-tester','shop-hunny-jumper','shop-hunny-pendant'];});
   await dialog.getByRole('button',{name:'Appearance',exact:true}).click();await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();
   for(const name of ['Hunny jumper','Hunny bear ears','Hunny pendant'])await dialog.getByRole('button',{name,exact:true}).click();
   await dialog.getByRole('button',{name:'Save avatar',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('could not be saved');
@@ -225,7 +225,7 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
     if(view.width===393){
       await page.evaluate(()=>{
         ModeAtlasRewardAccess={current:()=>({grants:['shop-sakura']}),refresh:async()=>{},status:()=> 'ready'};
-        ModeAtlasShop={current:()=>({status:'ready',balance:250,offers:ModeAtlasShopCatalogue.products.map(p=>ModeAtlasShopCatalogue.offer(p)),owned:['sakura'],inventory:{'streak-freeze':0,'streak-repair':0}}),refresh:async()=>{}};
+        ModeAtlasShop={current:()=>({status:'ready',balance:250,offers:ModeAtlasShopCatalogue.products.map(p=>ModeAtlasShopCatalogue.offer(p)).filter(Boolean),owned:['sakura'],inventory:{'streak-freeze':0,'streak-repair':0}}),refresh:async()=>{}};
         dispatchEvent(new CustomEvent('modeAtlasRewardAccessChanged'));dispatchEvent(new CustomEvent('modeAtlasShopChanged'));
       });
       await expect(shop.locator('[data-ma-coin-balance]')).toHaveText('250 coins');
@@ -677,7 +677,7 @@ for(const native of [true,false])test(`coin purchase, owned themes and rotation 
         if(product.kind==='collection')state.owned.push(product.id);else state.inventory[product.id]++;
       }
       if(action==='shopUse'){state.inventory['streak-repair']--;state.protection.push(state.repairDay);state.repairDay=null;}
-      return {version:2,currency:'atlas-coins',balance:state.balance,offers:ModeAtlasShopCatalogue.products.filter(p=>!state.hidden.includes(p.id)).map(p=>ModeAtlasShopCatalogue.offer(p)),owned:[...state.owned],inventory:{...state.inventory},protection:state.protection,repairDay:state.repairDay,checkedAt:Date.now(),developer:false};
+      return {version:2,currency:'atlas-coins',balance:state.balance,offers:ModeAtlasShopCatalogue.products.filter(p=>!state.hidden.includes(p.id)).map(p=>ModeAtlasShopCatalogue.offer(p)).filter(Boolean),owned:[...state.owned],inventory:{...state.inventory},protection:state.protection,repairDay:state.repairDay,checkedAt:Date.now(),developer:false};
     }};
     await ModeAtlasRewardAccess.refresh(true);await ModeAtlasShop.refresh(true);
   });
@@ -721,7 +721,7 @@ test('developer shop reset clears paid selections and uses the signed-in account
     ModeAtlasSocial={...ModeAtlasSocial,call:async(action,data)=>{
       if(action==='rewards')return {allCustom:true,grants:['hunny-tester',...owned.map(id=>'shop-'+id)],validUntil:Date.now()+86400000};
       if(action==='shopDeveloper'){devShopOperations.push(data);if(data.operation==='credit')balance+=data.amount;else owned=[];}
-      return {version:2,currency:'atlas-coins',balance,offers:ModeAtlasShopCatalogue.products.map(p=>ModeAtlasShopCatalogue.offer(p)),owned:[...owned],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,checkedAt:Date.now(),developer:true};
+      return {version:2,currency:'atlas-coins',balance,offers:ModeAtlasShopCatalogue.products.map(p=>ModeAtlasShopCatalogue.offer(p)).filter(Boolean),owned:[...owned],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,checkedAt:Date.now(),developer:true};
     }};
     await ModeAtlasRewardAccess.refresh(true);await ModeAtlasShop.refresh(true);ModeAtlasProgress.selectBanner('sakura');ModeAtlasProgress.selectAppearance('sakura');ModeAtlasTheme.set('sakura',{toast:false});
     await ModeAtlasDevConsoleLoader.loadIfEligible();ModeAtlasDevConsole.open();

@@ -37,11 +37,15 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     }
 
     @objc func deletePushToken(_ call: CAPPluginCall) {
-        enqueue(call) {
-            guard FirebaseApp.app() != nil else { return ["deleted": true] }
+        // FCM deletion can wait for the network. It must not block clearing the
+        // local widget/reminder state when an account signs out offline.
+        Task { @MainActor in
+            guard FirebaseApp.app() != nil else { call.resolve(["deleted": true]); return }
             Messaging.messaging().isAutoInitEnabled = false
-            try await Messaging.messaging().deleteToken()
-            return ["deleted": true]
+            do {
+                try await Messaging.messaging().deleteToken()
+                call.resolve(["deleted": true])
+            } catch { call.reject("The push token could not be removed", nil, error) }
         }
     }
 
@@ -265,7 +269,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         }
     }
 
-    // All mutations and reads use the same queue, including permission dialogs,
+    // Widget/reminder mutations and reads share a queue, including permission dialogs,
     // so a delayed enable cannot undo a newer disable/reset from another page.
     // The action itself stays on the main actor, including after suspension.
     private func enqueue(_ call: CAPPluginCall, _ action: @escaping @MainActor () async throws -> [String: Any]) {
@@ -373,7 +377,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     @objc func resetEngagement(_ call: CAPPluginCall) {
         enqueue(call) { [self] in
             center.removePendingNotificationRequests(withIdentifiers: [Self.reminderID, Self.testID])
-            center.removeDeliveredNotifications(withIdentifiers: [Self.reminderID, Self.testID])
+            center.removeAllDeliveredNotifications()
             try ModeAtlasWidgetStore.clear()
             reloadWidgets(immediate: true)
             return ["reset": true]

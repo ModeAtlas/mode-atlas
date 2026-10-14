@@ -127,7 +127,7 @@
     {id:'everyday',name:'Everyday tee',level:1},{id:'sport',name:'Track top',level:1},{id:'linen',name:'Linen shirt',level:1},
     {id:'crewneck',name:'Cosy jumper',level:1},{id:'striped',name:'Striped tee',level:1},
     {id:'varsity',name:'Varsity jacket',grant:'shop-varsity',kind:'shop'},{id:'cable-knit',name:'Cable knit',grant:'shop-cable-knit',kind:'shop'},
-    {id:'hunny',name:'Hunny jumper',grant:'hunny-tester',kind:'exclusive'},
+    {id:'hunny',name:'Hunny jumper',grant:'shop-hunny-jumper',audience:'hunny-tester',kind:'exclusive'},
     {id:'grove',name:'Grove cardigan',level:5},{id:'bridge',name:'Explorer jacket',level:10},{id:'summit',name:'Summit coat',level:20},
     ...['sakura','midnight','skyline'].map(id=>({id,name:{sakura:'Blossom jacket',midnight:'Moonlight hoodie',skyline:'City bomber'}[id],grant:'shop-'+id,kind:'shop'}))
   ].map(Object.freeze));
@@ -139,14 +139,14 @@
     {id:'studio-headphones',name:'Studio headphones',grant:'shop-studio-headphones',kind:'shop'}
   ].map(Object.freeze));
   const accessories=Object.freeze([
-    {id:'none',name:'No accessory',level:1},{id:'hunny',name:'Hunny pendant',grant:'hunny-tester',kind:'exclusive'},{id:'trail-scarf',name:'Trail scarf',level:10},{id:'atlas-pin',name:'Atlas pin',level:35},
+    {id:'none',name:'No accessory',level:1},{id:'hunny',name:'Hunny pendant',grant:'shop-hunny-pendant',audience:'hunny-tester',kind:'exclusive'},{id:'trail-scarf',name:'Trail scarf',level:10},{id:'atlas-pin',name:'Atlas pin',level:35},
     {id:'round-glasses',name:'Round glasses',grant:'shop-round-glasses',kind:'shop'}
   ].map(Object.freeze));
   const catalogue=Object.freeze({banners,frames:landmarks,icons,avatars,themes,hairstyles,outfits,headwear,accessories});
   function item(type,id){return catalogue[type]?.find(reward=>reward.id===id)||null;}
   function unlocked(reward,level,access={}){
     if(!reward)return false;
-    return reward.grant?(reward.kind!=='shop'&&access?.allCustom===true)||Array.isArray(access?.grants)&&access.grants.includes(reward.grant):Number(level)>=reward.level;
+    return reward.grant?(reward.kind!=='shop'&&access?.allCustom===true)||Array.isArray(access?.grants)&&access.grants.includes(reward.grant)&&(!reward.audience||access.grants.includes(reward.audience)):Number(level)>=reward.level;
   }
   function visible(reward,level,access){return !!reward&&(!reward.grant||unlocked(reward,level,access));}
   function allowed(type,id,level,access){return unlocked(item(type,id),level,access);}

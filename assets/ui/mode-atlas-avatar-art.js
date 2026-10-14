@@ -69,7 +69,7 @@
     if(v.accessory==='round-glasses')accessory=circle(102,90,15,'none','stroke="#39424f" stroke-width="3"')+circle(138,90,15,'none','stroke="#39424f" stroke-width="3"')+stroke('M117 88q3-3 6 0M86 87l-10-4m78 4 10-4','#39424f',3);
     if(v.accessory==='trail-scarf')accessory=path('M96 132Q120 146 145 132L143 151Q119 164 96 149Z','#cfaa6d')+path('m126 150 12 2 7 40-17 4Z','#bd8f53')+stroke('m130 185 12-3m-12 10 13-3','#ead4ad',2);
     if(v.accessory==='atlas-pin')accessory=path('m148 179 8 5v10l-8 5-8-5v-10Z','#e6bf67')+stroke('m144 191 4-7 4 7m-7-2h6','#65512c',1.5);
-    if(v.accessory==='hunny')accessory=stroke('M99 151Q104 168 120 180Q137 167 142 151','#edcd76',2)+path('M113 179h14l2 11q0 8-9 8t-9-8Z','#c19149')+path('M112 181h16v5q-4-3-6 2t-5-1-5-1Z','#f6d073')+stroke('M113 178h14','#f6d073',3)+circle(120,191,2,'#ffe5a3');
+    if(v.accessory==='hunny')accessory=stroke('M99 147Q106 158 120 162Q135 158 142 147','#edcd76',2)+path('M115 162h10l1 7q0 5-6 5t-6-5Z','#c19149')+path('M114 163h12v3q-3-2-5 1t-4-1-3 0Z','#f6d073')+stroke('M115 161h10','#f6d073',2)+circle(120,169,1.6,'#ffe5a3');
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${portrait?'34 8 172 178':'0 0 240 340'}" fill="none" aria-hidden="true">`
       +(!portrait?`<ellipse cx="120" cy="324" rx="49" ry="7" fill="#14212b" opacity=".12"/>`:'')+back
       +path('M86 232h69l-4 74h-26l-5-50-6 50H88Z','#364553')+stroke('M121 255V237','#202c3a',2)
