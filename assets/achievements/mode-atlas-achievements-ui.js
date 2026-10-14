@@ -544,18 +544,24 @@ function applyAchievementVisuals(root = document) {
   }
 
   let featureOpen=false;
-  function buildFeatureContent(kind){
+  function buildFeatureContent(kind,branch='kana'){
     const root=achEl('div','ma-ach-dialog-content'),view=achEl('div','ma-ach-dialog-view');
     const native=window.AtlasPlatform?.isNative===true;
     if(native&&kind!=='mastery')root.classList.add('ma-ach-native');
-    const selection=kind==='mastery'?{direction:'reading'}:native?{category:'modeAtlas',filter:'all'}:null;
+    const selection=kind==='mastery'?{direction:'reading',branch:branch==='kanji'?'kanji':'kana',level:5}:native?{category:'modeAtlas',filter:'all'}:null;
     let atRoot=true;
     let lastAchievement='',lastKana='';
     let lastScroll=0;
     root.append(view);
     const showMain=()=>{
       atRoot=true;
-      view.replaceChildren(kind==='mastery'?renderMasteryMap(selection,value=>{selection.direction=value;showMain();view.querySelector(`[data-ma-mastery-direction="${value}"]`)?.focus({preventScroll:true});}):renderAchievements(selection,(key,value)=>{
+      view.replaceChildren();
+      if(kind==='mastery'){
+        const branches=achEl('div','ma-mastery-branches');branches.setAttribute('role','group');branches.setAttribute('aria-label','Mastery branch');
+        for(const [id,label]of [['kana','Kana'],['kanji','Kanji']]){const button=achButton('ma-button ma-button--ghost',label);button.setAttribute('aria-pressed',String(selection.branch===id));button.addEventListener('click',()=>{selection.branch=id;showMain();});branches.append(button);}view.append(branches);
+        if(selection.branch==='kanji')view.append(window.ModeAtlasKanjiMastery.render(selection,(key,value)=>{selection[key]=value;if(key==='level')selection.kanjiPage=0;showMain();},showDetail));
+        else view.append(renderMasteryMap(selection,value=>{selection.direction=value;showMain();view.querySelector(`[data-ma-mastery-direction="${value}"]`)?.focus({preventScroll:true});}));
+      }else view.append(renderAchievements(selection,(key,value)=>{
         selection[key]=value;showMain();view.querySelector(`[data-ma-ach-choice="${key}:${value}"]`)?.focus({preventScroll:true});
       }));
       applyAchievementVisuals(view);
@@ -598,12 +604,12 @@ function applyAchievementVisuals(root = document) {
     });
     showMain(); return root;
   }
-  function openModal(kind){
+  function openModal(kind,branch='kana'){
     if(featureOpen||!window.ModeAtlasDialog?.feature)return false;
     featureOpen=true;
-    const content=buildFeatureContent(kind);
+    const content=buildFeatureContent(kind,branch);
     window.ModeAtlasDialog.feature({
-      kicker:kind==='mastery'?'Kana progress':'Mode Atlas progress',
+      kicker:kind==='mastery'?'Learning progress':'Mode Atlas progress',
       title:kind==='mastery'?'Mastery Map':'Achievements',
       message:kind==='mastery'||window.AtlasPlatform?.isNative?'':'Achievement tracks across Mode Atlas. Ranked tracks advance in place as you reach each milestone.',
       contentNode:content,
@@ -634,5 +640,5 @@ function applyAchievementVisuals(root = document) {
     }
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
-  window.ModeAtlasFeatures={openAchievements:()=>openModal('achievements'), openMasteryMap:()=>openModal('mastery'), checkAchievements:()=>checkAchievementUnlocks(), version:VERSION};
+  window.ModeAtlasFeatures={openAchievements:()=>openModal('achievements'), openMasteryMap:(branch='kana')=>openModal('mastery',branch), checkAchievements:()=>checkAchievementUnlocks(), version:VERSION};
 })();

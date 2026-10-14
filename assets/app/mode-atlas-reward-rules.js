@@ -32,7 +32,7 @@
   // Metrics belong to branches; the rotation only includes launched branches.
   // A new branch adds its templates here and records namespaced activity through
   // ModeAtlasProgress.recordActivity, using the same durable run receipts.
-  const goalBranches=Object.freeze(['kana']);
+  const goalBranches=Object.freeze(['kana','kanji']);
   const goal=(id,period,slot,label,short,target,xp,metric,branch='kana')=>Object.freeze({id,period,slot,label,short,target,xp,metric,branch});
   const goalPool=Object.freeze([
     goal('recall-25','daily',0,'Recall 25 kana','25 correct',25,40,'kana.correct'),
@@ -61,6 +61,10 @@
     goal('independent-200','weekly',1,'Recall 200 kana without hints this week','Independent recall',200,250,'kana.independent')
   ]);
   const goalCatalogue=Object.freeze([...goalPool,
+    goal('kanji-recall-15','daily',0,'Recall 15 kanji correctly','15 Kanji',15,40,'kanji.correct','kanji'),
+    goal('kanji-meaning-10','daily',1,'Recall 10 kanji meanings','10 meanings',10,50,'kanji.meaning','kanji'),
+    goal('kanji-session-1','daily',2,'Complete a Kanji set','Kanji set',1,40,'kanji.sessions','kanji'),
+    goal('kanji-recall-100','weekly',1,'Recall 100 kanji correctly this week','100 Kanji',100,200,'kanji.correct','kanji'),
     goal('days-1','weekly',0,'Practise on 1 day this week','1 study day',1,60,'study.days'),
     goal('days-2','weekly',0,'Practise on 2 days this week','2 study days',2,120,'study.days'),
     goal('recall-50','weekly',1,'Recall 50 kana this week','50 correct',50,100,'kana.correct'),
@@ -68,6 +72,7 @@
   ]);
   function suitable(goal,profile){
     const {metric,target,period}=goal,days=profile.daysAvailable||7;
+    if(goal.branch==='kanji'&&(profile.kanji||0)<5)return false;
     if(metric==='kana.katakana'&&profile.katakana<5)return false;
     if(metric==='kana.variety'&&profile.variety<target)return false;
     if(['kana.broad','kana.tests'].includes(metric)&&profile.variety<45)return false;

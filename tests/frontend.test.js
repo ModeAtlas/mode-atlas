@@ -1134,7 +1134,8 @@ test('primary destinations and in-page Kana navigation share their build-time ow
     assert.doesNotMatch(html,/maKanaMenu|data-ma-kana-menu-trigger/,rel);
     for(const label of ['atlas','learn','progress','friends','shop'])assert.ok(html.includes(`data-ma-nav-item="${label}"`),rel+': '+label);
   }
-  for(const rel of ['kana/index.html','reading/index.html','writing/index.html','results/index.html'])assert.match(read(rel),/class="ma-kana-navigation" aria-label="Kana sections"/);
+  for(const rel of ['kana/index.html','reading/index.html','writing/index.html'])assert.match(read(rel),/class="ma-kana-navigation" aria-label="Kana sections"/);
+  for(const rel of ['results/index.html','results/kanji/index.html'])assert.match(read(rel),/class="ma-results-branches" aria-label="Results branch"/);
 });
 
 test('Atlas homepage keeps visitor orientation and adds a personal returning dashboard', () => {
@@ -1556,8 +1557,8 @@ test('2.44 app-wide UX vocabulary keeps product destinations and actions semanti
   const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
   const settings = read('assets/ui/mode-atlas-settings-menu.js');
 
-  assert.match(frontend, /'results\/index\.html': NavConfig\('results', '測', 'Kana Trainer', 'Test Results'/);
-  assert.match(frontend, /\('results', 'Test Results', '\/results\/'\)/);
+  assert.match(frontend, /'results\/index\.html': NavConfig\('results', '測', 'Mode Atlas', 'Test Results'/);
+  assert.match(frontend, /\('results', 'Kana', '\/results\/'\)/);
   assert.match(frontend, /'reading\/index\.html': NavConfig\([^\n]*brand_href='\/kana\/'/);
   assert.match(frontend, /'writing\/index\.html': NavConfig\([^\n]*brand_href='\/kana\/'/);
   assert.match(frontend, /Kana Trainer home/);

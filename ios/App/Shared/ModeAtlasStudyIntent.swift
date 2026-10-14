@@ -4,7 +4,7 @@ extension ModeAtlasDestination: AppEnum {
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Mode Atlas screen")
     static var caseDisplayRepresentations: [ModeAtlasDestination: DisplayRepresentation] = [
         .atlas: "Atlas", .yourAtlas: "Progress", .kana: "Kana", .reading: "Reading", .writing: "Writing",
-        .daily: "Daily Challenge", .results: "Results", .wordBank: "Words"
+        .daily: "Daily Challenge", .results: "Results", .wordBank: "Words", .kanji: "Kanji", .kanjiResults: "Kanji Results"
     ]
 
     var title: String {
@@ -14,11 +14,11 @@ extension ModeAtlasDestination: AppEnum {
         switch self {
         case .yourAtlas: return "sparkles"
         case .atlas: return "house"
-        case .kana: return "character"
+        case .kana, .kanji: return "character"
         case .reading: return "book"
         case .writing: return "pencil"
         case .daily: return "flame"
-        case .results: return "chart.bar"
+        case .results, .kanjiResults: return "chart.bar"
         case .wordBank: return "character.book.closed"
         }
     }

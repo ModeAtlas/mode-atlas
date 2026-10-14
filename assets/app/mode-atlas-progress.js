@@ -17,7 +17,8 @@
 
   const COUNTER_XP = Object.freeze({
     'kana.reading.correct': 1,
-    'kana.writing.correct': 1
+    'kana.writing.correct': 1,
+    'kanji.correct': 1
   });
   const EVENT_XP = Object.freeze({
     'kana.reading.dailyComplete': 5,
@@ -203,7 +204,7 @@
   }
   function emptyActivity(){return {sources:{},reviews:{reading:[],writing:[]},metrics:{},kana:[],goalVersion:3};}
   function normalizeMetrics(input){
-    return Object.fromEntries(Object.entries(object(input)).filter(([key])=>/^(kana|wordbank|listening|grammar|comprehension)\.[a-zA-Z]+$/.test(key)).map(([key,n])=>[key,finiteCount(n)]));
+    return Object.fromEntries(Object.entries(object(input)).filter(([key])=>/^(kana|kanji|wordbank|listening|grammar|comprehension)\.[a-zA-Z]+$/.test(key)).map(([key,n])=>[key,finiteCount(n)]));
   }
   function normalizeCollections(input){
     return Object.fromEntries(Object.entries(object(input)).filter(([id,kind])=>safeKey(id)&&/^[a-z0-9-]{1,80}$/.test(id)&&['exclusive','event'].includes(kind)));
@@ -268,10 +269,10 @@
       const key=period==='daily'?day:weekKey(day),id=period+':'+key;if(state.goalPlans[id])continue;
       const active=Object.entries(state.activity).filter(([date])=>period==='daily'?date===day:weekKey(date)===key);
       const legacy=active.some(([,row])=>row.goalVersion===4)||Object.keys(state.claims).some(claim=>claim.startsWith(`v4:${period}:${key}:goal:`));
-      const known=new Set(),profile={variety:0,katakana:0,independent:0,daysAvailable:7-((new Date(day+'T12:00:00Z').getUTCDay()+6)%7)};
+      const known=new Set(),profile={variety:0,katakana:0,independent:0,kanji:0,daysAvailable:7-((new Date(day+'T12:00:00Z').getUTCDay()+6)%7)};
       for(const [date,row]of Object.entries(state.activity))if(date<=day){
         for(const kana of row.kana)known.add(kana);
-        const metrics=activityTotals(state,date).metrics;profile.katakana+=metrics['kana.katakana']||0;profile.independent+=metrics['kana.independent']||0;
+        const metrics=activityTotals(state,date).metrics;profile.katakana+=metrics['kana.katakana']||0;profile.independent+=metrics['kana.independent']||0;profile.kanji+=metrics['kanji.correct']||0;
       }
       profile.variety=known.size;
       state.goalPlans[id]={version:legacy?0:1,at:finiteCount(at),assisted:!legacy&&profile.independent<20,ids:root.ModeAtlasRewardRules.goals(key,period,legacy?undefined:profile).map(goal=>goal.id)};
@@ -338,6 +339,17 @@
     persistState(state,{source:'practice.answer'});
     return {duplicate:false,xp:Object.values(parts).reduce((a,b)=>a+b,0),parts};
   }
+  function recordKanjiAnswer(input){
+    const state=ensureSeeded({sync:false,emit:false}),run=state.runs[input.runId];
+    if(!run||run.done||input.index!==run.answers+1)return {duplicate:true,xp:0,parts:{}};
+    const at=Number(input.at||Date.now()),day=dayKey(at),count=input.correct?1:0,id=getDeviceId();
+    const rate=root.ModeAtlasRewardRules.kanaRate(input.poolSize,input.assisted);
+    state.sources[id]||={};state.sources[id]['kanji.correct']=(state.sources[id]['kanji.correct']||0)+count;
+    addCredit(state,'answer',count*(rate-1));
+    addActivity(state,day,{'kanji.correct':count,'kanji.pronunciation':input.skill==='pronunciation'?count:0,'kanji.meaning':input.skill==='meaning'?count:0,'kanji.independent':input.assisted?0:count});
+    const parts={answers:count*rate,goals:reconcileGoals(state,day)};run.answers=input.index;run.at=at;persistState(state,{source:'kanji.answer'});
+    return {duplicate:false,xp:Object.values(parts).reduce((a,b)=>a+b,0),parts};
+  }
   function finishRun(input){
     const state=ensureSeeded({sync:false,emit:false}),run=state.runs[input.runId];
     if(!run||run.done)return {xp:0,parts:{}};
@@ -350,7 +362,7 @@
     if(rewards.eligible){
       const finite=['guided','dailyChallenge','testMode','speedRun','timeTrial'].includes(input.mode);
       const complete=input.completed&&finite;
-      addActivity(state,day,{'kana.sessions':1,'kana.guided':complete&&input.mode==='guided'?1:0,'kana.daily':complete&&input.mode==='dailyChallenge'?1:0,'kana.tests':complete&&input.mode==='testMode'?1:0,'kana.precise':complete&&!input.assisted&&!input.hintsEnabled&&input.correct/input.answered>=.9?1:0});
+      addActivity(state,day,input.branch==='kanji'?{'kanji.sessions':1,'kanji.tests':complete&&input.mode==='testMode'?1:0}:{'kana.sessions':1,'kana.guided':complete&&input.mode==='guided'?1:0,'kana.daily':complete&&input.mode==='dailyChallenge'?1:0,'kana.tests':complete&&input.mode==='testMode'?1:0,'kana.precise':complete&&!input.assisted&&!input.hintsEnabled&&input.correct/input.answered>=.9?1:0});
       parts.goals=reconcileGoals(state,day);
     }
     run.done=true;run.at=Date.now();persistState(state,{source:'practice.finish'});
@@ -415,7 +427,7 @@
     const weeklyGoals=goalCount(state,start,'weekly');
     return {start,end:root.ModeAtlasDates.shiftDateKey(start,6),studyDays:metrics['study.days']||0,
       reading:metrics['kana.reading']||0,writing:metrics['kana.writing']||0,variety:metrics['kana.variety']||0,
-      sessions:metrics['kana.sessions']||0,dailyGoals:metrics['study.goals']||0,weeklyGoals,
+      kanji:metrics['kanji.correct']||0,sessions:(metrics['kana.sessions']||0)+(metrics['kanji.sessions']||0),dailyGoals:metrics['study.goals']||0,weeklyGoals,
       todayReading:daily.reading,todayWriting:daily.writing};
   }
   function achievementStats(input){
@@ -562,7 +574,7 @@
 
   function getLifetimeCorrect(input){
     const state = input ? normalizeState(input) : ensureSeeded({ sync: false, emit: false });
-    return Math.min(Number.MAX_SAFE_INTEGER, counterTotal(state, 'kana.reading.correct') + counterTotal(state, 'kana.writing.correct'));
+    return Math.min(Number.MAX_SAFE_INTEGER, counterTotal(state, 'kana.reading.correct') + counterTotal(state, 'kana.writing.correct') + counterTotal(state, 'kanji.correct'));
   }
 
   function getXP(input){
@@ -642,7 +654,7 @@
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
     award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, selectTheme, levelRequirement,
-    getXP, getLifetimeCorrect, getLevelFromXP, getSummary
+    getXP, getLifetimeCorrect, getLevelFromXP, getSummary, getDeviceId, recordKanjiAnswer
   });
 
 });

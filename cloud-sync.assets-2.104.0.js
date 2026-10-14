@@ -176,6 +176,8 @@ const SECTION_DEFS = {
       items: keyOr('wordBank', 'kanaWordBank')
     }
   },
+  kanji: {updatedAtKey:'modeAtlasKanjiUpdatedAt',scalar:{},json:{state:'modeAtlasKanji'}},
+  kanjiTests: {updatedAtKey:'modeAtlasKanjiTestsUpdatedAt',scalar:{},json:{items:'modeAtlasKanjiTests'}},
   progress: {
     updatedAtKey: keyOr('progressUpdatedAt', 'modeAtlasProgressUpdatedAt'),
     scalar: {},
@@ -203,6 +205,7 @@ const SECTION_TIMESTAMP_KEYS = {
   readingTests: 'resultsUpdatedAt',
   writingTests: 'resultsUpdatedAt',
   wordBank: 'profileUpdatedAt',
+  kanji: 'modeAtlasKanjiUpdatedAt', kanjiTests: 'modeAtlasKanjiTestsUpdatedAt',
   progress: keyOr('progressUpdatedAt', 'modeAtlasProgressUpdatedAt')
 };
 const SECTION_EXTRA_TIMESTAMP_KEYS = {
@@ -211,6 +214,7 @@ const SECTION_EXTRA_TIMESTAMP_KEYS = {
   readingTests: [],
   writingTests: [],
   wordBank: [],
+  kanji: [], kanjiTests: [],
   progress: []
 };
 
@@ -681,6 +685,8 @@ function clearLocalAppData() {
 function writeSectionToLocal(sectionName, payload, updatedAt) {
   const def = SECTION_DEFS[sectionName];
   let data = ensureResultIdsInSectionData(sectionName, normalizeTestSectionPayload(sectionName, payload || {}));
+  if(sectionName==='kanji')data={state:window.ModeAtlasKanjiState.normalize(data.state)};
+  if(sectionName==='kanjiTests')data={items:window.ModeAtlasKanjiResults.normalize(data.items)};
   if(sectionName==='progress'&&window.ModeAtlasProgress)data={...data,state:window.ModeAtlasProgress.normalizeState(data.state)};
   Object.entries(def.scalar).forEach(([field, key]) => {
     storeSet(key, String(data[field] ?? '0'));
@@ -774,6 +780,13 @@ function mergeCloudIntoLocal(snapshot, options = {}) {
     const localHasData = sectionHasMeaningfulData(name, localData);
     const baselineUpdatedAt = localBaseline ? normalizeTimestamp(localBaseline[name]) : 0;
 
+    if(name==='kanji'||name==='kanjiTests'){
+      const field=name==='kanji'?'state':'items',owner=name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
+      const merged=owner.merge(localData[field],remoteData[field]);
+      if(JSON.stringify(merged)!==JSON.stringify(localData[field]))applyRemote(name,{[field]:merged},Math.max(localUpdatedAt,remoteUpdatedAt,Date.now()));
+      if(JSON.stringify(merged)!==JSON.stringify(remoteData[field]))localPreferred=true;
+      return;
+    }
     if (name === 'progress') {
       const mergeProgress = window.ModeAtlasProgress?.mergeStates;
       const localState = localData.state || {};
@@ -876,6 +889,7 @@ const SECTION_LABELS = {
   readingTests: 'Reading Test Results',
   writingTests: 'Writing Test Results',
   wordBank: 'Word Bank',
+  kanji: 'Kanji learning', kanjiTests: 'Kanji tests',
   progress: 'Atlas Level'
 };
 
@@ -1160,6 +1174,23 @@ function getDocRef(uid) {
   return doc(db, 'users', uid, 'appData', 'kanaTrainer');
 }
 
+// The Kanji owner controls its storage representation. All account reads and
+// writes cross this boundary, including reset/import; local backups stay plain.
+async function readAccountDocument(uid){
+  const snap=await getDoc(getDocRef(uid));
+  if(!snap.exists()||!snap.data()?.sections?.kanji)return snap;
+  const data=snap.data(),section=data.sections.kanji;
+  section.data={...section.data,state:await window.ModeAtlasKanjiCodec.unpack(section.data?.state)};
+  return {exists:()=>true,data:()=>data,metadata:snap.metadata};
+}
+async function writeAccountDocument(uid,snapshot,merge=true){
+  const epoch=accountEpoch;
+  const data=structuredClone(snapshot),section=data.sections?.kanji;
+  if(section)section.data={...section.data,state:await window.ModeAtlasKanjiCodec.pack(section.data?.state)};
+  if(!sameAccount(uid,epoch))throw new Error('The signed-in account changed before this save.');
+  return setDoc(getDocRef(uid),data,merge?{merge:true}:undefined);
+}
+
 async function hydrateFromCloud(force = false) {
   // Capture the local mutation clocks before the first await. In the auth
   // callback, authReady is resolved immediately before hydrateFromCloud() is
@@ -1191,7 +1222,7 @@ async function hydrateFromCloud(force = false) {
 
   const hydration = (async () => {
     try {
-      const snap = await getDoc(getDocRef(uid));
+      const snap = await readAccountDocument(uid);
       if (!sameAccount(uid,epoch)) return false;
       if (snap.exists()) {
         const { localPreferred, changedSections } = mergeCloudIntoLocal(snap.data(), {
@@ -1607,7 +1638,7 @@ async function performSyncOnce() {
   const changedSections = [];
 
   try {
-    const snap = await getDoc(getDocRef(uid));
+    const snap = await readAccountDocument(uid);
     if (!sameAccount(uid,epoch)) return false;
 
     if (snap.exists() && !hasLocalImportGuard()) {
@@ -1626,7 +1657,11 @@ async function performSyncOnce() {
         const remoteData = remoteSection?.data || {};
         const localUpdatedAt = normalizeTimestamp(localSection?.updatedAt);
         const remoteUpdatedAt = normalizeTimestamp(remoteSection?.updatedAt);
-        if (name === 'progress' && window.ModeAtlasProgress?.mergeStates) {
+        if(name==='kanji'||name==='kanjiTests'){
+          const field=name==='kanji'?'state':'items',owner=name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
+          const data={[field]:owner.merge(localData[field],remoteData[field])},updatedAt=Math.max(localUpdatedAt,remoteUpdatedAt,Date.now());
+          snapshot.sections[name]={...localSection,data,updatedAt};writeSectionToLocal(name,data,updatedAt);changedSections.push(name);
+        } else if (name === 'progress' && window.ModeAtlasProgress?.mergeStates) {
           const state=window.ModeAtlasProgress.mergeStates(localData.state,remoteData.state);
           const updatedAt=Math.max(localUpdatedAt,remoteUpdatedAt,Date.now());
           snapshot.sections[name]={...localSection,data:{state},updatedAt};
@@ -1648,7 +1683,7 @@ async function performSyncOnce() {
     // Never let an operation captured for one signed-in account write after
     // auth has moved to another account or signed out.
     if (!sameAccount(uid,epoch)) return false;
-    await setDoc(getDocRef(uid), snapshot, { merge: true });
+    await writeAccountDocument(uid, snapshot);
     if (!sameAccount(uid,epoch)) return false;
     confirmedAccountData=snapshotData(snapshot);
 
@@ -1929,7 +1964,7 @@ async function importLocalBackup(obj) {
     requireDeveloperBackupAccess(importUid);
     if (CONFIG_READY && importUid && firestoreReady && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
       try {
-        await setDoc(getDocRef(importUid), importedSnapshot, { merge: true });
+        await writeAccountDocument(importUid, importedSnapshot);
         if (currentUser?.uid === importUid) {
           clearLocalImportGuard();
           hydratedForUserId = importUid;
@@ -1973,7 +2008,7 @@ async function resetAllData() {
     const resetUid = currentUser?.uid || null;
     const firestoreReady = resetUid ? await ensureFirestore() : false;
     if (CONFIG_READY && resetUid && firestoreReady) {
-      await setDoc(getDocRef(resetUid), buildEmptySnapshot());
+      await writeAccountDocument(resetUid, buildEmptySnapshot(),false);
       if (currentUser?.uid === resetUid) hydratedForUserId = resetUid;
     }
     clearLocalAppData();

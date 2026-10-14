@@ -29,6 +29,7 @@
   }
   function goalAction(goal,goals=[]){
     if(!goal||goal.value>=goal.target)return null;
+    if(goal.branch==='kanji')return {href:'/kanji/',label:'Practise Kanji'};
     if(goal.metric==='study.goals'){
       const next=goals.find(item=>item.period==='daily'&&item.value<item.target);
       return next?goalAction(next):null;
@@ -58,6 +59,9 @@
     }
     if(chars)params.set('kana',chars.join(','));
     return {href:`/${mode}/?${params}`,label:goal.metric==='kana.daily'?'Open Daily Challenge':goal.metric==='kana.tests'?'Open formal test':`Practise ${mode==='writing'?'Writing':'Reading'}`};
+  }
+  function kanjiReviews(){
+    return (root.ModeAtlasKanjiState?.reviewSets()||[]).map(({level,skill,count})=>({due:count,label:`Kanji N${level} · ${skill==='pronunciation'?'Pronunciation':'Meaning'}`,href:'/kanji/?'+new URLSearchParams({level:String(level),practice:skill,focus:'due'})}));
   }
   function recommend(input = {}){
     const reading = evidence(input.readingStats, availableChars(input.readingSettings));
@@ -97,5 +101,5 @@
     }
     return {unique: rows.size, mistakes: [...rows.values()].filter(row => row.wrong > 0).sort((a,b) => b.wrong - a.wrong)};
   }
-  root.ModeAtlasStudyPlan = Object.freeze({lengths, practiceCount, availableChars, evidence, targetChars, target, goalAction, recommend, summarise});
+  root.ModeAtlasStudyPlan = Object.freeze({lengths, practiceCount, availableChars, evidence, targetChars, target, goalAction, kanjiReviews, recommend, summarise});
 })(window);

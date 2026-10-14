@@ -1123,3 +1123,24 @@ test('owned profile themes are public while learning stats stay private and revo
   await friend(a,b);result=await b.call('profile',{uid:a.uid});assert.equal(result.profile.theme,'evergreen');assert.equal(result.profile.stats.xp,20);
   await db.doc('rewardEntitlements/'+a.uid).set({grants:{'shop-evergreen':{revoked:true}}});assert.equal((await b.call('profile',{uid:a.uid})).profile.theme,'');
 });
+
+test('Kanji weekly receipts enforce level gates, dictionary answers and idempotent rewards',async()=>{
+  const {createWeekly}=require('../functions/weekly.cjs');let at=Date.parse('2097-10-15T12:00:00Z');const weekly=createWeekly({db,now:()=>at}),a=await learner('Kanji Receipts',0);
+  await weekly.preference(a.uid,{enabled:true});
+  const config={id:'kanji-meaning-run',branch:'kanji',pool:['水','火','木','土','日'],direction:'meaning',mode:'guided',hints:false};
+  const band=require('../functions/shared/mode-atlas-kanji-curriculum.js');
+  await assert.rejects(weekly.start(a.uid,{...config,id:'kanji-locked-run',pool:[[...band[1].chars][0]]}),{code:'failed-precondition'});
+  await assert.rejects(weekly.start(a.uid,{...config,branch:'unknown'}),{code:'invalid-argument'});
+  await assert.rejects(weekly.start(a.uid,{...config,pool:['あ']}),{code:'invalid-argument'});
+  const run=await weekly.start(a.uid,config);at+=5000;
+  const answers=[{index:1,kana:'水',answer:'water',elapsed:500},{index:2,kana:'火',answer:'water',elapsed:1000},{index:3,kana:'木',answer:'tree',elapsed:1500}];
+  assert.equal((await weekly.submit(a.uid,{token:run.token,answers})).earned,4);
+  assert.equal((await weekly.submit(a.uid,{token:run.token,answers})).earned,0);
+  await assert.rejects(weekly.submit(a.uid,{token:run.token,answers:[{index:4,kana:'水',answer:'water',elapsed:2000,correct:true}]}),{code:'invalid-argument'});
+  const pronunciation=await weekly.start(a.uid,{...config,id:'kanji-reading-run',direction:'pronunciation'});at+=1000;
+  assert.equal((await weekly.submit(a.uid,{token:pronunciation.token,answers:[{index:1,kana:'水',answer:'mizu',elapsed:500}]})).earned,2);
+  const match=await weekly.start(a.uid,{...config,id:'kanji-matching-run',direction:'match',hints:true});at+=1000;
+  assert.equal((await weekly.submit(a.uid,{token:match.token,answers:[answers[0]]})).earned,1);
+  const completions=Object.fromEntries([...band[0].chars].map(char=>[char,at]));await db.doc(`users/${a.uid}/appData/kanaTrainer`).set({sections:{kanji:{data:{state:{version:1,completions,sources:{},evidence:{encoding:'gzip-base64-v1',data:'unused-by-competition'}}}}}},{merge:true});
+  assert.equal((await weekly.start(a.uid,{...config,id:'kanji-unlocked-run',pool:[[...band[1].chars][0]]})).enabled,true);
+});

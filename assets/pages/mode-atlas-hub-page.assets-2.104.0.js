@@ -54,13 +54,13 @@
     const practice=el('div','ma-learn-practice');
     practice.append(
       learningLink('reading','Reading','Recognise kana and their sounds.','/reading/'),
-      learningLink('writing','Writing','Match sounds to the right kana.','/writing/','edit'),
-      learningLink('results','Results','Look back at your saved tests.','/results/','chart')
+      learningLink('writing','Writing','Match sounds to the right kana.','/writing/','edit')
     );
     kana.append(practice);library.append(kana);
     const words=el('section','ma-learn-words');words.setAttribute('aria-label','Vocabulary');
     words.append(learningLink('words','Word Bank','Your vocabulary, meanings and notes.','/wordbank/','book','Open Word Bank'));
-    library.append(words);
+    const kanji=el('section','ma-learn-branch');kanji.setAttribute('aria-label','Kanji');kanji.append(learningLink('kanji','Kanji','Discover characters, pronunciation and meaning.','/kanji/','book','Open Kanji'));library.append(kanji,words);
+    const results=el('section','ma-learn-branch');results.setAttribute('aria-label','Test results');results.append(learningLink('results','Results','Your Kana and Kanji tests, in one place.','/results/','chart'));library.append(results);
     const upcoming=el('details','ma-learn-upcoming');upcoming.append(el('summary','','More ways to learn'),el('p','','Listening, Grammar and Reading Comprehension are planned. They will appear here when ready.'));library.append(upcoming);
     layout.append(suggestion,library);host.append(layout);
   }

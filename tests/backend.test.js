@@ -86,9 +86,11 @@ function createBaseContext({ configured = false } = {}) {
     WeakSet,
     Map,
     Number,
-    String,
+    String, structuredClone, TextEncoder, TextDecoder,
   };
+  Object.assign(window,{Blob,CompressionStream,DecompressionStream,btoa,atob});
   vm.createContext(context);
+  for(const file of ['data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-results'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
   return { context, window, localStorage, sessionStorage };
 }
 
@@ -740,7 +742,7 @@ test('document navigation uses loaded revision as a cache key without checking f
     Date,
     Promise,
     Object,
-    String,
+    String, structuredClone, TextEncoder, TextDecoder,
     Number,
     setTimeout,
     clearTimeout,
@@ -1115,4 +1117,30 @@ test('missing or cached cloud reads never advance the last confirmed save time',
   assert.equal(window.KanaCloudSync.getSyncStatus().lastSync,confirmed,'a cache read is not a new cloud confirmation');
   assert.equal(window.KanaCloudSync.getSyncStatus().state,'pending');
   cached=false;await window.KanaCloudSync.syncNow();
+});
+
+test('Kanji cloud compression merges offline devices, keeps backups plain and clears on reset',async()=>{
+  const {context,window,localStorage}=createBaseContext({configured:true});let callback,remote=null,latest;
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,fn)=>callback=fn,getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>!!remote,data:()=>structuredClone(remote)}),setDoc:async(_ref,payload)=>latest=JSON.parse(JSON.stringify(payload))};
+  vm.runInContext(STORAGE_SOURCE,context);
+  for(const file of ['app/mode-atlas-date','app/mode-atlas-reward-rules','app/mode-atlas-progress'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!callback;i++)await delay(1);callback({uid:'kanji-cloud'});await window.KanaCloudSync.waitForInitialHydration();
+  const evidence=[3,0,3,3,3000,Date.now(),Date.now()+60000,1,'2026-10-15'];
+  const state=window.ModeAtlasKanjiState;
+  localStorage.setItem('modeAtlasKanji',JSON.stringify(state.normalize({sources:{a:{'水':{meaning:evidence,pronunciation:evidence}}}})));
+  const remoteState=await window.ModeAtlasKanjiCodec.pack({sources:{b:{'火':{meaning:evidence,pronunciation:evidence}}}});
+  remote={sections:{kanji:{data:{state:remoteState},updatedAt:Date.now()}}};assert.equal(await window.KanaCloudSync.syncNow(),true);
+  assert.equal(latest.sections.kanji.data.state.evidence.encoding,'gzip-base64-v1');assert.equal(state.metrics(state.read(),'水','meaning').correct,3);assert.equal(state.metrics(state.read(),'火','meaning').correct,3);
+  remote=latest;await window.KanaCloudSync.syncNow();assert.equal(state.metrics(state.read(),'水','meaning').correct,3);
+  window.ModeAtlasDevConsoleLoader={isEligible:()=>true};
+  assert.ok(window.KanaCloudSync.createBackup().snapshot.sections.kanji.data.state.sources.a);
+  await window.KanaCloudSync.resetAllData();assert.equal(latest.sections.kanji.data.state.evidence,null);assert.deepEqual(latest.sections.kanji.data.state.sources,{});
+});
+
+test('an account change during Kanji encoding cannot write the previous account save',async()=>{
+  const {context,window}=createBaseContext({configured:true});let callback;const writes=[],gate=deferred();let held=false;
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,fn)=>callback=fn,getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>false}),setDoc:async(ref)=>writes.push(ref)};
+  vm.runInContext(STORAGE_SOURCE,context);vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!callback;i++)await delay(1);callback({uid:'kanji-old'});await window.KanaCloudSync.waitForInitialHydration();
+  const codec=window.ModeAtlasKanjiCodec;window.ModeAtlasKanjiCodec={...codec,pack:async value=>{held=true;await gate.promise;return codec.pack(value);}};
+  const saving=window.KanaCloudSync.syncNow();for(let i=0;i<50&&!held;i++)await delay(1);assert.ok(held);callback(null);gate.resolve();assert.equal(await saving,false);assert.equal(writes.length,0);
 });
