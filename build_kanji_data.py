@@ -48,6 +48,7 @@ def build(source: Path):
     data.mkdir(exist_ok=True)
     (data / 'mode-atlas-kanji-data.js').write_text(module('ModeAtlasKanjiData', records))
     curriculum = [{'level': int(n), 'name': {5:'Foundations',4:'Everyday',3:'Connections',2:'Fluency',1:'Advanced'}[int(n)], 'chars': ''.join(r['character'] for r in rows)} for n, rows in bands.items()]
+    curriculum[0]['intro'] = '一二三人日月木山川水'
     (data / 'mode-atlas-kanji-curriculum.js').write_text(module('ModeAtlasKanjiCurriculum', curriculum))
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=source, text=True).strip()
     meta = json.loads((base / 'meta.json').read_text())
@@ -70,7 +71,8 @@ https://creativecommons.org/licenses/by-sa/4.0/
 The full licence is included in kanji-LICENSE.txt.
 Changes: selected fields, filtered non-learning glosses, selected dictionary-
 verified short example words, and separated the lightweight level index.
-No Tatoeba sentences or KanjiVG artwork are included.
+No Tatoeba sentences are included. Stroke artwork is a separate KanjiVG dataset;
+see handwriting-NOTICE.txt for its source and licence.
 
 N5–N1 are approximate study bands. The JLPT does not publish an official kanji
 syllabus; Mode Atlas is independent of the JLPT organisers.

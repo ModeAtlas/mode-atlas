@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://mode-atlas.app/</loc></url>
+  <url><loc>https://mode-atlas.app/learn/</loc></url>
   <url><loc>https://mode-atlas.app/kana/</loc></url>
+  <url><loc>https://mode-atlas.app/kana/handwriting/</loc></url>
+  <url><loc>https://mode-atlas.app/kanji/</loc></url>
   <url><loc>https://mode-atlas.app/reading/</loc></url>
   <url><loc>https://mode-atlas.app/writing/</loc></url>
   <url><loc>https://mode-atlas.app/results/</loc></url>

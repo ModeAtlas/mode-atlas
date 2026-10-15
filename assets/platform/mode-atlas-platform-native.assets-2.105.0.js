@@ -155,6 +155,8 @@
     },
     playSound: async function(cue,volume){return hasBridge('playSound') ? nativeBridge.playSound({cue:cue,volume:volume}) : false;},
     stopSounds: async function(){return hasBridge('stopSounds') ? nativeBridge.stopSounds() : false;},
+    speakJapanese: async function(text,slow){return hasBridge('speakJapanese') ? nativeBridge.speakJapanese({text,slow}) : {played:false};},
+    stopSpeech: async function(){return hasBridge('stopSpeech') ? nativeBridge.stopSpeech() : false;},
     getAppIcon: async function(){ return hasBridge('getAppIcon')?(await nativeBridge.getAppIcon()).name:null; },
     setAppIcon: async function(name){
       if(!hasBridge('setAppIcon'))return false;

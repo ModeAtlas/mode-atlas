@@ -84,6 +84,8 @@
     openExternalLink: function(url){ return call('openExternalLink', [String(url || '')], false); },
     playSound: function(cue,volume){ return call('playSound', [cue,volume], false); },
     stopSounds: function(){ return call('stopSounds', [], false); },
+    speakJapanese: function(text,slow){ return call('speakJapanese', [text,!!slow], {played:false}); },
+    stopSpeech: function(){ return call('stopSpeech', [], false); },
     getAppIcon: function(){ return call('getAppIcon', [], null); },
     setAppIcon: function(name){ return call('setAppIcon', [name], false); },
     setAppearance: function(preference,canvas){ return call('setAppearance', [preference,canvas], false); },

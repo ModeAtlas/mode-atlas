@@ -4,13 +4,14 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const plain=v=>JSON.parse(JSON.stringify(v));
-function load(){
+function load({experienced=true}={}){
   const values=new Map(),listeners=new Map();let now=Date.parse('2026-10-15T12:00:00Z'),serial=0,fail=false;
   const localStorage={getItem:key=>values.get(key)??null,setItem:(key,value)=>{if(fail&&key==='modeAtlasKanji'){fail=false;throw Error('Quota');}values.set(key,String(value));},removeItem:key=>values.delete(key),get length(){return values.size;},key:i=>[...values.keys()][i]??null};
   class Clock extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
   const root={Date:Clock,console,localStorage,sessionStorage:localStorage,structuredClone,TextEncoder,TextDecoder,Blob,CompressionStream,DecompressionStream,btoa,atob,crypto:{randomUUID:()=>`kanji-test-${++serial}`},CustomEvent:class{constructor(type){this.type=type;}},document:{addEventListener(){}},addEventListener:(type,cb)=>{const list=listeners.get(type)||[];list.push(cb);listeners.set(type,list);},dispatchEvent:event=>{for(const cb of listeners.get(event.type)||[])cb(event);},ModeAtlasWeekly:{start(){},answer(){},finish(){}}};root.window=root;root.self=root;
   const context=vm.createContext(root);
-  for(const name of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-reward-rules','app/mode-atlas-progress','data/mode-atlas-kana-data','data/mode-atlas-kanji-curriculum','data/mode-atlas-kanji-data','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-content','app/mode-atlas-kanji-results','app/mode-atlas-kanji-session'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',name+'.js'),'utf8'),context);
+  for(const name of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-reward-rules','app/mode-atlas-progress','data/mode-atlas-kana-data','data/mode-atlas-kanji-curriculum','data/mode-atlas-kanji-data','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-content','app/mode-atlas-kanji-results','app/mode-atlas-kanji-teaching','app/mode-atlas-kanji-session'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',name+'.js'),'utf8'),context);
+  if(experienced){const s=root.ModeAtlasKanjiState.read();for(const c of root.ModeAtlasKanjiCurriculum[0].chars){s.lessons[c]=now;s.introductions[c]=now;}root.ModeAtlasKanjiState.save(s);}
   return {root,values,now:()=>now,advance:ms=>now+=ms,fail:()=>fail=true,state:root.ModeAtlasKanjiState,content:root.ModeAtlasKanjiContent,session:root.ModeAtlasKanjiSession,progress:root.ModeAtlasProgress};
 }
 function evidence(correct=30,wrong=0){return [correct,wrong,correct,3,120000,1792022400000,1792108800000,4,'2026-10-10,2026-10-11,2026-10-12,2026-10-13'];}
@@ -73,7 +74,7 @@ test('hints and matching cannot grant independent completion; pause excludes idl
 });
 
 test('teaching resumes after page reload without XP; checkpoints are owned by the active account',()=>{
-  const e=load(),s=e.session;s.start({mode:'learn',count:5});s.next();s.pause();assert.equal(s.saved().index,1);s.resume();assert.equal(s.current().index,1);assert.equal(e.progress.getXP(),0);
+  const e=load({experienced:false}),s=e.session;s.start({mode:'learn',count:5});finishLesson(e);s.pause();assert.equal(s.saved().index,1);s.resume();assert.equal(s.current().index,1);assert.equal(e.progress.getXP(),0);
   e.values.set('modeAtlasLastUserId','account-b');e.root.dispatchEvent(new e.root.CustomEvent('modeAtlasAccountWillChange'));assert.equal(s.saved(),null);assert.equal(s.current(),null);assert.throws(()=>s.answer('water'),/ended/);
 });
 
@@ -93,4 +94,58 @@ test('five complete device histories fit cloud storage and survive compression w
   assert.deepEqual(plain(unpacked.sources),plain(state.sources));assert.equal(Object.keys(unpacked.completions).length,2383);assert.ok(e.state.allowed(1,unpacked));
   assert.equal((await e.root.ModeAtlasKanjiCodec.pack({})).evidence,null);
   await assert.rejects(e.root.ModeAtlasKanjiCodec.unpack({...packed,evidence:{encoding:'future',data:'abc'}}),/newer/);
+});
+
+function finishLesson(e){
+  const s=e.session,c=s.current(),entry=e.content.get(c.sequence[c.index]);
+  s.lessonStep();s.lessonAnswer(entry.meanings[0]);s.lessonStep();s.lessonAnswer(e.root.ModeAtlasKanjiTeaching.lesson(entry).reading);s.next();
+}
+test('introductory lessons are ordered and require both checks before opening the wider N5 course',()=>{
+  const e=load({experienced:false}),s=e.session,state=e.state;
+  assert.throws(()=>s.start({mode:'meaning'}),/Learn a few/);
+  assert.equal(s.start({mode:'learn',count:5}).sequence.join(''),'一二三人日');s.discard();
+  assert.equal(s.start({mode:'learn',count:5}).sequence.join(''),'一二三人日');
+  s.next();assert.equal(s.current().index,0);s.lessonStep();s.lessonAnswer('wrong');s.next();assert.equal(s.current().index,0);assert.ok(!state.read().introductions['一']);
+  s.reviewLesson();for(let i=0;i<5;i++)finishLesson(e);
+  assert.equal(s.start({mode:'learn',count:5}).sequence.join(''),'月木山川水');assert.equal(state.studyPool(5).length,10);
+  for(let i=0;i<5;i++)finishLesson(e);
+  assert.ok(state.introReady());assert.equal(state.studyPool(5).length,84);assert.ok(!state.allowed(4));assert.equal(e.progress.getXP(),0);
+  assert.ok(s.start({mode:'meaning',count:20}).sequence.every(c=>state.introductory.includes(c)),'recall never adds unseen characters');
+});
+test('checked introductions merge, preserve old evidence and survive compressed cloud saves',async()=>{
+  const e=load({experienced:false}),s=e.state;
+  const a=s.normalize({introductions:{'一':10}}),b=s.normalize({introductions:{'二':20,'一':15}});
+  assert.deepEqual(plain(s.merge(a,b).introductions),{'一':10,'二':20});assert.deepEqual(plain(s.merge(a,b)),plain(s.merge(b,a)));
+  const historical=learned(s,'書',1);assert.ok(s.studyPool(5,historical).includes('書'));
+  historical.introductions={'一':10};assert.deepEqual(plain((await e.root.ModeAtlasKanjiCodec.unpack(await e.root.ModeAtlasKanjiCodec.pack(historical))).introductions),{'一':10});
+});
+test('guided reading choices always include an accepted answer, including alternate readings',()=>{
+  const e=load({experienced:false}),teaching=e.root.ModeAtlasKanjiTeaching;
+  for(const char of e.state.introductory){for(const phase of ['recognise','reading']){
+    const choices=teaching.choices(char,phase,'stable');assert.equal(choices.filter(x=>teaching.grade(char,phase,x)).length,1,char+phase);
+  }}
+});
+test('stroke guidance accepts natural drift but rejects reversals, shortcuts and scribbles',()=>{
+  const matcher=require('../assets/app/mode-atlas-stroke-matcher.js');
+  const path=Array.from({length:30},(_,i)=>({x:12+i*2.8,y:50+Math.sin(i/6)*2}));
+  assert.ok(matcher.matches(path.map((p,i)=>({x:p.x+Math.sin(i),y:p.y+1})),path));
+  assert.ok(!matcher.matches([...path].reverse(),path));assert.ok(!matcher.matches(path.slice(0,6),path));
+  assert.ok(!matcher.matches(path.map((p,i)=>({x:p.x,y:i%2?10:90})),path));
+  assert.ok(!matcher.matches([{x:NaN,y:0}],path));
+});
+test('offline stroke data covers every kanji and kana unit with safe ordered paths',()=>{
+  const e=load(),context={window:{}};
+  for(const group of ['kana','n5','n4','n3','n2','n1'])vm.runInNewContext(fs.readFileSync(path.join(__dirname,`../assets/data/mode-atlas-strokes-${group}.js`),'utf8'),context);
+  const data=context.window.ModeAtlasStrokeData;
+  const chars=new Set([...e.state.levels.keys(),...Object.values(e.root.ModeAtlasKanaData.maps).flatMap(map=>Object.keys(map).flatMap(k=>[...k]))]);
+  for(const char of chars){assert.ok(data[char]?.length,char);for(const d of data[char])assert.match(d,/^[MmLlHhVvCcSsQqTtAaZz0-9.,+eE\s-]+$/);}
+});
+
+test('web pronunciation uses a Japanese voice and cancels requests waiting for voices',async()=>{
+  let adapter,voices=[],listener;const played=[];
+  const root={setTimeout,clearTimeout,ModeAtlasEnv:{},SpeechSynthesisUtterance:class{constructor(text){this.text=text;}},AtlasPlatform:{registerAdapter(_name,value){adapter=value;}},speechSynthesis:{getVoices:()=>voices,addEventListener(_name,fn){listener=fn;},removeEventListener(){},cancel(){},speak(value){played.push(value);value.onstart();}}};root.window=root;
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../assets/platform/mode-atlas-platform-web.js'),'utf8'),root);
+  const waiting=adapter.speakJapanese('いち',false);adapter.stopSpeech();voices=[{lang:'ja-JP'}];listener();await waiting;assert.equal(played.length,0);
+  assert.equal((await adapter.speakJapanese('に',true)).played,true);assert.equal(played[0].text,'に');assert.equal(played[0].voice.lang,'ja-JP');assert.equal(played[0].rate,.65);
+  voices=[{lang:'en-US'}];assert.equal((await adapter.speakJapanese('さん',false)).played,false);assert.equal(played.length,1);
 });

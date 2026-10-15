@@ -78,6 +78,7 @@ CRITICAL = {
     'mode-atlas-early-loader.js',
 }
 LAZY_ASSETS = (
+    *(f'assets/data/mode-atlas-strokes-{group}.js' for group in ('kana','n5','n4','n3','n2','n1')),
     'assets/data/mode-atlas-kanji-data.js',
     'assets/css/mode-atlas-fonts-web.css',
     'assets/css/mode-atlas-fonts-native.css',

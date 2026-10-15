@@ -72,6 +72,7 @@ NAV_CONFIGS: dict[str, NavConfig] = {
     'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Writing Practice', brand_href='/kana/', accent='writing', hideable=True),
     'results/index.html': NavConfig('results', '測', 'Mode Atlas', 'Test Results', brand_href='/learn/', accent='results'),
     'results/kanji/index.html': NavConfig('kanjiResults', '測', 'Mode Atlas', 'Test Results', brand_href='/learn/', accent='results'),
+    'kana/handwriting/index.html': NavConfig('kanaHandwriting', '書', 'Kana', 'Handwriting', brand_href='/kana/', accent='writing'),
     'kanji/index.html': NavConfig('kanji', '漢', 'Mode Atlas', 'Kanji', brand_href='/learn/', accent='results'),
     'kanji/sources/index.html': NavConfig('kanjiSources', '漢', 'Mode Atlas', 'Learning sources', brand_href='/kanji/', account_actions=False),
     'wordbank/index.html': NavConfig('wordbank', '語', 'Mode Atlas', 'Word Bank', accent='words'),
@@ -91,6 +92,7 @@ KANA_LINKS = (
     ('kana', 'Overview', '/kana/'),
     ('reading', 'Reading', '/reading/'),
     ('writing', 'Writing', '/writing/'),
+    ('kanaHandwriting', 'Handwriting', '/kana/handwriting/'),
 )
 KANA_KEYS = frozenset(key for key, _label, _href in KANA_LINKS)
 
@@ -430,9 +432,13 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
             ),
         ),
     ),
+    'kana/handwriting/index.html': FrontendAssetConfig(
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-hub-page.css','assets/css/mode-atlas-handwriting.css','assets/css/mode-atlas-kana-handwriting.css'),
+        body_scripts=_interactive_scripts(page_scripts=('assets/app/mode-atlas-stroke-matcher.js','assets/ui/mode-atlas-pronunciation.js','assets/ui/mode-atlas-handwriting.js','assets/pages/mode-atlas-kana-handwriting-page.js')),
+    ),
     'kanji/index.html': FrontendAssetConfig(
-        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kanji.css',),
-        body_scripts=_interactive_scripts(page_scripts=('assets/app/mode-atlas-kanji-session.js', 'assets/pages/mode-atlas-kanji-page.js')),
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kanji.css','assets/css/mode-atlas-handwriting.css'),
+        body_scripts=_interactive_scripts(page_scripts=('assets/app/mode-atlas-kanji-teaching.js','assets/app/mode-atlas-stroke-matcher.js','assets/ui/mode-atlas-pronunciation.js','assets/ui/mode-atlas-handwriting.js','assets/app/mode-atlas-kanji-session.js','assets/ui/mode-atlas-kanji-lesson.js','assets/pages/mode-atlas-kanji-page.js')),
     ),
     'results/kanji/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kanji.css', 'assets/css/mode-atlas-results-navigation.css'),
