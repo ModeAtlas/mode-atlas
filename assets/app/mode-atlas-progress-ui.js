@@ -46,7 +46,7 @@
     const card=el('section','ma-session-rewards');card.setAttribute('aria-label','Session rewards');
     card.append(el('strong','ma-session-rewards__xp',`+${session.xpGain} XP`));
     const parts=el('div','ma-session-rewards__parts');
-    const names={answers:'Correct kana',completion:'Set complete',accuracy:'Accuracy',streak:'Best streak',review:'Spaced review',mastery:'Mastery milestones',goals:'Study goals',daily:'Daily completion & accuracy',test:'Test completion & accuracy'};
+    const names={answers:'Correct answers',completion:'Set complete',accuracy:'Accuracy',streak:'Best streak',review:'Spaced review',mastery:'Mastery milestones',goals:'Study goals',daily:'Daily completion & accuracy',test:'Test completion & accuracy'};
     for(const [key,value]of Object.entries(session.xpParts||{}))if(value){const line=el('span','','');line.append(el('span','',names[key]||key),el('strong','',`+${value}`));parts.append(line);}
     card.append(parts);
     const up=summary.level>session.startLevel;

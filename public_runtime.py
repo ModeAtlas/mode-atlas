@@ -4,6 +4,7 @@ import re
 
 MEDIA_SUFFIXES = frozenset({'.svg', '.png', '.jpg', '.jpeg', '.webp', '.ico', '.gif', '.woff2'})
 LICENSE_FILES = frozenset({
+    'assets/data/kanji-NOTICE.txt', 'assets/data/kanji-LICENSE.txt',
     'assets/fonts/inter-LICENSE.txt', 'assets/fonts/sora-LICENSE.txt',
     'assets/fonts/noto-sans-jp-LICENSE.txt', 'assets/icons/apple-sign-in-license.rtf',
 })

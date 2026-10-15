@@ -62,14 +62,14 @@
     setAll('[data-ma-home-week-days]', `${week.studyDays} / 7`);
     setAll('[data-ma-home-week-goals]', week.dailyGoals + week.weeklyGoals);
     setAll('[data-ma-home-week-sessions]', week.sessions);
-    const reviews = ['reading','writing'].map(mode => ({mode, due:window.ModeAtlasReview.due(store.readModeJSON(mode,'srs',{})).length}));
+    const reviews = [...['reading','writing'].map(mode => ({label:mode==='reading'?'Reading':'Writing',href:`/${mode}/?practice=10&due=1`,due:window.ModeAtlasReview.due(store.readModeJSON(mode,'srs',{})).length})),...window.ModeAtlasStudyPlan.kanjiReviews()];
     document.querySelectorAll('[data-ma-home-reviews]').forEach(host => {
       if(host.dataset.reviews === JSON.stringify(reviews)) return;
       host.dataset.reviews = JSON.stringify(reviews);host.replaceChildren();
-      for(const {mode,due} of reviews.filter(item => item.due)){
+      for(const {label,href,due} of reviews.filter(item => item.due)){
         const link = document.createElement('a'), detail = document.createElement('span');
-        link.className = 'atlas-home-review-link';link.href = `/${mode}/?practice=10&due=1`;
-        link.textContent = mode === 'reading' ? 'Reading' : 'Writing';detail.textContent = `${due} due →`;
+        link.className = 'atlas-home-review-link';link.href = href;
+        link.textContent = label;detail.textContent = `${due} due →`;
         link.append(detail);host.append(link);
       }
       if(!host.childElementCount){

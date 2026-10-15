@@ -70,7 +70,10 @@ NAV_CONFIGS: dict[str, NavConfig] = {
     'kana/index.html': NavConfig('kana', 'かな', 'Mode Atlas', 'Kana Trainer', accent='kana'),
     'reading/index.html': NavConfig('reading', '読', 'Kana Trainer', 'Reading Practice', brand_href='/kana/', accent='reading', hideable=True),
     'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Writing Practice', brand_href='/kana/', accent='writing', hideable=True),
-    'results/index.html': NavConfig('results', '測', 'Kana Trainer', 'Test Results', brand_href='/kana/', accent='results'),
+    'results/index.html': NavConfig('results', '測', 'Mode Atlas', 'Test Results', brand_href='/learn/', accent='results'),
+    'results/kanji/index.html': NavConfig('kanjiResults', '測', 'Mode Atlas', 'Test Results', brand_href='/learn/', accent='results'),
+    'kanji/index.html': NavConfig('kanji', '漢', 'Mode Atlas', 'Kanji', brand_href='/learn/', accent='results'),
+    'kanji/sources/index.html': NavConfig('kanjiSources', '漢', 'Mode Atlas', 'Learning sources', brand_href='/kanji/', account_actions=False),
     'wordbank/index.html': NavConfig('wordbank', '語', 'Mode Atlas', 'Word Bank', accent='words'),
     'privacy/index.html': NavConfig('privacy', 'あア', 'Mode Atlas', 'Privacy Policy', account_actions=False),
     'terms/index.html': NavConfig('terms', 'あア', 'Mode Atlas', 'Terms of Use', account_actions=False),
@@ -88,7 +91,6 @@ KANA_LINKS = (
     ('kana', 'Overview', '/kana/'),
     ('reading', 'Reading', '/reading/'),
     ('writing', 'Writing', '/writing/'),
-    ('results', 'Test Results', '/results/'),
 )
 KANA_KEYS = frozenset(key for key, _label, _href in KANA_LINKS)
 
@@ -107,7 +109,7 @@ def render_navigation(config: NavConfig) -> str:
     legal_page = config.key in {'privacy', 'terms'}
     links = LEGAL_LINKS if legal_page else PRIMARY_LINKS
     kana_section = not legal_page and config.key in KANA_KEYS
-    product_active = 'learn' if kana_section or config.key == 'wordbank' else config.key
+    product_active = 'learn' if kana_section or config.key in {'wordbank', 'kanji', 'results', 'kanjiResults'} else config.key
 
     link_markup = []
     for key, label, href in links:
@@ -141,6 +143,11 @@ def render_navigation(config: NavConfig) -> str:
         branch_markup = '<nav class="ma-kana-navigation" aria-label="Kana sections">' + ''.join(
             f'<a href="{href}"' + (' aria-current="page"' if key == config.key else '') + f'>{label}</a>'
             for key, label, href in KANA_LINKS) + '</nav>'
+
+    if config.key in {'results', 'kanjiResults'}:
+        branch_markup = '<nav class="ma-results-branches" aria-label="Results branch">' + ''.join(
+            f'<a href="{href}"' + (' aria-current="page"' if key == config.key else '') + f'>{label}</a>'
+            for key, label, href in [('results', 'Kana', '/results/'), ('kanjiResults', 'Kanji', '/results/kanji/')]) + '</nav>'
 
     nav_id = ' id="studyNav"' if config.hideable else ''
     handle = ''
@@ -215,6 +222,7 @@ INTERACTIVE_CHROME_STYLES = (
 )
 INTERACTIVE_TAIL_STYLES = (
     'assets/css/mode-atlas-achievements.css',
+    'assets/css/mode-atlas-kanji-mastery.css',
     'assets/css/mode-atlas-theme.css',
     'assets/css/mode-atlas-ios-theme.css',
     'assets/css/mode-atlas-components.css',
@@ -274,6 +282,12 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-data-controls.js',
     'assets/app/mode-atlas-review.js',
     'assets/data/mode-atlas-kana-data.js',
+    'assets/data/mode-atlas-kanji-curriculum.js',
+    'assets/app/mode-atlas-kanji-state.js',
+    'assets/app/mode-atlas-kanji-codec.js',
+    'assets/app/mode-atlas-kanji-content.js',
+    'assets/app/mode-atlas-kanji-results.js',
+    'assets/ui/mode-atlas-kanji-mastery.js',
     'assets/app/mode-atlas-kana-metrics.js',
     'assets/app/mode-atlas-study-plan.js',
     'assets/app/mode-atlas-avatar-rules.js',
@@ -406,7 +420,7 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
         ),
     ),
     'results/index.html': FrontendAssetConfig(
-        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-test-page.css',),
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-test-page.css', 'assets/css/mode-atlas-results-navigation.css'),
         body_scripts=_interactive_scripts(
             page_scripts=(
                 'assets/results/mode-atlas-results-storage.js',
@@ -416,6 +430,15 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
             ),
         ),
     ),
+    'kanji/index.html': FrontendAssetConfig(
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kanji.css',),
+        body_scripts=_interactive_scripts(page_scripts=('assets/app/mode-atlas-kanji-session.js', 'assets/pages/mode-atlas-kanji-page.js')),
+    ),
+    'results/kanji/index.html': FrontendAssetConfig(
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kanji.css', 'assets/css/mode-atlas-results-navigation.css'),
+        body_scripts=_interactive_scripts(page_scripts=('assets/pages/mode-atlas-kanji-results-page.js',)),
+    ),
+    'kanji/sources/index.html': FrontendAssetConfig(styles=LEGAL_STYLES, body_scripts=LEGAL_BODY_SCRIPTS),
     'wordbank/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-wordbank-page.css',),
         body_scripts=_interactive_scripts(

@@ -18,7 +18,7 @@ from public_runtime import is_public_runtime_file
 
 ROOT = Path(__file__).resolve().parent
 VERSION_FILE = ROOT / "assets/app/mode-atlas-version.js"
-PAGE_DIRS = ("learn", "progress", "friends", "shop", "kana", "reading", "writing", "results", "wordbank", "privacy", "terms")
+PAGE_DIRS = ("learn", "progress", "friends", "shop", "kanji", "kana", "reading", "writing", "results", "wordbank", "privacy", "terms")
 ROOT_RUNTIME_FILES = ("index.html",)
 ASSET_DIR = "assets"
 

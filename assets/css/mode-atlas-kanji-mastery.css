@@ -1,0 +1,8 @@
+.ma-mastery-branches{display:flex;gap:8px;margin:0 0 20px;}
+.ma-mastery-branches button{flex:1;}
+.ma-mastery-branches button[aria-pressed="true"]{background:var(--ma-surface-inset);border-color:var(--ma-results);}
+.ma-kanji-mastery{display:grid;gap:16px;}.ma-kanji-mastery>h3,.ma-kanji-mastery>p{margin:0;}
+.ma-kanji-mastery .ma-atlas-tabs{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}.ma-kanji-mastery .ma-atlas-tabs>button{flex:1;min-width:48px;}
+.ma-kanji-mastery .ma-mastery-grid{margin:0;}.ma-kanji-mastery-detail>h3{font:500 5rem/1.3 var(--ma-font-jp);text-align:center;margin:16px 0;}
+.ma-kanji-mastery-detail p{line-height:1.6;color:var(--ma-text-soft);}.ma-kanji-mastery-detail summary{min-height:44px;cursor:pointer;color:var(--ma-text-strong);}
+.ma-kanji-mastery .ma-mastery-cell.learning{border-color:var(--ma-results);}.ma-kanji-mastery .ma-mastery-cell.reviewing{border-color:var(--ma-writing);}.ma-kanji-mastery .ma-mastery-cell.mastered{border-color:var(--ma-reading);}

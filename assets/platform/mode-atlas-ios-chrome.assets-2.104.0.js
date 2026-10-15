@@ -7,7 +7,7 @@
   const tabs=[['atlas','Atlas','あア'],['learn','Learn','book'],['progress','Progress','chart'],['friends','Friends','people']];
   const route=location.pathname.replace(/\/index\.html$/i,'/');
   const current=tabs.find(tab=>root.AtlasPlatform.destinationPath(tab[0])===route)?.[0]
-    || (/^\/(kana|reading|writing|results|wordbank)\//.test(route)?'learn':'');
+    || (/^\/(kana|kanji|reading|writing|results|wordbank)\//.test(route)?'learn':'');
 
   function render(){
     if (document.querySelector('.ma-ios-tabs')) return;

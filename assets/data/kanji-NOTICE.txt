@@ -1,0 +1,27 @@
+Kanji learning data — Mode Atlas
+
+Adapted from OpenJLPT, https://github.com/evanclan/OpenJLPT
+Upstream commit: 0d1d3410bec90bd4098a7c72de820543cb4f707c
+KANJIDIC2 / JMdict source date: 2026-09-29
+
+Dictionary readings, meanings and stroke counts: Copyright James William Breen
+and the Electronic Dictionary Research and Development Group (EDRDG).
+https://www.edrdg.org/wiki/KANJIDIC_Project.html
+https://www.edrdg.org/jmdict/j_jmdict.html
+https://www.edrdg.org/edrdg/licence.html
+Level estimates: Jonathan Waller, https://www.tanos.co.uk/jlpt/ (CC BY).
+Data preparation and corrections: OpenJLPT contributors (CC BY-SA 4.0).
+
+This adapted dataset is distributed under CC BY-SA 4.0:
+https://creativecommons.org/licenses/by-sa/4.0/
+The full licence is included in kanji-LICENSE.txt.
+Changes: selected fields, filtered non-learning glosses, selected dictionary-
+verified short example words, and separated the lightweight level index.
+No Tatoeba sentences or KanjiVG artwork are included.
+
+N5–N1 are approximate study bands. The JLPT does not publish an official kanji
+syllabus; Mode Atlas is independent of the JLPT organisers.
+
+Maintainers: review upstream data monthly; regenerate using build_kanji_data.py.
+Source updates are reviewed with content and curriculum regression checks before
+release. Existing character identifiers retain their learning history.

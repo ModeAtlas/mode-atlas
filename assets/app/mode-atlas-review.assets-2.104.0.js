@@ -69,7 +69,7 @@
       ['Reading, Writing & Both','Each direction has its own stage. Both reaches Reviewing or Mastered only when both directions do. Accuracy and time are checked before rounding. Earlier practice is assessed against the same performance thresholds; new answers add spaced-recall evidence.']];
   }
   function dueHelp(){
-    return '“Due” counts kana ready to revisit, using spaced practice to help you remember them. Reading and Writing have separate schedules. A short session can repeat kana, so this isn’t a question count. Reviews are suggestions, not deadlines. Five correct answers each day keep your study streak going—you don’t need to clear every due review.';
+    return '“Due” counts characters ready to revisit, using spaced practice to help you remember them. Kana Reading, Kana Writing and each Kanji skill have separate schedules. A short session can repeat characters, so this isn’t a question count. Reviews are suggestions, not deadlines. Five correct answers each day keep your study streak going—you don’t need to clear every due review.';
   }
   function answer(input,event,stats={},time=0){
     const row=normalize(input,stats,time), at=number(event.at), id=String(event.id||'');

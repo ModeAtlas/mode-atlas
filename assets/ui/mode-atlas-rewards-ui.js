@@ -109,8 +109,8 @@
     for(const [value,label]of [[false,'This week'],[true,'Last week']]){const control=button(label);control.setAttribute('aria-pressed',String(value===previous));control.addEventListener('click',()=>{host.dataset.previous=String(value);renderRecap(host);host.querySelector('[aria-pressed="true"]')?.focus();});controls.append(control);}
     host.append(el('h3','','Your weekly recap'),controls,el('p','ma-atlas-rewards__note',`${data.start} – ${data.end} · Your local study week`));
     const grid=el('div','ma-recap-grid');
-    for(const [label,value]of [['Study days',`${data.studyDays} / 7`],['Reading correct',data.reading],['Writing correct',data.writing],['Different kana',data.variety],['Daily goals completed',data.dailyGoals],['Weekly goals completed',data.weeklyGoals]]){const card=el('div');card.append(el('strong','',Number.isFinite(value)?value.toLocaleString():value),el('span','',label));grid.append(card);}
-    host.append(grid,el('p','ma-atlas-rewards__note',data.reading+data.writing?'Each study day needs five correct answers across your practice. These totals use saved, dated activity; older undated practice is not estimated.':'No dated practice is recorded for this week yet. A short session is a good place to start.'));
+    for(const [label,value]of [['Study days',`${data.studyDays} / 7`],['Reading correct',data.reading],['Writing correct',data.writing],['Kanji correct',data.kanji||0],['Sessions',data.sessions],['Different kana',data.variety],['Daily goals completed',data.dailyGoals],['Weekly goals completed',data.weeklyGoals]]){const card=el('div');card.append(el('strong','',Number.isFinite(value)?value.toLocaleString():value),el('span','',label));grid.append(card);}
+    host.append(grid,el('p','ma-atlas-rewards__note',data.reading+data.writing+(data.kanji||0)?'Each study day needs five correct answers across your practice. These totals use saved, dated activity; older undated practice is not estimated.':'No dated practice is recorded for this week yet. A short session is a good place to start.'));
     host.append(pageActions([{label:'Start a short session',short:'Practise',icon:'play',href:'/reading/?practice=10'},{label:'View weekly ranking',short:'Rankings',icon:'chart',href:root.AtlasPlatform.destinationPath('weekly')} ]));
   }
   function renderReviews(reviewActions){
@@ -120,6 +120,7 @@
       const due=root.ModeAtlasReview.due(root.ModeAtlasStorage.readModeJSON(mode,'srs',{}));
       if(due.length){const link=el('a','ma-button ma-button--ghost',`Review ${mode==='reading'?'Reading':'Writing'} · ${due.length} due`);link.href=`/${mode}/?practice=10&due=1`;reviewActions.append(link);}
     }
+    for(const {label,href,due}of root.ModeAtlasStudyPlan.kanjiReviews()){const link=el('a','ma-button ma-button--ghost',`${label} · ${due} due`);link.href=href;reviewActions.append(link);}
     if(!reviewActions.childElementCount)reviewActions.append(el('p','ma-atlas-rewards__note','You’re up to date with your reviews.'));
   }
   function goalPanel(){

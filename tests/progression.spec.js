@@ -1,4 +1,6 @@
 const {test,expect}=require('@playwright/test');
+// Each case owns its browser context, mocks and output paths; shard them independently.
+test.describe.configure({mode:'parallel'});
 
 for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'light',width:320},{native:false,theme:'dark',width:1280}])test(`character creator saves one portrait across profile and progress ${layout.native?'iOS':'web'} ${layout.theme}`,async({page},info)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,layout);await page.setViewportSize({width:layout.width,height:900});await open(page,'/progress/');
@@ -331,7 +333,7 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
       await expect(page.getByRole('link',{name:'Review Writing · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
       await expect(page.locator('.ma-toast')).toHaveCount(0);
       const help=page.getByRole('button',{name:'About due reviews'});await help.click();
-      await expect(page.locator('.ma-dialog__message')).toContainText('Reading and Writing have separate schedules');
+      await expect(page.locator('.ma-dialog__message')).toContainText('Kana Reading, Kana Writing and each Kanji skill have separate schedules');
       await expect(page.locator('.ma-dialog__message')).toContainText('not deadlines');await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');await page.screenshot({path:testInfo.outputPath('review-help.png'),animations:'disabled'});
       await page.keyboard.press('Escape');await expect(help).toBeFocused();
       await page.evaluate(()=>{ModeAtlasStorage.writeModeJSON('reading','srs',{});dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));});

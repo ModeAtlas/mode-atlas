@@ -21,6 +21,7 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   await expect(page.locator('.ma-learn-next')).toHaveAttribute('href','/reading/?practice=10&starter=starter');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   if(native&&width===393){
+    await page.getByRole('link',{name:'Open Word Bank',exact:true}).scrollIntoViewIfNeeded();
     const words=await page.getByRole('link',{name:'Open Word Bank',exact:true}).boundingBox(),dock=await nav().boundingBox();
     expect(words.y+words.height).toBeLessThanOrEqual(dock.y-8);
   }

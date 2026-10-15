@@ -4,6 +4,7 @@ const {FieldPath}=require('firebase-admin/firestore');
 const {HttpsError}=require('firebase-functions/v2/https');
 const policy=require('./shared/mode-atlas-weekly-rules.js');
 const kana=require('./shared/mode-atlas-kana-data.js');
+const kanji=require('./kanji-verification.cjs');
 const rewards=require('./shared/mode-atlas-reward-rules.js');
 const progress=require('./shared/mode-atlas-progress.js')({ModeAtlasRewardRules:rewards});
 const {publicProfile}=require('./projection.cjs');
@@ -13,6 +14,7 @@ const fail=(code,message)=>{throw new HttpsError(code,message);};
 function fields(data,allowed){if(!data||typeof data!=='object'||Array.isArray(data)||Object.keys(data).some(key=>!allowed.includes(key)))fail('invalid-argument','Unsupported weekly competition request.');}
 function active(account){return account?.active&&!account.deleting&&!account.restricted&&account.weekly?.enabled===true;}
 function scoreAnswers(run,answers,at){
+  if(run.branch==='kanji')return kanji.score(run,answers,at);
   if(!Array.isArray(answers)||!answers.length||answers.length>policy.batchSize)fail('invalid-argument','Send at most 20 new answers.');
   let index=run.index,elapsed=run.elapsed,score=0;
   const seen=new Set(run.seen),pool=new Set(run.pool);
@@ -58,16 +60,19 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
     });return {enabled:data.enabled};
   }
   async function start(uid,data){
-    fields(data,['id','pool','direction','mode','hints']);
-    if(typeof data.id!=='string'||!/^[a-zA-Z0-9-]{8,100}$/.test(data.id)||!['reading','writing'].includes(data.direction)||!['guided','free','endless','dailyChallenge','testMode','speedRun','timeTrial','comboKana'].includes(data.mode)||typeof data.hints!=='boolean'||!Array.isArray(data.pool)||!data.pool.length||data.pool.length>512||data.pool.some(char=>typeof char!=='string'||!Object.hasOwn(map,char)))fail('invalid-argument','Choose a valid Kana practice session.');
+    fields(data,['id','pool','direction','mode','hints','branch']);
+    const branch=data.branch||'kana';
+    const kanaValid=['reading','writing'].includes(data.direction)&&['guided','free','endless','dailyChallenge','testMode','speedRun','timeTrial','comboKana'].includes(data.mode)&&typeof data.hints==='boolean'&&Array.isArray(data.pool)&&data.pool.length>0&&data.pool.length<=512&&data.pool.every(char=>typeof char==='string'&&Object.hasOwn(map,char));
+    if(typeof data.id!=='string'||!/^[a-zA-Z0-9-]{8,100}$/.test(data.id)||!['kana','kanji'].includes(branch)||(branch==='kanji'?!kanji.valid(data):!kanaValid))fail('invalid-argument','Choose a valid practice session.');
     const period=policy.period(now());
     return db.runTransaction(async tx=>{
-      const ref=runs.doc(uid),[self,old,week]=await tx.getAll(account(uid),ref,weeks.doc(period.id));
+      const ref=runs.doc(uid),[self,old,week,save]=await tx.getAll(account(uid),ref,weeks.doc(period.id),...(branch==='kanji'?[db.doc('users/'+uid+'/appData/kanaTrainer')]:[]));
       if(!active(self.data()))return {enabled:false};
+      if(branch==='kanji')kanji.unlocked(data,save?.data());
       const previous=old.data();
       if(previous?.id===data.id&&previous.week===period.id&&previous.expiresAt.toMillis()>now())return {enabled:true,token:previous.token,week:period.id,expiresAt:previous.expiresAt.toMillis(),index:previous.index,earned:previous.earned||0};
       const expiresAt=Math.min(now()+policy.runLifetime,period.endAt),token=randomUUID();
-      tx.set(ref,{id:data.id,token,week:period.id,pool:[...new Set(data.pool)].sort(),direction:data.direction,mode:data.mode,hints:data.hints,index:0,elapsed:0,seen:[],startedAt:now(),expiresAt:new Date(expiresAt)});
+      tx.set(ref,{id:data.id,branch,token,week:period.id,pool:[...new Set(data.pool)].sort(),direction:data.direction,mode:data.mode,hints:data.hints,index:0,elapsed:0,seen:[],startedAt:now(),expiresAt:new Date(expiresAt)});
       if(!week.exists)tx.create(weeks.doc(period.id),{...period,settled:false});
       return {enabled:true,token,week:period.id,expiresAt,index:0,earned:0};
     });
