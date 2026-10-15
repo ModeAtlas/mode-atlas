@@ -1,0 +1,18 @@
+Stroke-order artwork — Mode Atlas
+
+KanjiVG, copyright © 2009–2026 Ulrich Apel and contributors.
+https://kanjivg.tagaini.net/ — https://github.com/KanjiVG/kanjivg
+Pinned source revision: 70a0b7ae0c18ceb5cb358274b029cce0234a43bc
+
+Distributed under Creative Commons Attribution–ShareAlike 3.0:
+https://creativecommons.org/licenses/by-sa/3.0/
+Full licence: handwriting-LICENSE.txt.
+
+Adaptation: extracted stroke paths in their original order and 109 × 109
+coordinate space; grouped the selected characters by study band and kana.
+Original path geometry is unchanged. The adapted path datasets retain CC BY-SA
+3.0. Application controllers and teaching text are separate works.
+
+To refresh: review the upstream changes, check out the selected revision, run
+python3 build_handwriting_data.py --source /path/to/kanjivg, and validate coverage,
+path safety and drawing behaviour. No live third-party requests are made in app.

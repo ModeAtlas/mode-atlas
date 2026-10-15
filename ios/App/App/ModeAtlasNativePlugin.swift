@@ -16,7 +16,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState", "deletePushToken",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
-        "exportBackup", "getAccessibilityPreferences", "getAppIcon", "setAppIcon", "playSound", "stopSounds", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion", "revokeAppleAuthorization"
+        "exportBackup", "getAccessibilityPreferences", "getAppIcon", "setAppIcon", "playSound", "stopSounds", "speakJapanese", "stopSpeech", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion", "revokeAppleAuthorization"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
@@ -30,6 +30,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     private var changingIcon = false
     private var mailCall: CAPPluginCall?
     private let sounds = ModeAtlasSoundPlayer()
+    private let speech = AVSpeechSynthesizer()
 
     @objc func getAppVersion(_ call: CAPPluginCall) {
         call.resolve(["version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
@@ -118,6 +119,28 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
             }
         }
     }
+    @objc func speakJapanese(_ call: CAPPluginCall) {
+        guard let text = call.getString("text"), !text.isEmpty, text.count <= 80,
+              text.range(of: "^[ぁ-ゖァ-ヺー\\s]+$", options: .regularExpression) != nil else {
+            call.reject("Invalid pronunciation"); return
+        }
+        DispatchQueue.main.async {
+            guard UIApplication.shared.applicationState == .active,
+                  let voice = AVSpeechSynthesisVoice(language: "ja-JP") else {
+                call.resolve(["played": false]); return
+            }
+            self.speech.stopSpeaking(at: .immediate)
+            self.speech.usesApplicationAudioSession = false
+            let utterance = AVSpeechUtterance(string: text)
+            utterance.voice = voice
+            utterance.rate = call.getBool("slow") == true ? 0.35 : AVSpeechUtteranceDefaultSpeechRate
+            self.speech.speak(utterance)
+            call.resolve(["played": true])
+        }
+    }
+    @objc func stopSpeech(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { self.speech.stopSpeaking(at: .immediate); call.resolve() }
+    }
     @objc func stopSounds(_ call: CAPPluginCall) {
         DispatchQueue.main.async { self.sounds.fadeOut(); call.resolve() }
     }
@@ -191,6 +214,9 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
 
     override public func load() {
         bridge?.notificationRouter.localNotificationHandler = self
+        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.speech.stopSpeaking(at: .immediate)
+        })
         observers.append(NotificationCenter.default.addObserver(forName: ModeAtlasNavigation.event, object: nil, queue: .main) { [weak self] _ in
             self?.notifyListeners("destinationAction", data: [:], retainUntilConsumed: true)
         })

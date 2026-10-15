@@ -43,8 +43,10 @@
 .ma-learn-row__copy strong{font-size:1rem;line-height:1.3;font-weight:750;}
 .ma-learn-row__copy>span{color:var(--ma-muted);font-size:.8rem;line-height:1.4;}
 .ma-learn-row>.ma-icon{width:18px;height:18px;color:var(--ma-muted);}
-.ma-learn-words{margin-top:16px;}
-.ma-learn-words .ma-learn-row{min-height:78px;}
+.ma-learn-branch{margin-top:26px;}
+.ma-learn-branch-description{margin:0 0 6px;color:var(--ma-muted);font-size:.78rem;line-height:1.5;}
+.ma-learn-branch[data-branch] .ma-learn-section-heading h2,.ma-learn-kana .ma-learn-section-heading h2{font-size:1.2rem;}
+.ma-learn-row[data-subject="kanji"],.ma-learn-row[data-subject="kanjiPractice"]{--learn-accent:var(--ma-results);}
 .ma-learn-upcoming{padding-top:8px;}
 .ma-learn-upcoming summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;cursor:pointer;color:var(--ma-muted);font-size:.74rem;font-weight:650;list-style:none;}
 .ma-learn-upcoming summary::-webkit-details-marker{display:none;}

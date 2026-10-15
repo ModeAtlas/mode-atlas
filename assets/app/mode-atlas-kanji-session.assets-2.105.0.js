@@ -21,6 +21,11 @@
     const run=root.ModeAtlasProgress.readState().runs[value.runId];
     if(value.mode!=='learn'&&(!run||run.done||run.answers!==value.answers.length))return null;
     if(value.answers.some((a,i)=>a?.char!==value.sequence[i]||typeof a.correct!=='boolean'||typeof a.answer!=='string'||a.answer.length>160||!Number.isFinite(a.elapsed)||a.elapsed<0))return null;
+    if(value.mode==='learn'){
+      value.lessonPhase=['teach','recognise','reading'].includes(value.lessonPhase)?value.lessonPhase:'teach';
+      const feedback=value.lessonFeedback;
+      if(feedback&&(typeof feedback.answer!=='string'||feedback.answer.length>160||typeof feedback.correct!=='boolean'))return null;
+    }
     value.pool=[...value.sequence];
     return value;
   }
@@ -28,23 +33,29 @@
     const current=state.read();
     if(!modes.includes(mode)||!state.allowed(level,current))throw new Error('Complete the previous level to open this one.');
     const band=root.ModeAtlasKanjiCurriculum.find(b=>b.level===level),runId=id(),skill=mode==='pronunciation'?'pronunciation':'meaning';
-    let pool=[...band.chars];
+    let pool=state.studyPool(level,current);
+    if(mode!=='learn')pool=pool.filter(c=>current.lessons[c]||state.introduced(current,c)||state.skills.some(skill=>state.metrics(current,c,skill).attempts));
     if(chars.length)pool=pool.filter(c=>chars.includes(c));
     if(focus==='due')pool=pool.filter(c=>{const m=state.metrics(current,c,skill);return m.last&&m.due<=Date.now();});
-    if(focus==='new')pool=pool.filter(c=>!current.lessons[c]);
-    if(!pool.length)throw new Error(focus==='due'?'No reviews are due in this level. Choose All kanji to keep practising.':'There are no characters in this selection.');
+    if(focus==='new'&&mode==='learn')pool=pool.filter(c=>!state.introduced(current,c));
+    if(!pool.length)throw new Error(focus==='due'?'No reviews are due in this level. Choose All kanji to keep practising.':mode==='learn'?'There are no new characters in this selection. Choose All kanji to revisit a lesson.':'Learn a few characters first, then practise their meanings and readings.');
+    const lessonOrder=mode==='learn'?new Map([...(band.intro||''),...[...band.chars].filter(c=>!band.intro?.includes(c)).sort((a,b)=>content.get(a).strokes-content.get(b).strokes)].map((char,index)=>[char,index])):null;
     pool.sort((a,b)=>{
+      if(mode==='learn'){
+        const doneA=state.introduced(current,a),doneB=state.introduced(current,b);
+        if(doneA!==doneB)return Number(doneA)-Number(doneB);
+        return lessonOrder.get(a)-lessonOrder.get(b);
+      }
       if(!test&&focus==='all'){
         const aDone=state.completed(current,a),bDone=state.completed(current,b);
         if(aDone!==bDone)return Number(aDone)-Number(bDone);
-        const seenA=mode==='learn'?current.lessons[a]||0:state.metrics(current,a,skill).last;
-        const seenB=mode==='learn'?current.lessons[b]||0:state.metrics(current,b,skill).last;
+        const seenA=state.metrics(current,a,skill).last,seenB=state.metrics(current,b,skill).last;
         if(seenA!==seenB)return seenA-seenB;
       }
       return content.hash(runId+a)-content.hash(runId+b);
     });
     const sequence=pool.slice(0,Math.min(pool.length,[5,10,20,40].includes(count)?count:10));
-    active={version:1,owner:owner(),runId,mode,level,test:!!test&&mode!=='learn',sequence,pool:sequence,index:0,answers:[],feedback:null,questionElapsed:0,paused:false,hinted:false,everAssisted:mode==='match',xp:0,bestStreak:0,streak:0,at:Date.now(),finished:false};
+    active={version:1,owner:owner(),runId,mode,level,test:!!test&&mode!=='learn',sequence,pool:sequence,index:0,answers:[],feedback:null,questionElapsed:0,paused:false,hinted:false,everAssisted:mode==='match',xp:0,bestStreak:0,streak:0,at:Date.now(),finished:false,lessonPhase:'teach',lessonFeedback:null};
     storage.transaction(()=>{if(mode!=='learn')root.ModeAtlasProgress.startRun(runId);write();});
     if(mode!=='learn')root.ModeAtlasWeekly.start(active,{branch:'kanji',pool:sequence,direction:mode,mode:test?'testMode':'guided',hints:mode==='match'});
     questionStarted=Date.now();return active;
@@ -60,7 +71,7 @@
     // checkpoint, including the original answer, wins over stale in-memory UI.
     storage.transaction(()=>{});
     const committed=storage.json(KEY,null);
-    if(committed?.runId===active.runId&&(committed.index>active.index||committed.answers?.length>active.answers.length||committed.finished)){active=committed;questionStarted=0;}
+    if(committed?.runId===active.runId&&(committed.index>active.index||committed.answers?.length>active.answers.length||committed.finished||(committed.lessonRevision||0)>(active.lessonRevision||0))){active=committed;questionStarted=0;}
   }
   function hint(){ensure();if(active.test||active.mode==='learn'||active.feedback||active.paused)return false;active.hinted=true;active.everAssisted=true;write();return true;}
   function answer(value,skip=false){
@@ -85,11 +96,28 @@
     storage.setJSON(KEY,active);
     root.dispatchEvent(new CustomEvent('modeAtlasKanjiChanged'));return item;
   }
+  function changeLesson(change){
+    const before=structuredClone(active);
+    try{storage.transaction(()=>{change();active.lessonRevision=(active.lessonRevision||0)+1;write();});}
+    catch(error){active=before;throw error;}
+  }
+  function lessonStep(){
+    ensure();if(active.mode!=='learn'||active.paused)return;
+    if(active.lessonPhase!=='teach'&&!(active.lessonPhase==='recognise'&&active.lessonFeedback?.correct))return;
+    changeLesson(()=>{active.lessonPhase=active.lessonPhase==='teach'?'recognise':'reading';active.lessonFeedback=null;});
+  }
+  function lessonAnswer(answer){
+    ensure();if(active.mode!=='learn'||active.paused||active.lessonPhase==='teach'||active.lessonFeedback)return;
+    const char=active.sequence[active.index];
+    changeLesson(()=>{active.lessonFeedback={answer:String(answer).slice(0,160),correct:root.ModeAtlasKanjiTeaching.grade(char,active.lessonPhase,answer)};});
+  }
+  function reviewLesson(){ensure();if(active.mode!=='learn'||active.paused)return;changeLesson(()=>{active.lessonPhase='teach';active.lessonFeedback=null;});}
   function next(){
     ensure();if(active.paused||active.mode!=='learn'&&!active.feedback)return active;
+    if(active.mode==='learn'&&(active.lessonPhase!=='reading'||!active.lessonFeedback?.correct))return active;
     const before=structuredClone(active);
     try{storage.transaction(()=>{
-      if(active.mode==='learn')state.lesson(active.sequence[active.index]);
+      if(active.mode==='learn')state.introduction(active.sequence[active.index]);
       active.index++;
       if(active.index===active.sequence.length){
         active.finished=true;
@@ -100,7 +128,7 @@
           if(active.test)root.ModeAtlasKanjiResults.add({id:active.runId,at:Date.now(),level:active.level,mode:active.mode,answers:active.answers});
         }
         write();
-      }else{active.feedback=null;active.hinted=false;active.questionElapsed=0;write();}
+      }else{active.feedback=null;active.hinted=false;active.questionElapsed=0;active.lessonPhase='teach';active.lessonFeedback=null;write();}
     });}catch(error){active=before;throw error;}
     if(active.finished)root.ModeAtlasWeekly.finish(active);
     questionStarted=active.finished?0:Date.now();root.dispatchEvent(new CustomEvent('modeAtlasKanjiChanged'));return active;
@@ -111,5 +139,5 @@
   for(const event of ['modeAtlasAccountWillChange','modeAtlasAccountSignedOut','modeAtlasDataCleared'])root.addEventListener(event,()=>{active=null;questionStarted=0;});
   root.addEventListener('pagehide',checkpoint);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){pause();root.dispatchEvent(new CustomEvent('modeAtlasKanjiPaused'));}});
-  root.ModeAtlasKanjiSession=Object.freeze({start,resume,saved,current:()=>active,hint,answer,next,pause,play,discard,checkpoint});
+  root.ModeAtlasKanjiSession=Object.freeze({start,resume,saved,current:()=>active,hint,answer,lessonStep,lessonAnswer,reviewLesson,next,pause,play,discard,checkpoint});
 })(window);

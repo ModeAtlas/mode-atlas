@@ -17,7 +17,8 @@ https://creativecommons.org/licenses/by-sa/4.0/
 The full licence is included in kanji-LICENSE.txt.
 Changes: selected fields, filtered non-learning glosses, selected dictionary-
 verified short example words, and separated the lightweight level index.
-No Tatoeba sentences or KanjiVG artwork are included.
+No Tatoeba sentences are included. Stroke artwork is a separate KanjiVG dataset;
+see handwriting-NOTICE.txt for its source and licence.
 
 N5–N1 are approximate study bands. The JLPT does not publish an official kanji
 syllabus; Mode Atlas is independent of the JLPT organisers.

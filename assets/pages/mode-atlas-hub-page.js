@@ -57,9 +57,22 @@
       learningLink('writing','Writing','Match sounds to the right kana.','/writing/','edit')
     );
     kana.append(practice);library.append(kana);
-    const words=el('section','ma-learn-words');words.setAttribute('aria-label','Vocabulary');
-    words.append(learningLink('words','Word Bank','Your vocabulary, meanings and notes.','/wordbank/','book','Open Word Bank'));
-    const kanji=el('section','ma-learn-branch');kanji.setAttribute('aria-label','Kanji');kanji.append(learningLink('kanji','Kanji','Discover characters, pronunciation and meaning.','/kanji/','book','Open Kanji'));library.append(kanji,words);
+    function branch(key,title,description,href,accessibleLabel,rows){
+      const section=el('section','ma-learn-branch');section.dataset.branch=key;
+      const top=el('div','ma-learn-section-heading'),h=el('h2','',title);h.id='maLearn'+key+'Title';section.setAttribute('aria-labelledby',h.id);
+      const open=el('a','','Open');open.href=href;open.setAttribute('aria-label',accessibleLabel);open.append(icon('chevron'));top.append(h,open);
+      section.append(top,el('p','ma-learn-branch-description',description));
+      for(const row of rows)section.append(learningLink(...row));library.append(section);
+    }
+    kana.dataset.branch='kana';kana.insertBefore(el('p','ma-learn-branch-description','Hiragana and katakana: sounds, recognition and writing.'),practice);
+    practice.append(learningLink('handwriting','Handwriting','Learn stroke order and write kana by hand.','/kana/handwriting/','edit','Kana handwriting'));
+    branch('kanji','Kanji','Build character recognition, pronunciation and meaning.','/kanji/','Open Kanji',[
+      ['kanji','Guided lessons','Meet, listen, recognise. Begin with your first ten.','/kanji/?learn=1','book','Kanji guided lessons'],
+      ['kanjiPractice','Recall & practice','Practise familiar characters and optional handwriting.','/kanji/','edit','Kanji recall and practice']
+    ]);
+    branch('words','Word Bank','Your vocabulary branch: collect useful words and make them stick.','/wordbank/','Open Word Bank',[
+      ['words','Your vocabulary','Save words, meanings and notes; revisit what you have learned.','/wordbank/','book','Your vocabulary']
+    ]);
     const results=el('section','ma-learn-branch');results.setAttribute('aria-label','Test results');results.append(learningLink('results','Results','Your Kana and Kanji tests, in one place.','/results/','chart'));library.append(results);
     const upcoming=el('details','ma-learn-upcoming');upcoming.append(el('summary','','More ways to learn'),el('p','','Listening, Grammar and Reading Comprehension are planned. They will appear here when ready.'));library.append(upcoming);
     layout.append(suggestion,library);host.append(layout);

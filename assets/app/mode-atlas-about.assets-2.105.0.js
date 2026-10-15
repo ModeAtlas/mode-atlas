@@ -16,9 +16,9 @@
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Signing out returns this device to guest mode and removes your account’s local data. Stay signed in to keep studying offline.',
-    'Japanese keyboard practice waits for completed input. Word Bank handles half-width kana and syllabic n more clearly.',
-    'More reliable account switching and small improvements across practice and your wardrobe.'
+    'Meet your first ten kanji in guided lessons, with pronunciation audio and short meaning and reading checks.',
+    'Watch stroke order, trace a guide or practise handwriting for both Kanji and Kana.',
+    'Kana, Kanji and Word Bank now have clearer spaces on the Learn page.'
   ];
 
   function storeGet(key, fallback = '') {
