@@ -1,0 +1,25 @@
+/* Practice Setup owns its modal surface and controls. Native sheet geometry
+   lives in ios-chrome; shared content and behaviour stay identical. */
+body.ma-practice-setup-open{overflow:hidden;}
+.ma-practice-sheet{
+  width:min(860px,calc(100% - 32px));max-width:none;max-height:calc(100dvh - 40px);
+  box-sizing:border-box;margin:auto;padding:0;overflow:hidden;
+  border:1px solid var(--ma-border);border-radius:24px;
+  background:var(--ma-surface-strong);color:var(--ma-text);box-shadow:var(--ma-shadow);
+}
+.ma-practice-sheet[open]{display:flex;flex-direction:column;animation:ma-setup-enter .22s cubic-bezier(.22,1,.36,1);}
+.ma-practice-sheet::backdrop{background:rgb(0 0 0 / .52);}
+.ma-practice-sheet__handle{display:none;}
+.ma-practice-sheet__header{display:flex;flex:none;align-items:center;justify-content:space-between;gap:16px;padding:20px;border-bottom:1px solid var(--ma-border);}
+.ma-practice-sheet__header h2{margin:4px 0 0;font:800 1.35rem/1.2 var(--ma-font-display);color:var(--ma-text-strong);}
+.ma-practice-sheet__header .ma-button{min-height:44px;}
+.ma-practice-content{overflow-y:auto;overscroll-behavior:contain;padding:18px;min-height:0;}
+.ma-practice-content .options-stack{display:grid;gap:16px;width:100%;}
+.ma-practice-content .ma-settings-section{margin:0;padding:0;border:0;background:none;}
+.ma-practice-content .section-title{font-size:.9rem;text-align:left;font-weight:800;color:var(--ma-text-strong);}
+.ma-practice-content .button-grid.tight{display:flex;flex-wrap:wrap;gap:8px;}
+.ma-practice-content button:focus-visible,.ma-practice-content summary:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
+.ma-practice-content button:disabled{opacity:.45;}
+@keyframes ma-setup-enter{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:420px){.ma-practice-content{padding:14px;}.ma-practice-sheet__header{padding:16px;}}
+@media(prefers-reduced-motion:reduce){.ma-practice-sheet[open]{animation:none;}}

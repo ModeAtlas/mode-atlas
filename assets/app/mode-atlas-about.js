@@ -16,9 +16,9 @@
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Meet your first ten kanji in guided lessons, with pronunciation audio and short meaning and reading checks.',
-    'Watch stroke order, trace a guide or practise handwriting for both Kanji and Kana.',
-    'Kana, Kanji and Word Bank now have clearer spaces on the Learn page.'
+    'Kana now has one learning path. Start with the A-row or check your starting point.',
+    'Read, Recall and Handwrite unlock rows independently, with a simpler practice menu.',
+    'One mastery map shows each skill. Earn Mastered through Read and Recall, then add optional handwriting for Mastered+.'
   ];
 
   function storeGet(key, fallback = '') {

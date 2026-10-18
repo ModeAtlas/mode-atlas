@@ -42,8 +42,8 @@
               <span id="profileAtlasXpBar"></span>
             </div>
             <div class="ma-level-activity" aria-label="Learning activity">
-              <div><span>Reading</span><strong id="profileReadingCorrect">0</strong><small>correct kana</small></div>
-              <div><span>Writing</span><strong id="profileWritingCorrect">0</strong><small>correct kana</small></div>
+              <div><span>Read</span><strong id="profileReadingCorrect">0</strong><small>correct kana</small></div>
+              <div><span>Recall</span><strong id="profileWritingCorrect">0</strong><small>correct kana</small></div>
             </div>
             <div class="ma-progression-footer">
               <div class="ma-achievement-summary"><strong id="profileAchievementCount">0</strong><span>achievements</span></div>

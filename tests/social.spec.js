@@ -105,7 +105,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await page.getByRole('tab',{name:'Rankings',exact:true}).click();await page.getByRole('button',{name:'All time',exact:true}).click();await expect(page.locator('.ma-social-rank')).toHaveText(['1','2']);await fits(page);
     await page.screenshot({path:info.outputPath('rankings.png'),animations:'disabled'});
     await page.getByLabel('Ranking',{exact:true}).selectOption('reading');await fits(page);
-    await page.locator('.ma-social-person').first().click();await expect(page.getByText('Reading mastery',{exact:true})).toBeVisible();await fits(page);
+    await page.locator('.ma-social-person').first().click();await expect(page.getByText('Read mastery',{exact:true})).toBeVisible();await fits(page);
     await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});await fits(page);
     await page.screenshot({path:info.outputPath('profile-large-text.png'),animations:'disabled'});expect(errors).toEqual([]);
   });

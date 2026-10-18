@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 
 async function prepare(page){
   await page.setViewportSize({width:393,height:852});

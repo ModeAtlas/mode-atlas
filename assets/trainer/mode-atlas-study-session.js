@@ -23,10 +23,12 @@
     function sync(){
       const state=snapshot(), count=root.ModeAtlasStudyPlan.practiceCount(state.settings);
       const active=state.sessionStarted, current=study();
+      const hints=byId('kanaHintsQuick');
+      if(hints){hints.textContent=state.settings.hint?'Hints on':'Hints off';hints.setAttribute('aria-pressed',String(!!state.settings.hint));hints.disabled=active||root.ModeAtlasPracticeModes.fixedPool(state.settings);}
       const select=byId('studyLength');
       if(select){select.value=String(count);select.disabled=active;}
       byId('studySetSetup').hidden=!!(state.settings.dailyChallenge||state.settings.testMode||state.settings.timeTrial||state.settings.speedRun||state.settings.endless||state.settings.comboKana);
-      byId('studySetDescription').textContent=pendingReview.length?`${count} questions · Targeted practice: ${pendingReview.join(' ')}. Hints follow the setting below.`:count?`${count} questions. Mistakes pause so you can learn the answer.`:'No timer. Learn from each mistake and continue when you are ready.';
+      byId('studySetDescription').textContent=pendingReview.length?`${count} questions · Targeted practice: ${pendingReview.join(' ')}. Hints follow the setting below.`:count?`${count} questions · ${root.ModeAtlasPracticeModes.describe(state.settings).feedback==='learn'?'Pause and learn from mistakes.':'Quick feedback keeps your rhythm.'}`:'No timer. Learn from each mistake and continue when you are ready.';
       const goal=current?.count || (current?.mode==='dailyChallenge'?20:current?.mode==='testMode'?state.testSequence?.length:0);
       const progress=byId('studySessionProgress');
       progress.hidden=!active||!goal;
@@ -88,11 +90,15 @@
         answered:state.sessionStats.answered,correct:state.sessionStats.correct,unique:Object.keys(current.items).length,
         bestStreak:state.sessionStats.bestStreak,assisted:current.assisted,poolSize:current.poolSize,hintsEnabled:current.hintsEnabled,completed}));
     }
+    function captureMilestone(kana,state){
+      root.ModeAtlasKanaLearning.recordRecall(config.mode,kana,{[config.mode+'Stats']:state.stats,[config.mode+'Review']:state.srs,[config.mode+'Times']:state.times});
+    }
     function prepareAnswer(){
       const state=snapshot();
       // Freeze legacy achievements before the answer changes averages/counts.
       // This runs inside the same transaction as scoring and the checkpoint.
       for(const kana of root.ModeAtlasKanaData.splitKana(state.currentChar)){
+        captureMilestone(kana,state);
         if(state.srs[kana]?.reviewVersion!==1)state.srs[kana]=root.ModeAtlasReview.normalize(state.srs[kana],state.stats[kana],state.times[kana]);
       }
     }
@@ -113,6 +119,7 @@
       for(const kana of root.ModeAtlasKanaData.splitKana(answer.kana)){
         const result=root.ModeAtlasReview.answer(state.srs[kana],{id:`${current.runId}:${state.sessionStats.answered}`,at,correct:answer.correct,assisted},state.stats[kana],state.times[kana]);
         state.srs[kana]=result.entry;
+        captureMilestone(kana,state);
         if(result.reviewed)reviewed.push(kana);
         if(result.milestone>=2)milestones.push({kana,stage:result.milestone});
         if(!answer.correct&&current.feedback==='learn'&&!current.retryQueue.some(item=>item.kana===kana))current.retryQueue.push({kana,after:state.sessionStats.answered+3});
@@ -218,14 +225,15 @@
       }
       if(current.mode==='testMode'&&complete){const results=el('a','ma-button ma-button--ghost','View Results');results.href='/results/';actions.appendChild(results);}
       content.append(actions);
-      root.ModeAtlasDialog.feature({kicker:`${config.mode==='writing'?'Writing':'Reading'} · ${mode.label}`,title,contentNode:content}).then(()=>{
+      root.ModeAtlasDialog.feature({kicker:`${config.mode==='writing'?'Recall':'Read'} · ${mode.label}`,title,contentNode:content}).then(()=>{
         root.removeEventListener('modeAtlasWeeklyChanged',onWeekly);
         if(reviewing){root.ModeAtlasTrainerControls.setPracticeCount(10);config.start();}else config.naturalBreak();
       });
       return true;
     }
+    byId('kanaHintsQuick')?.addEventListener('click',()=>root.ModeAtlasTrainerControls.update({hint:!snapshot().settings.hint}));
     byId('studyLength').addEventListener('change',event=>root.ModeAtlasTrainerControls.setPracticeCount(Number(event.target.value)));
-    return Object.freeze({sync,begin,pool,beforeQuestion,nextPick,retryDue,requestDue(){pendingReview=root.ModeAtlasReview.due(snapshot().srs);},requestKana(chars){pendingReview=root.ModeAtlasStudyPlan.targetChars(chars);},prepareAnswer,recordAnswer,finish,showFeedback,clearFeedback,showSummary,hasPendingReview:()=>pendingReview.length>0});
+    return Object.freeze({sync,begin,pool,beforeQuestion,nextPick,retryDue,requestDue(){pendingReview=root.ModeAtlasReview.due(snapshot().srs).filter(char=>root.ModeAtlasKanaLearning.available(config.mode).has(char));},requestKana(chars){pendingReview=root.ModeAtlasStudyPlan.targetChars(chars).filter(char=>root.ModeAtlasKanaLearning.available(config.mode).has(char));},prepareAnswer,recordAnswer,finish,showFeedback,clearFeedback,showSummary,hasPendingReview:()=>pendingReview.length>0});
   }
   root.ModeAtlasStudySession=Object.freeze({create});
 })(window);

@@ -124,7 +124,7 @@ function applyAchievementVisuals(root = document) {
     const recentSave = latestTimestamp(['settingsUpdatedAt','resultsUpdatedAt','srsUpdatedAt','dailyUpdatedAt','profileUpdatedAt','kanaWordBankUpdatedAt']);
     return {
       correct,wrong,total:correct+wrong,seen,
-      new:mastery.New,mastered:mastery.Mastered,reviewing:mastery.Reviewing,learning:mastery.Learning,
+      new:mastery.New,mastered:mastery.Mastered+mastery['Mastered+'],reviewing:mastery.Confident,learning:mastery.Learning+mastery.Introduced+mastery.Familiar,
       under2,under1,speed3to2,speed2to1,speedUnder1,wordCount,resultCount,perfect:perfectSeen.size,cloud,recentSave,
       atlasLevel:Number(progression.level||1),avg:avgCount?avgSum/avgCount:0,snapshot,...presetValues,
       ...window.ModeAtlasProgress?.achievementStats?.()
@@ -470,85 +470,12 @@ function applyAchievementVisuals(root = document) {
     applyAchievementVisuals(body); return body;
   }
 
-  function masteryLabel(ch,snapshot,mode='both'){
-    const data=snapshot||Metrics.createSnapshot();
-    const label=mode==='both'?Metrics.masteryLabel(ch,data):window.ModeAtlasReview.labels[Metrics.masteryDirection(ch,mode,data)];
-    return {label,cls:Metrics.masteryClass(label)};
-  }
-  function masteryStats(ch,data,mode){
-    const modes=mode==='both'?['reading','writing']:[mode];let correct=0,wrong=0;
-    for(const direction of modes){const row=data[direction+'Stats'][ch]||{};correct+=Number(row.correct||row.right||0);wrong+=Number(row.wrong||row.incorrect||0);}
-    const total=correct+wrong,avg=mode==='both'?Metrics.charAvg(ch,data):window.ModeAtlasReview.timeMilliseconds(data[mode+'Times'][ch]);
-    return {correct,wrong,total,avg,accuracy:total?correct/total*100:0};
-  }
-  function practiceLink(mode,chars,label){
-    const href=window.ModeAtlasStudyPlan.target(mode,chars);if(!href)return null;
-    const link=achEl('a','ma-button ma-button--ghost',label);link.href=href;return link;
-  }
-  function buildMasteryKanaInfo(ch,mode){
-    const data=Metrics.createSnapshot(),item=masteryStats(ch,data,mode),badge=masteryLabel(ch,data,mode),review=window.ModeAtlasReview;
-    const body=achEl('div','ma-ach-info-body ma-mastery-detail');
-    body.append(createInfoTopbar({branch:'kana',cls:badge.cls,accent:'80,220,155',symbol:ch,kicker:`Mastery Map · ${mode==='both'?'Both':mode==='reading'?'Reading':'Writing'}`,title:ch,tier:badge.label}));
-    const stats=achEl('div','ma-ach-info-stats');
-    for(const [label,value]of [['Correct',`${item.correct} / ${item.total}`],['Accuracy',item.total?formatAccuracyPercent(item.accuracy):'No attempts yet'],['Average time',item.avg?Metrics.formatMs(item.avg):'No timing yet']]){const stat=achEl('div');stat.append(achEl('b','',label),achEl('span','',value));stats.append(stat);}
-    body.append(stats,achEl('p','ma-mastery-directions',`Reading: ${review.labels[Metrics.masteryDirection(ch,'reading',data)]} · Writing: ${review.labels[Metrics.masteryDirection(ch,'writing',data)]}`));
-    if(mode==='both')body.append(achEl('p','ma-ach-info-copy','Both reaches Reviewing or Mastered when Reading and Writing each reach that stage. A stronger direction keeps its own stage.'));
-    for(const direction of mode==='both'?['reading','writing']:[mode]){
-      const guide=review.guidance(data[direction+'Review'][ch],data[direction+'Stats'][ch],data[direction+'Times'][ch]);
-      const section=achEl('section','ma-mastery-next'),name=direction==='reading'?'Reading':'Writing';
-      section.append(achEl('h4','',guide.next?`${name} → ${guide.next}`:`${name} · Mastered`));
-      if(guide.legacy)section.append(achEl('p','ma-ach-info-copy','This stage comes from earlier lifetime practice. New answers build the spaced recall evidence below.'));
-      if(guide.next){
-        const list=achEl('ul','ma-mastery-checks');
-        for(const check of guide.checks){
-          const met=check.maximum?(check.value===null?check.optional:check.value<=check.target):check.value>=check.target;
-          const format=value=>value===null?'No timing yet':check.unit==='ms'?(value/1000).toFixed(3)+'s':check.percent?value.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4})+'%':String(value);
-          const row=achEl('li','',`${met?'✓ ':''}${check.label}: ${format(check.value)} / ${check.maximum?'≤ ':''}${format(check.target)}`);row.dataset.complete=String(!!met);list.append(row);
-        }
-        section.append(list);
-      }
-      if(guide.due)section.append(achEl('p','ma-ach-info-copy',guide.due<=Date.now()?'Ready for a spaced review.':`Next spaced review: ${new Date(guide.due).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}. Early practice still helps; it does not advance the schedule.`));
-      else section.append(achEl('p','ma-ach-info-copy','Practise without hints, then return on another day when a review is due. Speed is tracked separately.'));
-      section.append(practiceLink(direction,[ch],`Practise ${name}`));body.append(section);
-    }
-    applyAchievementVisuals(body);return body;
-  }
-  function grid(title,chars,snapshot,mode){
-    const section=achEl('section','ma-mastery-group');section.append(achEl('h3','',title));
-    const gridEl=achEl('div','ma-mastery-grid');
-    chars.forEach(ch=>{
-      const m=masteryLabel(ch,snapshot,mode),btn=achButton(`ma-mastery-cell ${m.cls}`);
-      btn.dataset.maMasteryKana=ch;btn.title=`${ch} · ${m.label}`;
-      btn.setAttribute('aria-label',`${ch} mastery details: ${m.label}`);btn.append(achEl('strong','',ch),achEl('span','',m.label));gridEl.append(btn);
-    });section.append(gridEl);return section;
-  }
-  function renderMasteryMap(selection,onChange){
-    const snapshot=Metrics.createSnapshot(),mode=selection.direction,wrap=document.createDocumentFragment();
-    const controls=achEl('div','ma-atlas-tabs');controls.setAttribute('role','group');controls.setAttribute('aria-label','Mastery direction');
-    for(const [value,label]of [['reading','Reading'],['writing','Writing'],['both','Both']]){const button=achButton('ma-button ma-button--ghost');button.textContent=label;button.dataset.maMasteryDirection=value;button.setAttribute('aria-pressed',String(value===mode));button.addEventListener('click',()=>onChange(value));controls.append(button);}
-    const guide=achEl('div','ma-mastery-guide');guide.append(achEl('p','',mode==='both'?'Both reflects progress in both directions. Choose Reading or Writing to see each skill independently.':'Tap a kana to see its evidence, next stage and a targeted practice shortcut.'));
-    const counts={New:0,Learning:0,Reviewing:0,Mastered:0};for(const ch of ALL)counts[masteryLabel(ch,snapshot,mode).label]++;
-    const overview=achEl('div','ma-mastery-overview');
-    for(const [label,copy]of [['New','No attempts yet'],['Learning','Building independent recall'],['Reviewing','Spaced, unassisted recall'],['Mastered','Consistent recall across days']]){const item=achEl('div',`ma-mastery-stage ${label.toLowerCase()}`);item.append(achEl('b','',counts[label]),achEl('strong','',label),achEl('span','',copy));overview.append(item);}
-    const actions=achEl('div','ma-atlas-rewards__actions');
-    for(const direction of mode==='both'?['reading','writing']:[mode]){
-      const name=direction==='reading'?'Reading':'Writing',learning=ALL.filter(ch=>Metrics.masteryDirection(ch,direction,snapshot)===1);
-      if(learning.length)actions.append(practiceLink(direction,learning,`Practise Learning · ${name}`));
-      const due=window.ModeAtlasReview.due(snapshot[direction+'Review']);
-      if(due.length)actions.append(practiceLink(direction,due,`Review due · ${name} (${due.length})`));
-    }
-    const help=achEl('details','ma-mastery-guide');help.append(achEl('summary','','How mastery works'));
-    for(const [label,copy]of window.ModeAtlasReview.help())help.append(achEl('p','',`${label}: ${copy}`));
-    wrap.append(controls,guide,overview,actions,help,...[['Hiragana',HIRA],['Katakana',KATA],['Dakuten',DAK],['Yōon',YOON],['Extended Katakana',EXT]].map(([title,chars])=>grid(title,chars,snapshot,mode)));
-    return wrap;
-  }
-
   let featureOpen=false;
   function buildFeatureContent(kind,branch='kana'){
     const root=achEl('div','ma-ach-dialog-content'),view=achEl('div','ma-ach-dialog-view');
     const native=window.AtlasPlatform?.isNative===true;
     if(native&&kind!=='mastery')root.classList.add('ma-ach-native');
-    const selection=kind==='mastery'?{direction:'reading',branch:branch==='kanji'?'kanji':'kana',level:5}:native?{category:'modeAtlas',filter:'all'}:null;
+    const selection=kind==='mastery'?{branch:branch==='kanji'?'kanji':'kana',level:5}:native?{category:'modeAtlas',filter:'all'}:null;
     let atRoot=true;
     let lastAchievement='',lastKana='';
     let lastScroll=0;
@@ -560,7 +487,7 @@ function applyAchievementVisuals(root = document) {
         const branches=achEl('div','ma-mastery-branches');branches.setAttribute('role','group');branches.setAttribute('aria-label','Mastery branch');
         for(const [id,label]of [['kana','Kana'],['kanji','Kanji']]){const button=achButton('ma-button ma-button--ghost',label);button.setAttribute('aria-pressed',String(selection.branch===id));button.addEventListener('click',()=>{selection.branch=id;showMain();});branches.append(button);}view.append(branches);
         if(selection.branch==='kanji')view.append(window.ModeAtlasKanjiMastery.render(selection,(key,value)=>{selection[key]=value;if(key==='level')selection.kanjiPage=0;showMain();},showDetail));
-        else view.append(renderMasteryMap(selection,value=>{selection.direction=value;showMain();view.querySelector(`[data-ma-mastery-direction="${value}"]`)?.focus({preventScroll:true});}));
+        else view.append(window.ModeAtlasKanaMastery.render((char,detail)=>{lastScroll=root.closest('.ma-dialog')?.scrollTop||0;lastKana=char;showDetail(detail);}));
       }else view.append(renderAchievements(selection,(key,value)=>{
         selection[key]=value;showMain();view.querySelector(`[data-ma-ach-choice="${key}:${value}"]`)?.focus({preventScroll:true});
       }));
@@ -599,8 +526,7 @@ function applyAchievementVisuals(root = document) {
         showDetail(detail);
         return;
       }
-      const kana=e.target.closest('[data-ma-mastery-kana]');
-      if(kana){e.preventDefault();lastScroll=root.closest('.ma-dialog')?.scrollTop||0;lastKana=kana.dataset.maMasteryKana;showDetail(buildMasteryKanaInfo(lastKana,selection.direction));}
+
     });
     showMain(); return root;
   }

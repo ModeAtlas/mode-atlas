@@ -144,6 +144,7 @@
     if(!settingsKey) return null;
     const next = buildSettings(readJSON(settingsKey, {}), id);
     if(!next) return null;
+    delete next.kanaRows;
     writeJSON(settingsKey, next);
     const now = String(Date.now());
     storeSet(UPDATED_AT_KEYS[branch] || 'settingsUpdatedAt', now);

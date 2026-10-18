@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 for(const mode of ['reading','writing'])test(`web ${mode} navigation stays visible and setup clears the desktop dock`,async({page},testInfo)=>{
   await prepare(page);await page.setViewportSize({width:1280,height:800});await open(page,`/${mode}/`);
   const branch=page.getByRole('navigation',{name:'Kana sections'}),dock=page.locator('.bottom-shell'),start=page.locator('#startBtn');

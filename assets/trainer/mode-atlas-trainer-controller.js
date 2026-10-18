@@ -48,11 +48,11 @@
     if (typeof config.setScoreHistory !== 'function') throw new Error('ModeAtlasTrainerController requires setScoreHistory');
 
     const labels = Object.assign({
-      dailyTitle: `${mode === 'writing' ? 'Writing' : 'Reading'} Daily Challenge`,
+      dailyTitle: `${mode === 'writing' ? 'Recall' : 'Read'} Daily Challenge`,
       dailySubline: '',
-      testTitle: `${mode === 'writing' ? 'Writing' : 'Reading'} Test Mode`,
+      testTitle: `${mode === 'writing' ? 'Recall' : 'Read'} Test Mode`,
       testSubline: 'One full shuffled pass through all enabled test kana',
-      practiceTitle: `${mode === 'writing' ? 'Writing' : 'Reading'} Practice`,
+      practiceTitle: `${mode === 'writing' ? 'Recall' : 'Read'} Practice`,
       practiceSubline: ''
     }, config.labels || {});
     const hooks = config.hooks || {};
@@ -72,7 +72,7 @@
 
     function normalizeSettingsShape(settings){
       const rows = rowMaps();
-      if (!Array.isArray(settings.hiraganaRows)) settings.hiraganaRows = Object.keys(rows.hiraganaRows || {});
+      if (!Array.isArray(settings.hiraganaRows)) settings.hiraganaRows = ['h_a'];
       if (!Array.isArray(settings.katakanaRows)) settings.katakanaRows = [];
       if (!['same_row', 'random'].includes(settings.comboMode)) settings.comboMode = 'random';
       return root.ModeAtlasPracticeModes.normalize(settings);
@@ -119,7 +119,7 @@
 
       if (!titleEl || !sublineEl) return;
       const state = snapshot(), descriptor = root.ModeAtlasPracticeModes.describe(state.settings);
-      titleEl.textContent = `${mode === 'writing' ? 'Writing' : 'Reading'} · ${descriptor.label}`;
+      titleEl.textContent = `${mode === 'writing' ? 'Recall' : 'Read'} · ${descriptor.label}`;
       sublineEl.textContent = dailyActive ? labels.dailySubline : testActive ? labels.testSubline : descriptor.detail;
       const start = byId('startBtn')?.querySelector('span');
       if (start) start.textContent = descriptor.action;
@@ -197,10 +197,6 @@
       call(hooks.rebuildCharMap);
       call(hooks.ensureDataObjects);
       call(hooks.buildModifierButtons);
-      call(hooks.buildOptionButtons);
-      const rows = rowMaps();
-      call(hooks.buildRows, 'rowOptions', rows.hiraganaRows || {}, 'hiraganaRows', 'h_');
-      call(hooks.buildRows, 'katakanaRowOptions', rows.katakanaRows || {}, 'katakanaRows', 'k_');
       call(hooks.applyPanelStates);
       call(hooks.updateTrialConfigVisibility);
     }
@@ -250,10 +246,6 @@
       config.setScoreHistory(root.normalizeScoreHistory(state.scoreHistory));
       call(hooks.ensureDataObjects);
       call(hooks.buildModifierButtons);
-      call(hooks.buildOptionButtons);
-      const rows = rowMaps();
-      call(hooks.buildRows, 'rowOptions', rows.hiraganaRows || {}, 'hiraganaRows', 'h_');
-      call(hooks.buildRows, 'katakanaRowOptions', rows.katakanaRows || {}, 'katakanaRows', 'k_');
       call(hooks.applyPanelStates);
       call(hooks.updateTrialConfigVisibility);
       call(hooks.updateTopStats);
@@ -371,7 +363,7 @@
       root.addEventListener('modeAtlasAccountWillChange',()=>root.suspendTrainerForAccountChange({saveCheckpoint:false}));
       root.addEventListener('modeAtlasCloudDataChanged', (event) => {
         const sections = Array.isArray(event.detail?.sections) ? event.detail.sections : [];
-        if (!sections.length || sections.includes(mode)) requestRefresh('cloud-data');
+        if (!sections.length || sections.includes(mode) || sections.includes('kanaLearning')) requestRefresh('cloud-data');
       });
       root.addEventListener('pageshow', (event) => {
         if (event.persisted === true) requestRefresh('bfcache-restore');

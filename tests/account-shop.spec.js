@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 const fs=require('node:fs');
 const catalogue=require('../assets/app/mode-atlas-shop-catalogue.js');
 const source=fs.readFileSync(require.resolve('../cloud-sync.js'),'utf8');

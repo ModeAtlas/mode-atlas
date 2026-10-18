@@ -176,6 +176,7 @@ const SECTION_DEFS = {
       items: keyOr('wordBank', 'kanaWordBank')
     }
   },
+  kanaLearning: {updatedAtKey:'modeAtlasKanaLearningUpdatedAt',scalar:{},json:{state:'modeAtlasKanaLearning'}},
   kanji: {updatedAtKey:'modeAtlasKanjiUpdatedAt',scalar:{},json:{state:'modeAtlasKanji'}},
   kanjiTests: {updatedAtKey:'modeAtlasKanjiTestsUpdatedAt',scalar:{},json:{items:'modeAtlasKanjiTests'}},
   progress: {
@@ -205,6 +206,7 @@ const SECTION_TIMESTAMP_KEYS = {
   readingTests: 'resultsUpdatedAt',
   writingTests: 'resultsUpdatedAt',
   wordBank: 'profileUpdatedAt',
+  kanaLearning: 'modeAtlasKanaLearningUpdatedAt',
   kanji: 'modeAtlasKanjiUpdatedAt', kanjiTests: 'modeAtlasKanjiTestsUpdatedAt',
   progress: keyOr('progressUpdatedAt', 'modeAtlasProgressUpdatedAt')
 };
@@ -214,7 +216,7 @@ const SECTION_EXTRA_TIMESTAMP_KEYS = {
   readingTests: [],
   writingTests: [],
   wordBank: [],
-  kanji: [], kanjiTests: [],
+  kanaLearning: [], kanji: [], kanjiTests: [],
   progress: []
 };
 
@@ -685,6 +687,7 @@ function clearLocalAppData() {
 function writeSectionToLocal(sectionName, payload, updatedAt) {
   const def = SECTION_DEFS[sectionName];
   let data = ensureResultIdsInSectionData(sectionName, normalizeTestSectionPayload(sectionName, payload || {}));
+  if(sectionName==='kanaLearning')data={state:window.ModeAtlasKanaLearning.normalize(data.state)};
   if(sectionName==='kanji')data={state:window.ModeAtlasKanjiState.normalize(data.state)};
   if(sectionName==='kanjiTests')data={items:window.ModeAtlasKanjiResults.normalize(data.items)};
   if(sectionName==='progress'&&window.ModeAtlasProgress)data={...data,state:window.ModeAtlasProgress.normalizeState(data.state)};
@@ -780,8 +783,8 @@ function mergeCloudIntoLocal(snapshot, options = {}) {
     const localHasData = sectionHasMeaningfulData(name, localData);
     const baselineUpdatedAt = localBaseline ? normalizeTimestamp(localBaseline[name]) : 0;
 
-    if(name==='kanji'||name==='kanjiTests'){
-      const field=name==='kanji'?'state':'items',owner=name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
+    if(name==='kanaLearning'||name==='kanji'||name==='kanjiTests'){
+      const field=name==='kanjiTests'?'items':'state',owner=name==='kanaLearning'?window.ModeAtlasKanaLearning:name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
       const merged=owner.merge(localData[field],remoteData[field]);
       if(JSON.stringify(merged)!==JSON.stringify(localData[field]))applyRemote(name,{[field]:merged},Math.max(localUpdatedAt,remoteUpdatedAt,Date.now()));
       if(JSON.stringify(merged)!==JSON.stringify(remoteData[field]))localPreferred=true;
@@ -889,7 +892,7 @@ const SECTION_LABELS = {
   readingTests: 'Reading Test Results',
   writingTests: 'Writing Test Results',
   wordBank: 'Word Bank',
-  kanji: 'Kanji learning', kanjiTests: 'Kanji tests',
+  kanaLearning: 'Kana learning path', kanji: 'Kanji learning', kanjiTests: 'Kanji tests',
   progress: 'Atlas Level'
 };
 
@@ -1657,8 +1660,8 @@ async function performSyncOnce() {
         const remoteData = remoteSection?.data || {};
         const localUpdatedAt = normalizeTimestamp(localSection?.updatedAt);
         const remoteUpdatedAt = normalizeTimestamp(remoteSection?.updatedAt);
-        if(name==='kanji'||name==='kanjiTests'){
-          const field=name==='kanji'?'state':'items',owner=name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
+        if(name==='kanaLearning'||name==='kanji'||name==='kanjiTests'){
+          const field=name==='kanjiTests'?'items':'state',owner=name==='kanaLearning'?window.ModeAtlasKanaLearning:name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
           const data={[field]:owner.merge(localData[field],remoteData[field])},updatedAt=Math.max(localUpdatedAt,remoteUpdatedAt,Date.now());
           snapshot.sections[name]={...localSection,data,updatedAt};writeSectionToLocal(name,data,updatedAt);changedSections.push(name);
         } else if (name === 'progress' && window.ModeAtlasProgress?.mergeStates) {

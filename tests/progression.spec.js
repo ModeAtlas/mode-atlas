@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 // Each case owns its browser context, mocks and output paths; shard them independently.
 test.describe.configure({mode:'parallel'});
 
@@ -329,15 +330,15 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
         ModeAtlasStorage.writeModeJSON('reading','srs',Object.fromEntries([... 'あいうえおかき'].map(k=>[k,due])));
         ModeAtlasStorage.writeModeJSON('writing','srs',{'ア':due,'イ':due});dispatchEvent(new CustomEvent('modeAtlasCloudDataChanged'));
       });
-      await expect(page.getByRole('link',{name:'Review Reading · 7 due',exact:true})).toBeVisible();
-      await expect(page.getByRole('link',{name:'Review Writing · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
+      await expect(page.getByRole('link',{name:'Review Read · 7 due',exact:true})).toBeVisible();
+      await expect(page.getByRole('link',{name:'Review Recall · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
       await expect(page.locator('.ma-toast')).toHaveCount(0);
       const help=page.getByRole('button',{name:'About due reviews'});await help.click();
       await expect(page.locator('.ma-dialog__message')).toContainText('Kana Reading, Kana Writing and each Kanji skill have separate schedules');
       await expect(page.locator('.ma-dialog__message')).toContainText('not deadlines');await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');await page.screenshot({path:testInfo.outputPath('review-help.png'),animations:'disabled'});
       await page.keyboard.press('Escape');await expect(help).toBeFocused();
       await page.evaluate(()=>{ModeAtlasStorage.writeModeJSON('reading','srs',{});dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));});
-      await expect(page.getByRole('link',{name:'Review Reading · 7 due',exact:true})).toHaveCount(0);
+      await expect(page.getByRole('link',{name:'Review Read · 7 due',exact:true})).toHaveCount(0);
       await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
     }
     await page.evaluate(()=>{document.documentElement.dataset.maLargeText='true';document.documentElement.style.fontSize='24px';});
@@ -710,7 +711,7 @@ for(const mode of ['reading','writing'])test(`${mode}: targeted mastery practice
   expect(await page.evaluate(()=>sessionStats.study.xpParts.answers)).toBe(2);
 });
 
-test('mastery separates Reading, Writing and Both and returns to the selected map',async({page},info)=>{
+test('mastery shows one map with independent skill evidence and restores focus after details',async({page},info)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page);await open(page,'/');
   await page.evaluate(()=>{
     ModeAtlasStorage.writeModeJSON('reading','charStats',{'い':{correct:38,wrong:3},'う':{correct:50,wrong:1}});
@@ -718,17 +719,15 @@ test('mastery separates Reading, Writing and Both and returns to the selected ma
     ModeAtlasStorage.writeModeJSON('writing','charStats',{'い':{correct:3,wrong:0},'う':{correct:2,wrong:0}});
     ModeAtlasFeatures.openMasteryMap();
   });
-  const cell=page.locator('[data-ma-mastery-kana="い"]');await expect(cell).toContainText('Reviewing');
-  await page.getByRole('button',{name:'Writing',exact:true}).click();await expect(cell).toContainText('Learning');
-  await page.getByRole('button',{name:'Both',exact:true}).click();await expect(cell).toContainText('Learning');
-  await cell.click();await expect(page.locator('.ma-mastery-directions')).toContainText('Reading: Reviewing · Writing: Learning');
+  const cell=page.locator('[data-ma-mastery-kana="い"]');await expect(cell).toContainText('Familiar');
+  await cell.click();await expect(page.locator('.ma-kana-skill-evidence').nth(0)).toContainText('Confident');await expect(page.locator('.ma-kana-skill-evidence').nth(1)).toContainText('Learning');
   await expect(page.locator('.ma-mastery-checks')).toHaveCount(2);
-  const link=page.getByRole('link',{name:'Practise Writing',exact:true});await expect(link).toHaveAttribute('href',/\/writing\/\?practice=10&kana=/);
+  const link=page.getByRole('link',{name:'Practise Recall',exact:true});await expect(link).toHaveAttribute('href',/\/writing\/\?practice=20&kana=/);
   await page.setViewportSize({width:320,height:852});await page.evaluate(()=>{document.documentElement.style.fontSize='24px';});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:info.outputPath('mastery-directions.png'),animations:'disabled'});
   await page.getByRole('button',{name:'Close Mastery Map or return to the map',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Both',exact:true})).toHaveAttribute('aria-pressed','true');await expect(cell).toBeFocused();
+  await expect(page.getByRole('group',{name:'Mastery direction'})).toHaveCount(0);await expect(cell).toBeFocused();
   expect(errors).toEqual([]);
 });
 

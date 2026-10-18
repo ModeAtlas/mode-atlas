@@ -147,7 +147,7 @@ const trainerController = window.ModeAtlasTrainerController.create({
     mode: "reading",
     defaults: DEFAULT_SETTINGS,
     dailySeedPrefix: "daily",
-    getDailyPoolMap: () => getDailyChallengePoolMap(),
+    getDailyPoolMap: () => getDailyLearningPool(),
     showOfficialWhenRecorded: false,
     clearLastWrongOnCorrect: false,
     labels: {
@@ -182,8 +182,8 @@ const trainerController = window.ModeAtlasTrainerController.create({
         rebuildCharMap,
         ensureDataObjects,
         buildModifierButtons,
-        buildOptionButtons,
-        buildRows,
+
+
         applyPanelStates,
         updateTrialConfigVisibility,
         renderHeatmap,
@@ -197,10 +197,6 @@ const { debugEl, debugLine, debugValueLine, debugRow, debugCard } = window.ModeA
 
 function saveAll() { return trainerController.saveAll(); }
 
-
-function getDailyChallengePoolMap() {
-    return DAILY_CHALLENGE_CHAR_MAP;
-}
 
 function buildDailySequence(dateKey = getTodayKey()) { return trainerController.buildDailySequence(dateKey); }
 
@@ -512,7 +508,7 @@ function nextCharacter() {
 }
 
 function startSession(recovery = null) {
-    if (sessionStarted) return;
+    if (sessionStarted || !canStartKanaSession()) return;
     recovery=window.ModeAtlasSessionRecovery.validate(recovery,'reading');
     if(recovery){settings={...settings,...recovery.settings};rebuildCharMap();}
     if (!isDailyChallengeSession() && !isTestModeSession() && !activeChars.length && !trainerController.study.hasPendingReview()) {

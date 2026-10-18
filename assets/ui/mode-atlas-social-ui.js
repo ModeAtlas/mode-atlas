@@ -100,7 +100,7 @@
     body.append(tools);
     if(tab==='rankings'&&metric!=='weekly'){
       const label=el('label','ma-social-filter','Compare friends'),select=el('select');select.setAttribute('aria-label','Ranking');
-      for(const [value,title]of [['xp','Level & XP'],['streak','Study streak'],['mastery','Mastery · Both'],['reading','Mastery · Reading'],['writing','Mastery · Writing'],['correct','Total correct']]){const option=el('option','',title);option.value=value;select.append(option);}
+      for(const [value,title]of [['xp','Level & XP'],['streak','Study streak'],['mastery','Kana mastery'],['reading','Read mastery'],['writing','Recall mastery'],['correct','Total correct']]){const option=el('option','',title);option.value=value;select.append(option);}
       select.value=metric;select.addEventListener('change',()=>{lifetimeMetric=metric=select.value;home();body.querySelector('select[aria-label="Ranking"]')?.focus({preventScroll:true});});label.append(select);body.append(label);
     }
     const list=el('div','ma-social-list');list.id='maSocialList';list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby','maSocialTab-'+tab);body.append(list);
@@ -170,7 +170,7 @@
         const results=weekly.results||weekly.awards||[];
         if(!results.length)history.append(el('p','ma-social-note','Your place and score will appear here after your first weekly finish.'));
         for(const result of results)history.append(el('p','ma-social-note',`Week of ${result.week} · #${number(result.rank)} · ${number(result.score)} weekly XP${result.xp?` · +${number(result.xp)} personal XP${result.coins?` · +${number(result.coins)} Atlas Coins`:''}`:' · No prize'}`));
-        const details=el('details','ma-weekly-rules');details.append(el('summary','','Rules & prizes'),el('p','ma-social-note','Everyone resets together on Monday at 00:00 UTC. At least two learners must earn 100 weekly XP. First, second and third receive 500, 300 and 150 personal XP. First place also earns 100 Atlas Coins. Ties share the same place and prize.'),el('p','ma-social-note','Online Reading and Writing answers are checked by the server. Broader practice earns more as you cover different kana in a session; hints reduce the rate. Completion and goal bonuses, old saves and prizes count only towards personal XP. Submit before the reset; interrupted connections can retry within the same one-hour session. The daily safety limit is 20,000 weekly XP.'));
+        const details=el('details','ma-weekly-rules');details.append(el('summary','','Rules & prizes'),el('p','ma-social-note','Everyone resets together on Monday at 00:00 UTC. At least two learners must earn 100 weekly XP. First, second and third receive 500, 300 and 150 personal XP. First place also earns 100 Atlas Coins. Ties share the same place and prize.'),el('p','ma-social-note','Online Kana Read and Recall answers are checked by the server. Broader practice earns more as you cover different kana in a session; hints reduce the rate. Completion and goal bonuses, old saves and prizes count only towards personal XP. Submit before the reset; interrupted connections can retry within the same one-hour session. The daily safety limit is 20,000 weekly XP.'));
         if(weekly.enabled)details.append(button('Leave weekly competition',()=>confirmAction('Leave the weekly competition?','Your profile will disappear from the weekly board. Your personal XP and Friends stay available. Rejoining this week restores your existing weekly score.','Leave competition','weeklyPreference',{enabled:false},home,home)));
         const extra=el('div','ma-weekly-details');extra.append(details,history);
         if(!weekly.enabled){
@@ -255,7 +255,7 @@
       if(state.canModerate)body.append(button('Moderation & warnings',()=>staffProfile(uid)));
       const stats=profile.stats,grid=el('div','ma-social-stats');
       if(stats){
-        for(const [label,value]of [['Atlas level',number(profile.level)],['Total XP',number(stats.xp)],['Study streak',`${number(stats.streak)} days`],['Total correct',number(stats.totalCorrect)],['Reading mastery',`${stats.readingMastered} / ${stats.kanaCount}`],['Writing mastery',`${stats.writingMastered} / ${stats.kanaCount}`]]){const tile=el('div');tile.append(el('span','',label),el('strong','',value));grid.append(tile);}layout.append(grid);
+        for(const [label,value]of [['Atlas level',number(profile.level)],['Total XP',number(stats.xp)],['Study streak',`${number(stats.streak)} days`],['Total correct',number(stats.totalCorrect)],['Read mastery',`${stats.readingMastered} / ${stats.kanaCount}`],['Recall mastery',`${stats.writingMastered} / ${stats.kanaCount}`]]){const tile=el('div');tile.append(el('span','',label),el('strong','',value));grid.append(tile);}layout.append(grid);
         body.append(el('p','ma-social-note',stats.syncedAt?`Progress synced ${new Date(stats.syncedAt).toLocaleString()}.`:'Progress will appear after the next sync.'));
       }else{layout.classList.add('ma-social-profile-content--visitor');body.append(el('p','ma-social-note','Learning totals and mastery are shared only with accepted friends.'));}
       if(uid!==owner){const actions=el('div','ma-social-tools');actions.append(

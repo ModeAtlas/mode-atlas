@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 const {execFileSync}=require('node:child_process');
 const fs=require('node:fs');
 const path=require('node:path');

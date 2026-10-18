@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 const pages=['/','/kana/','/reading/','/writing/','/results/','/wordbank/'];
 const layouts=[
   {name:'web-phone',width:320,height:700},
@@ -81,18 +82,15 @@ for(const layout of layouts)for(const theme of ['dark','light']){
       await settleDrawer(page,'#maAccount-profile');
       if(route==='/reading/'){
         await page.locator('#modifiersTab').click();
-        await page.locator('summary').filter({hasText:'Learning options'}).click();
-        await page.locator('[data-ma-control-key="confusableKana"]').click();
+        await page.getByLabel('Focus',{exact:true}).selectOption('confusable');
         const chars=await page.evaluate(()=>getHeatmapCharsForDisplay());
         expect(chars.length).toBeGreaterThan(0);
         expect(chars.every(char=>'シツソンぬめれわねクケタナメ'.includes(char))).toBe(true);
-        await page.locator('[data-ma-control-key="confusableKana"]').click();
-        const row=page.locator('#rowOptions [data-row-key="h_a"]');
-        await row.focus();
-        await page.keyboard.press('Space');
-        await expect(row).toHaveAttribute('aria-pressed','true');
-        await page.keyboard.press('Space');
-        await expect(row).toHaveAttribute('aria-pressed','false');
+        await page.getByLabel('Focus',{exact:true}).selectOption('balanced');
+        await page.locator('.ma-kana-row-picker summary').click();
+        const row=page.locator('.ma-kana-row-picker-grid').first().getByRole('checkbox').first();
+        const before=await row.isChecked();await row.focus();await page.keyboard.press('Space');await expect(row).toBeChecked({checked:!before});
+        await page.keyboard.press('Space');await expect(row).toBeChecked({checked:before});
         await page.locator('#practiceSetupDone').click();
       }
       if(route==='/writing/'){

@@ -49,6 +49,7 @@
     return Object.freeze({
       __modeAtlasKanaMetricsSnapshot:true,
       studyStreak:window.ModeAtlasProgress?.routine?.().streak||0,
+      kanaLearning:window.ModeAtlasKanaLearning.read(),
       readingStats:modeObj('reading','charStats'),
       writingStats:modeObj('writing','charStats'),
       readingReview:modeObj('reading','srs'),
@@ -104,13 +105,11 @@
   }
   function masteryLabel(ch,snapshot){
     const data=useSnapshot(snapshot);
-    return window.ModeAtlasReview.labels[window.ModeAtlasReview.combinedStage(
-      {review:data.readingReview?.[ch],stats:data.readingStats[ch],time:data.readingTimes[ch]},
-      {review:data.writingReview?.[ch],stats:data.writingStats[ch],time:data.writingTimes[ch]})];
+    return window.ModeAtlasKanaLearning.labels[window.ModeAtlasKanaLearning.stage(ch,data.kanaLearning,data)];
   }
 
   function masteryClass(label){ return String(label||'').toLowerCase(); }
-  function masteryCounts(chars=ALL,snapshot){ const data=useSnapshot(snapshot), out={New:0,Learning:0,Reviewing:0,Mastered:0}; chars.forEach(ch=>{ out[masteryLabel(ch,data)]++; }); return out; }
+  function masteryCounts(chars=ALL,snapshot){ const data=useSnapshot(snapshot), out=Object.fromEntries(window.ModeAtlasKanaLearning.labels.map(label=>[label,0])); chars.forEach(ch=>{ out[masteryLabel(ch,data)]++; }); return out; }
   function bestWeak(chars=ALL,snapshot){ const data=useSnapshot(snapshot), rows=[]; [...new Set(chars)].forEach(ch=>{ const c=charCorrect(ch,data), w=charWrong(ch,data), avg=charAvg(ch,data), t=c+w; if(t) rows.push({ch,c,w,t,avg,score:(c/(t||1))-(w*.05)-(avg?Math.min(avg/7000,.5):0)}); }); return rows.sort((a,b)=>a.score-b.score).slice(0,4); }
   function formatMs(ms){ return !ms?'—':ms<1000?Math.round(ms)+'ms':(ms/1000).toFixed(1)+'s'; }
   function kanaStats(snapshot){

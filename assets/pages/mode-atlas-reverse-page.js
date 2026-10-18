@@ -143,7 +143,7 @@ const trainerController = window.ModeAtlasTrainerController.create({
     mode: "writing",
     defaults: DEFAULT_SETTINGS,
     dailySeedPrefix: "reverse-daily",
-    getDailyPoolMap: () => DAILY_CHALLENGE_CHAR_MAP,
+    getDailyPoolMap: () => getDailyLearningPool(),
     showOfficialWhenRecorded: true,
     clearLastWrongOnCorrect: true,
     labels: {
@@ -178,8 +178,8 @@ const trainerController = window.ModeAtlasTrainerController.create({
         rebuildCharMap,
         ensureDataObjects,
         buildModifierButtons,
-        buildOptionButtons,
-        buildRows,
+
+
         applyPanelStates,
         updateTrialConfigVisibility,
         renderHeatmap,
@@ -923,7 +923,7 @@ function evaluateKanaKeyboardAnswer(event) {
 inputEl.addEventListener("input", evaluateKanaKeyboardAnswer);
 
 function startSession(recovery = null) {
-    if (sessionStarted) return;
+    if (sessionStarted || !canStartKanaSession()) return;
     recovery=window.ModeAtlasSessionRecovery.validate(recovery,'writing');
     if(recovery){settings={...settings,...recovery.settings};rebuildCharMap();}
     if (!isDailyChallengeSession() && !isTestModeSession() && activeChars.length === 0 && !trainerController.study.hasPendingReview()) {

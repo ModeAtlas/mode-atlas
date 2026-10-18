@@ -39,14 +39,14 @@ class TrainerConfig:
 
 TRAINER_CONFIGS: dict[str, TrainerConfig] = {
     'reading/index.html': TrainerConfig(
-        mode='reading', title='Reading Practice', subline='Enter the matching romaji',
-        daily_title='Reading Daily Challenge', test_badge='Reading Test Mode · Full kana test run',
+        mode='reading', title='Read', subline='Enter the matching romaji',
+        daily_title='Read · Daily session', test_badge='Read · Script test',
         prompt_kind='reading',
     ),
     'writing/index.html': TrainerConfig(
-        mode='writing', title='Writing Practice', subline='Match the romaji prompt to the correct kana',
-        daily_title='Writing Daily Challenge', test_badge='Writing Test Mode · Full kana test run',
-        prompt_kind='writing', beta=True, answer_input_controls=True,
+        mode='writing', title='Recall', subline='Match the romaji prompt to the correct kana',
+        daily_title='Recall · Daily session', test_badge='Recall · Script test',
+        prompt_kind='writing', beta=False, answer_input_controls=True,
     ),
 }
 
@@ -68,8 +68,8 @@ NAV_CONFIGS: dict[str, NavConfig] = {
     'friends/index.html': NavConfig('friends', '友', 'Mode Atlas', 'Friends'),
     'shop/index.html': NavConfig('shop', '店', 'Mode Atlas', 'Atlas Shop'),
     'kana/index.html': NavConfig('kana', 'かな', 'Mode Atlas', 'Kana Trainer', accent='kana'),
-    'reading/index.html': NavConfig('reading', '読', 'Kana Trainer', 'Reading Practice', brand_href='/kana/', accent='reading', hideable=True),
-    'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Writing Practice', brand_href='/kana/', accent='writing', hideable=True),
+    'reading/index.html': NavConfig('reading', '読', 'Kana Trainer', 'Read', brand_href='/kana/', accent='reading', hideable=True),
+    'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Recall', brand_href='/kana/', accent='writing', hideable=True),
     'results/index.html': NavConfig('results', '測', 'Mode Atlas', 'Test Results', brand_href='/learn/', accent='results'),
     'results/kanji/index.html': NavConfig('kanjiResults', '測', 'Mode Atlas', 'Test Results', brand_href='/learn/', accent='results'),
     'kana/handwriting/index.html': NavConfig('kanaHandwriting', '書', 'Kana', 'Handwriting', brand_href='/kana/', accent='writing'),
@@ -89,12 +89,12 @@ PRIMARY_LINKS = (
 )
 
 KANA_LINKS = (
-    ('kana', 'Overview', '/kana/'),
-    ('reading', 'Reading', '/reading/'),
-    ('writing', 'Writing', '/writing/'),
-    ('kanaHandwriting', 'Handwriting', '/kana/handwriting/'),
+    ('kana', 'Learn', '/kana/'),
+    ('practice', 'Practise', '/kana/?view=practice'),
+    ('mastery', 'Mastery', '/kana/?view=mastery'),
+    ('tests', 'Tests', '/kana/?view=tests'),
 )
-KANA_KEYS = frozenset(key for key, _label, _href in KANA_LINKS)
+KANA_KEYS = frozenset(('kana', 'reading', 'writing', 'kanaHandwriting'))
 
 LEGAL_LINKS = (
     ('atlas', 'Atlas', '/'),
@@ -117,7 +117,7 @@ def render_navigation(config: NavConfig) -> str:
     for key, label, href in links:
         active = key == product_active
         classes = 'ma-nav__link' + (' is-active' if active else '')
-        current = ' aria-current="page"' if key == config.key else ''
+        current = ' aria-current="page"' if key == ('practice' if config.key in ('reading', 'writing', 'kanaHandwriting') else config.key) else ''
         link_markup.append(
             f'<a class="{classes}" data-ma-nav-scope="product" data-ma-nav-item="{_attr(key)}" href="{_attr(href)}"{current}>{html.escape(label)}</a>'
         )
@@ -143,12 +143,12 @@ def render_navigation(config: NavConfig) -> str:
     branch_markup = ''
     if kana_section:
         branch_markup = '<nav class="ma-kana-navigation" aria-label="Kana sections">' + ''.join(
-            f'<a href="{href}"' + (' aria-current="page"' if key == config.key else '') + f'>{label}</a>'
+            f'<a href="{href}"' + (' aria-current="page"' if key == ('practice' if config.key in ('reading', 'writing', 'kanaHandwriting') else config.key) else '') + f'>{label}</a>'
             for key, label, href in KANA_LINKS) + '</nav>'
 
     if config.key in {'results', 'kanjiResults'}:
         branch_markup = '<nav class="ma-results-branches" aria-label="Results branch">' + ''.join(
-            f'<a href="{href}"' + (' aria-current="page"' if key == config.key else '') + f'>{label}</a>'
+            f'<a href="{href}"' + (' aria-current="page"' if key == ('practice' if config.key in ('reading', 'writing', 'kanaHandwriting') else config.key) else '') + f'>{label}</a>'
             for key, label, href in [('results', 'Kana', '/results/'), ('kanjiResults', 'Kanji', '/results/kanji/')]) + '</nav>'
 
     nav_id = ' id="studyNav"' if config.hideable else ''
@@ -238,12 +238,14 @@ INTERACTIVE_TAIL_STYLES = (
 )
 INTERACTIVE_STYLES = (
     'assets/css/mode-atlas-page-shared.css',
+    'assets/css/mode-atlas-kana-learning.css',
 ) + INTERACTIVE_CHROME_STYLES + INTERACTIVE_TAIL_STYLES
 TRAINER_STYLES = (
     'assets/css/mode-atlas-page-shared.css',
     'assets/css/mode-atlas-study-shared.css',
 ) + INTERACTIVE_CHROME_STYLES + INTERACTIVE_TAIL_STYLES + (
     'assets/css/mode-atlas-modifier-menu.css',
+    'assets/css/mode-atlas-kana-learning.css',
 )
 LEGAL_STYLES = (
     'assets/css/mode-atlas-legal.css',
@@ -284,6 +286,7 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-data-controls.js',
     'assets/app/mode-atlas-review.js',
     'assets/data/mode-atlas-kana-data.js',
+    'assets/app/mode-atlas-kana-learning.js',
     'assets/data/mode-atlas-kanji-curriculum.js',
     'assets/app/mode-atlas-kanji-state.js',
     'assets/app/mode-atlas-kanji-codec.js',
@@ -291,6 +294,8 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-kanji-results.js',
     'assets/ui/mode-atlas-kanji-mastery.js',
     'assets/app/mode-atlas-kana-metrics.js',
+    'assets/ui/mode-atlas-kana-mastery.js',
+    'assets/ui/mode-atlas-kana-practice.js',
     'assets/app/mode-atlas-study-plan.js',
     'assets/app/mode-atlas-avatar-rules.js',
     'assets/ui/mode-atlas-rewards-ui.js',
@@ -369,10 +374,10 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
         body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-hub-page.js',)),
     ),
     'kana/index.html': FrontendAssetConfig(
-        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kana-page.css',),
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kana-page.css','assets/css/mode-atlas-handwriting.css'),
         body_scripts=_interactive_scripts(
             include_presets=True,
-            page_scripts=('assets/pages/mode-atlas-kana-page.js',),
+            page_scripts=('assets/app/mode-atlas-kana-placement.js','assets/data/mode-atlas-kana-coaching.js','assets/app/mode-atlas-stroke-matcher.js','assets/ui/mode-atlas-pronunciation.js','assets/ui/mode-atlas-handwriting.js','assets/pages/mode-atlas-kana-page.js',),
         ),
     ),
     'reading/index.html': FrontendAssetConfig(
@@ -659,7 +664,7 @@ def _trainer_score_panels(config: TrainerConfig) -> str:
                 <div class="score-row"><span>Incorrect</span><span id="bestEndlessWrong">0</span></div>
             </div>
             <div class="score-block ma-card ma-card--flat ma-trainer-score-card">
-                <h3>Combo Kana best</h3>
+                <h3>Character sequences best</h3>
                 <div class="score-row"><span>Same Row</span><span id="comboSameRowBest">0</span></div>
                 <div class="score-row"><span>Random</span><span id="comboRandomBest">0</span></div>
             </div>
@@ -670,14 +675,14 @@ def _trainer_score_panels(config: TrainerConfig) -> str:
                 <div class="score-subtitle">Previous days</div>
                 <div id="dailyHistoryList"></div>
             </div>
-            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>Speed Run top 3</h3><div id="speedRunTop3"></div></div>
-            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>Time Trial top 3</h3><div id="timeTrialTop3"></div></div>
+            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>60-second top 3</h3><div id="speedRunTop3"></div></div>
+            <div class="score-block ma-card ma-card--flat ma-trainer-score-card"><h3>Target challenge top 3</h3><div id="timeTrialTop3"></div></div>
         </div>
     </div>
 
     <div class="side-panel ma-card ma-card--flat ma-trainer-side-panel right-panel">
-        <button class="panel-header" id="statsHeader" type="button" aria-expanded="true" aria-controls="statsContent"><span>Mastery</span><span id="statsChevron" aria-hidden="true">▼</span></button>
-        <div class="panel-content" id="statsContent"><div id="heatmap" class="heatmap"></div></div>
+        <button class="panel-header" id="statsHeader" type="button" aria-expanded="true" aria-controls="statsContent"><span>Practice accuracy</span><span id="statsChevron" aria-hidden="true">▼</span></button>
+        <div class="panel-content" id="statsContent"><a class="ma-button ma-button--ghost" href="/kana/?view=mastery">Open mastery map</a><div id="heatmap" class="heatmap"></div></div>
     </div>'''
 
 
@@ -705,9 +710,7 @@ def _trainer_modifier_shell(config: TrainerConfig) -> str:
     <header class="ma-practice-sheet__header"><div><span class="ma-kicker">Make it your session</span><h2 id="practiceSetupTitle">Practice setup</h2></div><button type="button" class="ma-button ma-button--ghost" id="practiceSetupDone" autofocus>Done</button></header>
     <div class="ma-practice-content" id="modifiersContent">
         <div class="options-stack">
-            <div class="ma-settings-section"><div id="modifierOptions" class="button-grid"></div></div>{input_controls}
-            <div class="ma-kana-selection"><div><div class="section-title">Hiragana rows</div><div id="rowOptions" class="rows-grid"></div></div>
-            <div><div class="section-title">Katakana rows</div><div id="katakanaRowOptions" class="rows-grid"></div></div></div>
+            <div class="ma-settings-section"><div id="modifierOptions"></div></div>{input_controls}
         </div>
     </div>
 </dialog>'''
@@ -751,7 +754,8 @@ def render_trainer_shell(config: TrainerConfig) -> str:
         </div>
 
         <div class="start-wrap" id="startWrap">
-            <div class="ma-study-setup" id="studySetSetup"><label for="studyLength">Make time for a little practice</label><select id="studyLength" class="ma-input" aria-describedby="studySetDescription"><option value="0">Free practice</option><option value="10">10 questions</option><option value="20">20 questions</option><option value="30">30 questions</option></select><p id="studySetDescription">Practise freely, or choose a short guided set.</p></div>
+            <div class="ma-study-setup" id="studySetSetup"><label for="studyLength">Make time for a little practice</label><select id="studyLength" class="ma-input" aria-describedby="studySetDescription"><option value="0">Keep going</option><option value="10">10 questions</option><option value="20">20 questions</option><option value="30">30 questions</option></select><p id="studySetDescription">Choose a short set or keep going.</p></div>
+            <button class="ma-button ma-button--ghost" id="kanaHintsQuick" type="button" aria-pressed="false">Hints off</button>
             <button class="btn btn-start ma-button ma-button--accent ma-trainer-button" id="startBtn" type="button"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg><span>Start practice</span></button>
         </div>
         <div class="session-actions" id="sessionActions" hidden>

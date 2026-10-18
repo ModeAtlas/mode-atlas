@@ -35,7 +35,7 @@
         readingReview:storage.readModeJSON('reading','srs',{}),writingReview:storage.readModeJSON('writing','srs',{})});
       next.href=plan.href;next.dataset.mode=plan.mode;heading.textContent=plan.title;
       meta.textContent=plan.meta;reason.textContent=plan.reason;
-      startLabel.textContent=plan.mode==='writing'?'Start Writing':'Start Reading';
+      startLabel.textContent=plan.href.startsWith('/kana/')?'Open Kana':plan.mode==='writing'?'Practise Recall':'Practise Read';
     }
     refresh();
     for(const event of ['modeAtlasCloudDataChanged','modeAtlasProgressChanged'])root.addEventListener(event,refresh);
@@ -49,12 +49,12 @@
     }
     const library=el('div','ma-learn-library'),kana=el('section','ma-learn-kana');
     const sectionHeading=el('div','ma-learn-section-heading'),kanaHeading=el('h2','','Kana');kanaHeading.id='maLearnKanaTitle';kana.setAttribute('aria-labelledby',kanaHeading.id);
-    const overview=el('a','','Overview');overview.href='/kana/';overview.setAttribute('aria-label','Kana overview');overview.append(icon('chevron'));
+    const overview=el('a','','Open');overview.href='/kana/';overview.setAttribute('aria-label','Kana learning path');overview.append(icon('chevron'));
     sectionHeading.append(kanaHeading,overview);kana.append(sectionHeading);
     const practice=el('div','ma-learn-practice');
     practice.append(
-      learningLink('reading','Reading','Recognise kana and their sounds.','/reading/'),
-      learningLink('writing','Writing','Match sounds to the right kana.','/writing/','edit')
+      learningLink('reading','Learning path','Read, recall and handwrite, one row at a time.','/kana/'),
+      learningLink('writing','Practise','Short sets, daily sessions and timed challenges.','/kana/?view=practice','edit')
     );
     kana.append(practice);library.append(kana);
     function branch(key,title,description,href,accessibleLabel,rows){
@@ -65,7 +65,6 @@
       for(const row of rows)section.append(learningLink(...row));library.append(section);
     }
     kana.dataset.branch='kana';kana.insertBefore(el('p','ma-learn-branch-description','Hiragana and katakana: sounds, recognition and writing.'),practice);
-    practice.append(learningLink('handwriting','Handwriting','Learn stroke order and write kana by hand.','/kana/handwriting/','edit','Kana handwriting'));
     branch('kanji','Kanji','Build character recognition, pronunciation and meaning.','/kanji/','Open Kanji',[
       ['kanji','Guided lessons','Meet, listen, recognise. Begin with your first ten.','/kanji/?learn=1','book','Kanji guided lessons'],
       ['kanjiPractice','Recall & practice','Practise familiar characters and optional handwriting.','/kanji/','edit','Kanji recall and practice']

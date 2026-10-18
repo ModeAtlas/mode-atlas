@@ -1,4 +1,7 @@
 const {test,expect}=require('@playwright/test');
+// Every case owns its browser context; let CI split the long mode matrix across shards.
+test.describe.configure({mode:'parallel'});
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 async function setup(page,mode,{native=false,theme='dark'}={}){
   await page.setViewportSize({width:native?393:1280,height:native?852:900});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
@@ -11,11 +14,16 @@ async function setup(page,mode,{native=false,theme='dark'}={}){
   if(native){const device=await page.context().newCDPSession(page);await device.send('Emulation.setSafeAreaInsetsOverride',{insets:{top:59,bottom:34,left:0,right:0}});}
   await page.goto(`/${mode}/`);await expect(page.locator('#maLoadingScreen')).toBeHidden();await page.evaluate(()=>document.fonts.ready);
 }
+async function chooseMode(page,mode){
+  const family=['guided','free','endless'].includes(mode)?'practice':['speedRun','timeTrial'].includes(mode)?'timed':mode==='dailyChallenge'?'daily':'test';
+  await page.getByLabel('Session',{exact:true}).selectOption(family);
+  if(family==='practice'){await page.getByLabel('Session length',{exact:true}).selectOption(mode==='guided'?'10':'0');await page.getByLabel('Feedback',{exact:true}).selectOption(mode==='endless'?'quick':'learn');}
+  if(family==='timed')await page.getByLabel('Timed goal',{exact:true}).selectOption(mode==='speedRun'?'score':'target');
+}
 async function select(page,mode){
   await page.locator('#modifiersTab').click();
   await expect(page.getByRole('dialog',{name:'Practice setup',exact:true})).toBeVisible();
-  await page.locator(`[data-ma-mode="${mode}"]`).click();
-  await expect(page.locator(`[data-ma-mode="${mode}"]`)).toHaveAttribute('aria-pressed','true');
+  await chooseMode(page,mode);
   await page.locator('#practiceSetupDone').click();
 }
 async function finishAnswers(page,count){
@@ -27,7 +35,7 @@ for(const mode of ['reading','writing']){
     await setup(page,mode,{native:true});
     await page.locator('#modifiersTab').click();
     await expect(page.locator('#practiceSetupDone')).toBeFocused();
-    await expect(page.locator('[data-ma-mode]')).toHaveCount(7);
+    await expect(page.getByLabel('Session',{exact:true}).locator('option')).toHaveCount(5);
     await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:info.outputPath(`${mode}-setup.png`),animations:'disabled'});
     await page.keyboard.press('Escape');await expect(page.locator('#modifiersTab')).toBeFocused();
     for(const selected of ['guided','endless','timeTrial','speedRun','dailyChallenge','testMode','free']){
@@ -57,10 +65,10 @@ for(const mode of ['reading','writing']){
     }
   });
   test(`${mode}: Daily completion records once, replay preserves official score, review includes unselected kana`,async({page})=>{
-    test.setTimeout(60000);await setup(page,mode);await select(page,'dailyChallenge');await page.locator('#startBtn').click();await page.clock.install();
+    test.setTimeout(60000);await setup(page,mode);await page.evaluate(()=>{settings.katakanaRows=['k_sa'];onSettingsChanged();});await select(page,'dailyChallenge');await page.locator('#startBtn').click();await page.clock.install();
     await page.evaluate(()=>{dailySequence[0]='ツ';nextCharacter();});
     await page.locator('#skipKanaBtn').click();await page.clock.runFor(500);await finishAnswers(page,19);
-    await expect(page.locator('.ma-dialog__title')).toHaveText('Daily Challenge complete');
+    await expect(page.locator('.ma-dialog__title')).toHaveText('Daily session complete');
     expect(await page.evaluate(()=>getTodayDailyRecord().officialScore)).toBe(19);
     await page.getByRole('button',{name:'Practise these kana',exact:true}).click();
     await expect.poll(()=>page.evaluate(()=>currentChar)).toBe('ツ');
@@ -74,7 +82,7 @@ for(const mode of ['reading','writing']){
   test(`${mode}: full Test saves accurate results and real button count`,async({page})=>{
     test.setTimeout(60000);await setup(page,mode);await select(page,'testMode');await page.locator('#startBtn').click();await page.clock.install();
     const count=await page.evaluate(()=>testSequence.length);await finishAnswers(page,count);
-    await expect(page.locator('.ma-dialog__title')).toHaveText('Test Mode complete');
+    await expect(page.locator('.ma-dialog__title')).toHaveText('Test complete');
     const results=await page.evaluate(()=>loadStoredTestModeResults());expect(results).toHaveLength(1);
     expect(results[0].correct).toBe(count);expect(results[0].wrong).toBe(0);
     if(mode==='writing')expect(results[0].buttonLayout).toBe(6);
@@ -87,14 +95,14 @@ for(const mode of ['reading','writing']){
     await page.locator('#pauseSessionBtn').click();const remaining=await page.locator('#trialTimer').textContent();
     await page.clock.runFor(8000);expect(await page.evaluate(()=>sessionStarted)).toBe(true);await expect(page.locator('#trialTimer')).toHaveText(remaining);
     await page.locator('#pauseSessionBtn').click();await page.clock.runFor(6100);
-    await expect(page.locator('.ma-dialog__title')).toHaveText('Time Trial complete');
+    await expect(page.locator('.ma-dialog__title')).toHaveText('Target challenge complete');
     await expect(page.locator('.ma-study-summary')).toContainText('Target reached');
     expect(await page.evaluate(()=>scoreHistory.timeTrialTop3)).toHaveLength(1);
     await page.getByRole('button',{name:'Done',exact:true}).click();
     await select(page,'speedRun');await page.locator('#startBtn').click();await finishAnswers(page,1);await page.locator('#endSessionBtn').click();
     expect(await page.evaluate(()=>scoreHistory.speedRunTop3)).toHaveLength(0);await page.getByRole('button',{name:'Done',exact:true}).click();
     await page.locator('#startBtn').click();await finishAnswers(page,1);await page.clock.runFor(60100);
-    await expect(page.locator('.ma-dialog__title')).toHaveText('Speed Run complete');expect(await page.evaluate(()=>scoreHistory.speedRunTop3)).toHaveLength(1);
+    await expect(page.locator('.ma-dialog__title')).toHaveText('60-second challenge complete');expect(await page.evaluate(()=>scoreHistory.speedRunTop3)).toHaveLength(1);
     expect(await page.evaluate(()=>locked)).toBe(false);
   });
   test(`${mode}: joined kana stay whole in answers, progress and reviews`,async({page})=>{
@@ -201,7 +209,7 @@ for(const theme of ['light','dark'])test(`iOS ${theme}: setup and incorrect feed
   await expect(page.locator('#practiceSetupDialog')).toHaveCSS('transform','none');
   const sheet=await page.locator('#practiceSetupDialog').evaluate(el=>({width:el.scrollWidth,client:el.clientWidth,bottom:el.getBoundingClientRect().bottom}));
   expect(sheet.width).toBeLessThanOrEqual(sheet.client+1);expect(sheet.bottom).toBeLessThanOrEqual(667);
-  await page.locator('[data-ma-mode="free"]').click();await page.locator('#practiceSetupDone').click();await page.locator('#startBtn').click();
+  await chooseMode(page,'free');await page.locator('#practiceSetupDone').click();await page.locator('#startBtn').click();
   await page.evaluate(()=>handleWrong('wrong'));
   await expect(page.locator('#studyFeedbackTitle')).toHaveText('✕ Incorrect');
   await page.locator('#studyFeedbackContinue').scrollIntoViewIfNeeded();await expect(page.locator('#studyFeedbackContinue')).toBeInViewport();

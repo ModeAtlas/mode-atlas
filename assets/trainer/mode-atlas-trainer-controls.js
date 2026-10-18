@@ -1,4 +1,4 @@
-/* Mode Atlas trainer controls. Owns trainer modifier click handling, preset application, and active control state. */
+/* Shared trainer settings and navigation intents. Legacy preset APIs remain for saved links and achievement compatibility. */
 (function ModeAtlasTrainerControlsModule(){
   const resolvedPage=(window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop()||'')).toLowerCase();
   function isTrainerDocument(){
@@ -72,6 +72,7 @@
     try{ if(typeof renderScoreHistory==='function') renderScoreHistory(); }catch{}
     try{ if(typeof saveAll==='function') saveAll(); }catch{ writeJSON(storeKey,getSettings()); }
     markActive();
+    window.ModeAtlasModifierMenu?.render();
     trainerController.study.sync();
     window.ModeAtlasLifecycle?.requestUiRefresh?.('trainer-controls-save');
   }
@@ -107,6 +108,7 @@
     if(typeof isModeLocked === 'function' && isModeLocked())return;
     if(!window.ModeAtlasPresets.apply(id, {target:'both',source:'trainer-controls',notify:true}))return;
     const current=readJSON(storeKey,{});
+    delete getSettings().kanaRows;
     Object.assign(getSettings(),current);
     saveAndRefresh();
   }
@@ -123,6 +125,7 @@
     } else if(key==='confusableKana'){
       s.confusableKana=!s.confusableKana;
       if(s.confusableKana){
+        delete s.kanaRows;
         s.hiraganaRows=CONF_HIRA_ROWS.slice(); s.katakanaRows=CONF_KATA_ROWS.slice();
         s.dakuten=false; s.yoon=false; s.extendedKatakana=false;
         s.comboKana=false; s.focusWeak=false;
@@ -160,72 +163,23 @@
     setSettings({trialMinutes:trial.minutes,trialTarget:trial.target});saveAndRefresh();
   }
   for(const id of ['trialTime','trialTarget'])document.getElementById(id)?.addEventListener('change',setTrial);
-  function toggleRow(rowKey,settingsKey){
-    if(typeof isModeLocked === 'function' && isModeLocked())return;
-    const s=getSettings(); const wasPreset=!!inferActivePreset();
-    const list=Array.isArray(s[settingsKey])?s[settingsKey].slice():[];
-    s[settingsKey]=list.includes(rowKey)?list.filter(x=>x!==rowKey):list.concat(rowKey);
-    setSettings(s);
-    if(wasPreset) clearPresetForCustom(true);
-    saveAndRefresh();
-  }
-  function labelToKey(label){
-    if (label && typeof label === 'object' && label.dataset?.maControlKey) return label.dataset.maControlKey;
-    const n=String(label||'').toLowerCase().replace(/[\s\u00a0]+/g,' ').trim();
-    if(n==='hint mode'||n==='hint')return'hint';
-    if(n==='srs mode'||n==='srs')return'srs';
-    if(n==='endless mode'||n==='endless')return'endless';
-    if(n==='time trial mode'||n==='time trial')return'timeTrial';
-    if(n==='daily challenge')return'dailyChallenge';
-    if(n==='test mode')return'testMode';
-    if(n==='combo kana mode'||n==='combo kana')return'comboKana';
-    if(n==='focus weak')return'focusWeak';
-    if(n==='dakuten')return'dakuten';
-    if(n==='yōon'||n==='yoon')return'yoon';
-    if(n==='extended katakana')return'extendedKatakana';
-    if(n==='confusable kana'||n==='confusing kana')return'confusableKana';
-    if(n==='speed run'||n==='speed run mode')return'speedRun';
-    return'';
-  }
-  function rowKeyFromButton(btn,container){
-    if(btn.dataset.rowKey) return btn.dataset.rowKey;
-    const text=(btn.textContent||'').trim();
-    if(container?.id==='rowOptions') return 'h_'+text;
-    if(container?.id==='katakanaRowOptions') return 'k_'+text;
-    return '';
-  }
   function markActive(){
-    const s=getSettings();
-    const active=inferActivePreset();
-    if(active){window.__maStableActivePreset=active;} else {window.__maStableActivePreset='';}
-    document.querySelectorAll('#modifierOptions [data-preset]').forEach(btn=>{
-      const on=!!active && btn.dataset.preset===active;
-      btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');
-    });
-    document.querySelectorAll('#modifierOptions .toggle-btn,#modifierOptions button').forEach(btn=>{
-      if (btn.hasAttribute('data-preset')) return;
-      const key=labelToKey(btn); if(!key || key === 'preset') return;
-      const on=!!s[key]; btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');
-    });
-    document.querySelectorAll('#rowOptions .toggle-btn,#rowOptions button,#katakanaRowOptions .toggle-btn,#katakanaRowOptions button').forEach(btn=>{
-      const cont=btn.closest('#rowOptions,#katakanaRowOptions'); const key=rowKeyFromButton(btn,cont); if(!key) return;
-      const list=cont.id==='rowOptions'?s.hiraganaRows:s.katakanaRows;
-      const on=Array.isArray(list)&&list.includes(key); btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',on?'true':'false');
-    });
+    window.__maStableActivePreset=inferActivePreset();
   }
   function bootFromHub(){
     const params=new URLSearchParams(location.search);
     const confusable=params.get('confusable')==='1'||storeGet('modeAtlasConfusableMode')==='1';
     const daily=params.get('mode')==='daily';
     const formal=params.get('mode')==='test';
-    const target=window.ModeAtlasStudyPlan.targetChars((params.get('kana')||'').split(','));
-    const noHints=params.get('hints')==='off';
+    const target=window.ModeAtlasStudyPlan.targetChars((params.get('kana')||'').split(',')).filter(char=>window.ModeAtlasKanaLearning.available(isWriting?'writing':'reading').has(char));
+    const testScript=params.get('script');
+    const noHints=params.get('hints')==='off',withHints=params.get('hints')==='on';
     const due=params.get('due')==='1';
     const review=params.get('mode')==='review'||params.get('focusWeak')==='1';
     const practice=Number(params.get('practice'));
     const guided=!daily&&!formal&&window.ModeAtlasStudyPlan.lengths.includes(practice);
     // Consume navigation intent before a synchronous UI refresh can re-enter.
-    const keys=['confusable','mode','focusWeak','practice','due','kana','hints'];
+    const keys=['confusable','mode','focusWeak','practice','due','kana','hints','script'];
     if(keys.some(key=>params.has(key))){
       keys.forEach(key=>params.delete(key));
       history.replaceState(null,'',location.pathname+(params.size?'?'+params.toString():'')+location.hash);
@@ -234,6 +188,7 @@
     if(!confusable&&!daily&&!formal&&!review&&!guided&&!due&&!target.length) return;
     const s=getSettings();
     if(confusable){
+      delete s.kanaRows;
       Object.assign(s,{confusableKana:true,hint:false,srs:true,focusWeak:false,endless:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,speedRun:false,dakuten:false,yoon:false,extendedKatakana:false,hiraganaRows:CONF_HIRA_ROWS.slice(),katakanaRows:CONF_KATA_ROWS.slice(),activeBottomTab:'modifiers',practiceCount:0});
     } else if(daily||review){
       Object.assign(s,{confusableKana:false,focusWeak:review,srs:true,endless:false,timeTrial:false,dailyChallenge:daily,testMode:false,comboKana:false,speedRun:false,practiceCount:0});
@@ -245,9 +200,10 @@
       if(!confusable) s.confusableKana=false;
     }
     if(due){applyPracticeLength(s,10);s.hint=false;s.focusWeak=false;trainerController.study.requestDue();}
-    if(formal)window.ModeAtlasPracticeModes.select(s,'testMode');
+    if(formal){window.ModeAtlasPracticeModes.select(s,'testMode');s.kanaTestScript=testScript||s.kanaTestScript||'hiragana';}
     if(target.length&&!daily&&!formal){applyPracticeLength(s,guided?practice:10);s.focusWeak=false;s.confusableKana=false;trainerController.study.requestKana(target);}
     if(noHints)s.hint=false;
+    else if(withHints)s.hint=true;
     setSettings(s);
     if(confusable||daily||formal||review||due||target.length||noHints) setActivePreset('');
     saveAndRefresh();
@@ -263,9 +219,13 @@
   }
   window.ModeAtlasTrainerControls = Object.assign(window.ModeAtlasTrainerControls || {}, {
     refresh: function(){ install(); },
+    getSettings,
+    update(next){
+      if(typeof isModeLocked==='function'&&isModeLocked())return;
+      setSettings(next);saveAndRefresh();
+    },
     applyPreset,
     toggleMode,
-    toggleRow,
     setPracticeCount,
     selectMode,
     recordPresetCorrect,

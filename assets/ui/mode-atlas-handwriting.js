@@ -15,7 +15,7 @@
     }));
     await pending.get(group);const paths=root.ModeAtlasStrokeData?.[char];if(!paths)throw new Error('Stroke order is unavailable for this character.');return paths;
   }
-  function open(text,{pronunciation}={}){
+  function open(text,{pronunciation,onComplete}={}){
     current?.close();const chars=[...String(text)].filter(c=>shard(c));if(!chars.length)return;
     const previous=document.activeElement,dialog=el('dialog','ma-handwriting');dialog.setAttribute('aria-labelledby','maHandwritingTitle');
     const header=el('header'),title=el('h2','', 'Writing practice');title.id='maHandwritingTitle';header.append(title);
@@ -25,18 +25,20 @@
     const stage=el('div','ma-handwriting-stage'),status=el('p','ma-handwriting-status');status.setAttribute('role','status');
     const tools=el('div','ma-handwriting-tools'),actions=el('div','ma-handwriting-tools');
     const watch=makeButton('Watch strokes',()=>animate()),step=makeButton('Next stroke',()=>showStep()),trace=makeButton('Trace',()=>setMode('trace')),write=makeButton('Write',()=>setMode('write'));
-    const undo=makeButton('Undo',()=>{stopAnimation();accepted.pop();drawn.pop();render();}),clear=makeButton('Clear',()=>{stopAnimation();accepted=[];drawn=[];render();});
+    const undo=makeButton('Undo',()=>{stopAnimation();accepted.pop();drawn.pop();completions.delete(which);render();}),clear=makeButton('Clear',()=>{stopAnimation();accepted=[];drawn=[];completions.delete(which);errors=0;render();});
     tools.append(watch,step,trace,write);actions.append(undo,clear);
     const tip=el('p','ma-handwriting-tip','Follow the starting dot and stroke direction. Use a finger, pen or mouse.');
     const source=el('a','ma-handwriting-source','Stroke artwork: KanjiVG');source.href='/kanji/sources/';
     body.append(selector);if(pronunciation)body.append(root.ModeAtlasPronunciation.controls(pronunciation));body.append(tools,stage,status,actions,tip,source);dialog.append(header,body);document.body.append(dialog);
+    let receiptId='handwriting-'+root.crypto.randomUUID(),completions=new Map(),recorded=false,errors=0,assisted=false;
     let paths=[],reference=[],accepted=[],drawn=[],mode='trace',which=0,animation=0,loadToken=0,pointer=null,points=[],ink=null,board=null,watchIndex=0;
     function stopAnimation(){animation++;stage.getAnimations({subtree:true}).forEach(a=>a.cancel());watch.disabled=false;}
-    function setMode(next){stopAnimation();mode=next;accepted=[];drawn=[];watchIndex=0;render();}
+    function setMode(next){stopAnimation();mode=next;accepted=[];drawn=[];watchIndex=0;errors=0;assisted=false;completions.clear();recorded=false;receiptId='handwriting-'+root.crypto.randomUUID();render();}
     function pathPoints(path){const size=path.getTotalLength();return Array.from({length:40},(_,i)=>path.getPointAtLength(size*i/39));}
     function render(){
       pointer=null;points=[];stage.replaceChildren();reference=[];
-      board=svg('svg',{viewBox:'0 0 109 109',role:'img','aria-label':`Writing area for ${chars[which]}`});board.classList.add('ma-handwriting-board');stage.append(board);
+      [...selector.children].forEach((b,i)=>b.textContent=mode==='write'?'Part '+(i+1):chars[i]);
+      board=svg('svg',{viewBox:'0 0 109 109',role:'img','aria-label':mode==='write'?'Independent writing area':`Writing area for ${chars[which]}`});board.classList.add('ma-handwriting-board');stage.append(board);
       board.append(svg('path',{d:'M54.5 0V109 M0 54.5H109',class:'ma-handwriting-grid'}));
       paths.forEach((d,i)=>{
         const p=svg('path',{d,class:'ma-handwriting-guide'});board.append(p);reference.push(pathPoints(p));
@@ -49,7 +51,7 @@
       }
       trace.setAttribute('aria-pressed',String(mode==='trace'));write.setAttribute('aria-pressed',String(mode==='write'));
       undo.disabled=!accepted.length;clear.disabled=!accepted.length;watch.disabled=!paths.length;step.disabled=!paths.length;
-      status.textContent=accepted.length===paths.length?`${paths.length===1?'The stroke is':`All ${paths.length} strokes are`} practised. Try writing it again without the guide.`:`${chars[which]} · Stroke ${accepted.length+1} of ${paths.length}`;
+      status.textContent=accepted.length===paths.length?`${paths.length===1?'The stroke is':`All ${paths.length} strokes are`} practised. Try writing it again without the guide.`:`${mode==='write'?(root.ModeAtlasKanaLearning?.map[text]||'Part '+(which+1)):chars[which]} · Stroke ${accepted.length+1} of ${paths.length}`;
       board.addEventListener('pointerdown',begin);board.addEventListener('pointermove',move);board.addEventListener('pointerup',end);board.addEventListener('pointercancel',cancel);board.addEventListener('lostpointercapture',cancel);
     }
     function position(event){const r=board.getBoundingClientRect();return {x:(event.clientX-r.left)*109/r.width,y:(event.clientY-r.top)*109/r.height};}
@@ -61,17 +63,26 @@
     function move(event){if(event.pointerId!==pointer)return;event.preventDefault();if(points.length<2000)points.push(position(event));ink.setAttribute('d',pathString(points));}
     function end(event){
       if(event.pointerId!==pointer)return;move(event);const captured=pointer;pointer=null;board.releasePointerCapture(captured);
-      if(root.ModeAtlasStrokeMatcher.matches(points,reference[accepted.length])){accepted.push(true);drawn.push(pathString(points));render();}
-      else{ink.remove();status.textContent='Try that stroke again. Follow its starting point, direction and shape.';}
+      if(root.ModeAtlasStrokeMatcher.matches(points,reference[accepted.length])){accepted.push(true);drawn.push(pathString(points));render();complete();}
+      else{errors++;ink.remove();status.textContent='Try that stroke again. Follow its starting point, direction and shape.';}
+    }
+    function complete(){
+      if(!paths.length||accepted.length!==paths.length)return;
+      completions.set(which,{independent:mode==='write'&&!assisted&&errors===0});
+      if(completions.size<chars.length){status.textContent='Part complete. Choose the next part above.';return;}
+      if(recorded||!onComplete)return;
+      const event={id:receiptId,at:Date.now(),mode,errors,assisted:assisted||[...completions.values()].some(r=>!r.independent)};
+      try{onComplete(event);recorded=true;status.textContent=event.mode==='write'&&!event.assisted&&!event.errors?'Independent writing saved.':'Practice saved. Try Write without the guide when you are ready.';}
+      catch(error){status.textContent=error.message;const retry=makeButton('Save practice',()=>{retry.remove();complete();});status.append(retry);}
     }
     function cancel(event){if(event.pointerId!==pointer)return;pointer=null;points=[];ink?.remove();}
     function showStep(){
-      stopAnimation();accepted=[];drawn=[];render();const guides=[...board.querySelectorAll('.ma-handwriting-guide')];
+      stopAnimation();assisted=true;completions.delete(which);accepted=[];drawn=[];render();const guides=[...board.querySelectorAll('.ma-handwriting-guide')];
       guides.forEach((p,i)=>p.classList.toggle('is-hidden',i>watchIndex));guides[watchIndex].classList.add('is-demonstrated');
       status.textContent=`${chars[which]} · Showing stroke ${watchIndex+1} of ${paths.length}`;watchIndex=(watchIndex+1)%paths.length;
     }
     async function animate(){
-      stopAnimation();accepted=[];drawn=[];render();const token=animation;watch.disabled=true;
+      stopAnimation();assisted=true;completions.delete(which);accepted=[];drawn=[];render();const token=animation;watch.disabled=true;
       const guides=[...board.querySelectorAll('.ma-handwriting-guide')];guides.forEach(p=>p.classList.add('is-hidden'));board.querySelector('.ma-handwriting-start')?.remove();
       try{for(let i=0;i<guides.length;i++){
         if(token!==animation||!dialog.open)return;
@@ -81,7 +92,7 @@
       }if(token===animation)status.textContent='Your turn. Choose Trace or Write to begin.';}catch(_){}finally{if(token===animation)watch.disabled=false;}
     }
     async function choose(index){
-      stopAnimation();const token=++loadToken;which=index;paths=[];accepted=[];drawn=[];watchIndex=0;
+      stopAnimation();const token=++loadToken;which=index;paths=[];accepted=[];drawn=[];watchIndex=0;errors=0;assisted=false;
       for(const [i,b]of [...selector.children].entries())b.setAttribute('aria-pressed',String(i===index));
       stage.replaceChildren(el('p','','Loading stroke order…'));status.textContent='';for(const b of [...tools.children,...actions.children])b.disabled=true;
       try{const loaded=await load(chars[index]);if(token!==loadToken||!dialog.open)return;paths=loaded;trace.disabled=false;write.disabled=false;render();}

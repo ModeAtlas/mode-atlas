@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 const {execFileSync}=require('node:child_process');
 const path=require('node:path');
 test.beforeAll(()=>execFileSync('python3',['build_ios_web.py'],{cwd:path.resolve(__dirname,'..'),stdio:'pipe'}));

@@ -607,7 +607,7 @@ def main() -> int:
     modifier_runtime = text(ROOT / "assets/trainer/mode-atlas-modifier-menu.js")
     if any(marker in modifier_runtime for marker in ("importPreviewBound", "installImportPreview", "confirmImportBtn", "importTextarea")):
         fail(errors, "legacy trainer import-preview owner still exists outside shared Settings import flow")
-    if "event.persisted === true" not in modifier_runtime:
+    if "pageshow" in modifier_runtime and "event.persisted === true" not in modifier_runtime:
         fail(errors, "trainer runtime reboots on ordinary initial pageshow instead of BFCache restore only")
     if "function modeToggle(" in modifier_runtime or "persistTrainerSettings(" in modifier_runtime:
         fail(errors, "modifier-menu still contains a second trainer-control mutation owner")
@@ -784,8 +784,8 @@ def main() -> int:
 
     kana_page = text(ROOT / 'assets/pages/mode-atlas-kana-page.js')
     kana_css = text(ROOT / 'assets/css/mode-atlas-kana-page.css')
-    if 'ModeAtlasDialog.feature' not in kana_page:
-        fail(errors, 'Kana information popups bypass the shared dialog owner')
+    if 'ModeAtlasKanaMastery.render' not in kana_page or 'ModeAtlasKanaMastery.render' not in text(ROOT / 'assets/achievements/mode-atlas-achievements-ui.js'):
+        fail(errors, 'Kana mastery pages do not share their renderer')
     if any(marker in kana_page + kana_css for marker in ('kanaHubModal', '.kana-hub-modal', '.kana-modal-backdrop', '.kana-modal-panel')):
         fail(errors, 'Kana still contains a second feature-modal shell owner')
 
@@ -877,8 +877,8 @@ def main() -> int:
     if 'id="homeContinueCard"' not in atlas_markup or 'Reading Comprehension' not in atlas_markup:
         fail(errors, 'Atlas returning-user hierarchy or future branch naming drifted')
     kana_markup = text(ROOT / 'kana/index.html')
-    if 'id="kanaContinueAction"' not in kana_markup or 'ma-skeleton-block' not in kana_markup:
-        fail(errors, 'Kana hub recommendation/loading hierarchy drifted')
+    if 'id="maKanaLearning"' not in kana_markup or 'Take a starting-point test' not in kana_page:
+        fail(errors, 'Kana entry or course owner is missing')
     trainer_ui_markup = text(ROOT / 'reading/index.html') + text(ROOT / 'writing/index.html')
     for marker in ('Practice setup', 'id="studySessionProgress"', 'Focus mode', 'Exit focus mode'):
         if marker not in trainer_ui_markup:

@@ -136,15 +136,16 @@ test('handwriting guides stroke direction and supports mouse, touch, undo, reset
   await drawStroke(page);await expect(page.locator('.ma-handwriting-status')).toContainText('The stroke is practised');await page.getByRole('button',{name:'Undo',exact:true}).click();await expect(page.locator('.ma-handwriting-status')).toContainText('Stroke 1 of 1');
   await drawStroke(page,{touch:true});await expect(page.locator('.ma-handwriting-status')).toContainText('The stroke is practised');await page.getByRole('button',{name:'Clear',exact:true}).click();
   await page.screenshot({path:info.outputPath('kanji-writing.png'),animations:'disabled'});await page.keyboard.press('Escape');await expect(page.locator('.ma-handwriting')).toHaveCount(0);
+  await require('./helpers/kana-fixture')(page);
   await page.goto('/kana/handwriting/');await expect(page.getByRole('heading',{name:'Handwriting',exact:true})).toBeVisible();await page.getByRole('button',{name:'Write あ (a)',exact:true}).click();await expect(page.locator('.ma-handwriting-status')).toContainText('Stroke 1 of 3');
   await page.getByRole('button',{name:'Next stroke',exact:true}).click();await expect(page.locator('.ma-handwriting-status')).toContainText('Showing stroke 1 of 3');await page.getByRole('button',{name:'Trace',exact:true}).click();await drawStroke(page);await expect(page.locator('.ma-handwriting-status')).toContainText('Stroke 2 of 3');
   await page.getByRole('button',{name:'Write',exact:true}).click();await expect(page.locator('.ma-handwriting-guide.is-hidden')).toHaveCount(3);await page.getByRole('button',{name:'Close',exact:true}).click();
-  await page.getByRole('button',{name:'Katakana',exact:true}).click();await expect(page.getByRole('button',{name:'Write ア (a)',exact:true})).toBeVisible();await page.getByLabel('Choose a row').selectOption('extended:a');await expect(page.getByRole('button',{name:/Write ウィ/})).toBeVisible();await page.getByLabel('Choose a row').selectOption('base:a');await page.getByRole('button',{name:'Write ア (a)',exact:true}).click();await expect(page.locator('.ma-handwriting-status')).toContainText('ア · Stroke 1');
+  await page.getByRole('button',{name:'Katakana',exact:true}).click();await expect(page.getByRole('button',{name:'Write ア (a)',exact:true})).toBeVisible();await page.getByLabel('Choose a row').selectOption('katakana:extended:a');await expect(page.getByRole('button',{name:/Write ウィ/})).toBeVisible();await page.getByLabel('Choose a row').selectOption('katakana:base:a');await page.getByRole('button',{name:'Write ア (a)',exact:true}).click();await expect(page.locator('.ma-handwriting-status')).toContainText('ア · Stroke 1');
   await page.screenshot({path:info.outputPath('kana-writing.png'),animations:'disabled'});
 });
 
 test('Learn shows three sibling learning branches and shared results outside them',async({page})=>{
   await setup(page);await page.goto('/learn/');const library=page.locator('.ma-learn-library');
   await expect(library.locator(':scope > section[data-branch]')).toHaveCount(3);await expect(library.locator(':scope > section[data-branch] h2')).toHaveText(['Kana','Kanji','Word Bank']);
-  await expect(page.getByRole('link',{name:'Kana handwriting',exact:true})).toHaveAttribute('href','/kana/handwriting/');await expect(library.locator('section[data-branch] a[href="/results/"]')).toHaveCount(0);
+  await expect(page.getByRole('link',{name:'Learning path',exact:true})).toHaveAttribute('href','/kana/');await expect(library.locator('section[data-branch] a[href="/results/"]')).toHaveCount(0);
 });
