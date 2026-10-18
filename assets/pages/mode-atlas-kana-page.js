@@ -41,7 +41,7 @@
     const q=P.question(placement);if(!q){placement=P.finish(placement);render();return;}
     title('Starting point',`${L.names[q.skill]} · ${q.script==='hiragana'?'Hiragana':'Katakana'}`,`${placement.answered} answered · ${q.row.name}`);
     host.lastElementChild.classList.add('ma-kana-assessment-heading');
-    const stage=el('section','ma-kana-check');stage.setAttribute('aria-label','Placement question');
+    const stage=el('section','ma-kana-check');stage.setAttribute('aria-label','Placement question');let focusTarget=null;
     const prompt=el('div','ma-kana-check-prompt',q.skill==='reading'?q.char:q.roman);prompt.lang=q.skill==='reading'?'ja':'en';stage.append(prompt);
     if(q.skill==='reading'){
       const form=el('form'),input=el('input','ma-input');form.className='ma-kana-placement-form';
@@ -53,7 +53,7 @@
       const actions=el('div','ma-kana-check-actions'),submit=el('button','ma-button ma-button--primary',placement.feedback?'Continue':'Check answer');submit.type='submit';actions.append(submit);
       if(!placement.feedback)actions.append(button('I don’t know yet',()=>{placement=Store.transaction(()=>P.answer(placement,''));render();}));form.append(actions);
       form.addEventListener('submit',event=>{event.preventDefault();if(event.isComposing)return;if(placement.feedback||input.value.trim())run(()=>{placement=Store.transaction(()=>placement.feedback?P.advance(placement):P.answer(placement,input.value));render();});});stage.append(form);
-      requestAnimationFrame(()=>{if(input.isConnected)(placement.feedback?submit:input).focus({preventScroll:true});});
+      focusTarget=placement.feedback?submit:input;
     }else if(placement.feedback){
       stage.append(el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. We’ll start this skill around here.`));
       stage.append(button('Continue',()=>{placement=Store.transaction(()=>P.advance(placement));render();},true));
@@ -62,7 +62,7 @@
       for(const char of P.choices(placement))choices.append(button(char,()=>{placement=Store.transaction(()=>P.answer(placement,char));render();}));stage.append(choices);
     }
     if(q.skill!=='reading'&&!placement.feedback)stage.append(button('I don’t know yet',()=>{placement=Store.transaction(()=>P.answer(placement,''));render();}));
-    const finish=button('Finish with my progress so far',()=>{placement=Store.transaction(()=>P.finish(placement));render();});finish.className='ma-kana-text-action ma-kana-placement-finish';host.append(stage,finish);
+    const finish=button('Finish with my progress so far',()=>{placement=Store.transaction(()=>P.finish(placement));render();});finish.className='ma-kana-text-action ma-kana-placement-finish';host.append(stage,finish);focusTarget?.focus({preventScroll:true});
   }
   function renderLesson(){
     const char=lesson.row.chars[lesson.index],roman=L.map[char];title(`${lesson.row.name} · ${lesson.index+1} of ${lesson.row.chars.length}`,'Meet the character');

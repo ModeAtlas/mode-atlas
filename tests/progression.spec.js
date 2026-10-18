@@ -721,7 +721,10 @@ test('mastery shows one map with independent skill evidence and restores focus a
   });
   const cell=page.locator('[data-ma-mastery-kana="い"]');await expect(cell).toContainText('Familiar');
   await cell.click();await expect(page.locator('.ma-kana-skill-evidence').nth(0)).toContainText('Confident');await expect(page.locator('.ma-kana-skill-evidence').nth(1)).toContainText('Learning');
-  await expect(page.locator('.ma-mastery-checks')).toHaveCount(2);
+  await expect(page.locator('.ma-kana-targets')).toHaveCount(3);
+  await expect(page.locator('.ma-kana-skill-evidence').nth(0)).toBeVisible();
+  await page.getByRole('button',{name:'Recall · Learning',exact:true}).click();
+  await expect(page.locator('.ma-kana-skill-evidence').nth(1)).toBeVisible();
   const link=page.getByRole('link',{name:'Practise Recall',exact:true});await expect(link).toHaveAttribute('href',/\/writing\/\?practice=20&kana=/);
   await page.setViewportSize({width:320,height:852});await page.evaluate(()=>{document.documentElement.style.fontSize='24px';});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
