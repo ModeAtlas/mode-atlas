@@ -377,7 +377,7 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kana-page.css','assets/css/mode-atlas-handwriting.css'),
         body_scripts=_interactive_scripts(
             include_presets=True,
-            page_scripts=('assets/app/mode-atlas-kana-placement.js','assets/data/mode-atlas-kana-coaching.js','assets/app/mode-atlas-stroke-matcher.js','assets/ui/mode-atlas-pronunciation.js','assets/ui/mode-atlas-handwriting.js','assets/pages/mode-atlas-kana-page.js',),
+            page_scripts=('assets/app/mode-atlas-kana-placement.js','assets/data/mode-atlas-kana-coaching.js','assets/app/mode-atlas-stroke-matcher.js','assets/ui/mode-atlas-pronunciation.js','assets/ui/mode-atlas-handwriting.js','assets/platform/mode-atlas-ios-keyboard.js','assets/pages/mode-atlas-kana-page.js',),
         ),
     ),
     'reading/index.html': FrontendAssetConfig(

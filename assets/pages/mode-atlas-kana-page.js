@@ -7,7 +7,7 @@
   const params=new URLSearchParams(location.search);
   let view=['learn','path','practice','mastery','tests'].includes(params.get('view'))?params.get('view'):'learn';
   let script=L.scripts.includes(params.get('script'))?params.get('script'):'hiragana',skill=L.skills.includes(params.get('skill'))?params.get('skill'):'reading';
-  let lesson=null,placement=null,placementSetup=false,practiceSettings=null,customizing=false;
+  let lesson=null,placement=null,placementSetup=false,practiceSettings=null,customizing=false,placementKeyboard=null;
   const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
   function run(action){try{action();}catch(error){root.ModeAtlasToast?.show?.(error.message);const status=host.querySelector('[role=status]')||el('p','ma-status ma-status--error');status.setAttribute('role','status');status.textContent=error.message;if(!status.parentNode)host.append(status);}}
   function button(label,action,primary=false){const b=el('button','ma-button '+(primary?'ma-button--primary':'ma-button--ghost'),label);b.type='button';b.addEventListener('click',()=>run(action));return b;}
@@ -40,23 +40,29 @@
     }
     const q=P.question(placement);if(!q){placement=P.finish(placement);render();return;}
     title('Starting point',`${L.names[q.skill]} · ${q.script==='hiragana'?'Hiragana':'Katakana'}`,`${placement.answered} answered · ${q.row.name}`);
+    host.lastElementChild.classList.add('ma-kana-assessment-heading');
     const stage=el('section','ma-kana-check');stage.setAttribute('aria-label','Placement question');
     const prompt=el('div','ma-kana-check-prompt',q.skill==='reading'?q.char:q.roman);prompt.lang=q.skill==='reading'?'ja':'en';stage.append(prompt);
-    if(placement.feedback){
+    if(q.skill==='reading'){
+      const form=el('form'),input=el('input','ma-input');form.className='ma-kana-placement-form';
+      input.setAttribute('aria-label','Reading answer');input.autocomplete='off';input.spellcheck=false;input.autocapitalize='none';input.maxLength=20;input.placeholder='Type the sound';input.enterKeyHint='go';
+      if(placement.feedback){input.value=q.roman;input.disabled=true;}
+      form.append(input);
+      if(placement.feedback){const feedback=el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. We’ll start this skill around here.`);feedback.setAttribute('role','status');form.append(feedback);}
+      if(root.ModeAtlasIOSKeyboard){const keys=el('div','ma-kana-placement-keyboard');form.append(keys);placementKeyboard=root.ModeAtlasIOSKeyboard.mount({input,container:keys,onSubmit:()=>form.requestSubmit()});}
+      const actions=el('div','ma-kana-check-actions'),submit=el('button','ma-button ma-button--primary',placement.feedback?'Continue':'Check answer');submit.type='submit';actions.append(submit);
+      if(!placement.feedback)actions.append(button('I don’t know yet',()=>{placement=Store.transaction(()=>P.answer(placement,''));render();}));form.append(actions);
+      form.addEventListener('submit',event=>{event.preventDefault();if(event.isComposing)return;if(placement.feedback||input.value.trim())run(()=>{placement=Store.transaction(()=>placement.feedback?P.advance(placement):P.answer(placement,input.value));render();});});stage.append(form);
+      requestAnimationFrame(()=>{if(input.isConnected)(placement.feedback?submit:input).focus({preventScroll:true});});
+    }else if(placement.feedback){
       stage.append(el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. We’ll start this skill around here.`));
       stage.append(button('Continue',()=>{placement=Store.transaction(()=>P.advance(placement));render();},true));
-    }else if(q.skill==='reading'){
-      const form=el('form'),input=el('input','ma-input');input.setAttribute('aria-label','Reading answer');input.autocomplete='off';input.spellcheck=false;input.autocapitalize='none';input.maxLength=20;
-      const submit=el('button','ma-button ma-button--primary','Check answer');submit.type='submit';form.append(input,submit);
-      form.addEventListener('submit',event=>{event.preventDefault();if(input.value.trim())run(()=>{placement=Store.transaction(()=>P.answer(placement,input.value));render();});});stage.append(form);
-      // Keep the system keyboard a deliberate tap on phones.
-      if(!root.AtlasPlatform?.isNative)requestAnimationFrame(()=>input.focus({preventScroll:true}));
     }else{
       const choices=el('div','ma-kana-placement-choices');choices.setAttribute('role','group');choices.setAttribute('aria-label','Kana answers');
       for(const char of P.choices(placement))choices.append(button(char,()=>{placement=Store.transaction(()=>P.answer(placement,char));render();}));stage.append(choices);
     }
-    if(!placement.feedback)stage.append(button('I don’t know yet',()=>{placement=Store.transaction(()=>P.answer(placement,''));render();}));
-    host.append(stage,button('Finish with my progress so far',()=>{placement=Store.transaction(()=>P.finish(placement));render();}));
+    if(q.skill!=='reading'&&!placement.feedback)stage.append(button('I don’t know yet',()=>{placement=Store.transaction(()=>P.answer(placement,''));render();}));
+    const finish=button('Finish with my progress so far',()=>{placement=Store.transaction(()=>P.finish(placement));render();});finish.className='ma-kana-text-action ma-kana-placement-finish';host.append(stage,finish);
   }
   function renderLesson(){
     const char=lesson.row.chars[lesson.index],roman=L.map[char];title(`${lesson.row.name} · ${lesson.index+1} of ${lesson.row.chars.length}`,'Meet the character');
@@ -205,8 +211,11 @@
     }
     host.append(link('View test results','/results/'));
   }
-  function mastery(){title('Kana','Your mastery map');host.append(root.ModeAtlasKanaMastery.render((char,detail)=>{host.replaceChildren(button('Back to mastery map',render),detail);}));}
+  function mastery(){title('Kana','Your mastery map');host.append(root.ModeAtlasKanaMastery.render((char,detail)=>{
+    const scroll=root.scrollY;host.replaceChildren(button('Back to mastery map',()=>{render();requestAnimationFrame(()=>{root.scrollTo({top:scroll,behavior:'instant'});host.querySelector(`[data-ma-mastery-kana="${char}"]`)?.focus({preventScroll:true});});}),detail);root.scrollTo({top:0,behavior:'instant'});
+  }));}
   function render(){
+    placementKeyboard?.destroy();placementKeyboard=null;
     const rowOpen=host.querySelector('.ma-kana-row-picker')?.open,focus=host.contains(document.activeElement)?document.activeElement.getAttribute('aria-label'):null;
     host.replaceChildren();const state=L.read();
     document.querySelectorAll('.ma-kana-navigation a').forEach(a=>{
@@ -236,7 +245,7 @@
   });
   function refresh(){if(lesson||placement||placementSetup||customizing||refreshQueued)return;refreshQueued=true;requestAnimationFrame(()=>{refreshQueued=false;run(()=>{L.initialize();render();});});}
   root.addEventListener('modeAtlasCloudDataChanged',refresh);root.addEventListener('modeAtlasKanaLearningChanged',refresh);
-  root.addEventListener('modeAtlasAccountWillChange',()=>{lesson=null;placement=null;placementSetup=false;practiceSettings=null;});
+  root.addEventListener('modeAtlasAccountWillChange',()=>{placementKeyboard?.destroy();placementKeyboard=null;lesson=null;placement=null;placementSetup=false;practiceSettings=null;});
   document.addEventListener('ma:ui-refresh',refresh);
   run(()=>{L.initialize();render();});
 })(window);

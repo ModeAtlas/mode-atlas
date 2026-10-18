@@ -85,3 +85,29 @@ test('malformed scalar fields and placement tracks cannot break curriculum or pu
   const result=require('../backend/functions/projection.cjs').projectSave({sections:{reading:{data:{stats:{'あ':null,'い':{correct:bad,wrong:bad}},times:{'あ':null,'い':bad},srs:{'う':{reviewVersion:1,level:bad,days:[bad,null],recent:[{id:'bad',at:bad,quality:2}]}}}},kanaLearning:{data:{state}}}});
   assert.equal(result.readingMastered,0);assert.equal(result.combinedMastered,0);
 });
+
+test('mastery guidance follows the next earned milestone and compares exact evidence without rounding',()=>{
+  const {L}=load(),s=L.start();s.earned.reading['あ']=4;
+  const record={reviewVersion:1,level:4,days:['2026-10-12','2026-10-13','2026-10-14','2026-10-15'],recent:Array.from({length:8},(_,i)=>({id:String(i),at:i+1,quality:2}))};
+  const e={readingStats:{'あ':{correct:52,wrong:3}},readingTimes:{'あ':1100},readingReview:{'あ':record}};
+  let guide=L.guidance('あ','reading',s,e);assert.equal(guide.label,'Mastered');
+  const checks=Object.fromEntries(guide.checks.map(c=>[c.id,c]));assert.equal(checks.correct.met,true);assert.equal(checks.accuracy.met,false);assert.equal(checks.time.met,false);assert.equal(checks.spacing.met,true);
+  e.readingStats['あ']={correct:57,wrong:3};e.readingTimes['あ']=1000;
+  assert.equal(L.currentStage('あ','reading',e,s),5);assert.ok(L.guidance('あ','reading',s,e).checks.every(c=>c.met));
+  e.readingTimes['あ']=1000.00001;assert.equal(L.currentStage('あ','reading',e,s),4);assert.equal(L.guidance('あ','reading',s,e).checks.find(c=>c.id==='time').met,false);
+  s.earned.reading['あ']=5;assert.equal(L.earned('あ','reading',s,e),5);assert.equal(L.guidance('あ','reading',s,e).checks.find(c=>c.id==='time').met,false);
+});
+test('familiar and handwriting targets use the same evidence as advancement, with no hinted shortcuts',()=>{
+  const {L}=load(),s=L.start(),e={readingStats:{'あ':{correct:20,wrong:1}},readingReview:{'あ':{reviewVersion:1,recent:[2,2,2,1,0].map((quality,i)=>({id:String(i),at:i+1,quality}))}}};
+  const guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,3);assert.deepEqual(plain(guide.checks.map(c=>[c.value,c.met])),[[3,true],[75,false]]);assert.equal(L.currentStage('あ','reading',e,s),2);
+  e.readingReview['あ'].recent.pop();assert.equal(L.currentStage('あ','reading',e,s),3);assert.equal(L.guidance('あ','reading',s,e).achieved,3);assert.equal(L.guidance('あ','reading',s,e).target,4);
+  s.handwriting['あ']=[{id:'trace',at:1,independent:false}];assert.equal(L.guidance('あ','handwriting',s,e).checks[0].met,false);
+  s.handwriting['あ'].push({id:'write',at:2,independent:true});assert.equal(L.currentStage('あ','handwriting',e,s),3);assert.equal(L.guidance('あ','handwriting',s,e).label,'Confident');
+});
+test('legacy and optional evidence is labelled honestly until new practice adds review history',()=>{
+  const {L}=load(),s=L.start();s.earned.reading['あ']=3;
+  const e={readingStats:{'あ':{correct:10,wrong:0}},readingReview:{}};
+  let guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,5);assert.equal(guide.legacy,true);assert.equal(guide.checks.find(c=>c.id==='days').met,null);
+  e.readingStats['あ'].correct=3;e.readingReview['あ']={reviewVersion:1,recent:[{id:'x',at:1,quality:2}]};
+  guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,4);assert.equal(guide.legacy,false);assert.equal(guide.checks.find(c=>c.id==='days').met,false);assert.equal(guide.checks.find(c=>c.id==='time').met,true);assert.equal(guide.checks.find(c=>c.id==='time').optional,true);
+});

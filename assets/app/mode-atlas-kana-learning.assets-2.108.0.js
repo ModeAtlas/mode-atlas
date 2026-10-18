@@ -10,6 +10,7 @@
   const skills=Object.freeze(['reading','writing','handwriting']);
   const names=Object.freeze({reading:'Read',writing:'Recall',handwriting:'Handwrite'});
   const labels=Object.freeze(['New','Introduced','Learning','Familiar','Confident','Mastered','Mastered+']);
+  const requirements=Object.freeze({familiar:Object.freeze({correct:3,accuracy:.8}),handwriting:Object.freeze({3:Object.freeze({correct:1,days:1}),4:Object.freeze({correct:3,days:2}),5:Object.freeze({correct:5,days:3})})});
   const scripts=Object.freeze(['hiragana','katakana']);
   const number=v=>['number','string'].includes(typeof v)&&Number.isFinite(Number(v))?Math.max(0,Math.min(Number.MAX_SAFE_INTEGER,Math.floor(Number(v)))):0;
   const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
@@ -73,18 +74,25 @@
       out[skill+'Times']=root.ModeAtlasStorage?.readModeJSON(skill,'charTimes',{})||{};
     }return out;
   }
+  function handwritingEvidence(char,state){
+    const entries=state.handwriting[char]||[],independent=entries.filter(r=>r.independent),days=new Set([...(state.handwritingDays[char]||[]),...independent.map(r=>root.ModeAtlasDates.localDateKey(new Date(r.at)))]);
+    return {attempts:entries.length,correct:independent.length,days:days.size};
+  }
+  function familiarEvidence(srs,stats,time){
+    const recent=review.normalize(srs,stats,time).recent.filter(r=>r.quality!==1),correct=recent.filter(r=>r.quality===2).length;
+    return {correct,accuracy:correct/Math.max(1,recent.length)};
+  }
   function currentStage(char,skill,evidence,state){
     if(skill==='handwriting'){
-      const entries=state.handwriting[char]||[],independent=entries.filter(r=>r.independent),days=new Set([...(state.handwritingDays[char]||[]),...independent.map(r=>root.ModeAtlasDates.localDateKey(new Date(r.at)))]);
-      if(independent.length>=5&&days.size>=3)return 5;
-      if(independent.length>=3&&days.size>=2)return 4;
-      return independent.length?3:entries.length?2:state.introduced[char]?1:0;
+      const evidence=handwritingEvidence(char,state);
+      for(const next of [5,4,3]){const target=requirements.handwriting[next];if(evidence.correct>=target.correct&&evidence.days>=target.days)return next;}
+      return evidence.attempts?2:state.introduced[char]?1:0;
     }
     const stats=evidence[skill+'Stats']?.[char]||{},srs=evidence[skill+'Review']?.[char],time=evidence[skill+'Times']?.[char];
     const stage=review.stage(srs,stats,time),attempts=number(stats.correct)+number(stats.wrong);
     if(stage===3)return 5;if(stage===2)return 4;
-    const recent=review.normalize(srs,stats,time).recent.filter(r=>r.quality!==1),correct=recent.filter(r=>r.quality===2).length;
-    if(correct>=3&&correct/recent.length>=.8)return 3;
+    const recent=familiarEvidence(srs,stats,time);
+    if(recent.correct>=requirements.familiar.correct&&recent.accuracy>=requirements.familiar.accuracy)return 3;
     return attempts?2:state.introduced[char]?1:0;
   }
   function earned(char,skill,state,evidence){return Math.max(state.earned[skill]?.[char]||0,currentStage(char,skill,evidence,state));}
@@ -165,10 +173,25 @@
       return {skill,name:names[skill],stage:achieved,current,review:skill!=='handwriting'&&(current<achieved||!!r?.due&&r.due<=Date.now()),due:r?.due||0};
     })};
   }
+  function guidance(char,skill,state=read(),evidence=snapshot()){
+    const achieved=earned(char,skill,state,evidence),target=Math.min(5,Math.max(3,achieved+1));
+    let checks,legacy=false,due=0;
+    if(skill==='handwriting'){
+      const values=handwritingEvidence(char,state),goal=requirements.handwriting[target];
+      checks=[{id:'independent',label:'Clean writes without a guide',value:values.correct,target:goal.correct},{id:'days',label:'Different study days',value:values.days,target:goal.days}];
+    }else if(target===3){
+      const values=familiarEvidence(evidence[skill+'Review']?.[char],evidence[skill+'Stats']?.[char],evidence[skill+'Times']?.[char]);
+      checks=[{id:'recent-correct',label:'Recent unassisted correct',value:values.correct,target:requirements.familiar.correct},{id:'recent-accuracy',label:'Recent unassisted accuracy',value:values.accuracy*100,target:requirements.familiar.accuracy*100,percent:true}];
+    }else{
+      const guide=review.guidance(evidence[skill+'Review']?.[char],evidence[skill+'Stats']?.[char],evidence[skill+'Times']?.[char],target-2);
+      checks=guide.checks;legacy=guide.legacy;due=guide.due;
+    }
+    return {achieved,target,label:labels[target],legacy,due,checks:checks.map(check=>({...check,met:Object.hasOwn(check,'met')?check.met:check.value>=check.target}))};
+  }
   function practiceUrl(skill,chars=[],extra={}){
     const target=chars.filter(char=>available(skill).has(char));
     if(skill==='handwriting')return '/kana/handwriting/'+(target.length?'?kana='+encodeURIComponent(target[0]):'');
     return '/'+(skill==='writing'?'writing':'reading')+'/?'+new URLSearchParams({practice:'20',...(target.length?{kana:target.join(',')}:{}),...extra});
   }
-  return Object.freeze({KEY,UPDATED,skills,names,labels,scripts,confusable,rows,rowById,map,normalize,merge,read,save,snapshot,currentStage,earned,stage,capture,initialize,start,path,available,testScripts,selection,testPool,recordRecall,introduce,place,recordHandwriting,details,practiceUrl});
+  return Object.freeze({KEY,UPDATED,skills,names,labels,requirements,scripts,confusable,rows,rowById,map,normalize,merge,read,save,snapshot,currentStage,earned,stage,capture,initialize,start,path,available,testScripts,selection,testPool,recordRecall,introduce,place,recordHandwriting,details,guidance,practiceUrl});
 });

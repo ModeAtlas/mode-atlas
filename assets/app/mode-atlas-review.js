@@ -48,20 +48,23 @@
     for(const next of [3,2]){const target=requirements[next];if(performance>=next&&independent.length>=target.attempts&&accuracy>=target.accuracy&&row.days.length>=target.days&&row.level>=target.level)return next;}
     return 1;
   }
-  function guidance(input,stats={},time=0){
-    const current=stage(input,stats,time),row=normalize(input,stats,time),target=requirements[Math.max(2,current+1)];
+  function guidance(input,stats={},time=0,targetStage){
+    const current=stage(input,stats,time),row=normalize(input,stats,time),next=targetStage??Math.max(2,current+1),target=requirements[next];
     const attempts=row.recent.filter(x=>x.quality!==1),accuracy=attempts.filter(x=>x.quality===2).length/Math.max(1,attempts.length);
     const correct=number(stats?.correct??stats?.right),wrong=number(stats?.wrong??stats?.incorrect),ms=timeMilliseconds(time);
-    return {stage:current,next:target?labels[Math.max(2,current+1)]:null,legacy:!row.recent.length&&current>0,due:row.due,
-      checks:target?[
-        {label:'Correct answers',value:correct,target:target.correct},
-        {label:'Overall accuracy',value:correct/Math.max(1,correct+wrong)*100,target:target.lifetimeAccuracy*100,percent:true},
-        {label:'Average response time',value:ms||null,target:target.maxTime,maximum:true,unit:'ms',optional:Math.max(2,current+1)===2},
-        {label:'Recent unassisted attempts',value:attempts.length,target:target.attempts},
-        {label:'Recent unassisted accuracy',value:accuracy*100,target:target.accuracy*100,percent:true},
-        {label:'Days with independent recall',value:row.days.length,target:target.days},
-        {label:'Spaced recall steps',value:row.level,target:target.level}
-      ]:[]};
+    const legacy=(input?.reviewVersion!==1||!row.recent.length)&&correct+wrong>0;
+    const checks=target?[
+        {id:'correct',label:'Correct answers',value:correct,target:target.correct},
+        {id:'accuracy',label:'Overall accuracy',value:correct/Math.max(1,correct+wrong)*100,target:target.lifetimeAccuracy*100,percent:true},
+        {id:'time',label:'Average response time',value:ms||null,target:target.maxTime,maximum:true,unit:'ms',optional:next===2},
+        {id:'recent-attempts',label:'Recent unassisted attempts',value:attempts.length,target:target.attempts,required:!legacy},
+        {id:'recent-accuracy',label:'Recent unassisted accuracy',value:accuracy*100,target:target.accuracy*100,percent:true,required:!legacy},
+        {id:'days',label:'Days with independent recall',value:row.days.length,target:target.days,required:!legacy},
+        {id:'spacing',label:'Spaced recall steps',value:row.level,target:target.level,required:!legacy}
+      ]:[];
+    for(const check of checks)check.met=check.required===false?null:check.value===null?!!check.optional:check.maximum?check.value<=check.target:check.value>=check.target;
+    return {stage:current,next:target?labels[next]:null,legacy,due:row.due,
+      checks};
   }
   function help(){
     return [['New','No attempts yet.'],['Learning','Building independent recall. Hints help you learn; unassisted answers build mastery.'],

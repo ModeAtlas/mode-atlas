@@ -32,7 +32,7 @@
       field('Session length',s.practiceCount||0,[[10,'10 questions'],[20,'20 questions'],[30,'30 questions'],[0,'Keep going']],value=>{
         const count=Number(value);change({practiceCount:count,endless:!count&&s.feedbackStyle==='quick'});
       });
-      field('Feedback',s.endless?'quick':s.feedbackStyle||'learn',[['learn','Explain mistakes'],['quick','Keep the rhythm']],value=>change({feedbackStyle:value,endless:!s.practiceCount&&value==='quick'}));
+      field('Feedback',s.endless?'quick':s.feedbackStyle||'learn',[['learn','Explain errors'],['quick','Quick feedback']],value=>change({feedbackStyle:value,endless:!s.practiceCount&&value==='quick'}));
     }
     if(selectedFamily==='timed')field('Timed goal',s.timeTrial?'target':'score',[['score','60-second score attack'],['target','Reach a correct-answer target']],value=>change({timeTrial:value==='target',speedRun:value==='score'}));
     if(targetFields&&selectedFamily==='timed'&&s.timeTrial){
@@ -50,19 +50,28 @@
     }
     const hints=field('Hints',s.hint?'on':'off',[['off','Off'],['on','On']],value=>change({hint:value==='on'}));hints.disabled=locked||selectedFamily==='daily';
     const confusableRows=L.rows.filter(row=>row.chars.some(char=>L.confusable.has(char)&&L.available(skill,state,evidence).has(char)));
-    if(selectedFamily==='practice')field('Focus',s.confusableKana?'confusable':s.focusWeak?'weak':'balanced',[['balanced','Balanced practice'],['weak','Characters needing practice'],['confusable','Similar-looking characters',!confusableRows.length]],value=>change({focusWeak:value==='weak',confusableKana:value==='confusable',srs:true,...(value==='confusable'?{kanaRows:confusableRows.map(row=>row.id)}:{})}));
+    if(selectedFamily==='practice')field('Focus',s.confusableKana?'confusable':s.focusWeak?'weak':'balanced',[['balanced','Balanced'],['weak','Needs practice'],['confusable','Similar shapes',!confusableRows.length]],value=>change({focusWeak:value==='weak',confusableKana:value==='confusable',srs:true,...(value==='confusable'?{kanaRows:confusableRows.map(row=>row.id)}:{})}));
     const chooser=document.createElement('details');chooser.className='ma-kana-row-picker';const summary=document.createElement('summary');
-    const selected=new Set(Array.isArray(s.kanaRows)?s.kanaRows:L.rows.filter(row=>row.chars.some(c=>Object.hasOwn(root.ModeAtlasKanaData.selectedKanaMap(s),c))).map(row=>row.id));
+    const paths=L.scripts.map(script=>L.path(script,skill,state,evidence)),available=new Set(paths.flat().filter(row=>row.unlocked).map(row=>row.id));
+    const selected=new Set((Array.isArray(s.kanaRows)?s.kanaRows:L.rows.filter(row=>row.chars.some(c=>Object.hasOwn(root.ModeAtlasKanaData.selectedKanaMap(s),c))).map(row=>row.id)).filter(id=>available.has(id)));
     const count=Object.keys(L.selection(s,skill,state,evidence)).length;summary.textContent=`Study selection · ${count} kana`;chooser.append(summary);
-    for(const script of L.scripts){
-      const heading=document.createElement('h4');heading.textContent=script==='hiragana'?'Hiragana':'Katakana';chooser.append(heading);
+    for(const rows of paths){
+      const script=rows[0].script,name=script==='hiragana'?'Hiragana':'Katakana',unlocked=rows.filter(row=>row.unlocked),chosen=unlocked.filter(row=>selected.has(row.id));
+      const header=document.createElement('div');header.className='ma-kana-row-picker-header';
+      const heading=document.createElement('h4');heading.textContent=name;
+      const all=document.createElement('label'),toggle=document.createElement('input'),caption=document.createElement('span');
+      toggle.type='checkbox';toggle.setAttribute('aria-label','All unlocked '+name);toggle.checked=!!unlocked.length&&chosen.length===unlocked.length;toggle.indeterminate=!!chosen.length&&chosen.length<unlocked.length;toggle.disabled=locked||!unlocked.length;
+      toggle.addEventListener('change',()=>{const ids=new Set(selected);for(const row of unlocked){if(toggle.checked)ids.add(row.id);else ids.delete(row.id);}change({kanaRows:[...ids],kanaSelection:true});});
+      caption.textContent='All unlocked';all.append(toggle,caption);header.append(heading,all);chooser.append(header);
       const grid=document.createElement('div');grid.className='ma-kana-row-picker-grid';
-      for(const row of L.path(script,skill,state,evidence)){
+      for(const row of unlocked){
         const label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.setAttribute('aria-label',script+' '+row.groupName+' '+row.name);input.checked=row.unlocked&&selected.has(row.id);input.disabled=locked||!row.unlocked;
         input.addEventListener('change',()=>{const ids=new Set(selected);if(input.checked)ids.add(row.id);else ids.delete(row.id);change({kanaRows:[...ids],kanaSelection:true});});
-        const text=document.createElement('span');text.textContent=row.name+(row.group==='base'?'':' · '+row.groupName)+(row.unlocked?'':' · Locked');label.append(input,text);grid.append(label);
+        const text=document.createElement('span');text.textContent=row.name+(row.group==='base'?'':' · '+row.groupName);label.append(input,text);grid.append(label);
       }chooser.append(grid);
-    }host.append(chooser);return host;
+    }
+    const path=document.createElement('a');path.className='ma-kana-picker-path';path.href='/kana/?view=path&skill='+skill;path.textContent='See all rows in your learning path';chooser.append(path);
+    host.append(chooser);return host;
   }
   root.ModeAtlasKanaPractice=Object.freeze({family,forFamily,render});
 })(window);

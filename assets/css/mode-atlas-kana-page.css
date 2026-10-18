@@ -62,6 +62,10 @@
 .ma-kana-placement-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:24px 0;}
 .ma-kana-placement-choices button{font:500 2rem var(--ma-font-jp);min-height:70px;}
 .ma-kana-check-feedback{line-height:1.5;margin:24px 0;}
+.ma-kana-assessment-heading{margin-bottom:12px;}.ma-kana-assessment-heading h1{font-size:1.35rem;}.ma-kana-assessment-heading p{margin:4px 0;}
+.ma-kana-check:has(.ma-kana-placement-form){margin:12px auto;}.ma-kana-placement-form~*{margin-top:8px;}
+.ma-kana-check .ma-kana-placement-form{display:flex;flex-direction:column;gap:12px;margin:12px 0;}.ma-kana-placement-keyboard{min-width:0;}.ma-kana-check-actions{display:flex;flex-wrap:wrap;gap:8px;}.ma-kana-check-actions>.ma-button{flex:1 1 140px;min-height:44px;white-space:normal;}
+.ma-kana-placement-form .ma-kana-check-feedback{margin:0;font-size:.85rem;}.ma-kana-placement-finish{display:flex;margin:8px auto;}.ma-kana-assessment-heading+.ma-kana-check .ma-kana-check-prompt{font-size:clamp(3.5rem,12vw,5rem);margin:4px;}
 .ma-kana-lesson{text-align:center;max-width:600px;margin:auto;}
 .ma-kana-lesson-reading{font-size:1.5rem;}
 .ma-kana-lesson .ma-pronunciation{justify-content:center;margin:12px;}

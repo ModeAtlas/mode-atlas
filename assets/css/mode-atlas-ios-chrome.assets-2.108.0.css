@@ -102,12 +102,14 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(
 }
 html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open) .ma-ios-tabs{display:none;}
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard{display:none;}
-html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open) .ma-ios-reading-keyboard{
+html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open) .ma-ios-reading-keyboard,
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard--inline{
   position:fixed;z-index:101;left:0;right:0;bottom:0;
   display:grid;gap:7px;padding:11px max(4px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));
   border-top:1px solid var(--ma-border);background:var(--ma-surface-strong);
   box-shadow:var(--ma-native-chrome-shadow);
 }
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard--inline{position:static;padding:8px 0;background:transparent;border:0;box-shadow:none;}
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__row{display:flex;gap:3px;justify-content:center;}
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key{
   flex:1 1 0;min-width:0;height:60px;padding:0;
@@ -124,6 +126,8 @@ html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:is(:active,.is-pressed
   background:var(--ma-control-hover);
 }
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key--delete{flex:1.25;background:var(--ma-control-hover);}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard--inline .ma-ios-reading-keyboard__key{height:clamp(44px,6dvh,56px);}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:disabled{opacity:.45;cursor:default;}
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
 
 /* The dock trigger opens the same accessible dialog as the web trainer. */
