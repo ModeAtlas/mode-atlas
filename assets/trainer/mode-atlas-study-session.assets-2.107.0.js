@@ -12,6 +12,12 @@
     const snapshot=config.getSnapshot, byId=id=>document.getElementById(id);
     let pendingReview=[];
     const study=()=>snapshot().sessionStats?.study;
+    function focusChars(){
+      const requested=snapshot().sessionStarted?study()?.focusChars||[]:pendingReview;
+      if(!requested.length)return [];
+      const allowed=root.ModeAtlasKanaLearning.available(config.mode);
+      return requested.filter(char=>allowed.has(char));
+    }
     function rewardContext(current){
       const state=snapshot();
       if(!(current.poolSize>0)){
@@ -58,7 +64,7 @@
     }
     function pool(chars){
       const state=snapshot(),current=study();
-      const available=state.sessionStarted&&current?.focusChars.length?current.focusChars.slice():chars;
+      const focused=focusChars(),available=focused.length?focused:chars;
       if(!state.sessionStarted||current?.feedback!=='learn')return available;
       const waiting=new Set(current.retryQueue.filter(item=>item.after>state.sessionStats.answered).map(item=>item.kana));
       const spaced=available.filter(kana=>!waiting.has(kana));
@@ -233,7 +239,12 @@
     }
     byId('kanaHintsQuick')?.addEventListener('click',()=>root.ModeAtlasTrainerControls.update({hint:!snapshot().settings.hint}));
     byId('studyLength').addEventListener('change',event=>root.ModeAtlasTrainerControls.setPracticeCount(Number(event.target.value)));
-    return Object.freeze({sync,begin,pool,beforeQuestion,nextPick,retryDue,requestDue(){pendingReview=root.ModeAtlasReview.due(snapshot().srs).filter(char=>root.ModeAtlasKanaLearning.available(config.mode).has(char));},requestKana(chars){pendingReview=root.ModeAtlasStudyPlan.targetChars(chars).filter(char=>root.ModeAtlasKanaLearning.available(config.mode).has(char));},prepareAnswer,recordAnswer,finish,showFeedback,clearFeedback,showSummary,hasPendingReview:()=>pendingReview.length>0});
+    function requestKana(chars){
+      const allowed=root.ModeAtlasKanaLearning.available(config.mode);
+      pendingReview=root.ModeAtlasStudyPlan.targetChars(chars).filter(char=>allowed.has(char));
+    }
+    root.addEventListener('modeAtlasAccountWillChange',()=>{pendingReview=[];});
+    return Object.freeze({sync,begin,pool,focusChars,beforeQuestion,nextPick,retryDue,requestDue(){requestKana(root.ModeAtlasReview.due(snapshot().srs));},requestKana,clearFocus(){pendingReview=[];},prepareAnswer,recordAnswer,finish,showFeedback,clearFeedback,showSummary,hasPendingReview:()=>focusChars().length>0});
   }
   root.ModeAtlasStudySession=Object.freeze({create});
 })(window);

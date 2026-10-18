@@ -89,7 +89,7 @@ PRIMARY_LINKS = (
 )
 
 KANA_LINKS = (
-    ('kana', 'Learn', '/kana/'),
+    ('kana', 'Overview', '/kana/'),
     ('practice', 'Practise', '/kana/?view=practice'),
     ('mastery', 'Mastery', '/kana/?view=mastery'),
     ('tests', 'Tests', '/kana/?view=tests'),

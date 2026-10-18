@@ -395,8 +395,8 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-nav__link.i
 }
 
 /* Branch navigation stays in the page; primary destinations never change. */
-.ma-kana-navigation{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 16px;}
+.ma-kana-navigation{display:flex;gap:4px;max-width:820px;margin:8px auto 16px;width:100%;}
 body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation{width:min(540px,100%);margin-inline:auto;align-self:center;flex:none;}
-.ma-kana-navigation a{flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 12px;border-radius:12px;text-decoration:none;color:var(--ma-muted);font-weight:750;font-size:.8rem;}
+.ma-kana-navigation a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 5px;border-radius:12px;text-decoration:none;color:var(--ma-muted);font-weight:750;font-size:.78rem;}
 .ma-kana-navigation a[aria-current="page"]{color:var(--ma-text-strong);background:var(--ma-control);}
 body.trainer-session-active .ma-kana-navigation,body.study-nav-hidden .ma-kana-navigation{display:none;}

@@ -201,7 +201,11 @@
     }
     if(due){applyPracticeLength(s,10);s.hint=false;s.focusWeak=false;trainerController.study.requestDue();}
     if(formal){window.ModeAtlasPracticeModes.select(s,'testMode');s.kanaTestScript=testScript||s.kanaTestScript||'hiragana';}
-    if(target.length&&!daily&&!formal){applyPracticeLength(s,guided?practice:10);s.focusWeak=false;s.confusableKana=false;trainerController.study.requestKana(target);}
+    if(target.length&&!daily&&!formal){
+      applyPracticeLength(s,guided?practice:10);s.focusWeak=false;s.confusableKana=false;
+      s.kanaRows=window.ModeAtlasKanaLearning.rows.filter(row=>row.chars.some(char=>target.includes(char))).map(row=>row.id);s.kanaSelection=true;
+      trainerController.study.requestKana(target);
+    }
     if(noHints)s.hint=false;
     else if(withHints)s.hint=true;
     setSettings(s);
@@ -222,6 +226,7 @@
     getSettings,
     update(next){
       if(typeof isModeLocked==='function'&&isModeLocked())return;
+      if(['kanaRows','testMode','dailyChallenge','timeTrial','speedRun','comboKana','confusableKana'].some(key=>Object.hasOwn(next,key)&&JSON.stringify(next[key])!==JSON.stringify(getSettings()[key])))trainerController.study.clearFocus();
       setSettings(next);saveAndRefresh();
     },
     applyPreset,

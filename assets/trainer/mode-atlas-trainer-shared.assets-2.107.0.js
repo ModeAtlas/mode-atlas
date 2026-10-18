@@ -468,14 +468,24 @@ function showPopupForChar(ch, e) {
     }
 }
 
-function getHeatmapCharsForDisplay() { return Object.keys(getAnswerMapForCurrentMode()); }
+function getHeatmapCharsForDisplay() {
+    // Preview the same target selection as the session, rather than a cached
+    // map from the last row practised. Re-check eligibility after account sync.
+    const learning=window.ModeAtlasKanaLearning,skill=trainerSkill();
+    const allowed=learning.available(skill);
+    const focused=window.ModeAtlasPracticeModes.fixedPool(settings)?[]:trainerController.study.focusChars();
+    const map=isDailyChallengeSession()?getDailyLearningPool():isTestModeSession()?getTestModePoolMap():learning.selection(settings,skill);
+    return (focused.length?focused:Object.keys(map)).filter(char=>allowed.has(char));
+}
 
 function renderHeatmap() {
     heatmapEl.replaceChildren();
 
-    const heatmapChars = typeof getHeatmapCharsForDisplay === "function"
-        ? getHeatmapCharsForDisplay()
-        : activeChars;
+    const heatmapChars = getHeatmapCharsForDisplay();
+    if (!heatmapChars.length) {
+        heatmapEl.append(createTrainerEl('p', 'ma-kana-muted', 'Choose an available row to see your practice accuracy.'));
+        return;
+    }
 
     for (const ch of heatmapChars) {
         const cell = document.createElement("button");
