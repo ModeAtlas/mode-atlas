@@ -11,7 +11,7 @@ test('Atlas home uses its native composition and the wider website layout', asyn
   await expect(page.locator('html')).toHaveAttribute('data-ma-runtime', 'ios');
   await expect(page.locator('.atlas-ios-home')).toBeVisible();
   await expect(page.locator('.atlas-hero')).toBeHidden();
-  await expect(page.locator('#iosHomeContinue')).toHaveAttribute('href', '/reading/?practice=10&starter=starter');
+  await expect(page.locator('#iosHomeContinue')).toHaveAttribute('href', '/kana/');
   await expect(page.locator('#iosHomeGoals [data-goal]')).toHaveCount(3);
   await expect(page.locator('.atlas-ios-home [data-ma-rewards-open]')).toBeVisible();
   await page.evaluate(() => {
@@ -19,9 +19,10 @@ test('Atlas home uses its native composition and the wider website layout', asyn
     localStorage.setItem('maWhatsNewSeen', 'guided-study');
   });
   await page.locator('#iosHomeContinue').click();
-  await expect(page).toHaveURL(/\/reading\/$/);
-  await expect(page.locator('#studyLength')).toHaveValue('10');
-  expect(await page.evaluate(() => settings.hiraganaRows)).toEqual(['h_a']);
+  await expect(page).toHaveURL(/\/kana\/$/);
+  await expect(page.getByRole('button',{name:/Take a starting-point test/})).toBeVisible();
+  await page.getByRole('button',{name:/Start as a beginner/}).click();
+  await expect(page.locator('.ma-kana-next-chars')).toHaveText('あ い う え お');
 });
 
 test('iOS home scrolls on portrait phones and keeps its last action above the dock', async ({ page }) => {
@@ -178,6 +179,7 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
     localStorage.setItem('modeAtlasStarterSeen', 'true');
     localStorage.setItem('modeAtlasOnboardingComplete', 'true');
     localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
+    localStorage.setItem('maWhatsNewSeen','native-shell');
     localStorage.setItem('modeAtlasLegalAccepted', 'true');
     localStorage.setItem('modeAtlasLegalAcceptedAt', String(Date.now()));
     localStorage.setItem('modeAtlasLegalVersion', '2026-05');
@@ -190,9 +192,12 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-nav__links')).toBeHidden();
   await page.locator('.ma-ios-tab[href="/learn/"]').click();
   await expect(page).toHaveURL(/\/learn\/$/);
-  await page.getByRole('link',{name:'Reading',exact:true}).click();
+  await page.getByRole('link',{name:'Practise',exact:true}).click();
+  await page.getByRole('button',{name:/Start as a beginner/}).click();
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practise',exact:true}).click();
+  await page.getByRole('button',{name:'Open session',exact:true}).click();
   await expect(page).toHaveURL(/\/reading\/$/);
-  await expect(page.locator('.ma-kana-navigation [aria-current="page"]')).toHaveText('Reading');
+  await expect(page.locator('.ma-kana-navigation [aria-current="page"]')).toHaveText('Practise');
   await expect(page.locator('.ma-ios-tabs__links .ma-ios-tab.is-active')).toContainText('Learn');
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   await expect(page.locator('.ma-nav')).toBeHidden();
@@ -246,12 +251,14 @@ test('native Reading uses a compact answer keyboard while the website keeps text
     localStorage.setItem('modeAtlasStarterSeen', 'true');
     localStorage.setItem('modeAtlasOnboardingComplete', 'true');
     localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
+    localStorage.setItem('maWhatsNewSeen','native-shell');
     localStorage.setItem('modeAtlasLegalAccepted', 'true');
     localStorage.setItem('modeAtlasLegalAcceptedAt', String(Date.now()));
     localStorage.setItem('modeAtlasLegalVersion', '2026-05');
   });
   await page.goto('/reading/');
   await expect(page.locator('#input')).toHaveJSProperty('readOnly', true);
+  await page.evaluate(()=>ModeAtlasKanaLearning.start());
   await page.locator('#startBtn').click();
   await expect(page.locator('.ma-ios-reading-keyboard')).toBeVisible();
   await expect(page.locator('.ma-ios-tabs')).toBeHidden();

@@ -76,3 +76,12 @@ test('social profiles use earned skills and include Mastered+ in ordinary master
   const result=require('../backend/functions/projection.cjs').projectSave({sections:{kanaLearning:{data:{state}}}});
   assert.equal(result.readingMastered,2);assert.equal(result.writingMastered,1);assert.equal(result.combinedMastered,1);assert.equal(result.projectionVersion,5);
 });
+
+test('malformed scalar fields and placement tracks cannot break curriculum or public profiles',()=>{
+  const {L,P}=load(),bad={toString:5};
+  const state=L.normalize({startedAt:bad,updatedAt:bad,earned:{reading:{'あ':bad}},introduced:{'あ':bad},handwriting:{'あ':[{id:'x',at:bad}]}});
+  assert.equal(state.startedAt,0);assert.equal(state.updatedAt,0);assert.equal(Object.keys(state.earned.reading).length,0);
+  const placement=P.begin();assert.equal(P.valid({...placement,tracks:[null]}),null);
+  const result=require('../backend/functions/projection.cjs').projectSave({sections:{reading:{data:{stats:{'あ':null,'い':{correct:bad,wrong:bad}},times:{'あ':null,'い':bad},srs:{'う':{reviewVersion:1,level:bad,days:[bad,null],recent:[{id:'bad',at:bad,quality:2}]}}}},kanaLearning:{data:{state}}}});
+  assert.equal(result.readingMastered,0);assert.equal(result.combinedMastered,0);
+});

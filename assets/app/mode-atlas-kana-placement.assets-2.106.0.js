@@ -17,7 +17,7 @@
   }
   function valid(value){
     if(value?.version!==1||value.owner!==owner()||typeof value.id!=='string'||!/^placement-[a-zA-Z0-9-]{1,80}$/.test(value.id))return null;
-    if(!Array.isArray(value.tracks)||!value.tracks.length||value.tracks.length>4||value.tracks.some(t=>!learning.scripts.includes(t.script)||!['reading','writing'].includes(t.skill)))return null;
+    if(!Array.isArray(value.tracks)||!value.tracks.length||value.tracks.length>4||value.tracks.some(t=>!t||!learning.scripts.includes(t.script)||!['reading','writing'].includes(t.skill)))return null;
     if(![value.track,value.row,value.question,value.answered,value.correct].every(Number.isInteger)||value.track<0||value.track>value.tracks.length||value.row<0||value.row>9||value.question<0||value.question>1||value.answered<0||value.answered>80||value.correct<0||value.correct>value.answered)return null;
     if(new Set(value.tracks.map(t=>t.script+':'+t.skill)).size!==value.tracks.length||typeof value.finished!=='boolean')return null;
     if(!value.finished&&value.track===value.tracks.length)return null;

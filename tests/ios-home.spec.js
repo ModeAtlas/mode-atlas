@@ -66,7 +66,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: returning suggestions an
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.evaluate(()=>document.fonts.ready);
   const suggestions={'new':'Start small','reading':'Build your reading','writing':'Build your recall',
-    'weak-reading':'Read tricky kana','weak-writing':'Recall tricky kana','cross-mode':'Try writing','due':'Time to revisit'};
+    'weak-reading':'Read tricky kana','weak-writing':'Recall tricky kana','cross-mode':'Try Recall','due':'Time to revisit'};
   // Keep the larger 59px notch inset on narrower phones and check real suggestions.
   for(const viewport of [{width:393,height:852},{width:390,height:844},{width:375,height:812},{width:430,height:932}]){
     await page.setViewportSize(viewport);
@@ -168,7 +168,7 @@ test('web home shows the full owned character, shared study data and a direct Sh
   await expect(page.locator('.atlas-home-character [data-ma-home-avatar]')).toHaveAttribute('data-character',/"outfit":"evergreen"/);
   await expect(page.locator('.atlas-home-character svg')).toHaveAttribute('viewBox','0 0 240 340');
   await expect(page.locator('#homeGoals .ma-routine-goal')).toHaveCount(3);
-  await expect(page.locator('.atlas-home-dashboard .atlas-home-review-link')).toHaveText('Reading1 due →');
+  await expect(page.locator('.atlas-home-dashboard .atlas-home-review-link')).toHaveText('Read1 due →');
   await page.locator('.atlas-home-dashboard [data-ma-home-review-help]').click();await expect(page.locator('.ma-dialog__title')).toContainText('due');await page.keyboard.press('Escape');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:info.outputPath('web-personal-home.png'),fullPage:true});

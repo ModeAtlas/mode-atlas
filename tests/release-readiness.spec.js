@@ -107,7 +107,7 @@ test('visual tour opens real practice setup, goals, rewards and account sections
   await expect(page.locator('#modifiersTab')).toBeVisible();
   const before=await page.evaluate(()=>ModeAtlasProgress.getXP());
   await tour.getByRole('button',{name:'Next',exact:true}).click();
-  await expect(page.locator('#practiceSetupDialog')).toBeVisible();await expect(page.locator('.ma-mode-choice').first()).toBeVisible();
+  await expect(page.locator('#practiceSetupDialog')).toBeVisible();await expect(page.getByLabel('Session',{exact:true})).toBeVisible();
   await page.screenshot({path:test.info().outputPath('tour-setup.png')});
   await tour.getByRole('button',{name:'Next',exact:true}).click();
   await expect(page).toHaveURL(/\/progress\/$/);await expect(page.locator('#atlasPanel0')).toBeVisible();

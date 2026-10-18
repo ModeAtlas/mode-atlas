@@ -87,7 +87,7 @@ independent row access, exact mastery thresholds, hints, migration, convergent
 saves, cloud backup/reset, public profile counts, real pointer handwriting,
 compact web/iOS layouts and existing session behaviours. Release validation
 also covers website packaging, Firebase emulators and unsigned native builds.
-The local release gate passed 216 JavaScript tests and 15 Python packaging
+The local release gate passed 217 JavaScript tests and 15 Python packaging
 tests. The long, isolated trainer matrix now runs across CI workers and shards
 instead of serially within one file. Final CI counts and timings are recorded
 in the release handoff.

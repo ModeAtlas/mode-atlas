@@ -11,7 +11,7 @@
   const names=Object.freeze({reading:'Read',writing:'Recall',handwriting:'Handwrite'});
   const labels=Object.freeze(['New','Introduced','Learning','Familiar','Confident','Mastered','Mastered+']);
   const scripts=Object.freeze(['hiragana','katakana']);
-  const number=v=>Number.isFinite(Number(v))?Math.max(0,Math.min(Number.MAX_SAFE_INTEGER,Math.floor(Number(v)))):0;
+  const number=v=>['number','string'].includes(typeof v)&&Number.isFinite(Number(v))?Math.max(0,Math.min(Number.MAX_SAFE_INTEGER,Math.floor(Number(v)))):0;
   const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
   const known=new Set(data.collections.all),confusable=new Set(['シ','ツ','ソ','ン','ぬ','め','れ','わ','ね','ク','ケ','タ','ナ','メ']);
   const map=Object.assign({},...Object.values(data.maps));

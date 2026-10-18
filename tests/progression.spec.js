@@ -334,7 +334,7 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
       await expect(page.getByRole('link',{name:'Review Recall · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
       await expect(page.locator('.ma-toast')).toHaveCount(0);
       const help=page.getByRole('button',{name:'About due reviews'});await help.click();
-      await expect(page.locator('.ma-dialog__message')).toContainText('Kana Reading, Kana Writing and each Kanji skill have separate schedules');
+      await expect(page.locator('.ma-dialog__message')).toContainText('Kana Read, Kana Recall and each Kanji skill have separate schedules');
       await expect(page.locator('.ma-dialog__message')).toContainText('not deadlines');await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');await page.screenshot({path:testInfo.outputPath('review-help.png'),animations:'disabled'});
       await page.keyboard.press('Escape');await expect(help).toBeFocused();
       await page.evaluate(()=>{ModeAtlasStorage.writeModeJSON('reading','srs',{});dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));});
@@ -569,7 +569,7 @@ for(const mode of ['reading','writing'])for(const kind of ['dailyChallenge','tes
   expect(await page.evaluate(()=>sessionStats.answered)).toBe(resumed.sequence.length);
   await page.reload();await page.clock.resume();await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.getByRole('button',{name:action,exact:true}).click();
-  await expect(page.locator('.ma-dialog__title')).toHaveText(kind==='dailyChallenge'?'Daily Challenge complete':'Test Mode complete');
+  await expect(page.locator('.ma-dialog__title')).toHaveText(kind==='dailyChallenge'?'Daily session complete':'Test complete');
   const result=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),daily:getTodayDailyRecord(),tests:loadStoredTestModeResults(),correct:ModeAtlasProgress.getLifetimeCorrect()}));
   expect(result.correct).toBe(resumed.sequence.length-1);
   if(kind==='dailyChallenge'){expect(result.daily.officialScore).toBe(19);expect(result.daily.attempts).toBe(1);expect(result.daily.timeMs).toBeLessThan(60000);}
@@ -735,7 +735,7 @@ test('goal shortcuts and weekly recap expose recorded activity without inventing
   await prepare(page);await open(page,'/');await page.evaluate(()=>ModeAtlasRewardsUI.open());
   await expect(page.locator('.ma-routine-goal[href]').first()).toHaveAttribute('href',/\/(reading|writing)\/\?/);
   await page.getByRole('tab',{name:'Recap',exact:true}).click();
-  await expect(page.locator('.ma-recap-grid')).toContainText('Reading correct');await expect(page.locator('.ma-recap-grid')).toContainText('0 / 7');
+  await expect(page.locator('.ma-recap-grid')).toContainText('Read correct');await expect(page.locator('.ma-recap-grid')).toContainText('0 / 7');
   await page.getByRole('button',{name:'Last week',exact:true}).click();await expect(page.locator('.ma-atlas-recap')).toContainText('No dated practice');
   await expect(page.getByRole('link',{name:'View weekly ranking',exact:true})).toHaveAttribute('href','/friends/?ranking=weekly');
   await page.getByRole('tab',{name:'Recap',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toHaveAttribute('aria-selected','true');

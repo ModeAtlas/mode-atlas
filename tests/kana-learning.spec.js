@@ -1,11 +1,11 @@
 const {test,expect}=require('@playwright/test');
-async function setup(page,{native=false}={}){
+async function setup(page,{native=false,theme='dark'}={}){
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
-  await page.addInitScript(({native})=>{
+  await page.addInitScript(({native,theme})=>{
     if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
-    localStorage.setItem('modeAtlasSound','off');localStorage.setItem('maWhatsNewSeen','kana-learning');
-  },{native});
+    localStorage.setItem('modeAtlasThemePreference',theme);localStorage.setItem('modeAtlasSound','off');localStorage.setItem('maWhatsNewSeen','kana-learning');
+  },{native,theme});
 }
 async function open(page,url='/kana/') {await page.goto(url);await expect(page.locator('#maLoadingScreen')).toBeHidden();}
 test('fresh entry offers placement or beginner, with one path and independently locked rows',async({page},info)=>{
@@ -44,8 +44,8 @@ test('one mastery view keeps earned Read progress visible while Recall is new',a
   await expect(page.getByRole('group',{name:'Mastery direction'})).toHaveCount(0);await page.getByRole('button',{name:'あ mastery details: Familiar',exact:true}).click();
   const skills=page.locator('.ma-kana-skill-evidence');await expect(skills).toHaveCount(3);await expect(skills.nth(0)).toContainText('Mastered');await expect(skills.nth(1)).toContainText('New');await expect(skills.nth(2)).toContainText('Mastered+');
 });
-for(const native of [true,false])test(`Kana layout and lesson fit ${native?'iOS':'web'} without horizontal scrolling`,async({page},info)=>{
-  const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page,{native});await page.setViewportSize({width:native?320:1280,height:native?740:900});await open(page);await page.getByRole('button',{name:/Start as a beginner/}).click();
+for(const [native,theme] of [[true,'light'],[true,'dark'],[false,'light'],[false,'dark']])test(`Kana layout and lesson fit ${native?'iOS':'web'} ${theme} without horizontal scrolling`,async({page},info)=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page,{native,theme});await page.setViewportSize({width:native?320:1280,height:native?740:900});await open(page);await page.getByRole('button',{name:/Start as a beginner/}).click();
   expect(await page.locator('.ma-kana-segments button').evaluateAll(buttons=>buttons.every(button=>{const range=document.createRange();range.selectNodeContents(button);return range.getClientRects().length===1&&button.scrollWidth<=button.clientWidth+1;}))).toBe(true);
   await page.screenshot({path:info.outputPath(`kana-path-${native}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.getByRole('button',{name:'Learn this row',exact:true}).click();await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');await page.getByRole('button',{name:'Next character',exact:true}).click();await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('い');

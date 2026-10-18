@@ -60,8 +60,9 @@ for(const theme of ['dark','light'])test(`native ${theme}: six screens, drawers,
   await prepare(page,theme);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   const canvas=theme==='light'?'rgb(245, 245, 247)':'rgb(16, 16, 17)';
-  // The explicitly redesigned Atlas home is checked by ios-home, including web layouts.
-  for(const route of routes.filter(route=>route!=='/')){
+  // Redesigned Atlas and Kana pages have dedicated light/dark layout coverage
+  // in ios-home and kana-learning; their old styles are intentionally replaced.
+  for(const route of routes.filter(route=>!['/','/kana/'].includes(route))){
     await page.goto(route,{waitUntil:'domcontentloaded'});await settle(page);
     await expect(page.locator('html')).toHaveAttribute('data-ma-runtime','ios');
     await expect(page.locator('body')).toHaveCSS('background-color',canvas);
@@ -153,8 +154,9 @@ for(const theme of ['dark','light'])test(`website ${theme}: computed paint match
   test.setTimeout(120000);
   await prepare(page,theme,false);
   const baselineFiles=new Set(execFileSync('git',['ls-tree','-r','--name-only',baseline],{encoding:'utf8'}).trim().split('\n'));
-  // The explicitly redesigned Atlas home is checked by ios-home, including web layouts.
-  for(const route of routes.filter(route=>route!=='/')){
+  // Redesigned Atlas and Kana pages have dedicated light/dark layout coverage
+  // in ios-home and kana-learning; their old styles are intentionally replaced.
+  for(const route of routes.filter(route=>!['/','/kana/'].includes(route))){
     await page.goto(route,{waitUntil:'domcontentloaded'});await settle(page);
     expect(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--ma-native-page'))).toBe('');
     const current=await paintSnapshot(page);

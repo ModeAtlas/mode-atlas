@@ -18,24 +18,25 @@
   function url(){const q=new URLSearchParams({view,script,skill});history.replaceState(null,'','/kana/?'+q);}
   function chooseView(next){view=next;lesson=null;placement=null;placementSetup=false;practiceSettings=null;url();render();}
   function openPlacement(){placement=P.read();if(placement&&!placement.finished){render();return;}placement=null;placementSetup=true;render();}
+  function startBeginner(){L.start('beginner');placement=null;placementSetup=false;view='learn';script='hiragana';skill='reading';url();render();}
   function welcome(){
     title('Kana','Find your starting point','Learn the shapes, recall the sounds and write at your own pace.');
     const options=el('div','ma-kana-start-options');
     const assess=button('Take a starting-point test',openPlacement,true);assess.append(el('small','','Discover which rows are right for you.'));
-    const beginner=button('Start as a beginner',()=>{L.start('beginner');view='learn';script='hiragana';skill='reading';render();});beginner.append(el('small','','Begin with the A-row. No test needed.'));
+    const beginner=button('Start as a beginner',startBeginner);beginner.append(el('small','','Begin with the A-row. No test needed.'));
     options.append(assess,beginner);host.append(options);
   }
   function assessSetup(){
     title('Starting point','Which scripts do you know?','The check adapts separately for Read and Recall. You can finish whenever you like.');
     let selected='hiragana';const switcher=segmented('Placement scripts',[['hiragana','Hiragana'],['katakana','Katakana'],['both','Both']],selected,value=>{selected=value;for(const b of switcher.children)b.setAttribute('aria-pressed',String(b.textContent===(value==='both'?'Both':value==='hiragana'?'Hiragana':'Katakana')));});
-    host.append(switcher,button('Begin check',()=>{placement=Store.transaction(()=>P.begin(selected==='both'?L.scripts:[selected]));placementSetup=false;render();},true),button('Start as a beginner',()=>{L.start('beginner');placementSetup=false;render();}));
+    host.append(switcher,button('Begin check',()=>{placement=Store.transaction(()=>P.begin(selected==='both'?L.scripts:[selected]));placementSetup=false;render();},true),button('Start as a beginner',startBeginner));
   }
   function renderPlacement(){
     if(placement.finished){
       title('Starting point','Your learning path is ready',`${placement.answered} questions explored. Continue from the rows available in each skill.`);
       const list=el('div','ma-kana-placement-summary');const state=L.read(),evidence=L.snapshot();
       for(const track of placement.tracks){const rows=L.path(track.script,track.skill,state,evidence).filter(r=>r.group==='base'),next=rows.find(r=>r.unlocked&&!r.complete)||rows.at(-1);list.append(el('p','',`${track.script==='hiragana'?'Hiragana':'Katakana'} · ${L.names[track.skill]}: ${next.name}`));}
-      host.append(list,button('Open my learning path',()=>{placement=null;Store.remove(P.KEY);render();},true));return;
+      host.append(list,button('Open my learning path',()=>{placement=null;Store.remove(P.KEY);chooseView('learn');},true));return;
     }
     const q=P.question(placement);if(!q){placement=P.finish(placement);render();return;}
     title('Starting point',`${L.names[q.skill]} · ${q.script==='hiragana'?'Hiragana':'Katakana'}`,`${placement.answered} answered · ${q.row.name}`);

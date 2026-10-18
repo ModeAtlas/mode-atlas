@@ -35,6 +35,7 @@ async function seedStableLocalState(page) {
       if (localStorage.getItem('modeAtlasSmokeSeeded') === '1') return;
       localStorage.clear();
       localStorage.setItem('modeAtlasSmokeSeeded', '1');
+      localStorage.setItem('modeAtlasKanaLearning', JSON.stringify({version:1,startedAt:1,startKind:'beginner'}));
       localStorage.setItem('modeAtlasStarterSeen', 'true');
       localStorage.setItem('modeAtlasOnboardingComplete', 'true');
       localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
@@ -97,9 +98,10 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page.locator('#branches')).toBeVisible();
 
       await gotoApp(page, '/kana/');
-      await expect(page.locator('#mainContent.kana-hub')).toBeVisible();
-      await expect(page.locator('#kanaContinueAction')).toBeVisible();
-      await expect(page.locator('#kanaMasteryGrid')).toBeVisible();
+      await expect(page.locator('#mainContent.ma-kana-journey')).toBeVisible();
+      await expect(page.getByRole('button',{name:'Learn this row',exact:true})).toBeVisible();
+      await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Mastery',exact:true}).click();
+      await expect(page.locator('.ma-kana-mastery-map')).toBeVisible();
 
       await gotoApp(page, '/results/');
       await expect(page.locator('#testsGrid')).toBeVisible();
@@ -114,7 +116,7 @@ test.describe('Mode Atlas core smoke tests', () => {
         page.waitForURL(/\/kana\/$/, { timeout: 15000, waitUntil: 'domcontentloaded' }),
         page.locator('a.atlas-product__action[href="/kana/"]').click({ noWaitAfter: true }),
       ]);
-      await expect(page.locator('#mainContent.kana-hub')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('#mainContent.ma-kana-journey')).toBeVisible({ timeout: 5000 });
       const url = new URL(page.url());
       expect(url.pathname).toBe('/kana/');
       expect(url.searchParams.has('build')).toBe(false);
@@ -126,7 +128,7 @@ test.describe('Mode Atlas core smoke tests', () => {
   test('Settings update check survives click bursts and tab switching does not blank the app', async ({ page, context }) => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/kana/');
-      await expect(page.locator('#mainContent.kana-hub')).toBeVisible();
+      await expect(page.locator('#mainContent.ma-kana-journey')).toBeVisible();
 
       const settingsButton = page.locator('[data-settings-open]:visible').first();
       const settingsDrawer = page.locator('#maAccount-settings');
@@ -156,7 +158,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await otherTab.bringToFront();
       await page.waitForTimeout(150);
       await page.bringToFront();
-      await expect(page.locator('#mainContent.kana-hub')).toBeVisible();
+      await expect(page.locator('#mainContent.ma-kana-journey')).toBeVisible();
       await otherTab.close();
     });
   });
