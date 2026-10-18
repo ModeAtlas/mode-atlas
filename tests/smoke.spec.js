@@ -99,7 +99,7 @@ test.describe('Mode Atlas core smoke tests', () => {
 
       await gotoApp(page, '/kana/');
       await expect(page.locator('#mainContent.ma-kana-journey')).toBeVisible();
-      await expect(page.getByRole('button',{name:'Learn this row',exact:true})).toBeVisible();
+      await expect(page.getByRole('button',{name:'Continue learning',exact:true})).toBeVisible();
       await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Mastery',exact:true}).click();
       await expect(page.locator('.ma-kana-mastery-map')).toBeVisible();
 

@@ -114,7 +114,9 @@ test.describe('Phone and Tablet study UX', () => {
 
   test('Phone navigation reserves the top cleanly, hides downward, and requires deliberate upward travel to return', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await gotoApp(page, '/kana/');
+    // Exercise deliberate scroll travel on the long roadmap. The overview is
+    // intentionally short and cannot scroll to this test's 420px checkpoint.
+    await gotoApp(page, '/kana/?view=path');
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'phone');
     const nav = page.locator('.ma-nav');
     await expect(nav).toBeVisible();
