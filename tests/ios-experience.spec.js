@@ -40,10 +40,15 @@ test('Kana navigation leaves a daily session and avoids reloading the same pract
   await page.locator('.ma-kana-navigation a[href="/kana/?view=practice"]').click();
   await expect(page).toHaveURL(/\/kana\/\?view=practice$/);
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await expect(page.getByRole('heading',{name:'Find your rhythm',exact:true})).toBeVisible();
   // Re-selecting the exact screen scrolls to the top without reinitialising it.
   await page.evaluate(()=>{window.sameScreenMarker='preserved';});
-  await page.locator('.ma-kana-navigation a[href="/kana/?view=practice"]').click();
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practise',exact:true}).click();
   expect(await page.evaluate(()=>window.sameScreenMarker)).toBe('preserved');
+  await page.getByRole('button',{name:'Recall',exact:true}).click();
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practise',exact:true}).click();
+  expect(await page.evaluate(()=>window.sameScreenMarker)).toBe('preserved');
+  await expect(page.getByRole('button',{name:'Recall',exact:true})).toHaveAttribute('aria-pressed','true');
 });
 
 for(const mode of ['reading','writing']){

@@ -17,6 +17,10 @@ sequence pattern and both timed goals remain available there. Daily sessions,
 timed challenges and character sequences have concise activity rows instead
 of starting with five drop-down menus. Handwriting remains optional.
 
+Switching sections preserves the chosen script and skill. Re-selecting the
+current section scrolls up without reloading it; selecting Overview from a
+lesson returns to the hub even when the page address is the same.
+
 The accuracy grid now uses the requested practice targets, including before a
 session starts, and checks them against the current account's unlocked rows
 for that skill. Previously a targeted launch could display the trainer's old

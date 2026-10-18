@@ -54,6 +54,8 @@ for(const [native,theme] of [[true,'light'],[true,'dark'],[false,'light'],[false
   await page.screenshot({path:info.outputPath(`kana-path-${native}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.getByRole('button',{name:'Continue learning',exact:true}).click();await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');await page.getByRole('button',{name:'Next character',exact:true}).click();await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('い');
   await page.screenshot({path:info.outputPath(`kana-lesson-${native}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Overview',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Your Kana journey',exact:true})).toBeVisible();
 });
 
 test('handwriting awards a clean independent completion, while watching strokes awards nothing',async({page})=>{

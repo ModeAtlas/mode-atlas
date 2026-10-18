@@ -225,8 +225,9 @@ test.describe('Phone and Tablet study UX', () => {
         rootFound: !!root,
         stillGenericGrid: root?.classList.contains('button-grid') || false,
         columns: root ? getComputedStyle(root).gridTemplateColumns : '',
+        // A computed 44px box may be 43.99997px after subpixel transforms.
         controlsFit: controlMetrics.every((control) =>
-          control.scrollWidth <= control.clientWidth + 1 && control.width >= 100 && control.height >= 44
+          control.scrollWidth <= control.clientWidth + 1 && control.width >= 100 && control.height >= 44 - .01
         ),
         controlMetrics,
         groupsFit: groups.every((group) => group.scrollWidth <= group.clientWidth + 1)
@@ -236,7 +237,7 @@ test.describe('Phone and Tablet study UX', () => {
     expect(setup.stillGenericGrid).toBe(false);
     expect(columnCount(setup.columns)).toBe(2);
     expect(setup.controlsFit, JSON.stringify(setup.controlMetrics.filter((control) =>
-      control.scrollWidth > control.clientWidth + 1 || control.width < 100 || control.height < 44
+      control.scrollWidth > control.clientWidth + 1 || control.width < 100 || control.height < 44 - .01
     ), null, 2)).toBe(true);
     expect(setup.groupsFit).toBe(true);
 

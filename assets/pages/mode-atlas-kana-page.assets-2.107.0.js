@@ -67,7 +67,7 @@
     actions.append(button(lesson.index+1===lesson.row.chars.length?'Practise this row':'Next character',()=>{
       L.introduce(char);if(lesson.index+1<lesson.row.chars.length){lesson.index++;render();}
       else navigate(L.practiceUrl(skill,lesson.row.chars,{hints:'off'}));
-    },true));panel.append(actions);host.append(panel,button('Back to my path',()=>{lesson=null;render();}));
+    },true));panel.append(actions);host.append(panel,button('Back to Kana',()=>{lesson=null;render();}));
   }
   function controls(includeHand=true){
     host.append(segmented('Kana script',[['hiragana','Hiragana'],['katakana','Katakana']],script,value=>{script=value;practiceSettings=null;url();render();}));
@@ -211,7 +211,10 @@
     host.replaceChildren();const state=L.read();
     document.querySelectorAll('.ma-kana-navigation a').forEach(a=>{
       const target=new URL(a.href),next=target.searchParams.get('view')||'learn',active=next===(view==='path'?'learn':view);
-      target.searchParams.set('script',script);target.searchParams.set('skill',skill);a.href=target.pathname+target.search;
+      target.searchParams.set('script',script);target.searchParams.set('skill',skill);
+      // Preserve choices between sections, but keep an already-open section's
+      // exact URL so the native shell can scroll up without reloading it.
+      a.href=active&&view!=='path'&&!lesson&&!placement&&!placementSetup?location.pathname+location.search:target.pathname+target.search;
       a.toggleAttribute('aria-current',active);if(active)a.setAttribute('aria-current','page');
     });
     if(lesson||placement||placementSetup)root.scrollTo({top:0,behavior:'instant'});
@@ -222,6 +225,15 @@
     if(focus)[...host.querySelectorAll('[aria-label]')].find(n=>n.getAttribute('aria-label')===focus)?.focus({preventScroll:true});
   }
   let refreshQueued=false;
+  document.querySelector('.ma-kana-navigation')?.addEventListener('click',event=>{
+    if(!(lesson||placement||placementSetup)||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    const a=event.target.closest('a[href]');if(!a)return;
+    const target=new URL(a.href),next=target.searchParams.get('view')||'learn';
+    if(target.pathname!==location.pathname||!['learn','practice','mastery','tests'].includes(next))return;
+    // A lesson/placement is an in-page state: selecting its parent section
+    // must leave that state even when the address is already identical.
+    event.preventDefault();chooseView(next);
+  });
   function refresh(){if(lesson||placement||placementSetup||customizing||refreshQueued)return;refreshQueued=true;requestAnimationFrame(()=>{refreshQueued=false;run(()=>{L.initialize();render();});});}
   root.addEventListener('modeAtlasCloudDataChanged',refresh);root.addEventListener('modeAtlasKanaLearningChanged',refresh);
   root.addEventListener('modeAtlasAccountWillChange',()=>{lesson=null;placement=null;placementSetup=false;practiceSettings=null;});
