@@ -160,7 +160,7 @@ def render_navigation(config: NavConfig) -> str:
   <a class="ma-nav__brand" href="/" aria-label="Mode Atlas home">
     <img class="ma-nav__mark" src="/assets/brand/mode-atlas-symbol.svg" width="44" height="44" alt="">
     <span class="ma-nav__brand-copy">
-      <span class="ma-nav__title">Mode Atlas</span>
+      <span class="ma-nav__title ma-brand-wordmark">Mode Atlas</span>
     </span>
   </a>
   <div class="ma-nav__content">
@@ -494,7 +494,7 @@ def render_loading_screen() -> str:
     <div class="ma-loading-head">
       <div class="ma-loading-mark">学</div>
       <div>
-        <div class="ma-loading-title">Mode Atlas</div>
+        <div class="ma-loading-title ma-brand-wordmark">Mode Atlas</div>
         <div class="ma-loading-sub">Preparing your study space…</div>
       </div>
     </div>

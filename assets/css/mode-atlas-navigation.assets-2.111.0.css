@@ -38,16 +38,7 @@
 }
 .ma-nav__mark{width:44px;height:44px;flex:0 0 44px;display:block;object-fit:contain;}
 .ma-nav__brand-copy{display:grid;gap:2px;min-width:0;}
-.ma-nav__title{
-  overflow:hidden;
-  color:var(--ma-text-strong);
-  font-family:var(--ma-font-display);
-  font-size:1.12rem;
-  font-weight:750;
-  line-height:1.15;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
+.ma-nav__title{width:142px;flex:none;}
 
 .ma-nav__content{
   min-width:0;
@@ -214,7 +205,7 @@ body.study-nav-hidden .ma-nav-handle{display:none;}
 }
 
 @media(max-width:520px){
-  .ma-nav__title{font-size:.84rem;}
+  .ma-nav__title{width:114px;}
   .ma-nav__content,.ma-nav__primary{display:contents;}
   .ma-nav__links{grid-column:1 / -1;grid-row:2;width:100%;justify-content:space-between;gap:4px;}
   .ma-nav__actions{grid-column:2;grid-row:1;justify-self:end;gap:5px;}
@@ -239,7 +230,7 @@ body[data-effective-display-mode="tablet"] .ma-nav{
 }
 body[data-effective-display-mode="tablet"] .ma-nav__brand{grid-column:auto;max-width:174px;flex:0 1 174px;gap:9px;}
 body[data-effective-display-mode="tablet"] .ma-nav__mark{width:40px;height:40px;flex-basis:40px;border-radius:13px;}
-body[data-effective-display-mode="tablet"] .ma-nav__title{font-size:.84rem;}
+body[data-effective-display-mode="tablet"] .ma-nav__title{width:114px;}
 body[data-effective-display-mode="tablet"] .ma-nav__content{display:grid;min-width:0;flex:1 1 auto;gap:0;}
 body[data-effective-display-mode="tablet"] .ma-nav__primary{display:flex;min-width:0;align-items:center;justify-content:flex-end;gap:6px;}
 body[data-effective-display-mode="tablet"] .ma-nav__links{width:auto;gap:4px;}
@@ -271,7 +262,7 @@ body[data-effective-display-mode="phone"] .ma-nav{
 }
 body[data-effective-display-mode="phone"] .ma-nav__brand{grid-column:1;grid-row:1;min-width:0;max-width:none;gap:8px;}
 body[data-effective-display-mode="phone"] .ma-nav__mark{width:36px;height:36px;flex-basis:36px;border-radius:12px;}
-body[data-effective-display-mode="phone"] .ma-nav__title{font-size:.8rem;}
+body[data-effective-display-mode="phone"] .ma-nav__title{width:106px;}
 body[data-effective-display-mode="phone"] .ma-nav__content,
 body[data-effective-display-mode="phone"] .ma-nav__primary{display:contents;}
 body[data-effective-display-mode="phone"] .ma-nav__links{grid-column:1 / -1;grid-row:2;width:100%;min-width:0;justify-content:space-between;gap:3px;}

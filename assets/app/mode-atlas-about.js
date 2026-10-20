@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'A clearer space for your learning.';
+  const WHATS_NEW_COPY = 'The same learning tools, with a more consistent look.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Kana now has one learning path. Start with the A-row or check your starting point.',
-    'Read, Recall and Handwrite unlock rows independently, with a simpler practice menu.',
-    'One mastery map shows each skill. Earn Mastered through Read and Recall, then add optional handwriting for Mastered+.'
+    'More space for learning, with clearer Kana and Kanji layouts on smaller screens.',
+    'A quicker route to your next look in the Shop, and a tidier Rewards collection.',
+    'A consistent Mode Atlas identity across the app, website and Home Screen.'
   ];
 
   function storeGet(key, fallback = '') {
@@ -198,9 +198,7 @@
     const strong = document.createElement('strong');
     strong.dataset.maInfo = infoKey;
     card.append(strong);
-    const small = aboutEl('small', '', note || '');
-    if (extraInfoKey) small.dataset.maInfo = extraInfoKey;
-    card.append(small);
+    if(note||extraInfoKey){const small=aboutEl('small','',note||'');if(extraInfoKey)small.dataset.maInfo=extraInfoKey;card.append(small);}
     return card;
   }
 
@@ -218,16 +216,16 @@
     const intro = aboutEl('div', 'ma-about-hero');
     const introCopy = document.createElement('div');
     introCopy.append(
-      aboutEl('div', 'ma-about-kicker', 'Mode Atlas'),
-      aboutEl('p', '', 'Practise kana, track your progress and build your Japanese vocabulary.')
+      aboutEl('span', 'ma-brand-wordmark', 'Mode Atlas'),
+      aboutEl('p', '', 'Learn Japanese. Build a little more every day.')
     );
-    intro.append(aboutEl('div', 'ma-about-mark', 'かな'), introCopy);
+    const mark=aboutEl('img','ma-about-mark');mark.src='/assets/brand/mode-atlas-symbol.svg';mark.alt='';mark.width=56;mark.height=56;intro.append(mark,introCopy);
 
     const tabs = aboutEl('div', 'ma-about-tabs');
     tabs.setAttribute('role', 'tablist');
     tabs.setAttribute('aria-label', 'About sections');
     [['overview','Overview'],['whatsnew','What’s new'],['legal','Legal']].forEach(([key,label])=>{
-      const tab=aboutButton(label,{className:'ma-button ma-button--ghost ma-button--small'});
+      const tab=aboutButton(label,{className:'ma-about-tab'});
       tab.dataset.maAboutTab=key; tab.setAttribute('role','tab'); tabs.append(tab);
     });
 
@@ -274,7 +272,7 @@
   function openAbout(tab='overview'){
     if(aboutOpen||!window.ModeAtlasDialog?.feature)return false;
     aboutOpen=true;
-    window.ModeAtlasDialog.feature({kicker:'Mode Atlas',title:'About Mode Atlas',contentNode:buildAboutContent(tab),size:'large'}).finally(()=>{aboutOpen=false;});
+    window.ModeAtlasDialog.feature({kicker:'',title:'About',contentNode:buildAboutContent(tab),size:'wide',closeIcon:true,closeLabel:'×'}).finally(()=>{aboutOpen=false;});
     return true;
   }
 

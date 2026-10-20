@@ -27,10 +27,11 @@
     for(const item of bands){
       const b=button('',()=>{level=item.level;state.settings({level});showCourse();},'ma-kanji-level');
       b.disabled=!item.unlocked;b.setAttribute('aria-pressed',String(item.level===level));b.setAttribute('aria-label',`N${item.level} ${item.name}${item.unlocked?'':', locked'}`);
-      b.append(el('strong','',`N${item.level}`),el('span','',item.name),el('small','',item.unlocked?`${item.complete} / ${item.total}`:'Locked'));
+      b.append(el('strong','',`N${item.level}`),el('span','ma-kanji-level__name',item.name),el('small','ma-kanji-level__status',item.unlocked?`${item.complete} / ${item.total}`:'Locked'));
       path.append(b);
     }
-    const summary=el('div','ma-kanji-course-summary');summary.append(el('p','',`${band.complete} of ${band.total} complete · ${band.mastered} mastered`),button('How levels unlock',help,'ma-kanji-text-button'));
+    const summary=el('div','ma-kanji-course-summary'),summaryCopy=el('div');summaryCopy.append(el('strong','',`N${level} · ${band.name}`),el('p','',`${band.complete} of ${band.total} complete · ${band.mastered} mastered`));
+    const info=button('i',help,'ma-kanji-path-help');info.setAttribute('aria-label','How levels unlock');summary.append(summaryCopy,info);
     host.append(path,summary);
     let firstTen=null;
     if(level===5&&!state.introReady(current)){
@@ -42,7 +43,7 @@
     if(old){const resume=el('div','ma-kanji-resume');resume.append(el('p','',`${old.test?'Test':names[old.mode]} · ${old.index} of ${old.sequence.length}`),button('Resume',()=>safely(()=>{session.resume();showSession();}),'ma-button ma-button--primary'),button('Discard',()=>{session.discard();showCourse();}));host.append(resume);}
     const layout=el('div','ma-kanji-course-layout'),intro=el('section','ma-kanji-intro');
     const symbol=el('img','ma-kanji-intro__art');symbol.src='/assets/illustrations/kanji-scene.svg';symbol.alt='';symbol.width=480;symbol.height=300;
-    intro.append(symbol,heading('Meet your next kanji'),el('p','','Meet a few characters, hear them in a word and check what you remember.'));
+    const lessonCopy=el('div','ma-kanji-intro__copy');lessonCopy.append(heading('Learn your next kanji'),el('p','','Learn the shape, hear the word, then try it.'));intro.append(lessonCopy,symbol);
     intro.append(button('Start learning',()=>start('learn',false),'ma-button ma-button--primary'));
     const options=el('div','ma-kanji-options');
     options.append(select('Set length',[[5,'5 characters'],[10,'10 characters'],[20,'20 characters'],[40,'40 characters']],count,v=>count=Number(v)));

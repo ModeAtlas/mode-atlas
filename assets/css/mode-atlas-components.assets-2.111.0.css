@@ -364,8 +364,8 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-button:hove
 .ma-dialog-layer[data-tone="success"] .ma-dialog{border-color:color-mix(in srgb,var(--ma-success) 48%,var(--ma-border));}
 
 @media(max-width:560px){
-  .ma-dialog-layer{align-items:end;padding:12px max(12px,env(safe-area-inset-right)) max(12px,calc(env(safe-area-inset-bottom) + 8px)) max(12px,env(safe-area-inset-left));}
-  .ma-dialog{width:100%;max-height:calc(var(--ma-overlay-height,100dvh) - 36px - env(safe-area-inset-bottom));border-radius:24px;}
+  .ma-dialog-layer{--ma-dialog-inset-top:max(12px,var(--ma-page-inset-top,env(safe-area-inset-top)));--ma-dialog-inset-bottom:max(12px,calc(env(safe-area-inset-bottom) + 8px));align-items:end;padding:var(--ma-dialog-inset-top) max(12px,env(safe-area-inset-right)) var(--ma-dialog-inset-bottom) max(12px,env(safe-area-inset-left));}
+  .ma-dialog{width:100%;max-height:calc(var(--ma-overlay-height,100dvh) - var(--ma-dialog-inset-top) - var(--ma-dialog-inset-bottom) - 12px);border-radius:20px;}
   .ma-dialog__actions{display:grid;grid-template-columns:1fr;}
   .ma-dialog__actions .ma-button{width:100%;}
 }

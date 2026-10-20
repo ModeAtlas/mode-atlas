@@ -164,7 +164,7 @@
   function renderCategory(host){
     const content=host.querySelector('[data-ma-shop-content]'),category=host.dataset.category,full=host.dataset.maShop==='full';content.replaceChildren();
     if(category==='featured'){
-      const intro=el('div','ma-shop-intro');intro.append(el('h3','',full?'Make it yours.':'Top picks'),el('p','',full?'Find your look. Make it part of your journey.':'Fresh looks and favourites for your next chapter.'));content.append(intro);
+      if(!full){const intro=el('div','ma-shop-intro');intro.append(el('h3','','Top picks'));content.append(intro);}
       section(content,'themes','Featured collections','collection',full?3:2);
       section(content,'wardrobe','The finishing touches','cosmetic',full?4:2);
       section(content,'pets','Meet your companion','cosmetic',2);
@@ -197,7 +197,7 @@
     const header=el('div','ma-shop-header'),wallet=el('section','ma-shop-wallet');wallet.setAttribute('aria-label','Your balances');
     const coin=el('span','ma-shop-coin');coin.append(icon('star'));
     const copy=el('div','ma-shop-wallet__copy'),value=el('p','ma-shop-wallet__balance');value.dataset.maCoinBalance='';value.setAttribute('role','status');copy.append(el('strong','',catalogue.currency.name),value);
-    const tokenCopy=el('div','ma-shop-wallet__copy ma-shop-wallet__tokens'),tokenValue=el('p','ma-shop-wallet__balance');tokenValue.dataset.maTokenBalance='';tokenValue.setAttribute('role','status');const tokenHelp=button(catalogue.earnedCurrency.name,'ma-shop-wallet__help');tokenHelp.setAttribute('aria-label','How to earn Study Tokens');tokenHelp.addEventListener('click',()=>void root.ModeAtlasDialog.alert({title:'Study Tokens',message:'Earn tokens through correct answers, level-ups and consistent study days. Wider kana practice earns more, and hints reduce the rate. Your tokens arrive when your progress syncs.',confirmLabel:'Got it'}));tokenCopy.append(tokenHelp,tokenValue);
+    const tokenCopy=el('div','ma-shop-wallet__copy ma-shop-wallet__tokens'),tokenValue=el('p','ma-shop-wallet__balance');tokenValue.dataset.maTokenBalance='';tokenValue.setAttribute('role','status');const tokenHelp=button('i','ma-shop-wallet__help');tokenHelp.setAttribute('aria-label','How to earn Study Tokens');tokenHelp.addEventListener('click',()=>void root.ModeAtlasDialog.alert({title:'Study Tokens',message:'Earn tokens through correct answers, level-ups and consistent study days. Wider kana practice earns more, and hints reduce the rate. Your tokens arrive when your progress syncs.',confirmLabel:'Got it'}));const tokenLabel=el('div','ma-shop-wallet__label');tokenLabel.append(el('strong','',catalogue.earnedCurrency.name),tokenHelp);tokenCopy.append(tokenLabel,tokenValue);
     const topup=button('Buy 500 coins','ma-button ma-button--primary ma-button--small');topup.dataset.maPurchaseCoins='';topup.addEventListener('click',()=>void coinPrompt());
     const retry=button('Refresh balance','ma-button ma-button--ghost ma-button--small');retry.dataset.maShopRefresh='';retry.hidden=true;retry.addEventListener('click',()=>void root.ModeAtlasShop.refresh(true));wallet.append(coin,copy,tokenCopy,topup,retry);header.append(wallet);
     if(!full){const link=shopLink('See full shop','featured','ma-button ma-button--ghost ma-shop-open');link.append(icon('arrow'));header.append(link);}

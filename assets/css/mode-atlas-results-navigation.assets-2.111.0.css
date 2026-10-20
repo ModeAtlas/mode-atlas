@@ -8,3 +8,10 @@
 .ma-kanji-result-stats>div{display:grid;gap:6px;}.ma-kanji-result-stats strong{font-size:1.7rem;}.ma-kanji-result-stats span{font-size:.8rem;color:var(--ma-muted);}
 .ma-kanji-result-answers{list-style:none;margin:20px 0 0;padding:0;}.ma-kanji-result-answers li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:start;padding:14px 0;border-bottom:1px solid var(--ma-border);}.ma-kanji-result-answers li>strong{font:500 1.8rem/1.3 var(--ma-font-jp);}.ma-kanji-result-answers p{margin:0;overflow-wrap:anywhere;}.ma-kanji-result-answers small{display:block;margin-top:4px;color:var(--ma-muted);}.ma-kanji-result-answers [data-correct="true"]{color:var(--ma-reading);}
 @media(max-width:700px){.ma-kanji-result-layout{grid-template-columns:1fr;gap:22px;}.ma-kanji-result-list{display:flex;overflow-x:auto;padding-bottom:8px;}.ma-kanji-result-list button{min-width:155px;flex:none;}.ma-results-branches{margin-bottom:12px;}}
+
+/* Both result branches share the same empty assessment presentation. */
+.results-empty-assessment{display:grid;justify-items:center;gap:16px;text-align:center;padding:20px 12px;}.results-empty-assessment__art{display:block;width:220px;max-width:100%;height:140px;object-fit:contain;}
+.results-empty-assessment__title{color:var(--ma-text-strong);font-size:1rem;}
+.results-empty-assessment__copy{margin:0;color:var(--ma-muted);font-size:.86rem;line-height:1.55;max-width:52ch;}
+.results-empty-assessment__actions{justify-content:center;}
+#maKanjiResults>.results-empty-assessment{max-width:720px;margin:24px auto 0;padding:28px 20px;border:1px solid var(--ma-border);border-radius:18px;background:var(--ma-card);}

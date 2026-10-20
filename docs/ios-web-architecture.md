@@ -559,3 +559,7 @@ Results owns its compact header and empty state, with the former decorated
 hero CSS removed. Word Bank and Kanji retain their collection/course owners.
 Native chrome owns the Results back/profile placement. No separate iOS page
 implementation or layout override sheet is introduced.
+
+## 2.111.0 identity and layout completion
+
+The canonical Japanese outline pair and outlined wordmark are composed by `build_brand_assets.cjs`; collection icons import its symbol composition. Native launch text is a template asset with system label tint. About, Rewards and navigation reference the same geometry. The shared wordmark mask owns semantic theme tinting. Results empty-state presentation is shared by the existing independent Kana/Kanji result controllers. Phone dialog safe-area insets are owned by the shared dialog stylesheet. No data or learning-policy ownership changes accompany these layouts.

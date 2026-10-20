@@ -24,10 +24,13 @@
                                     <constraint firstAttribute="height" constant="116" id="mark-height"/>
                                 </constraints>
                             </imageView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Mode Atlas" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="brand-name">
-                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="23"/>
-                                <color key="textColor" systemColor="labelColor"/>
-                            </label>
+                            <imageView opaque="NO" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="ModeAtlasWordmark" translatesAutoresizingMaskIntoConstraints="NO" id="brand-name">
+                                <color key="tintColor" systemColor="labelColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="180" id="name-width"/>
+                                    <constraint firstAttribute="height" constant="31" id="name-height"/>
+                                </constraints>
+                            </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="YOUR JAPANESE LEARNING SPACE" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="brand-subtitle">
                                 <fontDescription key="fontDescription" type="system" weight="medium" pointSize="10"/>
                                 <color key="textColor" systemColor="secondaryLabelColor"/>
@@ -50,6 +53,7 @@
     </scenes>
     <resources>
         <image name="ModeAtlasLaunchMark" width="512" height="512"/>
+        <image name="ModeAtlasWordmark" width="760" height="128"/>
         <namedColor name="AppCanvas">
             <color red="0.960784" green="0.960784" blue="0.968627" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

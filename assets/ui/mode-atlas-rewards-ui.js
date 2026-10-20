@@ -155,7 +155,11 @@
     const section=el('details','ma-reward-category');section.dataset.rewardCategory=type;section.open=open;
     const heading=el('summary'),copy=el('span','ma-reward-category__heading');
     copy.append(el('strong','',title),el('small','ma-reward-category__meta'));
-    const arrow=el('span','ma-reward-category__arrow','⌄');arrow.setAttribute('aria-hidden','true');const mark=el('span','ma-reward-category__mark',({themes:'◐',banners:'▧',wardrobe:'✧',frames:'◎',icons:'あア'})[type]);mark.setAttribute('aria-hidden','true');heading.append(mark,copy,arrow);
+    const arrow=el('span','ma-reward-category__arrow','⌄');arrow.setAttribute('aria-hidden','true');
+    const mark=el('span','ma-reward-category__mark');mark.setAttribute('aria-hidden','true');
+    if(type==='icons'){const image=el('img');image.src='/assets/brand/mode-atlas-symbol.svg';image.alt='';mark.append(image);}
+    else mark.textContent=({themes:'◐',banners:'▧',wardrobe:'✧',frames:'◎'})[type];
+    heading.append(mark,copy,arrow);
     const content=el('div','ma-reward-category__content');content.append(el('p','ma-atlas-rewards__note',note));section.append(heading,content);
     return {section,content};
   }
@@ -198,7 +202,7 @@
       let changing=false;
       for(const item of rules.icons){
         const name=item.name,choose=button('','ma-atlas-icon-choice');choose.dataset.appIcon=name;choose.dataset.rewardId=item.id;choose.dataset.rewardLevel=String(item.level||0);
-        if(item.icon){const preview=el('img');preview.src=`/assets/rewards/${item.icon}.svg`;preview.alt='';choose.append(preview);}else{const mark=el('span','ma-atlas-icon-choice__original','あア');mark.setAttribute('aria-hidden','true');choose.append(mark);}
+        const preview=el('img');preview.src=item.icon?`/assets/rewards/${item.icon}.svg`:'/assets/mode-atlas-icon.svg';preview.alt='';choose.append(preview);
         choose.append(el('strong','',name),el('small','',item.kind==='shop'?'Shop':item.grant?'Exclusive':`Level ${item.level}`));
         choose.addEventListener('click',async()=>{
           if(changing||!rules.unlocked(item,root.ModeAtlasProgress.getSummary().level,access()))return;

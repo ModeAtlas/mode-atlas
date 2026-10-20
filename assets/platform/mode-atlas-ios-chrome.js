@@ -41,14 +41,14 @@
     dock.append(links);
     if(profile){
       profile.className='ma-ios-profile';profile.setAttribute('aria-label','Profile and settings');
-      const home=document.querySelector('.atlas-home-heading'),hub=document.querySelector('.ma-hub-header');
+      const home=document.querySelector('.atlas-home-heading'),hub=document.querySelector('.ma-hub-header'),resultsNav=document.querySelector('.ma-results-branches');
       if(home){home.append(profile);}
-      else if(hub)hub.append(profile);
+      else if(hub&&!resultsNav)hub.append(profile);
       else if(header?.querySelector('.ma-ios-practice-actions'))header.querySelector('.ma-ios-practice-actions').append(profile);
       else {
         const bar=document.createElement('div');bar.className='ma-ios-page-tools';
         const back=document.createElement('a');back.href=root.AtlasPlatform.destinationPath('learn');back.textContent='‹ Learn';
-        bar.append(back,profile);const resultsNav=document.querySelector('.ma-results-branches');if(resultsNav)resultsNav.before(bar);else document.querySelector('.shell,.wrap,main')?.prepend(bar);
+        bar.append(back,profile);if(resultsNav)resultsNav.before(bar);else document.querySelector('.shell,.wrap,main')?.prepend(bar);
       }
     }
     if(exit)dock.append(exit);

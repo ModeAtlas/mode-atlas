@@ -64,7 +64,7 @@
     opts.kind = kind || opts.kind || 'alert';
     opts.title = opts.title || (opts.kind === 'confirm' ? 'Confirm action' : 'Mode Atlas');
     opts.message = opts.message || '';
-    opts.kicker = opts.kicker || 'Mode Atlas';
+    opts.kicker = opts.kicker ?? 'Mode Atlas';
     opts.tone = ['info', 'success', 'warning', 'error', 'danger'].includes(opts.tone) ? opts.tone : 'info';
     opts.confirmLabel = opts.confirmLabel || (opts.kind === 'confirm' ? 'Continue' : 'OK');
     opts.hideActions = opts.kind === 'feature' ? true : opts.hideActions === true;
@@ -122,6 +122,7 @@
     panel.classList.toggle('ma-dialog--wide', opts.size === 'wide');
     panel.classList.toggle('ma-dialog--large', opts.size === 'large');
     kicker.textContent = opts.kicker;
+    kicker.hidden = !opts.kicker;
     title.textContent = opts.title;
     message.textContent = opts.message;
     message.hidden = !opts.message;
