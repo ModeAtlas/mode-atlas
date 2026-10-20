@@ -259,7 +259,7 @@ for(const native of [false,true])test(`mixed collection surfaces keep readable p
       await page.evaluate(banner=>ModeAtlasProgress.selectBanner(banner),banner);
       const card=page.locator('.ma-account-card');await expect(card.locator('[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner',banner);
       for(const signedIn of [false,true]){
-        await page.evaluate(signedIn=>{currentUser=signedIn?{uid:'contrast-test',displayName:'Test learner'}:null;updateUiBinding({authBtn:document.querySelector('#profileAuthBtn')});},signedIn);
+        await page.evaluate(signedIn=>{authResolved=true;currentUser=signedIn?{uid:'contrast-test',displayName:'Test learner'}:null;updateUiBinding({authBtn:document.querySelector('#profileAuthBtn')});},signedIn);
         const action=page.locator('#profileAuthBtn');await expect(action).toHaveText(signedIn?'Sign out':'Sign in with Google');
         await action.evaluate(async node=>{await Promise.all(node.getAnimations({subtree:true}).map(animation=>animation.finished.catch(()=>{})));});
         await readable(action.locator('[data-profile-auth-label]'),await action.evaluate(node=>getComputedStyle(node).backgroundColor));
