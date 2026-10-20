@@ -57,7 +57,7 @@ test('paused cloud sync offers one retry and replaces the failure with confirmed
   await launch(page);
   await page.evaluate(()=>{
     window.retryCalls=0;window.retryState={state:'paused',tone:'warning',text:'Sync paused · saved on this device',user:{uid:'fixture'},canRetry:true};
-    window.KanaCloudSync={...KanaCloudSync,getSyncStatus:()=>retryState,syncNow:async()=>{retryCalls++;retryState={...retryState,state:'pending',text:'Sync pending',canRetry:false};dispatchEvent(new Event('kanaCloudSyncStatusChanged'));await new Promise(resolve=>{window.finishRetry=resolve;});retryState={...retryState,state:'cloud',tone:'ok',text:'Synced across devices'};dispatchEvent(new Event('kanaCloudSyncStatusChanged'));}};
+    window.KanaCloudSync={...KanaCloudSync,getSyncStatus:()=>retryState,retryConnection:async()=>{retryCalls++;retryState={...retryState,state:'pending',text:'Sync pending',canRetry:false};dispatchEvent(new Event('kanaCloudSyncStatusChanged'));await new Promise(resolve=>{window.finishRetry=resolve;});retryState={...retryState,state:'cloud',tone:'ok',text:'Synced across devices'};dispatchEvent(new Event('kanaCloudSyncStatusChanged'));}};
     dispatchEvent(new Event('kanaCloudSyncStatusChanged'));ModeAtlasAccountNavigation.open('profile');
   });
   await page.getByRole('button',{name:'Retry sync',exact:true}).click();
