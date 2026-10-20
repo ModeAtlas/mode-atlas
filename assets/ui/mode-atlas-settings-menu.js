@@ -17,7 +17,7 @@
                 <div class="ma-setting-row__copy">
                   <div class="ma-setting-row__label">Display</div>
                 </div>
-                <div class="ma-setting-row__control ma-segmented ma-settings-segmented ma-settings-segmented--display" style="--ma-segment-count:4">
+                <div class="ma-setting-row__control ma-segmented ma-settings-segmented ma-settings-segmented--display">
                   <button class="ma-button ma-display-option" data-display="auto" type="button">Auto</button>
                   <button class="ma-button ma-display-option" data-display="desktop" type="button">Desktop</button>
                   <button class="ma-button ma-display-option" data-display="tablet" type="button">Tablet</button>
