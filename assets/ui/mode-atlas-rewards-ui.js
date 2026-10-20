@@ -90,7 +90,7 @@
     if(!host)return;
     const routine=root.ModeAtlasProgress.routine();host.replaceChildren();
     for(const goal of routine.goals.filter(goal=>!compact||goal.period==='daily')){
-      const complete=goal.value>=goal.target,action=root.ModeAtlasStudyPlan.goalAction(goal,routine.goals),card=el(action?'a':'div','ma-routine-goal');card.dataset.goal=goal.id;card.dataset.complete=String(complete);
+      const complete=goal.value>=goal.target,action=root.ModeAtlasStudyPlan.goalAction(goal,routine.goals),card=el(action?'a':'div','ma-routine-goal');card.classList.toggle('ma-routine-goal--full',!compact);card.dataset.goal=goal.id;card.dataset.complete=String(complete);
       if(action){card.href=action.href;card.setAttribute('aria-label',`${goal.label} · ${Math.min(goal.value,goal.target)} of ${goal.target} · ${action.label}`);}
       card.dataset.period=goal.period;
       if(!compact)card.append(el('small','ma-routine-goal__period',goal.period==='weekly'?'This week':'Today'));

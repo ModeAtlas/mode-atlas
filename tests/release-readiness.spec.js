@@ -18,7 +18,7 @@ test('native Firebase modules load offline from the payload and share a single a
   });
   expect(result).toEqual({same:true,count:1});
   expect(downloads.filter(url=>url.includes('/firebasejs/'))).toEqual([]);
-  await expect(page.locator('.atlas-ios-home')).toBeVisible();
+  await expect(page.locator('.atlas-home')).toBeVisible();
 });
 
 test('the first-use tour is skippable, keeps keyboard focus and can be replayed',async({page})=>{

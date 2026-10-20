@@ -76,14 +76,17 @@
   function render(onOpen){
     const state=L.read(),evidence=M.createSnapshot(),wrap=el('div','ma-kana-mastery-map'),counts=Object.fromEntries(L.labels.map(label=>[label,0]));
     for(const char of M.ALL)counts[L.labels[L.stage(char,state,evidence)]]++;
-    wrap.append(el('p','ma-kana-muted','Tap a kana to see its targets and choose what to practise.'));
+    wrap.append(el('p','ma-kana-muted','Two marks: Read, then Recall. Tap a kana for its targets and next practice.'));
     const summary=el('div','ma-kana-mastery-legend');
     L.labels.forEach((label,i)=>{const item=el('span','');item.dataset.stage=String(i);item.append(el('b','',counts[label]),document.createTextNode(' '+label));summary.append(item);});wrap.append(summary,masteryHelp());
     for(const [title,chars]of [['Hiragana',M.HIRA],['Katakana',M.KATA],['Voiced sounds',M.DAK],['Joined sounds',M.YOON],['Extended Katakana',M.EXT]]){
       const section=el('section','ma-mastery-group'),grid=el('div','ma-mastery-grid');section.append(el('h3','',title));
       for(const char of chars){
         const stage=L.stage(char,state,evidence),b=el('button','ma-mastery-cell');b.type='button';b.dataset.stage=String(stage);b.dataset.maMasteryKana=char;
-        b.setAttribute('aria-label',`${char} mastery details: ${L.labels[stage]}`);b.append(el('strong','',char),el('span','',L.labels[stage]));b.addEventListener('click',()=>onOpen(char,detail(char)));grid.append(b);
+        b.setAttribute('aria-label',`${char} mastery details: ${L.labels[stage]}`);b.append(el('strong','',char),el('span','',L.labels[stage]));
+        const skills=el('span','ma-mastery-skill-marks');skills.setAttribute('aria-hidden','true');
+        for(const skill of ['reading','writing']){const earned=L.earned(char,skill,state,evidence),mark=el('i');mark.dataset.stage=String(earned);mark.title=L.names[skill]+': '+L.labels[earned];skills.append(mark);}b.append(skills);
+        b.addEventListener('click',()=>onOpen(char,detail(char)));grid.append(b);
       }section.append(grid);wrap.append(section);
     }return wrap;
   }

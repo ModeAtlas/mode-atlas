@@ -3,7 +3,7 @@
 .ma-nav{
   --ma-nav-accent:var(--ma-collection-accent,var(--ma-writing));
   position:sticky;
-  top:max(12px,env(safe-area-inset-top,0px));
+  top:0;
   z-index:70;
   width:min(1240px,calc(100% - 32px));
   margin:14px auto 18px;
@@ -12,12 +12,12 @@
   align-items:center;
   gap:var(--ma-space-3);
   box-sizing:border-box;
-  border:1px solid var(--ma-border);
+  border:0;
+  border-bottom:1px solid var(--ma-border);
   border-radius:var(--ma-radius-nav);
-  background:var(--ma-surface-strong);
-  box-shadow:var(--ma-shadow-soft);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
+  background:var(--ma-app-bg);
+  box-shadow:none;
+
 }
 .shell > .ma-nav,.wrap > .ma-nav{width:100%;}
 .ma-nav--reading{--ma-nav-accent:var(--ma-collection-accent,var(--ma-reading));}
@@ -36,37 +36,14 @@
   color:var(--ma-text);
   text-decoration:none;
 }
-.ma-nav__mark{
-  width:44px;
-  height:44px;
-  flex:0 0 44px;
-  display:grid;
-  place-items:center;
-  border:1px solid color-mix(in srgb,var(--ma-nav-accent) 44%,var(--ma-border));
-  border-radius:15px;
-  background:color-mix(in srgb,var(--ma-nav-accent) 14%,var(--ma-card-2));
-  color:var(--ma-text-strong);
-  font-family:var(--ma-font-jp);
-  font-size:.98rem;
-  font-weight:900;
-  line-height:1;
-  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--ma-text) 8%,transparent);
-}
+.ma-nav__mark{width:44px;height:44px;flex:0 0 44px;display:block;object-fit:contain;}
 .ma-nav__brand-copy{display:grid;gap:2px;min-width:0;}
-.ma-nav__kicker{
-  color:var(--ma-muted);
-  font-size:.66rem;
-  font-weight:900;
-  letter-spacing:.12em;
-  line-height:1;
-  text-transform:uppercase;
-}
 .ma-nav__title{
   overflow:hidden;
   color:var(--ma-text-strong);
   font-family:var(--ma-font-display);
-  font-size:.92rem;
-  font-weight:850;
+  font-size:1.12rem;
+  font-weight:750;
   line-height:1.15;
   text-overflow:ellipsis;
   white-space:nowrap;
@@ -91,6 +68,7 @@
   gap:var(--ma-space-2);
 }
 .ma-nav__links{min-width:0;overflow:visible;}
+.ma-nav__destination-icon{display:none;}
 .ma-nav__link,.ma-nav__action{
   appearance:none;
   flex:0 0 auto;
@@ -236,7 +214,6 @@ body.study-nav-hidden .ma-nav-handle{display:none;}
 }
 
 @media(max-width:520px){
-  .ma-nav__kicker{display:none;}
   .ma-nav__title{font-size:.84rem;}
   .ma-nav__content,.ma-nav__primary{display:contents;}
   .ma-nav__links{grid-column:1 / -1;grid-row:2;width:100%;justify-content:space-between;gap:4px;}
@@ -262,7 +239,6 @@ body[data-effective-display-mode="tablet"] .ma-nav{
 }
 body[data-effective-display-mode="tablet"] .ma-nav__brand{grid-column:auto;max-width:174px;flex:0 1 174px;gap:9px;}
 body[data-effective-display-mode="tablet"] .ma-nav__mark{width:40px;height:40px;flex-basis:40px;border-radius:13px;}
-body[data-effective-display-mode="tablet"] .ma-nav__kicker{display:none;}
 body[data-effective-display-mode="tablet"] .ma-nav__title{font-size:.84rem;}
 body[data-effective-display-mode="tablet"] .ma-nav__content{display:grid;min-width:0;flex:1 1 auto;gap:0;}
 body[data-effective-display-mode="tablet"] .ma-nav__primary{display:flex;min-width:0;align-items:center;justify-content:flex-end;gap:6px;}
@@ -295,7 +271,6 @@ body[data-effective-display-mode="phone"] .ma-nav{
 }
 body[data-effective-display-mode="phone"] .ma-nav__brand{grid-column:1;grid-row:1;min-width:0;max-width:none;gap:8px;}
 body[data-effective-display-mode="phone"] .ma-nav__mark{width:36px;height:36px;flex-basis:36px;border-radius:12px;}
-body[data-effective-display-mode="phone"] .ma-nav__kicker{display:none;}
 body[data-effective-display-mode="phone"] .ma-nav__title{font-size:.8rem;}
 body[data-effective-display-mode="phone"] .ma-nav__content,
 body[data-effective-display-mode="phone"] .ma-nav__primary{display:contents;}
@@ -394,9 +369,24 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-nav__link.i
   .ma-nav__settings{width:44px;min-width:44px;min-height:44px;}
 }
 
-/* Branch navigation stays in the page; primary destinations never change. */
-.ma-kana-navigation{display:flex;gap:4px;max-width:820px;margin:8px auto 16px;width:100%;}
-body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation{width:min(540px,100%);margin-inline:auto;align-self:center;flex:none;}
-.ma-kana-navigation a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 5px;border-radius:12px;text-decoration:none;color:var(--ma-muted);font-weight:750;font-size:.78rem;}
-.ma-kana-navigation a[aria-current="page"]{color:var(--ma-text-strong);background:var(--ma-control);}
+/* Branch destinations are distinct from the global navigation. */
+.ma-kana-navigation{display:grid;grid-template-columns:1fr 1fr auto auto;align-items:stretch;gap:10px;max-width:1120px;margin:24px auto;width:calc(100% - 48px);}
+.ma-kana-navigation a{display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;min-height:64px;padding:14px 20px;border-radius:14px;background:var(--ma-card);border:1px solid var(--ma-border);text-decoration:none;color:var(--ma-muted);font-weight:700;font-size:.9rem;}
+.ma-kana-navigation a[data-kana-section="kana"],.ma-kana-navigation a[data-kana-section="practice"]{font-size:1.15rem;justify-content:flex-start;}
+.ma-kana-navigation a[data-kana-section="kana"]::before{content:'あ';font-family:var(--ma-font-jp);font-size:1.5rem;}
+.ma-kana-navigation a[data-kana-section="practice"]::before{content:'↔';font-size:1.5rem;}
+.ma-kana-navigation a[aria-current="page"]{color:var(--ma-primary-text);background:var(--ma-primary);border-color:var(--ma-primary);}
+body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation{width:min(540px,100%);margin:8px auto 12px;align-self:center;flex:none;grid-template-columns:repeat(4,1fr);gap:4px;}
+body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation a{min-height:44px;padding:8px 4px;font-size:.75rem;justify-content:center;}
+body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation a::before{display:none;}
 body.trainer-session-active .ma-kana-navigation,body.study-nav-hidden .ma-kana-navigation{display:none;}
+@media(max-width:600px){.ma-kana-navigation{width:100%;grid-template-columns:1fr 1fr;margin:12px auto 18px;gap:8px;}.ma-kana-navigation a{min-height:44px;padding:10px 14px;font-size:.75rem;}.ma-kana-navigation a[data-kana-section="kana"],.ma-kana-navigation a[data-kana-section="practice"]{min-height:52px;}.ma-kana-navigation a[data-kana-section="mastery"],.ma-kana-navigation a[data-kana-section="tests"]{background:none;border:0;padding:4px;}}
+/* Desktop has a persistent destination rail; compact web and iOS keep their
+   existing responsive chrome. Focus mode removes the rail with its controls. */
+@media(min-width:1100px){
+ html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .ma-nav__destination-icon{display:block;width:20px;height:20px;}
+ html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.study-nav-hidden) .ma-nav{position:fixed;left:0;right:0;top:0;width:100%;height:76px;margin:0;padding:0 28px;border-radius:0;background:var(--ma-card);}
+ html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.study-nav-hidden) .ma-nav__links{position:fixed;left:0;top:76px;bottom:0;width:180px;padding:24px 14px;display:flex;flex-direction:column;align-items:stretch;gap:7px;border-right:1px solid var(--ma-border);background:var(--ma-card);}
+ html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .ma-nav__link{justify-content:flex-start;min-height:48px;padding:12px 16px;font-size:.85rem;}
+ html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .ma-nav__link.is-active{color:var(--ma-atlas);background:var(--ma-control-active);border-color:transparent;}
+}

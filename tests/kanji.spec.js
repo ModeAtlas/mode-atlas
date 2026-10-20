@@ -145,7 +145,7 @@ test('handwriting guides stroke direction and supports mouse, touch, undo, reset
 });
 
 test('Learn shows three sibling learning branches and shared results outside them',async({page})=>{
-  await setup(page);await page.goto('/learn/');const library=page.locator('.ma-learn-library');
-  await expect(library.locator(':scope > section[data-branch]')).toHaveCount(3);await expect(library.locator(':scope > section[data-branch] h2')).toHaveText(['Kana','Kanji','Word Bank']);
-  await expect(page.getByRole('link',{name:'Learning path',exact:true})).toHaveAttribute('href','/kana/');await expect(library.locator('section[data-branch] a[href="/results/"]')).toHaveCount(0);
+  await setup(page);await page.goto('/learn/');const library=page.locator('.ma-branch-library');
+  await expect(library.locator(':scope > a[data-branch]')).toHaveCount(3);await expect(library.locator(':scope > a[data-branch] .ma-branch-tile__title')).toHaveText(['Kana','Kanji','Word Bank']);
+  await expect(page.getByRole('link',{name:'Kana learning path',exact:true})).toHaveAttribute('href','/kana/');await expect(library.locator('a[data-branch][href="/results/"]')).toHaveCount(0);
 });

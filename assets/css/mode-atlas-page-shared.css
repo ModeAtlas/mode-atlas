@@ -25,6 +25,8 @@ body{
 .app-shell,.shell,.wrap,main,.page,.page-shell{height:auto;max-height:none;}
 body::before{pointer-events:none;}
 
+[lang="ja"]{font-family:var(--ma-font-jp);}
+
 h1,h2,h3,.main-title,.hero-title,.launch-title,.card-title{font-family:var(--ma-font-display);}
 .hiragana,.prompt,.kana,.cell,.cell-char,.kana-big .char,.result-kana-card .char{font-family:var(--ma-font-jp);}
 
@@ -64,16 +66,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   color:var(--ma-text);
 }
 .ma-loading-head{display:flex;align-items:center;gap:13px;margin-bottom:16px;}
-.ma-loading-mark{
-  width:46px;
-  height:46px;
-  display:grid;
-  place-items:center;
-  border-radius:16px;
-  background:linear-gradient(135deg,var(--ma-writing),var(--ma-kana));
-  color:var(--ma-app-bg);
-  font-weight:900;
-}
+.ma-loading-mark{width:46px;height:46px;display:block;background:transparent url('/assets/brand/mode-atlas-symbol.svg') center/contain no-repeat;color:transparent;font-size:0;}
 .ma-loading-title{font-weight:900;letter-spacing:-.03em;}
 .ma-loading-sub{margin-top:3px;color:var(--ma-muted);font-size:13px;}
 .ma-skeleton{

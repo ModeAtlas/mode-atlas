@@ -22,8 +22,8 @@ html[data-ma-runtime="ios"] .ma-loading-card{
 }
 html[data-ma-runtime="ios"] .ma-loading-head{flex-direction:column;text-align:center;gap:14px;margin:0;}
 html[data-ma-runtime="ios"] .ma-loading-mark{
-  width:116px;height:116px;border:0;border-radius:50%;
-  background:transparent url('/assets/android-chrome-512.png') center / cover no-repeat;
+  width:116px;height:116px;border:0;border-radius:0;
+  background:transparent url('/assets/brand/mode-atlas-symbol.svg') center / contain no-repeat;
   color:transparent;font-size:0;
   box-shadow:var(--ma-native-shadow);
 }

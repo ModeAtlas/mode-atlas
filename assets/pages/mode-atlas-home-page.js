@@ -25,23 +25,18 @@
   function render(){
     const isUser = onboarded(), next = recommendation();
     document.body.dataset.maHomeState = isUser ? 'returning' : 'visitor';
-    document.querySelectorAll('[data-ma-home-visitor]').forEach(node => { node.hidden = isUser; });
-    document.querySelectorAll('[data-ma-home-user]').forEach(node => { node.hidden = !isUser; });
-    if (isUser) {
-      const action = find('#homeContinueAction');
-      if (action) action.href = next.href;
-      set('#homeContinueTitle', next.title);
-      set('#homeContinueMeta', next.reason);
-      set('#homeContinueLength', next.meta);
-    }
+    const action = find('#homeContinueAction');
+    if (action) { action.href = isUser ? next.href : '/kana/'; action.textContent = isUser ? 'Continue learning →' : 'Get started →'; }
+    set('#homeContinueTitle', isUser ? next.title : 'Make your first connection.');
+    set('#homeContinueKicker', isUser ? 'CONTINUE LEARNING' : 'START WITH KANA');
+    set('#homeContinueMeta', isUser ? next.reason : 'Connect Japanese shapes and sounds, one row at a time.');
+    set('#homeContinueLength', next.meta);
     const progress = window.ModeAtlasProgress.getSummary(), routine = window.ModeAtlasProgress.routine();
     renderPersonal(progress, routine);
-    if (window.ModeAtlasEnv?.isNativeApp) renderNative(next, progress, routine);
   }
   function renderPersonal(progress, routine){
     const {name,character} = window.ModeAtlasPortrait.self();
-    set('#iosHomeTitle', name ? `Hi, ${name}` : 'Mode Atlas');
-    set('#atlasReturningTitle', name ? `Good to see you, ${name}.` : 'Good to see you.');
+    set('#atlasReturningTitle', onboarded() ? (name ? `Good to see you, ${name}.` : 'Good to see you.') : 'Let’s learn Japanese.');
     const signature = JSON.stringify(character);
     document.querySelectorAll('[data-ma-home-avatar]').forEach(node => {
       if (node.dataset.character === signature) return;
@@ -51,6 +46,7 @@
     setAll('[data-ma-home-level]', `Level ${progress.level}`);
     set('#homeStreak', count(routine.streak));
     set('#homeTotalXp', count(progress.xp).toLocaleString());
+    set('#homeCorrect', count(progress.lifetimeCorrect).toLocaleString());
     set('#homeLevelMeta', `${count(progress.levelXp)} / ${progress.levelRequirement} XP to level ${progress.level + 1}`);
     const bar = find('#homeLevelProgress');
     if(bar) bar.value = count(progress.progress) * 100;
@@ -78,28 +74,10 @@
       }
     });
   }
-  function renderNative(next, progress, routine){
-    window.ModeAtlasRewardsUI.renderGoals(find('#iosHomeGoals'), {compact:true});
-    const kana = window.ModeAtlasKanaMetrics.kanaStats();
-    const link = find('#iosHomeContinue');
-    if (link) { link.href = next.href; link.dataset.mode = next.mode; }
-    set('#iosHomeGreeting', next.reason);
-    set('#iosHomeContinueKicker', 'Suggested for you');
-    set('#iosHomeContinueTitle', next.title);
-    set('#iosHomeContinueMeta', next.meta);
-    set('#iosHomeStreak', count(routine.streak));
-    set('#iosHomeLevel', Math.max(1, Number(progress.level) || 1));
-    set('#iosHomeCorrect', Math.max(0, Number(progress.lifetimeCorrect) || 0).toLocaleString());
-    set('#iosHomeDailyStatus', kana.dailyDone ? '✓ Daily challenge complete' : 'Try today’s daily challenge');
-    const daily = find('.atlas-ios-home__today');
-    if (daily) daily.href = kana.dailyDone ? window.AtlasPlatform.destinationPath('progress') : '/reading/?mode=daily';
-    set('#iosHomeLevelMeta', `${Math.max(0, Number(progress.levelXp) || 0)} / ${Math.max(1, Number(progress.levelRequirement) || 1)} XP to level ${Math.max(1, Number(progress.level) || 1) + 1}`);
-    const bar = find('#iosHomeLevelProgress');
-    if (bar) bar.value = Math.min(100, Math.max(0, Number(progress.progress) || 0) * 100);
-  }
   document.querySelectorAll('[data-ma-home-review-help]').forEach(button => button.addEventListener('click', () => {
     window.ModeAtlasDialog.alert({title:'What does “due” mean?',message:window.ModeAtlasReview.dueHelp(),confirmLabel:'Got it'});
   }));
+  window.ModeAtlasBranchLibrary.render(find('[data-ma-branch-library]'), {compact:true});
   render();
   document.addEventListener('ma:ui-refresh', render);
   document.addEventListener('ma:onboarding-complete', render);

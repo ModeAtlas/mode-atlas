@@ -83,7 +83,7 @@ test('repair inventory previews the entire eligible gap and its calendar expiry'
     const wallet={status:'ready',balance:0,inventory:{'streak-freeze':0,'streak-repair':1},repairDay:'2026-10-05',repair:{days:['2026-10-03','2026-10-04','2026-10-05'],expiresOn:'2026-10-12'}};
     window.repairUses=0;KanaCloudSync.getUser=()=>({uid:'repair-owner'});
     window.ModeAtlasShop={...ModeAtlasShop,current:()=>wallet,useRepair:async()=>{repairUses++;}};
-    const host=document.createElement('section');host.id='repairFixture';document.querySelector('.atlas-ios-home').append(host);ModeAtlasShopUI.renderInventory(host);
+    const host=document.createElement('section');host.id='repairFixture';document.querySelector('.atlas-home').append(host);ModeAtlasShopUI.renderInventory(host);
   });
   await expect(page.locator('#repairFixture')).toContainText('Restore 3 missed days');
   await expect(page.locator('#repairFixture')).toContainText('Use by');

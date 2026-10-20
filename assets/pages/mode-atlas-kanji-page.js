@@ -40,7 +40,7 @@
     const old=session.saved();
     if(old){const resume=el('div','ma-kanji-resume');resume.append(el('p','',`${old.test?'Test':names[old.mode]} · ${old.index} of ${old.sequence.length}`),button('Resume',()=>safely(()=>{session.resume();showSession();}),'ma-button ma-button--primary'),button('Discard',()=>{session.discard();showCourse();}));host.append(resume);}
     const layout=el('div','ma-kanji-course-layout'),intro=el('section','ma-kanji-intro');
-    const symbol=el('div','ma-kanji-intro__glyph','漢');symbol.lang='ja';symbol.setAttribute('aria-hidden','true');
+    const symbol=el('img','ma-kanji-intro__art');symbol.src='/assets/illustrations/kanji-scene.svg';symbol.alt='';symbol.width=480;symbol.height=300;
     intro.append(symbol,heading('Meet your next kanji'),el('p','','Meet a few characters, hear them in a word and check what you remember.'));
     intro.append(button('Start learning',()=>start('learn',false),'ma-button ma-button--primary'));
     const options=el('div','ma-kanji-options');

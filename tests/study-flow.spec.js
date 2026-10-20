@@ -4,7 +4,12 @@ for(const mode of ['reading','writing'])test(`web ${mode} navigation stays visib
   await prepare(page);await page.setViewportSize({width:1280,height:800});await open(page,`/${mode}/`);
   const branch=page.getByRole('navigation',{name:'Kana sections'}),dock=page.locator('.bottom-shell'),start=page.locator('#startBtn');
   const bounds=await branch.boundingBox(),left=await page.locator('.left-panel').boundingBox(),right=await page.locator('.right-panel').boundingBox();
-  expect(bounds.x).toBeGreaterThanOrEqual(left.x+left.width);expect(bounds.x+bounds.width).toBeLessThanOrEqual(right.x);
+  const rail=await page.locator('.ma-nav__links').boundingBox(),card=await page.locator('.ma-trainer-card').boundingBox();
+  expect(bounds.x).toBeGreaterThanOrEqual(rail.x+rail.width);
+  expect(left.x).toBeGreaterThanOrEqual(card.x+card.width);expect(right.x).toBe(left.x);
+  expect(left.y).toBeGreaterThanOrEqual(bounds.y+bounds.height);
+  expect(right.y).toBeGreaterThanOrEqual(left.y+left.height);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
   expect((await start.boundingBox()).y+(await start.boundingBox()).height).toBeLessThan((await dock.boundingBox()).y);
   expect(await page.evaluate(()=>document.documentElement.scrollHeight-innerHeight)).toBeLessThanOrEqual(1);
   await page.screenshot({path:testInfo.outputPath(`desktop-${mode}-setup.png`),animations:'disabled'});
@@ -142,10 +147,10 @@ for(const theme of ['light','dark'])test(`iOS ${theme}: recommendation reflects 
   await prepare(page,{native:true,theme});
   await page.addInitScript(()=>localStorage.setItem('charStats',JSON.stringify({'あ':{correct:3,wrong:5}})));
   await open(page,'/');
-  await expect(page.locator('#iosHomeContinueTitle')).toHaveText('Read tricky kana');
-  await expect(page.locator('#iosHomeGreeting')).toContainText('1 kana has');
+  await expect(page.locator('#homeContinueTitle')).toHaveText('Read tricky kana');
+  await expect(page.locator('#homeContinueMeta')).toContainText('1 kana has');
   await page.screenshot({path:testInfo.outputPath(`ios-${theme}-recommendation.png`)});
-  await page.locator('#iosHomeContinue').click();
+  await page.locator('#homeContinueAction').click();
   await expect(page.locator('#studyLength')).toHaveValue('10');
   expect(await page.evaluate(()=>settings.focusWeak)).toBe(true);
   await page.locator('#startBtn').click();

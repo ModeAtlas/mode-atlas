@@ -601,7 +601,7 @@ test('recovery rejects an expired daily attempt, a changed sequence, and an acco
 
 for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile order and dock frame stay consistent`,async({page},info)=>{
   await prepare(page,{theme,xp:700});await open(page,'/');
-  await expect(page.locator('#iosHomeGoals [data-goal]')).toHaveCount(3);
+  await expect(page.locator('#homeGoals [data-goal]')).toHaveCount(3);
   await page.locator('#profileOpenBtn').click();
   await expect(page.locator('#maAccount-profile')).toBeVisible();
   const order=await page.evaluate(()=>document.querySelector('.ma-progression-card').getBoundingClientRect().bottom<document.querySelector('.ma-sync-card').getBoundingClientRect().top);
@@ -614,7 +614,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile orde
   const frame=await page.locator('#topProfileDot').evaluate(node=>getComputedStyle(node).boxShadow);expect(frame).toContain(theme==='dark'?'232, 155, 128':'143, 62, 37');
   await page.screenshot({animations:'disabled',path:info.outputPath(`rewards-${theme}.png`)});
   await page.getByRole('tab',{name:'Rewards',exact:true}).focus();await page.keyboard.press('ArrowLeft');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toBeFocused();
-  await open(page,'/');await page.locator('.atlas-ios-home [data-ma-rewards-open]').click();await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
+  await open(page,'/');await page.locator('.atlas-home [data-ma-rewards-open]').click();await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
   await open(page,'/kana/');
   await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
 });

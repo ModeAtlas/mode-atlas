@@ -53,31 +53,27 @@ TRAINER_CONFIGS: dict[str, TrainerConfig] = {
 @dataclass(frozen=True)
 class NavConfig:
     key: str
-    mark: str
-    kicker: str
-    title: str
-    brand_href: str = '/'
     accent: str = 'atlas'
     account_actions: bool = True
     hideable: bool = False
 
 NAV_CONFIGS: dict[str, NavConfig] = {
-    'index.html': NavConfig('atlas', 'あア', 'Mode Atlas', 'Learn Japanese'),
-    'learn/index.html': NavConfig('learn', '学', 'Mode Atlas', 'Learn'),
-    'progress/index.html': NavConfig('progress', '記', 'Mode Atlas', 'Progress'),
-    'friends/index.html': NavConfig('friends', '友', 'Mode Atlas', 'Friends'),
-    'shop/index.html': NavConfig('shop', '店', 'Mode Atlas', 'Atlas Shop'),
-    'kana/index.html': NavConfig('kana', 'かな', 'Mode Atlas', 'Kana Trainer', accent='kana'),
-    'reading/index.html': NavConfig('reading', '読', 'Kana Trainer', 'Read', brand_href='/kana/', accent='reading', hideable=True),
-    'writing/index.html': NavConfig('writing', '書', 'Kana Trainer', 'Recall', brand_href='/kana/', accent='writing', hideable=True),
-    'results/index.html': NavConfig('results', '測', 'Mode Atlas', 'Test Results', brand_href='/learn/', accent='results'),
-    'results/kanji/index.html': NavConfig('kanjiResults', '測', 'Mode Atlas', 'Test Results', brand_href='/learn/', accent='results'),
-    'kana/handwriting/index.html': NavConfig('kanaHandwriting', '書', 'Kana', 'Handwriting', brand_href='/kana/', accent='writing'),
-    'kanji/index.html': NavConfig('kanji', '漢', 'Mode Atlas', 'Kanji', brand_href='/learn/', accent='results'),
-    'kanji/sources/index.html': NavConfig('kanjiSources', '漢', 'Mode Atlas', 'Learning sources', brand_href='/kanji/', account_actions=False),
-    'wordbank/index.html': NavConfig('wordbank', '語', 'Mode Atlas', 'Word Bank', accent='words'),
-    'privacy/index.html': NavConfig('privacy', 'あア', 'Mode Atlas', 'Privacy Policy', account_actions=False),
-    'terms/index.html': NavConfig('terms', 'あア', 'Mode Atlas', 'Terms of Use', account_actions=False),
+    'index.html': NavConfig('atlas'),
+    'learn/index.html': NavConfig('learn'),
+    'progress/index.html': NavConfig('progress'),
+    'friends/index.html': NavConfig('friends'),
+    'shop/index.html': NavConfig('shop'),
+    'kana/index.html': NavConfig('kana', accent='kana'),
+    'reading/index.html': NavConfig('reading', accent='reading', hideable=True),
+    'writing/index.html': NavConfig('writing', accent='writing', hideable=True),
+    'results/index.html': NavConfig('results', accent='results'),
+    'results/kanji/index.html': NavConfig('kanjiResults', accent='results'),
+    'kana/handwriting/index.html': NavConfig('kanaHandwriting', accent='writing'),
+    'kanji/index.html': NavConfig('kanji', accent='results'),
+    'kanji/sources/index.html': NavConfig('kanjiSources', account_actions=False),
+    'wordbank/index.html': NavConfig('wordbank', accent='words'),
+    'privacy/index.html': NavConfig('privacy', account_actions=False),
+    'terms/index.html': NavConfig('terms', account_actions=False),
 }
 
 PRIMARY_LINKS = (
@@ -88,9 +84,11 @@ PRIMARY_LINKS = (
     ('shop', 'Shop', '/shop/'),
 )
 
+DESTINATION_ICONS = dict(atlas='star', learn='book', progress='chart', friends='people', shop='shop')
+
 KANA_LINKS = (
-    ('kana', 'Overview', '/kana/'),
-    ('practice', 'Practise', '/kana/?view=practice'),
+    ('kana', 'Learn', '/kana/'),
+    ('practice', 'Practice', '/kana/?view=practice'),
     ('mastery', 'Mastery', '/kana/?view=mastery'),
     ('tests', 'Tests', '/kana/?view=tests'),
 )
@@ -119,7 +117,7 @@ def render_navigation(config: NavConfig) -> str:
         classes = 'ma-nav__link' + (' is-active' if active else '')
         current = ' aria-current="page"' if key == ('practice' if config.key in ('reading', 'writing', 'kanaHandwriting') else config.key) else ''
         link_markup.append(
-            f'<a class="{classes}" data-ma-nav-scope="product" data-ma-nav-item="{_attr(key)}" href="{_attr(href)}"{current}>{html.escape(label)}</a>'
+            f'<a class="{classes}" data-ma-nav-scope="product" data-ma-nav-item="{_attr(key)}" href="{_attr(href)}"{current}><svg class="ma-icon ma-nav__destination-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-{DESTINATION_ICONS.get(key,"book")}"></use></svg><span>{html.escape(label)}</span></a>'
         )
 
     action_markup = ''
@@ -143,7 +141,7 @@ def render_navigation(config: NavConfig) -> str:
     branch_markup = ''
     if kana_section:
         branch_markup = '<nav class="ma-kana-navigation" aria-label="Kana sections">' + ''.join(
-            f'<a href="{href}"' + (' aria-current="page"' if key == ('practice' if config.key in ('reading', 'writing', 'kanaHandwriting') else config.key) else '') + f'>{label}</a>'
+            f'<a data-kana-section="{key}" href="{href}" aria-label="{label}"' + (' aria-current="page"' if key == ('practice' if config.key in ('reading', 'writing', 'kanaHandwriting') else config.key) else '') + f'>{label}</a>'
             for key, label, href in KANA_LINKS) + '</nav>'
 
     if config.key in {'results', 'kanjiResults'}:
@@ -159,11 +157,10 @@ def render_navigation(config: NavConfig) -> str:
     return f"""{NAV_START}
 <a class="ma-skip-link" href="#mainContent">Skip to main content</a>
 <nav class="ma-nav ma-nav--{_attr(config.accent)}"{nav_id} data-ma-navigation="shared" data-ma-page="{_attr(config.key)}" aria-label="Mode Atlas navigation">
-  <a class="ma-nav__brand" href="{_attr(config.brand_href)}" aria-label="{_attr('Kana Trainer home' if config.brand_href == '/kana/' else 'Mode Atlas home')}">
-    <span class="ma-nav__mark" aria-hidden="true">{html.escape(config.mark)}</span>
+  <a class="ma-nav__brand" href="/" aria-label="Mode Atlas home">
+    <img class="ma-nav__mark" src="/assets/brand/mode-atlas-symbol.svg" width="44" height="44" alt="">
     <span class="ma-nav__brand-copy">
-      <span class="ma-nav__kicker">{html.escape(config.kicker)}</span>
-      <span class="ma-nav__title">{html.escape(config.title)}</span>
+      <span class="ma-nav__title">Mode Atlas</span>
     </span>
   </a>
   <div class="ma-nav__content">
@@ -354,12 +351,12 @@ def _interactive_scripts(
 
 PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
     'index.html': FrontendAssetConfig(
-        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-home-page.css', 'assets/css/mode-atlas-ios-home.css'),
-        body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-home-page.js',)),
+        styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-home-page.css',),
+        body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/ui/mode-atlas-branch-library.js','assets/pages/mode-atlas-home-page.js',)),
     ),
     'learn/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-hub-page.css',),
-        body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/pages/mode-atlas-hub-page.js',)),
+        body_scripts=_interactive_scripts(include_presets=True, page_scripts=('assets/ui/mode-atlas-branch-library.js','assets/pages/mode-atlas-hub-page.js',)),
     ),
     'progress/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-hub-page.css',),

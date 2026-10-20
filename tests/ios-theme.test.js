@@ -25,7 +25,7 @@ test('native palette has one scoped colour authority and no component/layout ove
   const selectors = [...source.replace(/\/\*[\s\S]*?\*\//g,'').matchAll(/([^{}]+)\{/g)].map(m=>m[1].trim());
   for(const selector of selectors) assert.ok(selector.startsWith('html[data-ma-runtime="ios"]') || selector.startsWith('@media'),selector);
   assert.doesNotMatch(source,/!important|\b(?:padding|margin|width|height|display|position):/);
-  for(const file of ['assets/css/mode-atlas-ios-home.css','assets/css/mode-atlas-ios-chrome.css']) {
+  for(const file of ['assets/css/mode-atlas-home-page.css','assets/css/mode-atlas-ios-chrome.css']) {
     assert.doesNotMatch(read(file),/#[0-9a-f]{3,8}\b|rgba?\(/i,`${file} must consume palette roles`);
   }
   const legacy = read('assets/css/mode-atlas-theme.css').split('/* Light mode readability:')[1];

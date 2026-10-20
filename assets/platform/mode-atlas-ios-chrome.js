@@ -33,7 +33,7 @@
       link.href=root.AtlasPlatform.destinationPath(key);
       if(key===current)link.setAttribute('aria-current','page');
       const icon=document.createElement('span');icon.className='ma-ios-tab__icon';icon.setAttribute('aria-hidden','true');
-      if(key==='atlas')icon.textContent=symbol;
+      if(key==='atlas'){const image=document.createElement('img');image.src='/assets/brand/mode-atlas-symbol.svg';image.width=24;image.height=24;image.alt='';icon.append(image);}
       else icon.innerHTML=`<svg class="ma-icon"><use href="/assets/mode-atlas-icons.svg#icon-${symbol}"></use></svg>`;
       const text=document.createElement('span');text.className='ma-ios-tab__label';text.textContent=label;
       link.append(icon,text);links.append(link);
@@ -41,8 +41,8 @@
     dock.append(links);
     if(profile){
       profile.className='ma-ios-profile';profile.setAttribute('aria-label','Profile and settings');
-      const home=document.querySelector('.atlas-ios-home__header'),hub=document.querySelector('.ma-hub-header');
-      if(home){home.querySelector('.atlas-ios-home__brand')?.remove();home.append(profile);}
+      const home=document.querySelector('.atlas-home-heading'),hub=document.querySelector('.ma-hub-header');
+      if(home){home.append(profile);}
       else if(hub)hub.append(profile);
       else if(header?.querySelector('.ma-ios-practice-actions'))header.querySelector('.ma-ios-practice-actions').append(profile);
       else {

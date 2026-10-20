@@ -874,8 +874,8 @@ def main() -> int:
             fail(errors, f'shared visual vocabulary missing: {marker}')
 
     atlas_markup = text(ROOT / 'index.html')
-    if 'id="homeContinueCard"' not in atlas_markup or 'Reading Comprehension' not in atlas_markup:
-        fail(errors, 'Atlas returning-user hierarchy or future branch naming drifted')
+    if 'id="homeContinueAction"' not in atlas_markup or 'data-ma-branch-library' not in atlas_markup:
+        fail(errors, 'Atlas recommendation action or shared branch discovery owner missing')
     kana_markup = text(ROOT / 'kana/index.html')
     if 'id="maKanaLearning"' not in kana_markup or 'Take a starting-point test' not in kana_page:
         fail(errors, 'Kana entry or course owner is missing')

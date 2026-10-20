@@ -108,48 +108,69 @@
     const arrow=el('span','ma-kana-activity-arrow','›');arrow.setAttribute('aria-hidden','true');
     item.append(symbol,text,arrow);return item;
   }
-  function reviewLink(){
+  function reviewLink(target=host){
     const evidence=L.snapshot(),state=L.read();
     for(const direction of ['reading','writing']){
       const allowed=L.available(direction,state,evidence),due=root.ModeAtlasReview.due(evidence[direction+'Review']).filter(char=>allowed.has(char));
       if(!due.length)continue;
-      const a=link(`Revisit ${due.length} kana · ${L.names[direction]}`,L.practiceUrl(direction,due,{hints:'off'}));a.className='ma-kana-review-link';host.append(a);
+      const a=link(`Revisit ${due.length} kana · ${L.names[direction]}`,L.practiceUrl(direction,due,{hints:'off'}));a.className='ma-kana-review-link';target.append(a);
     }
   }
+  function pathPreview(){
+    const state=L.read(),evidence=L.snapshot(),rows=L.path(script,skill,state,evidence),next=nextRow(skill,script,state,evidence);
+    const aside=el('aside','ma-kana-path-preview');aside.setAttribute('aria-label','Your next rows');
+    aside.append(el('span','ma-kicker',script==='hiragana'?'HIRAGANA':'KATAKANA'),el('h2','','Your path'));
+    const start=Math.max(0,rows.indexOf(next)-1);
+    for(const row of rows.slice(start,start+5)){
+      const item=button('',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,row.chars));else{lesson={row,index:0};render();}});
+      item.className='ma-kana-path-step';item.disabled=!row.unlocked;item.dataset.current=String(row.id===next.id);
+      const marker=el('span','ma-kana-path-marker',row.complete?'✓':row.chars[0]);marker.setAttribute('aria-hidden','true');
+      const copy=el('span');copy.append(el('strong','',row.name),el('small','',row.complete?'Ready to revisit':row.unlocked?`${row.ready} / ${row.chars.length} familiar`:'Up next'));
+      item.append(marker,copy);aside.append(item);
+    }
+    const all=button('Explore your path →',()=>chooseView('path'));all.className='ma-kana-text-action';all.setAttribute('aria-label','Explore your path');aside.append(all);
+    return aside;
+  }
+  function workspace(stage){const frame=el('div','ma-kana-workspace');frame.append(stage,pathPreview());host.append(frame);}
   function learn(){
-    title('One row at a time','Your Kana journey','Build a little confidence, every day.');
+    title('Kana · Learn','Connect shapes and sounds');controls();
     const state=L.read(),evidence=L.snapshot(),next=nextRow(skill,script,state,evidence);
     const stages=L.rows.flatMap(row=>row.chars).map(char=>L.stage(char,state,evidence));
     const familiar=stages.filter(stage=>stage>=3).length,mastered=stages.filter(stage=>stage>=5).length;
-    const current=el('section','ma-kana-next');current.dataset.skill=skill;
+    const stage=el('div','ma-kana-learning-stage'),current=el('section','ma-kana-next');current.dataset.skill=skill;
     current.append(el('span','ma-kicker',`${script==='hiragana'?'Hiragana':'Katakana'} · ${L.names[skill]}`));
     const introduced=next.chars.every(char=>state.introduced[char]),hasPractice=next.ready>0;
     current.append(el('h2','',`${introduced||hasPractice?'Keep building your':'Meet the'} ${next.name.replace(' row','-row')}`));
-    const chars=el('p','ma-kana-next-chars',next.chars.join(' '));chars.lang='ja';current.append(chars);
-    current.append(el('p','ma-kana-muted',skill==='handwriting'?'Get to know each shape, one stroke at a time.':introduced||hasPractice?'A short practice to help these characters stick.':'Discover their shapes and sounds, then give them a try.'));
+    const chars=el('div','ma-kana-lesson-tiles');chars.setAttribute('aria-label','Explore this row');
+    next.chars.forEach((char,index)=>{
+      const tile=button('',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,[char]));else{lesson={row:next,index};render();}});tile.className='ma-kana-lesson-tile';
+      tile.setAttribute('aria-label',`Learn ${char}, ${L.map[char]}`);const glyph=el('strong','',char);glyph.lang='ja';tile.append(glyph,el('span','',L.map[char]));chars.append(tile);
+    });current.append(chars);
+    current.append(el('p','ma-kana-muted',skill==='handwriting'?'Get to know each shape, one stroke at a time.':introduced||hasPractice?'Practise independently to make these connections familiar.':'Tap a character to meet its sound and shape. Then practise the row.'));
     const progress=el('progress','ma-kana-row-progress');progress.max=next.chars.length;progress.value=next.ready;progress.setAttribute('aria-label',next.name+' familiarity');
-    current.append(progress,el('span','ma-kana-progress-caption',`${next.ready} of ${next.chars.length} familiar`));
+    current.append(progress,el('span','ma-kana-progress-caption',`${next.ready} of ${next.chars.length} familiar · the next row opens when all are ready`));
     const actions=el('div','ma-kana-feature-actions');
     actions.append(button('Continue learning',()=>{
       if(skill==='handwriting'||introduced||hasPractice)navigate(L.practiceUrl(skill,next.chars));
       else{lesson={row:next,index:Math.max(0,next.chars.findIndex(char=>!state.introduced[char]))};render();}
-    },true));
-    const explore=button('Explore your path',()=>chooseView('path'));explore.className='ma-kana-text-action';actions.append(explore);current.append(actions);host.append(current);
-    const progressSummary=el('div','ma-kana-progress-summary');
-    for(const [value,label]of [[familiar,'Familiar'],[mastered,'Mastered']]){const item=el('div');item.append(el('strong','',value),el('span','',label));progressSummary.append(item);}
-    const map=link('View mastery','/kana/?view=mastery');map.className='ma-kana-text-action';progressSummary.append(map);host.append(progressSummary);
-    reviewLink();
-    host.append(el('h2','ma-kana-section-title','Make it part of your day'));
+    },true));current.insertBefore(actions,chars.nextSibling);stage.append(current);
+    const summary=el('div','ma-kana-progress-summary');
+    for(const [value,label]of [[familiar,'Familiar'],[mastered,'Mastered']]){const item=el('div');item.append(el('strong','',value),el('span','',label));summary.append(item);}
+    const map=link('View mastery','/kana/?view=mastery');map.className='ma-kana-text-action';summary.append(map);stage.append(summary);
+    reviewLink(stage);
     const activities=el('div','ma-kana-activities');
-    activities.append(activity('Read & recall','A short practice with the kana you know.','あ',()=>{skill='reading';chooseView('practice');}));
-    activities.append(activity('Try handwriting','Slow down and learn the shape of each kana.','✎',()=>{skill='handwriting';chooseView('practice');}));
-    host.append(activities);
-    const placementLink=button('Check my starting point',openPlacement);placementLink.className='ma-kana-text-action ma-kana-placement-link';host.append(placementLink);
+    activities.append(activity('Build your rhythm','Your practice tools, at your pace.','↔',()=>{skill='reading';chooseView('practice');}));
+    activities.append(activity('Try handwriting','Learn each shape, stroke by stroke.','✎',()=>{skill='handwriting';chooseView('practice');}));stage.append(activities);
+    const placementLink=button('Check my starting point',openPlacement);placementLink.className='ma-kana-text-action ma-kana-placement-link';stage.append(placementLink);
+    workspace(stage);
   }
   function settingsForPractice(){
     if(practiceSettings)return practiceSettings;
     const saved=Store.readModeJSON(skill,'settings',{}),next=nextRow();
-    return practiceSettings={...saved,kanaRows:[next.id],kanaSelection:true,practiceCount:20,feedbackStyle:'learn',hint:false,srs:true,endless:false,speedRun:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,focusWeak:false,confusableKana:false};
+    const previous=saved.kanaSelection&&Object.keys(L.selection(saved,skill)).length?saved:{};
+    practiceSettings={practiceCount:20,feedbackStyle:'learn',hint:false,srs:true,endless:false,speedRun:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,focusWeak:false,confusableKana:false,...previous,kanaRows:previous.kanaRows||[next.id],kanaSelection:true};
+    if(practiceSettings.testMode&&!L.testScripts(skill).includes(practiceSettings.kanaTestScript))practiceSettings=root.ModeAtlasKanaPractice.forFamily(practiceSettings,'practice',skill);
+    return practiceSettings;
   }
   function openSession(){
     const settings=settingsForPractice(),pool=settings.testMode?L.testPool(settings,skill):L.selection(settings,skill);
@@ -170,36 +191,36 @@
     draw();root.ModeAtlasDialog.feature({title:'Make it your session',contentNode:content}).then(()=>{customizing=false;render();});
   }
   function practise(){
-    title('Kana practice','Find your rhythm','A few characters. A little more confidence.');
+    title('Kana · Practice','Build the reflex.');
     host.append(segmented('Kana skill',L.skills.map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();}));
     const explanation={reading:'See あ, type “a”. Connect each shape with its sound.',writing:'See “a”, choose or type あ. Bring the shape to mind.',handwriting:'Trace the strokes, then try writing from memory.'};
     host.append(el('p','ma-kana-skill-explanation',explanation[skill]));
+    const stage=el('div','ma-kana-practice-stage');
     const card=el('section','ma-kana-next ma-kana-session');card.dataset.skill=skill;
     if(skill==='handwriting'){
       const row=nextRow();card.append(el('span','ma-kicker',script==='hiragana'?'Hiragana':'Katakana'),el('h2','','Make the shapes your own'),el('p','ma-kana-next-chars',row.chars.join(' ')),el('p','ma-kana-muted','Take your time. Handwriting is an optional part of your journey.'));
-      card.append(link('Open handwriting',L.practiceUrl(skill,row.chars),true));host.append(card,button('Choose a different row',()=>chooseView('path')));return;
+      card.append(link('Open handwriting',L.practiceUrl(skill,row.chars),true));stage.append(card,button('Choose a different row',()=>chooseView('path')));workspace(stage);return;
     }
     const settings=settingsForPractice(),family=root.ModeAtlasKanaPractice.family(settings),pool=settings.testMode?L.testPool(settings,skill):L.selection(settings,skill),chars=Object.keys(pool);
     const selected=L.rows.filter(row=>row.chars.some(char=>Object.hasOwn(pool,char)));
     const scripts=[...new Set(selected.map(row=>row.script))],scriptLabel=scripts.length===2?'Hiragana & Katakana':scripts[0]==='katakana'?'Katakana':'Hiragana';
     const name=family==='daily'?'Your daily session':family==='timed'?(settings.timeTrial?'Set yourself a target':'A one-minute challenge'):family==='sequence'?'Find the flow':family==='test'?'Put it all together':settings.practiceCount?`${settings.practiceCount} questions, at your pace`:'Stay a little longer';
     card.append(el('span','ma-kicker',scriptLabel),el('h2','',name));
-    const sample=el('p','ma-kana-next-chars',chars.slice(0,5).join(' '));sample.lang='ja';card.append(sample);
+    const instrument=el('div','ma-kana-instrument');instrument.setAttribute('aria-hidden','true');const sample=el('span','ma-kana-instrument-glyph',chars[0]||'あ');sample.lang='ja';instrument.append(el('span','ma-kicker','SHAPE ↔ SOUND'),sample,el('span','ma-kana-instrument-answer',L.map[chars[0]]||'a'));card.append(instrument);
     card.append(el('p','ma-kana-selection-summary',`${selected.length===1?selected[0].name+' · ':''}${chars.length} kana${settings.focusWeak?' · Focus on weaker characters':settings.confusableKana?' · Similar-looking characters':''}`));
     const copy=family==='daily'?'Twenty questions. Make a little progress today.':family==='timed'?(settings.timeTrial?`${settings.trialTarget} correct answers in ${settings.trialMinutes} minutes.`:'How many can you recognise in 60 seconds?'):family==='sequence'?'Read groups of characters together and build your fluency.':family==='test'?'One pass through your unlocked script.':settings.feedbackStyle==='quick'?'Quick feedback keeps your rhythm.':'Learn from each answer, with time to try again.';
     card.append(el('p','ma-kana-muted',copy));
-    const actions=el('div','ma-kana-feature-actions');actions.append(button('Open session',openSession,true));
+    const actions=el('div','ma-kana-feature-actions');actions.append(button('Start practice',openSession,true));
     if(family!=='daily'&&family!=='test'){
       const hints=button(settings.hint?'Hints on':'Hints off',()=>{practiceSettings={...settings,hint:!settings.hint};render();});hints.className='ma-kana-text-action';hints.setAttribute('aria-pressed',String(!!settings.hint));actions.append(hints);
     }
-    card.append(actions);host.append(card);
-    const adjust=button('Adjust this session',customize);adjust.className='ma-kana-text-action ma-kana-adjust';host.append(adjust);
-    reviewLink();host.append(el('h2','ma-kana-section-title','Try a different pace'));
+    card.append(actions);stage.append(card);
+    const adjust=button('Adjust this session',customize);adjust.className='ma-kana-text-action ma-kana-adjust';stage.append(adjust);
+    reviewLink(stage);stage.append(el('h2','ma-kana-section-title','Try a different pace'));
     const activities=el('div','ma-kana-activities');
     for(const [id,label,copy,mark]of [['practice','At your pace','Short sets or keep going.','あ'],['daily','Daily session','Twenty questions for today.','20'],['timed','Timed challenge','Build speed in one minute.','60'],['sequence','Character sequences','Practise reading kana together.','あい']]){
-      if(id===family)continue;
-      activities.append(activity(label,copy,mark,()=>{practiceSettings=root.ModeAtlasKanaPractice.forFamily(settings,id,skill);render();root.scrollTo({top:0,behavior:'instant'});}));
-    }host.append(activities);
+      const tool=activity(label,copy,mark,()=>{practiceSettings=root.ModeAtlasKanaPractice.forFamily(settings,id,skill);render();root.scrollTo({top:0,behavior:'instant'});});tool.setAttribute('aria-pressed',String(id===family));activities.append(tool);
+    }stage.append(activities);workspace(stage);
   }
   function tests(){
     if(skill==='handwriting')skill='reading';title('Kana','Put your skills to the test','Complete a full script assessment, then explore its results.');

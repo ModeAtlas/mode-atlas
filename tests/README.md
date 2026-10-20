@@ -60,10 +60,11 @@ This rebuilds revisioned assets, runs the static ownership/file-structure audit,
 
 `npm run release:check` includes semantic palette contrast and ownership checks.
 `npm run test:polish` also runs native Light/Dark screenshots, System/manual theme
-switching and website-paint parity against `fixtures/web-theme-baseline.txt`.
-Fetch that commit before a local parity run, or supply an equivalent local Git
-reference with `MODE_ATLAS_WEB_THEME_BASE`. Change the baseline only when website
-appearance is intentionally changed. See `docs/ios-theme-system.md`.
+switching, approved neutral brand tokens, and native-style isolation on every
+main web route. The 2.109.0 approved redesign supersedes the historical 2.67.0
+colour comparison. Removing the native theme stylesheet must leave every
+visible web element's computed paint unchanged; layout and contrast checks
+continue separately for web and native.
 
 ## Practice progression
 

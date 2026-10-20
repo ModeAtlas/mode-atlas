@@ -103,7 +103,7 @@
       for(const [value,title]of [['xp','Level & XP'],['streak','Study streak'],['mastery','Kana mastery'],['reading','Read mastery'],['writing','Recall mastery'],['correct','Total correct']]){const option=el('option','',title);option.value=value;select.append(option);}
       select.value=metric;select.addEventListener('change',()=>{lifetimeMetric=metric=select.value;home();body.querySelector('select[aria-label="Ranking"]')?.focus({preventScroll:true});});label.append(select);body.append(label);
     }
-    const list=el('div','ma-social-list');list.id='maSocialList';list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby','maSocialTab-'+tab);body.append(list);
+    const list=el('div','ma-social-list');list.id='maSocialList';list.dataset.layout=tab==='friends'&&kind==='friends'?'friends':'ranking';list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby','maSocialTab-'+tab);body.append(list);
     if(tab==='rankings'&&metric==='weekly')void loadWeekly(list);
     else if(tab==='friends'&&firstPage?.kind===kind)renderPage(list,firstPage,null);
     else void loadPage(list,null);
@@ -119,7 +119,7 @@
   }
   function row(profile,ranking=false){
     const card=profileCard(profile,'ma-social-row');if(profile.uid===owner)card.dataset.self='true';
-    if(ranking)card.append(el('strong','ma-social-rank',String(profile.rank)));
+    if(ranking){card.dataset.rank=String(profile.rank);card.append(el('strong','ma-social-rank',String(profile.rank)));}
     const open=button('',()=>showProfile(profile.uid),'ma-social-person');open.append(avatar(profile),identity(profile));card.append(open);
     if(ranking)card.append(el('strong','ma-social-score',score(profile)));
     else if(kind==='friends')card.append(el('span','ma-social-score',`${number(profile.stats.streak)}d streak`));
@@ -187,7 +187,9 @@
       const result=await root.ModeAtlasSocial.call('weeklyList',{scope:weeklyScope,...(cursor?{cursor}:{})});if(!alive(ticket))return;
       loading.remove();
       if(!result.rows.length&&!cursor)list.append(el('p','ma-social-empty',weeklyScope==='friends'?'No friends have posted a weekly score yet. Invite them to join, then start practising.':'The week is open. Start an online Kana session to post your first score.'));
-      for(const profile of result.rows)list.append(row(profile,true));
+      const leaders=!cursor&&result.rows.length>1?result.rows.filter(profile=>profile.rank<=3).slice(0,3):[];
+      if(leaders.length){const podium=el('div','ma-weekly-podium');podium.setAttribute('aria-label','This week’s leaders');podium.dataset.count=String(leaders.length);for(const profile of leaders)podium.append(row(profile,true));list.append(podium);}
+      for(const profile of result.rows)if(!leaders.includes(profile))list.append(row(profile,true));
       if(result.nextCursor){const more=button('Load more',()=>{more.remove();void loadWeekly(list,result.nextCursor);});list.append(more);}
     }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');list.append(button('Try again',home));}}
   }

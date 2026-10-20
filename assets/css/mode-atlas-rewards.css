@@ -140,3 +140,14 @@ html[data-ma-large-text] .ma-atlas-icons{grid-template-columns:repeat(2,minmax(0
 html[data-ma-large-text] .ma-atlas-landmark{flex-wrap:wrap;}
 
 [data-ma-banner="evergreen"]{--ma-banner-art:url('../rewards/evergreen-banner.svg');--ma-banner-canvas:#10291f;--ma-banner-fit:auto 100%;--ma-banner-position:right center;--ma-banner-repeat:no-repeat;--ma-banner-ink:#f1f3df;--ma-banner-muted:#bdceb4;--ma-banner-control:#284936;--ma-banner-hover:#355b43;--ma-banner-edge:#55765d;--ma-banner-accent:#d4df9a;--ma-banner-on-accent:#20301b;}
+
+/* Full goals are a board of progress, while Home keeps its compact goal rows. */
+.ma-routine-goals:has(.ma-routine-goal--full){grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
+.ma-routine-goal--full{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-width:0;padding:20px;min-height:160px;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-card);}
+.ma-routine-goal--full strong{font-size:.95rem;line-height:1.4;}
+.ma-routine-goal--full>span{font-size:.73rem;color:var(--ma-muted);}
+.ma-routine-goal--full progress{width:100%;margin-top:auto;height:6px;}
+.ma-routine-goal--full .ma-routine-goal__period{font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;}
+.ma-routine-goal--full .ma-routine-goal__action{font-size:.7rem;}
+@media(max-width:760px){.ma-routine-goals:has(.ma-routine-goal--full){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}.ma-routine-goal--full{padding:16px;min-height:160px;}.ma-routine-goal--full strong{font-size:.83rem;}}
+html[data-ma-large-text] .ma-routine-goals:has(.ma-routine-goal--full){grid-template-columns:1fr;}

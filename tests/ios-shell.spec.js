@@ -1,28 +1,30 @@
 const { test, expect } = require('@playwright/test');
 
-test('Atlas home uses its native composition and the wider website layout', async ({ page }) => {
+test('Atlas home shares one responsive composition with native chrome', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.atlas-hero')).toBeVisible();
-  await expect(page.locator('.atlas-ios-home')).toBeHidden();
+  await expect(page.locator('.atlas-home-learning')).toBeVisible();
+  await expect(page.locator('.atlas-home')).toHaveCount(1);
+  await expect(page.locator('.ma-ios-tabs')).toHaveCount(0);
   await page.addInitScript(() => {
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
   });
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-ma-runtime', 'ios');
-  await expect(page.locator('.atlas-ios-home')).toBeVisible();
-  await expect(page.locator('.atlas-hero')).toBeHidden();
-  await expect(page.locator('#iosHomeContinue')).toHaveAttribute('href', '/kana/');
-  await expect(page.locator('#iosHomeGoals [data-goal]')).toHaveCount(3);
-  await expect(page.locator('.atlas-ios-home [data-ma-rewards-open]')).toBeVisible();
+  await expect(page.locator('.atlas-home')).toBeVisible();
+  await expect(page.locator('.ma-nav')).toBeHidden();
+  await expect(page.locator('.atlas-home')).toHaveCount(1);
+  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href', '/kana/');
+  await expect(page.locator('#homeGoals [data-goal]')).toHaveCount(3);
+  await expect(page.locator('.atlas-home [data-ma-rewards-open]')).toBeVisible();
   await page.evaluate(() => {
     for (const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted']) localStorage.setItem(key, 'true');
     localStorage.setItem('maWhatsNewSeen', 'guided-study');
   });
-  await page.locator('#iosHomeContinue').click();
+  await page.locator('#homeContinueAction').click();
   await expect(page).toHaveURL(/\/kana\/$/);
   await expect(page.getByRole('button',{name:/Take a starting-point test/})).toBeVisible();
   await page.getByRole('button',{name:/Start as a beginner/}).click();
-  await expect(page.locator('.ma-kana-next-chars')).toHaveText('あ い う え お');
+  await expect(page.locator('.ma-kana-lesson-tile strong')).toHaveText(['あ','い','う','え','お']);
 });
 
 test('iOS home scrolls on portrait phones and keeps its last action above the dock', async ({ page }) => {
@@ -36,7 +38,7 @@ test('iOS home scrolls on portrait phones and keeps its last action above the do
     await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
     await expect.poll(() => page.evaluate(() => ({
       scrolls: document.documentElement.scrollHeight > innerHeight && scrollY > 0,
-      clear: document.querySelector('.atlas-ios-home').getBoundingClientRect().bottom
+      clear: document.querySelector('.atlas-home').getBoundingClientRect().bottom
         <= document.querySelector('.ma-ios-tabs').getBoundingClientRect().top,
       width: document.documentElement.scrollWidth <= innerWidth
     }))).toEqual({scrolls:true,clear:true,width:true});
@@ -192,12 +194,12 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-nav__links')).toBeHidden();
   await page.locator('.ma-ios-tab[href="/learn/"]').click();
   await expect(page).toHaveURL(/\/learn\/$/);
-  await page.getByRole('link',{name:'Practise',exact:true}).click();
+  await page.getByRole('link',{name:'Kana learning path',exact:true}).click();
   await page.getByRole('button',{name:/Start as a beginner/}).click();
-  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practise',exact:true}).click();
-  await page.getByRole('button',{name:'Open session',exact:true}).click();
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practice',exact:true}).click();
+  await page.getByRole('button',{name:'Start practice',exact:true}).click();
   await expect(page).toHaveURL(/\/reading\/$/);
-  await expect(page.locator('.ma-kana-navigation [aria-current="page"]')).toHaveText('Practise');
+  await expect(page.locator('.ma-kana-navigation [aria-current="page"]')).toHaveText('Practice');
   await expect(page.locator('.ma-ios-tabs__links .ma-ios-tab.is-active')).toContainText('Learn');
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
   await expect(page.locator('.ma-nav')).toBeHidden();
@@ -318,15 +320,15 @@ test('native safe-area insets survive phone trainer styles and clear the dock af
     await page.screenshot({path:testInfo.outputPath(path.includes('reading')?'native-reading.png':'native-writing.png')});
   }
   await page.goto('/');
-  await expect(page.locator('.atlas-ios-home')).toBeVisible();
+  await expect(page.locator('.atlas-home')).toBeVisible();
   await expect.poll(()=>page.evaluate(()=>{
-    const home=document.querySelector('.atlas-ios-home').getBoundingClientRect();
+    const home=document.querySelector('.atlas-home').getBoundingClientRect();
     const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
     return home.top>=59 && dock.bottom<=innerHeight && document.documentElement.scrollHeight>innerHeight;
   })).toBe(true);
   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
   await expect.poll(()=>page.evaluate(()=>{
-    const home=document.querySelector('.atlas-ios-home').getBoundingClientRect();
+    const home=document.querySelector('.atlas-home').getBoundingClientRect();
     const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
     return home.bottom<=dock.top-12 && dock.top-home.bottom<32 && scrollY>0;
   })).toBe(true);

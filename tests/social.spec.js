@@ -491,3 +491,25 @@ for(const native of [true,false])test(`global weekly profile can request, cancel
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:info.outputPath('friend-avatar-large-text.png'),fullPage:true});
 });
+
+test('weekly podium keeps server ties, profile actions and pagination without duplicating rows',async({page})=>{
+  await prepare(page,{native:false,width:1280});
+  await page.evaluate(()=>{
+    socialFixture.weeklyEnabled=true;
+    const original=ModeAtlasSocial.call;
+    ModeAtlasSocial.call=async(action,input)=>{
+      if(action!=='weeklyList')return original(action,input);
+      const people=[['first',1],['friend',1],['third',3],['fourth',4],['fifth',5]];
+      const items=(input.cursor?people.slice(4):people.slice(0,4)).map(([uid,rank])=>({...socialFixture.friend,uid,rank,score:2000-rank*100,displayName:uid}));
+      return {rows:items,nextCursor:input.cursor?null:'page-two'};
+    };
+  });
+  await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+  await expect(page.locator('.ma-weekly-podium .ma-social-rank')).toHaveText(['1','1','3']);
+  await expect(page.locator('.ma-social-row')).toHaveCount(4);
+  await page.getByRole('button',{name:'Load more',exact:true}).click();
+  await expect(page.locator('.ma-social-rank')).toHaveText(['1','1','3','4','5']);
+  await expect(page.locator('.ma-weekly-podium')).toHaveCount(1);
+  await page.locator('.ma-weekly-podium .ma-social-person').nth(1).click();
+  await expect(page.getByText('Read mastery',{exact:true})).toBeVisible();
+});

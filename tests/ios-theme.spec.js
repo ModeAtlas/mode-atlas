@@ -1,10 +1,6 @@
 const {test,expect}=require('@playwright/test');
 test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
-const {execFileSync}=require('node:child_process');
-const fs=require('node:fs');
-const path=require('node:path');
 const routes=['/','/kana/','/reading/','/writing/','/results/','/wordbank/'];
-const baseline=process.env.MODE_ATLAS_WEB_THEME_BASE || fs.readFileSync(path.join(__dirname,'fixtures/web-theme-baseline.txt'),'utf8').trim();
 
 async function prepare(page,theme,native=true){
   await page.setViewportSize({width:393,height:852});
@@ -141,37 +137,28 @@ test('System theme follows the device; manual choice persists; canvas charts red
 async function paintSnapshot(page){
   return page.evaluate(()=>{
     const properties=['color','backgroundColor','backgroundImage','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','boxShadow','textShadow','outlineColor','fill','stroke','webkitTextFillColor'];
-    // New shared study/reward components and the Kana/Results navigation have no 2.67.0 paint baseline.
-    // Their theme/layout checks live in study-flow, progression and kanji.
-    const newStudyComponent = el => el.closest('#studySetSetup,#studySessionProgress,#studyFeedback,#answerFeedback,.ma-profile-title,.ma-profile-atlas-link,.ma-practice-recovery,.ma-atlas-rewards,.ma-session-rewards,.ma-kana-navigation,.ma-results-branches');
-    return [...document.body.querySelectorAll('*'),document.body].filter(el=>!newStudyComponent(el) && el.getClientRects().length && getComputedStyle(el).visibility!=='hidden')
+    return [...document.body.querySelectorAll('*'),document.body].filter(el=>el.getClientRects().length && getComputedStyle(el).visibility!=='hidden')
       .map(el=>[el.tagName,el.id,el.className?.baseVal ?? el.className,...['','::before','::after'].map(pseudo=>{
         const style=getComputedStyle(el,pseudo||null);return properties.map(name=>style[name]);
       })]);
   });
 }
-for(const theme of ['dark','light'])test(`website ${theme}: computed paint matches the pre-iOS-theme baseline`,async({page})=>{
+for(const theme of ['dark','light'])test(`website ${theme}: shared identity is consistent and native colours stay scoped`,async({page})=>{
   test.setTimeout(120000);
   await prepare(page,theme,false);
-  const baselineFiles=new Set(execFileSync('git',['ls-tree','-r','--name-only',baseline],{encoding:'utf8'}).trim().split('\n'));
-  // Redesigned Atlas and Kana pages have dedicated light/dark layout coverage
-  // in ios-home and kana-learning; their old styles are intentionally replaced.
-  for(const route of routes.filter(route=>!['/','/kana/'].includes(route))){
+  for(const route of [...routes,'/learn/','/progress/','/friends/','/shop/','/kanji/']){
     await page.goto(route,{waitUntil:'domcontentloaded'});await settle(page);
-    expect(await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--ma-native-page'))).toBe('');
+    const tokens=await page.evaluate(()=>{
+      const css=getComputedStyle(document.documentElement);
+      return Object.fromEntries(['--ma-native-page','--ma-app-bg','--ma-primary'].map(key=>[key,css.getPropertyValue(key).trim()]));
+    });
+    expect(tokens).toEqual({'--ma-native-page':'','--ma-app-bg':theme==='light'?'#f2f4f7':'#11161c','--ma-primary':theme==='light'?'#4051ca':'#bac7ff'});
+    await expect(page.locator('.ma-nav__title')).toHaveText('Mode Atlas');
+    await expect(page.locator('.ma-nav__mark')).toHaveAttribute('src','/assets/brand/mode-atlas-symbol.svg');
     const current=await paintSnapshot(page);
-    const links=await page.locator('link[rel="stylesheet"]').evaluateAll(links=>links.filter(link=>new URL(link.href).origin===location.origin).map(link=>({href:link.href,path:new URL(link.href).pathname.slice(1).replace(/\.assets-\d+\.\d+\.\d+(?=\.css$)/,'')})));
-    for(const link of links){
-      // The historical tree owns which sheets existed. New component sheets
-      // are absent from that baseline and must not change existing web paint.
-      link.css=baselineFiles.has(link.path)?execFileSync('git',['show',`${baseline}:${link.path}`],{encoding:'utf8'}):'';
-    }
-    await page.evaluate(links=>{
-      for(const entry of links){
-        const link=[...document.querySelectorAll('link[rel="stylesheet"]')].find(link=>link.href===entry.href);
-        const style=document.createElement('style');style.textContent=entry.css;link.replaceWith(style);
-      }
-    },links);
-    expect(await paintSnapshot(page),`${route} ${theme} changed website paint`).toEqual(current);
+    // The approved redesign changes web paint. The native boundary is still
+    // strict: removing native-only styles cannot change any visible web paint.
+    await page.locator('link[href*="mode-atlas-ios-theme."]').evaluateAll(links=>links.forEach(link=>link.remove()));
+    expect(await paintSnapshot(page),`${route} ${theme} leaked native paint`).toEqual(current);
   }
 });

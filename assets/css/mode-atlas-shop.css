@@ -97,8 +97,6 @@ html[data-ma-large-text] .ma-shop-scene{justify-self:end;}
 .ma-shop-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;}
 .ma-shop-section-heading h3{margin:0;font:800 .98rem/1.35 var(--ma-font-display);color:var(--ma-text-strong);}
 .ma-shop-section-link{display:inline-flex;align-items:center;min-height:44px;flex:none;color:var(--ma-muted);font-size:.75rem;text-underline-offset:3px;}
-.ma-shop-full .ma-shop-products{grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));}
-.ma-shop-full .ma-shop-essentials{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));}
 .ma-shop-preview .ma-shop-product{min-height:180px;padding:18px;grid-template-columns:minmax(0,1fr) 76px;gap:14px 10px;}
 .ma-shop-preview .ma-shop-product__name{font-size:1.6rem;}
 .ma-shop-preview .ma-shop-scene{width:76px;height:100px;}
@@ -118,3 +116,28 @@ html[data-ma-large-text] .ma-shop-wallet{grid-template-columns:28px minmax(0,1fr
 html[data-ma-large-text] .ma-shop-wallet__tokens{grid-column:2;padding-left:0;border-left:0;}
 html[data-ma-large-text] .ma-shop-wallet>[data-ma-purchase-coins]{grid-column:1/-1;}
 html[data-ma-large-text] .ma-shop-preview .ma-shop-product{grid-template-columns:minmax(0,1fr);}
+
+/* The full storefront uses the same products and payment UI, with art given
+   room to breathe. The compact profile preview retains its smaller composition. */
+.ma-shop-full .ma-shop-wallet{grid-template-columns:42px minmax(140px,1fr) minmax(140px,1fr) auto;gap:16px;padding:0 0 20px;}
+.ma-shop-full .ma-shop-wallet>[data-ma-purchase-coins]{grid-column:4;grid-row:1;}
+.ma-shop-full .ma-shop-wallet__balance{font-size:1.1rem;font-weight:700;}
+.ma-shop-full .ma-shop-products{grid-template-columns:repeat(2,minmax(0,1fr));}
+.ma-shop-full .ma-shop-product{--ma-banner-fit:auto 100%;min-height:240px;border-radius:18px;}
+.ma-shop-full[data-category="featured"] .ma-shop-product:nth-child(1 of :not([hidden])){grid-column:1/-1;min-height:290px;padding:30px;grid-template-columns:minmax(0,1fr) 180px;}
+.ma-shop-full[data-category="featured"] .ma-shop-product:nth-child(1 of :not([hidden])) .ma-shop-product__name{font-size:2.5rem;}
+.ma-shop-full[data-category="featured"] .ma-shop-product:nth-child(1 of :not([hidden])) .ma-shop-scene{width:150px;height:150px;}
+.ma-shop-full[data-category="featured"] .ma-shop-product:nth-child(1 of :not([hidden])) .ma-shop-scene>img{width:120px;height:120px;}
+.ma-shop-full .ma-shop-essentials{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;}
+.ma-shop-full .ma-shop-essential{display:flex;flex-direction:column;padding:0;overflow:hidden;background:var(--ma-card);gap:0;border-radius:16px;}
+.ma-shop-full .ma-shop-wardrobe-portrait{width:100%;height:160px;border-radius:0;background:var(--ma-control-active);display:grid;place-items:center;}
+.ma-shop-full .ma-shop-wardrobe-portrait svg{max-width:150px;}
+.ma-shop-full .ma-shop-essential__copy{padding:16px 16px 10px;}
+.ma-shop-full .ma-shop-essential__footer{padding:12px 16px 16px;margin-top:auto;font-size:.7rem;}
+.ma-shop-full .ma-shop-essential__footer>.ma-icon{flex:none;}
+.ma-shop-full .ma-shop-essential__copy>span{font-size:.72rem;}
+@media(max-width:800px){.ma-shop-full .ma-shop-essentials{grid-template-columns:repeat(2,minmax(0,1fr));}.ma-shop-full .ma-shop-wallet{grid-template-columns:34px 1fr 1fr;gap:10px;}.ma-shop-full .ma-shop-wallet>[data-ma-purchase-coins]{grid-column:2/-1;grid-row:auto;}.ma-shop-full .ma-shop-wallet__balance{font-size:.85rem;}}
+@media(max-width:600px){.ma-shop-full .ma-shop-products{grid-template-columns:1fr;}.ma-shop-full[data-category="featured"] .ma-shop-product:nth-child(1 of :not([hidden])){min-height:250px;padding:22px;grid-template-columns:minmax(0,1fr) 76px;}.ma-shop-full[data-category="featured"] .ma-shop-product:nth-child(1 of :not([hidden])) .ma-shop-product__name{font-size:2rem;}.ma-shop-full[data-category="featured"] .ma-shop-product:nth-child(1 of :not([hidden])) .ma-shop-scene{width:76px;height:100px;}.ma-shop-full[data-category="featured"] .ma-shop-product:nth-child(1 of :not([hidden])) .ma-shop-scene>img{width:68px;height:68px;}.ma-shop-full .ma-shop-essential__copy{padding:12px 12px 8px;}.ma-shop-full .ma-shop-essential__footer{padding:10px 12px 14px;}.ma-shop-full .ma-shop-essential__copy strong{font-size:.8rem;}}
+html[data-ma-large-text] .ma-shop-full .ma-shop-wallet{grid-template-columns:34px minmax(0,1fr);}
+html[data-ma-large-text] .ma-shop-full .ma-shop-wallet>[data-ma-purchase-coins]{grid-column:1/-1;grid-row:auto;}
+html[data-ma-large-text] .ma-shop-full .ma-shop-essentials{grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));}

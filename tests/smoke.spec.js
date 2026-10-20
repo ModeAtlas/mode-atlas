@@ -114,7 +114,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await gotoApp(page, '/');
       await Promise.all([
         page.waitForURL(/\/kana\/$/, { timeout: 15000, waitUntil: 'domcontentloaded' }),
-        page.locator('a.atlas-product__action[href="/kana/"]').click({ noWaitAfter: true }),
+        page.locator('a.ma-branch-tile[href="/kana/"]').click({ noWaitAfter: true }),
       ]);
       await expect(page.locator('#mainContent.ma-kana-journey')).toBeVisible({ timeout: 5000 });
       const url = new URL(page.url());

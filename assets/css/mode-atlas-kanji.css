@@ -14,13 +14,14 @@
 .ma-kanji-level strong{font-size:1.35rem;}.ma-kanji-level span{font-size:.8rem;}.ma-kanji-level small{color:var(--ma-muted);}
 .ma-kanji-level[aria-pressed="true"]{border-color:var(--ma-results);}.ma-kanji-level:disabled{opacity:.48;cursor:default;}
 .ma-kanji-course-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 24px;color:var(--ma-muted);font-size:.8rem;}
-.ma-kanji-course-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:52px;align-items:start;margin-bottom:32px;}
-.ma-kanji-intro__glyph{font:600 6rem/1.15 var(--ma-font-jp);color:var(--ma-results);margin-bottom:20px;}
+.ma-kanji-course-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:start;margin-bottom:32px;}
+.ma-kanji-intro{background:var(--ma-card);border:1px solid var(--ma-border);border-radius:20px;padding:24px;}
+.ma-kanji-intro__art{display:block;width:100%;height:180px;object-fit:contain;margin:-10px 0 16px;background:var(--ma-status-warning-bg);border-radius:12px;}
 .ma-kanji-intro>p{color:var(--ma-text-soft);max-width:34ch;font-size:.95rem;}
 .ma-kanji-options{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;}
 .ma-kanji-select{display:grid;gap:6px;flex:1 1 120px;font-size:.8rem;min-width:0;color:var(--ma-muted);}
 .ma-kanji-select select{min-height:44px;width:100%;border:1px solid var(--ma-border);border-radius:10px;padding:8px;background:var(--ma-surface-inset);color:var(--ma-text-strong);}
-.ma-kanji-mode{display:grid;grid-template-columns:36px minmax(0,1fr) 16px;gap:12px;align-items:center;width:100%;padding:18px 0;border:0;border-bottom:1px solid var(--ma-border);text-align:left;background:transparent;color:var(--ma-text-strong);cursor:pointer;}
+.ma-kanji-mode{display:grid;grid-template-columns:36px minmax(0,1fr) 16px;gap:12px;align-items:center;width:100%;padding:20px 16px;margin:10px 0;border:1px solid var(--ma-border);border-radius:14px;text-align:left;background:var(--ma-card);color:var(--ma-text-strong);cursor:pointer;}
 .ma-kanji-mode>span:nth-child(2){display:grid;gap:6px;}.ma-kanji-mode strong{font-size:1rem;}.ma-kanji-mode>span:nth-child(2)>span{color:var(--ma-muted);font-size:.8rem;line-height:1.5;}
 .ma-kanji-mode__mark{font-size:1.25rem;font-weight:750;color:var(--ma-results);}
 .ma-kanji-tests{padding-top:18px;}.ma-kanji-tests h3{margin:0;}.ma-kanji-tests p{font-size:.8rem;color:var(--ma-muted);}

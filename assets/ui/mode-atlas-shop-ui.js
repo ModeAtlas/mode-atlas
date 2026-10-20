@@ -138,7 +138,7 @@
     const link=el('a',cls,label);link.href='/shop/'+(category==='featured'?'':'?category='+category);return link;
   }
   function productTile(product){
-    const collection=product.kind==='collection',item=button('',collection?'ma-shop-product ma-profile-banner':'ma-shop-essential');item.dataset.maShopProduct=product.id;
+    const collection=product.kind==='collection',item=button('',collection?'ma-shop-product ma-profile-banner':'ma-shop-essential');item.dataset.maShopProduct=product.id;item.dataset.kind=product.kind;
     if(collection){
       item.dataset.maBanner=product.id;item.setAttribute('aria-label','Preview '+product.name+' collection');item.setAttribute('aria-haspopup','dialog');
       const text=el('span','ma-shop-product__copy'),ends=el('span','ma-shop-eyebrow');ends.dataset.maShopEnds='';ends.hidden=true;
@@ -164,7 +164,7 @@
   function renderCategory(host){
     const content=host.querySelector('[data-ma-shop-content]'),category=host.dataset.category,full=host.dataset.maShop==='full';content.replaceChildren();
     if(category==='featured'){
-      const intro=el('div','ma-shop-intro');intro.append(el('h3','',full?'Make it yours.':'Top picks'),el('p','',full?'A new look. A little breathing room. Your Atlas.':'Fresh looks and favourites for your next chapter.'));content.append(intro);
+      const intro=el('div','ma-shop-intro');intro.append(el('h3','',full?'Make it yours.':'Top picks'),el('p','',full?'Find your look. Make it part of your journey.':'Fresh looks and favourites for your next chapter.'));content.append(intro);
       section(content,'themes','Featured collections','collection',full?3:2);
       section(content,'wardrobe','The finishing touches','cosmetic',full?4:2);
       section(content,'pets','Meet your companion','cosmetic',2);

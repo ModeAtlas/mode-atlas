@@ -115,3 +115,21 @@ html[data-ma-large-text] .ma-social-moderation-tabs{grid-template-columns:repeat
 .ma-social-character--visitor .ma-social-character__figure{max-width:230px;}
 .ma-social-character--visitor .ma-social-character__figure[data-companion]{max-width:320px;}
 @media(max-width:680px){.ma-social-profile-content{grid-template-columns:minmax(0,1fr);gap:8px;}.ma-social-character__speech{padding:13px;font-size:.82rem;}}
+
+/* Real leaderboard rows form the podium; the same profile action and rank data
+   are retained. Ties and partial boards display the server's actual places. */
+.ma-weekly-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:12px;padding:12px 0;}
+.ma-weekly-podium[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr));}
+.ma-weekly-podium .ma-social-row{display:flex;flex-direction:column;flex-wrap:nowrap;gap:10px;padding:18px 10px;min-width:0;text-align:center;}
+.ma-weekly-podium .ma-social-row[data-rank="1"]{padding-top:24px;border-color:var(--ma-results);}
+.ma-weekly-podium .ma-social-person{min-width:0;width:100%;flex-direction:column;gap:12px;}
+.ma-weekly-podium .ma-social-avatar{width:62px;height:62px;flex-basis:62px;}
+.ma-weekly-podium .ma-social-identity{text-align:center;width:100%;}
+.ma-weekly-podium .ma-social-name{justify-content:center;}
+.ma-weekly-podium .ma-social-identity strong{font-size:.85rem;}
+.ma-weekly-podium .ma-social-identity small{font-size:.68rem;}
+.ma-weekly-podium .ma-social-score{text-align:center;max-width:100%;}
+.ma-weekly-podium .ma-social-rank{color:var(--ma-results);font-size:1.2rem;}
+@media(min-width:800px){.ma-social-list[data-layout="friends"]{grid-template-columns:repeat(2,minmax(0,1fr));}.ma-social-list[data-layout="friends"]>:not(.ma-social-row){grid-column:1/-1;}}
+@media(max-width:420px){.ma-weekly-podium{gap:6px;}.ma-weekly-podium .ma-social-row{padding:14px 6px;}.ma-weekly-podium .ma-social-identity strong{font-size:.72rem;}.ma-weekly-podium .ma-social-identity small{font-size:.63rem;}.ma-weekly-podium .ma-social-avatar{width:50px;height:50px;flex-basis:50px;}.ma-weekly-podium .ma-social-score{font-size:.7rem;}}
+html[data-ma-large-text] .ma-weekly-podium{grid-template-columns:1fr;}

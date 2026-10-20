@@ -11,7 +11,7 @@ async function open(page,url='/kana/') {await page.goto(url);await expect(page.l
 test('fresh entry offers placement or beginner, with one path and independently locked rows',async({page},info)=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);await open(page);
   await expect(page.getByRole('button',{name:/Take a starting-point test/})).toBeVisible();await page.getByRole('button',{name:/Start as a beginner/}).click();
-  await expect(page.getByRole('heading',{name:'Your Kana journey'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Connect shapes and sounds'})).toBeVisible();
   await expect(page.locator('#maKanaLearning select')).toHaveCount(0);
   await page.getByRole('button',{name:'Explore your path',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Your learning path'})).toBeVisible();
@@ -54,8 +54,8 @@ for(const [native,theme] of [[true,'light'],[true,'dark'],[false,'light'],[false
   await page.screenshot({path:info.outputPath(`kana-path-${native}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.getByRole('button',{name:'Continue learning',exact:true}).click();await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');await page.getByRole('button',{name:'Next character',exact:true}).click();await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('い');
   await page.screenshot({path:info.outputPath(`kana-lesson-${native}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
-  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Overview',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'Your Kana journey',exact:true})).toBeVisible();
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Learn',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Connect shapes and sounds',exact:true})).toBeVisible();
 });
 
 test('handwriting awards a clean independent completion, while watching strokes awards nothing',async({page})=>{
@@ -99,9 +99,9 @@ test('accuracy recomputes account eligibility and clears pending targets on acco
 test('practice starts simple and the optional sheet retains row, feedback and timing choices',async({page},info)=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await setup(page,{native:true});await page.setViewportSize({width:393,height:852});await open(page);await page.getByRole('button',{name:/Start as a beginner/}).click();
-  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practise',exact:true}).click();
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practice',exact:true}).click();
   await expect(page.locator('#maKanaLearning select')).toHaveCount(0);
-  await expect(page.getByRole('button',{name:'Open session',exact:true})).toBeInViewport();
+  await expect(page.getByRole('button',{name:'Start practice',exact:true})).toBeInViewport();
   await page.screenshot({path:info.outputPath('practice-ios-dark.png'),fullPage:true});
   await page.getByRole('button',{name:'Recall',exact:true}).click();await expect(page.locator('.ma-kana-skill-explanation')).toContainText('choose or type あ');
   await page.getByRole('button',{name:'Adjust this session',exact:true}).click();
@@ -112,14 +112,14 @@ test('practice starts simple and the optional sheet retains row, feedback and ti
   await expect(dialog.getByRole('checkbox',{name:'hiragana Basics Ka row',exact:true})).toHaveCount(0);
   await dialog.getByRole('button',{name:'Done',exact:true}).click();
   await expect(page.locator('.ma-kana-session')).toContainText('10 questions');await expect(page.locator('.ma-kana-session')).toContainText('Katakana');
-  await page.getByRole('button',{name:'Open session',exact:true}).click();await expect(page).toHaveURL(/\/writing\//);
+  await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page).toHaveURL(/\/writing\//);
   await expect(page.locator('#heatmap .cell')).toHaveText(['ア','イ','ウ','エ','オ']);
   const settings=await page.evaluate(()=>ModeAtlasTrainerControls.getSettings());expect(settings.practiceCount).toBe(10);expect(settings.feedbackStyle).toBe('quick');
   await open(page,'/kana/?view=practice');await page.getByRole('button',{name:/Timed challenge Build speed/}).click();
   await page.getByRole('button',{name:'Adjust this session',exact:true}).click();
   await dialog.getByLabel('Timed goal',{exact:true}).selectOption('target');await dialog.getByLabel('Minutes',{exact:true}).fill('2');await dialog.getByLabel('Minutes',{exact:true}).press('Tab');await dialog.getByLabel('Correct-answer target',{exact:true}).fill('30');await dialog.getByLabel('Correct-answer target',{exact:true}).press('Tab');
   await dialog.getByRole('button',{name:'Done',exact:true}).click();await expect(page.locator('.ma-kana-session')).toContainText('30 correct answers in 2 minutes');
-  await page.getByRole('button',{name:'Open session',exact:true}).click();await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('#trialConfig')).toBeVisible();expect(await page.evaluate(()=>ModeAtlasTrainerControls.getSettings().timeTrial)).toBe(true);expect(errors).toEqual([]);
+  await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('#trialConfig')).toBeVisible();expect(await page.evaluate(()=>ModeAtlasTrainerControls.getSettings().timeTrial)).toBe(true);expect(errors).toEqual([]);
 });
 
 for(const native of [false,true])test(`study selection uses two columns and script-wide unlocked toggles on ${native?'iOS':'web'}`,async({page},info)=>{
@@ -135,7 +135,7 @@ for(const native of [false,true])test(`study selection uses two columns and scri
   const grid=dialog.locator('.ma-kana-row-picker-grid').first();expect(await grid.evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length)).toBe(2);
   await grid.locator('label').first().scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath(`row-selection-${native}.png`)});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  await dialog.getByRole('button',{name:'Done',exact:true}).click();await page.getByRole('button',{name:'Open session',exact:true}).click();await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('#heatmap .cell')).toHaveCount(15);await expect(page.locator('#heatmap')).not.toContainText('か');await expect(page.locator('#heatmap')).toContainText('ア');
+  await dialog.getByRole('button',{name:'Done',exact:true}).click();await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('#heatmap .cell')).toHaveCount(15);await expect(page.locator('#heatmap')).not.toContainText('か');await expect(page.locator('#heatmap')).toContainText('ア');
 });
 
 for(const theme of ['light','dark'])test(`mastery displays exact next targets with accessible pass and missing states in ${theme}`,async({page},info)=>{
@@ -167,4 +167,24 @@ test('native placement keeps the shared app keyboard ready between answers and d
   await page.keyboard.type('xy');await expect(input).toHaveValue('xy');await page.keyboard.press('Backspace');await expect(input).toHaveValue('x');
   await page.getByRole('button',{name:'I don’t know yet',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();await expect(page.locator('.ma-kana-placement-choices')).toBeVisible();await expect(page.locator('.ma-ios-reading-keyboard')).toHaveCount(0);
   await page.getByRole('button',{name:'Finish with my progress so far',exact:true}).click();await expect(page.locator('.ma-ios-accessibility-status')).toHaveCount(0);expect(errors).toEqual([]);expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);
+});
+
+for(const skill of ['reading','writing'])test(`${skill} returns to the saved practice pace and selected rows`,async({page})=>{
+  await setup(page);await open(page);await page.getByRole('button',{name:/Start as a beginner/}).click();
+  await page.evaluate(skill=>ModeAtlasStorage.writeModeJSON(skill,'settings',{
+    kanaSelection:true,kanaRows:['katakana:base:a'],practiceCount:0,endless:true,feedbackStyle:'quick',hint:false,srs:true
+  }),skill);
+  await open(page,`/kana/?view=practice&skill=${skill}`);
+  await expect(page.locator('.ma-kana-selection-summary')).toContainText('5 kana');
+  await expect(page.locator('.ma-kana-session .ma-kicker').first()).toHaveText('Katakana');
+  await page.getByRole('button',{name:'Adjust this session',exact:true}).click();
+  await expect(page.getByLabel('Session length',{exact:true})).toHaveValue('0');
+  await expect(page.getByLabel('Feedback',{exact:true})).toHaveValue('quick');
+  await page.getByRole('button',{name:'Done',exact:true}).click();
+  await page.getByRole('button',{name:'Start practice',exact:true}).click();
+  await expect(page).toHaveURL(new RegExp('/'+skill+'/$'));
+  await expect(page.locator('#heatmap .cell')).toHaveText(['ア','イ','ウ','エ','オ']);
+  await open(page,`/kana/?view=practice&skill=${skill}`);
+  await expect(page.locator('.ma-kana-session h2')).toHaveText('Stay a little longer');
+  expect(await page.evaluate(skill=>ModeAtlasStorage.readModeJSON(skill,'settings',{}).endless,skill)).toBe(true);
 });
