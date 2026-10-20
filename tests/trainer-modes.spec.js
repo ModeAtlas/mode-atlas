@@ -57,7 +57,7 @@ for(const mode of ['reading','writing']){
       await select(page,selected);await page.locator('#startBtn').click();await page.clock.install();
       await page.locator('#skipKanaBtn').click();await page.clock.runFor(500);
       await page.locator('#endSessionBtn').click();
-      await expect(page.locator('.ma-dialog__title')).toHaveText('Practice saved');
+      await require('./helpers/session-recap')(page);await expect(page.locator('.ma-dialog__title')).toHaveText('Practice saved');
       expect(await page.evaluate(()=>Object.keys(dailyChallengeHistory).length)).toBe(0);
       expect(await page.evaluate(()=>loadStoredTestModeResults().length)).toBe(0);
       expect(await page.evaluate(()=>sessionStats.wrong)).toBe(1);
@@ -68,7 +68,7 @@ for(const mode of ['reading','writing']){
     test.setTimeout(60000);await setup(page,mode);await page.evaluate(()=>{settings.katakanaRows=['k_sa'];onSettingsChanged();});await select(page,'dailyChallenge');await page.locator('#startBtn').click();await page.clock.install();
     await page.evaluate(()=>{dailySequence[0]='ツ';nextCharacter();});
     await page.locator('#skipKanaBtn').click();await page.clock.runFor(500);await finishAnswers(page,19);
-    await expect(page.locator('.ma-dialog__title')).toHaveText('Daily session complete');
+    await require('./helpers/session-recap')(page);await expect(page.locator('.ma-dialog__title')).toHaveText('Daily session complete');
     expect(await page.evaluate(()=>getTodayDailyRecord().officialScore)).toBe(19);
     await page.getByRole('button',{name:'Practise these kana',exact:true}).click();
     await expect.poll(()=>page.evaluate(()=>currentChar)).toBe('ツ');
@@ -77,12 +77,13 @@ for(const mode of ['reading','writing']){
     await select(page,'dailyChallenge');await page.locator('#startBtn').click();await finishAnswers(page,20);
     expect(await page.evaluate(()=>getTodayDailyRecord().officialScore)).toBe(19);
     expect(await page.evaluate(()=>getTodayDailyRecord().attempts)).toBe(2);
+    await require('./helpers/session-recap')(page);
     await expect(page.locator('.ma-study-summary')).toContainText('This replay keeps your first completed score.');
   });
   test(`${mode}: full Test saves accurate results and real button count`,async({page})=>{
     test.setTimeout(60000);await setup(page,mode);await select(page,'testMode');await page.locator('#startBtn').click();await page.clock.install();
     const count=await page.evaluate(()=>testSequence.length);await finishAnswers(page,count);
-    await expect(page.locator('.ma-dialog__title')).toHaveText('Test complete');
+    await require('./helpers/session-recap')(page);await expect(page.locator('.ma-dialog__title')).toHaveText('Test complete');
     const results=await page.evaluate(()=>loadStoredTestModeResults());expect(results).toHaveLength(1);
     expect(results[0].correct).toBe(count);expect(results[0].wrong).toBe(0);
     if(mode==='writing')expect(results[0].buttonLayout).toBe(6);
@@ -95,14 +96,14 @@ for(const mode of ['reading','writing']){
     await page.locator('#pauseSessionBtn').click();const remaining=await page.locator('#trialTimer').textContent();
     await page.clock.runFor(8000);expect(await page.evaluate(()=>sessionStarted)).toBe(true);await expect(page.locator('#trialTimer')).toHaveText(remaining);
     await page.locator('#pauseSessionBtn').click();await page.clock.runFor(6100);
-    await expect(page.locator('.ma-dialog__title')).toHaveText('Target challenge complete');
+    await require('./helpers/session-recap')(page);await expect(page.locator('.ma-dialog__title')).toHaveText('Target challenge complete');
     await expect(page.locator('.ma-study-summary')).toContainText('Target reached');
     expect(await page.evaluate(()=>scoreHistory.timeTrialTop3)).toHaveLength(1);
     await page.getByRole('button',{name:'Done',exact:true}).click();
     await select(page,'speedRun');await page.locator('#startBtn').click();await finishAnswers(page,1);await page.locator('#endSessionBtn').click();
     expect(await page.evaluate(()=>scoreHistory.speedRunTop3)).toHaveLength(0);await page.getByRole('button',{name:'Done',exact:true}).click();
     await page.locator('#startBtn').click();await finishAnswers(page,1);await page.clock.runFor(60100);
-    await expect(page.locator('.ma-dialog__title')).toHaveText('60-second challenge complete');expect(await page.evaluate(()=>scoreHistory.speedRunTop3)).toHaveLength(1);
+    await require('./helpers/session-recap')(page);await expect(page.locator('.ma-dialog__title')).toHaveText('60-second challenge complete');expect(await page.evaluate(()=>scoreHistory.speedRunTop3)).toHaveLength(1);
     expect(await page.evaluate(()=>locked)).toBe(false);
   });
   test(`${mode}: joined kana stay whole in answers, progress and reviews`,async({page})=>{

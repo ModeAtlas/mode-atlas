@@ -74,7 +74,7 @@ test('failed curriculum saves report failure and placement checkpoint/grant reco
 test('social profiles use earned skills and include Mastered+ in ordinary mastery totals',()=>{
   const {L}=load(),state=L.normalize({earned:{reading:{'あ':5,'い':5},writing:{'あ':5},handwriting:{'あ':5}}});
   const result=require('../backend/functions/projection.cjs').projectSave({sections:{kanaLearning:{data:{state}}}});
-  assert.equal(result.readingMastered,2);assert.equal(result.writingMastered,1);assert.equal(result.combinedMastered,1);assert.equal(result.projectionVersion,5);
+  assert.equal(result.readingMastered,2);assert.equal(result.writingMastered,1);assert.equal(result.combinedMastered,1);assert.equal(result.projectionVersion,6);
 });
 
 test('malformed scalar fields and placement tracks cannot break curriculum or public profiles',()=>{

@@ -13,6 +13,8 @@ SOURCES = (
     "assets/app/mode-atlas-avatar-rules.js",
     "assets/app/mode-atlas-date.js",
     "assets/app/mode-atlas-progress.js",
+    "assets/app/mode-atlas-kana-metrics.js",
+    "assets/achievements/mode-atlas-achievements.js",
     "assets/app/mode-atlas-review.js",
     "assets/app/mode-atlas-kana-learning.js",
     "assets/app/mode-atlas-reward-rules.js",

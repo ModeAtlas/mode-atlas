@@ -115,6 +115,7 @@ test('longer sets finish at their own goal; free practice also teaches mistakes'
       await page.evaluate(()=>handleCorrect(charMap[currentChar]));
       await page.clock.runFor(300);
     }
+    await require('./helpers/session-recap')(page);
     await expect(page.locator('.ma-dialog__title')).toHaveText('Set complete');
     await expect(page.locator('.ma-study-summary')).toContainText(`${length} / ${length}`);
     expect(await page.evaluate(()=>sessionStats.answered)).toBe(length);

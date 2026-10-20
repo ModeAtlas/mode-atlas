@@ -12,7 +12,7 @@
   const STORAGE_KEY = 'modeAtlasProgress';
   const UPDATED_AT_KEY = 'modeAtlasProgressUpdatedAt';
   const DEVICE_KEY = 'modeAtlasProgressDeviceId';
-  const STATE_VERSION = 6;
+  const STATE_VERSION = 7;
   const LEGACY_SOURCE = 'legacy-baseline';
 
   const COUNTER_XP = Object.freeze({
@@ -40,6 +40,10 @@
   function object(value){ return value && typeof value === 'object' && !Array.isArray(value) ? value : {}; }
 
   const safeKey = key => !['__proto__','prototype','constructor'].includes(key);
+
+  function normalizeAchievements(input){
+    return Object.fromEntries(Object.entries(object(input)).filter(([id,at])=>safeKey(id)&&/^[a-zA-Z0-9:-]{1,100}$/.test(id)&&finiteCount(at)).slice(0,1000).map(([id,at])=>[id,finiteCount(at)]));
+  }
 
   function normalizeSource(source){
     const out = {};
@@ -101,6 +105,7 @@
       runs: normalizeRuns(value.runs),
       appearance: normalizeAppearance(value.appearance),
       collections: normalizeCollections(value.collections),
+      achievements: normalizeAchievements(value.achievements),
       updatedAt: finiteCount(value.updatedAt)
     };
     // All accounts use earned XP on the same curve. Discard v4's threshold-only
@@ -126,6 +131,7 @@
       runs: normalizeRuns({...a.runs,...b.runs}),
       appearance: mergeAppearance(a.appearance,b.appearance),
       collections: Object.fromEntries([...new Set([...Object.keys(a.collections),...Object.keys(b.collections)])].sort().map(id=>[id,[a.collections[id],b.collections[id]].includes('event')?'event':'exclusive'])),
+      achievements: Object.fromEntries([...new Set([...Object.keys(a.achievements),...Object.keys(b.achievements)])].sort().map(id=>[id,Math.min(a.achievements[id]||Infinity,b.achievements[id]||Infinity)])),
       updatedAt: Math.max(a.updatedAt, b.updatedAt)
     };
     const sourceIds = new Set([...Object.keys(a.sources), ...Object.keys(b.sources)]);
@@ -579,6 +585,13 @@
     return normalizeState(store()?.json?.(STORAGE_KEY, {}) || {});
   }
 
+  function recordAchievements(ids){
+    const state=readState();let changed=false;
+    for(const id of ids)if(root.ModeAtlasAchievements?.validId(id)&&!state.achievements[id]){state.achievements[id]=Date.now();changed=true;}
+    if(changed)persistState(state,{source:'achievements',emit:false});
+    return changed;
+  }
+
   function emit(summary, source = 'local', previousSummary = summary){
     try {
       root.dispatchEvent(new CustomEvent('modeAtlasProgressChanged', {
@@ -713,6 +726,7 @@
     const levelInfo = getLevelFromXP(xp);
     const readingCorrect = counterTotal(state, 'kana.reading.correct');
     const writingCorrect = counterTotal(state, 'kana.writing.correct');
+    const kanjiCorrect = counterTotal(state, 'kanji.correct');
     return {
       level: levelInfo.level,
       xp,
@@ -722,7 +736,8 @@
       progress: levelInfo.required ? Math.min(1, levelInfo.intoLevel / levelInfo.required) : 0,
       readingCorrect,
       writingCorrect,
-      lifetimeCorrect: Math.min(Number.MAX_SAFE_INTEGER, readingCorrect + writingCorrect)
+      kanjiCorrect,
+      lifetimeCorrect: Math.min(Number.MAX_SAFE_INTEGER, readingCorrect + writingCorrect + kanjiCorrect)
     };
   }
 
@@ -744,7 +759,7 @@
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
-    award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, selectTheme, levelRequirement,
+    award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordAchievements, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, selectTheme, levelRequirement,
     setPersonalGoal, removePersonalGoal, recordKanaMilestone, personalGoal, getXP, getLifetimeCorrect, getLevelFromXP, getSummary, getDeviceId, recordKanjiAnswer
   });
 

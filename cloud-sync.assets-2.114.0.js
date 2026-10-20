@@ -739,7 +739,7 @@ function clearLocalImportGuard() {
 function sectionHasMeaningfulData(sectionName, data = {}) {
   if (!data || typeof data !== 'object') return false;
   if (sectionName === 'wordBank') return arrayHasItems(data.items);
-  if (sectionName === 'progress') return ['sources','events','adjustments','credits','claims','activity'].some(key=>deepHasProgress(data.state?.[key]));
+  if (sectionName === 'progress') return ['sources','events','adjustments','credits','claims','activity','achievements'].some(key=>deepHasProgress(data.state?.[key]));
   if (sectionName === 'readingTests' || sectionName === 'writingTests') {
     return arrayHasItems(data.primary) || arrayHasItems(data.backup) || arrayHasItems(data.altPrimary) || arrayHasItems(data.altBackup);
   }

@@ -43,7 +43,7 @@ test('all accounts use the current earned-XP curve and discard threshold credit'
     const p=load({modeAtlasProgress:{version,legacySeeded:true,curveCredit:999999,sources:{old:{'kana.reading.correct':7003}}}}).progress;
     assert.equal(p.getXP(),7003);assert.equal(p.getSummary().level,12);
     assert.equal(p.getSummary().levelXp,1203);assert.equal(p.getSummary().nextLevelAt,7230);
-    assert.equal(p.readState().version,6);assert.equal('curveCredit' in p.readState(),false);
+    assert.equal(p.readState().version,7);assert.equal('curveCredit' in p.readState(),false);
     assert.deepEqual(plain(load({modeAtlasProgress:p.readState()}).progress.getSummary()),plain(p.getSummary()));
   }
   const p=load().progress;

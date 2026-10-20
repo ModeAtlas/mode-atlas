@@ -275,7 +275,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
       // Read the latest save inside the transaction: trigger delivery can repeat or reorder.
       const syncedAt=save.updateTime?.toMillis()||0;
       const rewardAccess=cachedAccess?a.rewardAccess||{}:await rewards.read(user,tx);
-      if(a.summary?.version===5&&a.summary?.projectionVersion===PROJECTION_VERSION&&a.summary?.syncedAt===syncedAt&&a.rewardAccess&&rewards.key(a.rewardAccess)===rewards.key(rewardAccess))return;
+      if(a.summary?.projectionVersion===PROJECTION_VERSION&&a.summary?.syncedAt===syncedAt&&a.rewardAccess&&rewards.key(a.rewardAccess)===rewards.key(rewardAccess))return;
       tx.update(ref,{rewardAccess,summary:projectSave(save.data(),a.profile.timeZone,syncedAt,rewardAccess)});
     });
   }

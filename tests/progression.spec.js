@@ -366,6 +366,8 @@ for(const mode of ['reading','writing'])test(`${mode}: a guided session crossing
   for(let i=0;i<5;i++)await correct(page,mode);
   await page.clock.fastForward(30000);
   for(let i=5;i<10;i++)await correct(page,mode);
+  await expect(page.locator('.ma-dialog__title')).toHaveText('Level up!');
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
   await expect(page.locator('.ma-dialog__title')).toHaveText('Set complete');
   expect(await page.evaluate(()=>Object.fromEntries(Object.entries(ModeAtlasProgress.readState().activity).map(([day,row])=>[day,Object.values(row.metrics).reduce((sum,metrics)=>sum+(metrics['kana.guided']||0),0)])))).toEqual({'2026-10-02':0,'2026-10-03':1});
 });
@@ -397,21 +399,21 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: achievements use compact
   await page.evaluate(()=>ModeAtlasFeatures.openAchievements());
   const root=page.locator('.ma-ach-native');await expect(root).toBeVisible();
   await expect(root.locator('.ma-achievement-section')).toHaveCount(1);
-  await expect(root.locator('.ma-achievement-tile')).toHaveCount(10);
+  await expect(root.locator('.ma-achievement-tile')).toHaveCount(6);
   const boxes=await root.locator('.ma-achievement-tile').evaluateAll(nodes=>nodes.slice(0,2).map(node=>({x:node.getBoundingClientRect().x,y:node.getBoundingClientRect().y,height:node.getBoundingClientRect().height})));
-  expect(boxes[0].y).toBe(boxes[1].y);expect(boxes[1].x).toBeGreaterThan(boxes[0].x);expect(boxes[0].height).toBeLessThan(200);
+  expect(boxes[0].y).toBe(boxes[1].y);expect(boxes[1].x).toBeGreaterThan(boxes[0].x);expect(boxes[0].height).toBeLessThan(310);
   await page.screenshot({animations:'disabled',path:info.outputPath(`ios-${theme}-achievements.png`)});
   await root.getByRole('button',{name:'Kana',exact:true}).click();
-  await expect(root.locator('.ma-achievement-tile')).toHaveCount(15);
+  await expect(root.locator('.ma-achievement-tile')).toHaveCount(11);
   await root.locator('[data-ma-ach-id="kana:on-a-roll"]').click();
   await expect(root.locator('.ma-ach-info-body')).toContainText('On a Roll');
   expect(await root.evaluate(node=>node.closest('.ma-dialog').scrollTop)).toBe(0);
   await page.getByRole('button',{name:'Close achievements or return to achievements',exact:true}).click();
   await expect(root.getByRole('button',{name:'Kana',exact:true})).toHaveAttribute('aria-pressed','true');
-  await root.getByRole('button',{name:'Unlocked',exact:true}).click();await expect(root.locator('.ma-ach-empty')).toBeVisible();
+  await root.getByRole('button',{name:'Earned',exact:true}).click();await expect(root.locator('.ma-ach-empty')).toBeVisible();
   await root.getByRole('button',{name:'All',exact:true}).click();
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
-  expect(await root.evaluate(node=>[node,...node.querySelectorAll('.ma-achievement-tile,.ma-ach-switch')].every(el=>el.scrollWidth<=el.clientWidth+1))).toBe(true);
+  expect(await root.evaluate(node=>[node,...node.querySelectorAll('.ma-achievement-tile')].every(el=>el.scrollWidth<=el.clientWidth+1))).toBe(true);
   await page.screenshot({animations:'disabled',path:info.outputPath(`ios-${theme}-achievements-large-text.png`)});
   expect(errors).toEqual([]);
 });
@@ -419,8 +421,12 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: achievements use compact
 test('web achievements expose every launched branch and the new milestones at a narrow viewport',async({page})=>{
   await prepare(page,{native:false});await page.setViewportSize({width:390,height:844});await open(page,'/');
   await page.evaluate(()=>ModeAtlasFeatures.openAchievements());
-  await expect(page.locator('.ma-ach-native')).toHaveCount(0);await expect(page.locator('.ma-achievement-tile')).toHaveCount(26);
-  await expect(page.locator('[data-ma-ach-id="modeAtlas:special-delivery"]')).toContainText('Special Delivery');
+  await expect(page.locator('.ma-ach-native')).toHaveCount(0);await expect(page.locator('.ma-achievement-tile')).toHaveCount(6);
+  await page.getByRole('button',{name:'Explore all milestones',exact:true}).click();
+  await expect(page.locator('.ma-achievement-tile')).toHaveCount(23);
+  await page.getByRole('button',{name:'Kanji',exact:true}).click();
+  await expect(page.locator('.ma-achievement-tile')).toHaveCount(5);
+  await expect(page.locator('[data-ma-ach-id="modeAtlas:special-delivery"]')).toHaveCount(0);
   expect(await page.locator('.ma-ach-dialog-content').evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
 });
 for(const mode of ['reading','writing'])test(`iOS ${mode}: interrupted guided sets resume without replaying XP or answers`,async({page})=>{
@@ -517,10 +523,17 @@ test('native answer feedback coalesces key haptics, respects Off and Reduce Moti
   expect(await page.evaluate(()=>ModeAtlasStorage.get('kanaTrainerNavHidden'))).toBe('0');
 });
 
-test('a level-crossing set has one reward summary and opens the collection without another level dialog',async({page})=>{
-  await prepare(page,{xp:90});await open(page,'/reading/?practice=10');await page.locator('#startBtn').click();
+test('a level-crossing set celebrates once, lists earned badges and retains its reward summary',async({page})=>{
+  await prepare(page,{xp:90});await open(page,'/reading/?practice=10');await page.evaluate(()=>{ModeAtlasStorage.setJSON('kanaWordBank',[{id:'old-word',word:'ねこ'}]);ModeAtlasFeatures.checkAchievements();});await page.locator('#startBtn').click();
+  await page.evaluate(()=>{const words=Array.from({length:25},(_,i)=>({id:String(i),word:'語'+i}));ModeAtlasStorage.setJSON('kanaWordBank',words);});
   for(let i=0;i<10;i++)await correct(page,'reading');
+  await expect(page.locator('.ma-dialog__title')).toHaveText('Level up!');
+  await expect(page.locator('.ma-level-up-number')).toHaveText('2');
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
   await expect(page.locator('.ma-dialog__title')).toHaveText('Set complete');
+  await expect(page.locator('.ma-session-achievements')).toContainText('Word Collection');
+  await expect(page.locator('.ma-session-achievements')).toContainText('Rank II');
+  await expect(page.locator('.ma-session-achievements li').filter({hasText:'Word Collection'})).toHaveCount(1);
   await expect(page.locator('.ma-session-rewards__level')).toHaveText('Level up · Atlas Level 2');
   expect(await page.evaluate(()=>ModeAtlasProgressUI.hasPendingLevelUp())).toBe(false);
   await page.getByRole('button',{name:'Progress',exact:true}).click();
@@ -571,6 +584,7 @@ for(const mode of ['reading','writing'])for(const kind of ['dailyChallenge','tes
   expect(await page.evaluate(()=>sessionStats.answered)).toBe(resumed.sequence.length);
   await page.reload();await page.clock.resume();await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.getByRole('button',{name:action,exact:true}).click();
+  await require('./helpers/session-recap')(page);
   await expect(page.locator('.ma-dialog__title')).toHaveText(kind==='dailyChallenge'?'Daily session complete':'Test complete');
   const result=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),daily:getTodayDailyRecord(),tests:loadStoredTestModeResults(),correct:ModeAtlasProgress.getLifetimeCorrect()}));
   expect(result.correct).toBe(resumed.sequence.length-1);
@@ -868,4 +882,26 @@ test('personal daily and weekly goals create, repeat, edit and remove in the sha
   await page.locator('[data-goal="personal-daily"]').click();await expect(page.getByLabel('Target',{exact:true})).toHaveValue('50');await page.getByLabel('Target',{exact:true}).selectOption('20');await page.getByRole('button',{name:'Save goal',exact:true}).click();
   await page.locator('[data-goal="personal-weekly"]').click();await page.getByRole('button',{name:'Remove goal',exact:true}).click();await expect(page.locator('[data-personal="true"]')).toHaveCount(1);await expect(page.getByRole('button',{name:'+ Set weekly goal',exact:true})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
+
+test('multiple level gains wait for a natural break, aggregate once and respect reduced motion',async({page})=>{
+  await prepare(page);await page.emulateMedia({reducedMotion:'reduce'});await open(page,'/');
+  await page.evaluate(()=>{ModeAtlasProgress.debugAdjustXP(110);ModeAtlasProgress.debugAdjustXP(500);});
+  await expect(page.locator('.ma-level-up-card')).toHaveCount(0);
+  await page.evaluate(()=>{void ModeAtlasProgressUI.naturalBreak();});
+  await expect(page.locator('.ma-level-up-label')).toHaveText('Level 1 → 4');
+  expect(await page.locator('.ma-level-up-emblem').evaluate(node=>getComputedStyle(node).animationName)).toBe('none');
+  await page.getByRole('button',{name:'Continue',exact:true}).click();await page.evaluate(()=>ModeAtlasProgressUI.naturalBreak());
+  await expect(page.locator('.ma-level-up-card')).toHaveCount(0);
+  await page.evaluate(()=>{void ModeAtlasDialog.feature({title:'Another feature'});ModeAtlasProgress.debugAdjustXP(500);void ModeAtlasProgressUI.naturalBreak();});
+  await expect(page.locator('.ma-dialog__title')).toHaveText('Another feature');
+  await page.evaluate(()=>{dispatchEvent(new Event('modeAtlasAccountWillChange'));ModeAtlasDialog.close();});
+  await expect(page.locator('.ma-level-up-card')).toHaveCount(0);
+  expect(await page.evaluate(()=>ModeAtlasProgressUI.hasPendingLevelUp())).toBe(false);
+});
+
+test('every achievement illustration is valid XML and keeps a distinct visible symbol',async({page})=>{
+  await prepare(page);await open(page,'/');
+  const result=await page.evaluate(async()=>{const text=await (await fetch('/assets/achievements/mode-atlas-badges.svg')).text(),xml=new DOMParser().parseFromString(text,'image/svg+xml');return {errors:xml.querySelectorAll('parsererror').length,symbols:[...xml.querySelectorAll('symbol')].map(s=>({id:s.id,children:s.childElementCount}))};});
+  expect(result.errors).toBe(0);expect(result.symbols.length).toBe(31);expect(result.symbols.every(s=>s.children>0)).toBe(true);
 });

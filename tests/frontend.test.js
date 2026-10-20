@@ -1339,7 +1339,7 @@ test('2.42 contextual install and progression feedback stay under shared owners'
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress.js'") < frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'"));
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'") < frontend.indexOf("'assets/app/mode-atlas-pwa.js'"));
 
-  assert.match(progress, /const STATE_VERSION = 6/);
+  assert.match(progress, /const STATE_VERSION = 7/);
   assert.match(progress, /adjustments/);
   assert.match(progress, /function debugAdjustXP/);
   assert.match(progress, /source: 'dev\.xpAdjust'/);
@@ -1349,7 +1349,7 @@ test('2.42 contextual install and progression feedback stay under shared owners'
   assert.match(progressUi, /modeAtlasProgressChanged/);
   assert.match(progressUi, /pendingLevelUp/);
   assert.match(progressUi, /naturalBreak/);
-  assert.match(progressUi, /title: 'Level up'/);
+  assert.match(progressUi, /title:'Level up!'/);
 
   assert.match(shared, /startXp/);
   assert.match(shared, /function getTrainerSessionXpGain/);
@@ -1382,58 +1382,14 @@ test('2.42 contextual install and progression feedback stay under shared owners'
     'developer XP controls must use the progression API rather than raw progression storage');
 });
 
-test('2.43 Achievements are category-owned and sequential milestones rank up in place', () => {
-  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
-  const css = read('assets/css/mode-atlas-achievements.css');
-
-  for (const category of ['Mode Atlas', 'Kana Trainer', 'Word Bank']) assert.match(achievements, new RegExp(`title:'${category.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}'`));
-  for (const future of ['Listening', 'Grammar', 'Reading Comprehension']) assert.match(achievements, new RegExp(`title:'${future}'`));
-
-  assert.match(achievements, /const ACHIEVEMENT_TRACKS/);
-  assert.match(achievements, /id:'speed-goal',name:'Speed Goal'/);
-  assert.match(achievements, /id:'word-collection',name:'Word Collection'/);
-  assert.match(achievements, /state\.complete\?'Max rank'/);
-  assert.match(achievements, /Achievement ranked up/);
-  assert.match(achievements, /dataset\.maAchRankNav/);
-  assert.match(achievements, /← Previous rank/);
-  assert.match(achievements, /Next rank →/);
-
-  for (const level of [5,10,20,50,100]) assert.match(achievements, new RegExp(`target:${level},key:'atlasLevel'`));
-  assert.match(achievements, /ModeAtlasProgress\?\.getSummary/);
-  assert.match(achievements, /modeAtlasProgressChanged/);
-
-  // Existing milestone IDs remain behind the ranked presentation, preventing false re-unlocks.
-  for (const id of ['general-0','general-4','kana-8','kana-10','wordbank-0','wordbank-4']) assert.match(achievements, new RegExp(`unlockId:'${id}'`));
-  assert.doesNotMatch(achievements, /const DEFINITIONS =/);
-
-  assert.match(css, /--ma-ach-rank/);
-  assert.match(css, /\.ma-ach-rank-history/);
-  assert.match(css, /\.ma-achievement-section--future/);
-});
-
-test('2.43.1 achievement tiles breathe and detail navigation has distinct destinations', () => {
-  const achievements = read('assets/achievements/mode-atlas-achievements-ui.js');
-  const achievementCss = read('assets/css/mode-atlas-achievements.css');
-  const dialog = read('assets/app/mode-atlas-dialog.js');
-  const components = read('assets/css/mode-atlas-components.css');
-
-  assert.match(achievements, /const RANK_ACCENTS = Object\.freeze\(\[1,2,3,4,5\]\.map/);
-  assert.match(read('assets/css/mode-atlas-theme.css'), /--ma-rank-1-rgb:184,92,62/);
-  assert.match(achievements, /const copy=achEl\('div','ma-ach-copy'\)/);
-  assert.match(achievementCss, /\.ma-achievement-tile\{[^}]*display:flex;flex-direction:column[^}]*min-height:165px/);
-  assert.match(achievementCss, /\.ma-ach-copy\{[^}]*margin-bottom:18px/);
-  assert.match(achievementCss, /\.ma-ach-meter\{[^}]*position:relative[^}]*margin-top:auto/);
-
-  assert.doesNotMatch(achievements, /backLabel:/);
-  assert.doesNotMatch(achievements, /data-ma-feature-back/);
-  assert.match(achievements, /handleFeatureCloseRequest/);
-  assert.match(achievements, /onCloseRequest:/);
-  assert.match(achievements, /closeLabel:'×'/);
-  assert.match(achievements, /Close achievements or return to achievements/);
-  assert.match(dialog, /opts\.onCloseRequest = typeof opts\.onCloseRequest === 'function'/);
-  assert.match(dialog, /if \(opts\.onCloseRequest\?\.\(\) === true\) return;/);
-  assert.match(dialog, /close\.classList\.toggle\('ma-dialog__close--icon', opts\.closeIcon\)/);
-  assert.match(components, /\.ma-dialog__close--icon/);
+test('achievement rules and artwork have shared owners; the UI retains the common dialog', () => {
+  const ui=read('assets/achievements/mode-atlas-achievements-ui.js');
+  const model=read('assets/achievements/mode-atlas-achievements.js');
+  for(const id of ['general-0','general-4','kana-8','kana-10','wordbank-0','wordbank-4'])assert.ok(model.includes(`unlockId:'${id}'`));
+  assert.match(ui,/ModeAtlasAchievements/);assert.doesNotMatch(ui,/const ACHIEVEMENT_TRACKS =/);
+  assert.match(ui,/ModeAtlasAchievementArt.badge/);assert.match(ui,/ModeAtlasDialog.feature/);
+  assert.match(ui,/handleFeatureCloseRequest/);assert.match(ui,/Close achievements or return to achievements/);
+  assert.doesNotMatch(ui,/ma-achievement-section--future|← Previous rank|Next rank →/);
 });
 
 test('2.43.2 responsive UX keeps results, mastery, focus mode, and trainer result states readable', () => {

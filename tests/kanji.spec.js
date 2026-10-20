@@ -53,6 +53,7 @@ test('typed recall, IME composition, hints, wrong answers and matching keep inde
 test('formal Kanji tests persist separately and share Results navigation with Kana',async({page},info)=>{
   await setup(page);await ready(page,'/kanji/?test=meaning&level=5');await expect(page.getByRole('button',{name:'Show answer',exact:true})).toHaveCount(0);
   for(let i=0;i<20;i++){await answer(page,i!==3);await page.getByRole('button',{name:i===19?'Finish set':'Continue',exact:true}).click();}
+  await require('./helpers/session-recap')(page);
   await expect(page.locator('.ma-kanji-recap-score')).toHaveText('19 / 20 correct');await page.getByRole('link',{name:'View results',exact:true}).click();await expect(page.locator('.ma-kanji-result-stats')).toContainText('95.0%');await expect(page.locator('.ma-kanji-result-answers li')).toHaveCount(20);
   await page.screenshot({path:info.outputPath('kanji-results.png'),animations:'disabled'});
   await page.getByRole('link',{name:'Kana',exact:true}).click();await expect(page).toHaveURL(/\/results\/$/);await page.getByRole('link',{name:'Kanji',exact:true}).click();await expect(page.locator('.ma-kanji-result-stats')).toContainText('95.0%');
@@ -148,4 +149,15 @@ test('Learn shows three sibling learning branches and shared results outside the
   await setup(page);await page.goto('/learn/');const library=page.locator('.ma-branch-library');
   await expect(library.locator(':scope > a[data-branch]')).toHaveCount(3);await expect(library.locator(':scope > a[data-branch] .ma-branch-tile__title')).toHaveText(['Kana','Kanji','Word Bank']);
   await expect(page.getByRole('link',{name:'Kana learning path',exact:true})).toHaveAttribute('href','/kana/');await expect(library.locator('a[data-branch][href="/results/"]')).toHaveCount(0);
+});
+
+test('Kanji recap celebrates a level gain and lists only the ranks earned in this session',async({page})=>{
+  await setup(page,true,393,'dark');await ready(page);
+  await page.evaluate(()=>{ModeAtlasProgress.debugAdjustXP(99);ModeAtlasKanjiState.save({...ModeAtlasKanjiState.read(),sources:{fixture:{'水':{meaning:[9,0,9,9,9000,Date.now(),Date.now(),0,'2026-10-20']}}}});});
+  await ready(page,'/kanji/?char=水&mode=meaning');
+  await answer(page);await page.getByRole('button',{name:'Finish set',exact:true}).click();
+  await expect(page.locator('.ma-level-up-card')).toBeVisible();await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await expect(page.locator('.ma-session-achievements')).toContainText('Meaning maker');
+  await expect(page.locator('.ma-session-achievements')).not.toContainText('First impressions');
+  await page.getByRole('button',{name:'Back to Kanji',exact:true}).click();await expect(page.locator('.ma-level-up-card')).toHaveCount(0);
 });

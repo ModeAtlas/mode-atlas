@@ -291,6 +291,8 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-kanji-results.js',
     'assets/ui/mode-atlas-kanji-mastery.js',
     'assets/app/mode-atlas-kana-metrics.js',
+    'assets/achievements/mode-atlas-achievements.js',
+    'assets/achievements/mode-atlas-achievement-art.js',
     'assets/ui/mode-atlas-kana-mastery.js',
     'assets/ui/mode-atlas-kana-practice.js',
     'assets/app/mode-atlas-study-plan.js',
