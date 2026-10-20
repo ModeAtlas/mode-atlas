@@ -12,7 +12,7 @@
   const STORAGE_KEY = 'modeAtlasProgress';
   const UPDATED_AT_KEY = 'modeAtlasProgressUpdatedAt';
   const DEVICE_KEY = 'modeAtlasProgressDeviceId';
-  const STATE_VERSION = 5;
+  const STATE_VERSION = 6;
   const LEGACY_SOURCE = 'legacy-baseline';
 
   const COUNTER_XP = Object.freeze({
@@ -95,6 +95,8 @@
       credits: normalizeCredits(value.credits),
       claims: normalizeClaims(value.claims),
       goalPlans: normalizeGoalPlans(value.goalPlans),
+      personalGoals: normalizePersonalGoals(value.personalGoals),
+      kanaMilestones: normalizeKanaMilestones(value.kanaMilestones),
       activity: normalizeActivity(value.activity),
       runs: normalizeRuns(value.runs),
       appearance: normalizeAppearance(value.appearance),
@@ -118,6 +120,8 @@
       credits: mergeCredits(a.credits,b.credits),
       claims: mergeClaims(a.claims,b.claims),
       goalPlans: mergeGoalPlans(a.goalPlans,b.goalPlans),
+      personalGoals: mergePersonalGoals(a.personalGoals,b.personalGoals),
+      kanaMilestones: mergeKanaMilestones(a.kanaMilestones,b.kanaMilestones),
       activity: mergeActivity(a.activity,b.activity),
       runs: normalizeRuns({...a.runs,...b.runs}),
       appearance: mergeAppearance(a.appearance,b.appearance),
@@ -160,9 +164,11 @@
     }
     for(const week of weeks){
       const days=Object.keys(merged.activity).filter(day=>weekKey(day)===week);
-      if(days.some(day=>merged.activity[day].goalVersion>=4))reconcilePeriod(merged,week,'weekly');
+      if(days.some(day=>merged.activity[day].goalVersion>=4)){reconcilePeriod(merged,week,'weekly');reconcilePersonal(merged,week,'weekly');}
       else if(weekDays(merged,week)>=4)claim(merged,`${week}:goal:week`,25);
     }
+    const milestoneDays=new Set(Object.values(merged.kanaMilestones).flatMap(row=>Object.values(row)).filter(at=>at>1).map(dayKey));
+    for(const day of milestoneDays){reconcilePersonal(merged,day,'daily');reconcilePersonal(merged,weekKey(day),'weekly');}
     return merged;
   }
 
@@ -203,6 +209,7 @@
     }return out;
   }
   function emptyActivity(){return {sources:{},reviews:{reading:[],writing:[]},metrics:{},kana:[],goalVersion:3};}
+  const maxMetric=key=>key.endsWith('.streak')||key.endsWith('.testScore');
   function normalizeMetrics(input){
     return Object.fromEntries(Object.entries(object(input)).filter(([key])=>/^(kana|kanji|wordbank|listening|grammar|comprehension)\.[a-zA-Z]+$/.test(key)).map(([key,n])=>[key,finiteCount(n)]));
   }
@@ -223,7 +230,7 @@
   function activityTotals(state,day){
     const row=state.activity[day]||{sources:{},reviews:{}};
     const counts=Object.values(row.sources).reduce((sum,n)=>[sum[0]+n[0],sum[1]+n[1]],[0,0]);
-    const metrics={};for(const source of Object.values(row.metrics||{}))for(const [key,n]of Object.entries(source))metrics[key]=key.endsWith('.streak')?Math.max(metrics[key]||0,n):(metrics[key]||0)+n;
+    const metrics={};for(const source of Object.values(row.metrics||{}))for(const [key,n]of Object.entries(source))metrics[key]=maxMetric(key)?Math.max(metrics[key]||0,n):(metrics[key]||0)+n;
     return {reading:counts[0],writing:counts[1],correct:counts[0]+counts[1],reviewed:(row.reviews.reading||[]).length+(row.reviews.writing||[]).length,metrics};
   }
   function weekKey(day){const d=new Date(day+'T12:00:00Z');return root.ModeAtlasDates.shiftDateKey(day,-((d.getUTCDay()+6)%7));}
@@ -231,6 +238,86 @@
   function weekDays(state,day){const first=weekKey(day);return Object.keys(state.activity).filter(key=>weekKey(key)===first&&correctAcrossBranches(activityTotals(state,key))>=5).length;}
   function claim(state,id,value){const key='v3:'+id,old=state.claims[key]||0;state.claims[key]=Math.max(old,finiteCount(value));return state.claims[key]-old;}
   function goalClaimKey(period,key,goal){return `v4:${period}:${key}:goal:${goal.id}`;}
+  const personalClaimKey=(period,key)=>`v5:personal:${period}:${key}`;
+  function normalizePersonalGoals(input){
+    const out={};
+    for(const period of ['daily','weekly']){
+      const row=object(input)[period],at=finiteCount(row?.at);if(!at)continue;
+      if(row.deleted===true){out[period]={at,deleted:true};continue;}
+      const template=root.ModeAtlasRewardRules.personalGoals.find(goal=>goal.id===row.id);
+      const start=String(row.start||''),parsed=Date.parse(start+'T12:00:00Z');
+      if(!template||!template[period].includes(row.target)||!/^\d{4}-\d{2}-\d{2}$/.test(start)||!Number.isFinite(parsed)||new Date(parsed).toISOString().slice(0,10)!==start)continue;
+      if(period==='weekly'&&weekKey(start)!==start)continue;
+      out[period]={id:template.id,target:row.target,repeat:row.repeat===true,start,at};
+    }return out;
+  }
+  function mergePersonalGoals(left,right){
+    const out=normalizePersonalGoals(left);
+    for(const [period,row]of Object.entries(normalizePersonalGoals(right))){
+      const previous=out[period];
+      if(!previous||row.at>previous.at||(row.at===previous.at&&JSON.stringify(row)>JSON.stringify(previous)))out[period]=row;
+    }return out;
+  }
+  function normalizeKanaMilestones(input){
+    const out={};
+    for(const [char,stages]of Object.entries(object(input)).sort().slice(0,512)){
+      if(!/^[ぁ-ゖァ-ヺー]{1,3}$/.test(char))continue;
+      const row={};for(const stage of [3,4,5,6]){const at=finiteCount(stages?.[stage]);if(at)row[stage]=at;}
+      if(Object.keys(row).length)out[char]=row;
+    }return out;
+  }
+  function mergeKanaMilestones(left,right){
+    const out=normalizeKanaMilestones(left);
+    for(const [char,stages]of Object.entries(normalizeKanaMilestones(right))){
+      out[char]||={};for(const [stage,at]of Object.entries(stages))out[char][stage]=Math.min(out[char][stage]||at,at);
+    }return out;
+  }
+  function personalGoal(state,key,period){
+    const config=state.personalGoals[period];
+    if(!config||config.deleted||key<config.start||(!config.repeat&&key!==config.start))return null;
+    const template=root.ModeAtlasRewardRules.personalGoals.find(goal=>goal.id===config.id);
+    const metrics=periodMetrics(state,key,period),inPeriod=at=>{
+      if(!finiteCount(at)||at<=1)return false;const day=dayKey(at);return (period==='daily'?day:weekKey(day))===key;
+    };
+    let value=metrics[template.metric]||0;
+    if(template.metric==='kana.learned')value=Object.values(state.kanaMilestones).filter(row=>inPeriod(row[3])).length;
+    if(template.metric==='kana.improved')value=Object.values(state.kanaMilestones).filter(row=>[4,5,6].some(stage=>inPeriod(row[stage]))).length;
+    return {...template,...config,id:'personal-'+period,template:template.id,period,personal:true,label:template.label(config.target),short:template.name,value,xp:period==='daily'?40:200,claimed:!!state.claims[personalClaimKey(period,key)]};
+  }
+  function reconcilePersonal(state,key,period){
+    const goal=personalGoal(state,key,period),id=personalClaimKey(period,key);
+    if(!goal||goal.value<goal.target||state.claims[id])return 0;
+    state.claims[id]=goal.xp;return goal.xp;
+  }
+  function seedKanaMilestones(state){
+    const learning=root.ModeAtlasKanaLearning;if(!learning)return;
+    const saved=learning.read(),evidence=learning.snapshot();
+    for(const char of Object.keys(learning.map)){
+      const stage=learning.stage(char,saved,evidence);if(stage<3)continue;
+      state.kanaMilestones[char]||={};
+      for(let step=3;step<=stage;step++)state.kanaMilestones[char][step]||=1;
+    }
+  }
+  function setPersonalGoal(period,input){
+    if(!['daily','weekly'].includes(period))throw new Error('Choose a daily or weekly goal.');
+    const state=ensureSeeded({sync:false,emit:false}),at=Math.max(Date.now(),(state.personalGoals[period]?.at||0)+1),day=dayKey();
+    const row=normalizePersonalGoals({[period]:{...input,at,start:period==='daily'?day:weekKey(day)}})[period];
+    if(!row||row.deleted)throw new Error('Choose a goal and one of its available targets.');
+    seedKanaMilestones(state);state.personalGoals[period]=row;reconcileGoals(state,day);
+    return persistState(state,{source:'goals.personal',requireSaved:true});
+  }
+  function removePersonalGoal(period){
+    if(!['daily','weekly'].includes(period))return false;
+    const state=ensureSeeded({sync:false,emit:false});
+    state.personalGoals[period]={at:Math.max(Date.now(),(state.personalGoals[period]?.at||0)+1),deleted:true};
+    persistState(state,{source:'goals.personal.remove',requireSaved:true});return true;
+  }
+  function recordKanaMilestone(char,stage,previous=0,at=Date.now(),{deferAwards=false}={}){
+    if(!/^[ぁ-ゖァ-ヺー]{1,3}$/.test(char)||![3,4,5,6].includes(stage)||stage<=previous)return;
+    const state=ensureSeeded({sync:false,emit:false}),row=state.kanaMilestones[char]||={};
+    for(let step=3;step<=stage;step++)row[step]||=step<=previous?1:at;
+    if(!deferAwards)reconcileGoals(state,dayKey(at));persistState(state,{source:'goals.kanaMilestone',emit:!deferAwards});
+  }
   function goalAwards(state,key,period){
     const slots={};
     for(const goal of root.ModeAtlasRewardRules.goalCatalogue.filter(goal=>goal.period===period)){
@@ -238,10 +325,11 @@
       if(xp)slots[goal.slot]=Math.max(slots[goal.slot]||0,xp);
     }return slots;
   }
-  function goalCount(state,key,period){
+  function rotatingGoalCount(state,key,period){
     const legacy=period==='daily'?['recall','balance','review'].filter(id=>state.claims[`v3:${key}:goal:${id}`]).length:Number(!!state.claims[`v3:${key}:goal:week`]);
     return Math.max(legacy,Object.keys(goalAwards(state,key,period)).length);
   }
+  function goalCount(state,key,period){return rotatingGoalCount(state,key,period)+Number(!!state.claims[personalClaimKey(period,key)]);}
   function normalizeGoalPlans(input){
     const out={};
     for(const [key,plan]of Object.entries(object(input))){
@@ -289,7 +377,7 @@
     const metrics={},kana=new Set();let reading=0,writing=0;
     for(const day of days){
       const totals=activityTotals(state,day);reading+=totals.reading;writing+=totals.writing;
-      for(const [id,n]of Object.entries(totals.metrics))metrics[id]=id.endsWith('.streak')?Math.max(metrics[id]||0,n):(metrics[id]||0)+n;
+      for(const [id,n]of Object.entries(totals.metrics))metrics[id]=maxMetric(id)?Math.max(metrics[id]||0,n):(metrics[id]||0)+n;
       for(const char of state.activity[day]?.kana||[])kana.add(char);
       metrics['study.goals']=(metrics['study.goals']||0)+dailyGoalCount(state,day);
       if(correctAcrossBranches(totals)>=5)metrics['study.days']=(metrics['study.days']||0)+1;
@@ -303,11 +391,11 @@
     }
     return xp;
   }
-  function reconcileGoals(state,day,weekly=true){return reconcilePeriod(state,day,'daily')+(weekly?reconcilePeriod(state,weekKey(day),'weekly'):0);}
+  function reconcileGoals(state,day,weekly=true){return reconcilePeriod(state,day,'daily')+reconcilePersonal(state,day,'daily')+(weekly?reconcilePeriod(state,weekKey(day),'weekly')+reconcilePersonal(state,weekKey(day),'weekly'):0);}
   function addActivity(state,day,metrics,kana=[]){
     ensureGoalPlans(state,day,Date.now());
     const row=state.activity[day]||emptyActivity(),id=getDeviceId();row.goalVersion=4;
-    row.metrics[id]||={};for(const [key,n]of Object.entries(normalizeMetrics(metrics)))row.metrics[id][key]=key.endsWith('.streak')?Math.max(row.metrics[id][key]||0,n):(row.metrics[id][key]||0)+n;
+    row.metrics[id]||={};for(const [key,n]of Object.entries(normalizeMetrics(metrics)))row.metrics[id][key]=maxMetric(key)?Math.max(row.metrics[id][key]||0,n):(row.metrics[id][key]||0)+n;
     row.kana=[...new Set([...row.kana,...kana])].sort().slice(0,512);state.activity[day]=row;return row;
   }
   function recordActivity(input){
@@ -363,6 +451,7 @@
       const finite=['guided','dailyChallenge','testMode','speedRun','timeTrial'].includes(input.mode);
       const complete=input.completed&&finite;
       addActivity(state,day,input.branch==='kanji'?{'kanji.sessions':1,'kanji.tests':complete&&input.mode==='testMode'?1:0}:{'kana.sessions':1,'kana.guided':complete&&input.mode==='guided'?1:0,'kana.daily':complete&&input.mode==='dailyChallenge'?1:0,'kana.tests':complete&&input.mode==='testMode'?1:0,'kana.precise':complete&&!input.assisted&&!input.hintsEnabled&&input.correct/input.answered>=.9?1:0});
+      if(complete&&input.mode==='testMode'&&!input.assisted&&!input.hintsEnabled)addActivity(state,day,{[(input.branch==='kanji'?'kanji':'kana')+'.testScore']:Math.floor(input.correct/input.answered*100)});
       parts.goals=reconcileGoals(state,day);
     }
     run.done=true;run.at=Date.now();persistState(state,{source:'practice.finish'});
@@ -418,6 +507,7 @@
     for(const period of ['daily','weekly']){
       const key=period==='daily'?today:weekKey(today),metrics=periodMetrics(state,key,period);
       goals.push(...periodGoals(state,key,period).map(goal=>({...goal,value:goalAwards(state,key,period)[goal.slot]?goal.target:metrics[goal.metric]||0})));
+      const personal=personalGoal(state,key,period);if(personal)goals.push(personal);
     }
     return {streak,weekDays:weekDays(state,today),goals};
   }
@@ -433,9 +523,9 @@
   function achievementStats(input){
     const state=input?normalizeState(input):readState(),days=new Set(),dailyKeys=new Set(),weeklyKeys=new Set();
     for(const [key,n]of Object.entries(state.claims))if(n){
-      const daily=/^v4:daily:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:(recall|balance|review)$/.exec(key);
-      const weekly=/^v4:weekly:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:week$/.exec(key);
-      if(daily){dailyKeys.add(daily[1]);if(dailyGoalCount(state,daily[1])>=3)days.add(daily[1]);}
+      const daily=/^v5:personal:daily:(\d{4}-\d{2}-\d{2})$/.exec(key)||/^v4:daily:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:(recall|balance|review)$/.exec(key);
+      const weekly=/^v5:personal:weekly:(\d{4}-\d{2}-\d{2})$/.exec(key)||/^v4:weekly:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:week$/.exec(key);
+      if(daily){dailyKeys.add(daily[1]);if(rotatingGoalCount(state,daily[1],'daily')>=3)days.add(daily[1]);}
       if(weekly)weeklyKeys.add(weekly[1]);
     }
     const dailyGoals=[...dailyKeys].reduce((sum,key)=>sum+dailyGoalCount(state,key),0),weeklyGoals=[...weeklyKeys].reduce((sum,key)=>sum+goalCount(state,key,'weekly'),0);
@@ -508,7 +598,8 @@
     const previousSummary = getSummary(readState());
     const state = normalizeState(input);
     state.updatedAt = Math.max(Date.now(), finiteCount(state.updatedAt));
-    storage.setJSON(STORAGE_KEY, state);
+    const saved=storage.setJSON(STORAGE_KEY, state);
+    if(saved===false&&options.requireSaved)throw new Error('Your goal could not be saved. Free some device storage and try again.');
     storage.set(UPDATED_AT_KEY, String(state.updatedAt));
     if (options.sync !== false) {
       try { root.KanaCloudSync?.markSectionUpdated?.('progress'); } catch {}
@@ -654,7 +745,7 @@
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, persistState, ensureSeeded,
     award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, selectTheme, levelRequirement,
-    getXP, getLifetimeCorrect, getLevelFromXP, getSummary, getDeviceId, recordKanjiAnswer
+    setPersonalGoal, removePersonalGoal, recordKanaMilestone, personalGoal, getXP, getLifetimeCorrect, getLevelFromXP, getSummary, getDeviceId, recordKanjiAnswer
   });
 
 });

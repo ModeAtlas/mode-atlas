@@ -218,7 +218,7 @@ test('shared shell regression guards keep nav spacing, sound controls, and train
   const studyCss = read('assets/css/mode-atlas-study-shared.css');
   const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
 
-  assert.match(kanaCss, /padding:\s*0 24px 24px;/, 'Kana top frame padding must not stack above shared nav');
+  assert.match(kanaCss, /padding:0 16px;/, 'Kana top frame padding must not stack above shared nav');
   assert.match(resultsCss, /padding:\s*0 22px 22px;/, 'Results top frame padding must not stack above shared nav');
   assert.match(studyCss, /body\.ma-reading-page,[\s\S]*?body\.ma-writing-page\{[\s\S]*?padding:var\(--ma-page-inset-top,0px\) 24px var\(--ma-page-inset-bottom,24px\);/,
     'Reading/Writing top frame padding must be owned by the shared trainer stylesheet');
@@ -309,7 +309,7 @@ test('Reading and Writing use one build-time trainer shell and shared trainer pr
   const commonTrainerIds = [
     'startBtn','sessionActions','skipKanaBtn','pauseSessionBtn','endSessionBtn',
     'scoresHeader','scoresContent','statsHeader','statsContent','heatmap','popup',
-    'modifiersTab','modifiersContent','modifierOptions','rowOptions','katakanaRowOptions',
+    'modifiersTab','modifiersContent','modifierOptions','kanaHintsQuick',
     'trialConfig','trialTarget','trialTime','comboConfig','comboSameRowBtn','comboRandomBtn','gameOver'
   ];
   for (const rel of ['reading/index.html', 'writing/index.html']) {
@@ -594,7 +594,9 @@ test('shared drawer, card, and form primitives replace page-local surface owners
   }
   assert.doesNotMatch(profile, /role="dialog"/);
   assert.doesNotMatch(settings, /role="dialog"/);
-  assert.match(profile + settings, /ma-card ma-card--soft/);
+  assert.match(profile, /ma-profile-card ma-progression-card/);
+  assert.doesNotMatch(profile, /ma-card ma-card--soft/, 'Profile uses open sections rather than nesting surface cards');
+  assert.match(settings, /ma-setting-list/);
   assert.match(drawerCss, /\.ma-account-sheet\{/);
   assert.doesNotMatch(drawerCss, /\.ma-shared-profile-drawer,\.ma-shared-settings-drawer\{/);
 
@@ -623,11 +625,11 @@ test('feature dialogs use the shared dialog mechanics and Kana no longer owns a 
   assert.match(dialog, /opts\.hideActions/);
   assert.match(dialog, /opts\.size === 'large'/);
   assert.match(components, /\.ma-dialog--large\{width:min\(980px,100%\);\}/);
-  assert.match(kana, /ModeAtlasDialog\.feature\(/);
-  assert.match(kana, /size: 'large'/);
+  assert.match(kana, /ModeAtlasKanaMastery\.render/);
+  assert.match(read('assets/achievements/mode-atlas-achievements-ui.js'), /ModeAtlasKanaMastery\.render/);
   assert.doesNotMatch(kana, /kanaHubModal|kana-modal-backdrop|kana-modal-panel|data-ma-kana-modal-close/);
   assert.doesNotMatch(kanaCss, /\.kana-hub-modal|\.kana-modal-backdrop|\.kana-modal-panel|\.kana-modal-close/);
-  assert.match(kanaCss, /\.kana-modal-grid/);
+  assert.doesNotMatch(kanaCss, /\.kana-modal-grid/);
 });
 
 test('visit flows keep behaviour in JS and presentation in shared CSS', () => {
@@ -639,7 +641,7 @@ test('visit flows keep behaviour in JS and presentation in shared CSS', () => {
   assert.match(visit, /ma-card ma-card--soft ma-visit-panel/);
   assert.match(visit, /ma-check ma-visit-check/);
   assert.match(visit, /ma-button ma-button--primary ma-visit-btn/);
-  assert.match(visit, /ma-status ma-status--error ma-visit-error/);
+  assert.match(visit, /ma-status ma-status--error/);
   assert.match(modals, /Shared visit-flow presentation/);
   assert.match(modals, /\.ma-visit-backdrop/);
   assert.match(modals, /\.ma-visit-presets/);
@@ -750,9 +752,8 @@ test('post-consolidation frontend ownership keeps pause, dynamic controls, and p
 
   assert.match(trainerShared, /document\.createElement\("button"\)/);
   assert.match(trainerShared, /toggle-btn ma-button ma-trainer-button/);
-  assert.match(modifier, /ma-button ma-trainer-button ma-structured-toggle/);
-  assert.match(modifier, /ma-card ma-card--soft ma-no-data-card/);
-  assert.match(modifier, /mmLink\('ma-button'/);
+  assert.match(modifier, /ModeAtlasKanaPractice\.render/);
+  assert.doesNotMatch(modifier, /makePresetBtn|ma-no-data-card/);
   assert.match(devConsole, /ma-button ma-button--small ma-dev-btn/);
   assert.doesNotMatch(devConsole, /ma-ui-btn/);
   assert.doesNotMatch(displayMode, /ma-display-btn/);
@@ -794,9 +795,10 @@ test('trainer consolidation preserves score, heatmap, modifier, nav-clearance, a
   assert.match(trainerCss, /\.trial-config \{[\s\S]*?display: flex;/);
   assert.match(trainerCss, /\.trial-config\[hidden\] \{ display: none; \}/);
 
-  assert.match(trainerCss, /--ma-trainer-side-top:96px/);
-  assert.match(trainerCss, /\.ma-trainer-side-panel\{[\s\S]*?top:var\(--ma-trainer-side-top\)/,
-    'desktop side panels must clear the shared navigation');
+  assert.match(trainerCss, /\.ma-trainer-side-panel\{position:static/,
+    'desktop side panels share document flow with the trainer');
+  assert.match(trainerCss, /grid-template-columns:minmax\(0,1fr\) 248px/,
+    'desktop panels have a reserved column, clear of the navigation rail');
   assert.match(trainerCss, /body\[data-effective-display-mode="tablet"\] \.ma-trainer-side-panel,[\s\S]*?position:static;/,
     'tablet side panels must return to document flow');
   assert.match(trainerCss, /body\[data-effective-display-mode="phone"\] \.ma-trainer-side-panel,[\s\S]*?position:static;/,
@@ -824,16 +826,9 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   assert.match(components, /min-height:var\(--ma-button-min-height,var\(--ma-control-height\)\)/);
   assert.match(components, /border-radius:var\(--ma-button-radius,var\(--ma-radius-control\)\)/);
 
-  assert.match(kanaHtml, /kana-hub-hero ma-page-hero/);
-  assert.doesNotMatch(kanaHtml, /kana-hub-hero[^\n]*ma-card/,
-    'Kana hero should remain an open orientation section rather than a shared card surface');
-  assert.match(kanaHtml, /kana-hero-actions ma-action-row/);
-  assert.match(kanaHtml, /kana-head-actions ma-action-grid/);
-  assert.match(kanaJs, /kana-next-card kana-next-card--recommended primary/);
-  assert.match(kanaJs, /kana-stage-card/);
-  assert.match(kanaJs, /kana-record-card/);
-  assert.doesNotMatch(kanaJs, /kana-next-card[^'"]*ma-card|kana-stage-card[^'"]*ma-card|kana-record-card[^'"]*ma-card/,
-    'Kana progress presentation should not recreate the retired nested card wall');
+  assert.match(kanaHtml, /id="maKanaLearning"/);
+  assert.match(kanaJs, /ma-kana-path-row/);
+  assert.doesNotMatch(kanaJs, /kana-next-card|kana-stage-card|kana-record-card/);
   const kanaActionBlock = kanaCss.match(/\.kana-primary-action,[\s\S]*?\.kana-inline-btn \{([\s\S]*?)\n\}/)?.[1] || '';
   assert.doesNotMatch(kanaActionBlock, /appearance:\s*none/,
     'Kana action family should let ma-button own native button reset mechanics');
@@ -841,8 +836,8 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   assert.doesNotMatch(kanaHeadBlock, /display:\s*flex/,
     'Kana section headers should let ma-section-head own flex layout');
 
-  assert.match(resultsHtml, /hero glass ma-card/);
-  assert.match(resultsHtml, /detail-panel ma-card ma-card--flat/);
+  assert.match(resultsHtml, /class="results-heading"/);
+  assert.doesNotMatch(resultsHtml, /hero glass ma-card|detail-panel ma-card/,'Results heading and analysis must not restore nested card shells');
   assert.match(resultsHtml, /meta-grid ma-stat-grid/);
   assert.match(resultsJs, /ma-card ma-card--flat ma-card--interactive/);
   assert.match(resultsUi, /row-doughnut-card ma-card ma-card--flat ma-card--interactive/);
@@ -891,10 +886,10 @@ test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and c
   assert.match(settings, /Data and account/);
   assert.match(settings, /ma-setting-row/);
 
-  assert.match(atlas, /id="homeContinueCard"/);
-  assert.match(atlas, /Reading Comprehension/);
-  assert.match(kana, /id="kanaContinueAction"/);
-  assert.match(kana, /ma-skeleton-block/);
+  assert.match(atlas, /id="homeContinueAction"/);
+  assert.match(atlas, /data-ma-branch-library/);
+  assert.match(kana, /id="maKanaLearning"/);
+  assert.match(read('assets/pages/mode-atlas-kana-page.js'), /Take a starting-point test/);
 
   for (const trainer of [reading, writing]) {
     assert.match(trainer, /Practice setup/);
@@ -1078,53 +1073,35 @@ test('2.33 experience restructure keeps Atlas clean and onboarding destination-a
   const homeJs = read('assets/pages/mode-atlas-home-page.js');
   const visit = read('assets/app/mode-atlas-visit-flows.js');
   const kana = read('kana/index.html');
-  assert.match(home, /data-ma-home-visitor/);
-  assert.match(home, /data-ma-home-user/);
-  assert.match(home, /Start with Kana Trainer/);
+  assert.match(home, /id="homeContinueAction"/);
+  assert.match(home, /data-ma-home-avatar/);
+  assert.match(home, /href="\/kana\/"/);
   assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Study status/);
   assert.match(homeJs, /dataset\.maHomeState\s*=\s*isUser\s*\?\s*'returning'\s*:\s*'visitor'/);
   assert.doesNotMatch(homeJs, /dailyDone\(|homeVisitStreak|homeReadingDaily|homeWritingDaily/);
   assert.match(visit, /BRANCH_PATHS=new Set/);
   assert.match(visit, /waitForInitialHydration/);
   assert.match(visit, /storeSet\(K\.pending,target\)/);
-  assert.match(visit, /const next=branchDestination\(storeGet\(K\.pending\)\)\|\|target/);
+  assert.match(visit, /const target=branchDestination/);
   assert.match(visit, /storeRemove\(K\.pending\)/);
-  assert.match(visit, /navigateApp\(next\)/);
+  assert.match(visit, /navigateApp\(target\)/);
   assert.doesNotMatch(visit, /if\(nd&&storeGet\(K\.first\)!=='true'\)/);
-  assert.ok(kana.indexOf('kana-pathways') < kana.indexOf('kana-progress-intro'));
-  assert.ok(kana.indexOf('kana-progress-intro') < kana.indexOf('id="kanaTodayCard"'));
+  assert.match(kana, /id="maKanaLearning"/);
 });
 
-test('2.33.1 onboarding separates Mode Atlas consent from Kana branch setup', () => {
-  const visit = read('assets/app/mode-atlas-visit-flows.js');
-  const pwa = read('assets/app/mode-atlas-pwa.js');
-  const modalCss = read('assets/css/mode-atlas-app-modals.css');
-  const wordbank = read('wordbank/index.html');
-  assert.match(visit, /kanaSetup:'modeAtlasKanaSetupComplete'/);
-  assert.match(visit, /KANA_SETUP_PATHS=new Set\(\['\/kana\/','\/reading\/','\/writing\/'\]\)/);
-  assert.match(visit, /const requireLegal=force\|\|!onboardingComplete\(\)/);
-  assert.match(visit, /const requireKana=requiresKanaSetup\(target\)&&\(force\|\|!kanaSetupComplete\(\)\)/);
-  assert.match(visit, /if\(requireKana\)\{[\s\S]*ModeAtlasPresets\?\.apply/);
-  assert.match(visit, /if\(requireLegal\)markLegalComplete\(\)/);
-  assert.doesNotMatch(wordbank, /mode-atlas-presets\.assets-/);
-  assert.match(pwa, /ma:visit-flow-opened/);
-  assert.match(pwa, /ma:visit-flow-closed/);
-  assert.match(modalCss, /\.ma-status\.ma-visit-error\{display:none/);
+test('general consent is separate from the Kana starting-point choice',()=>{
+  const visit=read('assets/app/mode-atlas-visit-flows.js'),kana=read('assets/pages/mode-atlas-kana-page.js');
+  assert.match(visit,/markLegalComplete/);assert.doesNotMatch(visit,/ModeAtlasPresets/);
+  assert.match(kana,/Take a starting-point test/);assert.match(kana,/Start as a beginner/);
+  assert.doesNotMatch(read('wordbank/index.html'),/mode-atlas-presets\.assets-/);
+  assert.match(read('assets/app/mode-atlas-pwa.js'),/ma:visit-flow-closed/);
 });
 
-test('2.33.2 Kana setup is destination-owned and persisted as app state', () => {
-  const visit = read('assets/app/mode-atlas-visit-flows.js');
-  const storage = read('assets/app/mode-atlas-storage.js');
-  const wordbank = read('wordbank/index.html');
-  const kana = read('kana/index.html');
-  assert.match(visit, /legacyKanaSetupAtLoad=storeGet\(K\.first\)==='true'&&/);
-  assert.match(visit, /const kanaSetupComplete=\(\)=>storeGet\(K\.kanaSetup\)==='true'/);
-  assert.match(visit, /if\(!target\|\|onboardingComplete\(\)\|\|requiresKanaSetup\(target\)\)return/);
-  assert.match(visit, /if\(needsSetup\(current\)\)\{visitDecisionMade=true;return first\(current\);\}/);
-  assert.match(storage, /'modeAtlasKanaSetupComplete'/);
-  assert.match(storage, /'modeAtlasPendingDestination'/);
-  assert.doesNotMatch(wordbank, /mode-atlas-presets\.assets-/);
-  assert.match(kana, new RegExp(`mode-atlas-presets\\.${REVISION.replaceAll('.', '\\.')}\\.js`));
+test('Kana curriculum saves and local placement checkpoints use the shared persistence owners',()=>{
+  const storage=read('assets/app/mode-atlas-storage.js'),cloud=read('cloud-sync.js');
+  assert.match(storage,/kanaLearning: 'modeAtlasKanaLearning'/);assert.match(storage,/'modeAtlasKanaPlacementCheckpoint'/);
+  assert.match(cloud,/kanaLearning: \{updatedAtKey:'modeAtlasKanaLearningUpdatedAt'/);
+  assert.match(cloud,/ModeAtlasKanaLearning/);
 });
 
 test('primary destinations and in-page Kana navigation share their build-time owner',()=>{
@@ -1138,78 +1115,27 @@ test('primary destinations and in-page Kana navigation share their build-time ow
   for(const rel of ['results/index.html','results/kanji/index.html'])assert.match(read(rel),/class="ma-results-branches" aria-label="Results branch"/);
 });
 
-test('Atlas homepage keeps visitor orientation and adds a personal returning dashboard', () => {
-  const home = read('index.html');
-  const css = read('assets/css/mode-atlas-home-page.css');
-  assert.match(home, /Build Japanese skills that stick\./);
-  assert.match(home, /class="atlas-home-character"/);
-  assert.match(home, /class="atlas-home-dashboard" data-ma-home-user hidden/);
-  assert.match(home, /class="atlas-product atlas-product--kana"/);
-  assert.match(home, /class="atlas-product atlas-product--words"/);
-  assert.match(home, /id="homeContinueCard"/);
-  assert.match(home, /data-ma-home-visitor/);
-  assert.match(home, /data-ma-home-user/);
-  assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Accuracy|Mastered|Daily Challenge|Study status/);
-  assert.doesNotMatch(home, /class="constellation"|class="branch-grid"|class="branch kana"|class="branch words"/);
-  assert.match(css, /\.atlas-hero__stage\{/);
-  assert.match(css, /\.atlas-home-character\{/);
-  assert.match(css, /\.atlas-product\{/);
-  assert.doesNotMatch(css, /\.constellation\{|\.branch-grid\{|\.branch\.kana/);
+test('Atlas Home uses one responsive owner with real progress and shared branch discovery', () => {
+  const home=read('index.html'),controller=read('assets/pages/mode-atlas-home-page.js');
+  assert.equal((home.match(/id="homeContinueAction"/g)||[]).length,1);
+  assert.equal((home.match(/data-ma-home-avatar/g)||[]).length,1);
+  for(const id of ['homeGoals','homeStreak','homeTotalXp','homeLevelProgress','homeCorrect'])assert.ok(home.includes(`id="${id}"`));
+  assert.match(controller,/ModeAtlasStudyPlan.recommend/);
+  assert.match(controller,/ModeAtlasBranchLibrary.render/);
+  assert.match(controller,/modeAtlasAccountSignedOut/);
+  assert.doesNotMatch(home,/atlas-ios-home|atlas-hero|atlas-product/);
+  assert.equal(fs.existsSync(path.join(ROOT,'assets/css/mode-atlas-ios-home.css')),false);
 });
 
 
-test('2.36 Kana hub keeps orientation calm and moves detailed progress below practice navigation', () => {
-  const kana = read('kana/index.html');
-  const kanaJs = read('assets/pages/mode-atlas-kana-page.js');
-  const kanaCss = read('assets/css/mode-atlas-kana-page.css');
-  const heroEnd = kana.indexOf('</section>', kana.indexOf('class="kana-hub-hero'));
-  const hero = kana.slice(kana.indexOf('class="kana-hub-hero'), heroEnd);
-
-  assert.match(kana, /class="kana-hub-hero ma-page-hero"/);
-  assert.doesNotMatch(kana, /kana-hub-hero[^\n]*ma-card/);
-  assert.match(kana, /class="kana-pathway-list"/);
-  assert.equal(count(kana, /class="kana-pathway kana-pathway--/g), 3);
-  assert.ok(kana.indexOf('kana-pathways') < kana.indexOf('kana-progress-intro'));
-  assert.match(kana, /class="kana-today-card kana-progress-overview"/);
-  assert.doesNotMatch(kana, /kana-(?:next|mastery|preset|records)-panel[^\n]*ma-card/);
-  assert.doesNotMatch(hero, /accuracy|mastered|streak|daily challenge|total answers/i);
-
-  assert.match(kanaJs, /const summary = kanaEl\('div','kana-progress-summary'\)/);
-  assert.match(kanaJs, /recommendedAction\(summaries, mastery\)/);
-  assert.match(kanaJs, /kana-next-card kana-next-card--recommended primary/);
-  assert.doesNotMatch(kanaJs, /kana-stage-card ma-card|kana-preset-card ma-card|kana-accuracy-card ma-card/);
-
-  assert.match(kanaCss, /\.kana-hub-hero\{[\s\S]*?border-bottom:1px solid var\(--ma-border\)/);
-  assert.match(kanaCss, /\.kana-pathway-list\{[\s\S]*?border-block:1px solid var\(--ma-border\)/);
-  assert.match(kanaCss, /\.kana-progress-overview\{[\s\S]*?grid-template-columns:/);
-  assert.match(kanaCss, /\.kana-mastery-grid\{[\s\S]*?border:1px solid var\(--ma-border\)/);
-  assert.match(kanaCss, /\.kana-preset-grid\{[\s\S]*?border:1px solid var\(--ma-border\)/);
+test('Kana journey navigation has one owner and no duplicate trainer dashboard',()=>{
+  const kana=read('kana/index.html');
+  for(const view of ['practice','mastery','tests'])assert.ok(kana.includes('/kana/?view='+view));
+  assert.equal(count(kana,/id="maKanaLearning"/g),1);
+  assert.doesNotMatch(kana,/kanaHeroTitle|kanaPresetPanel|kanaMasteryGrid/);
 });
 
-test('2.36.1 Kana keeps first-use orientation but compacts established learner hierarchy', () => {
-  const kanaHtml = read('kana/index.html');
-  const kanaJs = read('assets/pages/mode-atlas-kana-page.js');
-  const kanaCss = read('assets/css/mode-atlas-kana-page.css');
 
-  assert.match(kanaHtml, /id="kanaHeroTitle">Make kana feel automatic\.<\/h1>/,
-    'zero-history learners should retain the full Kana introduction');
-  assert.match(kanaJs, /function hasKanaHistory\(summaries\)/);
-  assert.match(kanaJs, /attempts > 0 \|\| dailyHistory > 0 \|\| formalTestCount\(\) > 0/,
-    'returning state should derive from real saved Kana history rather than a second preference flag');
-  assert.match(kanaJs, /classList\.toggle\('ma-kana-returning', returning\)/);
-  assert.match(kanaJs, /heroTitle\.textContent = returning \? 'Your kana' : 'Make kana feel automatic\.'/);
-  assert.match(kanaJs, /Current focus: \$\{compactKanaList\(mastery\.weak, 4\)\}/,
-    'returning header should surface a learner-specific focus when weak kana exist');
-  assert.match(kanaJs, /progressTitle\.textContent = returning \? 'Progress overview'/);
-
-  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-hub-hero\{[\s\S]*?padding:30px 0 26px;/,
-    'returning Kana hero should be materially shorter than the first-use hero');
-  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-hero-visual\{display:none;\}/);
-  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-pathways-head\{display:none;\}/,
-    'repeat visitors should not repeatedly receive the practice-area explainer');
-  assert.match(kanaCss, /\.ma-kana-page\.ma-kana-returning \.kana-pathway>p\{display:none;\}/,
-    'returning practice shortcuts should be compact rather than explanatory cards');
-});
 
 test('2.37 Word Bank is collection-first, state-aware, and keeps editing progressive', () => {
   const html = read('wordbank/index.html');
@@ -1318,7 +1244,7 @@ test('2.40 Results is a formal Test Mode report and preserves comprehensive asse
   const storage = read('assets/results/mode-atlas-results-storage.js');
 
   assert.match(html, /Formal assessment/);
-  assert.match(html, /Test Mode only · practice sessions are not included/);
+  assert.match(html, /Formal tests/);
   assert.match(html, /Assessment history/);
   assert.match(html, /Kana-level analysis/);
   assert.match(html, /Before your next test/);
@@ -1413,7 +1339,7 @@ test('2.42 contextual install and progression feedback stay under shared owners'
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress.js'") < frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'"));
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'") < frontend.indexOf("'assets/app/mode-atlas-pwa.js'"));
 
-  assert.match(progress, /const STATE_VERSION = 5/);
+  assert.match(progress, /const STATE_VERSION = 6/);
   assert.match(progress, /adjustments/);
   assert.match(progress, /function debugAdjustXP/);
   assert.match(progress, /source: 'dev\.xpAdjust'/);
@@ -1520,7 +1446,7 @@ test('2.43.2 responsive UX keeps results, mastery, focus mode, and trainer resul
   const trainerCss = read('assets/css/mode-atlas-study-shared.css');
   const icons = read('assets/mode-atlas-icons.svg');
 
-  assert.match(achievements, /ma-mastery-overview/);
+  assert.match(achievements, /ModeAtlasKanaMastery\.render/);
   assert.match(achievementCss, /\.ma-mastery-overview\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(achievementCss, /\.ma-mastery-cell::before/);
   assert.match(resultsUi, /Select a row for details/);
@@ -1557,23 +1483,18 @@ test('2.44 app-wide UX vocabulary keeps product destinations and actions semanti
   const wordbankJs = read('assets/pages/mode-atlas-wordbank-page.js');
   const settings = read('assets/ui/mode-atlas-settings-menu.js');
 
-  assert.match(frontend, /'results\/index\.html': NavConfig\('results', '測', 'Mode Atlas', 'Test Results'/);
+  assert.match(frontend, /'results\/index\.html': NavConfig\('results'/);
   assert.match(frontend, /\('results', 'Kana', '\/results\/'\)/);
-  assert.match(frontend, /'reading\/index\.html': NavConfig\([^\n]*brand_href='\/kana\/'/);
-  assert.match(frontend, /'writing\/index\.html': NavConfig\([^\n]*brand_href='\/kana\/'/);
-  assert.match(frontend, /Kana Trainer home/);
+  assert.match(frontend, /class="ma-nav__brand" href="\/" aria-label="Mode Atlas home"/);
   assert.match(frontend, />Start practice<\/span>/);
   assert.match(frontend, />End session<\/span>/);
   assert.match(frontend, />Try again<\/button>/);
   assert.match(frontend, />View Test Results<\/span>/);
   assert.doesNotMatch(frontend, /View full Results|Try Again|>Wrong</);
 
-  for (const html of [home, kana]) assert.match(html, /Test Results/);
-  assert.match(kana, />Open Reading /);
-  assert.match(kana, />Open Writing /);
-  assert.match(kanaJs, /label: 'Review weak kana'/);
-  assert.match(kanaJs, /label: 'Open Test Results'/);
-  assert.doesNotMatch(kanaJs, /label: 'Start Reading'|label: 'Go to Writing'|label: 'Open Results'/);
+  assert.match(read('assets/pages/mode-atlas-hub-page.js'), /\/results\//);
+  assert.match(kanaJs, /View test results/);
+  assert.match(kana, /view=tests/);
 
   assert.match(results, />Incorrect<\/div>/);
   assert.match(results, /No assessment selected/);
@@ -1581,7 +1502,7 @@ test('2.44 app-wide UX vocabulary keeps product destinations and actions semanti
   assert.doesNotMatch(results, /No result selected|Open Kana hub/);
   assert.match(resultsUi, /Test Average/);
   assert.doesNotMatch(resultsUi, /Overall Average/);
-  assert.match(resultsPage, /Reading average/);
+  assert.match(resultsPage, /Read average/);
   assert.match(resultsPage, /correct \/ \$\{item\.wrong\} incorrect/);
   assert.match(resultsPage, /Correct: \$\{row\.correct\} · Incorrect: \$\{row\.wrong\}/);
 
@@ -1627,7 +1548,7 @@ test('2.45 responsive and accessibility QA keeps landmarks, keyboard controls, f
   assert.match(dialog, /ModeAtlasOverlay\.lock\(layer\)/);
   assert.match(read('assets/app/mode-atlas-overlay.js'), /visualViewport\?\.addEventListener\('scroll',measure\)/);
   assert.match(wordbankCss, /@media\(pointer:coarse\)\{\.summary-toggle\{width:44px;height:44px;\}\}/);
-  assert.match(kanaCss, /@media\(pointer:coarse\)\{\.kana-ghost-action,\.kana-map-action,\.kana-inline-btn\{--ma-button-min-height:44px;\}\}/);
+  assert.match(kanaCss, /:focus-visible/);
 
   assert.match(dialog, /message\.id = 'maDialogMessage'/);
   assert.match(dialog, /el\.getClientRects\(\)\.length > 0/);
@@ -1700,7 +1621,7 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
   const kana = read('kana/index.html');
   assert.doesNotMatch(kana, /<main[^>]*\bid=["']mainContent["'][^>]*\bid=/,
     'Kana Hub main landmark must not contain duplicate id attributes');
-  assert.match(kana, /<main id=["']mainContent["'] class=["']kana-hub ma-page-section["']>/,
+  assert.match(kana, /<main id=["']mainContent["'] class=["']ma-kana-journey["']>/,
     'Kana Hub must keep the shared mainContent landmark');
 
   const wordBankPage = read('assets/pages/mode-atlas-wordbank-page.js');
@@ -1722,7 +1643,7 @@ test('2.47 release candidate hardening keeps release tooling reproducible', () =
     'core browser smoke must suppress release notes so unrelated interaction tests stay isolated');
   assert.doesNotMatch(smoke, /ma-trainer-card \.ma-pause-overlay/,
     'trainer smoke must validate canonical paused state rather than a presentation-only overlay');
-  assert.match(smoke, /atlas-product__action\[href=\\?"\/kana\/\\?"\]/,
+  assert.match(smoke, /ma-branch-tile\[href=\\?"\/kana\/\\?"\]/,
     'Atlas navigation smoke must use the current visible Kana product action');
   assert.match(smoke, /wordBankAddJumpBtn[\s\S]*kanaInput/,
     'Word Bank smoke must open the Add Word dialog before interacting with its form');
@@ -1762,13 +1683,13 @@ test('2.47 final responsive polish keeps explicit display modes and Atlas rank m
   assert.match(navigation, /body\[data-effective-display-mode="tablet"\] \.ma-nav\{[\s\S]*display:flex/,
   'explicit Tablet navigation must stay a compact single-row composition');
 
-assert.match(home, /body\[data-effective-display-mode="tablet"\] \.atlas-hero__stage/,
+assert.match(home, /body\[data-effective-display-mode="tablet"\] \.atlas-home/,
   'Atlas home must consume explicit Tablet mode directly');
-assert.match(home, /body\[data-effective-display-mode="phone"\] \.atlas-hero/,
+assert.match(home, /body\[data-effective-display-mode="phone"\] \.atlas-home/,
   'Atlas home must consume explicit Phone mode directly');
-assert.match(kana, /body\[data-effective-display-mode="tablet"\] \.kana-hub-hero/,
+assert.match(kana, /body\[data-effective-display-mode="tablet"\] \.ma-kana-journey/,
   'Kana hub must consume explicit Tablet mode directly');
-assert.match(kana, /body\[data-effective-display-mode="phone"\] \.kana-mastery-grid/,
+assert.match(kana, /body\[data-effective-display-mode="phone"\] \.ma-kana-journey/,
   'Kana Phone mode must own compact progress density');
 
   assert.match(drawers, /body\[data-effective-display-mode="tablet"\] \.ma-account-sheet\{/);

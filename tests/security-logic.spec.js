@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 async function words(page,native,entries=[]){
   await page.setViewportSize({width:native?393:1280,height:native?852:900});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());

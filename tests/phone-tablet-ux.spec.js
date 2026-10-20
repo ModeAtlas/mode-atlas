@@ -22,9 +22,19 @@ const READING_SETTINGS = {
   activeBottomTab: null
 };
 
+async function seedAssessment(page){
+  await page.addInitScript(()=>localStorage.setItem('testModeResults',JSON.stringify([{
+    id:'responsive-reading-test',type:'test',title:'Reading Test',mode:'reading',date:'2026-10-20',startedAt:'10:00',
+    correct:4,wrong:1,total:5,durationMs:9000,avgMs:1800,overallScore:80,
+    breakdown:{hiragana:{correct:4,wrong:1},katakana:{correct:0,wrong:0}},
+    kana:{'あ':{correct:1,wrong:0,avgMs:1000},'い':{correct:1,wrong:0,avgMs:1400},'う':{correct:0,wrong:1,avgMs:3000},'え':{correct:1,wrong:0,avgMs:1600},'お':{correct:1,wrong:0,avgMs:2000}}
+  }])));
+}
+
 async function seedStableState(page) {
   await page.addInitScript((readingSettings) => {
     localStorage.clear();
+    localStorage.setItem('modeAtlasKanaLearning', JSON.stringify({version:1,startedAt:1,startKind:'beginner'}));
     localStorage.setItem('modeAtlasStarterSeen', 'true');
     localStorage.setItem('modeAtlasOnboardingComplete', 'true');
     localStorage.setItem('modeAtlasKanaSetupComplete', 'true');
@@ -104,15 +114,18 @@ test.describe('Phone and Tablet study UX', () => {
 
     await expect(page.getByRole('navigation',{name:'Kana sections',exact:true})).toBeVisible();
     await Promise.all([
-      page.waitForURL(/\/writing\/$/, { timeout: 5000, waitUntil: 'commit' }),
-      page.locator('.ma-kana-navigation a[href="/writing/"]').click({ noWaitAfter: true })
+      page.waitForURL(/\/kana\/\?view=practice$/, { timeout: 5000, waitUntil: 'commit' }),
+      page.locator('.ma-kana-navigation a[href="/kana/?view=practice"]').click({ noWaitAfter: true })
     ]);
-    expect(new URL(page.url()).pathname).toBe('/writing/');
+    expect(new URL(page.url()).pathname).toBe('/kana/');
+    expect(new URL(page.url()).searchParams.get('view')).toBe('practice');
   });
 
   test('Phone navigation reserves the top cleanly, hides downward, and requires deliberate upward travel to return', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await gotoApp(page, '/kana/');
+    // Exercise deliberate scroll travel on the long roadmap. The overview is
+    // intentionally short and cannot scroll to this test's 420px checkpoint.
+    await gotoApp(page, '/kana/?view=path');
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'phone');
     const nav = page.locator('.ma-nav');
     await expect(nav).toBeVisible();
@@ -120,7 +133,7 @@ test.describe('Phone and Tablet study UX', () => {
     const topLayout = await page.evaluate(() => {
       const nav = document.querySelector('.ma-nav').getBoundingClientRect();
       const spacer = document.querySelector('[data-ma-nav-spacer]').getBoundingClientRect();
-      const hero = document.querySelector('.kana-hub-hero').getBoundingClientRect();
+      const hero = document.querySelector('.ma-kana-page-heading').getBoundingClientRect();
       return {
         navTop: nav.top,
         navBottom: nav.bottom,
@@ -188,23 +201,23 @@ test.describe('Phone and Tablet study UX', () => {
 
     const returnedTop = await page.evaluate(() => {
       const nav = document.querySelector('.ma-nav').getBoundingClientRect();
-      const hero = document.querySelector('.kana-hub-hero').getBoundingClientRect();
+      const hero = document.querySelector('.ma-kana-page-heading').getBoundingClientRect();
       return { navTop: nav.top, navBottom: nav.bottom, heroTop: hero.top };
     });
     expect(returnedTop.navTop).toBeGreaterThanOrEqual(0);
     expect(returnedTop.heroTop).toBeGreaterThanOrEqual(returnedTop.navBottom + 8);
   });
 
-  test('Phone Practice Setup stacks groups, sizes controls safely, and clears the fixed setup bar', async ({ page }) => {
+  test('Phone Practice Setup pairs compact controls and clears the fixed setup bar', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoApp(page, '/reading/');
     await page.locator('#modifiersTab').click();
     await expect(page.locator('#modifiersContent')).toHaveClass(/open/);
 
     const setup = await page.evaluate(() => {
-      const root = document.querySelector('#modifierOptions.ma-structured-modifiers');
-      const buttons = root ? [...root.querySelectorAll('button')].filter(button=>button.checkVisibility()) : [];
-      const groups = root ? [...root.querySelectorAll('.ma-modifier-group')] : [];
+      const root = document.querySelector('#modifierOptions .ma-kana-practice-form');
+      const buttons = root ? [...root.querySelectorAll('select')].filter(button=>button.checkVisibility()) : [];
+      const groups = root ? [...root.querySelectorAll('.ma-kana-field')] : [];
       const controlMetrics = buttons.map((button) => {
         const rect = button.getBoundingClientRect();
         return {
@@ -221,8 +234,9 @@ test.describe('Phone and Tablet study UX', () => {
         rootFound: !!root,
         stillGenericGrid: root?.classList.contains('button-grid') || false,
         columns: root ? getComputedStyle(root).gridTemplateColumns : '',
+        // A computed 44px box may be 43.99997px after subpixel transforms.
         controlsFit: controlMetrics.every((control) =>
-          control.scrollWidth <= control.clientWidth + 1 && control.width >= 100 && control.height >= 48
+          control.scrollWidth <= control.clientWidth + 1 && control.width >= 100 && control.height >= 44 - .01
         ),
         controlMetrics,
         groupsFit: groups.every((group) => group.scrollWidth <= group.clientWidth + 1)
@@ -230,9 +244,9 @@ test.describe('Phone and Tablet study UX', () => {
     });
     expect(setup.rootFound).toBe(true);
     expect(setup.stillGenericGrid).toBe(false);
-    expect(columnCount(setup.columns)).toBe(1);
+    expect(columnCount(setup.columns)).toBe(2);
     expect(setup.controlsFit, JSON.stringify(setup.controlMetrics.filter((control) =>
-      control.scrollWidth > control.clientWidth + 1 || control.width < 100 || control.height < 48
+      control.scrollWidth > control.clientWidth + 1 || control.width < 100 || control.height < 44 - .01
     ), null, 2)).toBe(true);
     expect(setup.groupsFit).toBe(true);
 
@@ -313,7 +327,7 @@ test.describe('Phone and Tablet study UX', () => {
     const geometry = await page.evaluate(() => {
       const panel = document.querySelector('[data-ma-dialog-panel]').getBoundingClientRect();
       const firstGroup = document.querySelector('.ma-mastery-group').getBoundingClientRect();
-      const overview = document.querySelector('.ma-mastery-overview').getBoundingClientRect();
+      const overview = document.querySelector('.ma-kana-mastery-legend').getBoundingClientRect();
       return {
         firstGroupVisible: firstGroup.top < panel.bottom - 12,
         overviewHeight: overview.height
@@ -353,6 +367,7 @@ test.describe('Phone and Tablet study UX', () => {
   });
 
   test('iPad Results summary and row charts use the full assessment width', async ({ page }) => {
+    await seedAssessment(page);
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.addInitScript(() => localStorage.setItem('modeAtlasDisplayMode', 'tablet'));
     await gotoApp(page, '/results/');
@@ -435,6 +450,7 @@ test.describe('Phone and Tablet study UX', () => {
   });
 
   test('Phone Results keeps history compact and heatmap cells dense', async ({ page }) => {
+    await seedAssessment(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem('modeAtlasDisplayMode', 'phone'));
     await gotoApp(page, '/results/');
@@ -487,14 +503,14 @@ test.describe('Phone and Tablet study UX', () => {
 
     await page.locator('#modifiersTab').click();
     const setup = await page.evaluate(() => {
-      const root = document.querySelector('#modifierOptions.ma-structured-modifiers');
-      const buttons = root ? [...root.querySelectorAll('button')].filter(button=>button.checkVisibility()) : [];
+      const root = document.querySelector('#modifierOptions .ma-kana-practice-form');
+      const buttons = root ? [...root.querySelectorAll('select')].filter(button=>button.checkVisibility()) : [];
       return {
         columns: root ? getComputedStyle(root).gridTemplateColumns : '',
         controlsFit: buttons.every((button) => button.scrollWidth <= button.clientWidth + 1)
       };
     });
-    expect(columnCount(setup.columns)).toBe(1);
+    expect(columnCount(setup.columns)).toBe(2);
     expect(setup.controlsFit).toBe(true);
   });
 });

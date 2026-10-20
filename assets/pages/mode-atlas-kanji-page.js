@@ -27,35 +27,38 @@
     for(const item of bands){
       const b=button('',()=>{level=item.level;state.settings({level});showCourse();},'ma-kanji-level');
       b.disabled=!item.unlocked;b.setAttribute('aria-pressed',String(item.level===level));b.setAttribute('aria-label',`N${item.level} ${item.name}${item.unlocked?'':', locked'}`);
-      b.append(el('strong','',`N${item.level}`),el('span','',item.name),el('small','',item.unlocked?`${item.complete} / ${item.total}`:'Locked'));
+      b.append(el('strong','',`N${item.level}`),el('span','ma-kanji-level__name',item.name),el('small','ma-kanji-level__status',item.unlocked?`${item.complete} / ${item.total}`:'Locked'));
       path.append(b);
     }
-    const summary=el('div','ma-kanji-course-summary');summary.append(el('p','',`${band.complete} of ${band.total} complete · ${band.mastered} mastered`),button('How levels unlock',help,'ma-kanji-text-button'));
+    const summary=el('div','ma-kanji-course-summary'),summaryCopy=el('div');summaryCopy.append(el('strong','',`N${level} · ${band.name}`),el('p','',`${band.complete} of ${band.total} complete · ${band.mastered} mastered`));
+    const info=button('i',help,'ma-kanji-path-help');info.setAttribute('aria-label','How levels unlock');summary.append(summaryCopy,info);
     host.append(path,summary);
+    let firstTen=null;
     if(level===5&&!state.introReady(current)){
       const intro=el('section','ma-kanji-first-ten');intro.append(heading('Your first ten'),el('p','','Learn their shapes, sounds and meanings in small steps. Then explore the rest of N5.'));
       const list=el('ol');for(const char of state.introductory){const item=el('li','',char);item.lang='ja';item.dataset.learned=String(state.introduced(current,char));item.setAttribute('aria-label',char+(state.introduced(current,char)?', learned':', to learn'));list.append(item);}
-      intro.append(list,el('p','ma-kanji-caption',`${state.introductory.filter(c=>state.introduced(current,c)).length} / 10 introduced`));host.append(intro);
+      intro.append(list,el('p','ma-kanji-caption',`${state.introductory.filter(c=>state.introduced(current,c)).length} / 10 introduced`));firstTen=intro;
     }
     const old=session.saved();
     if(old){const resume=el('div','ma-kanji-resume');resume.append(el('p','',`${old.test?'Test':names[old.mode]} · ${old.index} of ${old.sequence.length}`),button('Resume',()=>safely(()=>{session.resume();showSession();}),'ma-button ma-button--primary'),button('Discard',()=>{session.discard();showCourse();}));host.append(resume);}
     const layout=el('div','ma-kanji-course-layout'),intro=el('section','ma-kanji-intro');
-    const symbol=el('div','ma-kanji-intro__glyph','漢');symbol.lang='ja';symbol.setAttribute('aria-hidden','true');
-    intro.append(symbol,heading('Meet your next kanji'),el('p','','Meet a few characters, hear them in a word and check what you remember.'));
+    const symbol=el('img','ma-kanji-intro__art');symbol.src='/assets/illustrations/kanji-scene.svg';symbol.alt='';symbol.width=480;symbol.height=300;
+    const lessonCopy=el('div','ma-kanji-intro__copy');lessonCopy.append(heading('Learn your next kanji'),el('p','','Learn the shape, hear the word, then try it.'));intro.append(lessonCopy,symbol);
     intro.append(button('Start learning',()=>start('learn',false),'ma-button ma-button--primary'));
     const options=el('div','ma-kanji-options');
     options.append(select('Set length',[[5,'5 characters'],[10,'10 characters'],[20,'20 characters'],[40,'40 characters']],count,v=>count=Number(v)));
     options.append(select('Focus',[['all','All kanji'],['new','New lessons'],['due','Due reviews']],focus,v=>focus=v));intro.append(options);
     const known=state.studyPool(level,current).filter(c=>current.lessons[c]||state.introduced(current,c)||state.skills.some(skill=>state.metrics(current,c,skill).attempts));
-    const practice=el('section','ma-kanji-practice');practice.append(heading('Put it into practice'));
+    const practice=el('section','ma-kanji-practice'),tools=el('div','ma-kanji-tools');practice.append(heading('Put it into practice'));
     if(!known.length)practice.append(el('p','ma-kanji-caption','Start with a lesson. Recall will use the characters you have met.'));
     for(const [id,title,copy]of [['pronunciation','Recall · Pronunciation','Type the word in kana. Romaji input converts to kana.'],['meaning','Recall · Meaning','Type an English meaning for the character.'],['match','Meaning Match','Choose the English meaning that fits.']]){
       const row=button('',()=>start(id,false),'ma-kanji-mode');row.disabled=!known.length;row.append(el('span','ma-kanji-mode__mark',id==='pronunciation'?'あ':id==='meaning'?'Aa':'✓'));
-      const text=el('span');text.append(el('strong','',title),el('span','',copy));row.append(text,el('span','','›'));practice.append(row);
+      const text=el('span');text.append(el('strong','',title),el('span','',copy));row.append(text,el('span','','›'));tools.append(row);
     }
+    practice.append(tools);
     const assessment=el('div','ma-kanji-tests');assessment.append(el('h3','','Take a test'),el('p','',known.length?`${Math.min(20,known.length)} questions from familiar characters. Your results are saved.`:'Tests open after your first lesson.'));
     const actions=el('div','ma-kanji-actions');actions.append(button('Pronunciation',()=>start('pronunciation',true)),button('Meaning',()=>start('meaning',true)),button('Meaning Match',()=>start('match',true)));for(const b of actions.children)b.disabled=!known.length;assessment.append(actions);practice.append(assessment);
-    layout.append(intro,practice);host.append(layout);
+    const teaching=el('div','ma-kanji-teaching');teaching.append(intro);if(firstTen)teaching.append(firstTen);layout.append(teaching,practice);host.append(layout);
     const actionsBottom=el('div','ma-kanji-actions');actionsBottom.append(button('Mastery Map',()=>root.ModeAtlasFeatures.openMasteryMap('kanji')),link('View results','/results/kanji/'));host.append(actionsBottom);
     const credits=el('a','ma-kanji-sources','Learning sources');credits.href='/kanji/sources/';host.append(credits);
   }

@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 
 async function prepare(page){
   await page.setViewportSize({width:393,height:852});
@@ -33,16 +34,21 @@ async function open(page,path){
   await page.evaluate(()=>document.fonts.ready);
 }
 
-test('Reading dock link leaves Daily Challenge and avoids reloading the exact same mode',async({page})=>{
+test('Kana navigation leaves a daily session and avoids reloading the same practice page',async({page})=>{
   await prepare(page);await open(page,'/reading/?mode=daily');
   await open(page,'/reading/?mode=daily');
-  await page.locator('.ma-kana-navigation a[href="/reading/"]').click();
-  await expect(page).toHaveURL(/\/reading\/$/);
+  await page.locator('.ma-kana-navigation a[href="/kana/?view=practice"]').click();
+  await expect(page).toHaveURL(/\/kana\/\?view=practice$/);
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await expect(page.getByRole('heading',{name:'Build the reflex.',exact:true})).toBeVisible();
   // Re-selecting the exact screen scrolls to the top without reinitialising it.
   await page.evaluate(()=>{window.sameScreenMarker='preserved';});
-  await page.locator('.ma-kana-navigation a[href="/reading/"]').click();
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practice',exact:true}).click();
   expect(await page.evaluate(()=>window.sameScreenMarker)).toBe('preserved');
+  await page.getByRole('button',{name:'Recall',exact:true}).click();
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practice',exact:true}).click();
+  expect(await page.evaluate(()=>window.sameScreenMarker)).toBe('preserved');
+  await expect(page.getByRole('button',{name:'Recall',exact:true})).toHaveAttribute('aria-pressed','true');
 });
 
 for(const mode of ['reading','writing']){

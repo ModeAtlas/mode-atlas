@@ -525,3 +525,41 @@ The shared catalogue now handles both level unlocks and private account/event gr
 the cloud learning save. Firebase owns grants and validates public custom cosmetics.
 Reward selections remain with the existing progress/Friends/device owners. See
 [exclusive rewards](exclusive-rewards-2.83.0.md) for rollout and new reward types.
+
+
+### 2.109.0 production design ownership
+
+The approved visual identity is implemented in canonical production assets.
+`frontend_components.py` owns the single Mode Atlas wordmark/symbol and links;
+navigation/responsive CSS reserve the desktop rail and the iOS chrome retains
+its bottom dock. `build_brand_assets.cjs` derives default raster app/launch icons
+from the outlined SVG; reward-icon artwork remains separately owned.
+
+Home has one responsive DOM and renderer across web/iOS. Its former native-only
+stylesheet and markup are removed. Home and Learn consume the shared branch
+library; it owns only destinations and illustration markup, never progress.
+Kana, Shop, Rewards and Social retain their existing controllers. Their owners
+render the new layout from actual saved/server state. Mastery, currencies,
+unlocks, access rules, account boundaries and schemas are unchanged.
+
+The redesign deliberately replaces historical website paint. Web/native theme
+isolation is tested by removing the native theme stylesheet and comparing all
+visible computed paint, alongside explicit approved web tokens and the existing
+native contrast/layout matrix. This replaces the old pre-iOS commit comparison;
+no release gate is bypassed.
+
+
+### 2.110.0 layout completion
+
+Responsive sizing belongs to the existing feature styles: Kana owns row-aware
+character columns and bounded practice art; Social owns illustrated friend
+cards; Rewards owns grouped goals, collection controls and recap. Profile
+artwork uses the existing account-bound presentation cache and refresh events.
+Results owns its compact header and empty state, with the former decorated
+hero CSS removed. Word Bank and Kanji retain their collection/course owners.
+Native chrome owns the Results back/profile placement. No separate iOS page
+implementation or layout override sheet is introduced.
+
+## 2.111.0 identity and layout completion
+
+The canonical Japanese outline pair and outlined wordmark are composed by `build_brand_assets.cjs`; collection icons import its symbol composition. Native launch text is a template asset with system label tint. About, Rewards and navigation reference the same geometry. The shared wordmark mask owns semantic theme tinting. Results empty-state presentation is shared by the existing independent Kana/Kanji result controllers. Phone dialog safe-area insets are owned by the shared dialog stylesheet. No data or learning-policy ownership changes accompany these layouts.

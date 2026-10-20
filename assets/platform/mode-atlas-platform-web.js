@@ -23,7 +23,7 @@
       if(request!==speechGeneration)return {played:false};
       const voice=synth.getVoices().find(v=>/^ja(?:-|_)/i.test(v.lang)||v.lang==='ja');
       if(!voice)return {played:false};
-      synth.cancel();utterance=new SpeechSynthesisUtterance(text);utterance.lang='ja-JP';utterance.voice=voice;utterance.rate=slow?.65:.9;
+      synth.cancel();utterance=new SpeechSynthesisUtterance(text);utterance.lang='ja-JP';utterance.voice=voice;utterance.rate=slow?.45:1;
       return new Promise(resolve=>{
         const current=utterance,timer=setTimeout(()=>{if(utterance===current)synth.cancel();resolve({played:false});},4000);
         current.onstart=()=>{clearTimeout(timer);resolve({played:true});};

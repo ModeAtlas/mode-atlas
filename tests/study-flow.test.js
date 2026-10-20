@@ -15,7 +15,7 @@ test('goal and mastery shortcuts choose a qualifying mode, script and safe targe
   const root=load(),plan=root.ModeAtlasStudyPlan;root.ModeAtlasProgress={weeklyRecap:()=>({todayReading:10})};
   const action=metric=>new URL(plan.goalAction({metric,target:20,value:0}).href,'https://mode-atlas.app');
   assert.equal(action('kana.writing').pathname,'/writing/');assert.equal(action('kana.balance').pathname,'/writing/');
-  assert.equal(action('kana.daily').searchParams.get('mode'),'daily');assert.equal(action('kana.tests').searchParams.get('mode'),'test');
+  assert.equal(action('kana.daily').searchParams.get('mode'),'daily');assert.equal(action('kana.tests').searchParams.get('view'),'tests');
   const pool=action('kana.katakana').searchParams.get('kana').split(',');assert.ok(pool.includes('シ'));assert.ok(!pool.includes('あ'));
   assert.equal(action('kana.broad').searchParams.get('kana').split(',').length,46);
   assert.equal(action('kana.independent').searchParams.get('hints'),'off');
@@ -57,9 +57,9 @@ test('recommendation explains observed difficulties without treating unseen or e
 
 test('recommendation starts gently, offers the other direction and respects meaningful last mode',()=>{
   const {ModeAtlasStudyPlan:plan} = load();
-  assert.match(plan.recommend({}).href,/starter=starter/);
+  assert.match(plan.recommend({}).href,/hints=on/);
   const next=plan.recommend({readingStats:{'あ':{correct:40,wrong:0}}});
-  assert.equal(next.mode,'writing');assert.equal(next.title,'Try writing');
+  assert.equal(next.mode,'writing');assert.equal(next.title,'Try Recall');
   const balanced={readingStats:{'あ':{correct:10,wrong:0}},writingStats:{'あ':{correct:10,wrong:0}},lastMode:'writing'};
   assert.equal(plan.recommend(balanced).mode,'writing');
   assert.equal(plan.recommend({readingSettings:{hiraganaRows:['h_ka']}}).href,'/reading/?practice=10');

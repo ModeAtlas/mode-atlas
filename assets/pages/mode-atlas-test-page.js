@@ -254,7 +254,7 @@ function renderDebugPanel() {
             const main = createResultEl("div", "storage-debug-test-main");
             main.append(
                 createResultEl("div", "storage-debug-test-title", item.title),
-                createResultEl("div", "storage-debug-test-meta", `${item.mode === "reading" ? "Reading" : "Writing"} · ${item.date} · ${item.startedAt}`),
+                createResultEl("div", "storage-debug-test-meta", `${item.mode === "reading" ? "Read" : "Recall"} · ${item.date} · ${item.startedAt}`),
                 createResultEl("div", "storage-debug-test-id", item.id)
             );
 
@@ -298,13 +298,13 @@ function createResultEl(tag, className = "", text = "") {
 }
 
 function createMegaInlineCard(label, value) {
-    const card = createResultEl("div", "mega-inline-card ma-stat ma-card ma-card--flat");
+    const card = createResultEl("div", "mega-inline-card ma-stat");
     card.append(createResultEl("div", "label ma-stat__label", label), createResultEl("div", "value ma-stat__value", value));
     return card;
 }
 
 function createMetricCard(label, value) {
-    const card = createResultEl("div", "metric ma-stat ma-card ma-card--flat");
+    const card = createResultEl("div", "metric ma-stat");
     card.append(createResultEl("div", "label ma-stat__label", label), createResultEl("div", "value ma-stat__value", value));
     return card;
 }
@@ -356,7 +356,7 @@ function toTitleCase(value) {
 function getResultTypeLabel(result) {
     if (!result) return "—";
     if (result.type === "average") {
-        return result.mode === "reading" ? "Reading average" : "Writing average";
+        return result.mode === "reading" ? "Read average" : "Recall average";
     }
 
     if (result.inputMode === "buttons") {
@@ -369,7 +369,7 @@ function getResultTypeLabel(result) {
         return layout ? `Keyboard - ${toTitleCase(layout)}` : "Keyboard";
     }
 
-    return result.mode === "reading" ? "Reading" : "Writing";
+    return result.mode === "reading" ? "Read" : "Recall";
 }
 
 function getSelectedResult() {
@@ -440,9 +440,9 @@ function renderGuidance(result) {
     if (!result) {
         RESULTS_GUIDANCE_CARD?.classList.remove("reading", "writing");
         RESULTS_GUIDANCE_TITLE.textContent = "Complete your first formal assessment";
-        RESULTS_GUIDANCE_TEXT.textContent = "Finish Reading or Writing Test Mode to unlock row, kana, speed, and accuracy recommendations here.";
-        RESULTS_PRACTICE_ACTION.href = "/reading/";
-        RESULTS_PRACTICE_ACTION.querySelector("span").textContent = "Open Reading";
+        RESULTS_GUIDANCE_TEXT.textContent = "Finish a Kana Read or Recall test to unlock row, kana, speed, and accuracy recommendations here.";
+        RESULTS_PRACTICE_ACTION.href = "/kana/?view=tests";
+        RESULTS_PRACTICE_ACTION.querySelector("span").textContent = "Open Kana tests";
         return;
     }
 
@@ -469,7 +469,7 @@ function renderGuidance(result) {
     }
 
     RESULTS_PRACTICE_ACTION.href = `/${mode}/?focusWeak=1`;
-    RESULTS_PRACTICE_ACTION.querySelector("span").textContent = `Practise recommended ${mode === "reading" ? "Reading" : "Writing"} kana`;
+    RESULTS_PRACTICE_ACTION.querySelector("span").textContent = `Practise recommended ${mode === "reading" ? "Read" : "Recall"} kana`;
 }
 
 function renderTrend(result) {
@@ -477,7 +477,7 @@ function renderTrend(result) {
     const individualTests = STORED_RESULTS.filter(item => item.type !== "average");
     const latest = [...individualTests].sort((a, b) => parseStoredResultTimestamp(b) - parseStoredResultTimestamp(a))[0] || null;
     const mode = result?.mode || latest?.mode || null;
-    const modeLabel = mode === "writing" ? "Writing" : "Reading";
+    const modeLabel = mode === "writing" ? "Recall" : "Read";
     const tests = mode
         ? individualTests
             .filter(item => item.mode === mode)
@@ -491,7 +491,7 @@ function renderTrend(result) {
         RESULTS_TREND.replaceChildren(createResultEl("div", "results-trend-empty", "Complete a formal test to start your trend."));
         RESULTS_TREND.style.setProperty("--ma-trend-count", "1");
         RESULTS_TREND_SUMMARY.textContent = "No history yet";
-        RESULTS_TREND_NOTE.textContent = "Only formal Reading and Writing Test Mode results appear here.";
+        RESULTS_TREND_NOTE.textContent = "Only formal Kana Read and Recall test results appear here.";
         return;
     }
 
@@ -557,16 +557,17 @@ function createResultTile(item) {
 
 function renderResultsList() {
     if (!STORED_RESULTS.length) {
-        const empty = createResultEl("div", "empty ma-card ma-empty-state results-empty-assessment");
+        const empty = createResultEl("div", "results-empty-assessment");
+        const art=createResultEl("img","results-empty-assessment__art");art.src="/assets/illustrations/kana-scene.svg";art.alt="";art.width=480;art.height=300;empty.append(art);
         empty.append(
             createResultEl("strong", "results-empty-assessment__title", "No formal test results yet"),
-            createResultEl("p", "results-empty-assessment__copy", "Complete Test Mode in Reading or Writing to receive a comprehensive assessment of kana accuracy, speed, rows, modifiers, and focus areas.")
+            createResultEl("p", "results-empty-assessment__copy", "Take a Kana test to see your accuracy, speed and what to practise next.")
         );
         const actions = createResultEl("div", "results-empty-assessment__actions ma-action-row");
-        const reading = createResultEl("a", "ma-button ma-button--primary", "Open Reading");
-        reading.href = "/reading/";
-        const writing = createResultEl("a", "ma-button ma-button--ghost", "Open Writing");
-        writing.href = "/writing/";
+        const reading = createResultEl("a", "ma-button ma-button--primary", "Practise Read");
+        reading.href = "/kana/?view=tests&skill=reading";
+        const writing = createResultEl("a", "ma-button ma-button--ghost", "Practise Recall");
+        writing.href = "/kana/?view=tests&skill=writing";
         actions.append(reading, writing);
         empty.append(actions);
         TESTS_GRID.replaceChildren(empty);
@@ -576,7 +577,7 @@ function renderResultsList() {
 }
 
 function renderSnapshot(result) {
-    const modeLabel = result.mode === "writing" ? "Writing" : "Reading";
+    const modeLabel = result.mode === "writing" ? "Recall" : "Read";
     OVERALL_KICKER.textContent = result.type === "average" ? `${modeLabel} test average` : `${modeLabel} formal test`;
     OVERALL_SELECTED_NAME.textContent = result.title;
     OVERALL_SCORE.textContent = `${result.overallScore}%`;
@@ -605,7 +606,7 @@ function renderSnapshot(result) {
 }
 
 function renderDetailHeader(result) {
-    const modeLabel = result.mode === "writing" ? "Writing" : "Reading";
+    const modeLabel = result.mode === "writing" ? "Recall" : "Read";
     DETAIL_TITLE.textContent = result.title;
     DETAIL_SUB.textContent = result.type === "average"
         ? `${modeLabel} Test Mode · pinned formal-test average · click a kana for its average timing`
@@ -650,8 +651,8 @@ function openKanaModal(result, kana) {
         kicker: result.type === "average" ? "Average kana detail" : "Test kana detail",
         title: `${result.title} · ${kana}`,
         message: result.type === "average"
-            ? `Average stats for ${result.mode === "reading" ? "Reading" : "Writing"}`
-            : `Single test result for ${result.mode === "reading" ? "Reading" : "Writing"}`,
+            ? `Average stats for ${result.mode === "reading" ? "Read" : "Recall"}`
+            : `Single test result for ${result.mode === "reading" ? "Read" : "Recall"}`,
         contentNode: content,
         size: 'wide'
     });
@@ -741,6 +742,8 @@ function renderAll() {
         selectedKana = null;
     }
     const result = getSelectedResult();
+    document.body.classList.toggle("ma-results-empty",!result);
+    for(const panel of document.querySelectorAll(".results-overview,.results-detail-card,.results-guidance"))panel.hidden=!result;
     renderHero();
     renderResultsList();
     renderGuidance(result);
@@ -749,7 +752,7 @@ function renderAll() {
         OVERALL_KICKER.textContent = "Formal assessment";
         OVERALL_SELECTED_NAME.textContent = "No Test Mode results yet";
         OVERALL_SCORE.textContent = "—";
-        OVERALL_SUB.textContent = "Complete Reading or Writing Test Mode to populate this formal assessment report.";
+        OVERALL_SUB.textContent = "Complete a Kana Read or Recall test to populate this formal assessment report.";
         OVERALL_MODE.textContent = "—";
         OVERALL_CORRECT.textContent = "0";
         OVERALL_WRONG.textContent = "0";

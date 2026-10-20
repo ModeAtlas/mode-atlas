@@ -12,8 +12,11 @@
     const controls=el('div','ma-kanji-actions');
     for(const [value,label]of [['all','All tests'],['pronunciation','Pronunciation'],['meaning','Meaning'],['match','Meaning Match']]){
       const b=el('button','ma-button ma-button--ghost',label);b.type='button';b.setAttribute('aria-pressed',String(value===filter));b.addEventListener('click',()=>{filter=value;render();});controls.append(b);
-    }host.append(controls);
-    if(!rows.length){host.append(el('h2','','Your next milestone starts here'),el('p','','Finish a Kanji test to see your score, answers and what to revisit.'),link('Open Kanji','/kanji/'));return;}
+    }if(all.length)host.append(controls);
+    if(!rows.length){
+      const empty=el('div','results-empty-assessment'),art=el('img','results-empty-assessment__art');art.src='/assets/illustrations/kanji-scene.svg';art.alt='';art.width=480;art.height=300;
+      empty.append(art,el('strong','results-empty-assessment__title',all.length?'No tests in this mode yet':'No Kanji test results yet'),el('p','results-empty-assessment__copy','Finish a Kanji test to see your score, answers and what to revisit.'),link('Open Kanji','/kanji/'));host.append(empty);return;
+    }
     const current=rows.find(r=>r.id===selected)||rows[0];selected=current.id;
     const layout=el('div','ma-kanji-result-layout'),history=el('div','ma-kanji-result-list');history.setAttribute('role','group');history.setAttribute('aria-label','Saved Kanji tests');
     for(const row of rows){

@@ -1,0 +1,875 @@
+/* === Mode Atlas theme system ===
+   Shared geometry and web colour defaults. iOS colours are defined in
+   mode-atlas-ios-theme.css. Neutral system appearances keep colour meaningful; collections own their palettes. Page CSS should rely on these
+   tokens rather than carrying separate light-mode colour patches. */
+:root{
+  color-scheme:dark;
+  --ma-primary:#bac7ff;--ma-primary-text:#1c285b;
+  --ma-feature:#243f81;--ma-feature-text:#ffffff;--ma-feature-soft:#dae5ff;
+  --ma-feature-button:#b8f3dd;--ma-feature-button-text:#163c33;
+
+  --ma-font-ui:Inter,"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ma-font-display:var(--ma-font-ui);
+  --ma-font-jp:"Noto Sans JP",Inter,system-ui,sans-serif;
+  --ma-text-xs:.74rem;
+  --ma-text-sm:.82rem;
+  --ma-text-md:.95rem;
+  --ma-text-lg:1.125rem;
+  --ma-weight-medium:650;
+  --ma-weight-bold:750;
+  --ma-weight-heavy:800;
+  --ma-line-body:1.5;
+
+  /* Shared component geometry and motion. */
+  --ma-space-1:4px;
+  --ma-space-2:8px;
+  --ma-space-3:12px;
+  --ma-space-4:16px;
+  --ma-space-5:20px;
+  --ma-space-6:24px;
+  --ma-space-8:32px;
+
+  /* Canonical geometry. Shared/page CSS consumes these tokens but does not redefine them. */
+  --ma-radius-control:10px;
+  --ma-radius-md:14px;
+  --ma-radius-card:18px;
+  --ma-radius-lg:22px;
+  --ma-radius-xl:24px;
+  --ma-radius-nav:0px;
+  --ma-radius-pill:999px;
+  --ma-control-height-sm:38px;
+  --ma-control-height:46px;
+  --ma-control-height-lg:52px;
+  --ma-content-max:1240px;
+  --ma-content-wide:1320px;
+  --ma-page-gutter:24px;
+  --ma-page-gutter-tablet:18px;
+  --ma-page-gutter-phone:12px;
+  --ma-page-card-padding:24px;
+  --ma-page-card-padding-tablet:20px;
+  --ma-page-card-padding-phone:16px;
+  --ma-page-card-radius:var(--ma-radius-xl);
+  --ma-page-card-radius-tablet:22px;
+  --ma-page-card-radius-phone:18px;
+  --ma-motion-fast:160ms;
+  --ma-motion-medium:240ms;
+  --ma-icon-size:20px;
+  --ma-section-gap:18px;
+  --ma-surface-inset:color-mix(in srgb,var(--ma-card-3) 78%,transparent);
+  --ma-surface-elevated:var(--ma-surface);
+  --ma-status-success-bg:color-mix(in srgb,var(--ma-success) 12%,transparent);
+  --ma-status-warning-bg:color-mix(in srgb,var(--ma-warning) 12%,transparent);
+  --ma-status-danger-bg:color-mix(in srgb,var(--ma-danger) 12%,transparent);
+  --ma-status-info-bg:color-mix(in srgb,var(--ma-info) 12%,transparent);
+
+  --ma-app-bg:#11161c;
+  --ma-app-bg-soft:#1d252e;
+  --ma-card:#1d252e;
+  --ma-card-2:#242e39;
+  --ma-card-3:#293441;
+  --ma-border:#465262;
+  --ma-border-strong:#5b6a7b;
+  --ma-text:#f1f5f9;
+  --ma-text-strong:#f8fbff;
+  --ma-muted:#bdc8d4;
+  --ma-text-soft:color-mix(in srgb,var(--ma-text) 72%,var(--ma-muted));
+  --ma-link:#bac7ff;
+  --ma-reading:#75e3a8;
+  --ma-reading-soft:rgba(117,227,168,.16);
+  --ma-writing:#7db5ff;
+  --ma-writing-soft:rgba(125,181,255,.16);
+  --ma-results:#d7b46a;
+  --ma-results-soft:rgba(215,180,106,.15);
+  --ma-kana:#c9a7ff;
+  --ma-kana-soft:rgba(201,167,255,.15);
+  --ma-words:#9fc8ff;
+  --ma-atlas:#bac7ff;
+  --ma-rank-1-rgb:184,92,62;
+  --ma-rank-2-rgb:148,163,184;
+  --ma-rank-3-rgb:248,196,70;
+  --ma-rank-4-rgb:167,139,250;
+  --ma-rank-5-rgb:103,232,249;
+  --ma-rank-1:var(--ma-native-rank-1,rgb(var(--ma-rank-1-rgb)));
+  --ma-rank-2:var(--ma-native-rank-2,rgb(var(--ma-rank-2-rgb)));
+  --ma-rank-3:var(--ma-native-rank-3,rgb(var(--ma-rank-3-rgb)));
+  --ma-rank-4:var(--ma-native-rank-4,rgb(var(--ma-rank-4-rgb)));
+  --ma-rank-5:var(--ma-native-rank-5,rgb(var(--ma-rank-5-rgb)));
+  --ma-rose:#ff8fbd;
+  --ma-danger:#ff7d8a;
+  --ma-warning:#f4c96a;
+  --ma-success:#75e3a8;
+  --ma-info:#8fc4ff;
+  --ma-page-bg:var(--ma-app-bg);
+  --ma-page-bg-atlas:var(--ma-app-bg);
+  --ma-page-bg-kana:var(--ma-app-bg);
+  --ma-page-bg-results:var(--ma-app-bg);
+  --ma-page-bg-words:var(--ma-app-bg);
+  --ma-grid-line:transparent;
+  --ma-watermark:transparent;
+  --ma-surface:var(--ma-card);
+  --ma-surface-soft:var(--ma-card-2);
+  --ma-surface-strong:var(--ma-card-2);
+  --ma-control:var(--ma-card-3);
+  --ma-control-hover:#354354;
+  --ma-control-active:#2e3b60;
+  --ma-control-active-border:#bac7ff;
+  --ma-control-text:var(--ma-text);
+  --ma-focus-ring:#bac7ff;
+  --ma-backdrop:rgba(2,6,23,.58);
+  --ma-shadow:0 24px 70px rgba(0,0,0,.38);
+  --ma-shadow-soft:none;
+  --ma-shadow-control:none;
+
+  --bg:var(--ma-app-bg);
+  --bg-1:var(--ma-app-bg);
+  --bg-2:var(--ma-app-bg-soft);
+  --panel:var(--ma-card);
+  --panel-2:var(--ma-card-2);
+  --panel-strong:var(--ma-card-3);
+  --card:var(--ma-card);
+  --text:var(--ma-text);
+  --muted:var(--ma-muted);
+  --line:var(--ma-border);
+  --border:var(--ma-border);
+  --shadow:var(--ma-shadow);
+}
+
+html[data-ma-theme="light"]{
+  --ma-primary:#4051ca;--ma-primary-text:#ffffff;
+
+  color-scheme:light;
+  --ma-app-bg:#f2f4f7;
+  --ma-app-bg-soft:#e6ebf0;
+  --ma-card:#ffffff;
+  --ma-card-2:#f8fafc;
+  --ma-card-3:#e6ebf0;
+  --ma-border:#c8d0d9;
+  --ma-border-strong:#a4b0bd;
+  --ma-text:#202833;
+  --ma-text-strong:#182032;
+  --ma-muted:#59636f;
+  --ma-link:#4051ca;
+  --ma-reading:#11704d;
+  --ma-reading-soft:rgba(17,112,77,.14);
+  --ma-writing:#1d5598;
+  --ma-writing-soft:rgba(29,85,152,.14);
+  --ma-results:#76510f;
+  --ma-results-soft:rgba(118,81,15,.12);
+  --ma-danger:#9b2631;
+  --ma-warning:#805412;
+  --ma-success:#0f6a49;
+  --ma-info:#215d9f;
+  --ma-kana:#6c45a5;
+  --ma-kana-soft:rgba(108,69,165,.12);
+  --ma-words:#285f9c;
+  --ma-atlas:#4051ca;
+  --ma-rose:#9b3f69;
+  --ma-page-bg:var(--ma-app-bg);
+  --ma-page-bg-atlas:var(--ma-app-bg);
+  --ma-page-bg-kana:var(--ma-app-bg);
+  --ma-page-bg-results:var(--ma-app-bg);
+  --ma-page-bg-words:var(--ma-app-bg);
+  --ma-grid-line:transparent;
+  --ma-watermark:transparent;
+  --ma-surface:var(--ma-card);
+  --ma-surface-soft:var(--ma-card-2);
+  --ma-surface-strong:var(--ma-card);
+  --ma-control:var(--ma-card-3);
+  --ma-control-hover:#dce2eb;
+  --ma-control-active:#e4e9ff;
+  --ma-control-active-border:#4051ca;
+  --ma-control-text:var(--ma-text);
+  --ma-focus-ring:#4051ca;
+  --ma-backdrop:rgba(19,31,49,.30);
+  --ma-shadow:0 24px 70px rgba(42,58,84,.18);
+  --ma-shadow-soft:none;
+  --ma-shadow-control:none;
+
+  --bg:var(--ma-app-bg);
+  --bg-1:var(--ma-app-bg);
+  --bg-2:var(--ma-app-bg-soft);
+  --panel:var(--ma-card);
+  --panel-2:var(--ma-card-2);
+  --panel-strong:var(--ma-card-3);
+  --card:var(--ma-card);
+  --text:var(--ma-text);
+  --muted:var(--ma-muted);
+  --line:var(--ma-border);
+  --border:var(--ma-border);
+  --shadow:var(--ma-shadow);
+}
+
+/* Collection palettes share the same semantic interface as system appearances. */
+:is(html[data-ma-collection-theme="sakura"],[data-ma-profile-theme="sakura"]) {
+  --ma-collection-page:#e9bfd1;--ma-collection-surface:#f1cede;--ma-collection-elevated:#f6dce7;
+  --ma-collection-inset:#dfadc4;--ma-collection-text:#43232f;--ma-collection-heading:#341a27;
+  --ma-collection-secondary:#65364b;--ma-collection-border:#bc829c;--ma-collection-hover:#e5b7cd;
+  --ma-collection-selected:#d99eb9;--ma-collection-accent:#78193f;--ma-collection-on-accent:#ffffff;
+}
+:is(html[data-ma-collection-theme="midnight"],[data-ma-profile-theme="midnight"]) {
+  --ma-collection-page:#181628;--ma-collection-surface:#242139;--ma-collection-elevated:#302947;
+  --ma-collection-inset:#39314f;--ma-collection-text:#ece6ff;--ma-collection-heading:#faf7ff;
+  --ma-collection-secondary:#c0b2d8;--ma-collection-border:#605272;--ma-collection-hover:#44385d;
+  --ma-collection-selected:#4a3667;--ma-collection-accent:#d0b7ff;--ma-collection-on-accent:#25133e;
+}
+:is(html[data-ma-collection-theme="skyline"],[data-ma-profile-theme="skyline"]) {
+  --ma-collection-page:#101b25;--ma-collection-surface:#192936;--ma-collection-elevated:#213543;
+  --ma-collection-inset:#293f4d;--ma-collection-text:#eaf2f6;--ma-collection-heading:#ffffff;
+  --ma-collection-secondary:#b8cedb;--ma-collection-border:#526f81;--ma-collection-hover:#354d5c;
+  --ma-collection-selected:#4a402c;--ma-collection-accent:#ffd38a;--ma-collection-on-accent:#302310;
+}
+:is(html[data-ma-collection-theme="evergreen"],[data-ma-profile-theme="evergreen"]) {
+  --ma-collection-page:#091a13;--ma-collection-surface:#10271d;--ma-collection-elevated:#163324;
+  --ma-collection-inset:#1d3c2c;--ma-collection-text:#e7f0de;--ma-collection-heading:#f5f4df;
+  --ma-collection-secondary:#bfd1b9;--ma-collection-border:#476953;--ma-collection-hover:#244735;
+  --ma-collection-selected:#304b2c;--ma-collection-accent:#b5cd83;--ma-collection-on-accent:#152716;
+}
+:is(html[data-ma-collection-theme],[data-ma-profile-theme]){
+  --ma-feature:var(--ma-collection-surface);--ma-feature-text:var(--ma-collection-heading);--ma-feature-soft:var(--ma-collection-secondary);
+  --ma-feature-button:var(--ma-collection-accent);--ma-feature-button-text:var(--ma-collection-on-accent);
+  --ma-app-bg:var(--ma-collection-page);--ma-app-bg-soft:var(--ma-collection-surface);
+  --ma-page-bg:var(--ma-collection-page);--ma-page-bg-atlas:var(--ma-collection-page);
+  --ma-page-bg-kana:var(--ma-collection-page);--ma-page-bg-results:var(--ma-collection-page);--ma-page-bg-words:var(--ma-collection-page);
+  --ma-card:var(--ma-collection-surface);--ma-card-2:var(--ma-collection-elevated);--ma-card-3:var(--ma-collection-inset);
+  --ma-surface:var(--ma-collection-surface);--ma-surface-soft:var(--ma-collection-elevated);--ma-surface-strong:var(--ma-collection-elevated);
+  --ma-light-panel:var(--ma-card);--ma-light-panel-soft:var(--ma-card-2);--ma-light-panel-strong:var(--ma-card);
+  --ma-text:var(--ma-collection-text);--ma-text-strong:var(--ma-collection-heading);--ma-muted:var(--ma-collection-secondary);
+  --ma-border:var(--ma-collection-border);--ma-border-strong:var(--ma-collection-border);
+  --ma-control:var(--ma-collection-inset);--ma-control-hover:var(--ma-collection-hover);--ma-control-active:var(--ma-collection-selected);
+  --ma-control-text:var(--ma-collection-text);--ma-control-active-border:var(--ma-collection-accent);
+  --ma-focus-ring:var(--ma-collection-accent);--ma-atlas:var(--ma-collection-accent);--ma-link:var(--ma-collection-accent);
+  --ma-primary:var(--ma-collection-accent);--ma-primary-text:var(--ma-collection-on-accent);
+  --ma-surface-inset:var(--ma-collection-inset);
+}
+
+body{background:var(--ma-page-bg);color:var(--ma-text);}
+html[data-ma-theme="light"] body{
+  background:var(--ma-page-bg);
+  color:var(--ma-text);
+}
+html[data-ma-theme="light"] body.ma-atlas-page{background:var(--ma-page-bg-atlas);}
+html[data-ma-theme="light"] body.ma-kana-page{background:var(--ma-page-bg-kana);}
+html[data-ma-theme="light"] body.ma-results-page{background:var(--ma-page-bg-results);}
+html[data-ma-theme="light"] body.ma-wordbank-page{background:var(--ma-page-bg-words);}
+
+
+/* Light mode readability: page-level CSS may have dark-mode defaults; theme owns
+   the final light palette through tokens and scoped component rules. */
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) header.glass,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toolbar{
+  background:var(--ma-card);
+  border-color:var(--ma-border);
+  color:var(--ma-text);
+  box-shadow:var(--ma-shadow-soft);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .landing-hero,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .glass,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .modal-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .popup,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .bottom-shell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .drawer-content,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .modifier-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .options-stack>div,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pro-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-stat,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-plan>div,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-speed-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-breakdown>div,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mini-result-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-result-filter-bar,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .test-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stats-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) #statsPanel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .scores-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .scoreboard,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .about-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .about-point,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-shared-profile-drawer,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-shared-settings-drawer,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-profile-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-account-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-sync-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-branch-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement-card-summary,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-save-section,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-result-insights,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-pro-feature-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-path-step,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-preset-track,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .legal-card{
+  background:var(--ma-surface);
+  border-color:var(--ma-border);
+  color:var(--ma-text);
+  box-shadow:var(--ma-shadow);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .test-tile{
+  background:var(--ma-card);
+  border-color:var(--ma-border);
+  color:var(--ma-text);
+  box-shadow:var(--ma-shadow);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch.kana,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-card.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .reading-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-action-card.reading{
+  background:var(--ma-card);
+  border-color:rgba(17,112,77,.28);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch.words,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-card.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .writing-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-action-card.writing{
+  background:var(--ma-card);
+  border-color:rgba(29,85,152,.28);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch.future,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-tile{
+  background:var(--ma-card);
+  color:var(--ma-text);
+  opacity:1;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-bottom,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-bottom{
+  background:transparent;
+  border-top-color:rgba(42,59,88,.18);
+  color:var(--ma-text);
+  box-shadow:none;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-arrow,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-arrow,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-chip,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-badge,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pill,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .badge,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pill,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .chip{
+  background:var(--ma-control);
+  border-color:var(--ma-border);
+  color:var(--ma-text);
+  box-shadow:var(--ma-shadow-control);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .main-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .section-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .card-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-card-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-account-name,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pro-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stat-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .kana-character,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .prompt-character,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .question-character{
+  color:var(--ma-text-strong);
+  -webkit-text-fill-color:var(--ma-text-strong);
+  text-shadow:none;
+  opacity:1;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .subtitle,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .subtext,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .muted,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-line,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-tagline,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .card-sub,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .section-note,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pro-sub,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-stat .hint,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-account-email,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-sync-detail,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-sync-meta,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-save-note,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hint,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .meta,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .caption{
+  color:var(--ma-muted);
+  -webkit-text-fill-color:var(--ma-muted);
+  text-shadow:none;
+  opacity:1;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .btn,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .button,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toggle-btn,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tab-button,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-menu-action,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-choice,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-action-row a,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-action-row button,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-result-filter-bar button,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-dev-btn{
+  background:var(--ma-control);
+  color:var(--ma-control-text);
+  -webkit-text-fill-color:var(--ma-control-text);
+  border-color:var(--ma-border);
+  box-shadow:var(--ma-shadow-control);
+  text-shadow:none;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toggle-btn:hover,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-menu-action:hover,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-choice:hover{
+  background:var(--ma-control-hover);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .btn.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toggle-btn.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .toggle-btn[aria-pressed="true"],
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tab-button.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-display-option.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-sound-toggle.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-theme-choice-btn.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) [data-ma-theme-choice].active{
+  background:var(--ma-control-active);
+  border-color:var(--ma-control-active-border);
+  color:var(--ma-control-active-text,#102e57);
+  -webkit-text-fill-color:var(--ma-control-active-text,#102e57);
+  box-shadow:0 0 0 4px var(--ma-focus-ring),0 16px 34px rgba(38,95,165,.14);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-reading-page .bottom-shell .toggle-btn.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-reading-page .bottom-shell .toggle-btn[aria-pressed="true"]{
+  background:var(--ma-control-active);
+  border-color:rgba(17,112,77,.48);
+  color:#083421;
+  -webkit-text-fill-color:#083421;
+  box-shadow:0 0 0 4px rgba(17,112,77,.16),0 16px 34px rgba(17,112,77,.13);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .bottom-shell .toggle-btn.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .bottom-shell .toggle-btn[aria-pressed="true"]{
+  background:var(--ma-control-active);
+  border-color:rgba(29,85,152,.48);
+  color:var(--ma-control-active-text,#102e57);
+  -webkit-text-fill-color:var(--ma-control-active-text,#102e57);
+  box-shadow:0 0 0 4px rgba(29,85,152,.16),0 16px 34px rgba(29,85,152,.13);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score.average{
+  background:var(--ma-card);
+  border-color:rgba(132,92,24,.28);
+  color:var(--ma-text);
+  box-shadow:0 20px 50px rgba(120,85,25,.13);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score.reading{
+  background:var(--ma-card);
+  border-color:rgba(17,112,77,.25);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score.writing{
+  background:var(--ma-card);
+  border-color:rgba(29,85,152,.25);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-toast{
+  background:var(--ma-card);
+  color:var(--ma-text);
+  border-color:var(--ma-border);
+  box-shadow:var(--ma-shadow-soft);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) input,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) textarea,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) select{
+  background:var(--ma-card);
+  color:var(--ma-text);
+  -webkit-text-fill-color:var(--ma-text);
+  border-color:var(--ma-border);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) input::placeholder,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) textarea::placeholder{color:#6e7f99;-webkit-text-fill-color:#6e7f99;opacity:1;}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .progress,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-progress,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .meter,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .bar-track{
+  background:rgba(85,105,132,.16);
+}
+/* Keep branch identity on labels/chips only. Do not colour entire .reading/.writing
+   containers,
+because those classes are also used as card/page wrappers. */
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pill.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .reading-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .reading-accent,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .is-reading{color:var(--ma-reading);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-pill.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .writing-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .writing-accent,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .is-writing{color:var(--ma-writing);}
+/* Light mode contrast pass: central theme ownership for legacy dark page surfaces.
+   These rules replace old dark-page backgrounds/text with tinted light surfaces so
+   branch pages do not need separate light-mode patches. */
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .atlas-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .constellation,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .node,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .main,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .side-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel-content,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-block,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .quick-compare,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .status-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-stat,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .meta-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-doughnut-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-tooltip,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-view-toggle,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.reference,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .table-row,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .word-row{
+  background:var(--ma-surface);
+  border-color:var(--ma-border);
+  color:var(--ma-text);
+  box-shadow:var(--ma-shadow-soft);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .main{
+  background:var(--ma-card);
+  border-color:rgba(17,112,77,.28);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .main{
+  background:var(--ma-card);
+  border-color:rgba(29,85,152,.28);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.test-mode-active .main,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.daily-challenge-active .main{
+  background:var(--ma-control-active);
+  border-color:rgba(118,81,15,.26);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .atlas-card{
+  background:var(--ma-card);
+  border-color:rgba(42,59,88,.22);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .atlas-card::before{
+  background:none;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .constellation{
+  background:var(--ma-card);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .constellation::before{
+  background:none;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .node{
+  background:var(--ma-card);
+  border-color:rgba(42,59,88,.24);
+  color:var(--ma-text-strong);
+  box-shadow:var(--ma-shadow-control);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel-header,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .drawer-content,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .bottom-shell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .bottom-shell.ma-modifiers-only{
+  background:var(--ma-card);
+  border-color:var(--ma-border);
+  color:var(--ma-text);
+  box-shadow:var(--ma-shadow-soft);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-line,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-lead,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .subline,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-row,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel-header,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-performance-head,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-doughnut-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-doughnut-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-tooltip,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap-row-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat .value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric .value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.reference,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.reference .cell-char,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.reference .cell-time,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch-bottom,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-tile strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-tile span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-answer{
+  color:var(--ma-text);
+  -webkit-text-fill-color:var(--ma-text);
+  text-shadow:none;
+  opacity:1;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-line,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-lead,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .subline,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-row span:first-child,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-doughnut-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .node span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .future-tile span{
+  color:var(--ma-muted);
+  -webkit-text-fill-color:var(--ma-muted);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) button.cell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap .cell,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap .cell-char,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap .cell-time{
+  color:#0f1c31;
+  -webkit-text-fill-color:#0f1c31;
+  text-shadow:none;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.correct,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.good,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.green{
+  background:var(--ma-card);
+  border-color:rgba(19,95,44,.42);
+  color:#06151c;
+  -webkit-text-fill-color:#06151c;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.wrong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.bad,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.red{
+  background:var(--ma-card);
+  border-color:rgba(150,34,34,.42);
+  color:#06151c;
+  -webkit-text-fill-color:#06151c;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.slow,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell.yellow{
+  background:var(--ma-card);
+  border-color:rgba(128,84,18,.42);
+  color:#06151c;
+  -webkit-text-fill-color:#06151c;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell-badge.fastest,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-flag.best{
+  color:#0b6b45;
+  -webkit-text-fill-color:#0b6b45;
+  background:rgba(17,112,77,.12);
+  border-color:rgba(17,112,77,.26);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .cell-badge.slowest,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-flag.slowest{
+  color:#76510f;
+  -webkit-text-fill-color:#76510f;
+  background:rgba(202,150,44,.14);
+  border-color:rgba(202,150,44,.30);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-flag.worst{
+  color:#9b2631;
+  -webkit-text-fill-color:#9b2631;
+  background:rgba(155,38,49,.10);
+  border-color:rgba(155,38,49,.28);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .btn-start,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .button.primary{
+  background:var(--ma-control);
+  color:#10223a;
+  -webkit-text-fill-color:#10223a;
+  border-color:rgba(38,95,165,.25);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-title{
+  color:#9b2631;
+  -webkit-text-fill-color:#9b2631;
+}
+
+@media (prefers-contrast: more){
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])){
+    --ma-text:#071226;
+    --ma-text-strong:#020817;
+    --ma-muted:#354760;
+    --ma-border:rgba(20,36,62,.34);
+  }
+}
+/* === Light mode component integration: final contrast cleanup ===
+   Remaining branch components now resolve to shared theme tokens in light mode.
+   This keeps light mode tinted and readable without changing dark-mode styling. */
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])){
+  --ma-light-panel:var(--ma-card);
+  --ma-light-panel-strong:var(--ma-card);
+  --ma-light-panel-soft:var(--ma-card-2);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-list,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-end-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-summary{
+  background:var(--ma-light-panel-strong);
+  border-color:var(--ma-border);
+  color:var(--ma-text);
+  -webkit-text-fill-color:initial;
+  box-shadow:var(--ma-shadow);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-hero,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-section,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-table>div,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-list li,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stat-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-panel,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .duo-chip,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-block,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-pill,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .score-row,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel-row,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-detail-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .detail-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .selected-result,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-summary-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement-section,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-summary span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-cell{
+  background:var(--ma-light-panel-soft);
+  border-color:rgba(42,59,88,.20);
+  color:var(--ma-text);
+  -webkit-text-fill-color:initial;
+  box-shadow:var(--ma-shadow-soft);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-summary *,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over *{
+  text-shadow:none;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-card strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-section h3,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-table strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stat-card .value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .session-list h3,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over h2,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over h3,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .section-title,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-summary b,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement-detail strong,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-ach-info-body h3{
+  color:var(--ma-text-strong);
+  -webkit-text-fill-color:var(--ma-text-strong);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-kicker,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-hero p,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-card span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-card small,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-section p,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-table span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .stat-card .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .result-kana-stat .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over-answer,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement span,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-legend span{
+  color:var(--ma-muted);
+  -webkit-text-fill-color:var(--ma-muted);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-tabs button,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over button,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over .btn,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-mastery-open-btn{
+  background:var(--ma-control);
+  border-color:var(--ma-border);
+  color:var(--ma-control-text);
+  -webkit-text-fill-color:var(--ma-control-text);
+  box-shadow:var(--ma-shadow-control);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-tabs button.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .game-over .primary{
+  background:var(--ma-control-active);
+  border-color:var(--ma-control-active-border);
+  color:var(--ma-control-active-text,#102e57);
+  -webkit-text-fill-color:var(--ma-control-active-text,#102e57);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tag.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mode-tag.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-label.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-mode.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card.reading .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric.reading .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .reading-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .is-reading{
+  color:var(--ma-reading);
+  -webkit-text-fill-color:var(--ma-reading);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tag.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mode-tag.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mini-label.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-mode.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card.writing .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric.writing .label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .writing-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .is-writing{
+  color:var(--ma-writing);
+  -webkit-text-fill-color:var(--ma-writing);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tag.reading,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mode-tag.reading{background:var(--ma-reading-soft);border-color:rgba(17,112,77,.24);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .tag.writing,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mode-tag.writing{background:var(--ma-writing-soft);border-color:rgba(29,85,152,.24);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .quick-compare,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .today-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .status-box,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-kana-dashboard-card{
+  background:var(--ma-light-panel);
+  border-color:rgba(42,59,88,.20);
+  color:var(--ma-text);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box.reading{background:var(--ma-card);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box.writing{background:var(--ma-card);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box .pulse-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .pulse-mode-box .mode-copy,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .today-card,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .quick-compare span{color:var(--ma-muted);-webkit-text-fill-color:var(--ma-muted);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score .mega-kicker,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score .mega-sub,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .heatmap-row-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-performance-head,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .row-help,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hover-help{
+  color:var(--ma-muted);
+  -webkit-text-fill-color:var(--ma-muted);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-score .mega-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .summary-label,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .mega-inline-card .value,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .metric .value{
+  color:var(--ma-text-strong);
+  -webkit-text-fill-color:var(--ma-text-strong);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-loading-screen{background:rgba(215,230,243,.76);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-loading-card{background:var(--ma-light-panel-strong);border-color:var(--ma-border);color:var(--ma-text);}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-preset-toggle{
+  color:var(--ma-text,#10203a);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-preset-toggle small{
+  color:var(--ma-muted,#5f728d);
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-reading-page .ma-preset-toggle.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-reading-page .ma-preset-toggle[aria-pressed="true"]{
+  background:var(--ma-control-active);
+  border-color:rgba(28,140,91,.58);
+  color:#103322;
+}
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .ma-preset-toggle.active,
+html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) body.ma-writing-page .ma-preset-toggle[aria-pressed="true"]{
+  background:var(--ma-control-active);
+  border-color:rgba(57,108,190,.58);
+  color:#102a4d;
+}

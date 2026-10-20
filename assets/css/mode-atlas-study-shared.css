@@ -265,9 +265,9 @@ html[data-ma-large-text] .ma-study-summary__stats{grid-template-columns:minmax(0
         display: flex;
     }
 
-.left-panel { left: 12px; }
+.left-panel { grid-column:2;grid-row:1; }
 
-.right-panel { right: 12px; }
+.right-panel { grid-column:2;grid-row:2; }
 
 .panel-content {
         padding: 12px;
@@ -1045,13 +1045,10 @@ body.ma-writing-page{
   --ma-trainer-heatmap-wrong:var(--ma-native-danger-bg,#b23b3b);
   --ma-trainer-heatmap-correct:var(--ma-native-success-bg,#2e7d32);
   --ma-trainer-heatmap-even:var(--ma-native-warning-bg,#9a8c25);
-  --ma-trainer-side-top:96px;
   margin:0;
   min-height:100vh;
   color:var(--ma-text);
-  background:
-    var(--ma-collection-page,var(--ma-native-page,radial-gradient(circle at top,color-mix(in srgb,var(--ma-trainer-accent) 22%,transparent) 0%,transparent 34%),
-    radial-gradient(circle at top,#242424 0%,var(--ma-bg) 55%)));
+  background:var(--ma-app-bg);
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
@@ -1061,10 +1058,10 @@ body.ma-writing-page{
 
 .ma-trainer-card{
   width:min(540px,calc(100vw - 32px));
-  background:var(--ma-surface-strong);
-  border:1px solid color-mix(in srgb,var(--ma-trainer-accent) 18%,var(--ma-border));
+  background:var(--ma-card);
+  border:1px solid var(--ma-border);
   border-radius:20px;
-  box-shadow:var(--ma-shadow),0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 6%,transparent);
+  box-shadow:none;
   padding:24px 30px;
   text-align:center;
   position:relative;
@@ -1074,12 +1071,12 @@ body.ma-writing-page{
   font-size:28px;
   font-weight:700;
   letter-spacing:-.01em;
-  text-shadow:var(--ma-native-text-shadow,0 0 22px color-mix(in srgb,var(--ma-trainer-accent) 15%,transparent));
+  text-shadow:none;
 }
 .ma-trainer-card .subline{color:var(--ma-muted);font-size:15px;margin-bottom:20px;}
 
 .ma-trainer-score{
-  background:var(--ma-native-surface,linear-gradient(180deg,color-mix(in srgb,var(--ma-trainer-accent) 9%,transparent),rgba(255,255,255,.02)));
+  background:var(--ma-control-active);
   border-color:color-mix(in srgb,var(--ma-trainer-accent) 18%,var(--ma-border));
   color:var(--ma-text);
   padding:8px 14px;
@@ -1101,22 +1098,8 @@ body.ma-writing-page{
   color:var(--ma-native-text,var(--ma-trainer-active-text));
 }
 
-/* Side panels deliberately clear the sticky shared navigation on desktop. */
-.ma-trainer-side-panel{
-  position:fixed;
-  top:var(--ma-trainer-side-top);
-  width:248px;
-  max-height:calc(100vh - var(--ma-trainer-side-top) - 86px);
-  background:var(--ma-surface-strong);
-  border:1px solid color-mix(in srgb,var(--ma-trainer-accent) 14%,var(--ma-border));
-  border-radius:14px;
-  overflow:hidden;
-  box-shadow:var(--ma-native-shadow,0 12px 32px rgba(0,0,0,.28));
-  z-index:5;
-  display:flex;
-  flex-direction:column;
-}
-body.study-nav-hidden .ma-trainer-side-panel{top:12px;max-height:calc(100vh - 98px);}
+/* Supporting panels occupy their own column in the shared workspace. */
+.ma-trainer-side-panel{position:static;width:100%;max-height:none;background:var(--ma-card);border:1px solid var(--ma-border);border-radius:14px;overflow:hidden;box-shadow:none;z-index:5;display:flex;flex-direction:column;}
 .ma-trainer-side-panel .panel-header{
   background:var(--ma-card-2);
   border-bottom:1px solid color-mix(in srgb,var(--ma-trainer-accent) 14%,var(--ma-border));
@@ -1178,7 +1161,7 @@ body.study-nav-hidden .ma-trainer-side-panel{top:12px;max-height:calc(100vh - 98
 .ma-reading-page .bottom-shell,
 .ma-writing-page .bottom-shell{
   position:fixed;
-  left:0;
+  left:var(--ma-rail-width,0px);
   right:0;
   bottom:0;
   width:auto;
@@ -1234,8 +1217,6 @@ html:not([data-ma-runtime="ios"]) body:is([data-effective-display-mode="phone"],
 /* Responsive trainer workspace. One shared owner controls card, side-panel,
    and page geometry for the effective display mode. */
 @media (max-width:1180px) and (min-width:761px){
-  body.ma-reading-page,
-  body.ma-writing-page{--ma-trainer-side-top:104px;}
   .ma-trainer-card{width:min(760px,calc(100vw - 32px));}
 }
 @media (max-width:760px){
@@ -1362,6 +1343,12 @@ body[data-effective-display-mode="phone"].study-nav-hidden .ma-trainer-side-pane
    visibility owner toggles body.trainer-session-active; presentation consumes
    that state directly instead of re-deriving session state from DOM shape. */
 html:not([data-ma-runtime="ios"]) body:is(.ma-reading-page,.ma-writing-page)[data-effective-display-mode="desktop"]{padding-bottom:64px;}
+html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .ma-trainer-shell{display:grid;grid-template-columns:minmax(0,1fr) 248px;align-items:start;align-content:start;gap:16px 20px;width:min(1100px,100%);margin:16px auto 0;padding:0 24px;}
+html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .ma-trainer-card{grid-column:1;grid-row:1/3;justify-self:center;align-self:start;width:min(660px,100%);margin:0;}
+html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .left-panel{max-height:clamp(220px,calc(100dvh - 420px),400px);}
+html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .right-panel{max-height:220px;}
+html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"].study-nav-hidden .ma-trainer-shell{grid-template-columns:1fr;}
+
 html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.trainer-session-active) .ma-trainer-prompt-wrap{min-height:110px;}
 html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.trainer-session-active) .ma-trainer-prompt-wrap :is(.hiragana,.prompt){font-size:96px;}
 html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.trainer-session-active) :is(.hint,.combo-tier-notice):empty{display:none;}
@@ -1386,7 +1373,7 @@ body.trainer-session-active .ma-trainer-card{
   width:min(660px,calc(100vw - 32px));
   padding:18px 34px 24px;
   border-color:color-mix(in srgb,var(--ma-trainer-accent) 36%,var(--ma-border));
-  box-shadow:var(--ma-shadow),0 0 0 1px color-mix(in srgb,var(--ma-trainer-accent) 10%,transparent);
+  box-shadow:none;
 }
 body.trainer-session-active .ma-trainer-header{
   min-height:28px;

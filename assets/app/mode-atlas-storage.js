@@ -18,6 +18,7 @@
     displayMode: 'modeAtlasDisplayMode', soundMode: 'modeAtlasSound',
     activePreset: 'modeAtlasActivePreset', startReadingPreset: 'modeAtlasStartReadingPreset',
     wordBank: 'kanaWordBank',
+    kanaLearning: 'modeAtlasKanaLearning', kanaLearningUpdatedAt: 'modeAtlasKanaLearningUpdatedAt',
     kanji: 'modeAtlasKanji', kanjiUpdatedAt: 'modeAtlasKanjiUpdatedAt',
     kanjiTests: 'modeAtlasKanjiTests', kanjiTestsUpdatedAt: 'modeAtlasKanjiTestsUpdatedAt',
     progress: 'modeAtlasProgress', progressUpdatedAt: 'modeAtlasProgressUpdatedAt'
@@ -166,7 +167,8 @@
     'modeAtlasPracticeTransaction',
     'modeAtlasPracticeCheckpoint:reading',
     'modeAtlasPracticeCheckpoint:writing',
-    'modeAtlasKanjiCheckpoint'
+    'modeAtlasKanjiCheckpoint',
+    'modeAtlasKanaPlacementCheckpoint'
   ].filter((value, index, list) => value && list.indexOf(value) === index));
   const APP_LOCAL_SET = new Set(APP_LOCAL_EXACT);
   const APP_SESSION_SET = new Set(APP_SESSION_EXACT);

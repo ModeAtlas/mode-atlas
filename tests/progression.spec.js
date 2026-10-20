@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 // Each case owns its browser context, mocks and output paths; shard them independently.
 test.describe.configure({mode:'parallel'});
 
@@ -254,7 +255,7 @@ for(const native of [false,true])test(`mixed collection surfaces keep readable p
     await page.locator('#profileOpenBtn').click();
     for(const banner of ['hunny','sakura','midnight','skyline','evergreen']){
       await page.evaluate(banner=>ModeAtlasProgress.selectBanner(banner),banner);
-      const card=page.locator('.ma-account-card');await expect(card).toHaveAttribute('data-ma-banner',banner);
+      const card=page.locator('.ma-account-card');await expect(card.locator('[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner',banner);
       for(const signedIn of [false,true]){
         await page.evaluate(signedIn=>{currentUser=signedIn?{uid:'contrast-test',displayName:'Test learner'}:null;updateUiBinding({authBtn:document.querySelector('#profileAuthBtn')});},signedIn);
         const action=page.locator('#profileAuthBtn');await expect(action).toHaveText(signedIn?'Sign out':'Sign in with Google');
@@ -329,15 +330,15 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
         ModeAtlasStorage.writeModeJSON('reading','srs',Object.fromEntries([... 'あいうえおかき'].map(k=>[k,due])));
         ModeAtlasStorage.writeModeJSON('writing','srs',{'ア':due,'イ':due});dispatchEvent(new CustomEvent('modeAtlasCloudDataChanged'));
       });
-      await expect(page.getByRole('link',{name:'Review Reading · 7 due',exact:true})).toBeVisible();
-      await expect(page.getByRole('link',{name:'Review Writing · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
+      await expect(page.getByRole('link',{name:'Review Read · 7 due',exact:true})).toBeVisible();
+      await expect(page.getByRole('link',{name:'Review Recall · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
       await expect(page.locator('.ma-toast')).toHaveCount(0);
       const help=page.getByRole('button',{name:'About due reviews'});await help.click();
-      await expect(page.locator('.ma-dialog__message')).toContainText('Kana Reading, Kana Writing and each Kanji skill have separate schedules');
+      await expect(page.locator('.ma-dialog__message')).toContainText('Kana Read, Kana Recall and each Kanji skill have separate schedules');
       await expect(page.locator('.ma-dialog__message')).toContainText('not deadlines');await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');await page.screenshot({path:testInfo.outputPath('review-help.png'),animations:'disabled'});
       await page.keyboard.press('Escape');await expect(help).toBeFocused();
       await page.evaluate(()=>{ModeAtlasStorage.writeModeJSON('reading','srs',{});dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));});
-      await expect(page.getByRole('link',{name:'Review Reading · 7 due',exact:true})).toHaveCount(0);
+      await expect(page.getByRole('link',{name:'Review Read · 7 due',exact:true})).toHaveCount(0);
       await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
     }
     await page.evaluate(()=>{document.documentElement.dataset.maLargeText='true';document.documentElement.style.fontSize='24px';});
@@ -568,7 +569,7 @@ for(const mode of ['reading','writing'])for(const kind of ['dailyChallenge','tes
   expect(await page.evaluate(()=>sessionStats.answered)).toBe(resumed.sequence.length);
   await page.reload();await page.clock.resume();await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.getByRole('button',{name:action,exact:true}).click();
-  await expect(page.locator('.ma-dialog__title')).toHaveText(kind==='dailyChallenge'?'Daily Challenge complete':'Test Mode complete');
+  await expect(page.locator('.ma-dialog__title')).toHaveText(kind==='dailyChallenge'?'Daily session complete':'Test complete');
   const result=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),daily:getTodayDailyRecord(),tests:loadStoredTestModeResults(),correct:ModeAtlasProgress.getLifetimeCorrect()}));
   expect(result.correct).toBe(resumed.sequence.length-1);
   if(kind==='dailyChallenge'){expect(result.daily.officialScore).toBe(19);expect(result.daily.attempts).toBe(1);expect(result.daily.timeMs).toBeLessThan(60000);}
@@ -600,7 +601,7 @@ test('recovery rejects an expired daily attempt, a changed sequence, and an acco
 
 for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile order and dock frame stay consistent`,async({page},info)=>{
   await prepare(page,{theme,xp:700});await open(page,'/');
-  await expect(page.locator('#iosHomeGoals [data-goal]')).toHaveCount(3);
+  await expect(page.locator('#homeGoals [data-goal]')).toHaveCount(3);
   await page.locator('#profileOpenBtn').click();
   await expect(page.locator('#maAccount-profile')).toBeVisible();
   const order=await page.evaluate(()=>document.querySelector('.ma-progression-card').getBoundingClientRect().bottom<document.querySelector('.ma-sync-card').getBoundingClientRect().top);
@@ -613,7 +614,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile orde
   const frame=await page.locator('#topProfileDot').evaluate(node=>getComputedStyle(node).boxShadow);expect(frame).toContain(theme==='dark'?'232, 155, 128':'143, 62, 37');
   await page.screenshot({animations:'disabled',path:info.outputPath(`rewards-${theme}.png`)});
   await page.getByRole('tab',{name:'Rewards',exact:true}).focus();await page.keyboard.press('ArrowLeft');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toBeFocused();
-  await open(page,'/');await page.locator('.atlas-ios-home [data-ma-rewards-open]').click();await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
+  await open(page,'/');await page.locator('.atlas-home [data-ma-rewards-open]').click();await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
   await open(page,'/kana/');
   await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
 });
@@ -630,7 +631,7 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   await page.locator('[data-landmark="grove"]').click();
   expect(await page.evaluate(()=>ModeAtlasRewardsUI.banner().id)).toBe('grove');
   await page.locator('#profileOpenBtn').click();
-  await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','grove');
+  await expect(page.locator('.ma-account-user[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','grove');
   await page.screenshot({path:info.outputPath('profile-banner.png'),animations:'disabled'});
   await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();
   expect(await page.evaluate(()=>({banner:ModeAtlasRewardsUI.banner().id,frame:ModeAtlasRewardsUI.appearance().id,xp:ModeAtlasProgress.getXP()}))).toEqual({banner:'grove',frame:'grove',xp:700});
@@ -674,7 +675,7 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   })).toBe(1);
   await page.screenshot({path:info.outputPath('exclusive-banner-collection.png'),animations:'disabled'});
   await page.locator('#profileOpenBtn').click();
-  await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','hunny');
+  await expect(page.locator('.ma-account-user[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','hunny');
   await page.screenshot({path:info.outputPath('exclusive-profile.png'),animations:'disabled'});
   await page.evaluate(()=>ModeAtlasAccountNavigation.close());await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.evaluate(async()=>{ModeAtlasRewardAccess.clear();rewardUser='ordinary';rewardGrant={grants:[],allCustom:false};await ModeAtlasRewardAccess.refresh(true);});
@@ -710,7 +711,7 @@ for(const mode of ['reading','writing'])test(`${mode}: targeted mastery practice
   expect(await page.evaluate(()=>sessionStats.study.xpParts.answers)).toBe(2);
 });
 
-test('mastery separates Reading, Writing and Both and returns to the selected map',async({page},info)=>{
+test('mastery shows one map with independent skill evidence and restores focus after details',async({page},info)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page);await open(page,'/');
   await page.evaluate(()=>{
     ModeAtlasStorage.writeModeJSON('reading','charStats',{'い':{correct:38,wrong:3},'う':{correct:50,wrong:1}});
@@ -718,17 +719,18 @@ test('mastery separates Reading, Writing and Both and returns to the selected ma
     ModeAtlasStorage.writeModeJSON('writing','charStats',{'い':{correct:3,wrong:0},'う':{correct:2,wrong:0}});
     ModeAtlasFeatures.openMasteryMap();
   });
-  const cell=page.locator('[data-ma-mastery-kana="い"]');await expect(cell).toContainText('Reviewing');
-  await page.getByRole('button',{name:'Writing',exact:true}).click();await expect(cell).toContainText('Learning');
-  await page.getByRole('button',{name:'Both',exact:true}).click();await expect(cell).toContainText('Learning');
-  await cell.click();await expect(page.locator('.ma-mastery-directions')).toContainText('Reading: Reviewing · Writing: Learning');
-  await expect(page.locator('.ma-mastery-checks')).toHaveCount(2);
-  const link=page.getByRole('link',{name:'Practise Writing',exact:true});await expect(link).toHaveAttribute('href',/\/writing\/\?practice=10&kana=/);
+  const cell=page.locator('[data-ma-mastery-kana="い"]');await expect(cell).toContainText('Familiar');
+  await cell.click();await expect(page.locator('.ma-kana-skill-evidence').nth(0)).toContainText('Confident');await expect(page.locator('.ma-kana-skill-evidence').nth(1)).toContainText('Learning');
+  await expect(page.locator('.ma-kana-targets')).toHaveCount(3);
+  await expect(page.locator('.ma-kana-skill-evidence').nth(0)).toBeVisible();
+  await page.getByRole('button',{name:'Recall · Learning',exact:true}).click();
+  await expect(page.locator('.ma-kana-skill-evidence').nth(1)).toBeVisible();
+  const link=page.getByRole('link',{name:'Practise Recall',exact:true});await expect(link).toHaveAttribute('href',/\/writing\/\?practice=20&kana=/);
   await page.setViewportSize({width:320,height:852});await page.evaluate(()=>{document.documentElement.style.fontSize='24px';});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:info.outputPath('mastery-directions.png'),animations:'disabled'});
   await page.getByRole('button',{name:'Close Mastery Map or return to the map',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Both',exact:true})).toHaveAttribute('aria-pressed','true');await expect(cell).toBeFocused();
+  await expect(page.getByRole('group',{name:'Mastery direction'})).toHaveCount(0);await expect(cell).toBeFocused();
   expect(errors).toEqual([]);
 });
 
@@ -736,7 +738,7 @@ test('goal shortcuts and weekly recap expose recorded activity without inventing
   await prepare(page);await open(page,'/');await page.evaluate(()=>ModeAtlasRewardsUI.open());
   await expect(page.locator('.ma-routine-goal[href]').first()).toHaveAttribute('href',/\/(reading|writing)\/\?/);
   await page.getByRole('tab',{name:'Recap',exact:true}).click();
-  await expect(page.locator('.ma-recap-grid')).toContainText('Reading correct');await expect(page.locator('.ma-recap-grid')).toContainText('0 / 7');
+  await expect(page.locator('.ma-recap-grid')).toContainText('Read correct');await expect(page.locator('.ma-recap-grid')).toContainText('0 / 7');
   await page.getByRole('button',{name:'Last week',exact:true}).click();await expect(page.locator('.ma-atlas-recap')).toContainText('No dated practice');
   await expect(page.getByRole('link',{name:'View weekly ranking',exact:true})).toHaveAttribute('href','/friends/?ranking=weekly');
   await page.getByRole('tab',{name:'Recap',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toHaveAttribute('aria-selected','true');
@@ -837,4 +839,31 @@ for(const layout of [{native:true,theme:'light',width:320},{native:true,theme:'d
   expect(await editor.evaluate(node=>[...node.querySelectorAll('button,input,fieldset')].filter(el=>el.getClientRects().length).some(el=>{const b=el.getBoundingClientRect();return b.left<0||b.right>innerWidth+1;}))).toBe(false);
   await editor.getByRole('button',{name:'Save changes',exact:true}).click();await expect(editor).toBeHidden();
   expect(await page.evaluate(()=>companionSaved)).toMatchObject({revision:1,displayName:'Atlas Explorer',greeting:'A new chapter with my companion.',petNames:{calico:'Mochi','japanese-spitz':'Shiro'},character:{version:3,outfit:'seigaiha-kimono',outfitColor:'navy',pants:'a-line',pantsColor:'coral',pet:'japanese-spitz',petName:'Shiro'}});
+});
+
+test('full goals group each period while preserving live progress and practice destinations',async({page})=>{
+  await page.setViewportSize({width:393,height:852});
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await page.addInitScript(()=>{window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');});
+  await page.goto('/progress/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await expect(page.locator('.ma-goal-group')).toHaveCount(2);await expect(page.locator('.ma-goal-group').first().getByRole('heading',{name:'Today',exact:true})).toBeVisible();
+  expect(await page.locator('.ma-goal-group').evaluateAll(groups=>groups.map(group=>group.querySelectorAll('.ma-routine-goal').length))).toEqual([3,2]);
+  const goals=await page.evaluate(()=>ModeAtlasProgress.routine().goals);
+  for(const goal of goals){const card=page.locator(`[data-goal="${goal.id}"]`);await expect(card.locator('progress')).toHaveAttribute('max',String(goal.target));await expect(card).toContainText(`+${goal.xp} XP`);}
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await expect(page.locator('.ma-routine-goal[href]').first()).toHaveAttribute('href',/\/(reading|writing|kanji)\//);
+});
+
+test('personal daily and weekly goals create, repeat, edit and remove in the shared dialog',async({page})=>{
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await page.addInitScript(()=>{for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');localStorage.setItem('maWhatsNewSeen','personal-goals');});
+  await page.goto('/progress/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.getByRole('button',{name:'+ Set daily goal',exact:true}).click();
+  await page.getByLabel('Goal',{exact:true}).selectOption('kana-correct');await page.getByLabel('Target',{exact:true}).selectOption('50');await page.getByLabel('Repeat each day',{exact:true}).check();await page.getByRole('button',{name:'Create goal',exact:true}).click();
+  await expect(page.locator('[data-goal="personal-daily"]')).toContainText('Recall 50 kana correctly');await expect(page.locator('[data-goal="personal-daily"]')).toContainText('Repeats');
+  await page.getByRole('button',{name:'+ Set weekly goal',exact:true}).click();await page.getByLabel('Target',{exact:true}).selectOption('10');await page.getByRole('button',{name:'Create goal',exact:true}).click();
+  await page.reload();await expect(page.locator('[data-personal="true"]')).toHaveCount(2);
+  await page.locator('[data-goal="personal-daily"]').click();await expect(page.getByLabel('Target',{exact:true})).toHaveValue('50');await page.getByLabel('Target',{exact:true}).selectOption('20');await page.getByRole('button',{name:'Save goal',exact:true}).click();
+  await page.locator('[data-goal="personal-weekly"]').click();await page.getByRole('button',{name:'Remove goal',exact:true}).click();await expect(page.locator('[data-personal="true"]')).toHaveCount(1);await expect(page.getByRole('button',{name:'+ Set weekly goal',exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

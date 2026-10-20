@@ -355,7 +355,7 @@ function buildAverageResult(mode, tests) {
     return {
         id: `overall-${mode}`,
         type: "average",
-        title: `${mode === "reading" ? "Reading" : "Writing"} Test Average`,
+        title: `${mode === "reading" ? "Read" : "Recall"} Test Average`,
         mode,
         date: "All saved tests",
         startedAt: "Pinned summary",

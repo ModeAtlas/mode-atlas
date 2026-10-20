@@ -25,10 +25,16 @@ body{
 .app-shell,.shell,.wrap,main,.page,.page-shell{height:auto;max-height:none;}
 body::before{pointer-events:none;}
 
+[lang="ja"]{font-family:var(--ma-font-jp);}
+
+/* One outlined wordmark, tinted by the surface's semantic text colour. */
+.ma-brand-wordmark{display:block;width:150px;max-width:100%;aspect-ratio:379.92/64;background:var(--ma-text-strong);mask:url('/assets/brand/mode-atlas-wordmark.svg') center/contain no-repeat;-webkit-mask:url('/assets/brand/mode-atlas-wordmark.svg') center/contain no-repeat;font-size:0;line-height:0;color:transparent;}
+
 h1,h2,h3,.main-title,.hero-title,.launch-title,.card-title{font-family:var(--ma-font-display);}
 .hiragana,.prompt,.kana,.cell,.cell-char,.kana-big .char,.result-kana-card .char{font-family:var(--ma-font-jp);}
 
 button,a,input,textarea,select{-webkit-tap-highlight-color:transparent;}
+button,input,textarea,select{font-family:var(--ma-font-ui);}
 button,.btn,.launch-card{min-height:44px;}
 input,textarea,select{font-size:16px;}
 .btn,.button{display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;}
@@ -45,10 +51,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   z-index:10000;
   display:grid;
   place-items:center;
-  background:
-    radial-gradient(circle at 25% 18%,color-mix(in srgb,var(--ma-writing) 16%,transparent),transparent 30%),
-    radial-gradient(circle at 76% 18%,color-mix(in srgb,var(--ma-kana) 13%,transparent),transparent 28%),
-    color-mix(in srgb,var(--ma-app-bg) 92%,transparent);
+  background:var(--ma-app-bg);
   backdrop-filter:blur(12px);
   -webkit-backdrop-filter:blur(12px);
   transition:opacity .32s ease,visibility .32s ease;
@@ -57,23 +60,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .ma-loading-card{
   width:min(360px,calc(100vw - 40px));
   padding:22px;
-  border:1px solid var(--ma-border);
-  border-radius:var(--ma-radius-lg);
-  background:color-mix(in srgb,var(--ma-card) 88%,transparent);
-  box-shadow:var(--ma-shadow);
+  border:0;
+  border-radius:0;
+  background:transparent;
   color:var(--ma-text);
 }
 .ma-loading-head{display:flex;align-items:center;gap:13px;margin-bottom:16px;}
-.ma-loading-mark{
-  width:46px;
-  height:46px;
-  display:grid;
-  place-items:center;
-  border-radius:16px;
-  background:linear-gradient(135deg,var(--ma-writing),var(--ma-kana));
-  color:var(--ma-app-bg);
-  font-weight:900;
-}
+.ma-loading-mark{width:46px;height:46px;display:block;background:transparent url('/assets/brand/mode-atlas-symbol.svg') center/contain no-repeat;color:transparent;font-size:0;}
 .ma-loading-title{font-weight:900;letter-spacing:-.03em;}
 .ma-loading-sub{margin-top:3px;color:var(--ma-muted);font-size:13px;}
 .ma-skeleton{

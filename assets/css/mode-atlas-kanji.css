@@ -10,19 +10,25 @@
 .ma-kanji-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:16px;}
 .ma-kanji-eyebrow{color:var(--ma-muted);font-size:.72rem;font-weight:750;letter-spacing:.1em;text-transform:uppercase;}
 .ma-kanji-path{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;}
-.ma-kanji-level{display:grid;gap:5px;text-align:left;border:0;border-bottom:3px solid var(--ma-border);background:transparent;padding:12px 2px;color:var(--ma-text-strong);cursor:pointer;}
-.ma-kanji-level strong{font-size:1.35rem;}.ma-kanji-level span{font-size:.8rem;}.ma-kanji-level small{color:var(--ma-muted);}
-.ma-kanji-level[aria-pressed="true"]{border-color:var(--ma-results);}.ma-kanji-level:disabled{opacity:.48;cursor:default;}
-.ma-kanji-course-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 24px;color:var(--ma-muted);font-size:.8rem;}
-.ma-kanji-course-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:52px;align-items:start;margin-bottom:32px;}
-.ma-kanji-intro__glyph{font:600 6rem/1.15 var(--ma-font-jp);color:var(--ma-results);margin-bottom:20px;}
-.ma-kanji-intro>p{color:var(--ma-text-soft);max-width:34ch;font-size:.95rem;}
-.ma-kanji-options{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;}
+.ma-kanji-level{display:grid;min-width:0;gap:5px;text-align:left;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-card);padding:12px;color:var(--ma-text-strong);cursor:pointer;}
+.ma-kanji-level strong{font-size:1.35rem;}.ma-kanji-level span{font-size:.8rem;overflow-wrap:anywhere;}.ma-kanji-level small{color:var(--ma-muted);}
+.ma-kanji-level[aria-pressed="true"]{border-color:var(--ma-results);background:var(--ma-control-active);}.ma-kanji-level:disabled{opacity:.48;cursor:default;}
+.ma-kanji-course-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0 20px;font-size:.8rem;}
+.ma-kanji-course-summary strong{font-size:.85rem;}.ma-kanji-course-summary p{margin:4px 0 0;color:var(--ma-muted);font-size:.75rem;}
+.ma-kanji-path-help{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid var(--ma-border);border-radius:50%;color:var(--ma-muted);background:transparent;cursor:pointer;}
+.ma-kanji-course-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:start;margin-bottom:32px;}
+.ma-kanji-teaching{display:grid;gap:24px;min-width:0;}
+.ma-kanji-intro{display:grid;grid-template-columns:minmax(0,1fr) 100px;align-items:center;gap:16px;background:var(--ma-card);border:1px solid var(--ma-border);border-radius:18px;padding:20px;}
+.ma-kanji-intro__copy{min-width:0;}.ma-kanji-intro__copy h2{margin:0 0 8px;font-size:1.2rem;}.ma-kanji-intro__copy p{margin:0;color:var(--ma-text-soft);font-size:.8rem;line-height:1.5;}
+.ma-kanji-intro__art{display:block;width:100%;height:100px;object-fit:contain;margin:0;}
+.ma-kanji-intro>.ma-button,.ma-kanji-options{grid-column:1/-1;}
+.ma-kanji-options{display:flex;flex-wrap:wrap;gap:12px;margin:0;}
 .ma-kanji-select{display:grid;gap:6px;flex:1 1 120px;font-size:.8rem;min-width:0;color:var(--ma-muted);}
 .ma-kanji-select select{min-height:44px;width:100%;border:1px solid var(--ma-border);border-radius:10px;padding:8px;background:var(--ma-surface-inset);color:var(--ma-text-strong);}
-.ma-kanji-mode{display:grid;grid-template-columns:36px minmax(0,1fr) 16px;gap:12px;align-items:center;width:100%;padding:18px 0;border:0;border-bottom:1px solid var(--ma-border);text-align:left;background:transparent;color:var(--ma-text-strong);cursor:pointer;}
-.ma-kanji-mode>span:nth-child(2){display:grid;gap:6px;}.ma-kanji-mode strong{font-size:1rem;}.ma-kanji-mode>span:nth-child(2)>span{color:var(--ma-muted);font-size:.8rem;line-height:1.5;}
-.ma-kanji-mode__mark{font-size:1.25rem;font-weight:750;color:var(--ma-results);}
+.ma-kanji-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.ma-kanji-mode{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-width:0;width:100%;padding:18px;margin:0;border:1px solid var(--ma-border);border-radius:16px;text-align:left;background:var(--ma-card);color:var(--ma-text-strong);cursor:pointer;}.ma-kanji-mode:last-child{grid-column:1/-1;display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center;}.ma-kanji-mode>span:last-child{display:none;}
+.ma-kanji-mode>span:nth-child(2){display:grid;gap:6px;}.ma-kanji-mode strong{font-size:.9rem;}.ma-kanji-mode>span:nth-child(2)>span{color:var(--ma-muted);font-size:.8rem;line-height:1.5;}
+.ma-kanji-mode__mark{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:var(--ma-status-warning-bg);font-size:1.25rem;font-weight:750;color:var(--ma-results);}
 .ma-kanji-tests{padding-top:18px;}.ma-kanji-tests h3{margin:0;}.ma-kanji-tests p{font-size:.8rem;color:var(--ma-muted);}
 .ma-kanji-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0;}.ma-kanji-actions>.ma-button{flex:1 1 130px;}
 .ma-kanji-text-button{border:0;padding:9px 0;min-height:44px;color:var(--ma-text-soft);background:transparent;text-decoration:underline;text-underline-offset:4px;cursor:pointer;}
@@ -59,11 +65,11 @@
 .ma-kanji-lesson .ma-kanji-choices{margin:4px 0;}
 .ma-kanji-lesson>.ma-button{justify-self:center;min-width:180px;}
 .ma-kanji-lesson .ma-pronunciation{justify-content:center;}
-.ma-kanji-first-ten{margin:12px 0 28px;}
+.ma-kanji-first-ten{margin:0;padding:0 4px;}.ma-kanji-first-ten h2{font-size:1.05rem;}
 .ma-kanji-first-ten h2{margin:0 0 6px;}
 .ma-kanji-first-ten>p{font-size:.85rem;color:var(--ma-muted);margin:6px 0;}
 .ma-kanji-first-ten ol{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;padding:0;list-style:none;}
-.ma-kanji-first-ten li{font:500 1.5rem/1.5 var(--ma-font-jp);text-align:center;border-bottom:3px solid var(--ma-border);}
+.ma-kanji-first-ten li{font:500 1.5rem/1.5 var(--ma-font-jp);text-align:center;border:1px solid var(--ma-border);border-radius:9px;background:var(--ma-card);padding:4px;}
 .ma-kanji-first-ten li[data-learned="true"]{border-color:var(--ma-reading);}
 .ma-kanji-mode:disabled{opacity:.5;cursor:default;}
 .ma-kanji-readings{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;font-size:.95rem;line-height:1.65;}
@@ -79,7 +85,12 @@
 .ma-kanji-continue{display:block;margin:24px auto 0;min-width:180px;}.ma-kanji-paused,.ma-kanji-recap{text-align:center;padding:50px 0;}.ma-kanji-recap-score{font-size:1.8rem;font-weight:800;}
 .ma-kanji-resume{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 0 24px;border-bottom:1px solid var(--ma-border);margin-bottom:24px;}.ma-kanji-resume p{flex:1 1 200px;margin:0;}
 .ma-kanji-main :is(button,a,input,select):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
-@media(max-width:700px){.ma-kanji-page>.shell{padding:0 16px;}.ma-kanji-main{margin-top:12px;}.ma-kanji-course-layout{grid-template-columns:1fr;gap:30px;}.ma-kanji-intro{display:grid;grid-template-columns:minmax(0,1fr) 70px;gap:8px 16px;}.ma-kanji-intro__glyph{grid-column:2;grid-row:1/3;font-size:4.5rem;margin:0;}.ma-kanji-intro h2{grid-column:1;grid-row:1;margin:0;}.ma-kanji-intro>p{grid-column:1;grid-row:2;margin:0 0 8px;}.ma-kanji-intro>.ma-button{grid-column:1/-1;justify-self:start;}.ma-kanji-options{grid-column:1/-1;margin-top:12px;}.ma-kanji-level span{font-size:.65rem;}.ma-kanji-level small{font-size:.65rem;}.ma-kanji-path{gap:8px;}.ma-kanji-session-bar{margin-bottom:12px;}.ma-kanji-first-ten ol{grid-template-columns:repeat(5,1fr);}.ma-kanji-lesson{gap:10px;}.ma-kanji-reading-family{align-items:start;}.ma-kanji-reading-family>span{padding-top:10px;}.ma-kanji-answer{grid-template-columns:1fr;}.ma-kanji-answer>button{grid-column:1;grid-row:auto;}.ma-kanji-answer>input{font-size:16px;}.ma-kanji-question>.ma-kanji-glyph{margin:12px 0;}.ma-kanji-question .ma-kanji-actions{justify-content:center;}.ma-kanji-readings{font-size:.85rem;}}
-html[data-ma-large-text] .ma-kanji-path{grid-template-columns:repeat(3,minmax(0,1fr));}html[data-ma-large-text] .ma-kanji-choices{grid-template-columns:1fr;}
+@media(max-width:700px){
+  .ma-kanji-page>.shell{padding:0 16px;}.ma-kanji-main{margin-top:12px;}.ma-kanji-header{margin-bottom:18px;}.ma-kanji-main h1{font-size:1.85rem;}
+  .ma-kanji-course-layout{grid-template-columns:1fr;gap:24px;}.ma-kanji-intro{grid-template-columns:minmax(0,1fr) 72px;gap:14px 10px;padding:16px;}.ma-kanji-intro__art{height:80px;}.ma-kanji-intro__copy h2{font-size:1.1rem;}
+  .ma-kanji-level{padding:10px 4px;justify-items:center;text-align:center;}.ma-kanji-level strong{font-size:1.15rem;}.ma-kanji-level__name{display:none;}.ma-kanji-level small{font-size:.6rem;}.ma-kanji-path{gap:6px;}
+  .ma-kanji-session-bar{margin-bottom:12px;}.ma-kanji-first-ten ol{grid-template-columns:repeat(5,1fr);}.ma-kanji-lesson{gap:10px;}.ma-kanji-reading-family{align-items:start;}.ma-kanji-reading-family>span{padding-top:10px;}.ma-kanji-answer{grid-template-columns:1fr;}.ma-kanji-answer>button{grid-column:1;grid-row:auto;}.ma-kanji-answer>input{font-size:16px;}.ma-kanji-question>.ma-kanji-glyph{margin:12px 0;}.ma-kanji-question .ma-kanji-actions{justify-content:center;}.ma-kanji-readings{font-size:.85rem;}
+}
+html[data-ma-large-text] .ma-kanji-path{grid-template-columns:repeat(auto-fit,minmax(76px,1fr));}html[data-ma-large-text] .ma-kanji-intro{grid-template-columns:minmax(0,1fr) 56px;}html[data-ma-large-text] .ma-kanji-choices,html[data-ma-large-text] .ma-kanji-tools{grid-template-columns:1fr;}
 
 html[data-ma-large-text] .ma-kanji-lesson-hero{grid-template-columns:85px minmax(0,1fr);}html[data-ma-large-text] .ma-kanji-reading-family{flex-wrap:wrap;}

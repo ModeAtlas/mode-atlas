@@ -55,7 +55,9 @@ test('an older client cannot overwrite migrated progress; current saves and expl
   await assertSucceeds(setDoc(ref,migrated));await assertFails(setDoc(ref,oldCurve));
   migrated.sections.progress.data.state.sources.device['kana.reading.correct']=6180;
   await assertSucceeds(setDoc(ref,migrated));
-  const reset=save(0);reset.sections.progress.data.state.version=5;
+  const prePersonal=structuredClone(migrated);migrated.sections.progress.data.state.version=6;migrated.sections.progress.data.state.personalGoals={daily:{id:'learn-kana',target:3,repeat:true,start:'2026-10-20',at:1792454400000}};
+  await assertSucceeds(setDoc(ref,migrated));await assertFails(setDoc(ref,prePersonal));
+  const reset=save(0);reset.sections.progress.data.state.version=6;
   await assertSucceeds(setDoc(ref,reset));
 });
 
@@ -652,11 +654,14 @@ test('weekly prizes settle once, honor ties and preserve private saves without f
   const a=await learner('Prize One',7003),b=await learner('Prize Two',5800),c=await learner('Prize Three',0);
   const period=policy.period(at);await db.doc('weeklyCompetitions/'+period.id).set({...period,settled:false});
   for(const [p,score]of [[a,250],[b,250],[c,100]]){await weekly.preference(p.uid,{enabled:true});await db.doc(`weeklyCompetitions/${period.id}/entries/${p.uid}`).set({uid:p.uid,active:true,score,days:{}});}
+  const prizeSave=save(7003);prizeSave.sections.progress.data.state.version=6;prizeSave.sections.progress.data.state.personalGoals={daily:{id:'learn-kana',target:3,repeat:true,start:'2097-09-30',at}};
+  await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(prizeSave);
   at=period.endAt+300001;
   await Promise.all([weekly.settle(period.id),weekly.settle(period.id)]);await weekly.settle(period.id);
   for(const [p,base,prize,rank]of [[a,7003,500,1],[b,5800,500,1],[c,0,150,3]]){
     const saved=(await db.doc(`users/${p.uid}/appData/kanaTrainer`).get()).data();
     assert.equal(projectSave(saved).xp,base+prize);assert.equal(saved.sections.wordBank.data.items[0].english,'private word');
+    if(p.uid===a.uid)assert.equal(saved.sections.progress.data.state.personalGoals.daily.target,3);
     const status=await weekly.state(p.uid);assert.equal(status.score,0);assert.equal(status.awards[0].xp,prize);assert.equal(status.awards[0].rank,rank);assert.deepEqual(status.results[0],status.awards[0]);
     const coins=rank===1?100:0;assert.equal(status.awards[0].coins,coins);
     const wallet=(await db.doc('commerceAccounts/'+p.uid).get()).data();
@@ -763,7 +768,7 @@ test('cached mastery projections refresh on Friends views without waiting for an
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.readingMastered':2,'summary.combinedMastered':1});
   const result=await a.call('list',{kind:'rankings',metric:'mastery'}),peer=result.rows.find(row=>row.uid===b.uid);
   assert.equal(peer.stats.readingMastered,0);assert.equal(peer.stats.writingMastered,0);assert.equal(peer.stats.combinedMastered,0);
-  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,4);
+  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,5);
   const saved=(await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis();
   await a.call('list',{kind:'friends'});assert.equal((await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis(),saved);
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.combinedMastered':1});

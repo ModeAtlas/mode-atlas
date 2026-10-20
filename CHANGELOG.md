@@ -8,6 +8,14 @@
 - The existing Hunny exclusive grant includes a jumper, bear ears and pendant, with developer preview access. No public shop listing.
 - Public version 2.97.0, iOS build 2080019. Update and validation details: `docs/development-2.97.0.md`.
 
+## 2.106.0 — Unified Kana learning
+
+- One Learn / Practise / Mastery / Tests journey with Read, Recall and optional Handwrite skills.
+- Beginner or adaptive placement entry; independent row progression and script test unlocks.
+- One seven-stage mastery map, retained skill milestones and optional Mastered+ handwriting.
+- Shared session setup preserves distinct feedback, daily, sequence and timed learning tools.
+- Convergent learning saves and matching Firebase public-profile mastery counts.
+
 ## 2.96.0 — Level coins and your own avatar
 
 - Award 20 Atlas Coins per level gained after level 1, plus 50 at every fifth level. Existing accounts receive their current-curve catch-up once; a server high-water mark and receipts prevent repeat awards when saves reset or requests retry.

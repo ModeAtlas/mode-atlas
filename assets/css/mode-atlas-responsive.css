@@ -82,3 +82,8 @@ body[data-display-mode="mobile"] .ma-page-frame{width:min(100%,calc(100vw - 20px
 @media (min-width:761px) and (max-width:1024px) and (orientation:portrait){
   body{padding-left:var(--ma-page-gutter-tablet);padding-right:var(--ma-page-gutter-tablet);}
 }
+
+/* The desktop destination rail reserves document space once, for every page. */
+@media(min-width:1100px){
+ html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.study-nav-hidden){--ma-rail-width:180px;padding-top:88px;padding-left:180px;padding-right:0;}
+}

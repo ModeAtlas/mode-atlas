@@ -105,7 +105,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await page.getByRole('tab',{name:'Rankings',exact:true}).click();await page.getByRole('button',{name:'All time',exact:true}).click();await expect(page.locator('.ma-social-rank')).toHaveText(['1','2']);await fits(page);
     await page.screenshot({path:info.outputPath('rankings.png'),animations:'disabled'});
     await page.getByLabel('Ranking',{exact:true}).selectOption('reading');await fits(page);
-    await page.locator('.ma-social-person').first().click();await expect(page.getByText('Reading mastery',{exact:true})).toBeVisible();await fits(page);
+    await page.locator('.ma-social-person').first().click();await expect(page.getByText('Read mastery',{exact:true})).toBeVisible();await fits(page);
     await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});await fits(page);
     await page.screenshot({path:info.outputPath('profile-large-text.png'),animations:'disabled'});expect(errors).toEqual([]);
   });
@@ -317,7 +317,7 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
       ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
     },layout.role);
     await expect(page.locator('#maSocialList .ma-social-row')).toHaveCount(6);await fits(page);
-    await expect(page.locator('.ma-social-row[data-ma-banner="grove"]')).toHaveCount(1);
+    await expect(page.locator('.ma-social-friend__art[data-ma-banner="grove"]')).toHaveCount(1);
     if(layout.width===1280){
       const controls=await page.locator('.ma-social-home-tools>.ma-button').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().height));
       expect(controls.every(height=>height>=44&&height<=48)).toBe(true);
@@ -329,7 +329,8 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
       const panel={top:0,bottom:document.querySelector('.ma-ios-tabs')?.getBoundingClientRect().top||innerHeight};
       return [...list.children].filter(row=>{const box=row.getBoundingClientRect();return box.top>=panel.top&&box.bottom<=panel.bottom;}).length;
     });
-    if(layout.width>=393)expect(visibleRows).toBeGreaterThanOrEqual(3);
+    // Illustrated cards show two people side by side on narrow web screens.
+    if(layout.width>=393)expect(visibleRows).toBeGreaterThanOrEqual(!layout.native&&layout.width<600?2:3);
     await page.screenshot({path:info.outputPath('friends-compact-banners.png'),animations:'disabled'});
     const staff=page.getByRole('button',{name:'Moderator menu',exact:true});
     if(layout.role==='member'){await expect(staff).toHaveCount(0);return;}
@@ -360,10 +361,10 @@ test('a friend’s server-approved exclusive banner displays without granting it
   await prepare(page,{native:true});
   await page.evaluate(()=>{socialFixture.friend.banner='hunny';});
   await page.getByRole('button',{name:'Refresh',exact:true}).click();
-  await expect(page.locator('.ma-social-row[data-ma-banner="hunny"]')).toHaveCount(1);
-  expect(await page.locator('.ma-social-row[data-ma-banner="hunny"]').evaluate(row=>{
-    const artLeft=row.getBoundingClientRect().left+parseFloat(getComputedStyle(row,'::before').paddingLeft);
-    return [...row.querySelectorAll('.ma-social-person,.ma-social-score')].every(node=>node.getBoundingClientRect().right<=artLeft+1);
+  await expect(page.locator('.ma-social-friend__art[data-ma-banner="hunny"]')).toHaveCount(1);
+  expect(await page.locator('.ma-social-friend__art[data-ma-banner="hunny"]').evaluate(row=>{
+    const art=row.getBoundingClientRect(),caption=row.closest('.ma-social-person').querySelector('.ma-social-friend__caption').getBoundingClientRect();
+    return caption.top>=art.bottom&&caption.right<=row.closest('.ma-social-person').getBoundingClientRect().right;
   })).toBe(true);
   await page.screenshot({path:info.outputPath('friend-exclusive-banner.png'),animations:'disabled'});
   await page.goto('/progress/');await page.getByRole('tab',{name:'Rewards',exact:true}).click();
@@ -490,4 +491,39 @@ for(const native of [true,false])test(`global weekly profile can request, cancel
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.dataset.maLargeText='true';document.querySelector('.ma-social-pet-name').textContent='W'.repeat(24);});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:info.outputPath('friend-avatar-large-text.png'),fullPage:true});
+});
+
+test('weekly podium keeps server ties, profile actions and pagination without duplicating rows',async({page})=>{
+  await prepare(page,{native:false,width:1280});
+  await page.evaluate(()=>{
+    socialFixture.weeklyEnabled=true;
+    const original=ModeAtlasSocial.call;
+    ModeAtlasSocial.call=async(action,input)=>{
+      if(action!=='weeklyList')return original(action,input);
+      const people=[['first',1],['friend',1],['third',3],['fourth',4],['fifth',5]];
+      const items=(input.cursor?people.slice(4):people.slice(0,4)).map(([uid,rank])=>({...socialFixture.friend,uid,rank,score:2000-rank*100,displayName:uid}));
+      return {rows:items,nextCursor:input.cursor?null:'page-two'};
+    };
+  });
+  await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+  await expect(page.locator('.ma-weekly-podium .ma-social-rank')).toHaveText(['1','1','3']);
+  await expect(page.locator('.ma-social-row')).toHaveCount(4);
+  await page.getByRole('button',{name:'Load more',exact:true}).click();
+  await expect(page.locator('.ma-social-rank')).toHaveText(['1','1','3','4','5']);
+  await expect(page.locator('.ma-weekly-podium')).toHaveCount(1);
+  await page.locator('.ma-weekly-podium .ma-social-person').nth(1).click();
+  await expect(page.getByText('Read mastery',{exact:true})).toBeVisible();
+});
+
+test('friend artwork stays above readable identity and a narrow card opens the real profile',async({page})=>{
+  await prepare(page,{width:393});
+  await page.evaluate(()=>{
+    const friend=socialFixture.friend;friend.displayName='Evelyn';friend.banner='hunny';friend.avatar='character';friend.character={...ModeAtlasAvatarRules.defaults};
+    socialFixture.friends=[friend,{...friend,uid:'another',displayName:'Admin',banner:'skyline'}];ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
+  });
+  await expect(page.locator('.ma-social-friend')).toHaveCount(2);
+  const geometry=await page.locator('.ma-social-friend').evaluateAll(cards=>cards.map(card=>{const art=card.querySelector('.ma-social-friend__art').getBoundingClientRect(),copy=card.querySelector('.ma-social-friend__caption').getBoundingClientRect();return {clear:art.bottom<=copy.top,contained:card.scrollWidth<=card.clientWidth};}));
+  expect(geometry.every(card=>card.clear&&card.contained)).toBe(true);
+  await page.locator('.ma-social-friend .ma-social-person').first().click();await expect(page.locator('.ma-social-character')).toBeVisible();
+  expect(await page.evaluate(()=>socialCalls.some(call=>call.action==='profile'&&call.input.uid==='friend'))).toBe(true);
 });

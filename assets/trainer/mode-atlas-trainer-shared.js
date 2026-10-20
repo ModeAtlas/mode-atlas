@@ -53,11 +53,12 @@ function createBaseTrainerDefaultSettings(overrides = {}) {
         dailyChallenge: false,
         testMode: false,
         comboKana: false,
-        practiceCount: 0,
+        practiceCount: 20,
+        feedbackStyle: "learn",
         trialMinutes: 0.5,
         trialTarget: 20,
         comboMode: "random",
-        hiraganaRows: Object.keys(hiraganaRows),
+        hiraganaRows: ["h_a"],
         katakanaRows: [],
         statsVisible: true,
         scoresVisible: true,
@@ -67,6 +68,7 @@ function createBaseTrainerDefaultSettings(overrides = {}) {
 }
 
 function loadTrainerSettings(storageKey, defaults) {
+    window.ModeAtlasKanaLearning.initialize();
     const loaded = loadJSON(storageKey, defaults);
     return window.ModeAtlasPracticeModes.normalize({ ...defaults, ...loaded, activeBottomTab: null });
 }
@@ -187,7 +189,7 @@ function normalizeScoreHistory(data) {
 
 
 function rebuildCharMap() {
-    charMap = window.ModeAtlasKanaData.selectedKanaMap(settings);
+    charMap = window.ModeAtlasKanaLearning.selection(settings, trainerSkill());
     activeChars = Object.keys(charMap);
 
 }
@@ -246,29 +248,20 @@ function isTestModeSession() {
     return !!settings.testMode;
 }
 
-function getTestModePoolMap() {
-    const pool = { ...TEST_MODE_BASE_CHAR_MAP };
-
-    if (settings.dakuten) {
-        Object.assign(pool, ...Object.values(dakutenRows));
+function trainerSkill() { return document.body.classList.contains('ma-writing-page') ? 'writing' : 'reading'; }
+function getDailyLearningPool() {
+    return window.ModeAtlasKanaLearning.selection({...settings,confusableKana:false},trainerSkill());
+}
+function getTestModePoolMap() { return window.ModeAtlasKanaLearning.testPool(settings, trainerSkill()); }
+function canStartKanaSession() {
+    const learning=window.ModeAtlasKanaLearning;
+    if(!learning.initialize().startedAt){window.ModeAtlasVersionFile.navigate('/kana/');return false;}
+    if(settings.testMode&&!learning.testScripts(trainerSkill()).length){
+        window.ModeAtlas?.toast?.('Unlock every basic row in a script before taking its test.');
+        return false;
     }
-
-    if (settings.yoon) {
-        Object.entries(yoonRows).forEach(([key, value]) => {
-            if (!key.endsWith("_dakuten")) Object.assign(pool, value);
-        });
-        if (settings.dakuten) {
-            Object.entries(yoonRows).forEach(([key, value]) => {
-                if (key.endsWith("_dakuten")) Object.assign(pool, value);
-            });
-        }
-    }
-
-    if (settings.extendedKatakana) {
-        Object.assign(pool, ...Object.values(extendedKatakanaRows));
-    }
-
-    return pool;
+    if(settings.dailyChallenge&&!Object.keys(getDailyLearningPool()).length){window.ModeAtlas?.toast?.('Choose at least one unlocked row for your daily session.');return false;}
+    return true;
 }
 
 function buildTestSequence() {
@@ -289,9 +282,9 @@ function getCurrentKanaUnits(value = currentChar) {
 }
 
 function getAnswerMapForCurrentMode() {
-    if (isDailyChallengeSession()) return DAILY_CHALLENGE_CHAR_MAP;
+    if (isDailyChallengeSession()) return getDailyLearningPool();
     if (isTestModeSession()) return getTestModePoolMap();
-    const focused = sessionStarted ? sessionStats.study?.focusChars || [] : [];
+    const focused = sessionStarted ? (sessionStats.study?.focusChars || []).filter(char=>window.ModeAtlasKanaLearning.available(trainerSkill()).has(char)) : [];
     return focused.length ? {...charMap, ...Object.fromEntries(focused.map(kana => [kana, window.ModeAtlasKanaCoaching.reading(kana)]))} : charMap;
 }
 
@@ -435,39 +428,6 @@ function buildModifierButtons() {
     window.ModeAtlasModifierMenu?.render();
 }
 
-function buildOptionButtons() { /* Options menu removed; SRS now lives in Modifiers. */ }
-
-function buildRows(containerId, sourceRows, selectedRowsKey, displayPrefix) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    const lockedModes = isModeLocked();
-    const rows = Object.keys(sourceRows);
-    const existing = Array.from(container.children);
-    // Updating state must preserve the focused button and keyboard navigation.
-    if (existing.length === rows.length && existing.every((button, index) => button.dataset.rowKey === rows[index])) {
-        existing.forEach(button => {
-            const active = Array.isArray(settings[selectedRowsKey]) && settings[selectedRowsKey].includes(button.dataset.rowKey);
-            button.classList.toggle('active', active);
-            button.setAttribute('aria-pressed', String(active));
-            button.disabled = lockedModes;
-        });
-        return;
-    }
-    container.replaceChildren();
-    for (const row of rows) {
-        const label = row.replace(displayPrefix, "");
-        const isSelected = Array.isArray(settings[selectedRowsKey]) && settings[selectedRowsKey].includes(row);
-        const btn = makeToggleButton(label, isSelected, () => {
-            window.ModeAtlasTrainerControls.toggleRow(row, selectedRowsKey);
-        }, lockedModes);
-        btn.dataset.rowKey = row;
-        btn.dataset.rowGroup = selectedRowsKey;
-        btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-        btn.classList.toggle('active', isSelected);
-        container.appendChild(btn);
-    }
-}
-
 function heatmapColor(char) {
     const { correct, wrong } = getStats(char);
     const total = correct + wrong;
@@ -509,43 +469,23 @@ function showPopupForChar(ch, e) {
 }
 
 function getHeatmapCharsForDisplay() {
-    // The Stats heatmap shows only currently selected rows.
-    // Saved stats/times are used for those visible kana, but they do not make hidden rows appear.
-    const out = [];
-    const addMap = (map) => {
-        if (!map) return;
-        for (const ch of Object.keys(map)) {
-            if (!out.includes(ch)) out.push(ch);
-        }
-    };
-    const selectedHira = Array.isArray(settings.hiraganaRows) ? settings.hiraganaRows.filter(r => hiraganaRows[r]) : [];
-    const selectedKata = Array.isArray(settings.katakanaRows) ? settings.katakanaRows.filter(r => katakanaRows[r]) : [];
-
-    for (const row of selectedHira) {
-        addMap(hiraganaRows[row]);
-        if (settings.dakuten) addMap(dakutenRows[row]);
-        if (settings.yoon) addMap(yoonRows[row]);
-        if (settings.yoon && settings.dakuten) addMap(yoonRows[`${row}_dakuten`]);
-        if (settings.extendedKatakana) addMap(extendedKatakanaRows[row]);
-    }
-
-    for (const row of selectedKata) {
-        addMap(katakanaRows[row]);
-        if (settings.dakuten) addMap(dakutenRows[row]);
-        if (settings.yoon) addMap(yoonRows[row]);
-        if (settings.yoon && settings.dakuten) addMap(yoonRows[`${row}_dakuten`]);
-        if (settings.extendedKatakana) addMap(extendedKatakanaRows[row]);
-    }
-
-    return settings.confusableKana ? out.filter(ch => MODE_ATLAS_CONFUSABLE_KANA.has(ch)) : out;
+    // Preview the same target selection as the session, rather than a cached
+    // map from the last row practised. Re-check eligibility after account sync.
+    const learning=window.ModeAtlasKanaLearning,skill=trainerSkill();
+    const allowed=learning.available(skill);
+    const focused=window.ModeAtlasPracticeModes.fixedPool(settings)?[]:trainerController.study.focusChars();
+    const map=isDailyChallengeSession()?getDailyLearningPool():isTestModeSession()?getTestModePoolMap():learning.selection(settings,skill);
+    return (focused.length?focused:Object.keys(map)).filter(char=>allowed.has(char));
 }
 
 function renderHeatmap() {
     heatmapEl.replaceChildren();
 
-    const heatmapChars = typeof getHeatmapCharsForDisplay === "function"
-        ? getHeatmapCharsForDisplay()
-        : activeChars;
+    const heatmapChars = getHeatmapCharsForDisplay();
+    if (!heatmapChars.length) {
+        heatmapEl.append(createTrainerEl('p', 'ma-kana-muted', 'Choose an available row to see your practice accuracy.'));
+        return;
+    }
 
     for (const ch of heatmapChars) {
         const cell = document.createElement("button");

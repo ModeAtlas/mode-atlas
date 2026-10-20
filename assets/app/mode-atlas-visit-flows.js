@@ -30,16 +30,10 @@
   const hasArr=k=>{const v=j(k,null);return Array.isArray(v)&&v.length>0};
   const studyDate=(d=new Date())=>{const x=new Date(d);if(x.getHours()<4)x.setDate(x.getDate()-1);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
   const BRANCH_PATHS=new Set(['/kana/','/reading/','/writing/','/results/','/wordbank/']);
-  const KANA_SETUP_PATHS=new Set(['/kana/','/reading/','/writing/']);
   const onboardingComplete=()=>storeGet(K.complete)==='true'||storeGet(K.first)==='true';
-  const legacyKanaSetupAtLoad=storeGet(K.first)==='true'&&(hasObj('settings')||hasObj('reverseSettings')||Boolean(storeGet('modeAtlasOnboardingPreset'))||Boolean(storeGet('modeAtlasActivePreset'))||Boolean(storeGet('modeAtlasDefaultPreset')));
-  if(legacyKanaSetupAtLoad&&storeGet(K.kanaSetup)!=='true')storeSet(K.kanaSetup,'true');
-  const kanaSetupComplete=()=>storeGet(K.kanaSetup)==='true';
   function branchDestination(raw){try{const u=new URL(raw||location.href,location.origin);return u.origin===location.origin&&BRANCH_PATHS.has(u.pathname)?u.pathname+u.search+u.hash:''}catch{return''}}
-  function destinationPath(raw){try{return new URL(branchDestination(raw)||raw||location.href,location.origin).pathname}catch{return''}}
-  function requiresKanaSetup(raw){return KANA_SETUP_PATHS.has(destinationPath(raw))}
-  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/writing/'))return'Kana Writing';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Reading';return'Kana Trainer'}
-  function needsSetup(raw){return !onboardingComplete()||(requiresKanaSetup(raw)&&!kanaSetupComplete())}
+  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/writing/'))return'Kana Recall';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Read';return'Kana Trainer'}
+  function needsSetup(raw){return !onboardingComplete()}
   function vEl(tag, className='', text=''){const el=document.createElement(tag);if(className)el.className=className;if(className==='ma-visit-title')el.id='maVisitTitle';if(text!=='')el.textContent=String(text);return el}
   function vBtn(className='', text=''){const btn=vEl('button',className,text);btn.type='button';return btn}
   function vLink(className='', text='', href=''){const a=vEl('a',className,text);a.href=href;return a}
@@ -54,7 +48,7 @@
     if(!['reading','writing','wordBank'].includes(kind))return;
     const obj=kind==='wordBank'
       ? {branch:'Word Bank',page:'Word Bank',href:'wordbank.html',mode:'Vocabulary Review'}
-      : {branch:'Kana Trainer',page:kind==='writing'?'Writing Practice':'Reading Practice',href:kind==='writing'?'reverse.html':'default.html',mode:mode(kind)};
+      : {branch:'Kana Trainer',page:kind==='writing'?'Recall':'Read',href:kind==='writing'?'reverse.html':'default.html',mode:mode(kind)};
     storeSet(K.lastStudied,String(Date.now()));
     storeSetJSON(K.lastMode,obj);
     window.dispatchEvent(new CustomEvent('modeAtlasActivityChanged'));
@@ -116,121 +110,26 @@
     storeSet('modeAtlasLegalAcceptedAt',String(Date.now()));
     storeSet('modeAtlasLegalVersion','2026-09-30');
   }
-  function markKanaSetupComplete(){
-    storeSet(K.kanaSetup,'true');
-    storeSet(K.first,'true');
-  }
   function first(destination,options={}){
     ensure();
     const target=branchDestination(destination)||branchDestination(storeGet(K.pending))||'/kana/';
     storeSet(K.pending,target);
-    const force=options.force===true;
-    const requireLegal=force||!onboardingComplete();
-    const requireKana=requiresKanaSetup(target)&&(force||!kanaSetupComplete());
-    if(!requireLegal&&!requireKana){storeRemove(K.pending);navigateApp(target);return;}
-
+    if(!options.force&&onboardingComplete()){storeRemove(K.pending);navigateApp(target);return;}
     const c=document.getElementById('maVisitContent');
-    const presets=[
-      ['starter','Starter','あ row + hint mode. Best if kana is brand new.'],
-      ['intermediate','Intermediate','All hiragana rows with hints off.'],
-      ['advanced','Advanced','Hiragana, katakana, and dakuten.'],
-      ['pro','Pro','Everything enabled, including yōon and extended katakana.']
-    ];
-    c.replaceChildren();
-
-    let copy='Review the Privacy Policy and Terms of Use, then continue to '+destinationLabel(target)+'.';
-    if(requireKana&&requireLegal) copy='Choose your Kana Trainer starting level, agree to the terms, then continue to '+destinationLabel(target)+'.';
-    else if(requireKana) copy='Choose the Kana Trainer starting level that feels right for you. You can change it whenever you want.';
-    c.append(
-      vEl('div','ma-visit-kicker',requireKana?'Kana Trainer setup':'Mode Atlas setup'),
-      vEl('h2','ma-visit-title',requireKana&&!requireLegal?'Set up Kana Trainer':'Welcome to Mode Atlas'),
-      vEl('p','ma-visit-copy',copy)
-    );
-
-    let selected='';
-    if(requireKana){
-      const panel=vEl('div','ma-card ma-card--soft ma-visit-panel');
-      panel.append(vEl('div','ma-visit-label','Starting level'));
-      const presetGrid=vEl('div','ma-visit-presets');
-      presets.forEach(preset=>{
-        const btn=vBtn('ma-visit-preset');
-        btn.dataset.maOnboardingPreset=preset[0];
-        btn.setAttribute('aria-pressed','false');
-        btn.append(vEl('span','',preset[1]),vEl('small','',preset[2]));
-        presetGrid.append(btn);
-      });
-      panel.append(presetGrid);
-      c.append(panel);
-    }
-
-    let agree=null;
-    if(requireLegal){
-      const legal=vEl('div','ma-visit-legal');
-      const links=vEl('div','ma-visit-legal-links');
-      const privacy=vLink('', 'Privacy Policy', legalUrl('privacy'));
-      privacy.target='_blank';privacy.rel='noopener';
-      const terms=vLink('', 'Terms of Use', legalUrl('terms'));
-      terms.target='_blank';terms.rel='noopener';
-      links.append(privacy,terms);
-      const label=vEl('label','ma-check ma-visit-check');
-      agree=document.createElement('input');
-      agree.type='checkbox';
-      agree.dataset.legalAgree='';
-      label.append(agree,vEl('span','','I agree to the Privacy Policy and Terms of Use.'));
-      legal.append(links,label);
-      c.append(legal);
-    }
-
-    const err=vEl('div','ma-status ma-status--error ma-visit-error','Could not save your starting level. Please try again.');
-    err.dataset.setupError='';
-    const actions=vEl('div','ma-visit-actions');
-    const begin=vBtn('ma-button ma-button--primary ma-visit-btn',`Continue to ${destinationLabel(target)}`);
-    begin.dataset.begin='';
-    actions.append(begin);
-    c.append(err,actions);
-
-    function refresh(){
-      const ready=(!requireKana||Boolean(selected))&&(!requireLegal||Boolean(agree?.checked));
-      begin.disabled=!ready;
-      begin.setAttribute('aria-disabled',ready?'false':'true');
-      begin.classList.toggle('ready',ready);
-      c.classList.toggle('ma-visit-ready',ready);
-      if(ready)err.classList.remove('show');
-    }
-    if(requireKana){
-      c.addEventListener('click',event=>{
-        const preset=event.target.closest('[data-ma-onboarding-preset]');
-        if(!preset||!c.contains(preset))return;
-        event.preventDefault();
-        selected=preset.getAttribute('data-ma-onboarding-preset')||'';
-        c.querySelectorAll('[data-ma-onboarding-preset]').forEach(btn=>{
-          const on=btn===preset;
-          btn.classList.toggle('selected',on);
-          btn.setAttribute('aria-pressed',on?'true':'false');
-        });
-        refresh();
-      });
-    }
-    if(agree){agree.addEventListener('change',refresh);agree.addEventListener('input',refresh);}
+    c.replaceChildren(vEl('div','ma-visit-kicker','Mode Atlas setup'),vEl('h2','ma-visit-title','Welcome to Mode Atlas'),vEl('p','ma-visit-copy','Review the Privacy Policy and Terms of Use, then continue.'));
+    const legal=vEl('div','ma-visit-legal'),links=vEl('div','ma-visit-legal-links');
+    for(const [kind,label]of [['privacy','Privacy Policy'],['terms','Terms of Use']]){const link=vLink('',label,legalUrl(kind));link.target='_blank';link.rel='noopener';links.append(link);}
+    const label=vEl('label','ma-check ma-visit-check'),agree=document.createElement('input');agree.type='checkbox';agree.dataset.legalAgree='';label.append(agree,vEl('span','','I agree to the Privacy Policy and Terms of Use.'));legal.append(links,label);
+    const error=vEl('p','ma-status ma-status--error');error.setAttribute('role','status');
+    const actions=vEl('div','ma-visit-actions'),begin=vBtn('ma-button ma-button--primary ma-visit-btn',`Continue to ${destinationLabel(target)}`);begin.dataset.begin='';begin.disabled=true;actions.append(begin);c.append(legal,error,actions);
+    agree.addEventListener('change',()=>{begin.disabled=!agree.checked;});
     begin.addEventListener('click',()=>{
       if(begin.disabled)return;
-      if(requireKana){
-        const applied=window.ModeAtlasPresets?.apply?.(selected,{target:'both',source:'onboarding'});
-        if(!applied){err.classList.add('show');return;}
-        markKanaSetupComplete();
-      }
-      if(requireLegal)markLegalComplete();
-      storeSet(K.return,studyDate());
-      if(requireLegal){sessionStorage.setItem('modeAtlasTourPending','1');window.ModeAtlas?.markWhatsNewSeen?.();}
-      const next=branchDestination(storeGet(K.pending))||target;
-      storeRemove(K.pending);
-      closeModal(true,false);
-      if(requireLegal){try{document.dispatchEvent(new CustomEvent('ma:onboarding-complete'))}catch{}}
-      if(requireKana){try{document.dispatchEvent(new CustomEvent('ma:kana-setup-complete'))}catch{}}
-      navigateApp(next);
-    });
-    openModal(true);
-    refresh();
+      try{window.ModeAtlasStorage.transaction(()=>{markLegalComplete();storeSet(K.first,'true');storeSet(K.return,studyDate());storeRemove(K.pending);});}
+      catch(_){error.textContent='Your choice could not be saved. Please try again.';return;}
+      sessionStorage.setItem('modeAtlasTourPending','1');window.ModeAtlas?.markWhatsNewSeen?.();closeModal(true,false);
+      document.dispatchEvent(new CustomEvent('ma:onboarding-complete'));navigateApp(target);
+    });openModal(true);
   }
   function ret(){
     ensure();
@@ -307,7 +206,7 @@
     const target=branchDestination(link.href);
     // Branch-specific setup belongs to the destination page so its own module
     // dependencies are present. Link interception only owns general Mode Atlas setup.
-    if(!target||onboardingComplete()||requiresKanaSetup(target))return;
+    if(!target||onboardingComplete())return;
     event.preventDefault();
     const cloudReady=await waitForInitialCloudState();
     if(!cloudReady&&window.KanaCloudSync?.getUser?.()){navigateApp(target);return;}

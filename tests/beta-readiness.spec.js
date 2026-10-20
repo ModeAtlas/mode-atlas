@@ -14,23 +14,21 @@ async function launch(page,path='/',firstUse=false){
   },firstUse);
   await page.goto(path);await expect(page.locator('#maLoadingScreen')).toBeHidden();
 }
-test('first-use tour hands off to an unstarted ten-question set without a sign-in requirement',async({page})=>{
+test('first-use tour hands off to the beginner-or-placement choice without a sign-in requirement',async({page})=>{
   await launch(page,'/',true);
   const tour=page.getByRole('dialog',{name:'A quick look around'});
   await expect(tour).toBeVisible();
   for(let i=0;i<6;i++)await tour.getByRole('button',{name:'Next',exact:true}).click();
   await page.evaluate(()=>document.documentElement.style.fontSize='22px');
-  await expect(tour.getByRole('button',{name:'Try a short set'})).toBeVisible();
+  await expect(tour.getByRole('button',{name:'Choose my starting point'})).toBeVisible();
   const bounds=await tour.evaluate(node=>({left:node.getBoundingClientRect().left,right:node.getBoundingClientRect().right,width:innerWidth,overflow:node.scrollWidth-node.clientWidth}));
   expect(bounds.left).toBeGreaterThanOrEqual(0);expect(bounds.right).toBeLessThanOrEqual(bounds.width);expect(bounds.overflow).toBeLessThanOrEqual(1);
   await page.screenshot({path:test.info().outputPath('first-set-handoff.png')});
-  await tour.getByRole('button',{name:'Try a short set'}).click();
-  await expect(page).toHaveURL(/\/reading\/$/);
-  await expect(page.locator('#startBtn')).toBeVisible();
-  expect(await page.evaluate(()=>sessionStarted)).toBe(false);
+  await tour.getByRole('button',{name:'Choose my starting point'}).click();
+  await expect(page).toHaveURL(/\/kana\/$/);
+  await expect(page.getByRole('button',{name:/Start as a beginner/})).toBeVisible();
+  expect(await page.evaluate(()=>ModeAtlasKanaLearning.read().startedAt)).toBe(0);
   expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);
-  expect(await page.evaluate(()=>settings.practiceCount)).toBe(10);
-  expect(await page.evaluate(()=>settings.hiraganaRows)).toEqual(['h_a']);
 });
 test('feedback previews safe details, requires opt-in and preserves its draft after cancel',async({page})=>{
   await launch(page);
@@ -71,7 +69,7 @@ test('paused cloud sync offers one retry and replaces the failure with confirmed
   await expect(page.locator('#profileSyncChip')).toHaveText('Synced');
 });
 test('native hardware input supports editing and uses the shared answer checker',async({page})=>{
-  await launch(page,'/reading/?practice=10&starter=starter');await page.locator('#startBtn').click();
+  await require('./helpers/kana-fixture')(page);await launch(page,'/reading/?practice=10&starter=starter');await page.locator('#startBtn').click();
   await page.evaluate(()=>{currentChar='し';charMap['し']='shi';hiraganaEl.textContent='し';});
   const input=page.locator('#input');await input.focus();await page.keyboard.type('sh');await expect(input).toHaveValue('sh');
   await page.keyboard.press('Backspace');await expect(input).toHaveValue('s');

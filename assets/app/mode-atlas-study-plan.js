@@ -29,6 +29,10 @@
   }
   function goalAction(goal,goals=[]){
     if(!goal||goal.value>=goal.target)return null;
+    if(goal.metric==='kana.learned')return {href:'/kana/?view=path',label:'Learn a row'};
+    if(goal.metric==='kana.improved')return {href:'/kana/?view=mastery',label:'Explore mastery'};
+    if(goal.metric==='kana.testScore')return {href:'/kana/?view=tests',label:'Open Kana tests'};
+    if(goal.metric==='kanji.testScore')return {href:'/kanji/',label:'Open Kanji tests'};
     if(goal.branch==='kanji')return {href:'/kanji/',label:'Practise Kanji'};
     if(goal.metric==='study.goals'){
       const next=goals.find(item=>item.period==='daily'&&item.value<item.target);
@@ -40,10 +44,10 @@
       mode=routine.todayReading>=10?'writing':'reading';
     }
     const params=new URLSearchParams({practice:'20'});
-    if(goal.assisted){params.set('starter','starter');params.set('hints','on');}
+    if(goal.assisted){params.set('hints','on');}
     else if(['kana.independent','kana.streak','kana.precise','kana.tests','kana.broad'].includes(goal.metric))params.set('hints','off');
     if(goal.metric==='kana.daily'){params.delete('practice');params.set('mode','daily');}
-    if(goal.metric==='kana.tests'){params.delete('practice');params.set('mode','test');}
+    if(goal.metric==='kana.tests')return {href:'/kana/?view=tests',label:'Open Kana tests'};
     let chars;
     if(goal.metric==='kana.broad'||(goal.metric==='kana.hiragana'&&!goal.assisted))chars=root.ModeAtlasKanaData.collections.hiragana;
     if(goal.metric==='kana.katakana')chars=root.ModeAtlasKanaData.collections.katakana;
@@ -58,12 +62,14 @@
       }
     }
     if(chars)params.set('kana',chars.join(','));
-    return {href:`/${mode}/?${params}`,label:goal.metric==='kana.daily'?'Open Daily Challenge':goal.metric==='kana.tests'?'Open formal test':`Practise ${mode==='writing'?'Writing':'Reading'}`};
+    return {href:`/${mode}/?${params}`,label:goal.metric==='kana.daily'?'Open Daily Challenge':goal.metric==='kana.tests'?'Open formal test':`Practise ${mode==='writing'?'Recall':'Read'}`};
   }
   function kanjiReviews(){
     return (root.ModeAtlasKanjiState?.reviewSets()||[]).map(({level,skill,count})=>({due:count,label:`Kanji N${level} · ${skill==='pronunciation'?'Pronunciation':'Meaning'}`,href:'/kanji/?'+new URLSearchParams({level:String(level),practice:skill,focus:'due'})}));
   }
   function recommend(input = {}){
+    const learning=root.ModeAtlasKanaLearning;
+    if(learning&&!learning.initialize().startedAt)return Object.freeze({mode:'reading',title:'Find your starting point',reason:'Take a short check or begin with the A-row.',focus:false,count:0,meta:'Kana · Your learning path',href:'/kana/'});
     const reading = evidence(input.readingStats, availableChars(input.readingSettings));
     const writing = evidence(input.writingStats, availableChars(input.writingSettings));
     let mode = input.lastMode === 'writing' ? 'writing' : 'reading';
@@ -77,7 +83,7 @@
       focus = true; title = mode === 'writing' ? 'Recall tricky kana' : 'Read tricky kana';
       reason = `${count} ${count === 1 ? 'kana has' : 'kana have'} been tricky in your selected set. Give them another look.`;
     } else if (reading.answered >= 20 && writing.answered < reading.answered / 4) {
-      mode = 'writing'; title = 'Try writing'; reason = 'You have been reading kana. Try matching sounds back to characters.';
+      mode = 'writing'; title = 'Try Recall'; reason = 'You have been reading kana. Try matching sounds back to characters.';
     }
     const readingDue=root.ModeAtlasReview?.due(input.readingReview||{})||[];
     const writingDue=root.ModeAtlasReview?.due(input.writingReview||{})||[];
@@ -88,7 +94,7 @@
     const params = new URLSearchParams({practice: '10'});
     const newLearner = !input.readingSettings && !input.writingSettings
       && !Object.keys(input.readingStats || {}).length && !Object.keys(input.writingStats || {}).length;
-    if (newLearner && mode === 'reading') params.set('starter', 'starter');
+    if (newLearner && mode === 'reading') params.set('hints', 'on');
     if (focus) params.set('focusWeak', '1');
     return Object.freeze({mode, title, reason, focus, count: 10, meta: '10 questions · At your pace', href: `/${mode}/?${params}`});
   }

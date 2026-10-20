@@ -146,6 +146,7 @@ test('web pronunciation uses a Japanese voice and cancels requests waiting for v
   const root={setTimeout,clearTimeout,ModeAtlasEnv:{},SpeechSynthesisUtterance:class{constructor(text){this.text=text;}},AtlasPlatform:{registerAdapter(_name,value){adapter=value;}},speechSynthesis:{getVoices:()=>voices,addEventListener(_name,fn){listener=fn;},removeEventListener(){},cancel(){},speak(value){played.push(value);value.onstart();}}};root.window=root;
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../assets/platform/mode-atlas-platform-web.js'),'utf8'),root);
   const waiting=adapter.speakJapanese('いち',false);adapter.stopSpeech();voices=[{lang:'ja-JP'}];listener();await waiting;assert.equal(played.length,0);
-  assert.equal((await adapter.speakJapanese('に',true)).played,true);assert.equal(played[0].text,'に');assert.equal(played[0].voice.lang,'ja-JP');assert.equal(played[0].rate,.65);
-  voices=[{lang:'en-US'}];assert.equal((await adapter.speakJapanese('さん',false)).played,false);assert.equal(played.length,1);
+  assert.equal((await adapter.speakJapanese('に',true)).played,true);assert.equal(played[0].text,'に');assert.equal(played[0].voice.lang,'ja-JP');assert.equal(played[0].rate,.45);
+  await adapter.speakJapanese('に',false);assert.equal(played[1].rate,1);assert.ok(played[0].rate<played[1].rate*.5);
+  voices=[{lang:'en-US'}];assert.equal((await adapter.speakJapanese('さん',false)).played,false);assert.equal(played.length,2);
 });

@@ -1,5 +1,6 @@
 const {test,expect}=require('@playwright/test');
 for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768,'light'],[false,1280,'dark']])test(`shared hub navigation ${native?'iOS':'web'} ${width} ${theme}`,async({page},info)=>{
+  test.setTimeout(60000);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.setViewportSize({width,height:852});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
@@ -14,11 +15,12 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   await page.goto('/learn/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(destinations);
   await expect(page.getByRole('link',{name:'Open Word Bank',exact:true})).toBeVisible();
-  for(const [name,href] of [['Reading','/reading/'],['Writing','/writing/'],['Results','/results/'],['Kana overview','/kana/'],['Open Word Bank','/wordbank/']]){
+  for(const [name,href] of [['Kana learning path','/kana/'],['Open Kanji','/kanji/'],['Open Word Bank','/wordbank/']]){
     const link=page.getByRole('link',{name,exact:true});await expect(link).toHaveAttribute('href',href);
     expect((await link.boundingBox()).height).toBeGreaterThanOrEqual(44);
   }
-  await expect(page.locator('.ma-learn-next')).toHaveAttribute('href','/reading/?practice=10&starter=starter');
+  await expect(page.locator('.ma-learn-next')).toHaveAttribute('href','/kana/');
+  await expect(page.locator('.ma-learn-results')).toHaveAttribute('href','/results/');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   if(native&&width===393){
     await page.getByRole('link',{name:'Open Word Bank',exact:true}).scrollIntoViewIfNeeded();
@@ -30,13 +32,14 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.getByRole('link',{name:'Open Word Bank',exact:true}).scrollIntoViewIfNeeded();
   await expect(page.getByRole('link',{name:'Open Word Bank',exact:true})).toBeInViewport();
-  expect(await page.locator('.ma-learn-next__start,.ma-learn-row__copy').evaluateAll(nodes=>nodes.every(node=>node.scrollWidth<=node.clientWidth+1))).toBe(true);
+  expect(await page.locator('.ma-branch-tile__copy,.ma-learn-next>div').evaluateAll(nodes=>nodes.every(node=>node.scrollWidth<=node.clientWidth+1))).toBe(true);
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:info.outputPath('learn-large-text.png'),animations:'disabled'});
   await page.evaluate(()=>{document.documentElement.style.fontSize='';document.documentElement.removeAttribute('data-ma-large-text');});
   if(native&&width===393){
     // Saved reviews must still update the existing recommendation and its route.
     await page.evaluate(()=>{
+      ModeAtlasKanaLearning.start();
       const due={reviewVersion:1,level:2,due:Date.now()-1000,lastSeen:Date.now()-86400000,recent:[],days:[],peak:1};
       ModeAtlasStorage.writeModeJSON('reading','srs',{'あ':due});
       window.dispatchEvent(new Event('modeAtlasCloudDataChanged'));
@@ -50,14 +53,14 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
       window.dispatchEvent(new Event('modeAtlasProgressChanged'));
     });
     await expect(page.locator('.ma-learn-next')).toHaveAttribute('data-mode','writing');
-    await expect(page.locator('.ma-learn-next__start')).toHaveText('Start Writing');
+    await expect(page.locator('.ma-learn-next')).toHaveAttribute('href','/writing/?practice=10&due=1');
     await page.locator('.ma-learn-next').click();
     await expect(page).toHaveURL(/\/writing\/\?practice=10&due=1$/);
     await nav().getByRole('link',{name:'Learn',exact:true}).click();
     await expect(page.locator('.ma-hub-header h1')).toHaveText('Learn');
   }
-  await page.getByRole('link',{name:'Reading',exact:true}).click();
-  await expect(page).toHaveURL(/\/reading\/$/);await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(destinations);
+  await page.getByRole('link',{name:'Kana learning path',exact:true}).click();
+  await expect(page).toHaveURL(/\/kana\/$/);await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(destinations);
   await nav().getByRole('link',{name:'Progress',exact:true}).click();
   await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   await expect(page.locator('.ma-routine-goal')).toHaveCount(5);

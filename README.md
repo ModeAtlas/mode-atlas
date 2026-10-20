@@ -6,8 +6,9 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.105.0
+Version: 2.112.0
 
+Complete Kana path, personal goals, Profile and UI review: [2.112.0](docs/development-2.112.0.md).
 Personal home, Evergreen, weekly friend discovery and streak balance: [2.100.0](docs/development-2.100.0.md).
 Friends, sync and full shop: [2.99.0](docs/development-2.99.0.md).
 Development and release requirements for both platforms: [Web and iOS architecture](docs/ios-web-architecture.md).

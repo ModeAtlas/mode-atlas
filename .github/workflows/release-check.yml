@@ -149,8 +149,6 @@ jobs:
         run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Fetch website colour baseline
-        run: git fetch --no-tags --depth=1 origin "$(cat tests/fixtures/web-theme-baseline.txt)"
       - name: Prepare offline fonts for simulated iOS
         run: python3 build_ios_fonts.py
       - name: Run web and iOS polish shard

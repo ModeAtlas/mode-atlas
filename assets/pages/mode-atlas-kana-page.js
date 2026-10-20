@@ -1,720 +1,283 @@
-// Kana is local-first. cloud-sync.js owns Firebase/auth/hydration globally;
-// this page only rerenders when cloud-sync reports that save data actually changed.
-
-(function ModeAtlasKanaHub(){
-    const M = () => window.ModeAtlasKanaMetrics;
-    const Store = window.ModeAtlasStorage;
-    const $ = (sel, root = document) => root.querySelector(sel);
-
-    function storeGet(key, fallback = '') {
-        return Store?.get?.(key, fallback) ?? localStorage.getItem(key) ?? fallback;
+/* Kana branch navigation and learning path. Curriculum, assessments, practice
+   configuration and mastery each have a shared owner outside this page. */
+(function(root){
+  'use strict';
+  const host=document.getElementById('maKanaLearning');if(!host)return;
+  const L=root.ModeAtlasKanaLearning,P=root.ModeAtlasKanaPlacement,Store=root.ModeAtlasStorage;
+  const params=new URLSearchParams(location.search);
+  let view=['learn','path','practice','mastery','tests'].includes(params.get('view'))?params.get('view'):'learn';
+  let script=L.scripts.includes(params.get('script'))?params.get('script'):'hiragana',skill=L.skills.includes(params.get('skill'))?params.get('skill'):'reading';
+  let lesson=null,placement=null,placementSetup=false,practiceSettings=null,customizing=false,placementKeyboard=null;
+  const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
+  function run(action){try{action();}catch(error){root.ModeAtlasToast?.show?.(error.message);const status=host.querySelector('[role=status]')||el('p','ma-status ma-status--error');status.setAttribute('role','status');status.textContent=error.message;if(!status.parentNode)host.append(status);}}
+  function button(label,action,primary=false){const b=el('button','ma-button '+(primary?'ma-button--primary':'ma-button--ghost'),label);b.type='button';b.addEventListener('click',()=>run(action));return b;}
+  function link(label,href,primary=false){const a=el('a','ma-button '+(primary?'ma-button--primary':'ma-button--ghost'),label);a.href=href;return a;}
+  function navigate(href){root.ModeAtlasVersionFile?.navigate?root.ModeAtlasVersionFile.navigate(href):location.assign(href);}
+  function segmented(label,items,value,onChange){const group=el('div','ma-kana-segments');group.setAttribute('role','group');group.setAttribute('aria-label',label);for(const [id,text]of items){const b=button(text,()=>onChange(id));b.setAttribute('aria-pressed',String(id===value));group.append(b);}return group;}
+  function title(kicker,heading,copy){const h=el('header','ma-kana-page-heading');h.append(el('span','ma-kicker',kicker),el('h1','',heading));if(copy)h.append(el('p','ma-kana-muted',copy));host.append(h);}
+  function url(){const q=new URLSearchParams({view,script,skill});history.replaceState(null,'','/kana/?'+q);}
+  function chooseView(next){view=next;lesson=null;placement=null;placementSetup=false;practiceSettings=null;url();render();root.scrollTo({top:0,behavior:'instant'});}
+  function openPlacement(){placement=P.read();if(placement&&!placement.finished){render();return;}placement=null;placementSetup=true;render();}
+  function startBeginner(){L.start('beginner');placement=null;placementSetup=false;view='learn';script='hiragana';skill='reading';url();render();}
+  function welcome(){
+    title('Kana','Find your starting point','Learn the shapes, recall the sounds and write at your own pace.');
+    const options=el('div','ma-kana-start-options');
+    const assess=button('Take a starting-point test',openPlacement,true);assess.append(el('small','','Discover which rows are right for you.'));
+    const beginner=button('Start as a beginner',startBeginner);beginner.append(el('small','','Begin with the A-row. No test needed.'));
+    options.append(assess,beginner);host.append(options);
+  }
+  function assessSetup(){
+    title('Starting point','Which scripts do you know?','The check adapts separately for Read and Recall. You can finish whenever you like.');
+    let selected='hiragana';const switcher=segmented('Placement scripts',[['hiragana','Hiragana'],['katakana','Katakana'],['both','Both']],selected,value=>{selected=value;for(const b of switcher.children)b.setAttribute('aria-pressed',String(b.textContent===(value==='both'?'Both':value==='hiragana'?'Hiragana':'Katakana')));});
+    host.append(switcher,button('Begin check',()=>{placement=Store.transaction(()=>P.begin(selected==='both'?L.scripts:[selected]));placementSetup=false;render();},true),button('Start as a beginner',startBeginner));
+  }
+  function renderPlacement(){
+    if(placement.finished){
+      title('Starting point','Your learning path is ready',`${placement.answered} questions explored. Continue from the rows available in each skill.`);
+      const list=el('div','ma-kana-placement-summary');const state=L.read(),evidence=L.snapshot();
+      for(const track of placement.tracks){const rows=L.path(track.script,track.skill,state,evidence).filter(r=>r.group==='base'),next=rows.find(r=>r.unlocked&&!r.complete)||rows.at(-1);list.append(el('p','',`${track.script==='hiragana'?'Hiragana':'Katakana'} · ${L.names[track.skill]}: ${next.name}`));}
+      host.append(list,button('Open my learning path',()=>{placement=null;Store.remove(P.KEY);chooseView('learn');},true));return;
     }
-
-    function storeSet(key, value) {
-        return Store?.set?.(key, value) ?? localStorage.setItem(key, String(value));
+    const q=P.question(placement);if(!q){placement=P.finish(placement);render();return;}
+    title('Starting point',`${L.names[q.skill]} · ${q.script==='hiragana'?'Hiragana':'Katakana'}`,`${placement.answered} answered · ${q.row.name}`);
+    host.lastElementChild.classList.add('ma-kana-assessment-heading');
+    const stage=el('section','ma-kana-check');stage.setAttribute('aria-label','Placement question');let focusTarget=null;
+    const prompt=el('div','ma-kana-check-prompt',q.skill==='reading'?q.char:q.roman);prompt.lang=q.skill==='reading'?'ja':'en';stage.append(prompt);
+    if(q.skill==='reading'){
+      const form=el('form'),input=el('input','ma-input');form.className='ma-kana-placement-form';
+      input.setAttribute('aria-label','Reading answer');input.autocomplete='off';input.spellcheck=false;input.autocapitalize='none';input.maxLength=20;input.placeholder='Type the sound';input.enterKeyHint='go';
+      if(placement.feedback){input.value=q.roman;input.disabled=true;}
+      form.append(input);
+      if(placement.feedback){const feedback=el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. We’ll start this skill around here.`);feedback.setAttribute('role','status');form.append(feedback);}
+      if(root.ModeAtlasIOSKeyboard){const keys=el('div','ma-kana-placement-keyboard');form.append(keys);placementKeyboard=root.ModeAtlasIOSKeyboard.mount({input,container:keys,onSubmit:()=>form.requestSubmit()});}
+      const actions=el('div','ma-kana-check-actions'),submit=el('button','ma-button ma-button--primary',placement.feedback?'Continue':'Check answer');submit.type='submit';actions.append(submit);
+      if(!placement.feedback)actions.append(button('I don’t know yet',()=>{placement=Store.transaction(()=>P.answer(placement,''));render();}));form.append(actions);
+      form.addEventListener('submit',event=>{event.preventDefault();if(event.isComposing)return;if(placement.feedback||input.value.trim())run(()=>{placement=Store.transaction(()=>placement.feedback?P.advance(placement):P.answer(placement,input.value));render();});});stage.append(form);
+      focusTarget=placement.feedback?submit:input;
+    }else if(placement.feedback){
+      stage.append(el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. We’ll start this skill around here.`));
+      stage.append(button('Continue',()=>{placement=Store.transaction(()=>P.advance(placement));render();},true));
+    }else{
+      const choices=el('div','ma-kana-placement-choices');choices.setAttribute('role','group');choices.setAttribute('aria-label','Kana answers');
+      for(const char of P.choices(placement))choices.append(button(char,()=>{placement=Store.transaction(()=>P.answer(placement,char));render();}));stage.append(choices);
     }
-
-    function loadJSON(key, fallback) {
-        try {
-            if (window.ModeAtlasStorage?.json) return window.ModeAtlasStorage.json(key, fallback);
-            const raw = storeGet(key, null);
-            return raw ? JSON.parse(raw) : fallback;
-        } catch {
-            return fallback;
-        }
+    if(q.skill!=='reading'&&!placement.feedback)stage.append(button('I don’t know yet',()=>{placement=Store.transaction(()=>P.answer(placement,''));render();}));
+    const finish=button('Finish with my progress so far',()=>{placement=Store.transaction(()=>P.finish(placement));render();});finish.className='ma-kana-text-action ma-kana-placement-finish';host.append(stage,finish);focusTarget?.focus({preventScroll:true});
+  }
+  function renderLesson(){
+    const char=lesson.row.chars[lesson.index],roman=L.map[char];title(`${lesson.row.name} · ${lesson.index+1} of ${lesson.row.chars.length}`,'Meet the character');
+    const panel=el('section','ma-kana-lesson'),shape=el('div','ma-kana-lesson-shape',char);shape.lang='ja';
+    panel.append(shape,el('strong','ma-kana-lesson-reading',roman),root.ModeAtlasPronunciation.controls(char));
+    panel.append(el('p','',root.ModeAtlasKanaCoaching.explain(char).note));
+    const actions=el('div','ma-kana-actions');actions.append(button('See the strokes',()=>root.ModeAtlasHandwriting.open(char,{pronunciation:char})));
+    actions.append(button(lesson.index+1===lesson.row.chars.length?'Practise this row':'Next character',()=>{
+      L.introduce(char);if(lesson.index+1<lesson.row.chars.length){lesson.index++;render();}
+      else navigate(L.practiceUrl(skill,lesson.row.chars,{hints:'off'}));
+    },true));panel.append(actions);host.append(panel,button('Back to Kana',()=>{lesson=null;render();}));
+  }
+  function controls(includeHand=true){
+    host.append(segmented('Kana script',[['hiragana','Hiragana'],['katakana','Katakana']],script,value=>{script=value;practiceSettings=null;url();render();}));
+    host.append(segmented('Kana skill',(includeHand?L.skills:['reading','writing']).map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();}));
+  }
+  function learningPath(){
+    host.append(button('Back to Kana',()=>chooseView('learn')));
+    title('Kana','Your learning path','Read, recall and write, one row at a time.');controls();
+    const state=L.read(),evidence=L.snapshot(),rows=L.path(script,skill,state,evidence),next=rows.find(r=>r.unlocked&&!r.complete)||rows.at(-1);
+    const current=el('section','ma-kana-next');current.append(el('span','ma-kicker',next.groupName),el('h2','',`${next.name} · ${L.names[skill]}`),el('p','ma-kana-next-chars',next.chars.join(' ')),el('p','ma-kana-muted',skill==='handwriting'?'Complete each character without its guide to open the next row.':`${next.ready} of ${next.chars.length} familiar · independent practice opens the next row.`));
+    const actions=el('div','ma-kana-actions');
+    if(skill!=='handwriting')actions.append(button('Learn this row',()=>{lesson={row:next,index:0};render();},true));
+    actions.append(link(skill==='handwriting'?'Practise handwriting':'Practise '+L.names[skill],L.practiceUrl(skill,next.chars),skill==='handwriting'));current.append(actions);host.append(current);
+    const due=skill==='handwriting'?[]:root.ModeAtlasReview.due(evidence[skill+'Review']).filter(c=>L.available(skill,state,evidence).has(c));
+    if(due.length)host.append(link(`Review ${due.length} ready kana`,L.practiceUrl(skill,due,{hints:'off'})));
+    let group='';for(const row of rows){
+      if(row.group!==group){group=row.group;host.append(el('h2','ma-kana-group-title',row.groupName));}
+      const item=el('div','ma-kana-path-row');item.dataset.locked=String(!row.unlocked);item.dataset.complete=String(row.complete);
+      const copy=el('div');copy.append(el('strong','',row.name),el('span','ma-kana-path-chars',row.chars.join(' ')));
+      const action=button(row.complete?'Revisit':row.unlocked?'Learn':'Locked',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,row.chars));else{lesson={row,index:0};render();}});action.disabled=!row.unlocked;item.append(copy,action);host.append(item);
     }
-
-    function loadNumber(key, fallback = 0) {
-        try {
-            if (window.ModeAtlasStorage?.number) return window.ModeAtlasStorage.number(key, fallback);
-            const value = Number(storeGet(key, fallback));
-            return Number.isFinite(value) ? value : fallback;
-        } catch {
-            return fallback;
-        }
+    host.append(button('Check my starting point',openPlacement));
+  }
+  function nextRow(direction=skill,alphabet=script,state=L.read(),evidence=L.snapshot()){
+    const rows=L.path(alphabet,direction,state,evidence);
+    return rows.find(row=>row.unlocked&&!row.complete)||rows.at(-1);
+  }
+  function activity(label,copy,mark,action){
+    const item=button('',action);item.className='ma-kana-activity';
+    const symbol=el('span','ma-kana-activity-mark');symbol.setAttribute('aria-hidden','true');
+    const icon=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS(icon.namespaceURI,'use');icon.classList.add('ma-icon');use.setAttribute('href','/assets/mode-atlas-icons.svg#icon-'+(mark==='✎'?'edit':'play'));icon.append(use);symbol.append(icon);
+    const text=el('span','ma-kana-activity-copy');text.append(el('strong','',label),el('span','',copy));
+    const arrow=el('span','ma-kana-activity-arrow','›');arrow.setAttribute('aria-hidden','true');
+    item.append(symbol,text,arrow);return item;
+  }
+  function reviewLink(target=host){
+    const evidence=L.snapshot(),state=L.read();
+    for(const direction of ['reading','writing']){
+      const allowed=L.available(direction,state,evidence),due=root.ModeAtlasReview.due(evidence[direction+'Review']).filter(char=>allowed.has(char));
+      if(!due.length)continue;
+      const a=link(`Revisit ${due.length} kana · ${L.names[direction]}`,L.practiceUrl(direction,due,{hints:'off'}));a.className='ma-kana-review-link';target.append(a);
     }
-
-
-    function kanaEl(tag, className = '', text = '') {
-        const el = document.createElement(tag);
-        if (className) el.className = className;
-        if (text !== '') el.textContent = String(text);
-        return el;
+  }
+  function pathPreview(){
+    const state=L.read(),evidence=L.snapshot(),rows=L.path(script,skill,state,evidence),next=nextRow(skill,script,state,evidence);
+    const aside=el('aside','ma-kana-path-preview');aside.setAttribute('aria-label','Your complete Kana path');
+    aside.append(el('span','ma-kicker',script==='hiragana'?'HIRAGANA':'KATAKANA'),el('h2','','Your path'));
+    const summary=el('p','ma-kana-path-summary',`${rows.filter(row=>row.complete).length} / ${rows.length} rows familiar · ${L.names[skill]}`);aside.append(summary);
+    for(const groupId of [...new Set(rows.map(row=>row.group))]){
+      const groupRows=rows.filter(row=>row.group===groupId),group=el('details','ma-kana-path-group');
+      group.open=groupId===next.group;
+      const heading=el('summary');heading.append(el('strong','',groupRows[0].groupName),el('span','',`${groupRows.filter(row=>row.complete).length} / ${groupRows.length}`));group.append(heading);
+      const list=el('div','ma-kana-path-steps');
+      for(const row of groupRows){
+        const item=button('',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,row.chars));else{lesson={row,index:0};render();root.scrollTo({top:0,behavior:'instant'});}});
+        item.className='ma-kana-path-step';item.disabled=!row.unlocked;item.dataset.current=String(row.id===next.id);item.dataset.row=row.id;
+        item.setAttribute('aria-label',`${row.name} · ${row.complete?'Revisit lesson':row.unlocked?'Learn this row':'Locked'}`);
+        if(row.id===next.id)item.setAttribute('aria-current','step');
+        const marker=el('span','ma-kana-path-marker',row.complete?'✓':row.chars[0]);marker.setAttribute('aria-hidden','true');
+        const copy=el('span');copy.append(el('strong','',row.name),el('small','ma-kana-path-characters',row.chars.join(' ')),el('small','',row.complete?'Revisit lesson':row.unlocked?`${row.ready} / ${row.chars.length} familiar`:'Locked'));
+        item.append(marker,copy);list.append(item);
+      }
+      group.append(list);aside.append(group);
     }
-
-    function kanaButton(className = '', text = '') {
-        const button = kanaEl('button', className, text);
-        button.type = 'button';
-        return button;
+    const all=button('Explore your path →',()=>chooseView('path'));all.className='ma-kana-text-action';all.setAttribute('aria-label','Explore your path');aside.append(all);
+    return aside;
+  }
+  function workspace(stage){const frame=el('div','ma-kana-workspace');frame.append(stage,pathPreview());host.append(frame);}
+  function learn(){
+    title('Kana · Learn','Connect shapes and sounds');controls();
+    const state=L.read(),evidence=L.snapshot(),next=nextRow(skill,script,state,evidence);
+    const stages=L.rows.flatMap(row=>row.chars).map(char=>L.stage(char,state,evidence));
+    const familiar=stages.filter(stage=>stage>=3).length,mastered=stages.filter(stage=>stage>=5).length;
+    const stage=el('div','ma-kana-learning-stage'),current=el('section','ma-kana-next');current.dataset.skill=skill;
+    current.append(el('span','ma-kicker',`${script==='hiragana'?'Hiragana':'Katakana'} · ${L.names[skill]}`));
+    const introduced=next.chars.every(char=>state.introduced[char]),hasPractice=next.ready>0;
+    current.append(el('h2','',`${introduced||hasPractice?'Keep building your':'Meet the'} ${next.name.replace(' row','-row')}`));
+    const chars=el('div','ma-kana-lesson-tiles');chars.setAttribute('aria-label','Explore this row');chars.style.setProperty('--kana-tile-count',String(Math.min(5,next.chars.length)));
+    next.chars.forEach((char,index)=>{
+      const tile=button('',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,[char]));else{lesson={row:next,index};render();}});tile.className='ma-kana-lesson-tile';
+      tile.setAttribute('aria-label',`Learn ${char}, ${L.map[char]}`);const glyph=el('strong','',char);glyph.lang='ja';tile.append(glyph,el('span','',L.map[char]));chars.append(tile);
+    });current.append(chars);
+    current.append(el('p','ma-kana-muted',skill==='handwriting'?'Get to know each shape, one stroke at a time.':introduced||hasPractice?'Practise independently to make these connections familiar.':'Tap a character to meet its sound and shape. Then practise the row.'));
+    const progress=el('progress','ma-kana-row-progress');progress.max=next.chars.length;progress.value=next.ready;progress.setAttribute('aria-label',next.name+' familiarity');
+    current.append(progress,el('span','ma-kana-progress-caption',`${next.ready} of ${next.chars.length} familiar · the next row opens when all are ready`));
+    const actions=el('div','ma-kana-feature-actions');
+    actions.append(button('Continue learning',()=>{
+      if(skill==='handwriting'||introduced||hasPractice)navigate(L.practiceUrl(skill,next.chars));
+      else{lesson={row:next,index:Math.max(0,next.chars.findIndex(char=>!state.introduced[char]))};render();}
+    },true));current.insertBefore(actions,chars.nextSibling);stage.append(current);
+    const summary=el('div','ma-kana-progress-summary');
+    for(const [value,label]of [[familiar,'Familiar'],[mastered,'Mastered']]){const item=el('div');item.append(el('strong','',value),el('span','',label));summary.append(item);}
+    const map=link('View mastery','/kana/?view=mastery');map.className='ma-kana-text-action';summary.append(map);stage.append(summary);
+    reviewLink(stage);
+    const activities=el('div','ma-kana-activities');
+    activities.append(activity('Build your rhythm','Your practice tools, at your pace.','↔',()=>{skill='reading';chooseView('practice');}));
+    activities.append(activity('Try handwriting','Learn each shape, stroke by stroke.','✎',()=>{skill='handwriting';chooseView('practice');}));stage.append(activities);
+    const placementLink=button('Check my starting point',openPlacement);placementLink.className='ma-kana-text-action ma-kana-placement-link';stage.append(placementLink);
+    workspace(stage);
+  }
+  function settingsForPractice(){
+    if(practiceSettings)return practiceSettings;
+    const saved=Store.readModeJSON(skill,'settings',{}),next=nextRow();
+    const previous=saved.kanaSelection&&Object.keys(L.selection(saved,skill)).length?saved:{};
+    practiceSettings={practiceCount:20,feedbackStyle:'learn',hint:false,srs:true,endless:false,speedRun:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,focusWeak:false,confusableKana:false,...previous,kanaRows:previous.kanaRows||[next.id],kanaSelection:true};
+    if(practiceSettings.testMode&&!L.testScripts(skill).includes(practiceSettings.kanaTestScript))practiceSettings=root.ModeAtlasKanaPractice.forFamily(practiceSettings,'practice',skill);
+    return practiceSettings;
+  }
+  function openSession(){
+    const settings=settingsForPractice(),pool=settings.testMode?L.testPool(settings,skill):L.selection(settings,skill);
+    if(!Object.keys(pool).length)throw new Error('Choose at least one available row.');
+    if(!Store.writeModeJSON(skill,'settings',settings))throw new Error('Your session settings could not be saved. Please try again.');
+    root.KanaCloudSync?.markSectionUpdated?.(skill);navigate('/'+(skill==='writing'?'writing':'reading')+'/');
+  }
+  function customize(){
+    const content=el('div','ma-kana-customize');customizing=true;
+    function draw(){
+      const rowOpen=content.querySelector('.ma-kana-row-picker')?.open,focus=content.contains(document.activeElement)?document.activeElement.getAttribute('aria-label'):null;
+      content.replaceChildren();
+      content.append(root.ModeAtlasKanaPractice.render({skill,getSettings:settingsForPractice,onChange:next=>{practiceSettings=next;draw();},targetFields:true}));
+      content.append(button('Done',()=>root.ModeAtlasDialog.close(),true));
+      if(rowOpen)content.querySelector('.ma-kana-row-picker')?.setAttribute('open','');
+      if(focus)[...content.querySelectorAll('[aria-label]')].find(n=>n.getAttribute('aria-label')===focus)?.focus({preventScroll:true});
     }
-
-    function kanaLink(className = '', text = '', href = '') {
-        const link = kanaEl('a', className, text);
-        link.href = href;
-        return link;
+    draw();root.ModeAtlasDialog.feature({title:'Make it your session',contentNode:content}).then(()=>{customizing=false;render();});
+  }
+  function practise(){
+    title('Kana · Practice','Build the reflex.');
+    host.append(segmented('Kana skill',L.skills.map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();}));
+    const explanation={reading:'See あ, type “a”. Connect each shape with its sound.',writing:'See “a”, choose or type あ. Bring the shape to mind.',handwriting:'Trace the strokes, then try writing from memory.'};
+    host.append(el('p','ma-kana-skill-explanation',explanation[skill]));
+    const stage=el('div','ma-kana-practice-stage');
+    const card=el('section','ma-kana-next ma-kana-session');card.dataset.skill=skill;
+    if(skill==='handwriting'){
+      const row=nextRow();card.append(el('span','ma-kicker',script==='hiragana'?'Hiragana':'Katakana'),el('h2','','Make the shapes your own'),el('p','ma-kana-next-chars',row.chars.join(' ')),el('p','ma-kana-muted','Take your time. Handwriting is an optional part of your journey.'));
+      card.append(link('Open handwriting',L.practiceUrl(skill,row.chars),true));stage.append(card,button('Choose a different row',()=>chooseView('path')));workspace(stage);return;
     }
-
-    function progressBar(percent) {
-        const bar = document.createElement('i');
-        const fill = document.createElement('b');
-        fill.dataset.maProgress = String(percent);
-        bar.append(fill);
-        return bar;
+    const settings=settingsForPractice(),family=root.ModeAtlasKanaPractice.family(settings),pool=settings.testMode?L.testPool(settings,skill):L.selection(settings,skill),chars=Object.keys(pool);
+    const selected=L.rows.filter(row=>row.chars.some(char=>Object.hasOwn(pool,char)));
+    const scripts=[...new Set(selected.map(row=>row.script))],scriptLabel=scripts.length===2?'Hiragana & Katakana':scripts[0]==='katakana'?'Katakana':'Hiragana';
+    const name=family==='daily'?'Your daily session':family==='timed'?(settings.timeTrial?'Set yourself a target':'A one-minute challenge'):family==='sequence'?'Find the flow':family==='test'?'Put it all together':settings.practiceCount?`${settings.practiceCount} questions, at your pace`:'Stay a little longer';
+    const sessionCopy=el('div','ma-kana-session-copy');
+    sessionCopy.append(el('span','ma-kicker',scriptLabel),el('h2','',name));card.append(sessionCopy);
+    const instrument=el('div','ma-kana-instrument');instrument.setAttribute('aria-hidden','true');const sample=el('span','ma-kana-instrument-glyph',chars[0]||'あ');sample.lang='ja';sample.dataset.combined=String((chars[0]||'あ').length>1);instrument.append(el('span','ma-kicker','SHAPE ↔ SOUND'),sample,el('span','ma-kana-instrument-answer',L.map[chars[0]]||'a'));card.append(instrument);
+    sessionCopy.append(el('p','ma-kana-selection-summary',`${selected.length===1?selected[0].name+' · ':''}${chars.length} kana${settings.focusWeak?' · Focus on weaker characters':settings.confusableKana?' · Similar-looking characters':''}`));
+    const copy=family==='daily'?'Twenty questions. Make a little progress today.':family==='timed'?(settings.timeTrial?`${settings.trialTarget} correct answers in ${settings.trialMinutes} minutes.`:'How many can you recognise in 60 seconds?'):family==='sequence'?'Read groups of characters together and build your fluency.':family==='test'?'One pass through your unlocked script.':settings.feedbackStyle==='quick'?'Quick feedback keeps your rhythm.':'Learn from each answer, with time to try again.';
+    sessionCopy.append(el('p','ma-kana-muted',copy));
+    const actions=el('div','ma-kana-feature-actions');actions.append(button('Start practice',openSession,true));
+    if(family!=='daily'&&family!=='test'){
+      const hints=button(settings.hint?'Hints on':'Hints off',()=>{practiceSettings={...settings,hint:!settings.hint};render();});hints.className='ma-kana-text-action';hints.setAttribute('aria-pressed',String(!!settings.hint));actions.append(hints);
     }
-
-    function appendLabelValue(parent, label, value) {
-        const item = document.createElement('div');
-        item.append(kanaEl('span','',label), kanaEl('strong','',value));
-        parent.append(item);
-        return item;
+    card.append(actions);stage.append(card);
+    const adjust=button('Adjust this session',customize);adjust.className='ma-kana-text-action ma-kana-adjust';stage.append(adjust);
+    reviewLink(stage);stage.append(el('h2','ma-kana-section-title','Try a different pace'));
+    const activities=el('div','ma-kana-activities');
+    for(const [id,label,copy,mark]of [['practice','At your pace','Short sets or keep going.','あ'],['daily','Daily session','Twenty questions for today.','20'],['timed','Timed challenge','Build speed in one minute.','60'],['sequence','Character sequences','Practise reading kana together.','あい']]){
+      const tool=activity(label,copy,mark,()=>{practiceSettings=root.ModeAtlasKanaPractice.forFamily(settings,id,skill);render();root.scrollTo({top:0,behavior:'instant'});});tool.setAttribute('aria-pressed',String(id===family));activities.append(tool);
+    }stage.append(activities);workspace(stage);
+  }
+  function tests(){
+    if(skill==='handwriting')skill='reading';title('Kana','Put your skills to the test','Complete a full script assessment, then explore its results.');
+    host.append(segmented('Test skill',[['reading','Read'],['writing','Recall']],skill,value=>{skill=value;render();}));
+    const eligible=L.testScripts(skill);
+    for(const id of L.scripts){const name=id==='hiragana'?'Hiragana':'Katakana',row=el('section','ma-kana-test-row');row.append(el('h2','',name));
+      if(eligible.includes(id))row.append(el('p','','One pass through all basic characters.'),link('Start '+name+' test','/'+(skill==='writing'?'writing':'reading')+'/?mode=test&script='+id,true));
+      else row.append(el('p','ma-kana-muted','Unlock every basic row in '+L.names[skill]+' to open this test.'),button('Open learning path',()=>{script=id;chooseView('learn');}));host.append(row);
     }
-
-    function todayKey(value) {
-        if (window.ModeAtlasDates?.localDateKey) return window.ModeAtlasDates.localDateKey(value);
-        const now = value instanceof Date ? new Date(value.getTime()) : new Date();
-        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    }
-
-    function normaliseScoreHistory(data) {
-        return {
-            endlessBest: { total: 0, correct: 0, wrong: 0, ...((data || {}).endlessBest || {}) },
-            speedRunTop3: Array.isArray((data || {}).speedRunTop3) ? data.speedRunTop3 : [],
-            comboKanaBest: { same_row: 0, random: 0, ...((data || {}).comboKanaBest || {}) },
-            timeTrialTop3: Array.isArray((data || {}).timeTrialTop3) ? data.timeTrialTop3 : []
-        };
-    }
-
-    function formatMs(ms) {
-        const n = Number(ms || 0);
-        if (!Number.isFinite(n) || n <= 0) return '—';
-        return n < 1000 ? `${Math.round(n)}ms` : `${(n / 1000).toFixed(1)}s`;
-    }
-
-    function modeTotals(stats) {
-        let correct = 0, wrong = 0, seen = 0;
-        Object.values(stats || {}).forEach(item => {
-            if (!item || typeof item !== 'object') return;
-            const c = Number(item.correct || item.right || 0);
-            const w = Number(item.wrong || item.incorrect || 0);
-            if (c + w > 0) seen += 1;
-            correct += c;
-            wrong += w;
-        });
-        const attempts = correct + wrong;
-        return { correct, wrong, attempts, seen, accuracy: attempts ? Math.round((correct / attempts) * 100) : 0 };
-    }
-
-    function dailyEntries(history) {
-        return Object.entries(history || {})
-            .map(([date, entry]) => ({ date, entry: entry || {} }))
-            .sort((a, b) => b.date.localeCompare(a.date));
-    }
-
-    function dailyStatus(history) {
-        const today = history?.[todayKey()] || null;
-        const entries = dailyEntries(history);
-        const best = entries.reduce((pick, item) => {
-            const score = Number(item.entry.officialScore || 0);
-            if (!pick || score > pick.score) return { ...item, score };
-            return pick;
-        }, null);
-        return { today, entries, best };
-    }
-
-    function collectKanaSnapshot() { return M().createSnapshot(); }
-
-    function collectSummaries(snapshot) {
-        snapshot = snapshot || collectKanaSnapshot();
-        const readingStats = snapshot.readingStats || {};
-        const writingStats = snapshot.writingStats || {};
-        const readingDaily = Store.readModeJSON('reading', 'dailyHistory', {});
-        const writingDaily = Store.readModeJSON('writing', 'dailyHistory', {});
-        return {
-            reading: {
-                mode: 'reading',
-                label: 'Reading',
-                href: '../reading/',
-                totals: modeTotals(readingStats),
-                highScore: Store.readModeNumber('reading', 'highScore', 0),
-                scoreHistory: normaliseScoreHistory(Store.readModeJSON('reading', 'scoreHistory', {})),
-                daily: dailyStatus(readingDaily)
-            },
-            writing: {
-                mode: 'writing',
-                label: 'Writing',
-                href: '../writing/',
-                totals: modeTotals(writingStats),
-                highScore: Store.readModeNumber('writing', 'highScore', 0),
-                scoreHistory: normaliseScoreHistory(Store.readModeJSON('writing', 'scoreHistory', {})),
-                daily: dailyStatus(writingDaily)
-            }
-        };
-    }
-
-    function allKana() {
-        return Array.isArray(M()?.ALL) ? M().ALL : [];
-    }
-
-    function masteryFor(ch, snapshot) {
-        const correct = M().charCorrect(ch, snapshot);
-        const wrong = M().charWrong(ch, snapshot);
-        const attempts = correct + wrong;
-        const accuracy = attempts ? (correct / attempts) * 100 : 0;
-        const displayAccuracy = Math.round(accuracy);
-        const avg = M().charAvg(ch, snapshot);
-        const stage = M().masteryLabel(ch, snapshot);
-        const priority = attempts
-            ? (stage === 'Learning' ? 4 : stage === 'Reviewing' ? 3 : stage === 'Mastered' ? 1 : 5)
-                + (wrong * 0.18)
-                + (avg ? Math.min(avg / 2500, 2) : 1)
-                - (accuracy / 100)
-            : 0;
-        return { ch, correct, wrong, attempts, accuracy: displayAccuracy, accuracyRaw: accuracy, avg, stage, priority };
-    }
-
-    function masterySummary(snapshot) {
-        const items = allKana().map(ch => masteryFor(ch, snapshot));
-        const counts = { New: 0, Learning: 0, Reviewing: 0, Mastered: 0 };
-        items.forEach(item => { counts[item.stage] += 1; });
-        const seen = items.filter(item => item.attempts > 0).length;
-        const timed = items.filter(item => item.avg > 0);
-        const average = timed.length ? timed.reduce((sum, item) => sum + item.avg, 0) / timed.length : 0;
-        const weak = items
-            .filter(item => item.attempts > 0 && item.stage !== 'Mastered')
-            .sort((a, b) => b.priority - a.priority)
-            .slice(0, 6);
-        const slowest = timed
-            .slice()
-            .sort((a, b) => b.avg - a.avg)
-            .slice(0, 4);
-        return { items, counts, seen, total: items.length, average, weak, slowest };
-    }
-
-    function trainerStreak() {
-        return window.ModeAtlasProgress.routine().streak;
-    }
-
-    function formalTestCount() {
-        return M()?.formalTestCount?.() || 0;
-    }
-
-    function pct(value, total) {
-        return Math.max(0, Math.min(100, total ? Math.round((Number(value || 0) / total) * 100) : 0));
-    }
-
-    function applyHubVisuals(root = document) {
-        window.ModeAtlasUi?.applyProgressWidths?.(root);
-        const scope = root && root.querySelectorAll ? root : document;
-        scope.querySelectorAll('[data-ma-progress]').forEach(el => {
-            const value = Math.max(0, Math.min(100, Number(el.dataset.maProgress || 0)));
-            el.style.setProperty('--ma-progress', `${value}%`);
-            el.style.width = `${value}%`;
-        });
-        scope.querySelectorAll('[data-ring-pct]').forEach(el => {
-            const value = Math.max(0, Math.min(100, Number(el.dataset.ringPct || 0)));
-            el.style.setProperty('--pct', String(value));
-            if (el.dataset.ringColor) el.style.setProperty('--ring-color', el.dataset.ringColor);
-        });
-    }
-
-
-    function compactKanaList(items, limit = 4, formatter = item => item.ch || item) {
-        const list = Array.isArray(items) ? items : [];
-        const visible = list.slice(0, limit).map(formatter).join(' · ');
-        return list.length > limit ? `${visible} +${list.length - limit}` : (visible || 'Build more history');
-    }
-
-    function stageCopy(stage) {
-        return {
-            New: 'Not started yet',
-            Learning: 'Building confidence',
-            Reviewing: 'Reliable, building speed',
-            Mastered: 'Fast, accurate, proven'
-        }[stage] || '';
-    }
-
-    function bestRunCards(reading, writing) {
-        const readingSpeed = reading.scoreHistory.speedRunTop3[0]?.score || 0;
-        const writingSpeed = writing.scoreHistory.speedRunTop3[0]?.score || 0;
-        const readingTrial = reading.scoreHistory.timeTrialTop3[0]?.score || 0;
-        const writingTrial = writing.scoreHistory.timeTrialTop3[0]?.score || 0;
-        return [
-            ['Endless', Math.max(reading.scoreHistory.endlessBest.correct || 0, writing.scoreHistory.endlessBest.correct || 0), 'best correct streak'],
-            ['Speed Run', Math.max(readingSpeed, writingSpeed), 'top speed score'],
-            ['Time Trial', Math.max(readingTrial, writingTrial), 'best listed score'],
-            ['Combo', Math.max(reading.scoreHistory.comboKanaBest.same_row || 0, writing.scoreHistory.comboKanaBest.same_row || 0, reading.scoreHistory.comboKanaBest.random || 0, writing.scoreHistory.comboKanaBest.random || 0), 'best combo streak']
-        ];
-    }
-
-    function recommendedAction(summaries, mastery) {
-        const weak = mastery.weak.slice(0, 4);
-        if (weak.length) {
-            return {
-                title: `Review ${weak.map(item => item.ch).join(' · ')}`,
-                text: 'These kana are currently holding back accuracy, speed, or reliable reps.',
-                href: '../reading/?focusWeak=1',
-                label: 'Review weak kana',
-                kind: 'review'
-            };
-        }
-        if (mastery.counts.New > 0) {
-            return {
-                title: 'Start with fresh kana',
-                text: 'You still have new kana waiting. Build a little history, then the hub will suggest smarter reviews.',
-                href: '../reading/',
-                label: 'Open Reading',
-                kind: 'new'
-            };
-        }
-        const readingAcc = summaries.reading.totals.accuracy || 0;
-        const writingAcc = summaries.writing.totals.accuracy || 0;
-        if (readingAcc - writingAcc > 12) {
-            return { title: 'Balance recall practice', text: 'Writing is behind Reading. A short Writing session will strengthen active recall.', href: '../writing/', label: 'Open Writing', kind: 'writing' };
-        }
-        return { title: 'Take a formal test', text: 'You have enough history for a useful check-in. Test Mode will show weak rows and timing clearly.', href: '../results/', label: 'Open Test Results', kind: 'test' };
-    }
-
-    function hasKanaHistory(summaries) {
-        const attempts = Number(summaries?.reading?.totals?.attempts || 0) + Number(summaries?.writing?.totals?.attempts || 0);
-        const dailyHistory = Number(summaries?.reading?.daily?.entries?.length || 0) + Number(summaries?.writing?.daily?.entries?.length || 0);
-        return attempts > 0 || dailyHistory > 0 || formalTestCount() > 0;
-    }
-
-    function returningHeroLead(summaries, mastery, action) {
-        const overview = [
-            `${mastery.seen}/${mastery.total} kana seen`,
-            `${mastery.counts.Mastered} mastered`
-        ];
-        const streak = trainerStreak();
-        if (streak > 0) overview.push(`${streak}-day streak`);
-
-        let context = 'Your next session is ready when you are.';
-        if (mastery.weak.length) context = `Current focus: ${compactKanaList(mastery.weak, 4)}.`;
-        else if (action.kind === 'writing') context = 'Writing is currently behind Reading.';
-        else if (action.kind === 'test') context = 'Your practice history is ready for a formal check-in.';
-        else if (action.kind === 'new') context = 'Fresh kana are still waiting in your set.';
-        return `${overview.join(' · ')}. ${context}`;
-    }
-
-    function applyKanaExperienceState(summaries, mastery, action) {
-        const returning = hasKanaHistory(summaries);
-        document.body.classList.toggle('ma-kana-returning', returning);
-        document.body.dataset.maKanaExperience = returning ? 'returning' : 'new';
-
-        const heroTitle = $('#kanaHeroTitle');
-        const heroLead = $('.kana-hero-lead');
-        const progressTitle = $('.kana-progress-intro h2');
-        const progressLead = $('.kana-progress-intro p');
-        if (heroTitle) heroTitle.textContent = returning ? 'Your kana' : 'Make kana feel automatic.';
-        if (heroLead) heroLead.textContent = returning
-            ? returningHeroLead(summaries, mastery, action)
-            : 'Build fast recognition in Reading, active recall in Writing, and use Test Results to keep each practice session focused.';
-        if (progressTitle) progressTitle.textContent = returning ? 'Progress overview' : 'Know where you stand. Know what to practise next.';
-        if (progressLead) progressLead.textContent = returning
-            ? 'Coverage, mastery, recommendations, accuracy and records from your saved practice.'
-            : 'Track recognition, recall, mastery, and the kana most worth your attention.';
-        return returning;
-    }
-
-    function renderHero(summaries, mastery, action) {
-        applyKanaExperienceState(summaries, mastery, action);
-        const continueLink = $('#kanaContinueAction');
-        const continueHint = $('#kanaContinueHint');
-        if (continueLink) continueLink.href = action.href;
-        if (continueHint) continueHint.textContent = action.label;
-
-        const card = $('#kanaTodayCard');
-        if (!card) return;
-        const masteredPct = pct(mastery.counts.Mastered, mastery.total);
-        const reviewingPct = pct(mastery.counts.Mastered + mastery.counts.Reviewing, mastery.total);
-        const seenPct = pct(mastery.seen, mastery.total);
-
-        const map = kanaEl('div', 'kana-hero-map');
-        map.setAttribute('aria-label', 'Kana progress map');
-        [
-            ['Seen', seenPct],
-            ['Review+', reviewingPct],
-            ['Mastered', masteredPct]
-        ].forEach(([label, value]) => {
-            const row = kanaEl('div', 'kana-map-row');
-            row.append(kanaEl('span','',label), progressBar(value), kanaEl('em','',`${value}%`));
-            map.append(row);
-        });
-
-        const mini = kanaEl('div','kana-hero-mini');
-        [
-            [trainerStreak(), 'day study streak'],
-            [mastery.counts.Learning, 'learning'],
-            [mastery.counts.Reviewing, 'reviewing']
-        ].forEach(([value, label]) => {
-            const item = document.createElement('div');
-            item.append(kanaEl('strong','',value), kanaEl('span','',label));
-            mini.append(item);
-        });
-
-        const summary = kanaEl('div','kana-progress-summary');
-        summary.append(
-            kanaEl('span','kana-card-kicker ma-kicker','Coverage'),
-            kanaEl('h3','',`${mastery.seen}/${mastery.total} kana seen`),
-            kanaEl('p','','See how much of the kana set you have reached and how much is becoming reliable.')
-        );
-        card.replaceChildren(summary, map, mini);
-    }
-
-    function renderNextPanel(summaries, mastery, action) {
-        const target = $('#kanaNextPanel');
-        if (!target) return;
-        const weak = mastery.weak.slice(0, 5);
-        const weakText = compactKanaList(weak, 4);
-        const readingDone = !!summaries.reading.daily.today;
-        const writingDone = !!summaries.writing.daily.today;
-        const todayCount = Number(readingDone) + Number(writingDone);
-
-        const head = kanaEl('div','kana-section-head compact ma-section-head');
-        const copy = document.createElement('div');
-        copy.append(
-            kanaEl('span','kana-section-kicker ma-kicker','Start here'),
-            kanaEl('h2','','Your next best step'),
-            kanaEl('p','','Your recommendation, daily challenges, and weakest kana together for a quick decision.')
-        );
-        const guide = kanaButton('kana-ghost-action ma-button','What should I practise?');
-        guide.dataset.maKanaGuide = '';
-        head.append(copy, guide);
-
-        const grid = kanaEl('div','kana-next-grid');
-
-        const recommended = kanaLink(`kana-next-card kana-next-card--recommended primary ${action.kind}`, '', action.href);
-        recommended.append(
-            kanaEl('span','ma-kicker','Recommended'),
-            kanaEl('strong','',action.title),
-            kanaEl('p','',action.text),
-            kanaEl('em','',`${action.label} →`)
-        );
-
-        const daily = kanaEl('div','kana-next-card kana-next-card--secondary compact');
-        daily.append(kanaEl('span','ma-kicker','Daily check-in'));
-        const dailyTitle = kanaEl('strong','');
-        dailyTitle.append(
-            document.createTextNode(readingDone ? 'Reading ✓' : 'Reading ready'),
-            document.createElement('br'),
-            document.createTextNode(writingDone ? 'Writing ✓' : 'Writing ready')
-        );
-        const dailyBtn = kanaButton('kana-inline-btn ma-button','View history');
-        dailyBtn.dataset.maDailyHistory = '';
-        daily.append(dailyTitle, kanaEl('p','',`${todayCount}/2 daily challenges complete today.`), dailyBtn);
-
-        const focus = kanaEl('div','kana-next-card kana-next-card--secondary compact');
-        const review = kanaLink('kana-inline-btn ma-button','Review weak kana','../reading/?focusWeak=1');
-        review.dataset.maWeakReview = '';
-        focus.append(
-            kanaEl('span','ma-kicker','Focus set'),
-            kanaEl('strong','kana-focus-kana',weakText),
-            kanaEl('p','',weak.length ? 'Weakest kana by accuracy, speed, and reps.' : 'Finish a few sessions to unlock useful weak-kana focus.'),
-            review
-        );
-
-        grid.append(recommended, daily, focus);
-        target.replaceChildren(head, grid);
-    }
-
-    function renderMastery(mastery) {
-        const grid = $('#kanaMasteryGrid');
-        if (!grid) return;
-        const stages = ['New', 'Learning', 'Reviewing', 'Mastered'];
-        grid.replaceChildren(...stages.map(stage => {
-            const button = kanaButton(`kana-stage-card ${stage.toLowerCase()}`);
-            button.dataset.maMasteryOpen = '';
-            button.append(
-                kanaEl('span','ma-kicker',stage),
-                kanaEl('strong','',mastery.counts[stage]),
-                kanaEl('p','',stage === 'New' ? 'Waiting for first practice' : stageCopy(stage)),
-                progressBar(pct(mastery.counts[stage], mastery.total))
-            );
-            return button;
-        }));
-
-        const weak = compactKanaList(mastery.weak, 6);
-        const slow = compactKanaList(mastery.slowest, 4, item => `${item.ch} ${formatMs(item.avg)}`);
-        const focus = $('#kanaMasteryFocus');
-        if (focus) {
-            const focusNow = kanaEl('div','kana-focus-card');
-            focusNow.append(
-                kanaEl('span','ma-kicker','Focus now'),
-                kanaEl('strong','',mastery.weak.length ? `Review ${weak}` : 'Build first attempts'),
-                kanaEl('p','',mastery.weak.length ? 'Prioritised by low reps, lower accuracy, or slower recognition.' : 'Complete a few sessions so the hub can find useful focus kana.')
-            );
-            const avg = kanaEl('div','kana-focus-card');
-            avg.append(kanaEl('span','ma-kicker','Average recognition'), kanaEl('strong','',mastery.average ? formatMs(mastery.average) : '—'), kanaEl('p','','Across kana with saved timing history.'));
-            const slowest = kanaEl('div','kana-focus-card');
-            slowest.append(kanaEl('span','ma-kicker','Slowest kana'), kanaEl('strong','',slow), kanaEl('p','','Slowest saved recognition times. Practise these carefully before pushing speed.'));
-            focus.replaceChildren(focusNow, avg, slowest);
-        }
-        window.ModeAtlasUi?.applyProgressWidths?.(grid);
-    }
-
-    function presetProgress(snapshot) {
-        const metrics = M();
-        return (metrics?.PRESET_TRACKERS || []).map(item => {
-            const value = Math.min(100, item.chars.reduce((sum, ch) => sum + M().charCorrect(ch, snapshot), 0));
-            return { ...item, value, done: value >= 100, remaining: Math.max(0, 100 - value) };
-        });
-    }
-
-    function renderPresets(snapshot) {
-        const target = $('#kanaPresetPanel');
-        if (!target) return;
-        const items = presetProgress(snapshot);
-
-        const head = kanaEl('div','kana-section-head compact ma-section-head');
-        const copy = document.createElement('div');
-        copy.append(
-            kanaEl('h2','','Preset achievements')
-        );
-        head.append(copy);
-
-        const grid = kanaEl('div','kana-preset-grid');
-        items.forEach(item => {
-            const card = kanaEl('article', `kana-preset-card ${item.done ? 'done' : ''}`.trim());
-            const top = document.createElement('div');
-            top.append(kanaEl('strong','',item.name), kanaEl('span','',`${item.value}/100`));
-            card.append(top, kanaEl('p','',item.desc), progressBar(item.value), kanaEl('em','',item.done ? 'Complete' : 'In progress'));
-            grid.append(card);
-        });
-
-        target.replaceChildren(head, grid);
-        window.ModeAtlasUi?.applyProgressWidths?.(target);
-    }
-
-    function renderRecords(summaries, mastery) {
-        const target = $('#kanaRecordsPanel');
-        if (!target) return;
-        const records = bestRunCards(summaries.reading, summaries.writing);
-        const totalAnswers = summaries.reading.totals.attempts + summaries.writing.totals.attempts;
-
-        const head = kanaEl('div','kana-section-head ma-section-head');
-        const copy = document.createElement('div');
-        copy.append(
-            kanaEl('span','kana-section-kicker ma-kicker','Performance highlights'),
-            kanaEl('h2','','Records and progress'),
-            kanaEl('p','','Your best scores, accuracy, and practice volume in one place.')
-        );
-        head.append(copy, kanaLink('kana-ghost-action ma-button','View Test Results','../results/'));
-
-        const layout = kanaEl('div','kana-record-layout');
-
-        const accuracyPair = kanaEl('div','kana-accuracy-pair');
-        accuracyPair.append(
-            accuracyCardNode('Reading', summaries.reading.totals.accuracy, summaries.reading.highScore, summaries.reading.totals.attempts, 'reading'),
-            accuracyCardNode('Writing', summaries.writing.totals.accuracy, summaries.writing.highScore, summaries.writing.totals.attempts, 'writing')
-        );
-
-        const recordGrid = kanaEl('div','kana-record-grid');
-        records.forEach(([label, value, sub]) => {
-            const card = kanaEl('article','kana-record-card');
-            card.append(kanaEl('span','ma-kicker',label), kanaEl('strong','',value), kanaEl('em','',sub));
-            recordGrid.append(card);
-        });
-
-        const totalCard = kanaEl('article','kana-record-card total');
-        totalCard.append(
-            kanaEl('span','ma-kicker','Total answers'),
-            kanaEl('strong','',totalAnswers),
-            kanaEl('em','',`${mastery.seen}/${mastery.total} kana seen`)
-        );
-
-        const right = kanaEl('div','kana-record-side');
-        right.append(recordGrid, totalCard);
-
-        layout.append(accuracyPair, right);
-        target.replaceChildren(head, layout);
-        window.ModeAtlasUi?.applyProgressWidths?.(target);
-    }
-
-    function accuracyCardNode(label, accuracy, highScore, attempts, mode) {
-        const card = kanaEl('article', `kana-accuracy-card ${mode}`);
-        const ring = kanaEl('div','kana-ring');
-        ring.dataset.ringPct = String(accuracy || 0);
-        if (mode === 'writing') ring.dataset.ringColor = '#66a8ff';
-        ring.append(kanaEl('strong','',`${accuracy || 0}%`), kanaEl('span','','accuracy'));
-
-        const details = document.createElement('div');
-        details.append(kanaEl('h3','',label));
-        const grid = kanaEl('div','kana-mini-grid');
-        appendLabelValue(grid, 'High score', highScore || 0);
-        appendLabelValue(grid, 'Attempts', attempts || 0);
-        details.append(grid);
-
-        card.append(ring, details);
-        return card;
-    }
-
-
-
-    function openInfoModal(type, context = {}) {
-        const body = kanaEl('div','kana-modal-body');
-        const heading = { kicker: '', title: '' };
-        if (type === 'daily') renderDailyModal(heading, body, context);
-        else if (type === 'guide') renderGuideModal(heading, body);
-        else renderMasteryHelpModal(heading, body);
-
-        if (!window.ModeAtlasDialog?.feature) return;
-        window.ModeAtlasDialog.feature({
-            kicker: heading.kicker,
-            title: heading.title,
-            contentNode: body,
-            size: 'large',
-            tone: 'info'
-        });
-    }
-
-    function kanaModalGrid(items) {
-        const grid = kanaEl('div','kana-modal-grid');
-        items.forEach(([heading, copy]) => {
-            const item = document.createElement('div');
-            item.append(kanaEl('strong','',heading), kanaEl('p','',copy));
-            grid.append(item);
-        });
-        return grid;
-    }
-
-    function renderGuideModal(heading, body) {
-        heading.kicker = 'Quick guide';
-        heading.title = 'Choosing your next practice';
-        body.replaceChildren(kanaModalGrid([
-            ['Follow the recommendation', 'Start with the practice that best matches your saved accuracy, speed, and repetition history.'],
-            ['Keep daily challenges moving', 'Reading and Writing daily challenges give you a simple way to keep both recognition and recall active.'],
-            ['Use mastery to target weak spots', 'Mastery stages and the Mastery Map show which kana need more independent recall or spaced review.']
-        ]));
-    }
-
-    function renderMasteryHelpModal(heading, body) {
-        heading.kicker = 'Mastery rules';
-        heading.title = 'How mastery works';
-        body.replaceChildren(kanaModalGrid(window.ModeAtlasReview.help()));
-    }
-
-
-
-    function renderDailyModal(heading, body, { summaries }) {
-        heading.kicker = 'Daily challenge';
-        heading.title = 'Daily challenge history';
-        const grid = kanaEl('div','kana-daily-modal-grid');
-        grid.append(dailyModePanelNode('Reading', summaries.reading, 'reading'), dailyModePanelNode('Writing', summaries.writing, 'writing'));
-        body.replaceChildren(grid);
-    }
-
-    function dailyModePanelNode(label, summary, mode) {
-        const today = summary.daily.today;
-        const best = summary.daily.best;
-        const history = summary.daily.entries.slice(0, 12);
-
-        const section = kanaEl('section', `kana-daily-modal-card ${mode}`);
-        section.append(kanaEl('h3','',label));
-
-        const summaryGrid = kanaEl('div','kana-daily-summary');
-        appendLabelValue(summaryGrid, 'Today', today ? `${today.officialScore || 0}/${today.total || 20}` : 'Ready');
-        appendLabelValue(summaryGrid, 'Best', best ? `${best.score}/${best.entry.total || 20}` : '—');
-        appendLabelValue(summaryGrid, 'High score', summary.highScore || 0);
-
-        const historyWrap = kanaEl('div','kana-daily-history');
-        if (history.length) {
-            history.forEach(item => {
-                const row = document.createElement('div');
-                row.append(
-                    kanaEl('span','',item.date),
-                    kanaEl('strong','',`${item.entry.officialScore || 0}/${item.entry.total || 20}`),
-                    kanaEl('em','',`${formatMs(item.entry.timeMs)} · ${item.entry.attempts || 1} attempt${Number(item.entry.attempts || 1) === 1 ? '' : 's'}`)
-                );
-                historyWrap.append(row);
-            });
-        } else {
-            historyWrap.append(kanaEl('p','','No daily challenge history yet.'));
-        }
-
-        section.append(summaryGrid, historyWrap);
-        return section;
-    }
-
-
-
-    function bindActions() {
-        if (window.__maKanaHubActionsBound) return;
-        window.__maKanaHubActionsBound = true;
-        document.addEventListener('click', event => {
-            if (event.target.closest('[data-ma-daily-history]')) {
-                event.preventDefault();
-                openInfoModal('daily', { summaries: collectSummaries() });
-            }
-            if (event.target.closest('[data-ma-kana-guide]')) {
-                event.preventDefault();
-                openInfoModal('guide');
-            }
-            if (event.target.closest('[data-ma-mastery-help]')) {
-                event.preventDefault();
-                openInfoModal('mastery-help');
-            }
-            if (event.target.closest('[data-ma-weak-review]')) {
-                const current = Store.readModeJSON('reading', 'settings', {});
-                Object.assign(current, { focusWeak: true, srs: true, endless: false, timeTrial: false, speedRun: false, dailyChallenge: false, testMode: false });
-                try { window.ModeAtlasStorage?.setJSON?.('settings', current); } catch {}
-                storeSet('modeAtlasLastKanaPage', '../reading/');
-            }
-        }, true);
-    }
-
-    function renderAll() {
-        if (!M()) return;
-        // Read the large per-kana storage objects once for this render. All
-        // mastery/preset calculations below use the same in-memory snapshot.
-        const snapshot = collectKanaSnapshot();
-        const summaries = collectSummaries(snapshot);
-        const mastery = masterySummary(snapshot);
-        const action = recommendedAction(summaries, mastery);
-        renderHero(summaries, mastery, action);
-        renderNextPanel(summaries, mastery, action);
-        renderMastery(mastery);
-        renderPresets(snapshot);
-        renderRecords(summaries, mastery);
-        applyHubVisuals(document);
-    }
-
-    let renderQueued = false;
-    let queuedRenderSource = 'unknown';
-
-    function requestKanaHubRender(source = 'unknown') {
-        queuedRenderSource = source;
-        if (renderQueued) return;
-        renderQueued = true;
-
-        const run = () => {
-            renderQueued = false;
-            const activeSource = queuedRenderSource;
-            queuedRenderSource = 'unknown';
-            renderAll();
-        };
-
-        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
-        else setTimeout(run, 0);
-    }
-
-    bindActions();
-    renderAll();
-
-    // Genuine data/UI changes can request a fresh snapshot. Multiple events in
-    // the same cloud/profile update burst collapse into one dashboard render.
-    document.addEventListener('ma:ui-refresh', () => requestKanaHubRender('ui-refresh'));
-    document.addEventListener('ma:kana-hub-render', () => requestKanaHubRender('explicit-render'));
-    document.addEventListener('ma:preset-progress-updated', () => requestKanaHubRender('preset-progress'));
-    document.addEventListener('ma:profile-updated', () => requestKanaHubRender('profile-updated'));
-    window.addEventListener('modeAtlasCloudDataChanged', (event) => {
-        const sections = Array.isArray(event.detail?.sections) ? event.detail.sections : [];
-        const relevant = ['reading', 'writing', 'readingTests', 'writingTests'];
-        if (!sections.length || sections.some(section => relevant.includes(section))) {
-            requestKanaHubRender('cloud-data');
-        }
+    host.append(link('View test results','/results/'));
+  }
+  function mastery(){title('Kana','Your mastery map');host.append(root.ModeAtlasKanaMastery.render((char,detail)=>{
+    const scroll=root.scrollY;host.replaceChildren(button('Back to mastery map',()=>{render();requestAnimationFrame(()=>{root.scrollTo({top:scroll,behavior:'instant'});host.querySelector(`[data-ma-mastery-kana="${char}"]`)?.focus({preventScroll:true});});}),detail);root.scrollTo({top:0,behavior:'instant'});
+  }));}
+  function render(){
+    placementKeyboard?.destroy();placementKeyboard=null;
+    const rowOpen=host.querySelector('.ma-kana-row-picker')?.open,focus=host.contains(document.activeElement)?document.activeElement.getAttribute('aria-label'):null;
+    host.replaceChildren();const state=L.read();
+    document.querySelectorAll('.ma-kana-navigation a').forEach(a=>{
+      const target=new URL(a.href),next=target.searchParams.get('view')||'learn',active=next===(view==='path'?'learn':view);
+      target.searchParams.set('script',script);target.searchParams.set('skill',skill);
+      // Preserve choices between sections, but keep an already-open section's
+      // exact URL so the native shell can scroll up without reloading it.
+      a.href=active&&view!=='path'&&!lesson&&!placement&&!placementSetup?location.pathname+location.search:target.pathname+target.search;
+      a.toggleAttribute('aria-current',active);if(active)a.setAttribute('aria-current','page');
     });
-    window.addEventListener('pageshow', event => {
-        if (event.persisted === true) requestKanaHubRender('bfcache-restore');
-    });
-    document.addEventListener('ma:trainer-ready', () => requestKanaHubRender('trainer-ready'));
-})();
+    if(lesson||placement||placementSetup)root.scrollTo({top:0,behavior:'instant'});
+    if(placementSetup){assessSetup();return;}if(placement){renderPlacement();return;}if(lesson){renderLesson();return;}
+    if(!state.startedAt){welcome();return;}
+    if(view==='practice')practise();else if(view==='mastery')mastery();else if(view==='tests')tests();else if(view==='path')learningPath();else learn();
+    if(rowOpen&&host.querySelector('.ma-kana-row-picker'))host.querySelector('.ma-kana-row-picker').open=true;
+    if(focus)[...host.querySelectorAll('[aria-label]')].find(n=>n.getAttribute('aria-label')===focus)?.focus({preventScroll:true});
+  }
+  let refreshQueued=false;
+  document.querySelector('.ma-kana-navigation')?.addEventListener('click',event=>{
+    if(!(lesson||placement||placementSetup)||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    const a=event.target.closest('a[href]');if(!a)return;
+    const target=new URL(a.href),next=target.searchParams.get('view')||'learn';
+    if(target.pathname!==location.pathname||!['learn','practice','mastery','tests'].includes(next))return;
+    // A lesson/placement is an in-page state: selecting its parent section
+    // must leave that state even when the address is already identical.
+    event.preventDefault();chooseView(next);
+  });
+  function refresh(){if(lesson||placement||placementSetup||customizing||refreshQueued)return;refreshQueued=true;requestAnimationFrame(()=>{refreshQueued=false;run(()=>{L.initialize();render();});});}
+  root.addEventListener('modeAtlasCloudDataChanged',refresh);root.addEventListener('modeAtlasKanaLearningChanged',refresh);
+  root.addEventListener('modeAtlasAccountWillChange',()=>{placementKeyboard?.destroy();placementKeyboard=null;lesson=null;placement=null;placementSetup=false;practiceSettings=null;});
+  document.addEventListener('ma:ui-refresh',refresh);
+  run(()=>{L.initialize();render();});
+})(window);

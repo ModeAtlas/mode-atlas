@@ -43,7 +43,7 @@ test('all accounts use the current earned-XP curve and discard threshold credit'
     const p=load({modeAtlasProgress:{version,legacySeeded:true,curveCredit:999999,sources:{old:{'kana.reading.correct':7003}}}}).progress;
     assert.equal(p.getXP(),7003);assert.equal(p.getSummary().level,12);
     assert.equal(p.getSummary().levelXp,1203);assert.equal(p.getSummary().nextLevelAt,7230);
-    assert.equal(p.readState().version,5);assert.equal('curveCredit' in p.readState(),false);
+    assert.equal(p.readState().version,6);assert.equal('curveCredit' in p.readState(),false);
     assert.deepEqual(plain(load({modeAtlasProgress:p.readState()}).progress.getSummary()),plain(p.getSummary()));
   }
   const p=load().progress;
@@ -352,4 +352,88 @@ test('profile themes require ownership and merge independently of the banner and
   const selected=p.readState(),changed=structuredClone(selected);changed.appearance.banner='grove';changed.appearance.bannerAt=selected.appearance.themeAt+1;changed.appearance.theme='';changed.appearance.themeAt=0;
   const merged=p.mergeStates(selected,changed);assert.equal(merged.appearance.theme,'sakura');assert.equal(merged.appearance.banner,'grove');
   assert.equal(p.selectTheme(''),true);assert.equal(p.readState().appearance.theme,'');assert.ok(p.readState().appearance.themeAt>selected.appearance.themeAt);
+});
+
+test('personal goals allow one daily and one weekly slot with validated targets',()=>{
+  const e=load(),p=e.progress;
+  p.setPersonalGoal('daily',{id:'kana-correct',target:20,repeat:true});
+  p.setPersonalGoal('weekly',{id:'kanji-correct',target:100,repeat:false});
+  let goals=p.routine().goals.filter(g=>g.personal);assert.equal(goals.length,2);
+  assert.deepEqual(plain(goals.map(g=>[g.period,g.target,g.repeat])),[['daily',20,true],['weekly',100,false]]);
+  assert.throws(()=>p.setPersonalGoal('daily',{id:'kana-correct',target:99999}),/available targets/);
+  assert.throws(()=>p.setPersonalGoal('monthly',{id:'kana-correct',target:20}),/daily or weekly/);
+  p.setPersonalGoal('daily',{id:'learn-kana',target:3,repeat:false});assert.equal(p.routine().goals.filter(g=>g.personal).length,2);
+  assert.equal(p.readState().personalGoals.daily.id,'learn-kana');
+});
+test('personal completion awards once per period even after edits and replay',()=>{
+  const e=load(),p=e.progress;p.setPersonalGoal('daily',{id:'kana-correct',target:20});p.startRun('personal');
+  for(let i=1;i<=20;i++)answer(e,'personal',i,{kana:['あ']});
+  const key='v5:personal:daily:2026-09-30';assert.equal(p.readState().claims[key],40);
+  const before=p.getXP();p.setPersonalGoal('daily',{id:'kana-correct',target:20});p.removePersonalGoal('daily');p.setPersonalGoal('daily',{id:'kana-correct',target:20});
+  assert.equal(p.getXP(),before);assert.equal(p.routine().goals.find(g=>g.personal).claimed,true);
+  assert.equal(answer(e,'personal',20).duplicate,true);assert.equal(p.getXP(),before);
+});
+test('repeating personal goals reset at local midnight and Monday; one-off goals expire',()=>{
+  const e=load(),p=e.progress;p.setPersonalGoal('daily',{id:'kana-correct',target:20,repeat:true});p.setPersonalGoal('weekly',{id:'kanji-correct',target:50,repeat:false});
+  p.startRun('day');for(let i=1;i<=20;i++)answer(e,'day',i);
+  e.setNow(Date.parse('2026-10-01T00:01:00'));let goals=p.routine().goals.filter(g=>g.personal);assert.equal(goals.length,2);assert.equal(goals[0].value,0);assert.equal(goals[0].claimed,false);
+  e.setNow(Date.parse('2026-10-05T00:01:00'));goals=p.routine().goals.filter(g=>g.personal);assert.equal(goals.length,1);assert.equal(goals[0].period,'daily');
+  p.setPersonalGoal('weekly',{id:'kana-correct',target:100,repeat:true});e.setNow(Date.parse('2026-10-12T00:01:00'));assert.equal(p.routine().goals.filter(g=>g.personal).length,2);
+});
+test('new-kana and mastery goals count distinct earned milestones, not repeated visits',()=>{
+  const e=load(),p=e.progress;p.setPersonalGoal('daily',{id:'learn-kana',target:3});p.setPersonalGoal('weekly',{id:'mastery-kana',target:3});
+  for(const char of ['あ','い','う']){p.recordKanaMilestone(char,3,2,e.now());p.recordKanaMilestone(char,3,2,e.now()+100);}
+  assert.equal(p.routine().goals.find(g=>g.template==='learn-kana').value,3);
+  assert.equal(p.routine().goals.find(g=>g.template==='mastery-kana').value,0);
+  p.recordKanaMilestone('あ',4,3,e.now());p.recordKanaMilestone('あ',5,4,e.now());p.recordKanaMilestone('あ',6,5,e.now());
+  assert.equal(p.routine().goals.find(g=>g.template==='mastery-kana').value,1);
+  e.setNow(e.now()+86400000);p.recordKanaMilestone('あ',6,5,e.now());assert.equal(p.readState().kanaMilestones['あ'][3],Date.parse('2026-09-30T12:00:00Z'));
+});
+test('legacy mastery is seeded without retroactively inventing new learning',()=>{
+  const e=load(),p=e.progress;
+  e.root.ModeAtlasKanaLearning={read:()=>({}),snapshot:()=>({}),map:{'あ':'a','い':'i'},stage:char=>char==='あ'?5:0};
+  p.setPersonalGoal('daily',{id:'learn-kana',target:1});
+  assert.equal(p.readState().kanaMilestones['あ'][3],1);assert.equal(p.routine().goals.find(g=>g.personal).value,0);
+  p.recordKanaMilestone('あ',6,5,e.now());assert.equal(p.routine().goals.find(g=>g.personal).value,0);
+  p.recordKanaMilestone('い',3,2,e.now());assert.equal(p.routine().goals.find(g=>g.personal).value,1);
+});
+test('test goals retain best complete unassisted score, never sum scores or round a miss up',()=>{
+  const e=load(),p=e.progress;p.setPersonalGoal('daily',{id:'kana-test',target:95});
+  for(const [id,correct,answered,completed,assisted]of [['aborted',100,100,false,0],['assisted',100,100,true,1],['near',52,55,true,0],['lower',80,100,true,0]]){
+    p.startRun(id);p.finishRun({runId:id,direction:'reading',mode:'testMode',correct,answered,unique:46,poolSize:46,completed,assisted});
+  }
+  assert.equal(p.routine().goals.find(g=>g.personal).value,94);assert.equal(p.routine().goals.find(g=>g.personal).claimed,false);
+  p.startRun('pass');p.finishRun({runId:'pass',direction:'writing',mode:'testMode',correct:95,answered:100,unique:46,poolSize:46,completed:true});
+  assert.equal(p.routine().goals.find(g=>g.personal).value,95);assert.equal(p.routine().goals.find(g=>g.personal).claimed,true);
+});
+test('personal goals and deletion tombstones converge across offline devices without duplicate rewards',()=>{
+  const a=load({modeAtlasProgressDeviceId:'a'}),b=load({modeAtlasProgressDeviceId:'b'}),p=a.progress;
+  p.setPersonalGoal('daily',{id:'kana-correct',target:20,repeat:true});b.progress.persistState(p.readState());
+  for(const [e,id]of [[a,'a'],[b,'b']]){e.progress.startRun(id);for(let i=1;i<=10;i++)answer(e,id,i);}
+  const left=p.readState(),right=b.progress.readState(),merged=p.mergeStates(left,right);
+  assert.equal(merged.claims['v5:personal:daily:2026-09-30'],40);assert.deepEqual(plain(merged),plain(p.mergeStates(right,left)));assert.deepEqual(plain(merged),plain(p.mergeStates(merged,left)));
+  a.setNow(a.now()+1000);p.removePersonalGoal('daily');const removed=p.mergeStates(p.readState(),right);
+  assert.equal(removed.personalGoals.daily.deleted,true);assert.equal(p.routine(removed).goals.some(g=>g.personal),false);
+  assert.equal(load().progress.routine().goals.some(g=>g.personal),false,'another account/guest starts without personal goals');
+});
+
+test('personal completions count for goals achievements without replacing the three rotating goals',()=>{
+  const p=load().progress,state=p.readState();state.claims={'v5:personal:daily:2026-09-30':40,'v5:personal:weekly:2026-09-28':200};
+  const stats=p.achievementStats(state);assert.equal(stats.dailyGoals,1);assert.equal(stats.weeklyGoals,1);assert.equal(stats.goalDays,0);
+});
+test('milestone goal XP is included in the answer receipt when award is deferred',()=>{
+  const e=load(),p=e.progress;p.setPersonalGoal('daily',{id:'learn-kana',target:1});p.startRun('learn-answer');
+  p.recordKanaMilestone('あ',3,2,e.now(),{deferAwards:true});assert.equal(p.readState().claims['v5:personal:daily:2026-09-30'],undefined);
+  const result=answer(e,'learn-answer',1,{kana:['あ']});assert.ok(result.parts.goals>=40);assert.equal(p.readState().claims['v5:personal:daily:2026-09-30'],40);
+});
+test('personal goal save failure is reported without claiming a saved goal',()=>{
+  const e=load();e.root.ModeAtlasStorage={...e.root.ModeAtlasStorage,setJSON:()=>false};
+  assert.throws(()=>e.progress.setPersonalGoal('daily',{id:'learn-kana',target:1}),/could not be saved/);
+  assert.equal(e.progress.routine().goals.some(g=>g.personal),false);
+});
+test('offline handwriting milestones merge into personal goals without requiring an answer that day',()=>{
+  const a=load(),b=load();a.progress.setPersonalGoal('daily',{id:'mastery-kana',target:3});b.progress.persistState(a.progress.readState());
+  a.progress.recordKanaMilestone('あ',6,5,a.now());b.progress.recordKanaMilestone('い',6,5,b.now());b.progress.recordKanaMilestone('う',6,5,b.now());
+  const merged=a.progress.mergeStates(a.progress.readState(),b.progress.readState());assert.equal(merged.claims['v5:personal:daily:2026-09-30'],40);
+  assert.deepEqual(plain(merged),plain(a.progress.mergeStates(b.progress.readState(),a.progress.readState())));
 });

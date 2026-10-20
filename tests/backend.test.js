@@ -90,7 +90,7 @@ function createBaseContext({ configured = false } = {}) {
   };
   Object.assign(window,{Blob,CompressionStream,DecompressionStream,btoa,atob});
   vm.createContext(context);
-  for(const file of ['data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-results'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
+  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-review','app/mode-atlas-kana-learning','data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-results'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
   return { context, window, localStorage, sessionStorage };
 }
 
@@ -828,6 +828,7 @@ test('Kana metrics use one storage snapshot and local calendar dates', () => {
     vm.runInContext(KANA_DATA_SOURCE, context, { filename: 'mode-atlas-kana-data.js' });
     vm.runInContext(dateSource, context, { filename: 'mode-atlas-date.js' });
     vm.runInContext(fs.readFileSync(path.join(ROOT,'assets/app/mode-atlas-review.js'),'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(ROOT,'assets/app/mode-atlas-kana-learning.js'),'utf8'), context);
     vm.runInContext(metricsSource, context, { filename: 'mode-atlas-kana-metrics.js' });
 
     const collections = window.ModeAtlasKanaData.collections;
@@ -1065,6 +1066,7 @@ test('save status remains pending through the debounce and upload, and failures 
 
 test('sync retry recovers failed database startup and initial cloud hydration',async()=>{
   const {context,window,localStorage}=createBaseContext({configured:true});
+  vm.runInContext(STORAGE_SOURCE,context);
   let changed,fail='database';
   context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,
     GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,callback)=>{changed=callback;},
@@ -1075,7 +1077,7 @@ test('sync retry recovers failed database startup and initial cloud hydration',a
   changed({uid:'learner'});assert.equal(await window.KanaCloudSync.waitForInitialHydration(),false);
   assert.equal(window.KanaCloudSync.getSyncStatus().state,'paused');assert.equal(window.KanaCloudSync.getSyncStatus().canRetry,true);
   fail='read';assert.equal(await window.KanaCloudSync.syncNow(),false);assert.equal(window.KanaCloudSync.getSyncStatus().state,'paused');
-  fail='';assert.equal(await window.KanaCloudSync.syncNow(),true);
+  fail='';assert.equal(await window.KanaCloudSync.syncNow(),true,JSON.stringify(window.KanaCloudSync.getSyncStatus()));
   assert.equal(window.KanaCloudSync.getSyncStatus().state,'cloud');assert.equal(await window.KanaCloudSync.waitForInitialHydration(),true);
   assert.equal(JSON.parse(localStorage.getItem('charStats'))['あ'].correct,7);
 });
@@ -1143,4 +1145,23 @@ test('an account change during Kanji encoding cannot write the previous account 
   vm.runInContext(STORAGE_SOURCE,context);vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!callback;i++)await delay(1);callback({uid:'kanji-old'});await window.KanaCloudSync.waitForInitialHydration();
   const codec=window.ModeAtlasKanjiCodec;window.ModeAtlasKanjiCodec={...codec,pack:async value=>{held=true;await gate.promise;return codec.pack(value);}};
   const saving=window.KanaCloudSync.syncNow();for(let i=0;i<50&&!held;i++)await delay(1);assert.ok(held);callback(null);gate.resolve();assert.equal(await saving,false);assert.equal(writes.length,0);
+});
+
+
+test('Kana milestones merge across offline devices, survive backup and clear on reset',async()=>{
+  const {context,window,localStorage}=createBaseContext({configured:true});let callback,remote=null,latest;
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,GoogleAuthProvider:class{setCustomParameters(){}},onAuthStateChanged:(_auth,fn)=>callback=fn,getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),getDoc:async()=>({exists:()=>!!remote,data:()=>structuredClone(remote)}),setDoc:async(_ref,payload)=>latest=JSON.parse(JSON.stringify(payload))};
+  vm.runInContext(STORAGE_SOURCE,context);
+  for(const file of ['app/mode-atlas-date','app/mode-atlas-reward-rules','app/mode-atlas-progress'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!callback;i++)await delay(1);callback({uid:'kana-cloud'});await window.KanaCloudSync.waitForInitialHydration();
+  const course=window.ModeAtlasKanaLearning;
+  localStorage.setItem(course.KEY,JSON.stringify(course.normalize({startedAt:100,startKind:'beginner',earned:{reading:{'あ':5}},handwriting:{'あ':[{id:'local',at:1000,independent:true}]}})));
+  remote={sections:{kanaLearning:{data:{state:course.normalize({startedAt:200,startKind:'placement',earned:{writing:{'あ':5}},placed:{writing:{'hiragana:base:ka':200}},handwriting:{'あ':[{id:'remote',at:2000,independent:true}]}})},updatedAt:Date.now()}}};
+  assert.equal(await window.KanaCloudSync.syncNow(),true);
+  let merged=latest.sections.kanaLearning.data.state;
+  assert.equal(merged.earned.reading['あ'],5);assert.equal(merged.earned.writing['あ'],5);assert.equal(merged.handwriting['あ'].length,2);assert.equal(merged.placed.writing['hiragana:base:ka'],200);
+  remote=latest;await window.KanaCloudSync.syncNow();assert.equal(course.read().handwriting['あ'].length,2);
+  window.ModeAtlasDevConsoleLoader={isEligible:()=>true};assert.equal(window.KanaCloudSync.createBackup().snapshot.sections.kanaLearning.data.state.earned.reading['あ'],5);
+  localStorage.setItem('modeAtlasKanaPlacementCheckpoint','private checkpoint');
+  await window.KanaCloudSync.resetAllData();assert.equal(Object.keys(latest.sections.kanaLearning.data).length,0);assert.equal(Object.keys(course.read().earned.reading).length,0);assert.equal(localStorage.getItem('modeAtlasKanaPlacementCheckpoint'),null);
 });

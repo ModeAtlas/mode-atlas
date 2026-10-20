@@ -9,7 +9,8 @@ const progress = createProgress({ModeAtlasDates: dates, ModeAtlasRewardRules: re
 const review = createReview({ModeAtlasDates: dates});
 const identity = require('./shared/mode-atlas-social-identity.js');
 const characters = require('./shared/mode-atlas-avatar-rules.js');
-const PROJECTION_VERSION=4;
+const learning=require('./shared/mode-atlas-kana-learning.js')({ModeAtlasKanaData:kana,ModeAtlasReview:review,ModeAtlasDates:dates});
+const PROJECTION_VERSION=5;
 
 function progressOwner(save = {}, timeZone = 'UTC') {
   const sections = save.sections || {};
@@ -43,13 +44,13 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
   const seeded = owner.ensureSeeded({sync:false,emit:false});
   const summary = owner.getSummary(seeded);
   const selected = rewards.appearance(seeded.appearance.landmark,summary.level,access);
+  const course=learning.normalize(data('kanaLearning').state),evidence={};
+  for(const skill of ['reading','writing'])Object.assign(evidence,{[skill+'Stats']:data(skill).stats||{},[skill+'Review']:data(skill).srs||{},[skill+'Times']:data(skill).times||{}});
   let readingMastered=0,writingMastered=0,combinedMastered=0;
-  for (const char of kana.collections.all) {
-    const reading={review:data('reading').srs?.[char],stats:data('reading').stats?.[char],time:data('reading').times?.[char]};
-    const writing={review:data('writing').srs?.[char],stats:data('writing').stats?.[char],time:data('writing').times?.[char]};
-    if(review.stage(reading.review,reading.stats,reading.time)===3)readingMastered++;
-    if(review.stage(writing.review,writing.stats,writing.time)===3)writingMastered++;
-    if(review.combinedStage(reading,writing)===3)combinedMastered++;
+  for(const char of kana.collections.all){
+    if(learning.earned(char,'reading',course,evidence)===5)readingMastered++;
+    if(learning.earned(char,'writing',course,evidence)===5)writingMastered++;
+    if(learning.stage(char,course,evidence)>=5)combinedMastered++;
   }
   return {version:progress.STATE_VERSION,projectionVersion:PROJECTION_VERSION,xp:summary.xp,level:summary.level,totalCorrect:summary.lifetimeCorrect,
     readingMastered,writingMastered,combinedMastered,kanaCount:kana.collections.all.length,

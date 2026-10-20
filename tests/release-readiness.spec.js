@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 const {execFileSync}=require('node:child_process');
 const path=require('node:path');
 test.beforeAll(()=>execFileSync('python3',['build_ios_web.py'],{cwd:path.resolve(__dirname,'..'),stdio:'pipe'}));
@@ -17,7 +18,7 @@ test('native Firebase modules load offline from the payload and share a single a
   });
   expect(result).toEqual({same:true,count:1});
   expect(downloads.filter(url=>url.includes('/firebasejs/'))).toEqual([]);
-  await expect(page.locator('.atlas-ios-home')).toBeVisible();
+  await expect(page.locator('.atlas-home')).toBeVisible();
 });
 
 test('the first-use tour is skippable, keeps keyboard focus and can be replayed',async({page})=>{
@@ -106,7 +107,7 @@ test('visual tour opens real practice setup, goals, rewards and account sections
   await expect(page.locator('#modifiersTab')).toBeVisible();
   const before=await page.evaluate(()=>ModeAtlasProgress.getXP());
   await tour.getByRole('button',{name:'Next',exact:true}).click();
-  await expect(page.locator('#practiceSetupDialog')).toBeVisible();await expect(page.locator('.ma-mode-choice').first()).toBeVisible();
+  await expect(page.locator('#practiceSetupDialog')).toBeVisible();await expect(page.getByLabel('Session',{exact:true})).toBeVisible();
   await page.screenshot({path:test.info().outputPath('tour-setup.png')});
   await tour.getByRole('button',{name:'Next',exact:true}).click();
   await expect(page).toHaveURL(/\/progress\/$/);await expect(page.locator('#atlasPanel0')).toBeVisible();
