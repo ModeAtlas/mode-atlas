@@ -660,7 +660,7 @@
   }
 
   function counterTotal(state, type){
-    return Object.values(normalizeState(state).sources).reduce((sum, source) => Math.min(Number.MAX_SAFE_INTEGER, sum + finiteCount(source[type])), 0);
+    return Object.values(state.sources).reduce((sum, source) => Math.min(Number.MAX_SAFE_INTEGER, sum + finiteCount(source[type])), 0);
   }
 
   function getLifetimeCorrect(input){
@@ -709,7 +709,7 @@
 
   function getSummary(input){
     const state = input ? normalizeState(input) : ensureSeeded({ sync: false, emit: false });
-    const xp = getXP(state);
+    const xp = sumXP(state);
     const levelInfo = getLevelFromXP(xp);
     const readingCorrect = counterTotal(state, 'kana.reading.correct');
     const writingCorrect = counterTotal(state, 'kana.writing.correct');

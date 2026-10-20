@@ -376,7 +376,7 @@ html[data-ma-large-text] .ma-kana-navigation{grid-template-columns:repeat(2,minm
 /* Desktop has a persistent destination rail; compact web and iOS keep their
    existing responsive chrome. Focus mode removes the rail with its controls. */
 @media(min-width:1100px){
- html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .ma-nav__destination-icon{display:block;width:20px;height:20px;}
+ html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .ma-nav__destination-icon{display:block;width:26px;height:26px;}
  html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.study-nav-hidden) .ma-nav{position:fixed;left:0;right:0;top:0;width:100%;height:76px;margin:0;padding:0 28px;border-radius:0;background:var(--ma-card);}
  html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"]:not(.study-nav-hidden) .ma-nav__links{position:fixed;left:0;top:76px;bottom:0;width:180px;padding:24px 14px;display:flex;flex-direction:column;align-items:stretch;gap:7px;border-right:1px solid var(--ma-border);background:var(--ma-card);}
  html:not([data-ma-runtime="ios"]) body[data-effective-display-mode="desktop"] .ma-nav__link{justify-content:flex-start;min-height:48px;padding:12px 16px;font-size:.85rem;}

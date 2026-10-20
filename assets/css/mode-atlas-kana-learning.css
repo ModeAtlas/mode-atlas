@@ -12,9 +12,8 @@
 .ma-kana-row-picker-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 14px;margin:18px 0 8px;}.ma-kana-row-picker-header h4{margin:0;font-size:.95rem;}.ma-kana-row-picker-header label{display:flex;align-items:center;gap:8px;min-height:44px;font-size:.78rem;}.ma-kana-row-picker-header input{accent-color:var(--ma-reading);width:18px;height:18px;}
 .ma-kana-row-picker-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}.ma-kana-row-picker-grid label{display:flex;align-items:center;gap:8px;min-height:44px;font-size:.8rem;line-height:1.4;}.ma-kana-row-picker-grid label:has(:disabled){opacity:.55;}.ma-kana-row-picker-grid input{accent-color:var(--ma-reading);width:18px;height:18px;flex:none;}
 .ma-kana-mastery-legend{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0;}.ma-kana-mastery-legend>span{border-left:3px solid var(--ma-border);padding:6px 10px;font-size:.8rem;background:var(--ma-surface-inset);border-radius:6px;}
-.ma-kana-mastery-map .ma-mastery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;}.ma-kana-mastery-map .ma-mastery-cell{display:grid;place-items:center;gap:6px;min-height:92px;padding:12px 4px;background:var(--ma-surface-inset);color:var(--ma-text-strong);border:1px solid var(--ma-border);border-bottom-width:3px;border-radius:12px;cursor:pointer;}.ma-kana-mastery-map .ma-mastery-cell strong{font:550 1.7rem/1.3 var(--ma-font-jp);white-space:nowrap;}.ma-kana-mastery-map .ma-mastery-cell span{font-size:.66rem;}
+.ma-kana-mastery-map .ma-mastery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;}.ma-kana-mastery-map .ma-mastery-cell{display:grid;place-items:center;gap:6px;min-height:92px;padding:12px 4px;background:var(--ma-surface-inset);color:var(--ma-text-strong);border:1px solid var(--ma-border);border-bottom-width:4px;border-radius:12px;cursor:pointer;}.ma-kana-mastery-map .ma-mastery-cell strong{font:550 1.7rem/1.3 var(--ma-font-jp);white-space:nowrap;}.ma-kana-mastery-map .ma-mastery-cell span{font-size:.66rem;}
 /* Milestone colours remain distinct from branch/theme accent colours. */
-:is(.ma-kana-mastery-map,.ma-kana-mastery-detail){--ma-stage-new:var(--ma-border-strong);--ma-stage-introduced:var(--ma-muted);--ma-stage-learning:#7c9ee8;--ma-stage-familiar:#d6a447;--ma-stage-confident:#39afc5;--ma-stage-mastered:#51b989;--ma-stage-plus:#b58ae5;}
 :is(.ma-kana-mastery-map,.ma-kana-mastery-detail) [data-stage="0"]{--ma-stage:var(--ma-stage-new);}
 :is(.ma-kana-mastery-map,.ma-kana-mastery-detail) [data-stage="1"]{--ma-stage:var(--ma-stage-introduced);}
 :is(.ma-kana-mastery-map,.ma-kana-mastery-detail) [data-stage="2"]{--ma-stage:var(--ma-stage-learning);}
@@ -23,6 +22,7 @@
 :is(.ma-kana-mastery-map,.ma-kana-mastery-detail) [data-stage="5"]{--ma-stage:var(--ma-stage-mastered);}
 :is(.ma-kana-mastery-map,.ma-kana-mastery-detail) [data-stage="6"]{--ma-stage:var(--ma-stage-plus);}
 .ma-kana-mastery-map :is(.ma-mastery-cell,.ma-kana-mastery-legend>span){border-color:var(--ma-stage);}
+.ma-kana-mastery-map .ma-mastery-cell{background:color-mix(in srgb,var(--ma-stage) 9%,var(--ma-surface-inset));}
 .ma-kana-mastery-heading>strong{display:inline-block;padding:6px 12px;border-left:4px solid var(--ma-stage);background:var(--ma-surface-inset);border-radius:6px;}
 .ma-kana-mastery-skills .ma-button span{border-bottom:3px solid var(--ma-stage);padding-bottom:4px;}
 
@@ -38,5 +38,5 @@
 html[data-ma-large-text] :is(.ma-kana-practice-form,.ma-kana-row-picker-grid,.ma-kana-targets,.ma-kana-stage-guide){grid-template-columns:1fr;}
 
 .ma-kana-mastery-map .ma-mastery-skill-marks{display:flex;gap:4px;width:32px;margin-top:3px;}
-.ma-kana-mastery-map .ma-mastery-skill-marks i{display:block;width:14px;height:4px;border-radius:3px;background:var(--ma-border);box-shadow:none;}
+.ma-kana-mastery-map .ma-mastery-skill-marks i{display:block;width:14px;height:5px;border-radius:3px;background:var(--ma-border);box-shadow:none;}
 .ma-kana-mastery-map .ma-mastery-skill-marks [data-stage]{background:var(--ma-stage);}

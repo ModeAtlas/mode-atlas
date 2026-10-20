@@ -70,7 +70,7 @@ let STORED_RESULTS = loadStoredResults();
 
 let selectedResultId = STORED_RESULTS[0]?.id || null;
 let selectedKana = null;
-let hideUnusedKana = false;
+let hideUnusedKana = true;
 let activeRowGraphView = "regular";
 
 const HERO_STORED_TESTS = document.getElementById("heroStoredTests");
@@ -770,7 +770,7 @@ function renderAll() {
         DETAIL_SUB.textContent = "Complete Test Mode to unlock the full kana heatmap and row analysis.";
         DETAIL_METRICS.replaceChildren();
         const hideBtn = document.getElementById("hideUnusedBtn");
-        if (hideBtn) { hideBtn.classList.remove("active"); hideBtn.textContent = "Hide unused kana"; }
+        if (hideBtn) { hideBtn.classList.toggle("active",hideUnusedKana); hideBtn.textContent = hideUnusedKana?"Show unused kana":"Hide unused kana"; }
         TEST_HEATMAP.replaceChildren(createResultEl("div", "empty test-heatmap-empty ma-card ma-empty-state", "No formal assessment data yet."));
         return;
     }

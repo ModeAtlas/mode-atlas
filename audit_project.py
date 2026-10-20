@@ -771,7 +771,7 @@ def main() -> int:
         fail(errors, 'Atlas page controller takes over shared Profile/Settings/cloud ownership')
     if 'Branches' in profile_menu or 'data-ma-nav-item' in profile_menu:
         fail(errors, 'Profile drawer duplicates shared navigation')
-    settings_hierarchy_markers = ('ma-setting-row', 'ma-settings-section', 'ma-settings-data-list', 'ma-save-section', 'ma-tools-panel')
+    settings_hierarchy_markers = ('ma-preference-row', 'ma-settings-section', 'ma-settings-action-grid', 'ma-save-section', 'data-ma-tour', 'data-ma-repair-data', 'data-ma-unified-reset', 'settingsDeleteAccountBtn')
     if any(marker not in settings_menu for marker in settings_hierarchy_markers):
         fail(errors, 'Settings drawer is missing the standard preference/data hierarchy')
 

@@ -26,7 +26,8 @@
     return root.ModeAtlasRewardRules.banner(state.appearance.banner,root.ModeAtlasProgress.getSummary(state).level,access());
   }
   function refresh(){
-    const item=appearance(),selectedBanner=banner(),summary=root.ModeAtlasProgress.getSummary(),routine=root.ModeAtlasProgress.routine();
+    const state=root.ModeAtlasProgress.readState(),summary=root.ModeAtlasProgress.getSummary(state);
+    const item=rules.appearance(state.appearance.landmark,summary.level,access()),selectedBanner=rules.banner(state.appearance.banner,summary.level,access());
     const title=document.getElementById('profileAtlasTitle');if(title)title.textContent=item.title;
     document.querySelectorAll('#profileAvatar,#topProfileDot,[data-ma-selected-avatar]').forEach(node=>{node.dataset.maFrame=item.frame;});
     document.querySelectorAll('[data-ma-selected-avatar]').forEach(renderAvatar);
@@ -72,11 +73,13 @@
       notice.querySelector('span').textContent=state==='loading'?'Refreshing your extra rewards…':state==='offline'?'Showing your saved extra rewards while offline.':'Showing your saved extra rewards.';
       notice.querySelector('button').hidden=state!=='error';
     }
+    const routine=document.querySelector('[data-ma-routine-streak],[data-ma-atlas-summary]')?root.ModeAtlasProgress.routine(state):null;
     document.querySelectorAll('[data-ma-routine-streak]').forEach(node=>{node.textContent=String(routine.streak);});
     document.querySelectorAll('[data-ma-atlas-summary]').forEach(node=>{node.textContent=`Level ${summary.level} · ${routine.streak}-day study streak`;});
-    renderGoals(document.querySelector('.ma-atlas-rewards .ma-routine-goals'));
-    renderReviews(document.querySelector('[data-ma-due-reviews]'));
-    renderRecap(document.querySelector('.ma-atlas-recap'));
+    const visible=selector=>{const node=document.querySelector(selector);return node&&!node.closest('[hidden]')?node:null;};
+    renderGoals(visible('.ma-atlas-rewards .ma-routine-goals'));
+    renderReviews(visible('[data-ma-due-reviews]'));
+    renderRecap(visible('.ma-atlas-recap'));
   }
   function avatar(item){
     const node=el('span','ma-atlas-avatar');node.dataset.maFrame=item.frame;node.setAttribute('aria-hidden','true');
@@ -257,14 +260,26 @@
     const status=el('span');status.dataset.maAtlasSummary='';
     copy.append(title,status);identity.append(preview,copy);content.append(identity);
     const tabs=el('div','ma-atlas-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Progress');
-    const recap=el('div','ma-atlas-panel ma-atlas-recap');renderRecap(recap);
-    const panels=[goalPanel(),rewardPanel(summary),recap];
+    const recap=el('div','ma-atlas-panel ma-atlas-recap');
+    const panels=[el('div','ma-atlas-panel'),el('div','ma-atlas-panel'),recap],mounted=new Set();
     const controls=['Goals','Rewards','Recap'].map((label,index)=>{
       const tab=button(label);tab.id=`atlasTab${index}`;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',`atlasPanel${index}`);
       panels[index].id=`atlasPanel${index}`;panels[index].setAttribute('role','tabpanel');panels[index].setAttribute('aria-labelledby',tab.id);panels[index].tabIndex=0;
       tab.addEventListener('click',()=>selectTab(index));tabs.append(tab);return tab;
     });
-    function selectTab(index){controls.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});if(index===2)renderRecap(recap);}
+    function selectTab(index){
+      if(!mounted.has(index)){
+        if(index<2){
+          const content=index===0?goalPanel():rewardPanel(root.ModeAtlasProgress.getSummary());
+          panels[index].className=content.className;panels[index].append(...content.childNodes);
+        }
+        mounted.add(index);
+      }
+      controls.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});
+      if(index===0){renderGoals(panels[0].querySelector('.ma-routine-goals'));renderReviews(panels[0].querySelector('[data-ma-due-reviews]'));}
+      if(index===1&&panels[index].isConnected)refresh();
+      if(index===2)renderRecap(recap);
+    }
     tabs.addEventListener('keydown',event=>{
       const index=controls.indexOf(document.activeElement);if(index<0)return;
       const target=event.key==='ArrowRight'?(index+1)%controls.length:event.key==='ArrowLeft'?(index+controls.length-1)%controls.length:event.key==='Home'?0:event.key==='End'?controls.length-1:-1;

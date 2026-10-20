@@ -23,7 +23,7 @@
       for(const [key,tab]of tabs){tab.setAttribute('aria-selected',String(key===name));tab.tabIndex=key===name?0:-1;}
       document.getElementById('maAccountTitle').textContent=sections.find(section=>section[0]===name)[1];
       if(name==='settings')root.ModeAtlasNativeSettings?.refresh?.();
-      if(name==='shop'){root.ModeAtlasShopUI.refresh();void root.ModeAtlasShop.refresh(true);void root.ModeAtlasRewardAccess?.refresh();}
+      if(name==='shop'){if(!panels.get(name).dataset.maShop)root.ModeAtlasShopUI.mount(panels.get(name));else root.ModeAtlasShopUI.refresh();void root.ModeAtlasShop.refresh(true);void root.ModeAtlasRewardAccess?.refresh();}
     }
     syncVisibility();
     if(focus)tabs.get(name).focus({preventScroll:true});
@@ -79,7 +79,6 @@
     if(root.ModeAtlasEnv?.isNativeApp){profileButton=document.getElementById('profileOpenBtn');if(profileButton){profileHome=document.createComment('profile-home');profileButton.before(profileHome);}}
     for(const [name]of visible){
       panels.set(name,document.getElementById('maAccount-'+name));
-      if(name==='shop')root.ModeAtlasShopUI.mount(panels.get(name));
       const tab=document.getElementById('maAccountTab-'+name);tabs.set(name,tab);
       tab.addEventListener('click',()=>select(name,{focus:true}));
     }

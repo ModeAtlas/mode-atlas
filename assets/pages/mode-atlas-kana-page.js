@@ -104,7 +104,7 @@
   function activity(label,copy,mark,action){
     const item=button('',action);item.className='ma-kana-activity';
     const symbol=el('span','ma-kana-activity-mark');symbol.setAttribute('aria-hidden','true');
-    const icon=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS(icon.namespaceURI,'use');icon.classList.add('ma-icon');use.setAttribute('href','/assets/mode-atlas-icons.svg#icon-'+(mark==='✎'?'edit':'play'));icon.append(use);symbol.append(icon);
+    const icon=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS(icon.namespaceURI,'use');icon.classList.add('ma-icon');use.setAttribute('href','/assets/mode-atlas-icons.svg#icon-'+('tool-'+({'✎':'handwrite','20':'daily','60':'timed','あい':'sequence'}[mark]||'practice')));icon.append(use);symbol.append(icon);
     const text=el('span','ma-kana-activity-copy');text.append(el('strong','',label),el('span','',copy));
     const arrow=el('span','ma-kana-activity-arrow','›');arrow.setAttribute('aria-hidden','true');
     item.append(symbol,text,arrow);return item;
