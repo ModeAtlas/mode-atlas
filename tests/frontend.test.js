@@ -218,7 +218,7 @@ test('shared shell regression guards keep nav spacing, sound controls, and train
   const studyCss = read('assets/css/mode-atlas-study-shared.css');
   const wordbankCss = read('assets/css/mode-atlas-wordbank-page.css');
 
-  assert.match(kanaCss, /padding:0 24px;/, 'Kana top frame padding must not stack above shared nav');
+  assert.match(kanaCss, /padding:0 16px;/, 'Kana top frame padding must not stack above shared nav');
   assert.match(resultsCss, /padding:\s*0 22px 22px;/, 'Results top frame padding must not stack above shared nav');
   assert.match(studyCss, /body\.ma-reading-page,[\s\S]*?body\.ma-writing-page\{[\s\S]*?padding:var\(--ma-page-inset-top,0px\) 24px var\(--ma-page-inset-bottom,24px\);/,
     'Reading/Writing top frame padding must be owned by the shared trainer stylesheet');
@@ -834,8 +834,8 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   assert.doesNotMatch(kanaHeadBlock, /display:\s*flex/,
     'Kana section headers should let ma-section-head own flex layout');
 
-  assert.match(resultsHtml, /hero glass ma-card/);
-  assert.match(resultsHtml, /detail-panel ma-card ma-card--flat/);
+  assert.match(resultsHtml, /class="results-heading"/);
+  assert.doesNotMatch(resultsHtml, /hero glass ma-card|detail-panel ma-card/,'Results heading and analysis must not restore nested card shells');
   assert.match(resultsHtml, /meta-grid ma-stat-grid/);
   assert.match(resultsJs, /ma-card ma-card--flat ma-card--interactive/);
   assert.match(resultsUi, /row-doughnut-card ma-card ma-card--flat ma-card--interactive/);
@@ -1242,7 +1242,7 @@ test('2.40 Results is a formal Test Mode report and preserves comprehensive asse
   const storage = read('assets/results/mode-atlas-results-storage.js');
 
   assert.match(html, /Formal assessment/);
-  assert.match(html, /Test Mode only · practice sessions are not included/);
+  assert.match(html, /Formal tests/);
   assert.match(html, /Assessment history/);
   assert.match(html, /Kana-level analysis/);
   assert.match(html, /Before your next test/);

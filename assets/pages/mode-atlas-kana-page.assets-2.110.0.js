@@ -141,7 +141,7 @@
     current.append(el('span','ma-kicker',`${script==='hiragana'?'Hiragana':'Katakana'} · ${L.names[skill]}`));
     const introduced=next.chars.every(char=>state.introduced[char]),hasPractice=next.ready>0;
     current.append(el('h2','',`${introduced||hasPractice?'Keep building your':'Meet the'} ${next.name.replace(' row','-row')}`));
-    const chars=el('div','ma-kana-lesson-tiles');chars.setAttribute('aria-label','Explore this row');
+    const chars=el('div','ma-kana-lesson-tiles');chars.setAttribute('aria-label','Explore this row');chars.style.setProperty('--kana-tile-count',String(Math.min(5,next.chars.length)));
     next.chars.forEach((char,index)=>{
       const tile=button('',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,[char]));else{lesson={row:next,index};render();}});tile.className='ma-kana-lesson-tile';
       tile.setAttribute('aria-label',`Learn ${char}, ${L.map[char]}`);const glyph=el('strong','',char);glyph.lang='ja';tile.append(glyph,el('span','',L.map[char]));chars.append(tile);
@@ -205,11 +205,12 @@
     const selected=L.rows.filter(row=>row.chars.some(char=>Object.hasOwn(pool,char)));
     const scripts=[...new Set(selected.map(row=>row.script))],scriptLabel=scripts.length===2?'Hiragana & Katakana':scripts[0]==='katakana'?'Katakana':'Hiragana';
     const name=family==='daily'?'Your daily session':family==='timed'?(settings.timeTrial?'Set yourself a target':'A one-minute challenge'):family==='sequence'?'Find the flow':family==='test'?'Put it all together':settings.practiceCount?`${settings.practiceCount} questions, at your pace`:'Stay a little longer';
-    card.append(el('span','ma-kicker',scriptLabel),el('h2','',name));
-    const instrument=el('div','ma-kana-instrument');instrument.setAttribute('aria-hidden','true');const sample=el('span','ma-kana-instrument-glyph',chars[0]||'あ');sample.lang='ja';instrument.append(el('span','ma-kicker','SHAPE ↔ SOUND'),sample,el('span','ma-kana-instrument-answer',L.map[chars[0]]||'a'));card.append(instrument);
-    card.append(el('p','ma-kana-selection-summary',`${selected.length===1?selected[0].name+' · ':''}${chars.length} kana${settings.focusWeak?' · Focus on weaker characters':settings.confusableKana?' · Similar-looking characters':''}`));
+    const sessionCopy=el('div','ma-kana-session-copy');
+    sessionCopy.append(el('span','ma-kicker',scriptLabel),el('h2','',name));card.append(sessionCopy);
+    const instrument=el('div','ma-kana-instrument');instrument.setAttribute('aria-hidden','true');const sample=el('span','ma-kana-instrument-glyph',chars[0]||'あ');sample.lang='ja';sample.dataset.combined=String((chars[0]||'あ').length>1);instrument.append(el('span','ma-kicker','SHAPE ↔ SOUND'),sample,el('span','ma-kana-instrument-answer',L.map[chars[0]]||'a'));card.append(instrument);
+    sessionCopy.append(el('p','ma-kana-selection-summary',`${selected.length===1?selected[0].name+' · ':''}${chars.length} kana${settings.focusWeak?' · Focus on weaker characters':settings.confusableKana?' · Similar-looking characters':''}`));
     const copy=family==='daily'?'Twenty questions. Make a little progress today.':family==='timed'?(settings.timeTrial?`${settings.trialTarget} correct answers in ${settings.trialMinutes} minutes.`:'How many can you recognise in 60 seconds?'):family==='sequence'?'Read groups of characters together and build your fluency.':family==='test'?'One pass through your unlocked script.':settings.feedbackStyle==='quick'?'Quick feedback keeps your rhythm.':'Learn from each answer, with time to try again.';
-    card.append(el('p','ma-kana-muted',copy));
+    sessionCopy.append(el('p','ma-kana-muted',copy));
     const actions=el('div','ma-kana-feature-actions');actions.append(button('Start practice',openSession,true));
     if(family!=='daily'&&family!=='test'){
       const hints=button(settings.hint?'Hints on':'Hints off',()=>{practiceSettings={...settings,hint:!settings.hint};render();});hints.className='ma-kana-text-action';hints.setAttribute('aria-pressed',String(!!settings.hint));actions.append(hints);

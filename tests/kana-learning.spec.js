@@ -188,3 +188,21 @@ for(const skill of ['reading','writing'])test(`${skill} returns to the saved pra
   await expect(page.locator('.ma-kana-session h2')).toHaveText('Stay a little longer');
   expect(await page.evaluate(skill=>ModeAtlasStorage.readModeJSON(skill,'settings',{}).endless,skill)).toBe(true);
 });
+
+for(const width of [320,393])test(`combined kana stay together and practice actions fit on a ${width}px iPhone`,async({page})=>{
+  await setup(page,{native:true});await page.setViewportSize({width,height:852});await open(page);
+  await page.evaluate(()=>{
+    const L=ModeAtlasKanaLearning,state=L.start('beginner'),rows=L.rows.filter(row=>row.script==='hiragana'),index=rows.findIndex(row=>row.group==='yoon');
+    for(const row of rows.slice(0,index))state.placed.reading[row.id]=Date.now();L.save(state);
+  });
+  await open(page);
+  await expect(page.locator('.ma-kana-lesson-tile strong').first()).toHaveText('きゃ');
+  const tiles=await page.locator('.ma-kana-lesson-tile strong').evaluateAll(nodes=>nodes.map(node=>{const box=node.getBoundingClientRect(),style=getComputedStyle(node);return {height:box.height,line:parseFloat(style.lineHeight),fits:node.scrollWidth<=node.parentElement.clientWidth};}));
+  expect(tiles.every(tile=>tile.height<=tile.line+1&&tile.fits)).toBe(true);
+  await expect(page.getByRole('button',{name:'Continue learning',exact:true})).toBeInViewport();
+  await open(page,'/kana/?view=practice');await expect(page.getByRole('button',{name:'Start practice',exact:true})).toBeInViewport();
+  expect(await page.locator('.ma-kana-session').evaluate(node=>node.getBoundingClientRect().height)).toBeLessThan(330);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.getByRole('button',{name:'Start practice',exact:true}).click();
+  await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('#startBtn')).toBeVisible();await page.waitForFunction(()=>window.ModeAtlasKanaLearning&&window.ModeAtlasStorage);expect(await page.evaluate(()=>Object.keys(ModeAtlasKanaLearning.selection(ModeAtlasStorage.readModeJSON('reading','settings',{}),'reading')))).toEqual(['きゃ','きゅ','きょ']);
+});

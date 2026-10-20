@@ -1058,8 +1058,8 @@ body.ma-writing-page{
 
 .ma-trainer-card{
   width:min(540px,calc(100vw - 32px));
-  background:var(--ma-surface-strong);
-  border:1px solid color-mix(in srgb,var(--ma-trainer-accent) 18%,var(--ma-border));
+  background:var(--ma-card);
+  border:1px solid var(--ma-border);
   border-radius:20px;
   box-shadow:none;
   padding:24px 30px;
@@ -1071,12 +1071,12 @@ body.ma-writing-page{
   font-size:28px;
   font-weight:700;
   letter-spacing:-.01em;
-  text-shadow:var(--ma-native-text-shadow,0 0 22px color-mix(in srgb,var(--ma-trainer-accent) 15%,transparent));
+  text-shadow:none;
 }
 .ma-trainer-card .subline{color:var(--ma-muted);font-size:15px;margin-bottom:20px;}
 
 .ma-trainer-score{
-  background:var(--ma-native-surface,linear-gradient(180deg,color-mix(in srgb,var(--ma-trainer-accent) 9%,transparent),rgba(255,255,255,.02)));
+  background:var(--ma-control-active);
   border-color:color-mix(in srgb,var(--ma-trainer-accent) 18%,var(--ma-border));
   color:var(--ma-text);
   padding:8px 14px;

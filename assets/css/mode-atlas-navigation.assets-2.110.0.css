@@ -371,7 +371,7 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"])) .ma-nav__link.i
 
 /* Branch destinations are distinct from the global navigation. */
 .ma-kana-navigation{display:grid;grid-template-columns:1fr 1fr auto auto;align-items:stretch;gap:10px;max-width:1120px;margin:24px auto;width:calc(100% - 48px);}
-.ma-kana-navigation a{display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;min-height:64px;padding:14px 20px;border-radius:14px;background:var(--ma-card);border:1px solid var(--ma-border);text-decoration:none;color:var(--ma-muted);font-weight:700;font-size:.9rem;}
+.ma-kana-navigation a{display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;min-height:52px;padding:10px 16px;border-radius:14px;background:var(--ma-card);border:1px solid var(--ma-border);text-decoration:none;color:var(--ma-muted);font-weight:700;font-size:.9rem;}
 .ma-kana-navigation a[data-kana-section="kana"],.ma-kana-navigation a[data-kana-section="practice"]{font-size:1.15rem;justify-content:flex-start;}
 .ma-kana-navigation a[data-kana-section="kana"]::before{content:'あ';font-family:var(--ma-font-jp);font-size:1.5rem;}
 .ma-kana-navigation a[data-kana-section="practice"]::before{content:'↔';font-size:1.5rem;}
@@ -380,7 +380,8 @@ body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation{width:min(540px,1
 body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation a{min-height:44px;padding:8px 4px;font-size:.75rem;justify-content:center;}
 body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation a::before{display:none;}
 body.trainer-session-active .ma-kana-navigation,body.study-nav-hidden .ma-kana-navigation{display:none;}
-@media(max-width:600px){.ma-kana-navigation{width:100%;grid-template-columns:1fr 1fr;margin:12px auto 18px;gap:8px;}.ma-kana-navigation a{min-height:44px;padding:10px 14px;font-size:.75rem;}.ma-kana-navigation a[data-kana-section="kana"],.ma-kana-navigation a[data-kana-section="practice"]{min-height:52px;}.ma-kana-navigation a[data-kana-section="mastery"],.ma-kana-navigation a[data-kana-section="tests"]{background:none;border:0;padding:4px;}}
+@media(max-width:600px){.ma-kana-navigation{width:100%;grid-template-columns:repeat(4,minmax(0,1fr));margin:8px auto 16px;gap:4px;padding:3px;border-radius:12px;background:var(--ma-surface-inset);box-sizing:border-box;}.ma-kana-navigation a,.ma-kana-navigation a[data-kana-section="kana"],.ma-kana-navigation a[data-kana-section="practice"]{min-height:44px;padding:8px 3px;font-size:.75rem;justify-content:center;border:0;border-radius:9px;background:transparent;}.ma-kana-navigation a::before{display:none;}.ma-kana-navigation a[aria-current="page"]{background:var(--ma-primary);}}
+html[data-ma-large-text] .ma-kana-navigation{grid-template-columns:repeat(2,minmax(0,1fr));}
 /* Desktop has a persistent destination rail; compact web and iOS keep their
    existing responsive chrome. Focus mode removes the rail with its controls. */
 @media(min-width:1100px){

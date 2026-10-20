@@ -118,11 +118,19 @@
     return `${number(row.score)} / ${number(row.stats.kanaCount)}`;
   }
   function row(profile,ranking=false){
+    if(!ranking&&kind==='friends'){
+      const card=el('div','ma-social-row ma-social-friend');
+      const open=button('',()=>showProfile(profile.uid),'ma-social-person');
+      const art=profileCard(profile,'ma-social-friend__art');art.setAttribute('aria-hidden','true');
+      if(profile.avatar==='character'&&profile.character){const figure=el('span','ma-social-friend__figure');root.ModeAtlasAvatarArt.render(figure,profile.character);art.append(figure);}
+      else art.append(avatar(profile));
+      const caption=el('span','ma-social-friend__caption');caption.append(identity(profile),el('span','ma-social-score',`${number(profile.stats.streak)}d streak`));
+      open.append(art,caption);card.append(open);return card;
+    }
     const card=profileCard(profile,'ma-social-row');if(profile.uid===owner)card.dataset.self='true';
     if(ranking){card.dataset.rank=String(profile.rank);card.append(el('strong','ma-social-rank',String(profile.rank)));}
     const open=button('',()=>showProfile(profile.uid),'ma-social-person');open.append(avatar(profile),identity(profile));card.append(open);
     if(ranking)card.append(el('strong','ma-social-score',score(profile)));
-    else if(kind==='friends')card.append(el('span','ma-social-score',`${number(profile.stats.streak)}d streak`));
     else{
       const label=el('div','ma-social-person');open.replaceWith(label);label.append(avatar(profile));
       if(kind==='blocked'){const copy=el('span','ma-social-identity');copy.append(el('strong','',profile.displayName),el('small','','Blocked profile'));label.append(copy);}

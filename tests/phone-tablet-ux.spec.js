@@ -22,6 +22,15 @@ const READING_SETTINGS = {
   activeBottomTab: null
 };
 
+async function seedAssessment(page){
+  await page.addInitScript(()=>localStorage.setItem('testModeResults',JSON.stringify([{
+    id:'responsive-reading-test',type:'test',title:'Reading Test',mode:'reading',date:'2026-10-20',startedAt:'10:00',
+    correct:4,wrong:1,total:5,durationMs:9000,avgMs:1800,overallScore:80,
+    breakdown:{hiragana:{correct:4,wrong:1},katakana:{correct:0,wrong:0}},
+    kana:{'あ':{correct:1,wrong:0,avgMs:1000},'い':{correct:1,wrong:0,avgMs:1400},'う':{correct:0,wrong:1,avgMs:3000},'え':{correct:1,wrong:0,avgMs:1600},'お':{correct:1,wrong:0,avgMs:2000}}
+  }])));
+}
+
 async function seedStableState(page) {
   await page.addInitScript((readingSettings) => {
     localStorage.clear();
@@ -358,6 +367,7 @@ test.describe('Phone and Tablet study UX', () => {
   });
 
   test('iPad Results summary and row charts use the full assessment width', async ({ page }) => {
+    await seedAssessment(page);
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.addInitScript(() => localStorage.setItem('modeAtlasDisplayMode', 'tablet'));
     await gotoApp(page, '/results/');
@@ -440,6 +450,7 @@ test.describe('Phone and Tablet study UX', () => {
   });
 
   test('Phone Results keeps history compact and heatmap cells dense', async ({ page }) => {
+    await seedAssessment(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript(() => localStorage.setItem('modeAtlasDisplayMode', 'phone'));
     await gotoApp(page, '/results/');

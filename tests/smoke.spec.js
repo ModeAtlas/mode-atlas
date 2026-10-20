@@ -105,7 +105,9 @@ test.describe('Mode Atlas core smoke tests', () => {
 
       await gotoApp(page, '/results/');
       await expect(page.locator('#testsGrid')).toBeVisible();
-      await expect(page.locator('#testHeatmap')).toBeVisible();
+      await expect(page.locator('#testHeatmap')).toBeHidden();
+      await expect(page.locator('.results-empty-assessment')).toBeVisible();
+      await expect(page.locator('.results-empty-assessment a').first()).toHaveAttribute('href','/kana/?view=tests&skill=reading');
     });
   });
 

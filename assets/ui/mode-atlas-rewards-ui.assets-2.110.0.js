@@ -30,6 +30,7 @@
     const title=document.getElementById('profileAtlasTitle');if(title)title.textContent=item.title;
     document.querySelectorAll('#profileAvatar,#topProfileDot,[data-ma-selected-avatar]').forEach(node=>{node.dataset.maFrame=item.frame;});
     document.querySelectorAll('[data-ma-selected-avatar]').forEach(renderAvatar);
+    document.querySelectorAll('.ma-reward-studio__art').forEach(renderStudio);
     document.querySelectorAll('[data-ma-selected-title]').forEach(node=>{node.textContent=item.title;});
     document.querySelectorAll('[data-ma-selected-banner]').forEach(node=>{node.dataset.maBanner=selectedBanner.id;});
     document.querySelectorAll('.ma-atlas-banner-choice').forEach(node=>{
@@ -86,19 +87,32 @@
     root.ModeAtlasPortrait?.render(node);
   }
 
+  function renderStudio(node){root.ModeAtlasAvatarArt.render(node,root.ModeAtlasAvatar?.presentation?.()?.character);}
+
   function renderGoals(host,{compact=false}={}){
     if(!host)return;
     const routine=root.ModeAtlasProgress.routine();host.replaceChildren();
+    const groups=new Map();
+    if(!compact){
+      for(const [period,label]of [['daily','Today'],['weekly','This week']]){
+        const goals=routine.goals.filter(goal=>goal.period===period),group=el('section','ma-goal-group'),heading=el('div','ma-goal-group__heading');
+        heading.append(el('h3','',label),el('span','',`${goals.filter(goal=>goal.value>=goal.target).length} / ${goals.length} complete`));
+        group.append(heading);host.append(group);groups.set(period,group);
+      }
+    }
     for(const goal of routine.goals.filter(goal=>!compact||goal.period==='daily')){
-      const complete=goal.value>=goal.target,action=root.ModeAtlasStudyPlan.goalAction(goal,routine.goals),card=el(action?'a':'div','ma-routine-goal');card.classList.toggle('ma-routine-goal--full',!compact);card.dataset.goal=goal.id;card.dataset.complete=String(complete);
+      const complete=goal.value>=goal.target,action=root.ModeAtlasStudyPlan.goalAction(goal,routine.goals),card=el(action?'a':'div','ma-routine-goal');card.classList.toggle('ma-routine-goal--full',!compact);card.dataset.goal=goal.id;card.dataset.complete=String(complete);card.dataset.period=goal.period;
       if(action){card.href=action.href;card.setAttribute('aria-label',`${goal.label} · ${Math.min(goal.value,goal.target)} of ${goal.target} · ${action.label}`);}
-      card.dataset.period=goal.period;
-      if(!compact)card.append(el('small','ma-routine-goal__period',goal.period==='weekly'?'This week':'Today'));
-      card.append(el('strong','',compact?goal.short:goal.label));
-      const value=el('span','',compact?`${Math.min(goal.target,goal.value)}/${goal.target}${complete?' ✓':''}`:complete?`✓ Complete · +${goal.xp} XP`:`${Math.min(goal.target,goal.value)} / ${goal.target} · +${goal.xp} XP`);
-      card.append(value);
-      const meter=el('progress');meter.max=goal.target;meter.value=Math.min(goal.target,goal.value);meter.setAttribute('aria-label',goal.label);card.append(meter);host.append(card);
-      if(action&&!compact)card.append(el('small','ma-routine-goal__action',action.label+' →'));
+      const meter=el('progress');meter.max=goal.target;meter.value=Math.min(goal.target,goal.value);meter.setAttribute('aria-label',goal.label);
+      if(compact){
+        card.append(el('strong','',goal.short),el('span','',`${Math.min(goal.target,goal.value)}/${goal.target}${complete?' ✓':''}`),meter);host.append(card);
+      }else{
+        const mark=el('span','ma-goal-ring',complete?'✓':'');mark.setAttribute('aria-hidden','true');mark.style.setProperty('--goal-progress',Math.min(100,goal.value/goal.target*100)+'%');
+        const copy=el('div','ma-goal-copy');copy.append(el('strong','',goal.label),el('span','',complete?'Complete':`${Math.min(goal.value,goal.target)} / ${goal.target}`),meter);
+        const reward=el('span','ma-goal-reward',`+${goal.xp} XP`);
+        if(action)copy.append(el('small','ma-routine-goal__action',action.label+' →'));
+        card.append(mark,copy,reward);groups.get(goal.period).append(card);
+      }
     }
   }
   function renderRecap(host){
@@ -125,8 +139,7 @@
   }
   function goalPanel(){
     const panel=el('div','ma-atlas-panel');
-    panel.append(el('h3','','Daily & weekly goals'));
-    panel.append(el('p','ma-atlas-rewards__note','A fresh set each day. Weekly goals rotate on Monday.'));
+    panel.classList.add('ma-goals-panel');
     const goals=el('div','ma-routine-goals');renderGoals(goals);panel.append(goals);
     const reviews=el('section','ma-due-reviews'),heading=el('div','ma-due-reviews__heading');
     const title=el('h3','','Spaced reviews');title.id='maDueReviewsTitle';reviews.setAttribute('aria-labelledby',title.id);
@@ -142,16 +155,16 @@
     const section=el('details','ma-reward-category');section.dataset.rewardCategory=type;section.open=open;
     const heading=el('summary'),copy=el('span','ma-reward-category__heading');
     copy.append(el('strong','',title),el('small','ma-reward-category__meta'));
-    const arrow=el('span','ma-reward-category__arrow','⌄');arrow.setAttribute('aria-hidden','true');heading.append(copy,arrow);
+    const arrow=el('span','ma-reward-category__arrow','⌄');arrow.setAttribute('aria-hidden','true');const mark=el('span','ma-reward-category__mark',({themes:'◐',banners:'▧',wardrobe:'✧',frames:'◎',icons:'あア'})[type]);mark.setAttribute('aria-hidden','true');heading.append(mark,copy,arrow);
     const content=el('div','ma-reward-category__content');content.append(el('p','ma-atlas-rewards__note',note));section.append(heading,content);
     return {section,content};
   }
   function rewardPanel(summary){
-    const panel=el('div','ma-atlas-panel');
+    const panel=el('div','ma-atlas-panel ma-collection-panel');
     const notice=el('div','ma-reward-access');notice.hidden=true;notice.setAttribute('role','status');
     const retry=button('Refresh');retry.addEventListener('click',()=>{void root.ModeAtlasRewardAccess?.refresh(true);});notice.append(el('span'),retry);panel.append(notice);
     const inventory=el('section');root.ModeAtlasShopUI?.renderInventory(inventory);panel.append(inventory);
-    const edit=button('Edit avatar & pet','ma-button ma-button--primary');edit.dataset.maAvatarOpen='';panel.append(edit);
+    const edit=button('','ma-reward-studio');edit.dataset.maAvatarOpen='';const figure=el('span','ma-reward-studio__art');figure.setAttribute('aria-hidden','true');renderStudio(figure);const editCopy=el('span');editCopy.append(el('strong','','Edit avatar & pet'),el('small','','Make your character your own'));edit.append(figure,editCopy,el('span','','→'));panel.append(edit);
     const themesSection=category('themes','App themes','A new look throughout Mode Atlas.'),themes=el('div','ma-owned-themes');
     for(const [id,name]of [['dark','Dark'],['light','Light'],['system','System']]){const choose=button(name);choose.dataset.maThemeChoice=id;themes.append(choose);}
     for(const theme of rules.themes){const choose=button(theme.name,'ma-button ma-theme-collection-choice');choose.dataset.maThemeChoice=theme.id;choose.dataset.maThemeSample=theme.id;themes.append(choose);}

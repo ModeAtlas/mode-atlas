@@ -317,7 +317,7 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
       ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
     },layout.role);
     await expect(page.locator('#maSocialList .ma-social-row')).toHaveCount(6);await fits(page);
-    await expect(page.locator('.ma-social-row[data-ma-banner="grove"]')).toHaveCount(1);
+    await expect(page.locator('.ma-social-friend__art[data-ma-banner="grove"]')).toHaveCount(1);
     if(layout.width===1280){
       const controls=await page.locator('.ma-social-home-tools>.ma-button').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().height));
       expect(controls.every(height=>height>=44&&height<=48)).toBe(true);
@@ -329,7 +329,8 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
       const panel={top:0,bottom:document.querySelector('.ma-ios-tabs')?.getBoundingClientRect().top||innerHeight};
       return [...list.children].filter(row=>{const box=row.getBoundingClientRect();return box.top>=panel.top&&box.bottom<=panel.bottom;}).length;
     });
-    if(layout.width>=393)expect(visibleRows).toBeGreaterThanOrEqual(3);
+    // Illustrated cards show two people side by side on narrow web screens.
+    if(layout.width>=393)expect(visibleRows).toBeGreaterThanOrEqual(!layout.native&&layout.width<600?2:3);
     await page.screenshot({path:info.outputPath('friends-compact-banners.png'),animations:'disabled'});
     const staff=page.getByRole('button',{name:'Moderator menu',exact:true});
     if(layout.role==='member'){await expect(staff).toHaveCount(0);return;}
@@ -360,10 +361,10 @@ test('a friend’s server-approved exclusive banner displays without granting it
   await prepare(page,{native:true});
   await page.evaluate(()=>{socialFixture.friend.banner='hunny';});
   await page.getByRole('button',{name:'Refresh',exact:true}).click();
-  await expect(page.locator('.ma-social-row[data-ma-banner="hunny"]')).toHaveCount(1);
-  expect(await page.locator('.ma-social-row[data-ma-banner="hunny"]').evaluate(row=>{
-    const artLeft=row.getBoundingClientRect().left+parseFloat(getComputedStyle(row,'::before').paddingLeft);
-    return [...row.querySelectorAll('.ma-social-person,.ma-social-score')].every(node=>node.getBoundingClientRect().right<=artLeft+1);
+  await expect(page.locator('.ma-social-friend__art[data-ma-banner="hunny"]')).toHaveCount(1);
+  expect(await page.locator('.ma-social-friend__art[data-ma-banner="hunny"]').evaluate(row=>{
+    const art=row.getBoundingClientRect(),caption=row.closest('.ma-social-person').querySelector('.ma-social-friend__caption').getBoundingClientRect();
+    return caption.top>=art.bottom&&caption.right<=row.closest('.ma-social-person').getBoundingClientRect().right;
   })).toBe(true);
   await page.screenshot({path:info.outputPath('friend-exclusive-banner.png'),animations:'disabled'});
   await page.goto('/progress/');await page.getByRole('tab',{name:'Rewards',exact:true}).click();
@@ -512,4 +513,17 @@ test('weekly podium keeps server ties, profile actions and pagination without du
   await expect(page.locator('.ma-weekly-podium')).toHaveCount(1);
   await page.locator('.ma-weekly-podium .ma-social-person').nth(1).click();
   await expect(page.getByText('Read mastery',{exact:true})).toBeVisible();
+});
+
+test('friend artwork stays above readable identity and a narrow card opens the real profile',async({page})=>{
+  await prepare(page,{width:393});
+  await page.evaluate(()=>{
+    const friend=socialFixture.friend;friend.displayName='Evelyn';friend.banner='hunny';friend.avatar='character';friend.character={...ModeAtlasAvatarRules.defaults};
+    socialFixture.friends=[friend,{...friend,uid:'another',displayName:'Admin',banner:'skyline'}];ModeAtlasSocialUI.mount(document.getElementById('maHubContent'));
+  });
+  await expect(page.locator('.ma-social-friend')).toHaveCount(2);
+  const geometry=await page.locator('.ma-social-friend').evaluateAll(cards=>cards.map(card=>{const art=card.querySelector('.ma-social-friend__art').getBoundingClientRect(),copy=card.querySelector('.ma-social-friend__caption').getBoundingClientRect();return {clear:art.bottom<=copy.top,contained:card.scrollWidth<=card.clientWidth};}));
+  expect(geometry.every(card=>card.clear&&card.contained)).toBe(true);
+  await page.locator('.ma-social-friend .ma-social-person').first().click();await expect(page.locator('.ma-social-character')).toBeVisible();
+  expect(await page.evaluate(()=>socialCalls.some(call=>call.action==='profile'&&call.input.uid==='friend'))).toBe(true);
 });

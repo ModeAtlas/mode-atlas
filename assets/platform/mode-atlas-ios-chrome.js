@@ -48,7 +48,7 @@
       else {
         const bar=document.createElement('div');bar.className='ma-ios-page-tools';
         const back=document.createElement('a');back.href=root.AtlasPlatform.destinationPath('learn');back.textContent='‹ Learn';
-        bar.append(back,profile);document.querySelector('.shell,.wrap,main')?.prepend(bar);
+        bar.append(back,profile);const resultsNav=document.querySelector('.ma-results-branches');if(resultsNav)resultsNav.before(bar);else document.querySelector('.shell,.wrap,main')?.prepend(bar);
       }
     }
     if(exit)dock.append(exit);

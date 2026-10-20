@@ -547,3 +547,15 @@ isolation is tested by removing the native theme stylesheet and comparing all
 visible computed paint, alongside explicit approved web tokens and the existing
 native contrast/layout matrix. This replaces the old pre-iOS commit comparison;
 no release gate is bypassed.
+
+
+### 2.110.0 layout completion
+
+Responsive sizing belongs to the existing feature styles: Kana owns row-aware
+character columns and bounded practice art; Social owns illustrated friend
+cards; Rewards owns grouped goals, collection controls and recap. Profile
+artwork uses the existing account-bound presentation cache and refresh events.
+Results owns its compact header and empty state, with the former decorated
+hero CSS removed. Word Bank and Kanji retain their collection/course owners.
+Native chrome owns the Results back/profile placement. No separate iOS page
+implementation or layout override sheet is introduced.

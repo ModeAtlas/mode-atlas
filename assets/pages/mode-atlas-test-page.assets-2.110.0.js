@@ -298,13 +298,13 @@ function createResultEl(tag, className = "", text = "") {
 }
 
 function createMegaInlineCard(label, value) {
-    const card = createResultEl("div", "mega-inline-card ma-stat ma-card ma-card--flat");
+    const card = createResultEl("div", "mega-inline-card ma-stat");
     card.append(createResultEl("div", "label ma-stat__label", label), createResultEl("div", "value ma-stat__value", value));
     return card;
 }
 
 function createMetricCard(label, value) {
-    const card = createResultEl("div", "metric ma-stat ma-card ma-card--flat");
+    const card = createResultEl("div", "metric ma-stat");
     card.append(createResultEl("div", "label ma-stat__label", label), createResultEl("div", "value ma-stat__value", value));
     return card;
 }
@@ -557,10 +557,11 @@ function createResultTile(item) {
 
 function renderResultsList() {
     if (!STORED_RESULTS.length) {
-        const empty = createResultEl("div", "empty ma-card ma-empty-state results-empty-assessment");
+        const empty = createResultEl("div", "results-empty-assessment");
+        const art=createResultEl("img","results-empty-assessment__art");art.src="/assets/illustrations/kana-scene.svg";art.alt="";art.width=480;art.height=300;empty.append(art);
         empty.append(
             createResultEl("strong", "results-empty-assessment__title", "No formal test results yet"),
-            createResultEl("p", "results-empty-assessment__copy", "Complete a Kana Read or Recall test to receive a comprehensive assessment of kana accuracy, speed, rows, modifiers, and focus areas.")
+            createResultEl("p", "results-empty-assessment__copy", "Take a Kana test to see your accuracy, speed and what to practise next.")
         );
         const actions = createResultEl("div", "results-empty-assessment__actions ma-action-row");
         const reading = createResultEl("a", "ma-button ma-button--primary", "Practise Read");
@@ -741,6 +742,8 @@ function renderAll() {
         selectedKana = null;
     }
     const result = getSelectedResult();
+    document.body.classList.toggle("ma-results-empty",!result);
+    for(const panel of document.querySelectorAll(".results-overview,.results-detail-card,.results-guidance"))panel.hidden=!result;
     renderHero();
     renderResultsList();
     renderGuidance(result);

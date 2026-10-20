@@ -840,3 +840,16 @@ for(const layout of [{native:true,theme:'light',width:320},{native:true,theme:'d
   await editor.getByRole('button',{name:'Save changes',exact:true}).click();await expect(editor).toBeHidden();
   expect(await page.evaluate(()=>companionSaved)).toMatchObject({revision:1,displayName:'Atlas Explorer',greeting:'A new chapter with my companion.',petNames:{calico:'Mochi','japanese-spitz':'Shiro'},character:{version:3,outfit:'seigaiha-kimono',outfitColor:'navy',pants:'a-line',pantsColor:'coral',pet:'japanese-spitz',petName:'Shiro'}});
 });
+
+test('full goals group each period while preserving live progress and practice destinations',async({page})=>{
+  await page.setViewportSize({width:393,height:852});
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await page.addInitScript(()=>{window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');});
+  await page.goto('/progress/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await expect(page.locator('.ma-goal-group')).toHaveCount(2);await expect(page.locator('.ma-goal-group').first().getByRole('heading',{name:'Today',exact:true})).toBeVisible();
+  expect(await page.locator('.ma-goal-group').evaluateAll(groups=>groups.map(group=>group.querySelectorAll('.ma-routine-goal').length))).toEqual([3,2]);
+  const goals=await page.evaluate(()=>ModeAtlasProgress.routine().goals);
+  for(const goal of goals){const card=page.locator(`[data-goal="${goal.id}"]`);await expect(card.locator('progress')).toHaveAttribute('max',String(goal.target));await expect(card).toContainText(`+${goal.xp} XP`);}
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await expect(page.locator('.ma-routine-goal[href]').first()).toHaveAttribute('href',/\/(reading|writing|kanji)\//);
+});
