@@ -3,6 +3,7 @@
    mode-atlas-ios-theme.css. Neutral system appearances keep colour meaningful; collections own their palettes. Page CSS should rely on these
    tokens rather than carrying separate light-mode colour patches. */
 :root{
+  --ma-badge-ink:#1b2850;--ma-badge-highlight:#fff;
   /* Milestones keep the same meaning across branches and collections. */
   --ma-stage-new:var(--ma-border-strong);--ma-stage-introduced:var(--ma-muted);--ma-stage-learning:#e98a70;--ma-stage-familiar:#dfbd55;--ma-stage-confident:#67bdf0;--ma-stage-mastered:#51b989;--ma-stage-plus:#b58ae5;
 

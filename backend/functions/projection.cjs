@@ -10,7 +10,34 @@ const review = createReview({ModeAtlasDates: dates});
 const identity = require('./shared/mode-atlas-social-identity.js');
 const characters = require('./shared/mode-atlas-avatar-rules.js');
 const learning=require('./shared/mode-atlas-kana-learning.js')({ModeAtlasKanaData:kana,ModeAtlasReview:review,ModeAtlasDates:dates});
-const PROJECTION_VERSION=5;
+const PROJECTION_VERSION=6;
+const createMetrics=require('./shared/mode-atlas-kana-metrics.js');
+const createAchievements=require('./shared/mode-atlas-achievements.js');
+const createKanji=require('./shared/mode-atlas-kanji-state.js');
+const curriculum=require('./shared/mode-atlas-kanji-curriculum.js');
+const {gunzipSync}=require('node:zlib');
+
+function accountInsights(save,owner,seeded,syncedAt){
+  const sections=save.sections||{},data=name=>sections[name]?.data||{};
+  let kanjiState=data('kanji').state||{},kanjiAvailable=true;
+  if(kanjiState.evidence){
+    try{
+      const evidence=kanjiState.evidence;
+      if(evidence.encoding!=='gzip-base64-v1'||typeof evidence.data!=='string'||evidence.data.length>1500000)throw Error('Invalid Kanji evidence');
+      kanjiState={...kanjiState,sources:JSON.parse(gunzipSync(Buffer.from(evidence.data,'base64'),{maxOutputLength:16*1024*1024}).toString('utf8'))};
+    }catch{kanjiState={};kanjiAvailable=false;}
+  }
+  const direct={modeAtlasProgress:seeded,modeAtlasKanaLearning:data('kanaLearning').state||{},modeAtlasKanji:kanjiState,modeAtlasKanjiTests:data('kanjiTests').items||[],kanaWordBank:data('wordBank').items||[],
+    testModeResults:data('readingTests').primary||[],kanaTrainerTestModeResults:data('readingTests').backup||[],readingTestModeResults:data('readingTests').altPrimary||[],kanaTrainerReadingTestModeResults:data('readingTests').altBackup||[],writingTestModeResults:data('writingTests').primary||[],kanaTrainerWritingTestModeResults:data('writingTests').backup||[]};
+  const storage={json:(key,fallback)=>direct[key]??fallback,get:(key,fallback)=>key==='modeAtlasLastCloudSyncAt'&&syncedAt?String(syncedAt):fallback,
+    readModeJSON:(mode,key,fallback)=>data(mode)[{charStats:'stats',charTimes:'times',srs:'srs',dailyHistory:'dailyChallengeHistory'}[key]]||fallback};
+  const root={ModeAtlasStorage:storage,ModeAtlasProgress:{...owner,readState:()=>seeded,getSummary:()=>owner.getSummary(seeded),achievementStats:()=>owner.achievementStats(seeded)},ModeAtlasDates:dates,ModeAtlasKanaData:kana,ModeAtlasReview:review,ModeAtlasKanjiCurriculum:curriculum};
+  root.ModeAtlasKanaLearning=require('./shared/mode-atlas-kana-learning.js')(root);
+  root.ModeAtlasKanjiState=createKanji(root);root.ModeAtlasKanaMetrics=createMetrics(root);
+  const achievements=createAchievements(root),insights=achievements.profile();
+  if(!kanjiAvailable){insights.kanji=null;insights.achievements=null;}
+  return insights;
+}
 
 function progressOwner(save = {}, timeZone = 'UTC') {
   const sections = save.sections || {};
@@ -53,7 +80,7 @@ function projectSave(save = {}, timeZone = 'UTC', syncedAt = 0, access = {}) {
     if(learning.stage(char,course,evidence)>=5)combinedMastered++;
   }
   return {version:progress.STATE_VERSION,projectionVersion:PROJECTION_VERSION,xp:summary.xp,level:summary.level,totalCorrect:summary.lifetimeCorrect,
-    readingMastered,writingMastered,combinedMastered,kanaCount:kana.collections.all.length,
+    readingMastered,writingMastered,combinedMastered,kanaCount:kana.collections.all.length,insights:accountInsights(save,owner,seeded,syncedAt),
     theme:rewards.allowed('themes',seeded.appearance.theme,summary.level,access)?seeded.appearance.theme:'',landmark:selected.id,banner:rewards.banner(seeded.appearance.banner,summary.level,access).id,studyDays:owner.studyDays(seeded),syncedAt};
 }
 
@@ -73,7 +100,7 @@ function publicProfile(uid, account, now = Date.now(), full = true) {
   if(full)out.stats={xp:summary.xp,totalCorrect:summary.totalCorrect,
     streak:progress.studyStreak(summary.studyDays,dates.dateKeyInTimeZone(now,account.profile.timeZone)),
     readingMastered:summary.readingMastered,writingMastered:summary.writingMastered,
-    combinedMastered:summary.combinedMastered,kanaCount:summary.kanaCount,syncedAt:summary.syncedAt};
+    combinedMastered:summary.combinedMastered,kanaCount:summary.kanaCount,syncedAt:summary.syncedAt,...(summary.insights?{insights:summary.insights}:{})};
   return out;
 }
 

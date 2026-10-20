@@ -120,7 +120,9 @@
     const correct=current.answers.filter(x=>x.correct).length,section=el('section','ma-kanji-recap');
     section.append(heading(current.mode==='learn'?'Ready to remember':'Set complete'));
     section.append(el('p','ma-kanji-recap-score',current.mode==='learn'?`${current.sequence.length} kanji introduced`:`${correct} / ${current.answers.length} correct`));
-    if(current.mode!=='learn')section.append(el('p','',`${Math.round(correct/current.answers.length*100)}% accuracy · +${current.xp} XP`));
+    if(current.mode!=='learn')section.append(el('p','',`${Math.round(correct/Math.max(1,current.answers.length)*100)}% accuracy`));
+    root.ModeAtlasProgressUI.renderSessionReward(section,{...current,xpGain:current.xp});
+    void root.ModeAtlasProgressUI.completeSession(current);
     const actions=el('div','ma-kanji-actions');actions.append(button('Back to Kanji',()=>{session.discard();showCourse();},'ma-button ma-button--primary'));
     if(current.mode==='learn'){
       actions.append(button('Recall readings',()=>{session.start({mode:'pronunciation',level:current.level,count:current.sequence.length,chars:current.sequence});showSession();}),button('Recall meanings',()=>{session.start({mode:'meaning',level:current.level,count:current.sequence.length,chars:current.sequence});showSession();}));

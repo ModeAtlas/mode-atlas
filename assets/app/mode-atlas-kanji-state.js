@@ -78,13 +78,18 @@
     return {correct,wrong,attempts,independent:sum(I),streak:latest[S],average:attempts?sum(T)/attempts:0,last:latest[AT],due:latest[DUE],reviews:latest[R],days:[...new Set(rows.flatMap(r=>r[DAYS].split(',')).filter(Boolean))].sort(),accuracy:attempts?correct/attempts:0};
   }
   function completed(state,char){return !!state.completions[char]||skills.every(skill=>{const m=metrics(state,char,skill);return m.independent>=3&&m.accuracy>=.8;});}
-  function stage(state,char,skill){
-    if(!skill){const stages=skills.map(s=>stage(state,char,s));return Math.max(...stages)?Math.max(1,Math.min(...stages)):0;}
-    const m=metrics(state,char,skill);
+  function stageFromMetrics(m,lesson){
     if(m.independent>=30&&m.accuracy>=.95&&m.days.length>=4&&m.reviews>=4&&m.streak>=3)return 3;
     if(m.independent>=10&&m.accuracy>=.85&&m.days.length>=2&&m.reviews>=2)return 2;
-    return m.attempts||state.lessons[char]?1:0;
+    return m.attempts||lesson?1:0;
   }
+  function assessment(state,char){
+    const evidence=Object.fromEntries(skills.map(skill=>[skill,metrics(state,char,skill)]));
+    const stages=skills.map(skill=>stageFromMetrics(evidence[skill],state.lessons[char]));
+    const complete=!!state.completions[char]||skills.every(skill=>evidence[skill].independent>=3&&evidence[skill].accuracy>=.8);
+    return {metrics:evidence,stage:Math.max(...stages)?Math.max(1,Math.min(...stages)):0,introduced:!!state.introductions[char]||complete};
+  }
+  function stage(state,char,skill){return skill?stageFromMetrics(metrics(state,char,skill),state.lessons[char]):assessment(state,char).stage;}
   function summary(state=read()){
     let unlocked=true;
     return bands.map(band=>{
@@ -129,5 +134,5 @@
     save(state);return true;
   }
   function settings(patch){const state=read();state.settings={...state.settings,...patch,at:Date.now()};save(state);return state.settings;}
-  return Object.freeze({KEY,UPDATED,skills,levels,normalize,merge,read,save,metrics,completed,stage,summary,allowed,introductory,introduced,introReady,studyPool,reviewSets,lesson,introduction,record,settings});
+  return Object.freeze({KEY,UPDATED,skills,levels,normalize,merge,read,save,metrics,completed,stage,assessment,summary,allowed,introductory,introduced,introReady,studyPool,reviewSets,lesson,introduction,record,settings});
 });

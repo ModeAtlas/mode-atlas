@@ -105,7 +105,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await page.getByRole('tab',{name:'Rankings',exact:true}).click();await page.getByRole('button',{name:'All time',exact:true}).click();await expect(page.locator('.ma-social-rank')).toHaveText(['1','2']);await fits(page);
     await page.screenshot({path:info.outputPath('rankings.png'),animations:'disabled'});
     await page.getByLabel('Ranking',{exact:true}).selectOption('reading');await fits(page);
-    await page.locator('.ma-social-person').first().click();await expect(page.getByText('Read mastery',{exact:true})).toBeVisible();await fits(page);
+    await page.locator('.ma-social-person').first().click();await expect(page.getByText('Kana',{exact:true})).toBeVisible();await fits(page);
     await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});await fits(page);
     await page.screenshot({path:info.outputPath('profile-large-text.png'),animations:'disabled'});expect(errors).toEqual([]);
   });
@@ -512,7 +512,7 @@ test('weekly podium keeps server ties, profile actions and pagination without du
   await expect(page.locator('.ma-social-rank')).toHaveText(['1','1','3','4','5']);
   await expect(page.locator('.ma-weekly-podium')).toHaveCount(1);
   await page.locator('.ma-weekly-podium .ma-social-person').nth(1).click();
-  await expect(page.getByText('Read mastery',{exact:true})).toBeVisible();
+  await expect(page.getByText('Kana',{exact:true})).toBeVisible();
 });
 
 test('friend artwork stays above readable identity and a narrow card opens the real profile',async({page})=>{
@@ -526,4 +526,15 @@ test('friend artwork stays above readable identity and a narrow card opens the r
   expect(geometry.every(card=>card.clear&&card.contained)).toBe(true);
   await page.locator('.ma-social-friend .ma-social-person').first().click();await expect(page.locator('.ma-social-character')).toBeVisible();
   expect(await page.evaluate(()=>socialCalls.some(call=>call.action==='profile'&&call.input.uid==='friend'))).toBe(true);
+});
+
+for(const native of [true,false])test(`account-wide friend insights distinguish mastery from learning ${native?'iOS':'web'}`,async({page},info)=>{
+  await prepare(page,{native,width:native?393:1280});
+  await page.evaluate(()=>{socialFixture.friend.stats.insights={dailyGoals:143,weeklyGoals:22,studyDays:78,dailyChallenges:41,achievements:{earned:32,total:96,percent:33},kana:{total:240,mastered:48,confident:144,learning:24,percent:20},kanji:{total:2093,mastered:21,confident:20,learning:14,percent:1}};});
+  await page.locator('.ma-social-person').first().click();
+  await expect(page.locator('.ma-social-insights')).toContainText('Daily goals');await expect(page.locator('.ma-social-insights')).toContainText('Weekly goals');
+  await expect(page.locator('.ma-social-insights')).toContainText('32 of 96');await expect(page.locator('.ma-social-branch__title')).toHaveText(['Kana20% mastered','Kanji1% mastered']);
+  await expect(page.locator('.ma-social-branch__legend').first()).toContainText('144 Confident');
+  await page.getByText('How mastery is counted',{exact:true}).click();await expect(page.locator('.ma-social-mastery-help')).toContainText('including locked characters');await fits(page);
+  await page.screenshot({path:info.outputPath(`account-insights-${native?'ios':'web'}.png`),fullPage:true,animations:'disabled'});
 });

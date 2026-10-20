@@ -1,3 +1,12 @@
+## 2.114.0 — A collection worth building
+
+- Rebuild Achievements around an illustrated collection, closest milestones, branch/status filters and direct rank details. Add five Kanji achievement families and permanent, mergeable earned ranks.
+- Replace all 31 achievement-family artworks with shared vector badges and visible rank changes. Current study completion covers 91 ranked milestones, excluding retired and special-award tracks.
+- Show account-wide learning stats in friend profiles, with strict Kana/Kanji mastered percentages and separate progress-stage bars. Include Kanji in correct-answer totals and preserve friend-only privacy.
+- Celebrate level-ups after Kana/Kanji sessions, combine multiple gains and show newly earned achievements in the recap. Respect Reduced Motion and account boundaries.
+- Export the current logo pack in SVG and transparent PNG formats. Record the prior review omission and concrete design acceptance criteria.
+- Version 2.114.0, iOS build 2080036. Functions deployment, checks and signing-preserving Mac command: `docs/development-2.114.0.md`.
+
 ## 2.113.0 — Faster pages, clearer controls
 
 - Remove hidden Shop construction on every page, calculate reward ownership once per shop refresh, and defer unopened Progress panels. Progress summary no longer repeatedly normalizes the same history.

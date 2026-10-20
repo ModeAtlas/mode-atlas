@@ -310,7 +310,9 @@ test.describe('Phone and Tablet study UX', () => {
 
     await page.locator('.ma-dialog__close').click();
     await expect(dialog).toBeVisible();
-    await expect(page.locator('.ma-achievement-layout')).toBeVisible();
+    await expect(page.locator('.ma-ach-collection')).toBeVisible();
+    await expect(page.getByRole('button',{name:'For you',exact:true})).toHaveAttribute('aria-pressed','true');
+    await expect(page.locator('.ma-achievement-tile')).toHaveCount(6);
 
     await page.locator('.ma-dialog__close').click();
     await expect(dialog).toBeHidden();

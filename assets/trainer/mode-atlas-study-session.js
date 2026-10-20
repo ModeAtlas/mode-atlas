@@ -55,6 +55,7 @@
       current.owner=root.ModeAtlasSessionRecovery.accountId();
       current.startedAt=Date.now();
       current.startLevel=root.ModeAtlasProgress.getSummary().level;
+      current.achievementStart=root.ModeAtlasFeatures.achievementSnapshot();
       rewardContext(current);current.independentStreak=0;
       current.xpParts={};current.milestones=[];current.retryQueue=[];current.assisted=0;current.questionAnswered=false;
       root.ModeAtlasProgress.startRun(current.runId);
@@ -231,7 +232,7 @@
       }
       if(current.mode==='testMode'&&complete){const results=el('a','ma-button ma-button--ghost','View Results');results.href='/results/';actions.appendChild(results);}
       content.append(actions);
-      root.ModeAtlasDialog.feature({kicker:`${config.mode==='writing'?'Recall':'Read'} · ${mode.label}`,title,contentNode:content}).then(()=>{
+      root.ModeAtlasProgressUI.presentSession(current,()=>root.ModeAtlasDialog.feature({kicker:`${config.mode==='writing'?'Recall':'Read'} · ${mode.label}`,title,contentNode:content})).then(()=>{
         root.removeEventListener('modeAtlasWeeklyChanged',onWeekly);
         if(reviewing){root.ModeAtlasTrainerControls.setPracticeCount(10);config.start();}else config.naturalBreak();
       });

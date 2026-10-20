@@ -636,7 +636,7 @@ def main() -> int:
             fail(errors, f"canonical Kana data missing flattened inventory marker: {marker}")
 
     metrics = text(ROOT / "assets/app/mode-atlas-kana-metrics.js")
-    for marker in ("function createSnapshot()", "function useSnapshot(snapshot)", "readingStats:modeObj('reading','charStats')", "writingTimes:modeObj('writing','charTimes')", "const Collections=KanaData?.collections"):
+    for marker in ("function createSnapshot({includeStreak=true}={})", "function useSnapshot(snapshot)", "readingStats:modeObj('reading','charStats')", "writingTimes:modeObj('writing','charTimes')", "const Collections=KanaData?.collections"):
         if marker not in metrics:
             fail(errors, f"Kana metrics missing canonical/snapshot ownership marker: {marker}")
     if re.search(r'''const\s+(?:HIRA|KATA|DAK|YOON|EXT)\s*=\s*['"\[]''', metrics):

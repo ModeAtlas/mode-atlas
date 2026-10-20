@@ -55,7 +55,7 @@
       return content.hash(runId+a)-content.hash(runId+b);
     });
     const sequence=pool.slice(0,Math.min(pool.length,[5,10,20,40].includes(count)?count:10));
-    active={version:1,owner:owner(),runId,mode,level,test:!!test&&mode!=='learn',sequence,pool:sequence,index:0,answers:[],feedback:null,questionElapsed:0,paused:false,hinted:false,everAssisted:mode==='match',xp:0,bestStreak:0,streak:0,at:Date.now(),finished:false,lessonPhase:'teach',lessonFeedback:null};
+    active={version:1,startLevel:root.ModeAtlasProgress.getSummary().level,achievementStart:root.ModeAtlasFeatures?.achievementSnapshot?.()||[],owner:owner(),runId,mode,level,test:!!test&&mode!=='learn',sequence,pool:sequence,index:0,answers:[],feedback:null,questionElapsed:0,paused:false,hinted:false,everAssisted:mode==='match',xp:0,bestStreak:0,streak:0,at:Date.now(),finished:false,lessonPhase:'teach',lessonFeedback:null};
     storage.transaction(()=>{if(mode!=='learn')root.ModeAtlasProgress.startRun(runId);write();});
     if(mode!=='learn')root.ModeAtlasWeekly.start(active,{branch:'kanji',pool:sequence,direction:mode,mode:test?'testMode':'guided',hints:mode==='match'});
     questionStarted=Date.now();return active;

@@ -244,6 +244,26 @@
       preview.append(button('Report',()=>reportProfile(result.profile,code)));if(state.canModerate)preview.append(button('Moderation',()=>staffProfile(result.profile.uid)));
     });});body.append(form,preview);
   }
+  function profileInsights(stats){
+    const wrap=el('section','ma-social-insights'),grid=el('div','ma-social-stats'),insights=stats.insights;
+    wrap.setAttribute('aria-label','Learning across Mode Atlas');
+    const totals=[['Total XP',number(stats.xp)],['Study streak',`${number(stats.streak)} days`],['Correct answers',number(stats.totalCorrect)]];
+    if(insights)totals.push(['Study days',number(insights.studyDays)],['Daily goals',number(insights.dailyGoals)],['Weekly goals',number(insights.weeklyGoals)],['Daily challenges',number(insights.dailyChallenges)]);
+    for(const [label,value]of totals){const tile=el('div');tile.append(el('strong','',value),el('span','',label));grid.append(tile);}wrap.append(grid);
+    if(insights?.achievements){const collection=el('div','ma-social-achievement-total');collection.append(root.ModeAtlasAchievementArt.badge('atlas-level',2,{earned:true}),el('strong','',`${insights.achievements.percent}%`));const copy=el('span','','Achievements');copy.append(el('small','',`${number(insights.achievements.earned)} of ${number(insights.achievements.total)} study milestones`));collection.append(copy);wrap.append(collection);}
+    const branches=el('div','ma-social-branches');
+    const kana=insights?.kana||(stats.kanaCount?{total:stats.kanaCount,mastered:stats.combinedMastered||0,percent:Math.floor((stats.combinedMastered||0)/stats.kanaCount*1000)/10}:null);
+    for(const [name,data]of [['Kana',kana],['Kanji',insights?.kanji]]){
+      if(!data?.total)continue;
+      const section=el('section','ma-social-branch'),title=el('div','ma-social-branch__title');title.append(el('h4','',name),el('strong','',`${data.percent}% mastered`));section.append(title);
+      const bar=el('div','ma-social-branch__bar');bar.setAttribute('aria-hidden','true');const legend=el('div','ma-social-branch__legend');
+      for(const [key,label]of [['mastered','Mastered'],['confident','Confident'],['learning','Building']]){if(data[key]===undefined)continue;const count=Math.max(0,Math.min(data.total,data[key])),segment=el('span');segment.dataset.stage=key;segment.style.width=`${count/data.total*100}%`;bar.append(segment);const item=el('span','',`${number(count)} ${label}`);item.dataset.stage=key;legend.append(item);}
+      section.append(bar,legend);branches.append(section);
+    }
+    wrap.append(branches);
+    const help=el('details','ma-social-mastery-help');help.append(el('summary','','How mastery is counted'),el('p','','Only characters at Mastered or Mastered+ count toward the percentage. Confident and Building show the learning on the way there. Each branch uses its full current curriculum, including locked characters.'));
+    wrap.append(help);return wrap;
+  }
   async function showProfile(uid){
     const ticket=screen();back(tab==='rankings'?'Rankings':'Friends',load);
     try{
@@ -263,9 +283,9 @@
         if(connection.childNodes.length)body.append(connection);
       }
       if(state.canModerate)body.append(button('Moderation & warnings',()=>staffProfile(uid)));
-      const stats=profile.stats,grid=el('div','ma-social-stats');
+      const stats=profile.stats;
       if(stats){
-        for(const [label,value]of [['Atlas level',number(profile.level)],['Total XP',number(stats.xp)],['Study streak',`${number(stats.streak)} days`],['Total correct',number(stats.totalCorrect)],['Read mastery',`${stats.readingMastered} / ${stats.kanaCount}`],['Recall mastery',`${stats.writingMastered} / ${stats.kanaCount}`]]){const tile=el('div');tile.append(el('span','',label),el('strong','',value));grid.append(tile);}layout.append(grid);
+        layout.append(profileInsights(stats));
         body.append(el('p','ma-social-note',stats.syncedAt?`Progress synced ${new Date(stats.syncedAt).toLocaleString()}.`:'Progress will appear after the next sync.'));
       }else{layout.classList.add('ma-social-profile-content--visitor');body.append(el('p','ma-social-note','Learning totals and mastery are shared only with accepted friends.'));}
       if(uid!==owner){const actions=el('div','ma-social-tools');actions.append(
