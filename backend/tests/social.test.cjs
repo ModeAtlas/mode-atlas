@@ -768,7 +768,8 @@ test('cached mastery projections refresh on Friends views without waiting for an
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.readingMastered':2,'summary.combinedMastered':1});
   const result=await a.call('list',{kind:'rankings',metric:'mastery'}),peer=result.rows.find(row=>row.uid===b.uid);
   assert.equal(peer.stats.readingMastered,0);assert.equal(peer.stats.writingMastered,0);assert.equal(peer.stats.combinedMastered,0);
-  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,5);
+  assert.equal(peer.stats.insights.kana.mastered,0);assert.equal(peer.stats.insights.kana.total,240);assert.equal(peer.stats.insights.achievements.total,91);
+  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,6);
   const saved=(await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis();
   await a.call('list',{kind:'friends'});assert.equal((await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis(),saved);
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.combinedMastered':1});
