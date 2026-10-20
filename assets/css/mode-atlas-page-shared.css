@@ -34,6 +34,7 @@ h1,h2,h3,.main-title,.hero-title,.launch-title,.card-title{font-family:var(--ma-
 .hiragana,.prompt,.kana,.cell,.cell-char,.kana-big .char,.result-kana-card .char{font-family:var(--ma-font-jp);}
 
 button,a,input,textarea,select{-webkit-tap-highlight-color:transparent;}
+button,input,textarea,select{font-family:var(--ma-font-ui);}
 button,.btn,.launch-card{min-height:44px;}
 input,textarea,select{font-size:16px;}
 .btn,.button{display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;}

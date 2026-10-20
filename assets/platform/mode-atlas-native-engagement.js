@@ -36,7 +36,7 @@
     const store = root.ModeAtlasStorage;
     const words = store?.json?.(store.KEYS.wordBank, []) || [];
     return {
-      schemaVersion:5, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
+      schemaVersion:6, updatedAt:Date.now(), localDay:root.ModeAtlasDates?.localDateKey?.() || null,
       totalXp:count(progress.xp),weekly:weeklySnapshot(),
       protectedThrough:root.ModeAtlasShop?.protection?.().filter(day=>day<=root.ModeAtlasDates.localDateKey()).sort().at(-1)||null,
       freezesRemaining:count(root.ModeAtlasShop?.current?.().inventory?.['streak-freeze']),

@@ -8,13 +8,13 @@
   const access=()=>root.ModeAtlasRewardAccess?.current()||{};
   const button=(label,cls='ma-button ma-button--ghost')=>{const node=el('button',cls,label);node.type='button';return node;};
   function pageActions(items=[]){
-    const host=el('div','ma-action-grid');host.setAttribute('aria-label','Explore your progress');
+    const host=el('div','ma-action-grid ma-progress-actions');host.setAttribute('aria-label','Explore your progress');
     for(const item of [...items,{label:'View achievements',short:'Achievements',icon:'achievement',achievements:true}]){
       const control=item.href?el('a','ma-button ma-button--ghost'):button('');
       if(item.href)control.href=item.href;if(item.action)control.addEventListener('click',item.action);if(item.achievements)control.dataset.maAchievementsOpen='';
       control.setAttribute('aria-label',item.label);
-      const icon=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS(icon.namespaceURI,'use');icon.classList.add('ma-icon');icon.setAttribute('aria-hidden','true');use.setAttribute('href','/assets/mode-atlas-icons.svg#icon-'+item.icon);icon.append(use);
-      control.append(icon,el('span','',item.short||item.label));host.append(control);
+      const art=el('img');art.alt='';art.src='/assets/illustrations/'+(item.icon==='book'?'mastery':item.icon==='achievement'?'achievement':'progress')+'-scene.svg';
+      control.append(art,el('span','',item.short||item.label));host.append(control);
     }return host;
   }
   function appearance(){
@@ -89,6 +89,31 @@
 
   function renderStudio(node){root.ModeAtlasAvatarArt.render(node,root.ModeAtlasAvatar?.presentation?.()?.character);}
 
+  function editPersonalGoal(period){
+    const current=root.ModeAtlasProgress.routine().goals.find(goal=>goal.personal&&goal.period===period);
+    const content=el('form','ma-personal-goal-editor'),type=el('select','ma-input'),target=el('select','ma-input'),repeat=el('input'),explanation=el('p','ma-personal-goal-help'),status=el('p','ma-status');
+    type.id='maPersonalGoalType';target.id='maPersonalGoalTarget';repeat.id='maPersonalGoalRepeat';repeat.type='checkbox';repeat.checked=!!current?.repeat;status.setAttribute('role','status');
+    for(const item of rules.personalGoals){const option=el('option','',item.name);option.value=item.id;type.append(option);}
+    type.value=current?.template||'learn-kana';
+    const field=(label,input)=>{const row=el('label','ma-personal-goal-field');row.htmlFor=input.id;input.setAttribute('aria-label',label);row.append(el('span','',label),input);return row;};
+    const intro=el('p','ma-personal-goal-intro',`Make one ${period==='daily'?'daily':'weekly'} goal your own. Choose what to work on and a target that suits you.`);
+    function update(){
+      const item=rules.personalGoals.find(goal=>goal.id===type.value);target.replaceChildren();
+      for(const value of item[period]){const option=el('option','',String(value)+(item.percent?'%':''));option.value=String(value);target.append(option);}
+      if(current?.template===item.id)target.value=String(current.target);
+      explanation.textContent=item.help;
+    }
+    update();type.addEventListener('change',update);
+    const repeating=el('label','ma-personal-goal-repeat');repeating.htmlFor=repeat.id;repeating.append(repeat,el('span','',period==='daily'?'Repeat each day':'Repeat each week'));
+    const note=el('p','ma-personal-goal-help',`${period==='daily'?'Days reset at midnight':'Weeks run Monday to Sunday'}, using your local time. Activity already recorded this ${period==='daily'?'day':'week'} counts. Earn ${period==='daily'?40:200} XP once per period, even if you edit the goal.`);
+    const actions=el('div','ma-personal-goal-actions'),save=button(current?'Save goal':'Create goal','ma-button ma-button--primary');save.type='submit';actions.append(save);
+    if(current){const remove=button('Remove goal');remove.addEventListener('click',()=>{try{root.ModeAtlasProgress.removePersonalGoal(period);root.ModeAtlasDialog.close();refresh();}catch(error){status.textContent=error.message;}});actions.append(remove);}
+    content.append(intro,field('Goal',type),field('Target',target),explanation,repeating,note,status,actions);
+    const action=current&&root.ModeAtlasStudyPlan.goalAction(current);if(action){const link=el('a','ma-personal-goal-study',action.label+' →');link.href=action.href;content.append(link);}
+    content.addEventListener('submit',event=>{event.preventDefault();try{root.ModeAtlasProgress.setPersonalGoal(period,{id:type.value,target:Number(target.value),repeat:repeat.checked});root.ModeAtlasDialog.close();refresh();}catch(error){status.textContent=error.message;}});
+    root.ModeAtlasDialog.feature({title:period==='daily'?'Your daily goal':'Your weekly goal',kicker:'Personal goal',contentNode:content});
+  }
+
   function renderGoals(host,{compact=false}={}){
     if(!host)return;
     const routine=root.ModeAtlasProgress.routine();host.replaceChildren();
@@ -101,18 +126,24 @@
       }
     }
     for(const goal of routine.goals.filter(goal=>!compact||goal.period==='daily')){
-      const complete=goal.value>=goal.target,action=root.ModeAtlasStudyPlan.goalAction(goal,routine.goals),card=el(action?'a':'div','ma-routine-goal');card.classList.toggle('ma-routine-goal--full',!compact);card.dataset.goal=goal.id;card.dataset.complete=String(complete);card.dataset.period=goal.period;
-      if(action){card.href=action.href;card.setAttribute('aria-label',`${goal.label} · ${Math.min(goal.value,goal.target)} of ${goal.target} · ${action.label}`);}
+      const complete=goal.value>=goal.target,action=root.ModeAtlasStudyPlan.goalAction(goal,routine.goals),card=el(goal.personal?'button':action?'a':'div','ma-routine-goal');card.classList.toggle('ma-routine-goal--full',!compact);card.dataset.goal=goal.id;card.dataset.complete=String(complete);card.dataset.period=goal.period;
+      if(goal.personal){card.type='button';card.dataset.personal='true';card.setAttribute('aria-label',`${goal.label} · ${Math.min(goal.value,goal.target)} of ${goal.target} · Edit ${goal.period} goal`);card.addEventListener('click',()=>editPersonalGoal(goal.period));}
+      else if(action){card.href=action.href;card.setAttribute('aria-label',`${goal.label} · ${Math.min(goal.value,goal.target)} of ${goal.target} · ${action.label}`);}
       const meter=el('progress');meter.max=goal.target;meter.value=Math.min(goal.target,goal.value);meter.setAttribute('aria-label',goal.label);
       if(compact){
         card.append(el('strong','',goal.short),el('span','',`${Math.min(goal.target,goal.value)}/${goal.target}${complete?' ✓':''}`),meter);host.append(card);
       }else{
         const mark=el('span','ma-goal-ring',complete?'✓':'');mark.setAttribute('aria-hidden','true');mark.style.setProperty('--goal-progress',Math.min(100,goal.value/goal.target*100)+'%');
         const copy=el('div','ma-goal-copy');copy.append(el('strong','',goal.label),el('span','',complete?'Complete':`${Math.min(goal.value,goal.target)} / ${goal.target}`),meter);
-        const reward=el('span','ma-goal-reward',`+${goal.xp} XP`);
-        if(action)copy.append(el('small','ma-routine-goal__action',action.label+' →'));
+        const reward=el('span','ma-goal-reward',goal.personal&&goal.claimed?'XP earned':`+${goal.xp} XP`);
+        if(goal.personal)copy.append(el('small','ma-routine-goal__action',`Your goal${goal.repeat?' · Repeats':''} · Edit →`));
+        else if(action)copy.append(el('small','ma-routine-goal__action',action.label+' →'));
         card.append(mark,copy,reward);groups.get(goal.period).append(card);
       }
+    }
+    if(!compact)for(const [period,group]of groups){
+      if(routine.goals.some(goal=>goal.period===period&&goal.personal))continue;
+      const add=button('+ Set '+period+' goal','ma-personal-goal-add');add.dataset.personalGoalAdd=period;add.addEventListener('click',()=>editPersonalGoal(period));group.append(add);
     }
   }
   function renderRecap(host){
@@ -135,6 +166,7 @@
       if(due.length){const link=el('a','ma-button ma-button--ghost',`Review ${mode==='reading'?'Read':'Recall'} · ${due.length} due`);link.href=`/${mode}/?practice=10&due=1`;reviewActions.append(link);}
     }
     for(const {label,href,due}of root.ModeAtlasStudyPlan.kanjiReviews()){const link=el('a','ma-button ma-button--ghost',`${label} · ${due} due`);link.href=href;reviewActions.append(link);}
+    for(const link of reviewActions.querySelectorAll('a')){const label=link.textContent;link.replaceChildren();const mark=el('span','ma-review-branch',link.href.includes('/kanji/')?'字':link.href.includes('/writing/')?'ア':'あ');mark.setAttribute('aria-hidden','true');link.append(mark,el('span','',label));}
     if(!reviewActions.childElementCount)reviewActions.append(el('p','ma-atlas-rewards__note','You’re up to date with your reviews.'));
   }
   function goalPanel(){

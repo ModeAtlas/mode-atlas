@@ -103,7 +103,8 @@
   }
   function activity(label,copy,mark,action){
     const item=button('',action);item.className='ma-kana-activity';
-    const symbol=el('span','ma-kana-activity-mark',mark);symbol.setAttribute('aria-hidden','true');
+    const symbol=el('span','ma-kana-activity-mark');symbol.setAttribute('aria-hidden','true');
+    const icon=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS(icon.namespaceURI,'use');icon.classList.add('ma-icon');use.setAttribute('href','/assets/mode-atlas-icons.svg#icon-'+(mark==='✎'?'edit':'play'));icon.append(use);symbol.append(icon);
     const text=el('span','ma-kana-activity-copy');text.append(el('strong','',label),el('span','',copy));
     const arrow=el('span','ma-kana-activity-arrow','›');arrow.setAttribute('aria-hidden','true');
     item.append(symbol,text,arrow);return item;
@@ -118,15 +119,24 @@
   }
   function pathPreview(){
     const state=L.read(),evidence=L.snapshot(),rows=L.path(script,skill,state,evidence),next=nextRow(skill,script,state,evidence);
-    const aside=el('aside','ma-kana-path-preview');aside.setAttribute('aria-label','Your next rows');
+    const aside=el('aside','ma-kana-path-preview');aside.setAttribute('aria-label','Your complete Kana path');
     aside.append(el('span','ma-kicker',script==='hiragana'?'HIRAGANA':'KATAKANA'),el('h2','','Your path'));
-    const start=Math.max(0,rows.indexOf(next)-1);
-    for(const row of rows.slice(start,start+5)){
-      const item=button('',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,row.chars));else{lesson={row,index:0};render();}});
-      item.className='ma-kana-path-step';item.disabled=!row.unlocked;item.dataset.current=String(row.id===next.id);
-      const marker=el('span','ma-kana-path-marker',row.complete?'✓':row.chars[0]);marker.setAttribute('aria-hidden','true');
-      const copy=el('span');copy.append(el('strong','',row.name),el('small','',row.complete?'Ready to revisit':row.unlocked?`${row.ready} / ${row.chars.length} familiar`:'Up next'));
-      item.append(marker,copy);aside.append(item);
+    const summary=el('p','ma-kana-path-summary',`${rows.filter(row=>row.complete).length} / ${rows.length} rows familiar · ${L.names[skill]}`);aside.append(summary);
+    for(const groupId of [...new Set(rows.map(row=>row.group))]){
+      const groupRows=rows.filter(row=>row.group===groupId),group=el('details','ma-kana-path-group');
+      group.open=groupId===next.group;
+      const heading=el('summary');heading.append(el('strong','',groupRows[0].groupName),el('span','',`${groupRows.filter(row=>row.complete).length} / ${groupRows.length}`));group.append(heading);
+      const list=el('div','ma-kana-path-steps');
+      for(const row of groupRows){
+        const item=button('',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,row.chars));else{lesson={row,index:0};render();root.scrollTo({top:0,behavior:'instant'});}});
+        item.className='ma-kana-path-step';item.disabled=!row.unlocked;item.dataset.current=String(row.id===next.id);item.dataset.row=row.id;
+        item.setAttribute('aria-label',`${row.name} · ${row.complete?'Revisit lesson':row.unlocked?'Learn this row':'Locked'}`);
+        if(row.id===next.id)item.setAttribute('aria-current','step');
+        const marker=el('span','ma-kana-path-marker',row.complete?'✓':row.chars[0]);marker.setAttribute('aria-hidden','true');
+        const copy=el('span');copy.append(el('strong','',row.name),el('small','ma-kana-path-characters',row.chars.join(' ')),el('small','',row.complete?'Revisit lesson':row.unlocked?`${row.ready} / ${row.chars.length} familiar`:'Locked'));
+        item.append(marker,copy);list.append(item);
+      }
+      group.append(list);aside.append(group);
     }
     const all=button('Explore your path →',()=>chooseView('path'));all.className='ma-kana-text-action';all.setAttribute('aria-label','Explore your path');aside.append(all);
     return aside;

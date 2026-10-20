@@ -594,7 +594,9 @@ test('shared drawer, card, and form primitives replace page-local surface owners
   }
   assert.doesNotMatch(profile, /role="dialog"/);
   assert.doesNotMatch(settings, /role="dialog"/);
-  assert.match(profile + settings, /ma-card ma-card--soft/);
+  assert.match(profile, /ma-profile-card ma-progression-card/);
+  assert.doesNotMatch(profile, /ma-card ma-card--soft/, 'Profile uses open sections rather than nesting surface cards');
+  assert.match(settings, /ma-setting-list/);
   assert.match(drawerCss, /\.ma-account-sheet\{/);
   assert.doesNotMatch(drawerCss, /\.ma-shared-profile-drawer,\.ma-shared-settings-drawer\{/);
 
@@ -1337,7 +1339,7 @@ test('2.42 contextual install and progression feedback stay under shared owners'
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress.js'") < frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'"));
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'") < frontend.indexOf("'assets/app/mode-atlas-pwa.js'"));
 
-  assert.match(progress, /const STATE_VERSION = 5/);
+  assert.match(progress, /const STATE_VERSION = 6/);
   assert.match(progress, /adjustments/);
   assert.match(progress, /function debugAdjustXP/);
   assert.match(progress, /source: 'dev\.xpAdjust'/);

@@ -93,6 +93,18 @@ struct WidgetSnapshotTests {
         commerce["weekly"] = ["rank": 0, "score": 420, "updatedAt": now.timeIntervalSince1970 * 1000, "endAt": tomorrow.timeIntervalSince1970 * 1000]
         let invalidRank = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: commerce))
         assert(!invalidRank.isValid)
+        var personal = try JSONSerialization.jsonObject(with: JSONEncoder().encode(enriched)) as! [String: Any]
+        personal["schemaVersion"] = 6
+        var personalGoals = personal["goals"] as! [[String: Any]]
+        personalGoals.append(["id": "personal-daily", "label": "Learn 3 new kana", "value": 1, "target": 3, "period": "daily"])
+        personalGoals.append(["id": "personal-weekly", "label": "Recall 100 kana correctly", "value": 10, "target": 100, "period": "weekly"])
+        personal["goals"] = personalGoals
+        let withPersonal = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: personal))
+        assert(withPersonal.isValid && withPersonal.goals(at: now).count == 7)
+        personalGoals[5]["id"] = "personal-weekly"
+        personal["goals"] = personalGoals
+        let invalidPersonal = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: JSONSerialization.data(withJSONObject: personal))
+        assert(!invalidPersonal.isValid, "Personal goals must have unique, period-matched slots")
         rotating.goals![0].period = "weekly"; assert(!rotating.isValid, "A snapshot requires three daily and two weekly goals")
         assert(ModeAtlasWidgetStore.read() == nil, "Unprovisioned builds must not read another container")
         testActivityTiming()

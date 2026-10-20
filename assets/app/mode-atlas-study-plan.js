@@ -29,6 +29,10 @@
   }
   function goalAction(goal,goals=[]){
     if(!goal||goal.value>=goal.target)return null;
+    if(goal.metric==='kana.learned')return {href:'/kana/?view=path',label:'Learn a row'};
+    if(goal.metric==='kana.improved')return {href:'/kana/?view=mastery',label:'Explore mastery'};
+    if(goal.metric==='kana.testScore')return {href:'/kana/?view=tests',label:'Open Kana tests'};
+    if(goal.metric==='kanji.testScore')return {href:'/kanji/',label:'Open Kanji tests'};
     if(goal.branch==='kanji')return {href:'/kanji/',label:'Practise Kanji'};
     if(goal.metric==='study.goals'){
       const next=goals.find(item=>item.period==='daily'&&item.value<item.target);

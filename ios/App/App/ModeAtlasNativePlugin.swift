@@ -133,7 +133,8 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
             self.speech.usesApplicationAudioSession = false
             let utterance = AVSpeechUtterance(string: text)
             utterance.voice = voice
-            utterance.rate = call.getBool("slow") == true ? 0.35 : AVSpeechUtteranceDefaultSpeechRate
+            utterance.prefersAssistiveTechnologySettings = false
+            utterance.rate = call.getBool("slow") == true ? 0.20 : AVSpeechUtteranceDefaultSpeechRate
             self.speech.speak(utterance)
             call.resolve(["played": true])
         }

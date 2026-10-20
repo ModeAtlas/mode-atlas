@@ -155,6 +155,9 @@ for(const theme of ['dark','light'])test(`website ${theme}: shared identity is c
     expect(tokens).toEqual({'--ma-native-page':'','--ma-app-bg':theme==='light'?'#f2f4f7':'#11161c','--ma-primary':theme==='light'?'#4051ca':'#bac7ff'});
     await expect(page.locator('.ma-nav__title')).toHaveText('Mode Atlas');
     await expect(page.locator('.ma-nav__mark')).toHaveAttribute('src','/assets/brand/mode-atlas-symbol.svg');
+    // Include all disclosure content in both snapshots. Closed <details>
+    // descendants can gain layout boxes during a stylesheet recalculation.
+    await page.locator('details').evaluateAll(items=>items.forEach(item=>{item.open=true;}));
     const current=await paintSnapshot(page);
     // The approved redesign changes web paint. The native boundary is still
     // strict: removing native-only styles cannot change any visible web paint.

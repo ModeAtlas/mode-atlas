@@ -255,7 +255,7 @@ for(const native of [false,true])test(`mixed collection surfaces keep readable p
     await page.locator('#profileOpenBtn').click();
     for(const banner of ['hunny','sakura','midnight','skyline','evergreen']){
       await page.evaluate(banner=>ModeAtlasProgress.selectBanner(banner),banner);
-      const card=page.locator('.ma-account-card');await expect(card).toHaveAttribute('data-ma-banner',banner);
+      const card=page.locator('.ma-account-card');await expect(card.locator('[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner',banner);
       for(const signedIn of [false,true]){
         await page.evaluate(signedIn=>{currentUser=signedIn?{uid:'contrast-test',displayName:'Test learner'}:null;updateUiBinding({authBtn:document.querySelector('#profileAuthBtn')});},signedIn);
         const action=page.locator('#profileAuthBtn');await expect(action).toHaveText(signedIn?'Sign out':'Sign in with Google');
@@ -631,7 +631,7 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   await page.locator('[data-landmark="grove"]').click();
   expect(await page.evaluate(()=>ModeAtlasRewardsUI.banner().id)).toBe('grove');
   await page.locator('#profileOpenBtn').click();
-  await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','grove');
+  await expect(page.locator('.ma-account-user[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','grove');
   await page.screenshot({path:info.outputPath('profile-banner.png'),animations:'disabled'});
   await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();
   expect(await page.evaluate(()=>({banner:ModeAtlasRewardsUI.banner().id,frame:ModeAtlasRewardsUI.appearance().id,xp:ModeAtlasProgress.getXP()}))).toEqual({banner:'grove',frame:'grove',xp:700});
@@ -675,7 +675,7 @@ for(const native of [false,true])for(const theme of ['light','dark'])test(`${nat
   })).toBe(1);
   await page.screenshot({path:info.outputPath('exclusive-banner-collection.png'),animations:'disabled'});
   await page.locator('#profileOpenBtn').click();
-  await expect(page.locator('.ma-account-card[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','hunny');
+  await expect(page.locator('.ma-account-user[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner','hunny');
   await page.screenshot({path:info.outputPath('exclusive-profile.png'),animations:'disabled'});
   await page.evaluate(()=>ModeAtlasAccountNavigation.close());await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.evaluate(async()=>{ModeAtlasRewardAccess.clear();rewardUser='ordinary';rewardGrant={grants:[],allCustom:false};await ModeAtlasRewardAccess.refresh(true);});
@@ -852,4 +852,18 @@ test('full goals group each period while preserving live progress and practice d
   for(const goal of goals){const card=page.locator(`[data-goal="${goal.id}"]`);await expect(card.locator('progress')).toHaveAttribute('max',String(goal.target));await expect(card).toContainText(`+${goal.xp} XP`);}
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await expect(page.locator('.ma-routine-goal[href]').first()).toHaveAttribute('href',/\/(reading|writing|kanji)\//);
+});
+
+test('personal daily and weekly goals create, repeat, edit and remove in the shared dialog',async({page})=>{
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await page.addInitScript(()=>{for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');localStorage.setItem('maWhatsNewSeen','personal-goals');});
+  await page.goto('/progress/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.getByRole('button',{name:'+ Set daily goal',exact:true}).click();
+  await page.getByLabel('Goal',{exact:true}).selectOption('kana-correct');await page.getByLabel('Target',{exact:true}).selectOption('50');await page.getByLabel('Repeat each day',{exact:true}).check();await page.getByRole('button',{name:'Create goal',exact:true}).click();
+  await expect(page.locator('[data-goal="personal-daily"]')).toContainText('Recall 50 kana correctly');await expect(page.locator('[data-goal="personal-daily"]')).toContainText('Repeats');
+  await page.getByRole('button',{name:'+ Set weekly goal',exact:true}).click();await page.getByLabel('Target',{exact:true}).selectOption('10');await page.getByRole('button',{name:'Create goal',exact:true}).click();
+  await page.reload();await expect(page.locator('[data-personal="true"]')).toHaveCount(2);
+  await page.locator('[data-goal="personal-daily"]').click();await expect(page.getByLabel('Target',{exact:true})).toHaveValue('50');await page.getByLabel('Target',{exact:true}).selectOption('20');await page.getByRole('button',{name:'Save goal',exact:true}).click();
+  await page.locator('[data-goal="personal-weekly"]').click();await page.getByRole('button',{name:'Remove goal',exact:true}).click();await expect(page.locator('[data-personal="true"]')).toHaveCount(1);await expect(page.getByRole('button',{name:'+ Set weekly goal',exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

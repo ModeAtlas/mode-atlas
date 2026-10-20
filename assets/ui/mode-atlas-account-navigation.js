@@ -68,7 +68,7 @@
     layer=document.createElement('div');layer.className='ma-account-layer';layer.hidden=true;
     layer.innerHTML=`<div class="ma-account-backdrop" data-ma-account-close></div>
       <section class="ma-account-sheet" id="maAccountSheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="maAccountTitle" tabindex="-1">
-        <header class="ma-account-header"><div><div class="ma-menu-kicker">Your space</div><h2 id="maAccountTitle">Profile</h2></div>
+        <header class="ma-account-header"><div><h2 id="maAccountTitle">Profile</h2></div>
           <button class="ma-button ma-button--ghost ma-icon-button" id="maAccountClose" data-ma-account-close type="button" aria-label="Close account menu">${icon('close')}</button></header>
         <div class="ma-account-tabs" role="tablist" aria-label="Account sections" style="--ma-account-tab-count:${visible.length}">
           ${visible.map(([name,label,symbol])=>`<button type="button" class="ma-account-tab" role="tab" id="maAccountTab-${name}" aria-controls="maAccount-${name}" aria-selected="false" tabindex="-1" data-ma-account-section="${name}">${icon(symbol)}<span>${label}</span></button>`).join('')}

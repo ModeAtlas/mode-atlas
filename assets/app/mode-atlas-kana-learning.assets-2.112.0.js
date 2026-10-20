@@ -148,11 +148,11 @@
     const chosen=eligible.includes(requested)?[requested]:requested==='both'?eligible:eligible.slice(0,1);
     return Object.fromEntries(chosen.flatMap(script=>path(script,skill,state,evidence).filter(row=>row.group==='base'||settings.kanaTestExtended&&row.unlocked).flatMap(row=>row.chars)).map(char=>[char,map[char]]));
   }
-  function recordRecall(skill,char,evidence){
+  function recordRecall(skill,char,evidence,track=true){
     if(!['reading','writing'].includes(skill)||!known.has(char))return;
     const state=read();if(!state.startedAt){state.startedAt=Date.now();state.startKind='existing';}
-    const before=state.earned[skill][char]||0,next=earned(char,skill,state,evidence);
-    if(next>before){state.earned[skill][char]=next;save(state);}
+    const combinedBefore=stage(char,state,{}),before=state.earned[skill][char]||0,next=earned(char,skill,state,evidence);
+    if(next>before){state.earned[skill][char]=next;save(state);if(track)root.ModeAtlasProgress?.recordKanaMilestone(char,stage(char,state,{}),combinedBefore,Date.now(),{deferAwards:true});}
   }
   function introduce(char){if(!known.has(char))return;const state=start();if(!state.introduced[char]){state.introduced[char]=Date.now();save(state);}}
   function place(skill,rowId){
@@ -162,10 +162,10 @@
   function recordHandwriting(char,event){
     if(!known.has(char)||!event?.id||!number(event.at))return false;
     const state=start();if(!available('handwriting',state).has(char))return false;
-    const entries=state.handwriting[char]||=[];if(entries.some(r=>r.id===event.id))return false;
+    const before=stage(char,state,{}),entries=state.handwriting[char]||=[];if(entries.some(r=>r.id===event.id))return false;
     entries.push({id:event.id,at:event.at,independent:event.mode==='write'&&!event.assisted&&event.errors===0});
     if(event.mode==='write'&&!event.assisted&&event.errors===0)state.handwritingDays[char]=[...(state.handwritingDays[char]||[]),root.ModeAtlasDates.localDateKey(new Date(event.at))];
-    state.earned.handwriting[char]=Math.max(state.earned.handwriting[char]||0,currentStage(char,'handwriting',{},state));save(state);return true;
+    state.earned.handwriting[char]=Math.max(state.earned.handwriting[char]||0,currentStage(char,'handwriting',{},state));save(state);root.ModeAtlasProgress?.recordKanaMilestone(char,stage(char,state,{}),before,event.at);return true;
   }
   function details(char,state=read(),evidence=snapshot()){
     return {stage:stage(char,state,evidence),skills:skills.map(skill=>{

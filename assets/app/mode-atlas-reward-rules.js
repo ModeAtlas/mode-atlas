@@ -96,6 +96,16 @@
       return pool[((ordinal+slot*3)%pool.length+pool.length)%pool.length];
     }).filter(Boolean);
   }
+  // Personal goals share the activity ledger, but each period has just one
+  // reward slot regardless of target changes or offline device edits.
+  const personalGoals=Object.freeze([
+    {id:'learn-kana',name:'Learn new kana',branch:'kana',metric:'kana.learned',daily:[1,3,5,10],weekly:[5,10,20,30],label:n=>`Learn ${n} new kana`,help:'Bring new kana to Familiar in Read or Recall. Each character counts once, after three correct unassisted answers with at least 80% recent accuracy.'},
+    {id:'mastery-kana',name:'Improve Kana mastery',branch:'kana',metric:'kana.improved',daily:[1,3,5],weekly:[3,5,10,20],label:n=>`Improve mastery of ${n} kana`,help:'Move kana up to Confident, Mastered or Mastered+ on the combined mastery map. Each character counts once in the period.'},
+    {id:'kana-test',name:'Kana test accuracy',branch:'kana',metric:'kana.testScore',daily:[70,80,90,95,100],weekly:[70,80,90,95,100],percent:true,label:n=>`Complete a Kana test at ${n}% or higher`,help:'Finish a formal Kana test of at least 10 questions without hints. Your best completed test score counts; leaving a test early does not.'},
+    {id:'kanji-test',name:'Kanji test accuracy',branch:'kanji',metric:'kanji.testScore',daily:[70,80,90,95,100],weekly:[70,80,90,95,100],percent:true,label:n=>`Complete a Kanji test at ${n}% or higher`,help:'Finish a Pronunciation or typed Meaning test of at least 10 kanji without hints. Your best completed test score counts; leaving a test early does not.'},
+    {id:'kana-correct',name:'Correct Kana answers',branch:'kana',metric:'kana.correct',daily:[20,50,100],weekly:[100,250,500],label:n=>`Recall ${n} kana correctly`,help:'Correct answers across Read and Recall count together, including guided practice.'},
+    {id:'kanji-correct',name:'Correct Kanji answers',branch:'kanji',metric:'kanji.correct',daily:[10,20,50],weekly:[50,100,250],label:n=>`Recall ${n} kanji correctly`,help:'Correct answers across Kanji pronunciation, meaning recall and meaning match count together.'}
+  ].map(goal=>Object.freeze({...goal,daily:Object.freeze(goal.daily),weekly:Object.freeze(goal.weekly)})));
   const landmarks=Object.freeze([
     {id:'trail',level:1,title:'Trail Finder',name:'First trail',symbol:'◇',frame:'plain',icon:null},
     {id:'grove',level:5,title:'Grove Explorer',name:'Kana grove',symbol:'♧',frame:'grove',icon:'Grove'},
@@ -203,5 +213,5 @@
   function allowed(type,id,level,access){return unlocked(item(type,id),level,access);}
   function appearance(id,level,access){const reward=item('frames',id);return unlocked(reward,level,access)?reward:landmarks[0];}
   function banner(id,level,access){const reward=item('banners',id);return unlocked(reward,level,access)?reward:banners[0];}
-  return Object.freeze({accuracy,kanaRate,levelRequirement,session,starter,goalBranches,goalPool,goalCatalogue,goals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,pets,catalogue,item,unlocked,visible,allowed});
+  return Object.freeze({accuracy,kanaRate,levelRequirement,session,starter,goalBranches,goalPool,goalCatalogue,goals,personalGoals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,pets,catalogue,item,unlocked,visible,allowed});
 });

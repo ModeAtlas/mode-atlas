@@ -96,15 +96,15 @@
         answered:state.sessionStats.answered,correct:state.sessionStats.correct,unique:Object.keys(current.items).length,
         bestStreak:state.sessionStats.bestStreak,assisted:current.assisted,poolSize:current.poolSize,hintsEnabled:current.hintsEnabled,completed}));
     }
-    function captureMilestone(kana,state){
-      root.ModeAtlasKanaLearning.recordRecall(config.mode,kana,{[config.mode+'Stats']:state.stats,[config.mode+'Review']:state.srs,[config.mode+'Times']:state.times});
+    function captureMilestone(kana,state,track=true){
+      root.ModeAtlasKanaLearning.recordRecall(config.mode,kana,{[config.mode+'Stats']:state.stats,[config.mode+'Review']:state.srs,[config.mode+'Times']:state.times},track);
     }
     function prepareAnswer(){
       const state=snapshot();
       // Freeze legacy achievements before the answer changes averages/counts.
       // This runs inside the same transaction as scoring and the checkpoint.
       for(const kana of root.ModeAtlasKanaData.splitKana(state.currentChar)){
-        captureMilestone(kana,state);
+        captureMilestone(kana,state,false);
         if(state.srs[kana]?.reviewVersion!==1)state.srs[kana]=root.ModeAtlasReview.normalize(state.srs[kana],state.stats[kana],state.times[kana]);
       }
     }

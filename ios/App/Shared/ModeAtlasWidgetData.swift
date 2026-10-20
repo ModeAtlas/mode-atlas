@@ -51,7 +51,7 @@ struct ModeAtlasWidgetSnapshot: Codable {
     var freezesRemaining: Int? = nil
 
     var isValid: Bool {
-        guard [1, 2, 3, 4, 5].contains(schemaVersion), updatedAt.isFinite, updatedAt > 0,
+        guard [1, 2, 3, 4, 5, 6].contains(schemaVersion), updatedAt.isFinite, updatedAt > 0,
               (1...999).contains(level), (0...1_000_000_000_000).contains(correct),
               (0...100_000).contains(streak), levelProgress.isFinite,
               (0...1).contains(levelProgress), ["kana", "daily", "yourAtlas"].contains(destination) else { return false }
@@ -69,7 +69,14 @@ struct ModeAtlasWidgetSnapshot: Codable {
                   let studyStreak, (0...100000).contains(studyStreak), let localDay, Self.validDay(localDay),
                   let goals, goals.allSatisfy(\.isValid), Set(goals.map(\.id)).count == goals.count else { return false }
             if schemaVersion == 3 && Set(goals.map(\.id)) != Set(["recall", "balance", "review", "week"]) { return false }
-            if schemaVersion >= 4 && (goals.filter { $0.period == "daily" }.count != 3 || goals.filter { $0.period == "weekly" }.count != 2 || goals.count != 5) { return false }
+            if (4...5).contains(schemaVersion) && (goals.filter { $0.period == "daily" }.count != 3 || goals.filter { $0.period == "weekly" }.count != 2 || goals.count != 5) { return false }
+            if schemaVersion >= 6 {
+                let personal = goals.filter { $0.id.hasPrefix("personal-") }
+                guard personal.allSatisfy({ $0.id == "personal-" + ($0.period ?? "") }), personal.count <= 2,
+                      goals.filter({ $0.period == "daily" && !$0.id.hasPrefix("personal-") }).count == 3,
+                      goals.filter({ $0.period == "weekly" && !$0.id.hasPrefix("personal-") }).count == 2,
+                      goals.count == 5 + personal.count else { return false }
+            }
             if let lastStudyDay, !Self.validDay(lastStudyDay) { return false }
             if studyStreak > 0 && lastStudyDay == nil { return false }
             if let nextLevel, nextLevel <= level || nextLevel > 999 { return false }

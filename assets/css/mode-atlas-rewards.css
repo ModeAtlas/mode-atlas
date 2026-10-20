@@ -168,3 +168,26 @@ html[data-ma-large-text] .ma-atlas-landmark{flex-wrap:wrap;}
 @media(max-width:480px){.ma-collection-panel{grid-template-columns:1fr;}}
 html[data-ma-large-text] .ma-routine-goals:has(.ma-routine-goal--full),html[data-ma-large-text] .ma-collection-panel{grid-template-columns:1fr;}
 html[data-ma-large-text] .ma-routine-goal--full{grid-template-columns:34px minmax(0,1fr);}.ma-routine-goal--full .ma-goal-copy{min-width:0;}html[data-ma-large-text] .ma-goal-reward{grid-column:2;}
+
+/* Personal goals use the period's existing goal list and the shared dialog. */
+.ma-personal-goal-add{display:flex;align-items:center;min-height:48px;width:100%;padding:12px 0 0;border:0;background:none;color:var(--ma-text-strong);font:650 .8rem var(--ma-font-ui);text-align:left;cursor:pointer;}
+.ma-routine-goal[data-personal]{width:100%;font:inherit;text-align:left;cursor:pointer;color:var(--ma-text);}
+.ma-routine-goal[data-personal] .ma-goal-ring{background:conic-gradient(var(--ma-results) var(--goal-progress),var(--ma-border) 0);}
+.ma-routine-goal[data-personal][data-complete="true"] .ma-goal-ring{background:var(--ma-success);}
+.ma-personal-goal-editor{display:grid;grid-template-columns:2fr 1fr;gap:16px;min-width:0;}
+.ma-personal-goal-field{display:grid;gap:8px;min-width:0;font-size:.8rem;font-weight:650;}
+.ma-personal-goal-field .ma-input{width:100%;min-width:0;box-sizing:border-box;min-height:44px;padding:10px;border:1px solid var(--ma-border);border-radius:10px;background:var(--ma-surface-inset);color:var(--ma-text);font:inherit;}
+.ma-personal-goal-intro,.ma-personal-goal-help,.ma-personal-goal-repeat,.ma-personal-goal-actions,.ma-personal-goal-study,.ma-personal-goal-editor .ma-status{grid-column:1/-1;margin:0;}
+.ma-personal-goal-intro{font-size:.9rem;line-height:1.5;}.ma-personal-goal-help{font-size:.78rem;line-height:1.5;color:var(--ma-muted);}
+.ma-personal-goal-repeat{display:flex;gap:10px;align-items:center;min-height:44px;font-size:.85rem;}.ma-personal-goal-repeat input{width:20px;height:20px;accent-color:var(--ma-primary);}
+.ma-personal-goal-actions{display:flex;flex-wrap:wrap;gap:8px;}.ma-personal-goal-actions>*{flex:1;}.ma-personal-goal-study{display:flex;align-items:center;min-height:44px;font-size:.85rem;color:var(--ma-text-strong);}
+.ma-personal-goal-editor .ma-status:empty{display:none;}
+.ma-personal-goal-add:focus-visible,.ma-routine-goal[data-personal]:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
+.ma-progress-actions{grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr));}
+.ma-progress-actions .ma-button{flex-direction:row;justify-content:flex-start;text-align:left;gap:12px;padding:14px;min-height:88px;background:var(--ma-card);}
+.ma-progress-actions img{width:64px;height:50px;object-fit:contain;flex:none;}
+.ma-due-reviews .ma-atlas-rewards__actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:8px;}
+.ma-due-reviews .ma-atlas-rewards__actions>a{display:flex;gap:12px;align-items:center;min-height:64px;padding:12px;border:0;border-left:3px solid var(--ma-border-strong);border-radius:8px;background:var(--ma-surface-inset);font-size:.8rem;line-height:1.35;text-align:left;}
+.ma-review-branch{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--ma-control-active);color:var(--ma-atlas);font:550 1.5rem var(--ma-font-jp);flex:none;}
+@media(max-width:480px){.ma-progress-actions .ma-button{flex-direction:column;align-items:flex-start;gap:6px;}.ma-progress-actions img{width:62px;height:46px;}}
+html[data-ma-large-text] .ma-personal-goal-editor{grid-template-columns:1fr;}

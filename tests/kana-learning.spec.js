@@ -206,3 +206,22 @@ for(const width of [320,393])test(`combined kana stay together and practice acti
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
   await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('#startBtn')).toBeVisible();await page.waitForFunction(()=>window.ModeAtlasKanaLearning&&window.ModeAtlasStorage);expect(await page.evaluate(()=>Object.keys(ModeAtlasKanaLearning.selection(ModeAtlasStorage.readModeJSON('reading','settings',{}),'reading')))).toEqual(['きゃ','きゅ','きょ']);
 });
+
+test('Your path includes every row and reopens old lessons without changing unlocks',async({page})=>{
+  await setup(page);await open(page);await page.getByRole('button',{name:/Start as a beginner/}).click();
+  await page.evaluate(()=>{const L=ModeAtlasKanaLearning,s=L.read();for(const row of L.rows.filter(r=>r.script==='hiragana'&&r.group==='base').slice(0,6))s.placed.reading[row.id]=Date.now();L.save(s);});
+  const expected=await page.evaluate(()=>ModeAtlasKanaLearning.rows.filter(r=>r.script==='hiragana').length);
+  await expect(page.locator('.ma-kana-path-step')).toHaveCount(expected);
+  await expect(page.locator('[data-row="hiragana:base:a"]')).toBeEnabled();
+  await page.locator('[data-row="hiragana:base:a"]').click();await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');
+  await page.getByRole('button',{name:'Back to Kana',exact:true}).click();
+  await page.locator('.ma-kana-path-group summary').filter({hasText:'Joined sounds'}).click();
+  await expect(page.locator('.ma-kana-path-group').filter({hasText:'Joined sounds'}).locator('.ma-kana-path-step').first()).toBeDisabled();
+});
+test('Confident, Mastered and Mastered+ have distinct colours in the legend and details',async({page})=>{
+  await setup(page);await open(page,'/kana/?view=mastery');
+  // Enter the branch as an existing learner, keeping real mastery rendering.
+  await page.evaluate(()=>{const L=ModeAtlasKanaLearning,s=L.start();s.earned.reading['あ']=5;s.earned.writing['あ']=5;s.earned.handwriting['あ']=5;L.save(s);});await open(page,'/kana/?view=mastery');
+  const colours=await page.locator('.ma-kana-mastery-legend>[data-stage]').evaluateAll(nodes=>nodes.filter(n=>Number(n.dataset.stage)>=4).map(n=>getComputedStyle(n).borderLeftColor));expect(new Set(colours).size).toBe(3);
+  await page.getByRole('button',{name:'あ mastery details: Mastered+',exact:true}).click();await expect(page.locator('.ma-kana-mastery-heading')).toHaveAttribute('data-stage','6');
+});

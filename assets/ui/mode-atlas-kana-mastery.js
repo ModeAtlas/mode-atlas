@@ -26,12 +26,12 @@
   }
   function detail(char){
     const state=L.read(),evidence=M.createSnapshot(),info=L.details(char,state,evidence),body=el('div','ma-kana-mastery-detail');
-    const head=el('header','ma-kana-mastery-heading');head.append(el('span','ma-kicker','Kana mastery'),el('h3','ma-kana-mastery-glyph',char),el('strong','',L.labels[info.stage]),el('p','',description[info.stage]));body.append(head);
+    const head=el('header','ma-kana-mastery-heading');head.dataset.stage=String(info.stage);head.append(el('span','ma-kicker','Kana mastery'),el('h3','ma-kana-mastery-glyph',char),el('strong','',L.labels[info.stage]),el('p','',description[info.stage]));body.append(head);
     const choices=el('div','ma-kana-segments ma-kana-mastery-skills');choices.setAttribute('role','group');choices.setAttribute('aria-label','Skill details');body.append(choices);
     const panels=[];
     for(const entry of info.skills){
       const section=el('section','ma-kana-skill-evidence');section.dataset.stage=String(entry.stage);section.hidden=entry.skill!=='reading';section.setAttribute('aria-label',entry.name+' targets');
-      const pick=el('button','ma-button ma-button--ghost');pick.type='button';pick.setAttribute('aria-label',entry.name+' · '+L.labels[entry.stage]);pick.setAttribute('aria-pressed',String(!section.hidden));pick.append(el('strong','',entry.name),el('span','',L.labels[entry.stage]));
+      const pick=el('button','ma-button ma-button--ghost');pick.type='button';pick.dataset.stage=String(entry.stage);pick.setAttribute('aria-label',entry.name+' · '+L.labels[entry.stage]);pick.setAttribute('aria-pressed',String(!section.hidden));pick.append(el('strong','',entry.name),el('span','',L.labels[entry.stage]));
       pick.addEventListener('click',()=>{for(const [button,panel]of panels){const active=button===pick;button.setAttribute('aria-pressed',String(active));panel.hidden=!active;}});choices.append(pick);panels.push([pick,section]);
       const guide=L.guidance(char,entry.skill,state,evidence),title=el('div','ma-kana-skill-title');title.append(el('h4','',entry.name),el('strong','',L.labels[entry.stage]));section.append(title);
       section.append(el('p','ma-kana-target-heading',entry.stage===5?'Mastered earned · current evidence':'Working toward '+guide.label));

@@ -7,8 +7,8 @@
   window.ModeAtlasProfileMenu = {
     markup({ href }){
       return `
-          <section class="ma-card ma-card--soft ma-profile-card ma-account-card ma-profile-banner" data-ma-selected-banner aria-label="Mode Atlas account">
-            <div class="ma-account-user">
+          <section class="ma-profile-card ma-account-card" aria-label="Mode Atlas account">
+            <div class="ma-account-user ma-profile-banner" data-ma-selected-banner>
               <span class="ma-account-avatar" id="profileAvatar" aria-hidden="true"></span>
               <div class="ma-account-copy">
                 <div class="ma-account-name" id="profileName">Guest</div>
@@ -16,7 +16,7 @@
                 <div class="ma-profile-title" id="profileAtlasTitle">Trail Finder</div>
               </div>
             </div>
-            <div class="ma-auth-actions ma-action-grid">
+            <div class="ma-auth-actions">
               <button class="ma-button ma-button--ghost" data-ma-avatar-open type="button">${icon(href,'edit')}<span>Edit avatar & pet</span></button>
               <button class="ma-button ma-button--primary" id="profileAuthBtn" data-profile-auth type="button">
                 ${icon(href,'user')}
@@ -26,13 +26,13 @@
             </div>
           </section>
 
-          <section class="ma-card ma-card--soft ma-profile-card ma-progression-card" aria-label="Atlas Level and learning activity">
+          <section class="ma-profile-card ma-progression-card" aria-label="Atlas Level and learning activity">
             <div class="ma-profile-card-head">
               <div>
-                <div class="ma-menu-kicker">Learning progress</div>
+
                 <div class="ma-profile-card-title">Atlas Level <span id="profileAtlasLevel">1</span></div>
               </div>
-              ${icon(href,'achievement','ma-icon--lg')}
+              <img class="ma-profile-progress-art" src="${href('assets/illustrations/progress-scene.svg')}" alt="">
             </div>
             <div class="ma-level-xp-line">
               <strong id="profileAtlasXp">0 XP</strong>
@@ -51,11 +51,11 @@
             </div>
           </section>
 
-          <section class="ma-card ma-card--soft ma-profile-card ma-sync-card" aria-label="Sync status">
+          <section class="ma-profile-card ma-sync-card" aria-label="Sync status">
             <div class="ma-profile-card-head">
               <div>
-                <div class="ma-menu-kicker">Save status</div>
-                <div class="ma-profile-card-title">Cloud sync</div>
+
+                <div class="ma-profile-card-title">Save status</div>
               </div>
               <span class="ma-status-chip ma-status-chip--info" id="profileSyncChip">Checking</span>
             </div>

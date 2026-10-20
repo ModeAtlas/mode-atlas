@@ -48,7 +48,11 @@ async function checkLayout(page,scope='body'){
     }
     for(const tile of root.querySelectorAll('.ma-level-activity>div')){
       const boxes=Array.from(tile.children).map(el=>el.getBoundingClientRect());
-      for(let i=1;i<boxes.length;i++)if(boxes[i].top<boxes[i-1].bottom-1)issues.push('profile activity text overlaps');
+      const bounds=tile.getBoundingClientRect();
+      for(let i=0;i<boxes.length;i++){
+        if(boxes[i].right>bounds.right+1)issues.push('profile activity text overflows');
+        for(let j=0;j<i;j++)if(Math.min(boxes[i].right,boxes[j].right)>Math.max(boxes[i].left,boxes[j].left)+1&&Math.min(boxes[i].bottom,boxes[j].bottom)>Math.max(boxes[i].top,boxes[j].top)+1)issues.push('profile activity text overlaps');
+      }
     }
     return issues;
   },scope);
