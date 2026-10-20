@@ -639,6 +639,13 @@ test('initial cloud hydration preserves local section changes made while Firesto
 
 for(const recovery of ['online','manual'])test(`Firebase setup preserves the save after failure and recovers through ${recovery} retry`, async () => {
   const { context, window, localStorage } = createBaseContext({ configured: true });
+  let startupNotices=0;
+  window.addEventListener('kanaCloudSyncStatusChanged',()=>{
+    if(window.KanaCloudSync?.getSyncStatus().state==='restoring'){
+      startupNotices++;
+      if(startupNotices<5)void window.KanaCloudSync.waitForInitialHydration();
+    }
+  });
   localStorage.setItem('modeAtlasLocalSaveOwner','returning-learner');
   localStorage.setItem('kanaWordBank','[{"kana":"みず","english":"water"}]');
   let authCallback = null;
@@ -671,11 +678,14 @@ for(const recovery of ['online','manual'])test(`Firebase setup preserves the sav
   assert.equal(window.KanaCloudSync.getSyncStatus().canRetry,true);
   assert.equal(localStorage.getItem('modeAtlasLocalSaveOwner'),'returning-learner');
   assert.match(localStorage.getItem('kanaWordBank'),/water/);
+  assert.equal(await window.KanaCloudSync.waitForInitialHydration(),false,'readiness observers do not restart failed setup');
+  assert.equal(context.__firebaseLoadAttempts.count,1);
 
   let retry;
   if(recovery==='online')window.dispatchEvent({type:'online'});else retry=window.KanaCloudSync.syncNow();
   for (let i = 0; i < 50 && !authCallback; i += 1) await delay(1);
   assert.equal(context.__firebaseLoadAttempts.count, 2, 'online recovery should retry the failed Firebase setup');
+  assert.ok(startupNotices<=2,'reentrant observers join the registered startup owner');
   assert.equal(typeof authCallback, 'function', 'retry should complete Firebase auth setup without a page reload');
   assert.equal(window.KanaCloudSync.getSyncStatus().state,'restoring');
   authCallback({uid:'returning-learner'});await window.KanaCloudSync.ready;await retry;

@@ -12,7 +12,7 @@ Version 2.115.0 · iOS build 2080037.
 
 ## Changes and ownership
 
-Cloud sync now distinguishes restoring, unavailable and confirmed guest states. A failed SDK restore preserves the local account save; an explicit Retry reloads the document to clear the failed module import. Ordinary sync retries keep the current page. Account identity and save activation still belong to the Firebase auth callback.
+Cloud sync now distinguishes restoring, unavailable and confirmed guest states. A failed SDK restore preserves the local account save; an explicit Retry reloads the document to clear the failed module import. Ordinary sync retries keep the current page. Account identity and save activation still belong to the Firebase auth callback. Startup registers its pending attempt before notifying observers; readiness checks join it and do not restart a failed setup.
 
 Canonical value comparisons suppress unchanged writes and redraws. Full owned save fields replace obsolete nested fields, while unrelated top-level fields are retained. Arrays remain order-sensitive, including test history. Live local edits made during a cloud read, account-switch guards and confirmed-server-save checks remain covered by regressions.
 

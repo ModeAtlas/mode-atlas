@@ -1109,7 +1109,9 @@ async function setupFirebase() {
   if (app && auth && authListenerInstalled) return true;
   if (firebaseSetupPromise) return firebaseSetupPromise;
 
-  const attempt = (async () => {
+  // Publish the pending owner before notifying listeners: visit/readiness
+  // observers may synchronously join startup from the status event.
+  const attempt = Promise.resolve().then(async () => {
     authStartupFailed = false;
     emitStatus();
     if (!CONFIG_READY) {
@@ -1180,7 +1182,7 @@ async function setupFirebase() {
     }
 
     return true;
-  })();
+  });
 
   firebaseSetupPromise = (async () => {
     try {
@@ -1313,17 +1315,20 @@ function waitWithTimeout(promise, ms = 1400, label = 'cloud startup') {
   });
 }
 
-async function beforePageLoad() {
-  // Compatibility/readiness helper only. Cloud startup and initial hydration
-  // are owned by setupFirebase() + onAuthStateChanged(), not by individual pages.
-  await waitWithTimeout(setupFirebase(), 1400, 'cloud setup');
+async function waitForAuthRestore(){
+  if(!CONFIG_READY)return true;
+  // Readiness observers wait; only explicit sync/sign-in/reconnect actions
+  // retry failed startup. Otherwise a failure notification restarts itself.
+  if(authStartupFailed)return false;
+  if(!await waitWithTimeout(setupFirebase(),1400,'cloud setup'))return false;
   await waitWithTimeout(authReady, 1400, 'auth check');
-  return true;
+  return authResolved;
 }
 
+async function beforePageLoad(){return waitForAuthRestore();}
+
 async function waitForInitialHydration(timeoutMs = 2600) {
-  await waitWithTimeout(setupFirebase(), 1400, 'cloud setup');
-  await waitWithTimeout(authReady, 1400, 'auth check');
+  if(!await waitForAuthRestore())return false;
   if (!currentUser) return true;
   if (hydratedForUserId === currentUser.uid) return true;
   const result = await waitWithTimeout(initialHydrationPromise, timeoutMs, 'cloud hydrate');
