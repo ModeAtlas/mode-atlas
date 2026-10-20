@@ -8,6 +8,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import html
+import hashlib
+import json
 import re
 
 ROOT = Path(__file__).resolve().parent
@@ -75,6 +77,49 @@ NAV_CONFIGS: dict[str, NavConfig] = {
     'privacy/index.html': NavConfig('privacy', account_actions=False),
     'terms/index.html': NavConfig('terms', account_actions=False),
 }
+
+
+def apply_brand_metadata(root: Path = ROOT) -> None:
+    """One icon selection for browser tabs, touch shortcuts and installed apps.
+
+    Installed apps treat icon URLs as immutable. Fingerprint the actual artwork,
+    so a logo change is discoverable without changing the installed app's ID.
+    """
+    sources = {
+        'tab': 'assets/brand/mode-atlas-micro.svg',
+        'tab-png': 'assets/favicon-32.png',
+        'touch': 'assets/apple-touch-icon.png',
+        'app': 'assets/android-chrome-512.png',
+    }
+    icons = {}
+    for name, source in sources.items():
+        original = root / source
+        content = original.read_bytes()
+        digest = hashlib.sha256(content).hexdigest()[:12]
+        destination = Path(f'assets/brand/mode-atlas-{name}.{digest}{original.suffix}')
+        (root / destination).write_bytes(content)
+        icons[name] = destination.as_posix()
+    links = (
+        ('tab', 'icon', 'type="image/svg+xml" sizes="any"'),
+        ('tab-png', 'icon', 'type="image/png" sizes="32x32"'),
+        ('touch', 'apple-touch-icon', 'sizes="180x180"'),
+    )
+    pattern = re.compile(r'<link\b[^>]*\brel=[\"\'](?:icon|apple-touch-icon)[\"\'][^>]*>\s*', re.I)
+    for page in NAV_CONFIGS:
+        file = root / page
+        if not file.exists():
+            continue
+        prefix = '../' * (len(Path(page).parts) - 1)
+        markup = '\n'.join(f'<link rel="{rel}" href="{prefix}{icons[name]}" {extra} />' for name, rel, extra in links)
+        source = pattern.sub('', file.read_text(encoding='utf-8'))
+        file.write_text(source.replace('</head>', markup + '\n</head>', 1), encoding='utf-8')
+    manifest_file = root / 'site.webmanifest'
+    manifest = json.loads(manifest_file.read_text(encoding='utf-8'))
+    manifest['icons'] = [
+        {'src': '/' + icons['app'], 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any maskable'},
+        {'src': '/' + icons['touch'], 'sizes': '180x180', 'type': 'image/png', 'purpose': 'any'},
+    ]
+    manifest_file.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
 
 PRIMARY_LINKS = (
     ('atlas', 'Atlas', '/'),

@@ -91,9 +91,9 @@ test('profile presentation uses the chosen avatar and linked Google photo after 
 test('self-profile cache follows the authenticated owner, coalesces reads and rejects stale account responses',async()=>{
   let uid='first',cached=null,resolve,calls=0,clock=1000;
   const client=createSocial({enabled:()=>true,user:()=>uid?{uid}:null,online:()=>true,readProfile:()=>cached,writeProfile:value=>{cached=value;},now:()=>clock,transport:async()=>{calls++;return new Promise(done=>{resolve=done;});}});
-  const first=client.refreshProfile(),same=client.refreshProfile();resolve({active:true,profile:{uid:'first',avatar:'emoji:🦊'}});await Promise.all([first,same]);assert.equal(calls,1);assert.equal(client.selfProfile().avatar,'emoji:🦊');
-  await client.refreshProfile();assert.equal(calls,1);uid='other';assert.equal(client.selfProfile(),null);
-  clock+=60001;uid='first';const delayed=client.refreshProfile();client.clearProfile();uid='other';resolve({active:true,profile:{uid:'first',avatar:'moon'}});await delayed;assert.equal(cached,null);assert.equal(client.selfProfile(),null);
+  const first=client.call('state'),same=client.call('state');resolve({active:true,profile:{uid:'first',avatar:'emoji:🦊'}});await Promise.all([first,same]);assert.equal(calls,1);assert.equal(client.selfProfile().avatar,'emoji:🦊');
+  assert.equal(client.selfProfile().uid,'first');assert.equal(calls,1);uid='other';assert.equal(client.selfProfile(),null);
+  clock+=60001;uid='first';const delayed=client.call('state');client.clearProfile();uid='other';resolve({active:true,profile:{uid:'first',avatar:'moon'}});await assert.rejects(delayed,{code:'account-changed'});assert.equal(cached,null);assert.equal(client.selfProfile(),null);
 });
 test('server and client agree on migrated levels, new XP and rotating study days',()=>{
   const createProgress=require('../assets/app/mode-atlas-progress.js'),rules=require('../assets/app/mode-atlas-reward-rules.js'),dates=require('../assets/app/mode-atlas-date.js');

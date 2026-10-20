@@ -249,7 +249,7 @@
     const retry=document.getElementById('profileSyncRetry');
     retry?.addEventListener('click',async()=>{
       if(retry.disabled)return;retry.disabled=true;
-      try{await window.KanaCloudSync?.syncNow();}
+      try{await window.KanaCloudSync?.retryConnection();}
       catch(error){window.ModeAtlasDiagnostics?.record('cloud-sync',error);}
       finally{retry.disabled=false;updateSyncStatus();}
     });
@@ -310,7 +310,7 @@
     if(retry){
       retry.hidden=!status.canRetry&&!['syncing','slow'].includes(status.phase);
       retry.disabled=['syncing','slow'].includes(status.phase);
-      retry.textContent=retry.disabled?'Syncing…':status.state==='cloud'?'Sync now':'Retry sync';
+      retry.textContent=retry.disabled?'Syncing…':status.state==='restore-error'?'Retry connection':status.state==='cloud'?'Sync now':'Retry sync';
     }
     if (meta){meta.hidden=!status.user;meta.textContent='Last confirmed cloud save: '+(status.lastSyncLabel||'No cloud save confirmed yet');}
     if (dot) dot.className = 'ma-sync-dot ' + tone;

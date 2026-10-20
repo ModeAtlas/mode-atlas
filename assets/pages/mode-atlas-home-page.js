@@ -82,6 +82,7 @@
   document.addEventListener('ma:ui-refresh', render);
   document.addEventListener('ma:onboarding-complete', render);
   window.addEventListener('modeAtlasCloudDataChanged', render);
+  window.addEventListener('modeAtlasDayChanged', render);
   window.addEventListener('modeAtlasProgressChanged', render);
   for(const event of ['modeAtlasAvatarChanged','modeAtlasSelfProfileChanged','kanaCloudSyncStatusChanged','modeAtlasRewardAccessChanged','modeAtlasShopChanged','modeAtlasAccountSignedOut']) window.addEventListener(event, render);
   window.addEventListener('pageshow', event => { if (event.persisted) render(); });

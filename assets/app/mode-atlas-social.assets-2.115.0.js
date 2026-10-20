@@ -26,18 +26,10 @@
 })(typeof window!=='undefined'?window:globalThis,function createSocialClient(dependencies){
   'use strict';
   const {enabled,user,online,transport,readProfile=()=>null,writeProfile=()=>{},profileChanged=()=>{},now=Date.now}=dependencies;
-  let profilePending=null,profileEpoch=0;
+  let profileEpoch=0;
   const readPending=new Map(),sharedReads=new Set(['state','list','profile','weeklyState','weeklyList']);
   function selfProfile(){const cached=readProfile();return user()?.uid&&cached?.uid===user().uid&&cached.checkedAt<=now()&&now()-cached.checkedAt<86400000?cached.profile:null;}
-  function clearProfile(){profileEpoch++;profilePending=null;readPending.clear();writeProfile(null);profileChanged();}
-  async function refreshProfile(){
-    const uid=user()?.uid,cached=readProfile();
-    if(!uid||!enabled()||!online())return selfProfile();
-    if(cached?.uid===uid&&cached.checkedAt<=now()&&now()-cached.checkedAt<60000)return selfProfile();
-    if(profilePending?.uid===uid)return profilePending.promise;
-    const ticket=profileEpoch,promise=call('state').then(()=>selfProfile()).catch(()=>selfProfile()).finally(()=>{if(ticket===profileEpoch&&profilePending?.uid===uid)profilePending=null;});
-    profilePending={uid,promise};return promise;
-  }
+  function clearProfile(){profileEpoch++;readPending.clear();writeProfile(null);profileChanged();}
   const error=(code,message)=>Object.assign(new Error(message),{code});
   async function call(action,data={},expectedUid=user()?.uid){
     const accountAction=['deleteAccount','accountDeletionStatus'].includes(action);
@@ -70,6 +62,6 @@
     if(code==='unavailable'&&error.message?.startsWith('Friends is updating.'))return error.message;
     return 'Friends could not be reached. Check your connection and try again.';
   }
-  return Object.freeze({call,message,isEnabled:enabled,selfProfile,refreshProfile,clearProfile,
+  return Object.freeze({call,message,isEnabled:enabled,selfProfile,clearProfile,
     deleteAccount:uid=>call('deleteAccount',{},uid),accountDeletionStatus:uid=>call('accountDeletionStatus',{},uid)});
 });

@@ -4,6 +4,16 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const plain=value=>JSON.parse(JSON.stringify(value));
+test('read-only progression shares validated snapshots while edits and account changes invalidate them',()=>{
+  const e=load(),p=e.progress,first=p.readSnapshot();
+  assert.equal(p.readSnapshot(),first);assert.ok(Object.isFrozen(first)&&Object.isFrozen(first.activity));
+  const edit=p.readState();edit.sources.other={'kana.reading.correct':999};
+  assert.equal(first.sources.other,undefined);assert.equal(p.getSummary().xp,0);
+  p.persistState(edit);const second=p.readSnapshot();assert.notEqual(second,first);assert.equal(p.getSummary().xp,999);
+  const summary=p.getSummary();summary.level=999;assert.notEqual(p.getSummary().level,999);
+  e.values.set('modeAtlasProgress',JSON.stringify({legacySeeded:true,sources:{next:{'kana.reading.correct':2}}}));
+  assert.equal(p.getSummary().xp,2);assert.notEqual(p.readSnapshot(),second);
+});
 test('Both mastery consistently requires both directions and leaves directional evidence intact',()=>{
   const e=load(),r=e.review,reading={stats:{correct:38,wrong:3},time:2160};
   assert.equal(r.stage(reading.review,reading.stats,reading.time),2);
@@ -297,6 +307,14 @@ test('reward access shares in-flight reads, handles older backends and keeps gra
   await Promise.all([a.refresh(),a.refresh()]);assert.equal(calls,1);assert.equal(a.status(),'error');assert.deepEqual(a.current().grants,[]);
   const e=load();assert.equal(e.root.ModeAtlasStorage.isBackupKey('modeAtlasRewardAccess'),false);
   e.root.ModeAtlasStorage.setJSON('modeAtlasRewardAccess',{allCustom:true});e.root.ModeAtlasStorage.clearAppData();assert.equal(e.root.ModeAtlasStorage.get('modeAtlasRewardAccess',null),null);
+});
+test('fresh entitlement reads survive page navigation without a duplicate callable',async()=>{
+  const createAccess=require('../assets/app/mode-atlas-reward-access.js');let uid='tester',cache=null,calls=0,clock=100000,fail=false;
+  const deps={user:()=>uid,online:()=>true,read:()=>cache,write:value=>{cache=value;},now:()=>clock,fetch:async()=>{calls++;if(fail)throw Error('Unavailable');return {grants:['shop-sakura'],allCustom:false,validUntil:clock+86400000};}};
+  await createAccess(deps).refresh();const next=createAccess(deps);await next.refresh();assert.equal(calls,1);assert.equal(next.status(),'ready');
+  await next.refresh(true);assert.equal(calls,2);clock+=60001;await createAccess(deps).refresh();assert.equal(calls,3);
+  uid='stranger';assert.deepEqual(next.current().grants,[]);await next.refresh();assert.equal(calls,4);
+  fail=true;await next.refresh(true);await next.refresh();assert.equal(next.status(),'error','cached reads do not dismiss a failed refresh');
 });
 
 test('first-paint reward presentation is bound to the restoring account and never authorises a guest',()=>{

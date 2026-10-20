@@ -4,7 +4,7 @@ import shutil
 import json
 from datetime import date
 from urllib.parse import urljoin, urlsplit, urlunsplit, parse_qsl, urlencode
-from frontend_components import apply_navigation, apply_trainer_shell, apply_frontend_assets, apply_loading_screen, apply_legacy_redirects
+from frontend_components import apply_navigation, apply_trainer_shell, apply_frontend_assets, apply_loading_screen, apply_legacy_redirects, apply_brand_metadata
 from build_ios_fonts import build_fonts
 
 ROOT = Path(__file__).resolve().parent
@@ -65,6 +65,7 @@ apply_trainer_shell(ROOT)
 apply_frontend_assets(ROOT)
 apply_loading_screen(ROOT)
 apply_legacy_redirects(ROOT)
+apply_brand_metadata(ROOT)
 
 CRITICAL = {
     'mode-atlas-version.js',

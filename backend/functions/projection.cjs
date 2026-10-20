@@ -31,7 +31,7 @@ function accountInsights(save,owner,seeded,syncedAt){
     testModeResults:data('readingTests').primary||[],kanaTrainerTestModeResults:data('readingTests').backup||[],readingTestModeResults:data('readingTests').altPrimary||[],kanaTrainerReadingTestModeResults:data('readingTests').altBackup||[],writingTestModeResults:data('writingTests').primary||[],kanaTrainerWritingTestModeResults:data('writingTests').backup||[]};
   const storage={json:(key,fallback)=>direct[key]??fallback,get:(key,fallback)=>key==='modeAtlasLastCloudSyncAt'&&syncedAt?String(syncedAt):fallback,
     readModeJSON:(mode,key,fallback)=>data(mode)[{charStats:'stats',charTimes:'times',srs:'srs',dailyHistory:'dailyChallengeHistory'}[key]]||fallback};
-  const root={ModeAtlasStorage:storage,ModeAtlasProgress:{...owner,readState:()=>seeded,getSummary:()=>owner.getSummary(seeded),achievementStats:()=>owner.achievementStats(seeded)},ModeAtlasDates:dates,ModeAtlasKanaData:kana,ModeAtlasReview:review,ModeAtlasKanjiCurriculum:curriculum};
+  const root={ModeAtlasStorage:storage,ModeAtlasProgress:{...owner,readState:()=>seeded,readSnapshot:()=>seeded,getSummary:()=>owner.getSummary(seeded),achievementStats:()=>owner.achievementStats(seeded)},ModeAtlasDates:dates,ModeAtlasKanaData:kana,ModeAtlasReview:review,ModeAtlasKanjiCurriculum:curriculum};
   root.ModeAtlasKanaLearning=require('./shared/mode-atlas-kana-learning.js')(root);
   root.ModeAtlasKanjiState=createKanji(root);root.ModeAtlasKanaMetrics=createMetrics(root);
   const achievements=createAchievements(root),insights=achievements.profile();

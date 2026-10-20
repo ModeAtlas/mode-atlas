@@ -21,7 +21,8 @@
     const snapshot=Metrics.createSnapshot({includeStreak:false});
     const r=snapshot.readingStats, w=snapshot.writingStats;
     const words=readJSON('kanaWordBank',[]);
-    const progression=root.ModeAtlasProgress?.getSummary?.()||{};
+    const progressState=root.ModeAtlasProgress?.readSnapshot?.()||root.ModeAtlasProgress?.readState?.();
+    const progression=root.ModeAtlasProgress?.getSummary?.(progressState)||{};
     const readingTotals=Metrics.statTotals(r), writingTotals=Metrics.statTotals(w);
     const kanji=kanjiEvidence();
     const correct=readingTotals.c+writingTotals.c+kanji.kanjiCorrect, wrong=readingTotals.w+writingTotals.w+kanji.kanjiWrong;
@@ -65,8 +66,8 @@
       new:mastery.New,mastered:mastery.Mastered+mastery['Mastered+'],reviewing:mastery.Confident,learning:mastery.Learning+mastery.Introduced+mastery.Familiar,
       under2,under1,speed3to2,speed2to1,speedUnder1,wordCount,resultCount,perfect:perfectSeen.size,cloud,recentSave,
       atlasLevel:Number(progression.level||1),avg:avgCount?avgSum/avgCount:0,snapshot,...presetValues,
-      earned:root.ModeAtlasProgress?.readState?.().achievements||{},
-      ...root.ModeAtlasProgress?.achievementStats?.()
+      earned:progressState?.achievements||{},
+      ...root.ModeAtlasProgress?.achievementStats?.(progressState)
     };
   }
 

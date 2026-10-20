@@ -26,7 +26,7 @@
   const {user,online,call,sync=async()=>true,afterMutation=async()=>{},read=()=>null,write=()=>{},changed=()=>{},
     now=Date.now,project=value=>value,requestId=()=>crypto.randomUUID(),timeZone=()=>Intl.DateTimeFormat().resolvedOptions().timeZone}=dependencies;
   let epoch=0,uid=user(),status='idle',pending=null,mutating=false,checkedAt=0;
-  let cached=read();if(cached?.uid!==uid)cached=null;
+  let cached=read();if(uid&&cached?.uid!==uid)cached=null;
   const blank=()=>({offers:null,owned:[],inventory:{'streak-freeze':0,'streak-repair':0},protection:[],repairDay:null,developer:false});
   function valid(value){
     return [2,3].includes(value?.version)&&value.currency==='atlas-coins'&&Number.isSafeInteger(value.balance)&&value.balance>=0&&value.balance<=1_000_000_000
@@ -42,12 +42,15 @@
   }
   function protection(){return current().protection||[];}
   function clear(){epoch++;uid='';cached=null;status='idle';pending=null;mutating=false;checkedAt=0;write(null);changed();}
-  function account(){if(user()!==uid){clear();uid=user();}return uid;}
-  function accept(result){if(!valid(result))throw new Error('Invalid shop response');cached={uid,state:result,requests:cached?.requests||{}};checkedAt=now();status='ready';write(cached);}
+  function account(){if(user()!==uid){if(cached?.uid===user()){epoch++;pending=null;mutating=false;checkedAt=0;status='idle';}else clear();uid=user();}return uid;}
+  function accept(result){if(!valid(result))throw new Error('Invalid shop response');checkedAt=now();cached={uid,state:result,requests:cached?.requests||{},checkedAt};status='ready';write(cached);}
   async function refresh(force=false){
     const active=account();if(!active)return current();
     if(pending||mutating)return pending||current();
     if(!online()){status='offline';changed();return current();}
+    if(!force&&cached?.uid===active&&valid(cached.state)&&cached.checkedAt<=now()&&now()-cached.checkedAt<60000){
+      checkedAt=cached.checkedAt;if(status==='idle'){status='ready';changed();}return current();
+    }
     if(!force&&checkedAt&&now()-checkedAt<60000)return current();
     const ticket=epoch;status='loading';changed();checkedAt=now();
     pending=(async()=>{

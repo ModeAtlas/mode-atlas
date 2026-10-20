@@ -74,6 +74,17 @@ test('wallet rejects malformed balances, products and foreign currencies',async(
     const shop=createShop({user:()=> 'alice',online:()=>true,call:async()=>result});await shop.refresh();assert.equal(shop.current().status,'unavailable');assert.equal(shop.current().balance,null);
   }
 });
+test('navigating between documents reuses a fresh wallet only after its owner is authenticated',async()=>{
+  let uid='alice',cache=null,calls=0,clock=1000,fail=false;
+  const deps={user:()=>uid,online:()=>true,now:()=>clock,read:()=>cache,write:value=>{cache=value;},call:async()=>{calls++;if(fail)throw Error('Unavailable');return wallet(250);}};
+  await createShop(deps).refresh();assert.equal(calls,1);
+  uid='';const next=createShop(deps);assert.equal(next.current().balance,null);
+  uid='alice';await next.refresh();assert.equal(calls,1);assert.equal(next.current().balance,250);
+  await next.refresh(true);assert.equal(calls,2,'explicit refresh still reaches the server');
+  clock+=60001;await createShop(deps).refresh();assert.equal(calls,3,'stale data is refreshed');
+  uid='bob';const other=createShop(deps);assert.equal(other.current().balance,null);await other.refresh();assert.equal(calls,4);
+  fail=true;await other.refresh(true);await other.refresh();assert.equal(other.current().status,'unavailable');assert.equal(other.current().balance,null);
+});
 test('ambiguous purchase retries reuse the receipt ID across reload without optimistic balance or inventory writes',async()=>{
   let cache=null,attempt=0,ids=[];
   const deps={user:()=> 'alice',online:()=>true,read:()=>cache,write:value=>{cache=structuredClone(value);},requestId:()=> 'unique-request-id-123',sync:async()=>true,

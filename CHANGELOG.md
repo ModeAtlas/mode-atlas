@@ -1,3 +1,12 @@
+## 2.115.0 — Account recovery and responsive pages
+
+- Distinguish Firebase restoration from a confirmed guest; preserve device saves on startup failure and provide a working connection retry.
+- Stop unchanged cloud saves from re-uploading and redrawing the app. Correct empty Kanji result defaults and replace obsolete nested map fields safely.
+- Share immutable progress reads, coalesce reward rendering, reuse fresh account-bound wallet/access results between pages, and remove redundant Friends/commerce work.
+- Refresh repeating daily and weekly goals at local midnight and after suspension without polling.
+- Unify favicon, touch and install metadata with content-fingerprinted current brand assets.
+- Version 2.115.0, iOS build 2080037. Source findings, validation and signing-preserving update commands: `docs/development-2.115.0.md`.
+
 ## 2.114.0 — A collection worth building
 
 - Rebuild Achievements around an illustrated collection, closest milestones, branch/status filters and direct rank details. Add five Kanji achievement families and permanent, mergeable earned ranks.

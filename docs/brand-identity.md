@@ -29,3 +29,5 @@ The horizontal exports suit banners and wide headers; the stacked versions suit 
 `node build_brand_assets.cjs` derives the standard, micro, horizontal, stacked and single-colour SVGs plus default platform PNGs and the native template wordmark. `node build_ios_reward_icons.cjs` uses the same symbol geometry with the existing collection palettes. Playwright’s installed Chromium is required; an existing system executable can be selected with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 
 The website shared navigation, native dock, loading screen, About and Rewards all reference these outputs. iOS launch text uses a template image tinted with `labelColor`. Collection purchases, grants and icon switching still belong to their original catalogue and native bridge.
+
+From 2.115.0, `frontend_components.apply_brand_metadata` publishes content-fingerprinted copies for all page favicon/touch links and the install manifest. The app ID stays stable; only changed artwork changes an icon URL. Run the normal revision build after regenerating brand artwork.

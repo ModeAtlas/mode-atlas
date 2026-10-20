@@ -386,7 +386,9 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(action==='weeklySubmit')return weekly.submit(uid,data);
     if(action==='weeklyList'){const result=await weekly.list(uid,data);await decorate(result.rows);return result;}
     if(action==='state'){
-      await refreshSummary(uid,user);
+      // The save trigger and shop own wallet awards. A social read only needs
+      // the current learning projection, not a second commerce transaction.
+      await refreshSummary(uid,user,true);
       const result=await state(uid,user);
       if(result.profile){
         result.profile.role=result.role;
@@ -401,7 +403,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(action==='lookup'){const result=await lookup(uid,data);await decorate(result.rows||[result.profile]);return result;}
     if(action==='sendRequest')return sendRequest(uid,data);
     if(action==='list'){const result=await list(uid,data);await decorate(result.rows||[result.profile]);return result;}
-    if(action==='profile'){const result=await profile(uid,data);await decorate(result.rows||[result.profile]);return result;}
+    if(action==='profile')return profile(uid,data);
     if(action==='leave')return erase(uid);
     return relationship(uid,action,data);
   }

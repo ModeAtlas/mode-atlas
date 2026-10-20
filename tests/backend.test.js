@@ -56,6 +56,37 @@ const deferred = () => {
   return { promise, resolve, reject };
 };
 
+test('unordered Firestore maps do not re-upload or re-render an unchanged account',async()=>{
+  const {context,window,localStorage}=createBaseContext({configured:true});
+  let callback,remote=null,writes=0,lastOptions;
+  const reorder=value=>Array.isArray(value)?value.map(reorder):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().reverse().map(key=>[key,reorder(value[key])])):value;
+  context.__mocks={initializeApp:()=>({}),getApps:()=>[],getAuth:()=>({}),getRedirectResult:async()=>null,GoogleAuthProvider:class{setCustomParameters(){}},
+    onAuthStateChanged:(_auth,fn)=>callback=fn,getFirestore:()=>({}),doc:(_db,...parts)=>parts.join('/'),
+    getDoc:async()=>({exists:()=>!!remote,data:()=>structuredClone(remote),metadata:{fromCache:false,hasPendingWrites:false}}),
+    setDoc:async(_ref,payload,options)=>{writes++;lastOptions=options;remote=reorder(structuredClone(payload));}};
+  vm.runInContext(STORAGE_SOURCE,context);
+  for(const file of ['app/mode-atlas-date','app/mode-atlas-reward-rules','app/mode-atlas-progress'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
+  vm.runInContext(patchFirebaseLoader(CLOUD_SYNC_SOURCE),context);for(let i=0;i<50&&!callback;i++)await delay(1);
+  assert.equal(window.KanaCloudSync.isAuthResolved(),false);
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'restoring');
+  callback({uid:'stable-save'});await window.KanaCloudSync.waitForInitialHydration();
+  window.ModeAtlasStorage.setJSON('modeAtlasKanaLearning',window.ModeAtlasKanaLearning.normalize({}));
+  window.ModeAtlasStorage.setJSON('modeAtlasKanji',window.ModeAtlasKanjiState.normalize({}));
+  window.ModeAtlasProgress.setPersonalGoal('daily',{id:'kana-correct',target:20,repeat:true});
+  localStorage.setItem('charStats',JSON.stringify({'あ':{wrong:1,correct:8},'い':{correct:4,wrong:0}}));
+  await window.KanaCloudSync.syncNow();
+  const count=writes,changed=()=>window.events.filter(event=>event.type==='modeAtlasCloudDataChanged').length,before=changed();
+  await window.KanaCloudSync.hydrateFromCloud(true);await window.KanaCloudSync.syncNow();await delay(300);
+  assert.equal(writes,count,'same values, including reordered maps, need no write');
+  assert.equal(changed(),before,'unchanged reads do not trigger app-wide refresh work');
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'cloud');
+  assert.equal(window.ModeAtlasProgress.readState().personalGoals.daily.repeat,true);
+  assert.ok(Array.from(lastOptions.mergeFields).includes('sections'),'complete section maps replace obsolete nested fields');
+  localStorage.setItem('kanaWordBank',JSON.stringify([{kana:'みず',english:'water'}]));
+  await window.KanaCloudSync.syncNow();assert.equal(writes,count+1,'a real local edit still uploads');
+  assert.equal(remote.sections.wordBank.data.items[0].english,'water');
+});
+
 function createBaseContext({ configured = false } = {}) {
   const window = new EventTargetMock();
   const localStorage = new StorageMock();
@@ -606,8 +637,10 @@ test('initial cloud hydration preserves local section changes made while Firesto
   assert.deepEqual(latestWrite.sections.wordBank.data.items, newestLocal);
 });
 
-test('Firebase setup retries after a transient initial module failure', async () => {
-  const { context, window } = createBaseContext({ configured: true });
+for(const recovery of ['online','manual'])test(`Firebase setup preserves the save after failure and recovers through ${recovery} retry`, async () => {
+  const { context, window, localStorage } = createBaseContext({ configured: true });
+  localStorage.setItem('modeAtlasLocalSaveOwner','returning-learner');
+  localStorage.setItem('kanaWordBank','[{"kana":"みず","english":"water"}]');
   let authCallback = null;
   context.__firebaseLoadAttempts = { count: 0 };
   context.__mocks = {
@@ -628,14 +661,27 @@ test('Firebase setup retries after a transient initial module failure', async ()
   };
 
   vm.runInContext(patchFirebaseLoaderWithTransientFailure(CLOUD_SYNC_SOURCE), context, { filename: 'cloud-sync.js' });
-  for (let i = 0; i < 30 && context.__firebaseLoadAttempts.count < 1; i += 1) await delay(1);
+  for (let i = 0; i < 30 && window.KanaCloudSync.getSyncStatus().state!=='restore-error'; i += 1) await delay(1);
   assert.equal(context.__firebaseLoadAttempts.count, 1, 'initial Firebase setup should attempt module loading once');
   assert.equal(authCallback, null, 'failed first setup must not install a partial auth listener');
+  let ready=false;window.KanaCloudSync.ready.then(()=>ready=true);await delay(0);
+  assert.equal(ready,false,'a failed setup is not an authenticated guest');
+  assert.equal(window.KanaCloudSync.isAuthResolved(),false);
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'restore-error');
+  assert.equal(window.KanaCloudSync.getSyncStatus().canRetry,true);
+  assert.equal(localStorage.getItem('modeAtlasLocalSaveOwner'),'returning-learner');
+  assert.match(localStorage.getItem('kanaWordBank'),/water/);
 
-  window.dispatchEvent({ type: 'online' });
+  let retry;
+  if(recovery==='online')window.dispatchEvent({type:'online'});else retry=window.KanaCloudSync.syncNow();
   for (let i = 0; i < 50 && !authCallback; i += 1) await delay(1);
   assert.equal(context.__firebaseLoadAttempts.count, 2, 'online recovery should retry the failed Firebase setup');
   assert.equal(typeof authCallback, 'function', 'retry should complete Firebase auth setup without a page reload');
+  assert.equal(window.KanaCloudSync.getSyncStatus().state,'restoring');
+  authCallback({uid:'returning-learner'});await window.KanaCloudSync.ready;await retry;
+  assert.equal(ready,true);assert.equal(window.KanaCloudSync.getUser().uid,'returning-learner');
+  assert.equal(localStorage.getItem('modeAtlasLocalSaveOwner'),'returning-learner');
+  assert.match(localStorage.getItem('kanaWordBank'),/water/);
 });
 
 test('save repair runs schema migration once and only syncs when data changes', () => {
@@ -1163,5 +1209,5 @@ test('Kana milestones merge across offline devices, survive backup and clear on 
   remote=latest;await window.KanaCloudSync.syncNow();assert.equal(course.read().handwriting['あ'].length,2);
   window.ModeAtlasDevConsoleLoader={isEligible:()=>true};assert.equal(window.KanaCloudSync.createBackup().snapshot.sections.kanaLearning.data.state.earned.reading['あ'],5);
   localStorage.setItem('modeAtlasKanaPlacementCheckpoint','private checkpoint');
-  await window.KanaCloudSync.resetAllData();assert.equal(Object.keys(latest.sections.kanaLearning.data).length,0);assert.equal(Object.keys(course.read().earned.reading).length,0);assert.equal(localStorage.getItem('modeAtlasKanaPlacementCheckpoint'),null);
+  await window.KanaCloudSync.resetAllData();assert.equal(latest.sections.kanaLearning.data.state.startedAt,0);assert.equal(Object.keys(course.read().earned.reading).length,0);assert.equal(localStorage.getItem('modeAtlasKanaPlacementCheckpoint'),null);
 });

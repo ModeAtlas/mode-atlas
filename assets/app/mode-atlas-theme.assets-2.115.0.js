@@ -68,7 +68,7 @@
       });
     }
     updateButtons();
-    const appearance=window.ModeAtlasProgress?.readState?.().appearance;
+    const appearance=window.ModeAtlasProgress?.readSnapshot?.().appearance;
     if(window.KanaCloudSync?.getUser?.()&&appearance&&!appearance.themeAt&&(!selected||usable))window.ModeAtlasProgress.selectTheme(usable?pref:'');
     if (lastEffective !== effective+':'+(usable?pref:'')) {
       lastEffective = effective+':'+(usable?pref:'');
