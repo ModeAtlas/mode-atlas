@@ -66,8 +66,8 @@
   function refresh(){
     const wallet=state();
     for(const host of document.querySelectorAll('[data-ma-shop]')){
-      const balance=host.querySelector('[data-ma-coin-balance]');balance.textContent=wallet.balance!==null?wallet.balance.toLocaleString():wallet.status==='guest'?'Sign in to view your balance':wallet.status==='loading'?'Checking balance…':wallet.status==='offline'?'Connect to view your balance':'Couldn’t load your balance';
-      const tokens=host.querySelector('[data-ma-token-balance]');tokens.textContent=wallet.tokenBalance!==null&&wallet.tokenBalance!==undefined?wallet.tokenBalance.toLocaleString():wallet.status==='guest'?'Sign in':wallet.status==='loading'?'Checking…':'—';
+      const balance=host.querySelector('[data-ma-coin-balance]');balance.dataset.value=String(Number.isSafeInteger(wallet.balance));balance.textContent=wallet.balance!==null?wallet.balance.toLocaleString():wallet.status==='guest'?'Sign in to view your balance':wallet.status==='loading'?'Checking balance…':wallet.status==='offline'?'Connect to view your balance':'Couldn’t load your balance';
+      const tokens=host.querySelector('[data-ma-token-balance]');tokens.dataset.value=String(Number.isSafeInteger(wallet.tokenBalance));tokens.textContent=wallet.tokenBalance!==null&&wallet.tokenBalance!==undefined?wallet.tokenBalance.toLocaleString():wallet.status==='guest'?'Sign in':wallet.status==='loading'?'Checking…':'—';
       host.querySelector('[data-ma-shop-refresh]').hidden=!['unavailable','offline'].includes(wallet.status);
       for(const product of catalogue.products){
         const item=host.querySelector('[data-ma-shop-product="'+product.id+'"]');

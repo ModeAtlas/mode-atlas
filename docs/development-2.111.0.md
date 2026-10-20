@@ -6,7 +6,7 @@ Version 2.111.0 · iOS build 2080033 · 20 October 2026.
 
 - Rewards category marks stay inside their tiles. App icons now show the real asset, including the default icon, and category headings use less vertical space.
 - Kanji uses compact phone level selectors, a selected-level summary and a clear unlock information button. The next lesson has bounded artwork and concise copy. The existing level gates, set lengths, focus choices, lessons, practice and tests are retained.
-- The Shop removes repeated introductions, aligns the two currency balances, and brings collections into the first screen. Both currencies, balance refresh, earning information, categories and the 500-coin prompt retain their existing owners.
+- The Shop removes repeated introductions, aligns the two currency balances, uses compact guest/loading status text, and brings collections into the first screen. Both currencies, balance refresh, earning information, categories and the 500-coin prompt retain their existing owners.
 - About replaces the old nested cards and gradient logo with the brand identity, side-by-side version/date, simple save-status rows and compact tabs. What’s new describes the current experience.
 - The wider review brings the avatar editor onto the active theme and fits its character beside the message/name controls on phones. Kanji Results shares the illustrated empty-report presentation and native navigation order with Kana Results. Populated history, filters, analysis and practice links remain.
 - Small dialogs respect the top and bottom safe areas. The loading screen uses the neutral app canvas.
