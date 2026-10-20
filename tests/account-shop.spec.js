@@ -138,3 +138,25 @@ for(const width of [320,393])test(`compact branch, wallet and About layout stays
   await page.getByRole('tab',{name:'Legal',exact:true}).click();await expect(page.getByRole('link',{name:'Open Privacy Policy',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Close dialog',exact:true}).click();await expect(page.locator('.ma-dialog-layer')).toBeHidden();
 });
+
+test('unopened shops stay unmounted and catalogue refresh projects progress once',async({page})=>{
+  await prepare(page);
+  await expect(page.locator('#maAccount-shop [data-ma-shop-product]')).toHaveCount(0);
+  await page.evaluate(()=>{
+    const original=ModeAtlasProgress;window.summaryReads=0;
+    window.ModeAtlasProgress={...original,getSummary(...args){summaryReads++;return original.getSummary(...args);}};
+    ModeAtlasShopUI.refresh();
+  });
+  expect(await page.evaluate(()=>summaryReads)).toBe(0);
+  await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
+  expect(await page.locator('#maAccount-shop [data-ma-shop-product]').count()).toBeLessThanOrEqual(6);
+  expect(await page.evaluate(()=>{summaryReads=0;ModeAtlasShopUI.refresh();return summaryReads;})).toBe(1);
+  await page.locator('#maAccountClose').click();
+  expect(await page.evaluate(()=>{summaryReads=0;ModeAtlasShopUI.refresh();return summaryReads;})).toBe(0);
+  await page.goto('/progress/');
+  await expect(page.locator('[data-reward-category]')).toHaveCount(0);
+  await page.getByRole('tab',{name:'Rewards',exact:true}).click();await expect(page.locator('[data-reward-category=themes]')).toBeVisible();
+  await expect(page.locator('[data-reward-category=themes] .ma-reward-category__meta')).toContainText('3 available');
+  await page.getByRole('tab',{name:'Recap',exact:true}).click();await expect(page.getByText('Your weekly recap',{exact:true})).toBeVisible();
+  await page.getByRole('tab',{name:'Goals',exact:true}).click();await expect(page.locator('.ma-routine-goal')).toHaveCount(5);
+});

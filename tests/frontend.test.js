@@ -596,7 +596,7 @@ test('shared drawer, card, and form primitives replace page-local surface owners
   assert.doesNotMatch(settings, /role="dialog"/);
   assert.match(profile, /ma-profile-card ma-progression-card/);
   assert.doesNotMatch(profile, /ma-card ma-card--soft/, 'Profile uses open sections rather than nesting surface cards');
-  assert.match(settings, /ma-setting-list/);
+  assert.match(settings, /ma-settings-preferences/);
   assert.match(drawerCss, /\.ma-account-sheet\{/);
   assert.doesNotMatch(drawerCss, /\.ma-shared-profile-drawer,\.ma-shared-settings-drawer\{/);
 
@@ -883,8 +883,8 @@ test('2.31 visual standardisation keeps shared hierarchy, focus, guidance, and c
 
   assert.doesNotMatch(profile, /Branches|data-ma-nav-item|\/reading\/|\/writing\//, 'Profile must not duplicate navigation');
   assert.match(settings, /Preferences/);
-  assert.match(settings, /Data and account/);
-  assert.match(settings, /ma-setting-row/);
+  assert.match(settings, /maDataTitle/);
+  assert.match(settings, /ma-preference-row/);
 
   assert.match(atlas, /id="homeContinueAction"/);
   assert.match(atlas, /data-ma-branch-library/);
@@ -1047,7 +1047,7 @@ test('2.31.4 profile and settings polish keeps auth and drawer layout state-owne
   assert.match(bindings, /authBtn: document\.getElementById\('profileAuthBtn'\)/);
   assert.match(cloud, /boundAuthButtons/);
   assert.match(cloud, /currentUser\) void signOutUser\(\)/);
-  assert.match(css, /--ma-setting-row-columns:minmax\(96px,120px\) minmax\(0,1fr\)/);
+  assert.match(css, /\.ma-preference-row\{[^}]*display:grid[^}]*grid-template-columns:/);
   assert.match(css, /\.ma-settings-status:empty\{display:none;\}/);
 });
 
@@ -1059,7 +1059,7 @@ test('2.32 CSS consolidation keeps Settings and Profile ownership canonical', ()
   const modifiers = read('assets/css/mode-atlas-modifier-menu.css');
   assert.match(components, /grid-template-columns:var\(--ma-setting-row-columns,/);
   assert.match(components, /justify-self:var\(--ma-setting-control-justify,end\)/);
-  assert.match(profile, /--ma-setting-row-columns:minmax\(96px,120px\) minmax\(0,1fr\)/);
+  assert.match(profile, /\.ma-preference-row\{[^}]*display:grid[^}]*grid-template-columns:/);
   assert.doesNotMatch(profile, /data-profile-sign-in|data-profile-sign-out/);
   assert.doesNotMatch(profile, /\.ma-shared-settings-drawer \.ma-settings-section \.ma-setting-row\{grid-template-columns:/);
   assert.match(modifiers, /\.ma-practice-sheet\[open\]/);
@@ -1420,7 +1420,7 @@ test('2.43.1 achievement tiles breathe and detail navigation has distinct destin
   assert.match(achievements, /const RANK_ACCENTS = Object\.freeze\(\[1,2,3,4,5\]\.map/);
   assert.match(read('assets/css/mode-atlas-theme.css'), /--ma-rank-1-rgb:184,92,62/);
   assert.match(achievements, /const copy=achEl\('div','ma-ach-copy'\)/);
-  assert.match(achievementCss, /\.ma-achievement-tile\{[^}]*display:flex;flex-direction:column[^}]*min-height:190px/);
+  assert.match(achievementCss, /\.ma-achievement-tile\{[^}]*display:flex;flex-direction:column[^}]*min-height:165px/);
   assert.match(achievementCss, /\.ma-ach-copy\{[^}]*margin-bottom:18px/);
   assert.match(achievementCss, /\.ma-ach-meter\{[^}]*position:relative[^}]*margin-top:auto/);
 
@@ -1512,8 +1512,12 @@ test('2.44 app-wide UX vocabulary keeps product destinations and actions semanti
   assert.match(wordbankJs, /Clear search and filters/);
   assert.doesNotMatch(wordbankJs, /'warn'|'ok'|Save Changes|Clear search & filters/);
 
-  assert.match(settings, /data-display="tablet" type="button">Tablet<\/button>/);
-  assert.match(settings, />Data and account<\/h3>/);
+  const settingsContext={window:{ModeAtlasEnv:{isNativeApp:false}}};
+  vm.createContext(settingsContext);vm.runInContext(settings,settingsContext);
+  const markup=settingsContext.window.ModeAtlasSettingsMenu.markup({href:value=>value});
+  assert.match(markup, /data-display="tablet" type="button">Tablet<\/button>/);
+  assert.match(markup, /aria-labelledby="maDataTitle"/);
+  assert.match(markup, /data-ma-unified-reset/);
   assert.doesNotMatch(settings, />iPad<\/button>|>Data & app<\/strong>/);
 });
 

@@ -78,6 +78,7 @@ html[data-ma-runtime="ios"] .ma-ios-tab{
 html[data-ma-runtime="ios"] button.ma-ios-tab{
   border:0;background:transparent;cursor:pointer;font-family:inherit;
 }
+html[data-ma-runtime="ios"] .ma-ios-tab__icon>.ma-icon{display:block;width:28px;height:28px;}
 html[data-ma-runtime="ios"] .ma-ios-tab__icon{font-family:var(--ma-font-jp);font-size:1.25rem;font-weight:800;line-height:1.2;}
 html[data-ma-runtime="ios"] .ma-ios-tab.is-active{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-ios-accent) 17%,transparent);}
 html[data-ma-runtime="ios"] .ma-ios-tab:focus-visible,
@@ -177,10 +178,10 @@ html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .ma-
 }
 html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active .session-actions .ma-button{min-height:44px;}
 /* The early head bootstrap opts the native app into cross-document transitions. */
-@keyframes ma-ios-leave{to{opacity:0}}
-@keyframes ma-ios-enter{from{opacity:.92;transform:translateY(3px)}to{opacity:1;transform:none}}
-html[data-ma-runtime="ios"]::view-transition-old(root){animation:90ms ease-out both ma-ios-leave;}
-html[data-ma-runtime="ios"]::view-transition-new(root){animation:140ms ease-out both ma-ios-enter;}
+/* Keep the previous canvas fully opaque until the new document covers it. */
+@keyframes ma-ios-enter{from{opacity:0}to{opacity:1}}
+html[data-ma-runtime="ios"]::view-transition-old(root){animation:none;mix-blend-mode:normal;}
+html[data-ma-runtime="ios"]::view-transition-new(root){animation:120ms ease-out both ma-ios-enter;mix-blend-mode:normal;}
 /* At large system text sizes, reflow the existing surfaces instead of cropping. */
 html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-practice-actions{flex-wrap:wrap;}
 html[data-ma-runtime="ios"] .ma-ios-accessibility-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}

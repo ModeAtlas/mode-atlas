@@ -1,3 +1,12 @@
+## 2.113.0 — Faster pages, clearer controls
+
+- Remove hidden Shop construction on every page, calculate reward ownership once per shop refresh, and defer unopened Progress panels. Progress summary no longer repeatedly normalizes the same history.
+- Keep the outgoing native page opaque until its replacement appears; warm navigations retain the existing loader bypass.
+- Redesign Settings with compact preferences, notification scheduling disclosure and shared action tiles. Rework compact and full Shop around artwork, product grids, a clear wallet and direct category access.
+- Add illustrated dock, navigation, practice and streak-item symbols. Learning is coral, Confident blue, Mastered green and Mastered+ violet; Kanji uses the matching milestone palette.
+- Simplify achievement summaries and friend-profile framing. Results initially show tested kana, with unused kana still available. Remove obsolete light-mode surface overrides and Results blur.
+- Version 2.113.0, iOS build 2080035. Changes, measured timings and Mac update: `docs/development-2.113.0.md`.
+
 ## 2.97.0 — Your look, in one place
 
 - Avatar saves are independent of learning-history sync and background avatar reads; late reads cannot replace a newer saved look.

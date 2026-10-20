@@ -426,6 +426,7 @@ test('account alerts are independent, opt-in and remain editable with large text
   }
   await daily.uncheck();await expect(daily).toBeEnabled();await expect(daily).not.toBeChecked();
   await expect(page.locator('#maAlert-streak')).toBeChecked();
+  await page.getByText('Alert times & quiet hours',{exact:true}).click();
   await page.locator('#maAlertTime-reminderMinute').fill('18:30');
   await page.locator('#maAlertTime-quietStart').fill('21:30');
   await page.locator('#maAlertTime-quietEnd').fill('08:00');
@@ -439,7 +440,7 @@ test('account alerts are independent, opt-in and remain editable with large text
   await page.evaluate(()=>{document.documentElement.style.setProperty('--ma-ios-text-scale','1.6');document.documentElement.setAttribute('data-ma-large-text','');});
   await page.locator('#maAlert-overtaken').scrollIntoViewIfNeeded();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-  expect(await daily.evaluate(control=>{const panel=control.closest('.ma-setting-list');return panel.scrollWidth<=panel.clientWidth&&control.closest('label').getBoundingClientRect().left>=panel.getBoundingClientRect().left;})).toBe(true);
+  expect(await daily.evaluate(control=>{const panel=control.closest('.ma-settings-notifications');return panel.scrollWidth<=panel.clientWidth&&control.closest('label').getBoundingClientRect().left>=panel.getBoundingClientRect().left;})).toBe(true);
   await page.screenshot({path:'test-results/notification-options-large-text.png'});
   for(const key of ['weeklyGoals','streak','overtaken']){const control=page.locator('#maAlert-'+key);await control.uncheck();await expect(control).toBeEnabled();}
   expect(await page.evaluate(()=>alertTest.calls.filter(x=>x==='permission').length)).toBe(4);

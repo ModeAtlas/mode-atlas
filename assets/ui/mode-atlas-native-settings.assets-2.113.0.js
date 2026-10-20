@@ -54,21 +54,20 @@
   }
   root.ModeAtlasNativeSettings={
     markup(){return `<section class="ma-settings-section" aria-labelledby="maEngagementTitle">
-      <div class="ma-settings-section-head"><h3 class="ma-settings-section-title" id="maEngagementTitle">Notifications</h3></div>
-      <div class="ma-setting-list">
-        <div class="ma-setting-row ma-setting-row--stack">
-          <label class="ma-native-preference" for="maReminderEnabled"><span>Daily study reminder</span><input id="maReminderEnabled" type="checkbox" role="switch" disabled></label>
-          <label class="ma-native-preference" for="maReminderTime"><span>Reminder time</span><input id="maReminderTime" type="time" value="19:00" aria-describedby="maReminderStatus" disabled></label>
-          ${alertKinds.map(([key,label])=>`<label class="ma-native-preference" for="maAlert-${key}"><span>${label}</span><input id="maAlert-${key}" type="checkbox" role="switch" aria-describedby="maAccountAlertsStatus" disabled></label>`).join('')}
+      <h3 class="ma-settings-section-title" id="maEngagementTitle"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-bell"></use></svg><span>Notifications</span></h3>
+      <div class="ma-settings-notifications">
+        <label class="ma-native-preference" for="maReminderEnabled"><span>Daily study reminder</span><input id="maReminderEnabled" type="checkbox" role="switch" disabled></label>
+        <label class="ma-native-preference" for="maReminderTime"><span>Remind me at</span><input id="maReminderTime" type="time" value="19:00" aria-describedby="maReminderStatus" disabled></label>
+        ${alertKinds.map(([key,label])=>`<label class="ma-native-preference" for="maAlert-${key}"><span>${label}</span><input id="maAlert-${key}" type="checkbox" role="switch" aria-describedby="maAccountAlertsStatus" disabled></label>`).join('')}
+        <details class="ma-settings-schedule"><summary>Alert times & quiet hours</summary>
           ${timingFields.map(([key,label])=>`<label class="ma-native-preference" for="maAlertTime-${key}"><span>${label}</span><input id="maAlertTime-${key}" type="time" step="900" required disabled></label>`).join('')}
           <p id="maAlertTimeZone" class="ma-setting-row__description"></p>
           <button type="button" class="ma-button ma-button--ghost" id="maUseDeviceTimeZone" hidden>Use this device’s time zone for account alerts</button>
           <button type="button" class="ma-button" id="maSaveAlertTimes" disabled>Save alert times</button>
           <p id="maAccountAlertsStatus" class="ma-setting-row__description"></p>
-          <div class="ma-action-row"><button type="button" class="ma-button" id="maNotificationSettings">Open iPhone Settings</button></div>
-          <div id="maReminderStatus" class="ma-setting-row__description" role="status" aria-live="polite" hidden></div>
-        </div>
-
+        </details>
+        <button type="button" class="ma-settings-action" id="maNotificationSettings"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-settings"></use></svg><span>iPhone notification settings</span><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-arrow"></use></svg></button>
+        <div id="maReminderStatus" class="ma-setting-row__description" role="status" aria-live="polite" hidden></div>
       </div></section>`;},
     bind(){
       if(bound||!$('maReminderEnabled'))return;bound=true;

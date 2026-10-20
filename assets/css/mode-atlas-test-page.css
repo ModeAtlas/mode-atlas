@@ -33,10 +33,6 @@ body.results-page::before {
         margin: 0 auto;
     }
 
-.glass {
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-    }
 .card{
         --ma-card-border:var(--ma-border);
         --ma-card-bg:var(--ma-surface);

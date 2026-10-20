@@ -3,6 +3,9 @@
    mode-atlas-ios-theme.css. Neutral system appearances keep colour meaningful; collections own their palettes. Page CSS should rely on these
    tokens rather than carrying separate light-mode colour patches. */
 :root{
+  /* Milestones keep the same meaning across branches and collections. */
+  --ma-stage-new:var(--ma-border-strong);--ma-stage-introduced:var(--ma-muted);--ma-stage-learning:#e98a70;--ma-stage-familiar:#dfbd55;--ma-stage-confident:#67bdf0;--ma-stage-mastered:#51b989;--ma-stage-plus:#b58ae5;
+
   color-scheme:dark;
   --ma-primary:#bac7ff;--ma-primary-text:#1c285b;
   --ma-feature:#243f81;--ma-feature-text:#ffffff;--ma-feature-soft:#dae5ff;
@@ -266,8 +269,6 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collecti
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .landing-hero,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-panel,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .hero-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .glass,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .card,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .panel,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .modal-card,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .popup,
@@ -292,13 +293,9 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collecti
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .about-point,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-shared-profile-drawer,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-shared-settings-drawer,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-profile-card,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-account-card,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-sync-card,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-branch-card,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-achievement-card-summary,
-html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-save-section,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-settings-panel,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-result-insights,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-pro-feature-card,
@@ -308,7 +305,7 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collecti
   background:var(--ma-surface);
   border-color:var(--ma-border);
   color:var(--ma-text);
-  box-shadow:var(--ma-shadow);
+  box-shadow:var(--ma-card-shadow,none);
 }
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-card,
@@ -317,7 +314,7 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collecti
   background:var(--ma-card);
   border-color:var(--ma-border);
   color:var(--ma-text);
-  box-shadow:var(--ma-shadow);
+  box-shadow:var(--ma-card-shadow,none);
 }
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .branch.kana,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .launch-card.reading,
@@ -710,7 +707,7 @@ html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collecti
   border-color:var(--ma-border);
   color:var(--ma-text);
   -webkit-text-fill-color:initial;
-  box-shadow:var(--ma-shadow);
+  box-shadow:var(--ma-card-shadow,none);
 }
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-hero,
 html[data-ma-theme="light"]:where(:not([data-ma-runtime="ios"],[data-ma-collection-theme])) .ma-about-card,

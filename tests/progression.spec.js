@@ -41,6 +41,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
   await page.locator('#maAccount-profile [data-ma-avatar-open]').click();await expect(dialog.getByRole('button',{name:'Character portrait',exact:true})).toHaveAttribute('aria-pressed','true');
   await expect(dialog.locator('[data-avatar-mode=emoji],[data-avatar-mode=atlas]')).toHaveCount(0);
   await dialog.getByRole('button',{name:'Account photo',exact:true}).click();await dialog.getByRole('button',{name:'Save changes',exact:true}).click();await expect(dialog).toBeHidden();expect(await page.evaluate(()=>avatarSaves.at(-1).avatar)).toBe('account');
+  await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await expect(page.locator('[data-ma-avatar-open]')).toHaveCount(2);
   await page.evaluate(()=>{avatarUser=null;dispatchEvent(new Event('modeAtlasAccountSignedOut'));});await expect(page.locator('[data-ma-selected-avatar]')).toHaveText('あ');
   expect(errors).toEqual([]);
@@ -239,10 +240,11 @@ for(const native of [false,true])test(`mixed collection surfaces keep readable p
   });
   for(const theme of ['dark','light','sakura','midnight','skyline','evergreen']){
     await page.evaluate(theme=>ModeAtlasTheme.set(theme,{toast:false}),theme);
+    await page.locator('.ma-shop-full').evaluate(async node=>{await Promise.all(node.getAnimations({subtree:true}).map(animation=>animation.finished.catch(()=>{})));});
     if(theme==='dark')await page.screenshot({path:testInfo.outputPath(`${native?'ios':'web'}-shop.png`),animations:'disabled'});
     for(const id of ['sakura','midnight','skyline','evergreen']){
       const product=page.locator(`.ma-shop-full [data-ma-shop-product="${id}"]`);await product.scrollIntoViewIfNeeded();
-      const canvas=await product.evaluate(node=>getComputedStyle(node,'::before').backgroundColor);
+      const canvas=await product.evaluate(node=>getComputedStyle(node).backgroundColor);
       for(const text of await product.locator('.ma-shop-product__name,.ma-shop-product__description,[data-ma-shop-availability]').all())await readable(text,canvas);
       await product.click();const sample=page.locator('.ma-shop-theme-preview');
       const bg=await sample.evaluate(node=>getComputedStyle(node).backgroundColor);
@@ -280,20 +282,20 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
     const shop=page.getByRole('tabpanel',{name:'Shop',exact:true});await expect(shop).toBeVisible();
     await expect(shop).not.toContainText('Purchases aren’t available yet.');
     await expect(shop.getByRole('button',{name:'Buy 500 coins',exact:true})).toBeVisible();
-    await expect(shop.locator('[data-ma-coin-balance]')).toHaveText('Sign in to view your balance');
+    await expect(shop.locator('[data-ma-coin-balance]')).toHaveText('Sign in');
     for(const tile of await shop.locator('.ma-shop-product').all()){
-      expect(await tile.evaluate(node=>getComputedStyle(node,'::before').backgroundImage)).not.toBe('none');
+      expect(await tile.locator('.ma-shop-scene').evaluate(node=>getComputedStyle(node,'::before').backgroundImage)).not.toBe('none');
       const foreground=await tile.evaluate(node=>getComputedStyle(node).color);
       await expect(tile.locator('.ma-shop-product__name')).toHaveCSS('color',foreground);
       await expect(tile.locator('.ma-shop-product__name')).toHaveCSS('-webkit-text-fill-color',foreground);
     }
-    for(const frame of await shop.locator('[data-ma-frame]').all())await expect(frame).not.toHaveCSS('box-shadow','none');
     const before=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),appearance:ModeAtlasProgress.readState().appearance}));
     await shop.getByRole('button',{name:'Preview Sakura collection'}).click();
     await expect(page.locator('.ma-dialog__title')).toHaveText('Sakura');
     await expect(page.getByRole('button',{name:'Open Rewards',exact:true})).toBeHidden();
     await expect(page.locator('#maAccountSheet')).toHaveJSProperty('inert',true);
     await expect(page.locator('.ma-shop-includes img')).toBeVisible();
+    await expect(page.locator('.ma-shop-look [data-ma-frame]')).not.toHaveCSS('box-shadow','none');
     expect(await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),appearance:ModeAtlasProgress.readState().appearance}))).toEqual(before);
     await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');
     await page.screenshot({path:testInfo.outputPath('shop-preview.png'),animations:'disabled'});

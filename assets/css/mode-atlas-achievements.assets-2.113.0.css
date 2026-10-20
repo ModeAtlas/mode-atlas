@@ -1,5 +1,5 @@
 .ma-ach-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0 22px}
-.ma-ach-overview>div{padding:14px 15px;border:1px solid var(--ma-border);border-radius:var(--ma-radius-lg);background:var(--ma-surface-soft)}
+.ma-ach-overview>div{padding:8px 15px;border:0;border-left:3px solid var(--ma-atlas);border-radius:0;background:transparent}
 .ma-ach-overview b{display:block;color:var(--ma-text);font-size:1.45rem;line-height:1;font-weight:950;letter-spacing:-.04em}
 .ma-ach-overview span{display:block;margin-top:6px;color:var(--ma-muted);font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
 .ma-achievement-layout{display:grid;gap:28px}
@@ -9,7 +9,7 @@
 .ma-ach-section-copy{margin:5px 0 0;max-width:720px;color:var(--ma-muted);font-size:.84rem;line-height:1.45}
 .ma-ach-section-count,.ma-ach-future-status{flex:0 0 auto;color:var(--ma-muted);font-size:.74rem;font-weight:900;white-space:nowrap}
 .ma-achievement-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.ma-achievement-tile{--ma-ach-rank:148,163,184;position:relative;display:flex;flex-direction:column;box-sizing:border-box;min-height:190px;appearance:none;border:1px solid rgba(var(--ma-ach-rank),.38);border-radius:22px;padding:16px;text-align:left;color:var(--ma-text);background:var(--ma-card);box-shadow:none;cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+.ma-achievement-tile{--ma-ach-rank:148,163,184;position:relative;display:flex;flex-direction:column;box-sizing:border-box;min-height:165px;appearance:none;border:1px solid rgba(var(--ma-ach-rank),.38);border-radius:22px;padding:16px;text-align:left;color:var(--ma-text);background:var(--ma-card);box-shadow:none;cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
 .ma-achievement-tile:hover,.ma-achievement-tile:focus-visible{transform:translateY(-2px);border-color:rgba(var(--ma-ach-rank),.7);box-shadow:var(--ma-shadow);outline:none}
 .ma-achievement-tile.done{background:color-mix(in srgb,rgb(var(--ma-ach-rank)) 6%,var(--ma-card));border-color:rgba(var(--ma-ach-rank),.62)}
 .ma-ach-topline{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -36,7 +36,7 @@
 .ma-ach-switch button:focus-visible{outline:2px solid var(--ma-accent);outline-offset:1px;}
 .ma-ach-empty{grid-column:1/-1;margin:0;padding:20px 10px;color:var(--ma-muted);line-height:1.5;text-align:center;}
 .ma-ach-native .ma-ach-overview{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 14px;}
-.ma-ach-native .ma-ach-overview>div{padding:10px 8px;border-radius:12px;}
+.ma-ach-native .ma-ach-overview>div{padding:6px 8px;border-radius:0;}
 .ma-ach-native .ma-ach-overview b{font-size:1.15rem;}
 .ma-ach-native .ma-ach-overview span{font-size:.58rem;letter-spacing:.02em;line-height:1.35;}
 .ma-ach-native .ma-ach-section-head{flex-direction:row;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;}
@@ -44,7 +44,7 @@
 .ma-ach-native .ma-ach-section-copy{display:none;}
 .ma-ach-native .ma-ach-section-count{font-size:.63rem;}
 .ma-ach-native .ma-achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
-.ma-ach-native .ma-achievement-tile{display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:auto 1fr auto;align-items:start;gap:10px 7px;min-height:144px;padding:11px;border-radius:14px;box-shadow:none;}
+.ma-ach-native .ma-achievement-tile{display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:auto 1fr auto;align-items:start;gap:10px 7px;min-height:132px;padding:11px;border-radius:14px;box-shadow:none;}
 .ma-ach-native .ma-ach-topline,.ma-ach-native .ma-ach-meter{grid-column:1/-1;}
 .ma-ach-native .ma-ach-topline{gap:3px;flex-wrap:wrap;}
 .ma-ach-native .ma-ach-rank-badge,.ma-ach-native .ma-ach-status-text{min-height:21px;padding:3px 5px;font-size:.55rem;letter-spacing:0;}
@@ -86,7 +86,7 @@ html[data-ma-large-text] .ma-ach-native .ma-achievement-tile{min-height:120px;}
 .ma-mastery-checks [data-complete="true"]{color:var(--ma-text-strong);}
 .ma-mastery-stage{position:relative;min-width:0;padding:10px 11px 10px 14px;border:1px solid var(--ma-border);border-radius:14px;background:var(--ma-surface-soft);overflow:hidden}
 .ma-mastery-stage::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--ma-border-strong)}
-.ma-mastery-stage.learning::before{background:var(--ma-warning)}.ma-mastery-stage.reviewing::before{background:var(--ma-writing)}.ma-mastery-stage.mastered::before{background:var(--ma-success)}
+.ma-mastery-stage.learning::before{background:var(--ma-stage-learning)}.ma-mastery-stage.reviewing::before{background:var(--ma-stage-confident)}.ma-mastery-stage.mastered::before{background:var(--ma-stage-mastered)}
 .ma-mastery-stage b{display:block;color:var(--ma-text-strong);font-size:1.35rem;line-height:1;font-variant-numeric:tabular-nums}
 .ma-mastery-stage strong{display:block;margin-top:4px;color:var(--ma-text);font-size:.78rem}
 .ma-mastery-stage span{display:block;margin-top:3px;color:var(--ma-muted);font-size:.67rem;line-height:1.25}
