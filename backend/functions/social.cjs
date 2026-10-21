@@ -1,5 +1,6 @@
 'use strict';
-const {readSave}=require('./account-data.cjs');
+const {readSave,skipInvalidSave}=require('./account-data.cjs');
+const {requireSession}=require('./account-access.cjs');
 const {createEarnings}=require('./study-earnings.cjs');
 const {randomBytes,randomUUID,createHash}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
@@ -67,7 +68,7 @@ function slicePage(items,cursor){
 function createSocial({db,auth,messaging,now=Date.now}){
   const identities=createIdentityStore({db,auth,now});
   const staff=createStaff({db,auth,now});
-  const administration=createAdministration({db,auth,staff});
+  const administration=createAdministration({db,auth,staff,now});
   const moderation=createModeration({db,identities,staff,now});
   const rewards=createRewards({db,now});
   const commerce=createCommerce({db,auth,now}),earnings=createEarnings({db,now});
@@ -87,11 +88,12 @@ function createSocial({db,auth,messaging,now=Date.now}){
   function rejectDeleted(marker,createdAt){
     if(marker.exists && createdAt<=marker.data().at)fail('unauthenticated','This account has been deleted.');
   }
-  async function limit(uid,action,createdAt){
-    const bucket=action==='lookup' || action==='sendRequest'?'lookup':['adminUsers','adminInspect','avatarState','shop','rewards','state','list','profile','weeklyState','weeklyList','notificationState','accountNotices','staffProfile','listWarnings','listModerators','listReports','listRestrictions'].includes(action)?'read':'write';
+  async function limit(uid,action,createdAt,user,token){
+    const bucket=action==='lookup' || action==='sendRequest'?'lookup':['adminUsers','adminInspect','adminSecurity','adminUsage','avatarState','shop','rewards','state','list','profile','weeklyState','weeklyList','notificationState','accountNotices','staffProfile','listWarnings','listModerators','listReports','listRestrictions'].includes(action)?'read':'write';
     const max={lookup:12,read:60,write:30}[bucket],at=now();
     await db.runTransaction(async tx=>{
-      const ref=limits.doc(uid),[doc,marker]=await tx.getAll(ref,deletionRef(uid)),data=doc.data()||{};
+      const ref=limits.doc(uid),[doc,marker,access]=await tx.getAll(ref,deletionRef(uid),db.doc('accountAccess/'+uid)),data=doc.data()||{};
+      requireSession(user,token,access.data());
       rejectDeleted(marker,createdAt);
       const old=data[bucket],row=old && at-old.at<60000?old:{at,count:0};
       if(row.count>=max)fail('resource-exhausted','Please wait a minute before trying again.');
@@ -290,10 +292,11 @@ function createSocial({db,auth,messaging,now=Date.now}){
       const relationship=uid===data.uid?'self':friend?'friend':has(a.incoming,data.uid)?'incoming':has(a.outgoing,data.uid)?'outgoing':'none';
       return {profile:value,friend,relationship,canRequest:relationship==='none'&&weeklyActive(a)&&weeklyActive(b),stale:b.summary?.projectionVersion!==PROJECTION_VERSION};
     });
-    if(result.stale){await refreshSummary(data.uid,null,{cachedAccess:true});return profile(uid,data);}
+    if(result.stale){if(!await refreshSummary(data.uid,null,{cachedAccess:true}))fail('failed-precondition','This profile needs a cloud save repair.');return profile(uid,data);}
     delete result.stale;await decorate([result.profile]);return result;
   }
-  async function refreshSummary(uid,user,{cachedAccess=false,awardLevels=!cachedAccess}={}){
+  const refreshSummary=(uid,user,options)=>skipInvalidSave(()=>projectSummary(uid,user,options),uid);
+  async function projectSummary(uid,user,{cachedAccess=false,awardLevels=!cachedAccess}={}){
     if(!validUid(uid))return;
     if(!user&&!cachedAccess)user=await staff.user(uid);
     if(awardLevels)await commerce.awardLevels(uid,user);
@@ -371,10 +374,11 @@ function createSocial({db,auth,messaging,now=Date.now}){
     // Reject tokens belonging to accounts already deleted or disabled.
     let user;try{user=await auth.getUser(uid);}catch{fail('unauthenticated','Sign in again to use Friends.');}
     if(user.disabled || !user.emailVerified)fail('permission-denied','Use a verified account to join Friends.');
+    requireSession(user,request.auth.token);
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['adminUsers','adminInspect','earnStudy','avatarState','avatarUpdate','shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
+    const actions=['adminUsers','adminInspect','adminSecurity','adminUsage','adminAccess','earnStudy','avatarState','avatarUpdate','shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
     if(['rewards','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
     if(action==='state'){
@@ -382,9 +386,12 @@ function createSocial({db,auth,messaging,now=Date.now}){
       if(data.listKind!==undefined&&!['friends','incoming','outgoing','blocked'].includes(data.listKind))fail('invalid-argument','Choose a friends list.');
     }
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
-    await limit(uid,action,createdAt);
+    await limit(uid,action,createdAt,user,request.auth.token);
     if(action==='adminUsers')return administration.directory(user,data);
     if(action==='adminInspect')return administration.inspect(user,data);
+    if(action==='adminSecurity')return administration.security(user,data);
+    if(action==='adminAccess')return administration.access(user,data,request.auth.token);
+    if(action==='adminUsage')return administration.usage(user,data);
     if(['avatarState','avatarUpdate','updateProfile','shop','shopPurchase','shopDeveloper','state'].includes(action))await rewards.retainEquipped(user);
     if(action==='earnStudy'){const result=await earnings.submit(uid,data);await commerce.awardLevels(uid,user);return result;}
     if(action==='rewards')return rewards.read(user);

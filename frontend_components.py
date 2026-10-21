@@ -4,6 +4,7 @@ The shipped site stays static: this module renders common HTML into each documen
 at build time so navigation has one source without adding a runtime fragment fetch.
 """
 from __future__ import annotations
+import security_policy
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -356,7 +357,10 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
 ACCOUNT_SCRIPTS = (
     'assets/platform/mode-atlas-firebase-loader.js',
     'firebase-config.js',
+    'assets/platform/mode-atlas-app-check.js',
+    'assets/app/mode-atlas-save-limits.js',
     'assets/app/mode-atlas-account-transport.js',
+    'assets/app/mode-atlas-usage.js',
     'cloud-sync.js',
     'assets/app/mode-atlas-social-config.js',
     'assets/ui/mode-atlas-avatar-art.js',
@@ -573,7 +577,7 @@ def apply_frontend_assets(root: Path = ROOT) -> list[Path]:
         if not path.exists():
             raise RuntimeError(f'Missing page for frontend asset manifest: {rel}')
         source = path.read_text(encoding='utf-8')
-        updated = source
+        updated = security_policy.apply(source)
         updated = _replace_region(
             updated,
             HEAD_ASSET_REGION_RE,
@@ -619,29 +623,21 @@ def apply_loading_screen(root: Path = ROOT) -> list[Path]:
 def render_legacy_redirect(target: str) -> str:
     escaped_target = _attr(target)
     canonical = 'https://mode-atlas.app' + target
-    return f'''<!DOCTYPE html>
+    return security_policy.apply(f'''<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="refresh" content="0; url={escaped_target}" />
+  <noscript><meta http-equiv="refresh" content="0; url={escaped_target}" /></noscript>
   <link rel="canonical" href="{_attr(canonical)}" />
   <title>Redirecting • Mode Atlas</title>
-  <script>
-    (function() {{
-      var target = new URL('{escaped_target}', location.origin);
-      var source = new URLSearchParams(location.search);
-      source.forEach(function(value, key) {{ if (key !== 'build' && key !== 'v' && key !== 'reload') target.searchParams.set(key, value); }});
-      target.hash = location.hash;
-      location.replace(target.href);
-    }})();
-  </script>
+  <script src="./assets/platform/mode-atlas-redirect.js"></script>
 </head>
 <body>
   <p>Redirecting to <a href="{escaped_target}">{escaped_target}</a>…</p>
 </body>
 </html>
-'''
+''')
 
 
 def apply_legacy_redirects(root: Path = ROOT) -> list[Path]:

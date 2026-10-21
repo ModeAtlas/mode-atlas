@@ -3,11 +3,37 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function ownsActiveAccount(uid) {
       return request.auth != null && request.auth.uid == uid
+        && request.auth.token.get('email_verified', false) == true
+        && (!exists(/databases/$(database)/documents/accountAccess/$(uid)) ||
+          (get(/databases/$(database)/documents/accountAccess/$(uid)).data.get('disabled', false) == false
+          && request.auth.token.get('auth_time', 0) > get(/databases/$(database)/documents/accountAccess/$(uid)).data.get('revokedBefore', 0)))
         && !exists(/databases/$(database)/documents/accountDeletions/$(uid));
     }
     function progressVersion(data) {
       let section = data.get('sections', {}).get('progress', {});
       return section.get('storage', {}).get('schemaVersion', section.get('data', {}).get('state', {}).get('version', 0));
+    }
+    function partCount(data, section) {
+      return data.get('sections', {}).get(section, {}).get('storage', {}).get('parts', []).size();
+    }
+    function boundedSave(data) {
+      return data.get('sections', {}) is map
+        && data.get('sections', {}).keys().hasOnly(['reading','writing','readingTests','writingTests','wordBank','kanaLearning','kanji','kanjiTests','progress'])
+        && partCount(data, 'reading') + partCount(data, 'writing')
+          + partCount(data, 'readingTests') + partCount(data, 'writingTests')
+          + partCount(data, 'wordBank') + partCount(data, 'kanaLearning')
+          + partCount(data, 'kanji') + partCount(data, 'kanjiTests') + partCount(data, 'progress') <= 350;
+    }
+    function referencedPart(uid, id) {
+      let path = /databases/$(database)/documents/users/$(uid)/appData/kanaTrainer;
+      let data = getAfter(path).data;
+      let previous = exists(path) ? get(path).data.get('revision', 0) : 0;
+      return data.get('revision', 0) == previous + 1
+        && data.get('sections', {}).get(id.split('-')[1], {}).get('storage', {}).get('parts', []).hasAny([id]);
+    }
+    function removedPart(uid, id) {
+      let data = getAfter(/databases/$(database)/documents/users/$(uid)/appData/kanaTrainer).data;
+      return !data.get('sections', {}).get(id.split('-')[1], {}).get('storage', {}).get('parts', []).hasAny([id]);
     }
     // Preserve the live project's owner-only profile and app-data access.
     // These are two exact document depths, not a recursive users wildcard.
@@ -16,10 +42,11 @@ service cloud.firestore {
     }
     match /users/{uid}/appData/{docId} {
       allow read: if ownsActiveAccount(uid);
-      allow create: if ownsActiveAccount(uid);
+      allow create: if docId == 'kanaTrainer' && ownsActiveAccount(uid) && boundedSave(request.resource.data);
       allow delete: if ownsActiveAccount(uid) && resource.data.get('storageVersion', 1) < 2;
       // Older clients must not restore retired level credits or erase goal evidence.
-      allow update: if ownsActiveAccount(uid)
+      allow update: if docId == 'kanaTrainer' && ownsActiveAccount(uid)
+        && boundedSave(request.resource.data)
         && progressVersion(request.resource.data) >= progressVersion(resource.data)
         && (resource.data.get('storageVersion', 1) < 2 ||
           (request.resource.data.get('storageVersion', 0) == 2
@@ -28,9 +55,11 @@ service cloud.firestore {
           && request.resource.data.get('generation', 0) <= resource.data.get('generation', 0) + 1));
     }
     match /users/{uid}/appData/kanaTrainer/parts/{partId} {
-      allow read, delete: if ownsActiveAccount(uid);
+      allow read: if ownsActiveAccount(uid);
+      allow delete: if ownsActiveAccount(uid) && removedPart(uid, partId);
       allow create, update: if ownsActiveAccount(uid)
-        && partId.matches('section-[a-zA-Z]+-[0-9]+')
+        && partId.matches('section-(reading|writing|readingTests|writingTests|wordBank|kanaLearning|kanji|kanjiTests|progress)-([0-9]|[1-9][0-9]|[12][0-9][0-9]|3[0-4][0-9])')
+        && referencedPart(uid, partId)
         && request.resource.data.keys().hasOnly(['text'])
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 480000;

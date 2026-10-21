@@ -106,8 +106,9 @@ test('build-time frontend manifest owns page dependencies, loader markup, and le
   })) {
     const html = read(rel);
     assert.match(html, new RegExp(`url=${target.replaceAll('/', '\\/')}`), `${rel} meta redirect`);
-    assert.match(html, new RegExp(`new URL\\('${target.replaceAll('/', '\\/')}'`), `${rel} JS redirect`);
-    assert.match(html, /key !== 'build' && key !== 'v' && key !== 'reload'/, `${rel} strips transport parameters`);
+    assert.ok(html.includes(`href="https://mode-atlas.app${target}"`), `${rel} JS destination`);
+    assert.match(html, /mode-atlas-redirect\.assets-/, `${rel} external redirect`);
+    assert.match(read('assets/platform/mode-atlas-redirect.js'), /\['build','v','reload'\]/, `${rel} strips transport parameters`);
   }
 });
 

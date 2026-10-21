@@ -23,6 +23,9 @@
           },
           "@capacitor-firebase/messaging": {
             "symlink": true
+          },
+          "@capacitor-firebase/app-check": {
+            "symlink": true
           }
         },
         "swiftToolsVersion": "6.1",

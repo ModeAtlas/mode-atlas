@@ -141,6 +141,8 @@ for(const width of [393,1280])test(`developer console account directory and acco
     window.directoryCalls=[];ModeAtlasSocial={...ModeAtlasSocial,call:async(action,data)=>{
       directoryCalls.push({action,data});
       if(action==='adminUsers')return {rows:[{uid:'one',displayName:'Test Learner',email:'learner@example.test',role:'member',verified:true,friends:false}],nextCursor:data.cursor?null:'next-page'};
+      if(action==='adminSecurity')return {appCheckEnforced:false,usageRequiresAppCheck:true,audit:[{operation:'suspend',status:'complete',reason:'Test access',target:'one',at:Date.now()}]};
+      if(action==='adminUsage')return {counts:[1,1,1],rows:[{id:'abc123',platform:'web',version:'2.120.0',level:3,xp:350,kana:['あ','い'],introduced:['あ'],correct:20,attempts:24,branch:'kana',lastSeen:Date.now()}]};
       if(action==='adminInspect')return {uid:'one',providers:['apple.com'],save:{exists:true,revision:7,generation:1,updatedAt:Date.now(),sections:[{name:'reading',partitioned:true,parts:2}]},wallet:{balance:10,tokenBalance:200,purchases:2},social:{active:false,projectionVersion:7,syncedAt:Date.now(),refreshQueued:false},warningCount:0,deleting:false,receipts:[]};
       throw Error('No mock for '+action);
     }};
@@ -153,5 +155,8 @@ for(const width of [393,1280])test(`developer console account directory and acco
   await consoleDialog.getByRole('button',{name:'Inspect',exact:true}).click();await expect(consoleDialog).toContainText('Revision 7');await expect(consoleDialog).toContainText('reading (2 parts)');
   await expect(consoleDialog.getByRole('link',{name:'Moderation & warnings'})).toHaveAttribute('href','/friends/?moderate=one');
   expect(await consoleDialog.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);await page.screenshot({path:info.outputPath('developer-directory.png')});
+  await consoleDialog.getByRole('button',{name:'Security',exact:true}).click();await expect(consoleDialog).toContainText('Test access');
+  await consoleDialog.getByRole('button',{name:'Usage',exact:true}).click();await expect(consoleDialog).toContainText('Level 3');await expect(consoleDialog).toContainText('Practised: あ い');
+  expect(await consoleDialog.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
   await page.evaluate(()=>{consoleUser=null;dispatchEvent(new CustomEvent('modeAtlasAccountWillChange'));});await expect(consoleDialog).toHaveCount(0);expect(await page.locator('#maDevMenu').textContent()).toBe('');expect(errors).toEqual([]);
 });

@@ -22,7 +22,7 @@
       for(const [key,panel]of panels){panel.hidden=key!==name;panel.classList.toggle('is-active',key===name);}
       for(const [key,tab]of tabs){tab.setAttribute('aria-selected',String(key===name));tab.tabIndex=key===name?0:-1;}
       document.getElementById('maAccountTitle').textContent=sections.find(section=>section[0]===name)[1];
-      if(name==='settings')root.ModeAtlasNativeSettings?.refresh?.();
+      if(name==='settings'){root.ModeAtlasNativeSettings?.refresh?.();root.ModeAtlasUsage?.refreshSettings?.();}
       if(name==='shop'){if(!panels.get(name).dataset.maShop)root.ModeAtlasShopUI.mount(panels.get(name));else root.ModeAtlasShopUI.refresh();void root.ModeAtlasShop.refresh(true);void root.ModeAtlasRewardAccess?.refresh();}
     }
     syncVisibility();

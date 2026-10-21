@@ -11,3 +11,16 @@ backend/functions/shared/
 .firebase/
 *-debug.log
 /assets/fonts/*.woff2
+
+# Local credentials and signing material must never enter public/runtime builds.
+.env
+.env.*
+!.env.example
+!.env.template
+*service-account*.json
+*serviceAccount*.json
+*.p12
+*.p8
+*.key
+*.mobileprovision
+*.provisionprofile

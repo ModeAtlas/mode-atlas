@@ -86,6 +86,7 @@ LAZY_ASSETS = (
     'assets/app/mode-atlas-dev-console.js',
     'assets/app/mode-atlas-dev-backups.js',
     'assets/app/mode-atlas-dev-accounts.js',
+    'assets/app/mode-atlas-dev-monitoring.js',
     'assets/css/mode-atlas-dev-console.css',
 )
 

@@ -34,11 +34,26 @@
         const data=await request('adminInspect',{uid:item.uid});if(!active(ticket))return;
         status.textContent=item.displayName+' · '+(item.email||item.uid);
         const details=el('dl','ma-dev-detail-grid');
-        const fields={'Account ID':data.uid,'Sign-in providers':data.providers.join(', ')||'Email','Cloud save':data.save.exists?`Revision ${data.save.revision} · generation ${data.save.generation}`:'No save yet','Last server save':date(data.save.updatedAt),'Sections':data.save.sections.map(s=>s.name+(s.partitioned?` (${s.parts} parts)`:'' )).join(', ')||'—','Friends':data.social.restricted?'Restricted':data.social.active?'Active':'Not joined','Profile projection':`v${data.social.projectionVersion}${data.social.refreshQueued?' · Refresh queued':''}`,'Last profile sync':date(data.social.syncedAt),'Atlas Coins':data.wallet.balance,'Study Tokens':data.wallet.tokenBalance,'Purchases':data.wallet.purchases,'Warnings':data.warningCount,'Deletion':data.deleting?'In progress':'None'};
+        const fields={'Account ID':data.uid,'Save health':data.save.problem||'Readable','Sign-in providers':data.providers.join(', ')||'Email','Cloud save':data.save.exists?`Revision ${data.save.revision} · generation ${data.save.generation}`:'No save yet','Last server save':date(data.save.updatedAt),'Sections':data.save.sections.map(s=>s.name+(s.partitioned?` (${s.parts} parts)`:'' )).join(', ')||'—','Friends':data.social.restricted?'Restricted':data.social.active?'Active':'Not joined','Profile projection':`v${data.social.projectionVersion}${data.social.refreshQueued?' · Refresh queued':''}`,'Last profile sync':date(data.social.syncedAt),'Atlas Coins':data.wallet.balance,'Study Tokens':data.wallet.tokenBalance,'Purchases':data.wallet.purchases,'Warnings':data.warningCount,'Deletion':data.deleting?'In progress':'None'};
         for(const [name,value]of Object.entries(fields)){details.append(el('dt','',name),el('dd','',String(value)));}list.append(details);
+        if(data.learning){list.append(el('p','','Introduced: '+((data.learning.introduced||[]).join(' ')||'—')),el('h4','','Reported learning progress'),el('p','',`Level ${data.learning.level} · ${data.learning.correct}/${data.learning.attempts} Kana answers`),el('p','ma-dev-kana-list','Practised: '+(data.learning.kana.join(' ')||'—')));}
         if(data.receipts.length){list.append(el('h4','','Recent verified study receipts'));for(const receipt of data.receipts)list.append(el('p','ma-dev-receipt',`${receipt.branch} · ${receipt.answers} answers · ${receipt.finished?'Finished':'In progress'} · ${date(receipt.updatedAt)}`));}
         const moderation=el('a','ma-button ma-button--small','Moderation & warnings');moderation.href='/friends/?moderate='+encodeURIComponent(item.uid);
         paging.append(button('Back to accounts',()=>void load(currentCursor)),moderation);
+        if(item.uid!==uid&&item.role!=='admin'){
+          const reason=el('input','ma-dev-progress-input');reason.placeholder='Reason for access change';reason.maxLength=240;reason.setAttribute('aria-label','Reason for access change');
+          const access=el('div','ma-dev-access');access.append(reason);
+          for(const [operation,label]of [['revoke','End all sessions'],[data.disabled?'restore':'suspend',data.disabled?'Restore access':'Suspend account']])access.append(button(label,async()=>{
+            if(!active(ticket))return;
+            if(reason.value.trim().length<5){status.textContent='Enter a reason of at least 5 characters.';reason.focus();return;}
+            const approved=await root.ModeAtlasFeedback.confirm({title:label+'?',message:`Account: ${item.email||item.uid}. ${operation==='restore'?'They will need to sign in again.':'Cloud access will stop immediately. Local offline data cannot be recalled.'}`,confirmLabel:label,cancelLabel:'Cancel',tone:'warning'});
+            if(!approved||!active(ticket))return;
+            access.inert=true;
+            try{await root.KanaCloudSync.confirmCurrentSignIn();if(!active(ticket))return;await request('adminAccess',{uid:item.uid,operation,reason:reason.value.trim()});if(active(ticket))await inspect({...item,disabled:operation==='suspend'?true:operation==='restore'?false:item.disabled});}
+            catch(error){if(active(ticket))status.textContent=root.ModeAtlasSocial.message(error);}
+            finally{access.inert=false;}
+          }));list.append(access);
+        }
       }catch(error){if(active(ticket)){status.textContent=root.ModeAtlasSocial.message(error);paging.append(button('Back to accounts',()=>void load(currentCursor)));}}
     }
     form.addEventListener('submit',event=>{event.preventDefault();void load();});queueMicrotask(()=>void load());return host;

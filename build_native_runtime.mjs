@@ -13,9 +13,10 @@ try{
   // Splitting preserves one Firebase component registry across all entry points.
   const exports={
     app:'initializeApp,getApps,getApp',
-    auth:'getAuth,initializeAuth,browserLocalPersistence,GoogleAuthProvider,OAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signInWithCredential,linkWithCredential,reauthenticateWithPopup,reauthenticateWithCredential,signOut,onAuthStateChanged',
-    firestore:'getFirestore,doc,getDoc,setDoc',
-    functions:'getFunctions,httpsCallable'
+    auth:'getAuth,initializeAuth,browserLocalPersistence,GoogleAuthProvider,OAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signInWithCredential,linkWithCredential,reauthenticateWithPopup,reauthenticateWithCredential,updateProfile,signOut,onAuthStateChanged',
+    firestore:'getFirestore,doc,getDoc,setDoc,runTransaction',
+    functions:'getFunctions,httpsCallable',
+    'app-check':'initializeAppCheck,CustomProvider,ReCaptchaEnterpriseProvider'
   };
   const entries={};
   for(const [name,api]of Object.entries(exports)){
