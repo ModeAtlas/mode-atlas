@@ -61,6 +61,11 @@
     goal('independent-200','weekly',1,'Recall 200 kana without hints this week','Independent recall',200,250,'kana.independent')
   ]);
   const goalCatalogue=Object.freeze([...goalPool,
+    goal('recall-10','daily',0,'Answer 10 Kana questions correctly','10 correct',10,20,'kana.correct'),
+    goal('variety-5','daily',1,'Practise 5 different kana','5 different',5,25,'kana.variety'),
+    goal('kanji-recall-5','daily',0,'Answer 5 Kanji questions correctly','5 Kanji answers',5,20,'kanji.correct','kanji'),
+    goal('kanji-meaning-5','daily',1,'Answer 5 Kanji meaning questions correctly','5 meanings',5,25,'kanji.meaning','kanji'),
+    goal('kanji-recall-25','weekly',1,'Answer 25 Kanji questions correctly this week','25 Kanji answers',25,100,'kanji.correct','kanji'),
     goal('kanji-recall-15','daily',0,'Recall 15 kanji correctly','15 Kanji',15,40,'kanji.correct','kanji'),
     goal('kanji-meaning-10','daily',1,'Recall 10 kanji meanings','10 meanings',10,50,'kanji.meaning','kanji'),
     goal('kanji-session-1','daily',2,'Complete a Kanji set','Kanji set',1,40,'kanji.sessions','kanji'),
@@ -72,10 +77,19 @@
   ]);
   function suitable(goal,profile){
     const {metric,target,period}=goal,days=profile.daysAvailable||7;
-    if(goal.branch==='kanji'&&(profile.kanji||0)<5)return false;
+    const kanji=profile.kanjiReady??0;
+    if(goal.branch==='kanji'){
+      if(kanji<1)return false;
+      if(metric==='kanji.sessions'&&kanji<10)return false;
+      if(['kanji.correct','kanji.meaning'].includes(metric)&&target>(period==='weekly'?25:5)&&kanji<20)return false;
+    }
+    if(metric==='kana.tests'&&profile.kanaTests!==true)return false;
+    if(goal.id==='recall-10'&&profile.variety>10)return false;
+    if(goal.id==='variety-5'&&profile.variety>=12)return false;
+    if(metric==='kana.correct'&&period==='daily'&&target>25&&profile.variety<=10)return false;
     if(metric==='kana.katakana'&&profile.katakana<5)return false;
     if(metric==='kana.variety'&&profile.variety<target)return false;
-    if(['kana.broad','kana.tests'].includes(metric)&&profile.variety<45)return false;
+    if(metric==='kana.broad'&&profile.variety<45)return false;
     if(['kana.independent','kana.streak','kana.precise','kana.tests'].includes(metric)&&profile.independent<20)return false;
     if(metric==='kana.daily'&&profile.variety<20)return false;
     if(period==='weekly'){
@@ -91,9 +105,12 @@
     const ordinal=Math.floor(Date.parse(key+'T12:00:00Z')/86400000/(period==='weekly'?7:1));
     if(!Number.isFinite(ordinal))return [];
     const catalogue=profile?goalCatalogue:goalPool;
+    let kanjiSelected=false;
     return [...new Set(catalogue.filter(g=>g.period===period).map(g=>g.slot))].map(slot=>{
-      const pool=catalogue.filter(g=>g.period===period&&g.slot===slot&&goalBranches.includes(g.branch)&&(!profile||suitable(g,profile)));
-      return pool[((ordinal+slot*3)%pool.length+pool.length)%pool.length];
+      const pool=catalogue.filter(g=>g.period===period&&g.slot===slot&&goalBranches.includes(g.branch)&&(!profile||suitable(g,profile))&&(!kanjiSelected||g.branch!=='kanji'));
+      const selected=pool[((ordinal+slot*3)%pool.length+pool.length)%pool.length];
+      if(selected?.branch==='kanji')kanjiSelected=true;
+      return selected;
     }).filter(Boolean);
   }
   // Personal goals share the activity ledger, but each period has just one
@@ -213,5 +230,5 @@
   function allowed(type,id,level,access){return unlocked(item(type,id),level,access);}
   function appearance(id,level,access){const reward=item('frames',id);return unlocked(reward,level,access)?reward:landmarks[0];}
   function banner(id,level,access){const reward=item('banners',id);return unlocked(reward,level,access)?reward:banners[0];}
-  return Object.freeze({accuracy,kanaRate,levelRequirement,session,starter,goalBranches,goalPool,goalCatalogue,goals,personalGoals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,pets,catalogue,item,unlocked,visible,allowed});
+  return Object.freeze({accuracy,kanaRate,levelRequirement,session,starter,goalBranches,goalPool,goalCatalogue,suitable,goals,personalGoals,landmarks,appearance,banners,banner,icons,avatars,themes,hairstyles,hairColours,outfits,pants,headwear,accessories,pets,catalogue,item,unlocked,visible,allowed});
 });

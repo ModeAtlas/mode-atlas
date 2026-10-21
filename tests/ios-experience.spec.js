@@ -107,6 +107,7 @@ test('developer native export only records completion after the Share Sheet succ
     await window.ModeAtlasDevConsoleLoader.loadIfEligible();
     window.ModeAtlasDevConsole.open();
   });
+  await page.getByRole('button',{name:'Storage',exact:true}).click();
   await page.getByRole('button',{name:'Save files',exact:true}).click();
   await page.locator('[data-ma-dev-export-save]').click();
   await expect.poll(()=>page.evaluate(()=>window.sharedBackups.length)).toBe(1);

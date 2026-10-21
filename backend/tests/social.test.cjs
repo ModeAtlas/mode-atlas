@@ -809,7 +809,10 @@ test('Friends lists queue stale projections without loading every private save',
   await until(async()=>(await db.doc('socialAccounts/'+b.uid).get()).data().summary.readingMastered===0);
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.readingMastered':2,'summary.combinedMastered':1});
   const result=await a.call('list',{kind:'rankings',metric:'mastery'}),peer=result.rows.find(row=>row.uid===b.uid);
-  assert.equal((await db.doc('socialProjectionQueue/'+b.uid).get()).exists,true);
+  const queued=await db.doc('socialProjectionQueue/'+b.uid).get(),projected=await db.doc('socialAccounts/'+b.uid).get();
+  // A delayed save trigger may finish the same migration before this read.
+  // Both states are valid; the final assertions below still require fresh data.
+  assert.ok(queued.exists||projected.data().summary.projectionVersion===7);
   await service.maintainEngagement();
   const refreshed=(await a.call('list',{kind:'rankings',metric:'mastery'})).rows.find(row=>row.uid===b.uid);
   Object.assign(peer,refreshed);
@@ -1236,4 +1239,21 @@ test('verified study receipts credit once and editable progress cannot forge the
   const first=await a.call('shop',{version:3,timeZone:'UTC'});await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(999999));const next=await a.call('shop',{version:3,timeZone:'UTC'});
   assert.equal(next.balance,first.balance);assert.equal(next.tokenBalance,first.tokenBalance);
   await assert.rejects(a.call('earnStudy',{...receipt,id:'forged-receipt',xp:99999}),{code:'INVALID_ARGUMENT'});
+});
+
+test('administrator directory is paginated, includes non-social users and never exposes private records',async()=>{
+  const uid='directory-private',email='directory-private@example.test';await auth.createUser({uid,email,emailVerified:true,displayName:'Directory Learner'});
+  await db.doc(`users/${uid}/appData/kanaTrainer`).set({storageVersion:2,revision:4,generation:0,sections:{wordBank:{data:{items:[{written:'secret-private-word'}]}}}});
+  const call=(actor,action,data={})=>service.call({auth:{uid:actor,token:{email:'admin@mode-atlas.com',email_verified:true}},data:{action,data,expectedUid:actor}});
+  await assert.rejects(call(uid,'adminUsers'),{code:'permission-denied'});await assert.rejects(call(uid,'adminInspect',{uid}),{code:'permission-denied'});
+  await db.doc('socialStaff/roles').set({moderators:{[uid]:{at:Date.now(),by:'legacy-admin'}}},{merge:true});
+  await assert.rejects(call(uid,'adminUsers'),{code:'permission-denied'});
+  await db.doc('socialLimits/legacy-admin').delete();
+  const page=await call('legacy-admin','adminUsers');assert.equal(page.rows.length,25);assert.ok(page.nextCursor);
+  const next=await call('legacy-admin','adminUsers',{cursor:page.nextCursor});assert.ok(next.rows.length<=25);assert.ok(next.rows.every(row=>!page.rows.some(old=>old.uid===row.uid)));
+  const found=await call('legacy-admin','adminUsers',{query:email});assert.equal(found.rows.length,1);assert.equal(found.rows[0].uid,uid);assert.equal(found.rows[0].friends,false);
+  assert.deepEqual(Object.keys(found.rows[0]).sort(),['uid','email','displayName','role','verified','disabled','createdAt','lastSignInAt','friends','restricted'].sort());
+  const detail=await call('legacy-admin','adminInspect',{uid});assert.equal(detail.save.revision,4);assert.equal(detail.save.version,2);assert.equal(detail.save.sections[0].name,'wordBank');assert.equal(JSON.stringify(detail).includes('secret-private-word'),false);
+  assert.equal(JSON.stringify(detail).includes('passwordHash'),false);
+  await assert.rejects(call('legacy-admin','adminUsers',{query:email,cursor:page.nextCursor}),{code:'invalid-argument'});
 });

@@ -332,7 +332,8 @@ test('beginner goals stay suitable and frozen through settings changes and new e
   const e=load(),p=e.progress;
   const before=plain(p.routine().goals);
   assert.equal(before.length,5);
-  assert.ok(before.every(goal=>!['kana.independent','kana.streak','kana.precise','kana.broad','kana.katakana','kana.variety','kana.tests','kana.daily'].includes(goal.metric)));
+  assert.ok(before.every(goal=>!['kana.independent','kana.streak','kana.precise','kana.broad','kana.tests','kana.daily'].includes(goal.metric)));
+  assert.ok(before.filter(goal=>goal.metric==='kana.variety').every(goal=>goal.target<=10));
   e.root.ModeAtlasStorage.setJSON('settings',{hiraganaRows:['h_a'],hint:false});
   p.startRun('progress');for(let i=1;i<=60;i++)answer(e,'progress',i,{kana:['あ'+i],katakana:1,assisted:false});
   assert.deepEqual(plain(p.routine().goals.map(({id,assisted})=>({id,assisted}))),before.map(({id,assisted})=>({id,assisted})));
@@ -348,7 +349,9 @@ test('a late-week newcomer receives achievable weekly goals and existing active 
   assert.ok(weekly.some(g=>['recall-50','guided-2'].includes(g.id)));
   const old={version:5,legacySeeded:true,activity:{'2026-09-30':{goalVersion:4,sources:{a:[20,0]}}},claims:{'v4:daily:2026-09-30:goal:read-20':40}};
   const migrated=load({modeAtlasProgress:old});
-  assert.deepEqual(plain(migrated.progress.routine().goals.filter(g=>g.period==='daily').map(g=>g.id)),plain(migrated.root.ModeAtlasRewardRules.goals('2026-09-30','daily').map(g=>g.id)));
+  const repaired=migrated.progress.routine().goals.filter(g=>g.period==='daily');
+  assert.equal(repaired[0].id,'read-20');assert.equal(repaired[0].value,repaired[0].target);
+  assert.ok(repaired.every(goal=>!['kana.broad','kana.streak'].includes(goal.metric)));
   assert.equal(migrated.progress.getXP(),40);
 });
 test('conflicting offline goal assignments converge and cannot multiply period rewards',()=>{
@@ -454,4 +457,36 @@ test('offline handwriting milestones merge into personal goals without requiring
   a.progress.recordKanaMilestone('あ',6,5,a.now());b.progress.recordKanaMilestone('い',6,5,b.now());b.progress.recordKanaMilestone('う',6,5,b.now());
   const merged=a.progress.mergeStates(a.progress.readState(),b.progress.readState());assert.equal(merged.claims['v5:personal:daily:2026-09-30'],40);
   assert.deepEqual(plain(merged),plain(a.progress.mergeStates(b.progress.readState(),a.progress.readState())));
+});
+
+test('goal eligibility uses unlocked curriculum and introduced Kanji, not lifetime correct counts',()=>{
+  const e=load(),p=e.progress;
+  for(const file of ['app/mode-atlas-kana-learning','data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state'])vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../assets',file+'.js'),'utf8'),e.root);
+  e.root.ModeAtlasKanaLearning.start('beginner');e.root.ModeAtlasKanjiState.enter('beginner');
+  const state=p.readState();state.activity['2026-09-29']={sources:{},reviews:{reading:[],writing:[]},metrics:{old:{'kanji.correct':900}},kana:[],goalVersion:4};
+  p.persistState(state);
+  let profile=p.goalProfile(p.readState(),'2026-09-30');assert.equal(profile.variety,10);assert.equal(profile.kanjiReady,0);assert.equal(profile.kanaTests,false);
+  assert.ok(p.routine().goals.every(goal=>goal.branch!=='kanji'));
+  for(const char of e.root.ModeAtlasKanjiState.introductory.slice(0,3))e.root.ModeAtlasKanjiState.introduction(char);
+  profile=p.goalProfile(p.readState(),'2026-09-30');assert.equal(profile.kanjiReady,3);
+  for(let i=0;i<60;i++){
+    const key=e.root.ModeAtlasDates.shiftDateKey('2026-09-30',i),goals=e.root.ModeAtlasRewardRules.goals(key,'daily',profile);
+    assert.equal(goals.length,3);assert.ok(goals.filter(goal=>goal.branch==='kanji').length<=1);
+    for(const goal of goals.filter(goal=>goal.branch==='kanji')){assert.ok(goal.target<=5);assert.notEqual(goal.metric,'kanji.sessions');}
+    assert.ok(goals.every(goal=>goal.metric!=='kana.tests'));
+  }
+  assert.ok(p.personalGoalChoices('daily').every(goal=>!goal.id.endsWith('-test')));
+  const old=p.readState();old.goalPlans['daily:2026-09-30']={version:1,at:1,assisted:false,ids:['kanji-recall-15','kanji-meaning-10','kanji-session-1']};p.persistState(old);
+  const repaired=p.routine().goals.filter(goal=>goal.period==='daily');assert.ok(repaired.every(goal=>goal.branch!=='kanji'||goal.target<=5));
+  assert.ok(repaired.filter(goal=>goal.branch==='kanji').length<=1);
+});
+
+test('changing an unfinished goal preserves earned XP, converges offline and cannot award a slot twice',()=>{
+  const e=load(),p=e.progress;const first=p.routine().goals.find(goal=>goal.period==='daily'&&goal.slot===0),before=p.readState();
+  const choices=p.goalChoices('daily',0);assert.ok(choices.length);p.replaceGoal('daily',0,choices[0].id);
+  const after=p.readState();assert.notEqual(after.goalPlans['daily:2026-09-30'].ids[0],first.id);
+  assert.deepEqual(plain(p.mergeStates(before,after)),plain(p.mergeStates(after,before)));
+  assert.equal(p.mergeStates(before,after).goalPlans['daily:2026-09-30'].ids[0],choices[0].id);
+  after.claims['v4:daily:2026-09-30:goal:'+first.id]=first.xp;p.persistState(after);
+  const xp=p.getXP();assert.equal(p.goalChoices('daily',0).length,0);assert.throws(()=>p.replaceGoal('daily',0,first.id));assert.equal(p.getXP(),xp);
 });

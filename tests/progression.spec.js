@@ -824,6 +824,7 @@ test('developer shop reset clears paid selections and uses the signed-in account
     await ModeAtlasRewardAccess.refresh(true);await ModeAtlasShop.refresh(true);ModeAtlasProgress.selectBanner('sakura');ModeAtlasProgress.selectAppearance('sakura');ModeAtlasTheme.set('sakura',{toast:false});
     await ModeAtlasDevConsoleLoader.loadIfEligible();ModeAtlasDevConsole.open();
   });
+  await page.getByRole('button',{name:'Testing',exact:true}).click();
   await page.locator('[data-ma-dev-shop]').click();await page.locator('[data-ma-dev-coins]').fill('1500');await page.getByRole('button',{name:'Add currency',exact:true}).click();
   await expect(page.locator('[data-ma-dev-shop-status]')).toContainText('1,500 Atlas Coins added');
   await page.getByRole('button',{name:'Reset purchases',exact:true}).click();await expect(page.locator('.ma-dialog__title')).toHaveText('Reset your shop purchases?');
@@ -904,4 +905,17 @@ test('every achievement illustration is valid XML and keeps a distinct visible s
   await prepare(page);await open(page,'/');
   const result=await page.evaluate(async()=>{const text=await (await fetch('/assets/achievements/mode-atlas-badges.svg')).text(),xml=new DOMParser().parseFromString(text,'image/svg+xml');return {errors:xml.querySelectorAll('parsererror').length,symbols:[...xml.querySelectorAll('symbol')].map(s=>({id:s.id,children:s.childElementCount}))};});
   expect(result.errors).toBe(0);expect(result.symbols.length).toBe(31);expect(result.symbols.every(s=>s.children>0)).toBe(true);
+});
+
+test('goals can be changed to reachable starter Kanji work without changing completed goals',async({page},info)=>{
+  await prepare(page);await open(page,'/progress/');
+  await page.evaluate(()=>{
+    const saved=ModeAtlasKanjiState.normalize({entry:{mode:'beginner',at:1}});for(const char of ModeAtlasKanjiState.introductory.slice(0,3))saved.introductions[char]=1;ModeAtlasKanjiState.save(saved);
+    ModeAtlasProgress.persistState({...ModeAtlasProgress.readState(),goalPlans:{}});ModeAtlasProgress.routine();dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));
+  });
+  const change=page.getByRole('button',{name:/^Change goal:/}).first();await expect(change).toBeVisible();await change.click();
+  const dialog=page.getByRole('dialog',{name:'Choose a goal'});await expect(dialog).toBeVisible();await expect(dialog).not.toContainText('Complete a Kanji set');
+  await dialog.getByRole('button',{name:'Answer 5 Kanji questions correctly +20 XP',exact:true}).click();await expect(dialog).toBeHidden();
+  await expect(page.locator('[data-goal="kanji-recall-5"]')).toBeVisible();await page.screenshot({path:info.outputPath('reachable-goals.png')});
+  expect(await page.evaluate(()=>ModeAtlasProgress.routine().goals.filter(g=>g.period==='daily'&&g.branch==='kanji').every(g=>g.target<=5))).toBe(true);
 });

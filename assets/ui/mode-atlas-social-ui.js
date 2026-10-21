@@ -67,7 +67,12 @@
       const result=await root.ModeAtlasSocial.call('state',tab==='friends'?{listKind:kind}:{});if(!alive(ticket))return;state=result;
       if(result.restricted){screen();empty('Friends access is restricted','Contact support@mode-atlas.com if you think this is a mistake. Your learning progress is still available.');return;}
       if(result.deleting){screen();empty('Removing your friends profile','Please try again shortly.');return;}
-      if(!result.active)editProfile();else home(result.list);
+      const params=new URLSearchParams(location.search),moderate=params.get('moderate'),section=params.get('moderation');
+      if(result.canModerate&&(moderate||section)){
+        const url=new URL(location.href);url.searchParams.delete('moderate');url.searchParams.delete('moderation');history.replaceState(null,'',url);
+        if(moderate&&/^[A-Za-z0-9_-]{1,128}$/.test(moderate))void staffProfile(moderate);
+        else void moderationHub(['reports','warnings','restricted','moderators'].includes(section)?section:'reports');
+      }else if(!result.active)editProfile();else home(result.list);
     }catch(error){if(alive(ticket)){screen();empty('Friends is unavailable',root.ModeAtlasSocial.message(error)).append(button('Try again',load));}}
   }
   function home(firstPage){

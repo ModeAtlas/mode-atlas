@@ -99,16 +99,17 @@
 
   function editPersonalGoal(period){
     const current=root.ModeAtlasProgress.routine().goals.find(goal=>goal.personal&&goal.period===period);
+    const choices=root.ModeAtlasProgress.personalGoalChoices(period);
     const content=el('form','ma-personal-goal-editor'),type=el('select','ma-input'),target=el('select','ma-input'),repeat=el('input'),explanation=el('p','ma-personal-goal-help'),status=el('p','ma-status');
     type.id='maPersonalGoalType';target.id='maPersonalGoalTarget';repeat.id='maPersonalGoalRepeat';repeat.type='checkbox';repeat.checked=!!current?.repeat;status.setAttribute('role','status');
-    for(const item of rules.personalGoals){const option=el('option','',item.name);option.value=item.id;type.append(option);}
-    type.value=current?.template||'learn-kana';
+    for(const item of choices){const option=el('option','',item.name);option.value=item.id;type.append(option);}
+    type.value=choices.some(item=>item.id===current?.template)?current.template:choices[0].id;
     const field=(label,input)=>{const row=el('label','ma-personal-goal-field');row.htmlFor=input.id;input.setAttribute('aria-label',label);row.append(el('span','',label),input);return row;};
     const intro=el('p','ma-personal-goal-intro',`Make one ${period==='daily'?'daily':'weekly'} goal your own. Choose what to work on and a target that suits you.`);
     function update(){
-      const item=rules.personalGoals.find(goal=>goal.id===type.value);target.replaceChildren();
+      const item=choices.find(goal=>goal.id===type.value);target.replaceChildren();
       for(const value of item[period]){const option=el('option','',String(value)+(item.percent?'%':''));option.value=String(value);target.append(option);}
-      if(current?.template===item.id)target.value=String(current.target);
+      if(current?.template===item.id&&item[period].includes(current.target))target.value=String(current.target);
       explanation.textContent=item.help;
     }
     update();type.addEventListener('change',update);
@@ -120,6 +121,14 @@
     const action=current&&root.ModeAtlasStudyPlan.goalAction(current);if(action){const link=el('a','ma-personal-goal-study',action.label+' →');link.href=action.href;content.append(link);}
     content.addEventListener('submit',event=>{event.preventDefault();try{root.ModeAtlasProgress.setPersonalGoal(period,{id:type.value,target:Number(target.value),repeat:repeat.checked});root.ModeAtlasDialog.close();refresh();}catch(error){status.textContent=error.message;}});
     root.ModeAtlasDialog.feature({title:period==='daily'?'Your daily goal':'Your weekly goal',kicker:'Personal goal',contentNode:content});
+  }
+  function changeGoal(goal){
+    const content=el('div','ma-goal-choices'),status=el('p','ma-status');status.setAttribute('role','status');
+    for(const next of root.ModeAtlasProgress.goalChoices(goal.period,goal.slot)){
+      const choice=button('','ma-goal-choice');choice.append(el('span','',next.label),el('small','',`+${next.xp} XP`));
+      choice.addEventListener('click',()=>{try{root.ModeAtlasProgress.replaceGoal(goal.period,goal.slot,next.id);root.ModeAtlasDialog.close();refresh();}catch(error){status.textContent=error.message;}});content.append(choice);
+    }
+    content.append(status);root.ModeAtlasDialog.feature({title:'Choose a goal',kicker:goal.period==='daily'?'Today':'This week',contentNode:content});
   }
 
   function renderGoals(host,{compact=false}={}){
@@ -146,7 +155,10 @@
         const reward=el('span','ma-goal-reward',goal.personal&&goal.claimed?'XP earned':`+${goal.xp} XP`);
         if(goal.personal)copy.append(el('small','ma-routine-goal__action',`Your goal${goal.repeat?' · Repeats':''} · Edit →`));
         else if(action)copy.append(el('small','ma-routine-goal__action',action.label+' →'));
-        card.append(mark,copy,reward);groups.get(goal.period).append(card);
+        card.append(mark,copy,reward);
+        if(!goal.personal&&!complete){
+          const row=el('div','ma-goal-editable'),change=button('↻','ma-goal-change');change.setAttribute('aria-label','Change goal: '+goal.label);change.title='Change goal';change.addEventListener('click',()=>changeGoal(goal));row.append(card,change);groups.get(goal.period).append(row);
+        }else groups.get(goal.period).append(card);
       }
     }
     if(!compact)for(const [period,group]of groups){

@@ -4,7 +4,7 @@
   'use strict';
   if(root.ModeAtlasDiagnostics)return;
   const key='modeAtlasDiagnostics',limit=20,lifetime=86400000;
-  const kinds=new Set(['script','promise','resource','cloud-sync','friends','feedback','sharing']);
+  const kinds=new Set(['script','promise','resource','cloud-sync','friends','feedback','sharing','study-rewards']);
   const names=new Set(['Error','TypeError','ReferenceError','RangeError','SyntaxError','AbortError','TimeoutError','QuotaExceededError','SecurityError']);
   const codes=new Set(['permission-denied','unavailable','resource-exhausted','deadline-exceeded','failed-precondition','unauthenticated','offline','auth/network-request-failed','auth/user-token-expired']);
   const pages=new Set(['atlas','learn','progress','friends','kana','reading','writing','results','wordbank','privacy','terms','achievements']);
@@ -38,7 +38,18 @@
   }
   function snapshot(){const count=entries.length;entries=entries.filter(value=>Date.now()-value.at<lifetime);if(entries.length!==count)persist();return entries.map(value=>({...value}));}
   function report(){return snapshot().slice(-6).map(value=>`${new Date(value.at).toISOString()} ${value.screen} ${value.kind} ${value.name}${value.code?' '+value.code:''}${value.file?' '+value.file+':'+value.line:''} ×${value.count}`).join('\n').slice(0,1500)||'No recent technical errors recorded.';}
-  function clear(){entries=[];try{sessionStorage.removeItem(key);}catch{}}
+  // Timing samples stay in memory: no per-answer diagnostic storage writes,
+  // identifiers, answers or remote telemetry. Unsupported iOS observers are OK.
+  const timings=new Map();
+  function duration(kind,ms){
+    if(!['local-save','long-task'].includes(kind)||!Number.isFinite(ms)||ms<0)return;
+    const samples=timings.get(kind)||[];samples.push(Math.round(ms*10)/10);if(samples.length>60)samples.shift();timings.set(kind,samples);
+  }
+  function performanceSnapshot(){return Object.fromEntries([...timings].map(([kind,samples])=>{const sorted=[...samples].sort((a,b)=>a-b);return [kind,{samples:sorted.length,medianMs:sorted[Math.floor(sorted.length/2)]||0,p95Ms:sorted[Math.min(sorted.length-1,Math.floor(sorted.length*.95))]||0,maxMs:sorted.at(-1)||0}];}));}
+  if(root.PerformanceObserver?.supportedEntryTypes?.includes('longtask')){
+    const observer=new root.PerformanceObserver(list=>{for(const entry of list.getEntries())duration('long-task',entry.duration);});observer.observe({type:'longtask',buffered:false});
+  }
+  function clear(){entries=[];timings.clear();try{sessionStorage.removeItem(key);}catch{}}
   let notified=false;
   function notify(){
     if(notified)return;notified=true;
@@ -51,5 +62,5 @@
   },true);
   root.addEventListener('unhandledrejection',event=>{if(event.reason?.name==='AbortError')return;record('promise',event.reason);notify();});
   for(const event of ['modeAtlasAccountWillChange','modeAtlasAccountSignedOut','modeAtlasDataReset'])root.addEventListener(event,clear);
-  root.ModeAtlasDiagnostics=Object.freeze({record,snapshot,report,screen,screenLabel:()=>labels[screen()],clear});
+  root.ModeAtlasDiagnostics=Object.freeze({record,snapshot,report,duration,performanceSnapshot,screen,screenLabel:()=>labels[screen()],clear});
 })(window);

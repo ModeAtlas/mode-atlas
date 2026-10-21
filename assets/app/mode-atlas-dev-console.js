@@ -393,13 +393,6 @@
       toast('Developer tools are only available locally or to the developer account.', 'err');
       return null;
     }
-    const data = {
-      version: (window.ModeAtlasEnv && window.ModeAtlasEnv.appVersion) || window.ModeAtlasVersion || 'dev-local',
-      page: pageName(),
-      localDev: isLocalDevHost(),
-      signedInAs: currentUserEmail() || 'not signed in',
-      status: 'Dev console ready. Choose a diagnostic panel.'
-    };
     let backdrop = $('#maDevMenu');
     if (!backdrop) {
       backdrop = document.createElement('div');
@@ -408,45 +401,60 @@
       document.body.appendChild(backdrop);
     }
     const modal = devEl('div', 'ma-dev-modal');
+    modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','maDevTitle');
     const head = devEl('div', 'ma-dev-head');
-    head.append(devEl('h2', '', 'Mode Atlas Dev Diagnostics'), devButton('Close', 'maDevClose'));
-
-    const actions = devEl('div', 'ma-dev-actions');
-    actions.append(
-      devButton('Overview', 'maDevOverview', 'diagnostic'),
-      devButton('Data flow', 'maDevDataFlow', 'diagnostic'),
-      devButton('Storage keys', 'maDevStorageKeys', 'diagnostic'),
-      devButton('Service worker', 'maDevServiceWorker', 'diagnostic'),
-      devButton('Progress / XP', 'maDevProgress', 'diagnostic'),
-      devButton('Save files', 'maDevSaveFiles', 'diagnostic'),
-      devButton('Shop / Coins', 'maDevShop', 'diagnostic'),
-      devButton('Copy diagnostics', 'maDevCopy', 'action'),
-      devButton('Repair save data', 'maDevRepair', 'action'),
-      devButton('Force sync', 'maDevSync', 'action'),
-      devButton('Request UI refresh', 'maDevUiRefresh', 'action'),
-      devButton('Safe mode reload', 'maDevSafe', 'action'),
-      devButton('Test sound', 'maDevTestSound', 'action'),
-      devButton('Trigger first visit', 'maDevFirstVisit', 'action'),
-      devButton('Trigger daily return', 'maDevDailyReturn', 'action'),
-      devButton('Reset visit flags', 'maDevResetVisit', 'action'),
-      devButton('Refresh app assets', 'maDevRefreshAssets', 'action')
-    );
-
-    if(window.ModeAtlasEnv?.isNativeApp && window.AtlasPlatform?.getCapabilities?.().notifications){
-      actions.append(devButton('Test notification', 'maDevTestNotification', 'action'));
-    }
-
+    const heading=devEl('div'),title=devEl('h2','','Developer console');title.id='maDevTitle';
+    heading.append(devEl('small','ma-dev-eyebrow','MODE ATLAS · '+(window.ModeAtlasVersion||'LOCAL')),title,devEl('p','ma-dev-subtitle',currentUserEmail()||'Local development'));
+    const headActions=devEl('div','ma-dev-head-actions');headActions.append(devButton('Copy diagnostics','maDevCopy','diagnostic'),devButton('Close','maDevClose'));head.append(heading,headActions);
+    const navigation=devEl('nav','ma-dev-tabs');navigation.setAttribute('aria-label','Developer sections');
     const body = devEl('div');
-    body.dataset.maDevBody = '';
-    body.append(renderKeyValueTable(data));
-
-    modal.append(head, actions, body);
+    body.dataset.maDevBody = '';body.className='ma-dev-body';body.id='maDevBody';
+    const groups={
+      overview:[['Force sync','maDevSync'],['Retry study rewards','maDevRetryRewards'],['Refresh overview','maDevOverview']],
+      testing:[['Progress / XP','maDevProgress'],['Shop / Coins','maDevShop'],['Test sound','maDevTestSound'],['Trigger first visit','maDevFirstVisit'],['Trigger daily return','maDevDailyReturn'],['Reset visit flags','maDevResetVisit']],
+      storage:[['Save files','maDevSaveFiles'],['Data flow','maDevDataFlow'],['Storage keys','maDevStorageKeys'],['Repair save data','maDevRepair']],
+      runtime:[['Service worker','maDevServiceWorker'],['Request UI refresh','maDevUiRefresh'],['Safe mode reload','maDevSafe'],['Refresh app assets','maDevRefreshAssets'],['Clear diagnostics','maDevClearDiagnostics']]
+    };
+    if(window.ModeAtlasEnv?.isNativeApp&&window.AtlasPlatform?.getCapabilities?.().notifications)groups.testing.push(['Test notification','maDevTestNotification']);
+    function overview(){
+      const panel=devEl('section','ma-dev-overview'),status=window.KanaCloudSync?.getSyncStatus?.()||{},cards=devEl('div','ma-dev-metrics');
+      for(const [label,value]of [['Connection',navigator.onLine?'Online':'Offline'],['Cloud',status.text||'Guest'],['Queued reward sessions',window.ModeAtlasEarnings?.pending?.()||0],['Local storage',Math.round(storageBytes()*2/1024)+' KiB']]){const card=devEl('div');card.append(devEl('small','',label),devEl('strong','',value));cards.append(card);}
+      panel.append(cards,devEl('p','ma-dev-subtitle','Last confirmed sync: '+fmtDate(status.lastSync||storeGet('modeAtlasLastCloudSyncAt','0'))));
+      const timing=window.ModeAtlasDiagnostics?.performanceSnapshot?.()||{};
+      panel.append(renderJsonPanel('Performance · recent samples',timing),renderJsonPanel('Recent technical events',window.ModeAtlasDiagnostics?.snapshot?.()||[]));
+      return panel;
+    }
+    function section(id){
+      for(const control of navigation.children)control.setAttribute('aria-current',String(control.dataset.maDevSection===id));
+      const actions=devEl('div','ma-dev-actions');for(const [label,key]of groups[id]||[])actions.append(devButton(label,key,'diagnostic'));
+      body.replaceChildren(actions);
+      if(id==='overview')body.append(overview());
+      if(id==='testing')body.append(renderProgressPanel());
+      if(id==='storage')body.append(renderSaveFilesPanel(backdrop));
+      if(id==='runtime')body.append(renderJsonPanel('Runtime',{version:window.ModeAtlasVersion,page:pageName(),native:!!window.ModeAtlasEnv?.isNativeApp,online:navigator.onLine}));
+      if(id==='accounts')body.append(window.ModeAtlasDevAccounts.render());
+      if(id==='moderation'){
+        body.append(devEl('h3','','Community moderation'));
+        const links=devEl('div','ma-dev-tool-grid');
+        for(const [key,label,description]of [['reports','Reports','Review reported profiles'],['warnings','Warnings','Review previous warnings'],['restricted','Restrictions','Review restricted profiles'],['moderators','Moderators','Manage the moderation team']]){const link=devEl('a','ma-dev-tool');link.href='/friends/?moderation='+key;link.append(devEl('strong','',label),devEl('span','',description));links.append(link);}body.append(links);
+      }
+    }
+    for(const [id,label]of [['overview','Overview'],['testing','Testing'],['accounts','Accounts'],['moderation','Moderation'],['storage','Storage'],['runtime','Runtime']]){const control=devButton(label,'maDevSection','diagnostic');control.dataset.maDevSection=id;control.setAttribute('aria-controls','maDevBody');navigation.append(control);}
+    modal.append(head,navigation,body);
     backdrop.replaceChildren(modal);
     backdrop.classList.add('open');
+    section('overview');headActions.querySelector('[data-ma-dev-close]').focus();
+    backdrop.onkeydown=event=>{
+      if(event.key==='Escape'){event.preventDefault();backdrop.classList.remove('open');$('#maHiddenDevTrigger')?.focus();}
+      if(event.key==='Tab'){const focusable=[...modal.querySelectorAll('button,a,input,select,textarea')].filter(node=>!node.disabled&&node.getClientRects().length),first=focusable[0],last=focusable.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}
+    };
     backdrop.onclick = event => {
       if (event.target === backdrop || event.target.closest('[data-ma-dev-close]')) backdrop.classList.remove('open');
       if (!canUseDevTools()) { backdrop.classList.remove('open'); return; }
-      if (event.target.closest('[data-ma-dev-overview]')) replaceDevBody(backdrop, [renderKeyValueTable(safeDevData())]);
+      const tab=event.target.closest('[data-ma-dev-section]');if(tab){section(tab.dataset.maDevSection);return;}
+      if (event.target.closest('[data-ma-dev-overview]')) section('overview');
+      if(event.target.closest('[data-ma-dev-retry-rewards]'))void window.ModeAtlasEarnings?.flush?.().then(()=>section('overview'));
+      if(event.target.closest('[data-ma-dev-clear-diagnostics]')){window.ModeAtlasDiagnostics?.clear();section('overview');}
       if (event.target.closest('[data-ma-dev-data-flow]')) replaceDevBody(backdrop, [renderKeyValueTable(safeDataFlow())]);
       if (event.target.closest('[data-ma-dev-storage-keys]')) replaceDevBody(backdrop, [renderJsonPanel('Storage keys', allStorageKeys())]);
       if (event.target.closest('[data-ma-dev-service-worker]')) {
@@ -458,7 +466,7 @@
       if (event.target.closest('[data-ma-dev-save-files]')) replaceDevBody(backdrop, [renderSaveFilesPanel(backdrop)]);
       if (event.target.closest('[data-ma-dev-xp-add]')) adjustDevXp(backdrop, 1);
       if (event.target.closest('[data-ma-dev-xp-remove]')) adjustDevXp(backdrop, -1);
-      if (event.target.closest('[data-ma-dev-copy]')) navigator.clipboard?.writeText(JSON.stringify({ diagnostics: safeDevData(), dataFlow: safeDataFlow(), recentErrors: window.ModeAtlasDiagnostics?.snapshot() || [] }, null, 2)).then(() => toast('Diagnostics copied.'));
+      if (event.target.closest('[data-ma-dev-copy]')) navigator.clipboard?.writeText(JSON.stringify({ diagnostics: safeDevData(), dataFlow: safeDataFlow(), performance:window.ModeAtlasDiagnostics?.performanceSnapshot?.()||{},recentErrors: window.ModeAtlasDiagnostics?.snapshot() || [] }, null, 2)).then(() => toast('Diagnostics copied.')).catch(()=>toast('Clipboard unavailable.','warning'));
       if (event.target.closest('[data-ma-dev-repair]')) {
         const result = window.ModeAtlas?.repairSaveData?.() || { summary: 'repair unavailable' };
         toast('Repair complete · ' + result.summary);
@@ -515,7 +523,7 @@
     const button = $('#maHiddenDevTrigger');
     if (button) button.remove();
     const menu = $('#maDevMenu');
-    if (menu) menu.classList.remove('open');
+    if (menu){menu.classList.remove('open');menu.replaceChildren();}
   }
 
   function syncHiddenDevButton(){
@@ -552,5 +560,7 @@
   else syncHiddenDevButton();
 
   window.addEventListener('kanaCloudSyncStatusChanged', syncHiddenDevButton);
+  window.addEventListener('modeAtlasAccountWillChange',removeHiddenDevButton);
+  window.addEventListener('modeAtlasAccountSignedOut',removeHiddenDevButton);
   window.addEventListener('storage', syncHiddenDevButton);
 })();
