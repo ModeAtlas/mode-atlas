@@ -1,5 +1,4 @@
 const { test, expect } = require('@playwright/test');
-test.beforeEach(async({page})=>require('./helpers/returning-tours')(page));
 
 const READING_SETTINGS = {
   focusWeak: false,
@@ -35,6 +34,7 @@ async function seedAssessment(page){
 async function seedStableState(page) {
   await page.addInitScript((readingSettings) => {
     localStorage.clear();
+    localStorage.setItem('modeAtlasBranchToursSeen',JSON.stringify({kana:true,kanji:true,words:true}));
     localStorage.setItem('modeAtlasKanaLearning', JSON.stringify({version:1,startedAt:1,startKind:'beginner'}));
     localStorage.setItem('modeAtlasStarterSeen', 'true');
     localStorage.setItem('modeAtlasOnboardingComplete', 'true');
