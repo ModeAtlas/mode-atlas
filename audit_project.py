@@ -389,9 +389,9 @@ def main() -> int:
     }
     for rel, target in redirect_targets.items():
         redirect_html = text(ROOT / rel)
-        if f'url={target}' not in redirect_html or f"new URL('{target}'" not in redirect_html:
+        if f'url={target}' not in redirect_html or f'href="https://mode-atlas.app{target}"' not in redirect_html:
             fail(errors, f'legacy redirect target drifted for {rel}: expected {target}')
-        if "key !== 'build' && key !== 'v' && key !== 'reload'" not in redirect_html:
+        if 'mode-atlas-redirect' not in redirect_html or "['build','v','reload']" not in text(ROOT / 'assets/platform/mode-atlas-redirect.js'):
             fail(errors, f'legacy redirect no longer strips update transport parameters: {rel}')
 
     frontend_component_source = text(ROOT / 'frontend_components.py')

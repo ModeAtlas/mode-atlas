@@ -1,5 +1,5 @@
 'use strict';
-const {readSave}=require('./account-data.cjs');
+const {readSave,skipInvalidSave}=require('./account-data.cjs');
 const earnings=require('./study-earnings.cjs');
 // Coins, inventory, receipts and access are committed in one server transaction.
 const {createHash,randomUUID}=require('node:crypto');
@@ -139,7 +139,7 @@ function createCommerce({db,auth,now=Date.now}){
     if(!start)return;
     try{
       const page=await auth.listUsers(50,start.pageToken||undefined);
-      for(let offset=0;offset<page.users.length;offset+=5)await Promise.all(page.users.slice(offset,offset+5).map(user=>awardLevels(user.uid,user)));
+      for(let offset=0;offset<page.users.length;offset+=5)await Promise.all(page.users.slice(offset,offset+5).map(user=>skipInvalidSave(()=>awardLevels(user.uid,user),user.uid)));
       await db.runTransaction(async tx=>{
         const state=(await tx.get(ref)).data();if(state?.token!==token)return;
         tx.set(ref,{token,pageToken:page.pageToken||null,complete:!page.pageToken,leaseUntil:0,updatedAt:now()});

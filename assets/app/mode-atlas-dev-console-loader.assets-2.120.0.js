@@ -10,6 +10,7 @@
   const consoleScriptUrl = new URL(`mode-atlas-dev-console${suffix}.js`, loaderUrl).href;
   const backupScriptUrl = new URL(`mode-atlas-dev-backups${suffix}.js`, loaderUrl).href;
   const accountsScriptUrl = new URL(`mode-atlas-dev-accounts${suffix}.js`, loaderUrl).href;
+  const monitoringScriptUrl = new URL(`mode-atlas-dev-monitoring${suffix}.js`, loaderUrl).href;
   const consoleStyleUrl = new URL(`../css/mode-atlas-dev-console${suffix}.css`, loaderUrl).href;
   let loadPromise = null;
 
@@ -63,6 +64,7 @@
       try {
         if (!root.ModeAtlasDevBackups) await loadScript(backupScriptUrl, 'maDevBackupScript');
         if (!root.ModeAtlasDevAccounts) await loadScript(accountsScriptUrl, 'maDevAccountsScript');
+        if (!root.ModeAtlasDevMonitoring) await loadScript(monitoringScriptUrl, 'maDevMonitoringScript');
         if (!isEligible()) return false;
         if (!root.ModeAtlasDevConsole) await loadScript(consoleScriptUrl, 'maDevConsoleScript');
         return isEligible() && !!root.ModeAtlasDevConsole;

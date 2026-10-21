@@ -176,17 +176,17 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
       await db.runTransaction(async tx=>{
         const [existing,self,receipt,barrier,current]=await tx.getAll(prize,account(uid),history,db.doc('accountDeletions/'+uid),entry.ref);
         if(barrier.exists||!self.exists||!current.exists||receipt.data()?.results?.[week])return;
-        const held=eligiblePrize&&current.data()?.integrity?.reviewRequired===true;
-        const awardPrize=eligiblePrize&&!held&&active(self.data())&&!existing.exists;
+        let held=eligiblePrize&&current.data()?.integrity?.reviewRequired===true;
+        let awardPrize=eligiblePrize&&!held&&active(self.data())&&!existing.exists,saveInvalid=false,value;
         const save=awardPrize?await tx.get(saveRef):null;
-        if(save)await readSave(tx,save);
+        if(save)try{value=await readSave(tx,save);}catch(error){if(error.code!=='invalid-account-save')throw error;held=true;awardPrize=false;saveInvalid=true;}
         const coinAward=awardPrize&&policy.coinPrizes[place-1]?await commerce.prepareWeeklyPrize(tx,uid,week,policy.coinPrizes[place-1]):null;
         const xp=existing.data()?.xp||(awardPrize?policy.prizes[place-1]:0),coins=coinAward?.amount||existing.data()?.coins||0,result={week,rank:place,xp,coins,score,at:now(),...(held?{rewardStatus:'review'}:{})};
-        if(held)tx.set(db.doc('weeklyRewardReviews/'+week+'-'+uid),{uid,week,rank:place,score,reason:'timing-pattern',at:now()});
+        if(held)tx.set(db.doc('weeklyRewardReviews/'+week+'-'+uid),{uid,week,rank:place,score,reason:saveInvalid?'invalid-save':'timing-pattern',at:now()});
         const previous=receipt.data()||{},results={...previous.results,[week]:result},awards={...previous.weeks};
         if(awardPrize){
           coinAward?.commit();
-          const value=await readSave(tx,save),state=progress.normalizeState(value.sections?.progress?.data?.state||{legacySeeded:true});
+          const state=progress.normalizeState(value.sections?.progress?.data?.state||{legacySeeded:true});
           state.claims[`v5:weekly:${week}:prize`]=xp;state.updatedAt=now();
           awards[week]=result;
           tx.set(prize,{...result,uid,expiresAt:new Date(period.endAt+90*86400000)});

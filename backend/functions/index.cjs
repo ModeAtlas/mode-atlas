@@ -9,9 +9,11 @@ const {onDocumentWritten}=require('firebase-functions/v2/firestore');
 const functionsV1=require('firebase-functions/v1');
 const config=require('./shared/mode-atlas-social-config.js');
 const {createService,accountActions}=require('./service.cjs');
+const {createUsage}=require('./usage.cjs');
 initializeApp();
 const service=createService({db:getFirestore(),auth:getAuth(),messaging:getMessaging()});
 const options={region:config.region,maxInstances:2,memory:'256MiB',timeoutSeconds:60};
+exports.modeAtlasUsage=onCall({...options,concurrency:10,cors:true,enforceAppCheck:true},request=>createUsage({db:getFirestore()}).call(request));
 exports.modeAtlasSocial=onCall({...options,cors:true,enforceAppCheck:process.env.MODE_ATLAS_ENFORCE_APP_CHECK==='true'},request=>{
   if(['earnStudy','weeklyStart','weeklySubmit','shopPurchase'].includes(request.data?.action))console.info('client-integrity',{action:request.data.action,attested:!!request.app,authenticated:!!request.auth});
   if(!config.enabled && process.env.FUNCTIONS_EMULATOR!=='true' && request.data?.action!=='leave' && !accountActions.has(request.data?.action))throw new HttpsError('unavailable','Friends is not available yet.');

@@ -1,7 +1,7 @@
 /* SDK transport only. Firebase app/session ownership stays in cloud-sync.js. */
 (function(root){
   'use strict';
-  const pending=new Map(),modules=new Set(['app','auth','firestore','functions']);
+  const pending=new Map(),modules=new Set(['app','auth','firestore','functions','app-check']);
   root.ModeAtlasFirebase=Object.freeze({load(name){
     if(!modules.has(name))return Promise.reject(new Error('Unknown Firebase module.'));
     if(!pending.has(name)){

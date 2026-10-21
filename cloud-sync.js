@@ -996,8 +996,9 @@ async function setupFirebase() {
       provider.setCustomParameters({ prompt: 'select_account' });
     }
 
-    if (!app) {
-      app = getApps().length ? getApp() : initializeApp(CONFIG);
+    if (!app) app = getApps().length ? getApp() : initializeApp(CONFIG);
+    await window.ModeAtlasAppCheck?.initialize(app);
+    if (!auth) {
       // The native WebView navigates between bundled documents. Use its local
       // storage directly for the one JS Firebase session instead of getAuth's
       // browser dependency chain (which tries IndexedDB first on iOS).
@@ -1335,6 +1336,23 @@ async function performProviderLink(providerId) {
 function deleteAccount() {
   return runAccountAction(performAccountDeletion);
 }
+async function confirmCurrentSignIn() {
+  await authReady;
+  const user=currentUser;if(!user||!auth)throw new Error('Sign in again to continue.');
+  const hasApple=user.providerData?.some(item=>item.providerId==='apple.com');
+  const hasGoogle=user.providerData?.some(item=>item.providerId==='google.com');
+  const providerId=hasApple&&(window.ModeAtlasEnv?.isNativeApp||!hasGoogle)?'apple.com':'google.com';
+  let appleAuthorizationCode='';
+  if(window.ModeAtlasEnv?.isNativeApp){
+    const result=await window.AtlasPlatform?.authenticate?.(providerId);
+    await reauthenticateWithCredential(user,credentialFromNativeResult(providerId,result));
+    if(providerId==='apple.com')appleAuthorizationCode=result?.credential?.authorizationCode||'';
+  }else await reauthenticateWithPopup(user,providerId==='apple.com'?new OAuthProvider('apple.com'):provider);
+  if(auth.currentUser?.uid!==user.uid)throw new Error('The signed-in account changed. The action was cancelled.');
+  await user.getIdToken(true);
+  return {providerId,appleAuthorizationCode};
+}
+
 async function performAccountDeletion() {
   await authReady;
   const user = currentUser;
@@ -1349,21 +1367,8 @@ async function performAccountDeletion() {
     tone:'danger', confirmLabel:'Delete account', cancelLabel:'Keep account'
   });
   if (!approved) return false;
-  const hasApple = user.providerData?.some((item) => item.providerId === 'apple.com');
-  const providerId = hasApple && window.ModeAtlasEnv?.isNativeApp ? 'apple.com' : 'google.com';
   try {
-    // Firebase requires a recent login before deleting a user. Reconfirm the
-    // provider while the original UID is still signed in; never sign in as a
-    // different UID and never clear local data before cloud deletion succeeds.
-    let appleAuthorizationCode = '';
-    if (window.ModeAtlasEnv?.isNativeApp) {
-      const result = await window.AtlasPlatform?.authenticate?.(providerId);
-      await reauthenticateWithCredential(user, credentialFromNativeResult(providerId, result));
-      if (providerId === 'apple.com') appleAuthorizationCode = result?.credential?.authorizationCode || '';
-    } else {
-      await reauthenticateWithPopup(user, provider);
-    }
-    if (auth.currentUser?.uid !== user.uid) throw new Error('The signed-in account changed. Deletion was cancelled.');
+    const {providerId,appleAuthorizationCode}=await confirmCurrentSignIn();
     if (!window.ModeAtlasSocial?.deleteAccount) throw new Error('Account deletion is unavailable in this build.');
     setSessionCloudPause(true);
     clearTimeout(syncTimeout);
@@ -1613,10 +1618,10 @@ function getUser() {
   return currentUser;
 }
 
-async function getFirebaseApp() {
+async function getFirebaseApp({allowGuest=false}={}) {
   if(!await setupFirebase())throw new Error('Firebase is unavailable.');
   await authReady;
-  if(!app || !currentUser)throw new Error('Sign in to continue.');
+  if(!app || (!allowGuest&&!currentUser))throw new Error('Sign in to continue.');
   return app;
 }
 
@@ -1918,6 +1923,7 @@ window.KanaCloudSync = {
   getUser,
   isAuthResolved: () => authResolved,
   getFirebaseApp,
+  confirmCurrentSignIn,
   isConfigured: () => CONFIG_READY,
   getSyncStatus,
   retryConnection,

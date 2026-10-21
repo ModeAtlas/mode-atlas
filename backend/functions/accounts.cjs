@@ -1,6 +1,7 @@
 'use strict';
 const {HttpsError}=require('firebase-functions/v2/https');
 const {randomUUID}=require('node:crypto');
+const {requireSession}=require('./account-access.cjs');
 // Auth deletion commits the operation. The existing retrying Auth trigger owns
 // recovery after that point; private data and Friends are never removed first.
 function createAccounts({db,auth,social,now=Date.now}){
@@ -14,6 +15,7 @@ function createAccounts({db,auth,social,now=Date.now}){
     await ref.set({state:'cleaning',updatedAt:now()},{merge:true});
     await db.recursiveDelete(db.doc('users/'+uid));
     await social.erase(uid,true);
+    await db.doc('accountAccess/'+uid).delete();
     // Keep a short-lived access barrier beyond the lifetime of an issued token.
     await ref.set({state:'complete',updatedAt:now(),expiresAt:new Date(now()+7*86400000)},{merge:true});
     return {deleted:true,cleanupPending:false};
@@ -45,6 +47,7 @@ function createAccounts({db,auth,social,now=Date.now}){
     if(!user)return outcome(uid);
     const age=now()/1000-Number(request.auth.token?.auth_time);
     if(!Number.isFinite(age)||age< -60||age>300)throw new HttpsError('failed-precondition','Confirm your sign-in again before deleting your account.');
+    requireSession(user,request.auth.token,(await db.doc('accountAccess/'+uid).get()).data());
     if(user.disabled)throw new HttpsError('permission-denied','Contact support to delete this account.');
     const ref=receipts.doc(uid),id=randomUUID();
     await ref.set({state:'committing',id,updatedAt:now()});

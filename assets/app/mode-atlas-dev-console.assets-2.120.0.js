@@ -433,13 +433,14 @@
       if(id==='storage')body.append(renderSaveFilesPanel(backdrop));
       if(id==='runtime')body.append(renderJsonPanel('Runtime',{version:window.ModeAtlasVersion,page:pageName(),native:!!window.ModeAtlasEnv?.isNativeApp,online:navigator.onLine}));
       if(id==='accounts')body.append(window.ModeAtlasDevAccounts.render());
+      if(id==='security'||id==='usage')body.append(window.ModeAtlasDevMonitoring.render(id));
       if(id==='moderation'){
         body.append(devEl('h3','','Community moderation'));
         const links=devEl('div','ma-dev-tool-grid');
         for(const [key,label,description]of [['reports','Reports','Review reported profiles'],['warnings','Warnings','Review previous warnings'],['restricted','Restrictions','Review restricted profiles'],['moderators','Moderators','Manage the moderation team']]){const link=devEl('a','ma-dev-tool');link.href='/friends/?moderation='+key;link.append(devEl('strong','',label),devEl('span','',description));links.append(link);}body.append(links);
       }
     }
-    for(const [id,label]of [['overview','Overview'],['testing','Testing'],['accounts','Accounts'],['moderation','Moderation'],['storage','Storage'],['runtime','Runtime']]){const control=devButton(label,'maDevSection','diagnostic');control.dataset.maDevSection=id;control.setAttribute('aria-controls','maDevBody');navigation.append(control);}
+    for(const [id,label]of [['overview','Overview'],['testing','Testing'],['accounts','Accounts'],['security','Security'],['usage','Usage'],['moderation','Moderation'],['storage','Storage'],['runtime','Runtime']]){const control=devButton(label,'maDevSection','diagnostic');control.dataset.maDevSection=id;control.setAttribute('aria-controls','maDevBody');navigation.append(control);}
     modal.append(head,navigation,body);
     backdrop.replaceChildren(modal);
     backdrop.classList.add('open');

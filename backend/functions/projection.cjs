@@ -16,6 +16,7 @@ const createAchievements=require('./shared/mode-atlas-achievements.js');
 const createKanji=require('./shared/mode-atlas-kanji-state.js');
 const curriculum=require('./shared/mode-atlas-kanji-curriculum.js');
 const {gunzipSync}=require('node:zlib');
+const saveLimits=require('./shared/mode-atlas-save-limits.js');
 
 function accountInsights(save,owner,seeded,syncedAt){
   const sections=save.sections||{},data=name=>sections[name]?.data||{};
@@ -24,7 +25,7 @@ function accountInsights(save,owner,seeded,syncedAt){
     try{
       const evidence=kanjiState.evidence;
       if(evidence.encoding!=='gzip-base64-v1'||typeof evidence.data!=='string'||evidence.data.length>1500000)throw Error('Invalid Kanji evidence');
-      kanjiState={...kanjiState,sources:JSON.parse(gunzipSync(Buffer.from(evidence.data,'base64'),{maxOutputLength:16*1024*1024}).toString('utf8'))};
+      kanjiState={...kanjiState,sources:saveLimits.parse(gunzipSync(Buffer.from(evidence.data,'base64'),{maxOutputLength:saveLimits.MAX_BYTES}).toString('utf8'))};
     }catch{kanjiState={};kanjiAvailable=false;}
   }
   const direct={modeAtlasProgress:seeded,modeAtlasKanaLearning:data('kanaLearning').state||{},modeAtlasKanji:kanjiState,modeAtlasKanjiTests:data('kanjiTests').items||[],kanaWordBank:data('wordBank').items||[],

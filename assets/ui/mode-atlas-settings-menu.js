@@ -34,6 +34,7 @@
         ${heading('maDataTitle','Data & account','shield')}
         <div class="ma-settings-action-grid">
           ${action('Repair save','refresh','data-ma-repair-data')}
+          ${action('Share guest learning','shield','data-ma-usage-settings hidden')}
           ${action('Reset data','delete','data-ma-unified-reset','ma-settings-action--danger')}
         </div>
         ${action('Delete account & data','delete','id="settingsDeleteAccountBtn" hidden','ma-settings-action--danger')}

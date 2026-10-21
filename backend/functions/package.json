@@ -2,9 +2,15 @@
   "name": "mode-atlas-social-functions",
   "private": true,
   "main": "index.cjs",
-  "engines": {"node": "22"},
+  "engines": {
+    "node": "22"
+  },
   "dependencies": {
     "firebase-admin": "14.5.0",
     "firebase-functions": "7.4.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.6",
+    "uuid@<11.1.1": "11.1.1"
   }
 }

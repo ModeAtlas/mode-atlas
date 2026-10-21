@@ -32,6 +32,7 @@ let rules,serial=0;
 console.log(directService?'Validation: direct service + Auth/Firestore/rules (no function transport or triggers)':'Validation: callable transport + Auth/Firestore/rules + function triggers');
 before(async()=>{rules=await initializeTestEnvironment({projectId,firestore:{rules:fs.readFileSync('firestore.rules','utf8')}});});
 after(async()=>{await rules.cleanup();await deleteApp(app);});
+function verifiedContext(uid){return rules.authenticatedContext(uid,{email_verified:true,auth_time:Math.floor(Date.now()/1000)});}
 async function learner(label,correct=20){
   const uid=`${label.replace(/[^a-z0-9]/gi,'')}-${++serial}`,email=`${uid}@example.test`,password='emulator-password';
   await auth.createUser({uid,email,password,emailVerified:true});
@@ -61,7 +62,7 @@ async function friend(a,b){await a.call('sendRequest',{code:b.code});await b.cal
 async function until(check){for(let i=0;i<200;i++){if(await check())return;await new Promise(resolve=>setTimeout(resolve,100));}assert.fail('Expected emulator trigger did not finish');}
 
 test('owned save sections replace removed map fields and retain repeating personal goals',async()=>{
-  const client=rules.authenticatedContext('section-replace').firestore(),ref=doc(client,'users/section-replace/appData/kanaTrainer');
+  const client=verifiedContext('section-replace').firestore(),ref=doc(client,'users/section-replace/appData/kanaTrainer');
   const old=save(20);old.sections.progress.data.state.version=7;
   old.sections.progress.data.state.personalGoals={daily:{id:'kana-correct',target:20,repeat:true,start:'2026-10-20',at:1792454400000},weekly:{id:'kana-correct',target:100,repeat:false,start:'2026-10-19',at:1792454400000}};
   old.sections.reading.data.stats['い']={correct:3,wrong:0};
@@ -76,7 +77,7 @@ test('owned save sections replace removed map fields and retain repeating person
 });
 
 test('an older client cannot overwrite migrated progress; current saves and explicit current resets remain allowed',async()=>{
-  const mine=rules.authenticatedContext('curve-migration').firestore(),ref=doc(mine,'users/curve-migration/appData/kanaTrainer');
+  const mine=verifiedContext('curve-migration').firestore(),ref=doc(mine,'users/curve-migration/appData/kanaTrainer');
   await assertSucceeds(setDoc(ref,save(6175)));
   const migrated=save(6175);Object.assign(migrated.sections.progress.data.state,{version:4,curveCredit:20000,collections:{'hunny-tester':'exclusive'}});
   await assertSucceeds(setDoc(ref,migrated));
@@ -94,18 +95,19 @@ test('an older client cannot overwrite migrated progress; current saves and expl
 });
 
 test('partitioned account saves require atomic revisions and protect private chunks from other accounts',async()=>{
-  const client=rules.authenticatedContext('partition-owner').firestore(),stranger=rules.authenticatedContext('partition-other').firestore();
+  const client=verifiedContext('partition-owner').firestore(),stranger=verifiedContext('partition-other').firestore();
   const root=doc(client,'users/partition-owner/appData/kanaTrainer'),part=doc(client,'users/partition-owner/appData/kanaTrainer/parts/section-progress-0');
   const value={storageVersion:2,revision:1,generation:0,sections:{progress:{updatedAt:1,data:{},storage:{format:'json-parts-v1',parts:['section-progress-0'],schemaVersion:7}}}};
-  await assertSucceeds(setDoc(part,{text:JSON.stringify({state:{version:7}})}));await assertSucceeds(setDoc(root,value));
+  await assertFails(setDoc(part,{text:'orphan'}));
+  const batch=require('firebase/firestore').writeBatch(client);batch.set(part,{text:JSON.stringify({state:{version:7}})});batch.set(root,value);await assertSucceeds(batch.commit());
   await assertFails(getDoc(doc(stranger,part.path)));await assertFails(setDoc(doc(stranger,part.path),{text:'stolen'}));
   await assertFails(setDoc(root,save(1000)));await assertFails(setDoc(root,{...value,revision:1}));await assertSucceeds(setDoc(root,{...value,revision:2,generation:1}));
   await assertFails(require('firebase/firestore').deleteDoc(root));
 });
 
 test('rules preserve owner-only profile/app-data access and deny every direct social read/write',async()=>{
-  const mine=rules.authenticatedContext('rules-owner').firestore(),other=rules.authenticatedContext('rules-other').firestore(),anon=rules.unauthenticatedContext().firestore();
-  for(const path of ['users/rules-owner','users/rules-owner/appData/kanaTrainer','users/rules-owner/appData/otherSave']){
+  const mine=verifiedContext('rules-owner').firestore(),other=verifiedContext('rules-other').firestore(),anon=rules.unauthenticatedContext().firestore();
+  for(const path of ['users/rules-owner','users/rules-owner/appData/kanaTrainer']){
     await assertSucceeds(setDoc(doc(mine,path),save(5)));
     await assertSucceeds(getDoc(doc(mine,path)));
     for(const stranger of [other,anon]){
@@ -117,7 +119,7 @@ test('rules preserve owner-only profile/app-data access and deny every direct so
     await assertFails(getDoc(doc(mine,path)));
     await assertFails(setDoc(doc(mine,path),{}));
   }
-  for(const collection of ['avatarProfiles','commerceMigrations','socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','commerceAccounts','shopCatalogue','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices','studyEarnings','weeklyRewardReviews','socialProjectionQueue']){
+  for(const collection of ['avatarProfiles','commerceMigrations','socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','commerceAccounts','shopCatalogue','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices','studyEarnings','weeklyRewardReviews','socialProjectionQueue','accountAccess','securityAudit','usageReports','usageOptOuts','usageLimits']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));
   }
@@ -274,7 +276,7 @@ test('an in-flight profile update cannot recreate a deleted account’s social d
   let resume,started;
   const checked=new Promise(resolve=>{started=resolve;});
   const gated=createSocial({db,auth:{getUser:async()=>{started();await new Promise(resolve=>{resume=resolve;});return user;}}});
-  const pending=gated.call({auth:{uid:a.uid},data:{action:'updateProfile',expectedUid:a.uid,data:{displayName:'Stale Request',avatar:'kana',timeZone:'UTC'}}});
+  const pending=gated.call({auth:{uid:a.uid,token:{auth_time:Math.floor(Date.now()/1000)}},data:{action:'updateProfile',expectedUid:a.uid,data:{displayName:'Stale Request',avatar:'kana',timeZone:'UTC'}}});
   await checked;await auth.deleteUser(a.uid);await service.erase(a.uid,true);resume();
   await assert.rejects(pending,{code:'unauthenticated'});
   assert.equal((await db.doc(`socialAccounts/${a.uid}`).get()).exists,false);
@@ -305,7 +307,7 @@ test('official names require the actual verified admin record, not client token 
   const a=await learner('Ordinary Learner');
   for(const name of ['Owner','STAFF','Admіn','Admin 1','Mode Atlas Support'])await assert.rejects(a.call('updateProfile',{displayName:name,avatar:'kana',timeZone:'UTC'}),{code:'INVALID_ARGUMENT'});
   const payload={action:'updateProfile',expectedUid:a.uid,data:{displayName:'admin',avatar:'kana',timeZone:'UTC'}};
-  await assert.rejects(service.call({auth:{uid:a.uid,token:{email:'admin@mode-atlas.com',email_verified:true}},data:payload}),/reserved/);
+  await assert.rejects(service.call({auth:{uid:a.uid,token:{auth_time:Math.floor(Date.now()/1000),email:'admin@mode-atlas.com',email_verified:true}},data:payload}),/reserved/);
   await service.call({auth:{uid:'legacy-admin'},data:{...payload,expectedUid:'legacy-admin'}});
   await assert.rejects(service.call({auth:{uid:'legacy-admin'},data:{...payload,expectedUid:'legacy-admin',data:{...payload.data,displayName:'Owner'}}}),/reserved/);
 });
@@ -331,7 +333,7 @@ test('deletion commits Auth first, removes every private document and blocks sta
   await db.doc(`users/${a.uid}`).set({private:'profile'});
   await db.doc(`users/${a.uid}/appData/otherSave`).set({private:'other'});
   await db.doc(`users/${a.uid}/appData/kanaTrainer/private/nested`).set({private:'nested'});
-  const mine=rules.authenticatedContext(a.uid).firestore();
+  const mine=verifiedContext(a.uid).firestore();
   const result=await a.call('deleteAccount');assert.equal(result.deleted,true);
   if(!directService)await until(async()=>!(await db.doc(`socialAccounts/${a.uid}`).get()).exists);
   assert.equal((await db.doc(`users/${a.uid}`).get()).exists,false);
@@ -497,7 +499,7 @@ test('custom rewards need no Friends enrolment and never trust forged tokens or 
   await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(selected);
   assert.deepEqual((await a.call('rewards')).grants,[]);
   assert.equal((await a.call('state')).profile.banner,'plain');
-  const forged=await service.call({auth:{uid:a.uid,token:{email:'admin@mode-atlas.com',email_verified:true}},data:{action:'rewards',data:{},expectedUid:a.uid}});
+  const forged=await service.call({auth:{uid:a.uid,token:{auth_time:Math.floor(Date.now()/1000),email:'admin@mode-atlas.com',email_verified:true}},data:{action:'rewards',data:{},expectedUid:a.uid}});
   assert.equal(forged.allCustom,false);assert.deepEqual(forged.grants,[]);
   await assert.rejects(a.call('rewards',{uid:b.uid}),{code:'INVALID_ARGUMENT'});
   await assert.rejects(a.call('rewards',{},b.uid),{code:'UNAUTHENTICATED'});
@@ -565,7 +567,7 @@ test('coin purchases are atomic, retry-safe and reject forged prices, insufficie
   await Promise.all([freeze(),freeze()]);const wallet=await a.call('shop',{version:2,timeZone});
   assert.equal(wallet.balance,450);assert.equal(wallet.inventory['streak-freeze'],2);
   await assert.rejects(freeze(),{code:'FAILED_PRECONDITION'});
-  const mine=rules.authenticatedContext(a.uid).firestore();
+  const mine=verifiedContext(a.uid).firestore();
   await assertFails(setDoc(doc(mine,'commerceAccounts/'+a.uid+'/operations/forged'),{balanceAfter:999999}));
   await assertFails(setDoc(doc(mine,'shopCatalogue/current'),{offers:{sakura:{coinPrice:0}}}));
   await db.doc('accountDeletions/'+a.uid).set({state:'committing'});
@@ -593,7 +595,7 @@ for(const productId of ['midnight','skyline','evergreen'])test(`rotating ${produ
 test('developer coin credits and purchase reset use actual Auth role, keep earned/event rewards and audit retries',async()=>{
   const a=await learner('NotDeveloper'),timeZone='UTC',credit={requestId:crypto.randomUUID(),operation:'credit',amount:2000,timeZone};
   await assert.rejects(a.call('shopDeveloper',credit),{code:'PERMISSION_DENIED'});
-  await assert.rejects(service.call({auth:{uid:a.uid,token:{email:'admin@mode-atlas.com',email_verified:true}},data:{action:'shopDeveloper',data:credit,expectedUid:a.uid}}),{code:'permission-denied'});
+  await assert.rejects(service.call({auth:{uid:a.uid,token:{auth_time:Math.floor(Date.now()/1000),email:'admin@mode-atlas.com',email_verified:true}},data:{action:'shopDeveloper',data:credit,expectedUid:a.uid}}),{code:'permission-denied'});
   const uid='legacy-admin';await db.doc('socialLimits/'+uid).delete();
   const custom=await auth.createCustomToken(uid),login=await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:custom,returnSecureToken:true})}).then(r=>r.json());
   const call=async(action,data)=>{
@@ -806,6 +808,7 @@ test('Friends lists queue stale projections without loading every private save',
   snapshot.sections.reading.data={stats:{'あ':{correct:52,wrong:3},'お':{correct:86,wrong:14}},times:{'あ':1100,'お':1600},srs:{'あ':review,'お':review}};
   await db.doc(`users/${b.uid}/appData/kanaTrainer`).set(snapshot);
   await b.call('state');
+  if(directService)await service.refreshSummary(b.uid);
   await until(async()=>(await db.doc('socialAccounts/'+b.uid).get()).data().summary.readingMastered===0);
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.readingMastered':2,'summary.combinedMastered':1});
   const result=await a.call('list',{kind:'rankings',metric:'mastery'}),peer=result.rows.find(row=>row.uid===b.uid);
@@ -1144,7 +1147,7 @@ test('two currencies debit independently and reject mixed, stale and repeated pa
   let state=await a.call('shop',{version:3,timeZone});assert.equal(state.balance,1000);assert.equal(state.tokenBalance,9700);
   state=await a.call('shopPurchase',{...pay,requestId:crypto.randomUUID(),productId:'sakura',currency:'atlas-coins',price:catalogue.item('sakura').coinPrice});
   assert.equal(state.balance,250);assert.equal(state.tokenBalance,9700);
-  const mine=rules.authenticatedContext(a.uid).firestore();await assertFails(setDoc(doc(mine,'commerceAccounts/'+a.uid),{tokenBalance:999999}));
+  const mine=verifiedContext(a.uid).firestore();await assertFails(setDoc(doc(mine,'commerceAccounts/'+a.uid),{tokenBalance:999999}));
   await a.call('leave');assert.equal((await a.call('shop',{version:3,timeZone})).tokenBalance,9700);
 });
 
@@ -1214,7 +1217,7 @@ test('ordinary Friends reads use the public projection without loading private l
     const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
   }});
   const isolated=createSocial({db:tracked,auth});
-  const result=await isolated.call({auth:{uid:a.uid},data:{expectedUid:a.uid,action:'state',data:{listKind:'friends'}}});
+  const result=await isolated.call({auth:{uid:a.uid,token:{auth_time:Math.floor(Date.now()/1000)}},data:{expectedUid:a.uid,action:'state',data:{listKind:'friends'}}});
   assert.equal(result.active,true);assert.equal(result.list.rows.length,0);
   assert.equal(reads.some(path=>path===`users/${a.uid}/appData/kanaTrainer`),false);
 });
@@ -1226,7 +1229,7 @@ test('a 100-friend list fetches one display page rather than every private or pu
   batch.update(db.doc('socialAccounts/'+a.uid),{friends});await batch.commit();
   const reads=[];
   const tracked=new Proxy(db,{get(target,key){if(key==='getAll')return async(...refs)=>{reads.push(...refs.map(r=>r.path));return target.getAll(...refs);};const value=target[key];return typeof value==='function'?value.bind(target):value;}});
-  const bounded=createSocial({db:tracked,auth});const result=await bounded.call({auth:{uid:a.uid},data:{expectedUid:a.uid,action:'list',data:{kind:'friends'}}});
+  const bounded=createSocial({db:tracked,auth});const result=await bounded.call({auth:{uid:a.uid,token:{auth_time:Math.floor(Date.now()/1000)}},data:{expectedUid:a.uid,action:'list',data:{kind:'friends'}}});
   assert.equal(result.rows.length,20);assert.ok(result.nextCursor);assert.ok(reads.filter(name=>name.startsWith('socialAccounts/page-budget-')).length<=20);
   assert.equal(reads.filter(name=>name.startsWith('users/')).length,0);
 });
@@ -1244,7 +1247,7 @@ test('verified study receipts credit once and editable progress cannot forge the
 test('administrator directory is paginated, includes non-social users and never exposes private records',async()=>{
   const uid='directory-private',email='directory-private@example.test';await auth.createUser({uid,email,emailVerified:true,displayName:'Directory Learner'});
   await db.doc(`users/${uid}/appData/kanaTrainer`).set({storageVersion:2,revision:4,generation:0,sections:{wordBank:{data:{items:[{written:'secret-private-word'}]}}}});
-  const call=(actor,action,data={})=>service.call({auth:{uid:actor,token:{email:'admin@mode-atlas.com',email_verified:true}},data:{action,data,expectedUid:actor}});
+  const call=(actor,action,data={})=>service.call({auth:{uid:actor,token:{auth_time:Math.floor(Date.now()/1000),email:'admin@mode-atlas.com',email_verified:true}},data:{action,data,expectedUid:actor}});
   await assert.rejects(call(uid,'adminUsers'),{code:'permission-denied'});await assert.rejects(call(uid,'adminInspect',{uid}),{code:'permission-denied'});
   await db.doc('socialStaff/roles').set({moderators:{[uid]:{at:Date.now(),by:'legacy-admin'}}},{merge:true});
   await assert.rejects(call(uid,'adminUsers'),{code:'permission-denied'});
@@ -1256,4 +1259,69 @@ test('administrator directory is paginated, includes non-social users and never 
   const detail=await call('legacy-admin','adminInspect',{uid});assert.equal(detail.save.revision,4);assert.equal(detail.save.version,2);assert.equal(detail.save.sections[0].name,'wordBank');assert.equal(JSON.stringify(detail).includes('secret-private-word'),false);
   assert.equal(JSON.stringify(detail).includes('passwordHash'),false);
   await assert.rejects(call('legacy-admin','adminUsers',{query:email,cursor:page.nextCursor}),{code:'invalid-argument'});
+});
+
+test('rules reject unverified users, arbitrary save collections and revoked sessions immediately',async()=>{
+  const uid='security-access-rules',at=Math.floor(Date.now()/1000),path='users/'+uid+'/appData/kanaTrainer';
+  const old=rules.authenticatedContext(uid,{email_verified:true,auth_time:at}).firestore();
+  const unverified=rules.authenticatedContext(uid,{email_verified:false,auth_time:at}).firestore();
+  await assertSucceeds(setDoc(doc(old,path),save(1)));await assertFails(getDoc(doc(unverified,path)));
+  await assertFails(setDoc(doc(old,'users/'+uid+'/appData/arbitrary'),{}));
+  await assertFails(setDoc(doc(old,path+'/parts/section-reading-350'),{text:'{}'}));
+  await db.doc('accountAccess/'+uid).set({revokedBefore:at,disabled:false});
+  await assertFails(getDoc(doc(old,path)));await assertFails(setDoc(doc(old,path),save(2)));
+  const fresh=rules.authenticatedContext(uid,{email_verified:true,auth_time:at+1}).firestore();await assertSucceeds(getDoc(doc(fresh,path)));
+  await db.doc('accountAccess/'+uid).update({disabled:true});await assertFails(getDoc(doc(fresh,path)));
+});
+
+test('administrator access actions require real authority, recent login, reason and protect owner',async()=>{
+  const uid='security-access-target';await auth.createUser({uid,email:uid+'@example.test',emailVerified:true});
+  const call=(actor,action,data={},time=Math.floor(Date.now()/1000))=>service.call({auth:{uid:actor,token:{auth_time:time}},data:{action,data,expectedUid:actor}});
+  for(const action of ['adminSecurity','adminUsage','adminAccess'])await assert.rejects(call(uid,action,{uid,operation:'suspend',reason:'Testing access'}),{code:'permission-denied'});
+  await db.doc('socialLimits/legacy-admin').delete();
+  await assert.rejects(call('legacy-admin','adminAccess',{uid,operation:'suspend',reason:'Testing access'},Math.floor(Date.now()/1000)-600));
+  await assert.rejects(call('legacy-admin','adminAccess',{uid:'legacy-admin',operation:'suspend',reason:'Testing owner'}),{code:'permission-denied'});
+  await assert.rejects(call('legacy-admin','adminAccess',{uid,operation:'suspend',reason:'x'}),{code:'invalid-argument'});
+  assert.equal((await call('legacy-admin','adminAccess',{uid,operation:'suspend',reason:'Confirmed test account'})).complete,true);
+  assert.equal((await auth.getUser(uid)).disabled,true);assert.equal((await db.doc('accountAccess/'+uid).get()).data().disabled,true);
+  await assert.rejects(call(uid,'shop'),{code:'permission-denied'});
+  await call('legacy-admin','adminAccess',{uid,operation:'restore',reason:'Restore test account'});assert.equal((await auth.getUser(uid)).disabled,false);
+  const events=(await call('legacy-admin','adminSecurity')).audit.filter(row=>row.target===uid);assert.equal(events.length,2);assert.ok(events.every(row=>row.status==='complete'));
+});
+
+test('a large partition batch remains atomic under ownership and access rules',async()=>{
+  const uid='large-rules-batch',client=verifiedContext(uid).firestore(),path='users/'+uid+'/appData/kanaTrainer';
+  const parts=Array.from({length:40},(_,i)=>'section-reading-'+i),batch=require('firebase/firestore').writeBatch(client);
+  batch.set(doc(client,path),{storageVersion:2,revision:1,generation:0,sections:{reading:{data:{},storage:{format:'json-parts-v1',parts}}}});
+  for(const id of parts)batch.set(doc(client,path+'/parts/'+id),{text:'{}'});
+  await assertSucceeds(batch.commit());
+  await assertFails(setDoc(doc(client,path+'/parts/section-reading-0'),{text:'changed without a manifest revision'}));
+  await assertFails(require('firebase/firestore').deleteDoc(doc(client,path+'/parts/section-reading-0')));
+  await assertFails(setDoc(doc(client,path+'/parts/section-writing-0'),{text:'unreferenced'}));
+});
+
+test('malformed saves do not loop profile triggers or block inspection and weekly settlement',async()=>{
+  const a=await learner('InvalidSave'),other=await learner('ValidWinner'),third=await learner('ValidThird'),at=Date.parse('2026-10-21T12:00:00Z');
+  await db.doc('users/'+a.uid+'/appData/kanaTrainer').set({sections:{progress:{data:{},storage:{format:'bad',parts:['section-progress-0']}}}});
+  assert.equal(await service.refreshSummary(a.uid),false);
+  await db.doc('socialLimits/legacy-admin').delete();
+  const inspected=await service.call({auth:{uid:'legacy-admin',token:{auth_time:Math.floor(Date.now()/1000)}},data:{action:'adminInspect',expectedUid:'legacy-admin',data:{uid:a.uid}}});
+  assert.ok(inspected.save.problem);assert.equal(inspected.learning,null);
+  const {createWeekly}=require('../functions/weekly.cjs'),{createCommerce}=require('../functions/commerce.cjs'),policy=require('../functions/shared/mode-atlas-weekly-rules.js');
+  const period=policy.period(at-7*86400000),week=period.id;
+  const commerce=createCommerce({db,auth,now:()=>at}),weekly=createWeekly({db,commerce,now:()=>at});
+  await db.doc('weeklyCompetitions/'+week).set({startAt:period.startAt,endAt:period.endAt,settled:false,topScores:[500,400,300],resultCount:0,lastScore:null,lastRank:0});
+  for(const [uid,score]of [[a.uid,500],[other.uid,400],[third.uid,300]]){
+    await db.doc('socialAccounts/'+uid).update({weekly:{enabled:true}});
+    await db.doc('weeklyCompetitions/'+week+'/entries/'+uid).set({active:true,score,uid,integrity:{}});
+  }
+  await weekly.maintain();
+  assert.equal((await db.doc('weeklyRewardReviews/'+week+'-'+a.uid).get()).data()?.reason,'invalid-save');
+  assert.equal((await db.doc('weeklyCompetitions/'+week).get()).data().settled,true);
+});
+
+test('the deployed guest callable refuses unattested traffic',async()=>{
+  if(directService)return;
+  const response=await fetch(`http://127.0.0.1:5001/${projectId}/${config.region}/modeAtlasUsage`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{action:'report',id:'a'.repeat(64),snapshot:{}}})});
+  const result=await response.json();assert.equal(result.error.status,'UNAUTHENTICATED');
 });

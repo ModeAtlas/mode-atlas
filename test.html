@@ -2,19 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta data-ma-security http-equiv="Content-Security-Policy" content="default-src &#x27;self&#x27;; script-src &#x27;self&#x27; https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; style-src &#x27;self&#x27; &#x27;unsafe-inline&#x27; https://fonts.googleapis.com; font-src &#x27;self&#x27; https://fonts.gstatic.com; img-src &#x27;self&#x27; data: blob: https://*.googleusercontent.com https://www.gstatic.com; connect-src &#x27;self&#x27; https://*.googleapis.com https://mode-atlus.firebaseapp.com https://australia-southeast1-mode-atlus.cloudfunctions.net https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; frame-src https://mode-atlus.firebaseapp.com https://accounts.google.com https://www.google.com/recaptcha/ https://www.recaptcha.net/recaptcha/; media-src &#x27;self&#x27; blob:; worker-src &#x27;self&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;self&#x27;; form-action &#x27;self&#x27;" />
+  <meta data-ma-security name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="refresh" content="0; url=/results/" />
+  <noscript><meta http-equiv="refresh" content="0; url=/results/" /></noscript>
   <link rel="canonical" href="https://mode-atlas.app/results/" />
   <title>Redirecting • Mode Atlas</title>
-  <script>
-    (function() {
-      var target = new URL('/results/', location.origin);
-      var source = new URLSearchParams(location.search);
-      source.forEach(function(value, key) { if (key !== 'build' && key !== 'v' && key !== 'reload') target.searchParams.set(key, value); });
-      target.hash = location.hash;
-      location.replace(target.href);
-    })();
-  </script>
+  <script src="./assets/platform/mode-atlas-redirect.assets-2.120.0.js" defer></script>
 </head>
 <body>
   <p>Redirecting to <a href="/results/">/results/</a>…</p>

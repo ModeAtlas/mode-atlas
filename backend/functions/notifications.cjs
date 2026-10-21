@@ -1,5 +1,5 @@
 'use strict';
-const {readSave}=require('./account-data.cjs');
+const {readSave,skipInvalidSave}=require('./account-data.cjs');
 const {createHash,randomUUID}=require('node:crypto');
 const {FieldPath}=require('firebase-admin/firestore');
 const {HttpsError}=require('firebase-functions/v2/https');
@@ -114,7 +114,7 @@ function createNotifications({db,messaging,weekly,now=Date.now}){
       let query=accounts.where('enabled','==',true).orderBy(FieldPath.documentId()).limit(100);
       if(cursor)query=query.startAfter(cursor);
       const found=await query.get();
-      for(let i=0;i<found.docs.length;i+=10)await Promise.all(found.docs.slice(i,i+10).map(doc=>inspect(doc.id)));
+      for(let i=0;i<found.docs.length;i+=10)await Promise.all(found.docs.slice(i,i+10).map(doc=>skipInvalidSave(()=>inspect(doc.id),doc.id)));
       cursor=found.size===100?found.docs.at(-1).id:null;
       await stateRef.set({cursor,updatedAt:now()});
       if(!cursor)break;

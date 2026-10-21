@@ -18,7 +18,7 @@ from configure_ios_widgets import sync_widget_configuration
 ROOT = Path(__file__).resolve().parent
 VERSION_SOURCE = ROOT / "assets/app/mode-atlas-version.js"
 PBXPROJ = ROOT / "ios/App/App.xcodeproj/project.pbxproj"
-SPM_LINKS = {'CapacitorFirebaseAuthentication': 'authentication', 'CapacitorFirebaseMessaging': 'messaging'}
+SPM_LINKS = {'CapacitorFirebaseAuthentication': 'authentication', 'CapacitorFirebaseMessaging': 'messaging', 'CapacitorFirebaseAppCheck': 'app-check'}
 BUILD_CONFIG = ROOT / "ios/release.xcconfig"
 
 

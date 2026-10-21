@@ -16,18 +16,20 @@
       if (!raw) return {record,raw:null,data:null,chunks};
       if (raw.storageVersion > 2) throw Error('Update Mode Atlas to open this save.');
       const data = structuredClone(raw);
+      const budget=root.ModeAtlasSaveLimits.envelope(data);
       for (const [name,section] of Object.entries(data.sections || {})) {
         if (section.storage) {
           if (section.storage.format !== 'json-parts-v1' || !Array.isArray(section.storage.parts) || section.storage.parts.length > MAX_PARTS) throw Error('This account save could not be opened.');
           let text = '';
           if(section.storage.parts.some(id=>!/^section-[a-zA-Z]+-\d+$/.test(id)))throw Error('Invalid account section.');
-          const documents=await Promise.all(section.storage.parts.map(id=>tx.get(partRef(uid,id))));
-          for (const [index,id] of section.storage.parts.entries()) {
-            const part = documents[index];
-            if (!part.exists() || typeof part.data().text !== 'string') throw Error('An account section is missing. Your device copy has been kept.');
-            chunks.set(id,part.data().text); text += part.data().text;
+          for(let at=0;at<section.storage.parts.length;at+=20){
+            const ids=section.storage.parts.slice(at,at+20),documents=await Promise.all(ids.map(id=>tx.get(partRef(uid,id))));
+            for(const [index,id]of ids.entries()){
+              const part=documents[index],chunk=part.exists()?part.data().text:undefined;budget.add(chunk);
+              chunks.set(id,chunk);text+=chunk;
+            }
           }
-          section.data = JSON.parse(text); delete section.storage;
+          section.data = budget.decode(text); delete section.storage;
         }
         if (name === 'kanji') section.data = {...section.data,state:await root.ModeAtlasKanjiCodec.unpack(section.data?.state)};
       }
@@ -66,6 +68,7 @@
           }
         }
         if (next.size > MAX_PARTS || bytes(raw) > 750000) throw Error('This account has reached the cloud save limit. Your device copy is still here. Contact support before resetting or signing out.');
+        const budget=root.ModeAtlasSaveLimits.envelope(raw);for(const text of next.values())budget.add(text);
         let changedBytes=0;
         for (const [id,text] of next) if (previous.chunks.get(id)!==text) changedBytes+=bytes({text});
         if (changedBytes > 8*1024*1024) throw Error('This save exceeds the cloud transfer limit. Your device copy is still here. Contact support before resetting or signing out.');

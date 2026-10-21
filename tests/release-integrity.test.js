@@ -5,7 +5,7 @@ function browser(){
   const values=new Map(),storage={get:(k,f='')=>values.get(k)??f,set:(k,v)=>{values.set(k,String(v));return true;},remove:k=>values.delete(k),json:(k,f)=>values.has(k)?JSON.parse(values.get(k)):f,setJSON:(k,v)=>{values.set(k,JSON.stringify(v));return true;},readModeJSON:(_m,_k,f)=>f,transaction:fn=>fn()};
   const root={ModeAtlasStorage:storage,crypto:require('node:crypto').webcrypto,Blob,CompressionStream,DecompressionStream,btoa,atob,dispatchEvent:()=>{},addEventListener:()=>{}};
   const context=vm.createContext({window:root,self:root,console,Date,TextEncoder,TextDecoder,structuredClone,CustomEvent:class{},setTimeout,clearTimeout});
-  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-date','app/mode-atlas-reward-rules','app/mode-atlas-progress','app/mode-atlas-review','app/mode-atlas-japanese','app/mode-atlas-kana-learning','app/mode-atlas-kana-evidence','data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-wordbank','app/mode-atlas-save-merge','results/mode-atlas-results-storage','app/mode-atlas-account-transport'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
+  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-date','app/mode-atlas-reward-rules','app/mode-atlas-progress','app/mode-atlas-review','app/mode-atlas-japanese','app/mode-atlas-kana-learning','app/mode-atlas-kana-evidence','data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-wordbank','app/mode-atlas-save-merge','results/mode-atlas-results-storage','app/mode-atlas-save-limits','app/mode-atlas-account-transport'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
   return {root,storage,values};
 }
 function database(){
@@ -29,6 +29,52 @@ function backend(file){
   }
   return load(path.join(ROOT,'backend/functions',file));
 }
+
+test('save envelope rejects cross-section parts, duplicate parts and aggregate memory amplification',()=>{
+  const limits=require('../assets/app/mode-atlas-save-limits.js');
+  assert.throws(()=>limits.parse('['.repeat(33)+'0'+']'.repeat(33)),/complex/);
+  assert.deepEqual(limits.parse('{"text":"[\\\"{}]"}'),{text:'["{}]'});
+  const section=parts=>({data:{},storage:{format:'json-parts-v1',parts}});
+  assert.throws(()=>limits.envelope({sections:{reading:section(['section-writing-0'])}}),/part/);
+  assert.throws(()=>limits.envelope({sections:{reading:section(['section-reading-0','section-reading-0'])}}),/part/);
+  assert.throws(()=>limits.envelope({sections:{reading:section(['section-reading-350'])}}),/part/);
+  const budget=limits.envelope({sections:{reading:section(['section-reading-0'])}});
+  assert.throws(()=>budget.add('学'.repeat(160001)),/limit/);
+  const total=limits.envelope({sections:{}});
+  for(let i=0;i<34;i++)total.add('a'.repeat(480000));
+  assert.throws(()=>{total.add('a'.repeat(480000));total.add('a'.repeat(480000));},/limit/);
+});
+test('server sessions reject disabled, revoked and missing authentication times',()=>{
+  const {requireSession}=backend('account-access.cjs'),user={tokensValidAfterTime:'2026-10-21T10:00:00Z'},at=Date.parse(user.tokensValidAfterTime)/1000;
+  assert.doesNotThrow(()=>requireSession(user,{auth_time:at}));
+  for(const token of [{},{auth_time:at-1}])assert.throws(()=>requireSession(user,token),{code:'unauthenticated'});
+  assert.throws(()=>requireSession(user,{auth_time:at},{revokedBefore:at}),{code:'unauthenticated'});
+  assert.throws(()=>requireSession({...user,disabled:true},{auth_time:at+10}),{code:'permission-denied'});
+});
+test('the bundled iOS Firebase API includes every SDK method used by cloud sync',()=>{
+  const sync=fs.readFileSync(path.join(ROOT,'cloud-sync.js'),'utf8'),bundle=fs.readFileSync(path.join(ROOT,'build_native_runtime.mjs'),'utf8');
+  for(const [owner,name]of [['firestoreMod','firestore'],['authMod','auth'],['appMod','app']]){
+    const exported=new Set(bundle.match(new RegExp(name+":'([^']+)'"))[1].split(','));
+    for(const match of sync.matchAll(new RegExp(owner+'\\.([a-zA-Z]+)','g')))assert.ok(exported.has(match[1]),`${name}.${match[1]} must exist in the iOS bundle`);
+  }
+});
+test('guest usage requires attestation, consent capability, bounded fields and excludes signed-in reports',async()=>{
+  const {db,rows}=database();let at=Date.now();
+  const service=backend('usage.cjs').createUsage({db,now:()=>at}),id='a'.repeat(64),snapshot={platform:'web',version:'2.120.0',level:2,xp:90,kana:['あ'],introduced:['あ','い'],correct:8,attempts:10,branch:'kana'};
+  const request={app:{appId:'test'},data:{action:'report',id,snapshot}};
+  await assert.rejects(()=>service.call({...request,app:undefined}),{code:'unauthenticated'});
+  await assert.rejects(()=>service.call({...request,auth:{uid:'learner'}}),{code:'failed-precondition'});
+  await assert.rejects(()=>service.call({...request,data:{...request.data,snapshot:{...snapshot,email:'private@example.test'}}}),{code:'invalid-argument'});
+  await assert.rejects(()=>service.call({...request,data:{...request.data,snapshot:{...snapshot,kana:['invalid']}}}),{code:'invalid-argument'});
+  assert.equal((await service.call(request)).accepted,true);assert.equal((await service.call(request)).accepted,false);
+  at+=61000;assert.equal((await service.call(request)).accepted,true);
+  const report=[...rows.entries()].find(([key])=>key.startsWith('usageReports/'))[1];assert.equal(report.correct,8);assert.equal(report.email,undefined);
+  await service.call({...request,data:{action:'delete',id}});
+  await assert.rejects(()=>service.call(request),{code:'permission-denied'});
+  assert.equal([...rows.keys()].filter(key=>key.startsWith('usageReports/')).length,0);
+  await service.call({...request,data:{action:'delete',id:'b'.repeat(64)}});
+  await assert.rejects(()=>service.call({...request,data:{...request.data,id:'b'.repeat(64)}}),{code:'permission-denied'},'withdrawal wins over delayed first report');
+});
 test('new Kana evidence converges across devices, retries and both merge orders',()=>{
   const {root}=browser(),E=root.ModeAtlasKanaEvidence,M=root.ModeAtlasSaveMerge;
   const baseline=E.legacy({'あ':{correct:12,wrong:2}},{'あ':{avg:1000,count:14}});
