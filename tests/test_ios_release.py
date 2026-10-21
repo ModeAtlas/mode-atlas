@@ -25,6 +25,18 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             sync(legacy.replace('504EC3001FED79650016851F', 'MISSING_SOURCE_PHASE'))
 
+    def test_widget_artwork_survives_a_retained_local_signing_project(self):
+        source = release.PBXPROJ.read_text()
+        legacy = re.sub(r'^.*29121000000000000000000[1-5].*\n', '', source, flags=re.M)
+        legacy = legacy.replace('MARKETING_VERSION = ', 'DEVELOPMENT_TEAM = LOCAL12345;\nMARKETING_VERSION = ')
+        updated = release.sync_widget_artwork(legacy)
+        self.assertEqual(updated.count('291210000000000000000001'), 4)
+        for suffix in ['2', '3', '5']:
+            self.assertEqual(updated.count('29121000000000000000000' + suffix), 2)
+        self.assertEqual(updated.count('DEVELOPMENT_TEAM = LOCAL12345;'), legacy.count('DEVELOPMENT_TEAM = LOCAL12345;'))
+        self.assertEqual(release.sync_widget_artwork(updated), updated)
+        self.assertEqual((release.ROOT / 'ios/App/ModeAtlasWidgets/WidgetAssets.xcassets/AtlasMark.imageset/atlas-mark.svg').read_bytes(), (release.ROOT / 'assets/brand/mode-atlas-micro.svg').read_bytes())
+
     def test_apple_entitlements_remain_on_app_with_or_without_widget_sharing(self):
         root = release.ROOT / 'ios/App'
         for app_path, widget_path in [('App/App.entitlements', 'Shared/LocalOnly.entitlements'),

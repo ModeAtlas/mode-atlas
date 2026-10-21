@@ -111,8 +111,35 @@ struct WidgetSnapshotTests {
         assert(!invalidPersonal.isValid, "Personal goals must have unique, period-matched slots")
         rotating.goals![0].period = "weekly"; assert(!rotating.isValid, "A snapshot requires three daily and two weekly goals")
         assert(ModeAtlasWidgetStore.read() == nil, "Unprovisioned builds must not read another container")
+        try testProducerContract()
         testActivityTiming()
         print("Widget bounds, v1 migration, retained totals, first-minute boundaries, minimal timelines, calendar rollover and round-trip passed")
+    }
+
+    static func testProducerContract() throws {
+        guard CommandLine.arguments.count > 1 else { fatalError("Missing actual JavaScript producer fixture") }
+        let data = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1]))
+        let value = try JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: data)
+        assert(value.isValid && value.schemaVersion == 7 && value.correct == 40 && value.kanjiCorrect == 20)
+        assert(value.studyStreak == 8 && value.goals?.count == 7, "Kanji must not invalidate the whole widget")
+        var adaptive = value
+        adaptive.goals = Array(value.goals!.prefix(1))
+        assert(adaptive.isValid, "An attainable goal pool can be smaller than five")
+        adaptive.goals = []; assert(adaptive.isValid)
+        adaptive.kanjiCorrect = -1; assert(!adaptive.isValid)
+        adaptive.kanjiCorrect = 40; assert(!adaptive.isValid, "Branch counts cannot exceed the aggregate")
+        adaptive.kanjiCorrect = 20; adaptive.avatarKey = "../private"; assert(!adaptive.isValid)
+        adaptive.avatarKey = String(repeating: "a", count: 64); assert(adaptive.isValid)
+        let now = Date(timeIntervalSince1970: value.updatedAt / 1000)
+        var protected = value; protected.freezesRemaining = 2
+        let calendar = Calendar(identifier: .gregorian)
+        let expiry = protected.studyRoutine(at: now, calendar: calendar).expiresAt!
+        let timeline = WidgetActivity.timelineDates(since: now, at: now, calendar: calendar, boundaries: [expiry])
+        let missed = calendar.date(byAdding: .day, value: 2, to: calendar.startOfDay(for: now))!
+        assert(timeline.contains(missed) && protected.studyRoutine(at: missed, calendar: calendar).frozen)
+        assert(protected.studyRoutine(at: expiry, calendar: calendar).streak == 0)
+        let weekEnd = now.addingTimeInterval(3600)
+        assert(WidgetActivity.timelineDates(since: nil, at: now, boundaries: [weekEnd]).contains(weekEnd))
     }
 
     static func calendarDay(_ days: Int, after date: Date) -> Date { Calendar.current.date(byAdding: .day, value: days, to: date)! }

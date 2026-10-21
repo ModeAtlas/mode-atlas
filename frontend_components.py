@@ -367,6 +367,7 @@ ACCOUNT_SCRIPTS = (
     'assets/app/mode-atlas-social-identity.js',
     'assets/app/mode-atlas-social.js',
     'assets/app/mode-atlas-avatar.js',
+    'assets/platform/mode-atlas-widget-avatar.js',
     'assets/ui/mode-atlas-portrait.js',
     'assets/ui/mode-atlas-avatar-ui.js',
     'assets/app/mode-atlas-weekly-rules.js',

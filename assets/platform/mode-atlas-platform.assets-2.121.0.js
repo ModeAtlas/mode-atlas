@@ -101,7 +101,7 @@
     testNotification: function(){ return call('testNotification', [], {scheduled:false}); },
     openNotificationSettings: function(){ return call('openNotificationSettings', [], {opened:false}); },
     setBadge: function(value){ return call('setBadge', [value], false); },
-    publishWidgetSnapshot: function(snapshot){ return call('publishWidgetSnapshot', [snapshot], false); },
+    publishWidgetSnapshot: function(snapshot,options){ return call('publishWidgetSnapshot', [snapshot,options], false); },
     authenticate: function(provider){ return call('authenticate', [String(provider || '')], { handled:false }); },
     revokeAppleAuthorization: function(authorizationCode, firebaseIdToken){ return call('revokeAppleAuthorization', [String(authorizationCode || ''), String(firebaseIdToken || '')], false); },
     signOutIdentityProvider: function(){ return call('signOutIdentityProvider', [], false); }

@@ -253,8 +253,28 @@ jobs:
 
       - name: Test widget snapshot model and activity timing
         run: |
+          node tests/helpers/widget-fixture.cjs "${RUNNER_TEMP}/widget-contract.json"
           swiftc ios/App/Shared/ModeAtlasWidgetData.swift ios/App/ModeAtlasWidgets/WidgetActivity.swift tests/native/WidgetSnapshotTests.swift -o "${RUNNER_TEMP}/widget-model-tests"
-          "${RUNNER_TEMP}/widget-model-tests"
+          "${RUNNER_TEMP}/widget-model-tests" "${RUNNER_TEMP}/widget-contract.json"
+          swiftc ios/App/Shared/ModeAtlasWidgetArtwork.swift tests/native/WidgetArtworkTests.swift -o "${RUNNER_TEMP}/widget-artwork-tests"
+          "${RUNNER_TEMP}/widget-artwork-tests" tests/fixtures/widgets/avatar.png
+
+      - name: Render actual widget layouts at compact iPhone sizes
+        run: |
+          preview_bundle="${RUNNER_TEMP}/WidgetReview.app/Contents"
+          mkdir -p "$preview_bundle/MacOS" "$preview_bundle/Resources"
+          python3 -c 'import plistlib,sys; plistlib.dump({"CFBundleExecutable":"WidgetReview","CFBundleIdentifier":"app.modeatlas.widget-review","CFBundlePackageType":"APPL"},open(sys.argv[1],"wb"))' "$preview_bundle/Info.plist"
+          xcrun actool ios/App/ModeAtlasWidgets/WidgetAssets.xcassets --compile "$preview_bundle/Resources" --platform macosx --minimum-deployment-target 15.0 --target-device mac
+          swiftc -target "$(uname -m)-apple-macosx15.0" ios/App/Shared/ModeAtlasWidgetData.swift ios/App/Shared/ModeAtlasWidgetArtwork.swift ios/App/ModeAtlasWidgets/WidgetActivity.swift ios/App/ModeAtlasWidgets/ModeAtlasWidgets.swift tests/native/WidgetRenderChecks.swift -o "$preview_bundle/MacOS/WidgetReview"
+          "$preview_bundle/MacOS/WidgetReview" "${RUNNER_TEMP}/widget-layouts" "${RUNNER_TEMP}/widget-contract.json" tests/fixtures/widgets/avatar.png
+
+      - name: Upload native widget layout evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: widget-layouts-${{ github.sha }}
+          path: ${{ runner.temp }}/widget-layouts/*.png
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Test intent navigation before and after bridge loading
         run: |

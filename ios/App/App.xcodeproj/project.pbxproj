@@ -34,6 +34,9 @@
 		279000000000000000000004 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 279000000000000000000003 /* PrivacyInfo.xcprivacy */; };
 		289100000000000000000002 /* ModeAtlasRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 289100000000000000000001 /* ModeAtlasRouter.swift */; };
 		291160000000000000000002 /* ModeAtlasPronunciationPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291160000000000000000001 /* ModeAtlasPronunciationPlayer.swift */; };
+		291210000000000000000002 /* ModeAtlasWidgetArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291210000000000000000001 /* ModeAtlasWidgetArtwork.swift */; };
+		291210000000000000000003 /* ModeAtlasWidgetArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291210000000000000000001 /* ModeAtlasWidgetArtwork.swift */; };
+		291210000000000000000005 /* WidgetAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 291210000000000000000004 /* WidgetAssets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +70,8 @@
 		279000000000000000000003 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		289100000000000000000001 /* ModeAtlasRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasRouter.swift; sourceTree = "<group>"; };
 		291160000000000000000001 /* ModeAtlasPronunciationPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasPronunciationPlayer.swift; sourceTree = "<group>"; };
+		291210000000000000000001 /* ModeAtlasWidgetArtwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasWidgetArtwork.swift; sourceTree = "<group>"; };
+		291210000000000000000004 /* WidgetAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WidgetAssets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,9 +131,12 @@
 			path = App;
 			sourceTree = "<group>";
 		};
-		F2B31C9786B4BF0A9A4AAF84 = {isa = PBXGroup; children = (4AABF49794811E21EA1A85A0, 676944F0EBD4EF9E4B363FC6, 1803230A3093F15837F56DE0, 7FFB534204306E4FDF256A2B, 61F160D3F5EB024BF9CA7EE4, ); path = Shared; sourceTree = "<group>"; };
+		F2B31C9786B4BF0A9A4AAF84 = {isa = PBXGroup; children = (4AABF49794811E21EA1A85A0, 676944F0EBD4EF9E4B363FC6, 1803230A3093F15837F56DE0, 7FFB534204306E4FDF256A2B, 61F160D3F5EB024BF9CA7EE4,
+				291210000000000000000001 /* ModeAtlasWidgetArtwork.swift */,
+			); path = Shared; sourceTree = "<group>"; };
 		C7700313516F038757BAEF16 = {isa = PBXGroup; children = (28E05D3E1DF32F28BFA3EF47, 1990D4A5BD9E4ABE98AEE73D, D4B604B59E210717F1306C5C, 269100000000000000000002, 11DCDACF74B33BC245135679,
 				279000000000000000000003 /* PrivacyInfo.xcprivacy */,
+				291210000000000000000004 /* WidgetAssets.xcassets */,
 			); path = ModeAtlasWidgets; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
@@ -224,6 +232,7 @@
 		};
 		3FE72E556019EC3F3A1FF736 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (
 				279000000000000000000004 /* PrivacyInfo.xcprivacy */,
+				291210000000000000000005 /* WidgetAssets.xcassets */,
 			); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
@@ -241,10 +250,13 @@
 				F291D0B0592B66D3ADDAE019,
 				289100000000000000000002 /* ModeAtlasRouter.swift */,
 				291160000000000000000002 /* ModeAtlasPronunciationPlayer.swift */,
+				291210000000000000000002 /* ModeAtlasWidgetArtwork.swift */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		745764688D705D4EF7062BCF = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (D4B205A2B7ED0B04DDEEEA29, C1EBD311EF2F12652096A6E2, DC5CBB535E30347566368E7C, 7B1AAEADEA7E20CD33136934, 44CF3F2A58C25B8C40017453, E08668E0C4CB93947F17B0CA, 269100000000000000000001, ); runOnlyForDeploymentPostprocessing = 0; };
+		745764688D705D4EF7062BCF = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (D4B205A2B7ED0B04DDEEEA29, C1EBD311EF2F12652096A6E2, DC5CBB535E30347566368E7C, 7B1AAEADEA7E20CD33136934, 44CF3F2A58C25B8C40017453, E08668E0C4CB93947F17B0CA, 269100000000000000000001,
+				291210000000000000000003 /* ModeAtlasWidgetArtwork.swift */,
+			); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
@@ -393,7 +405,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.120.0;
+				MARKETING_VERSION = 2.121.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -418,7 +430,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.120.0;
+				MARKETING_VERSION = 2.121.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -436,7 +448,7 @@
                 CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.120.0;
+                MARKETING_VERSION = 2.121.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;
@@ -454,7 +466,7 @@
                 CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.120.0;
+                MARKETING_VERSION = 2.121.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;

@@ -200,9 +200,9 @@
       await nativeBridge.setBadge({ value:Math.max(0, Number(value || 0)) });
       return true;
     },
-    publishWidgetSnapshot: async function(snapshot){
+    publishWidgetSnapshot: async function(snapshot,options={}){
       if (!hasBridge('publishWidgetSnapshot')) return false;
-      return nativeBridge.publishWidgetSnapshot({ snapshot:JSON.stringify(snapshot || {}) });
+      return nativeBridge.publishWidgetSnapshot({snapshot:JSON.stringify(snapshot || {}),avatarPNG:options.avatarPNG,refreshImmediately:options.refreshImmediately===true});
     },
     authenticate: async function(provider){
       var providerId = String(provider || '');
