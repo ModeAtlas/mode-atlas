@@ -22,6 +22,15 @@ normalizeLegacyRowSelection();
 let stats = window.ModeAtlasStorage.readModeJSON("reading", "charStats", {});
 let times = window.ModeAtlasStorage.readModeJSON("reading", "charTimes", {});
 let srs = window.ModeAtlasStorage.readModeJSON("reading", "srs", {});
+let answerMode = 'reading';
+
+function selectAnswerMode(mode){
+    if(answerMode===mode)return;
+    answerMode=mode;
+    stats=window.ModeAtlasStorage.readModeJSON(mode,'charStats',{});
+    times=window.ModeAtlasStorage.readModeJSON(mode,'charTimes',{});
+    srs=window.ModeAtlasStorage.readModeJSON(mode,'srs',{});
+}
 
 let scoreHistory = normalizeScoreHistory(window.ModeAtlasStorage.readModeJSON("reading", "scoreHistory", createDefaultScoreHistory()));
 let dailyChallengeHistory = window.ModeAtlasStorage.readModeJSON("reading", "dailyHistory", {});
@@ -145,6 +154,7 @@ const speedRunTop3El = document.getElementById("speedRunTop3");
 
 const trainerController = window.ModeAtlasTrainerController.create({
     mode: "reading",
+    getAnswerMode: () => answerMode,
     defaults: DEFAULT_SETTINGS,
     dailySeedPrefix: "daily",
     getDailyPoolMap: () => getDailyLearningPool(),
@@ -418,6 +428,9 @@ function scheduleHint() {
 }
 
 function showIdleState() {
+    selectAnswerMode('reading');
+    document.body.classList.remove('ma-mixed-recall');inputEl.hidden=false;
+    const choices=document.getElementById('mixedRecallChoices');if(choices)choices.hidden=true;
     trainerController.study.sync();
     clearHint();
     hideComboTierNotice();
@@ -439,6 +452,7 @@ function showIdleState() {
 
 function nextCharacter() {
     if (!sessionStarted || !trainerController.study.beforeQuestion()) return;
+    selectAnswerMode(settings.kanaDirection==='both'&&sessionStats.answered%2?'writing':'reading');
 
     clearHint();
     closePopup();
@@ -505,10 +519,33 @@ function nextCharacter() {
     scheduleHint();
     inputEl.disabled = false;
     inputEl.focus();
+    presentPracticeDirection();
+}
+
+// The existing session owns scoring, feedback and recovery in both directions.
+// Recall only changes the prompt/input; its evidence is saved to the Recall track.
+function presentPracticeDirection(){
+    let choices=document.getElementById('mixedRecallChoices');
+    let label=document.getElementById('kanaDirectionLabel');
+    if(!label){label=document.createElement('span');label.id='kanaDirectionLabel';label.className='ma-kicker';hiraganaEl.insertAdjacentElement('beforebegin',label);}
+    label.hidden=settings.kanaDirection!=='both';label.textContent=answerMode==='writing'?'Recall · sound → shape':'Read · shape → sound';
+    const recall=settings.kanaDirection==='both'&&answerMode==='writing';
+    document.body.classList.toggle('ma-mixed-recall',recall);
+    hiraganaEl.dataset.direction=answerMode;
+    if(!choices){choices=document.createElement('div');choices.id='mixedRecallChoices';choices.className='ma-kana-placement-choices';choices.setAttribute('role','group');choices.setAttribute('aria-label','Recall answers');inputEl.insertAdjacentElement('afterend',choices);}
+    choices.replaceChildren();choices.hidden=!recall;inputEl.hidden=recall;inputEl.disabled=recall;
+    if(!recall)return;
+    hiraganaEl.textContent=charMap[currentChar];
+    const others=activeChars.filter(char=>charMap[char]!==charMap[currentChar]);
+    for(let i=others.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
+    const values=[currentChar,...others.slice(0,5)];
+    for(let i=values.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[values[i],values[j]]=[values[j],values[i]];}
+    for(const char of values){const choice=document.createElement('button');choice.type='button';choice.className='ma-button ma-button--ghost';choice.textContent=char;choice.lang='ja';choice.addEventListener('click',()=>{if(locked||!sessionStarted)return;char===currentChar?handleCorrect(char):handleWrong(char);});choices.append(choice);}
 }
 
 function startSession(recovery = null) {
     if (sessionStarted || !canStartKanaSession()) return;
+    selectAnswerMode('reading');
     recovery=window.ModeAtlasSessionRecovery.validate(recovery,'reading');
     if(recovery){settings={...settings,...recovery.settings};rebuildCharMap();}
     if (!isDailyChallengeSession() && !isTestModeSession() && !activeChars.length && !trainerController.study.hasPendingReview()) {
@@ -585,11 +622,13 @@ function flashResult(correct, onDone) {
 }
 
 function getAnswerForCurrentChar() {
+    if(answerMode==='writing')return currentChar;
     const sourceMap = getAnswerMapForCurrentMode();
     return getCurrentKanaUnits().map(ch => sourceMap[ch] || "").join("");
 }
 
 function getDisplayAnswerForCurrentChar() {
+    if(answerMode==='writing')return currentChar;
     const sourceMap = getAnswerMapForCurrentMode();
     const parts = getCurrentKanaUnits().map(ch => sourceMap[ch] || "");
     return settings.comboKana ? parts.join(" + ") : parts.join("");
@@ -609,7 +648,7 @@ function handleCorrect(answer = inputEl.value) {
         }
 
         streak += 1;
-        highScore = Math.max(highScore, streak);
+        if(settings.kanaDirection!=='both')highScore = Math.max(highScore, streak);
         trainerController.recordComboBest();
 
         const nextComboLength = getComboLength();
@@ -783,6 +822,8 @@ function showSessionModal(autoEnded = false) { return trainerController.showSess
 
 function endSession(autoEnded = false) {
     finishTrainerSession(autoEnded, () => { hiraganaEl.textContent = "—"; currentChar = ""; });
+    selectAnswerMode('reading');document.body.classList.remove('ma-mixed-recall');inputEl.hidden=false;
+    const choices=document.getElementById('mixedRecallChoices');if(choices)choices.hidden=true;
 }
 
 endSessionBtn.addEventListener("click", () => endSession(false));

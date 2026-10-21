@@ -30,7 +30,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     private var changingIcon = false
     private var mailCall: CAPPluginCall?
     private let sounds = ModeAtlasSoundPlayer()
-    private let speech = AVSpeechSynthesizer()
+    private let speech = ModeAtlasPronunciationPlayer()
 
     @objc func getAppVersion(_ call: CAPPluginCall) {
         call.resolve(["version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
@@ -125,22 +125,16 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
             call.reject("Invalid pronunciation"); return
         }
         DispatchQueue.main.async {
-            guard UIApplication.shared.applicationState == .active,
-                  let voice = AVSpeechSynthesisVoice(language: "ja-JP") else {
+            guard UIApplication.shared.applicationState == .active else {
                 call.resolve(["played": false]); return
             }
-            self.speech.stopSpeaking(at: .immediate)
-            self.speech.usesApplicationAudioSession = false
-            let utterance = AVSpeechUtterance(string: text)
-            utterance.voice = voice
-            utterance.prefersAssistiveTechnologySettings = false
-            utterance.rate = call.getBool("slow") == true ? 0.20 : AVSpeechUtteranceDefaultSpeechRate
-            self.speech.speak(utterance)
-            call.resolve(["played": true])
+            self.speech.play(text, slow: call.getBool("slow") == true) { played in
+                call.resolve(["played": played])
+            }
         }
     }
     @objc func stopSpeech(_ call: CAPPluginCall) {
-        DispatchQueue.main.async { self.speech.stopSpeaking(at: .immediate); call.resolve() }
+        DispatchQueue.main.async { self.speech.stop(); call.resolve() }
     }
     @objc func stopSounds(_ call: CAPPluginCall) {
         DispatchQueue.main.async { self.sounds.fadeOut(); call.resolve() }
@@ -216,7 +210,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     override public func load() {
         bridge?.notificationRouter.localNotificationHandler = self
         observers.append(NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.speech.stopSpeaking(at: .immediate)
+            self?.speech.stop()
         })
         observers.append(NotificationCenter.default.addObserver(forName: ModeAtlasNavigation.event, object: nil, queue: .main) { [weak self] _ in
             self?.notifyListeners("destinationAction", data: [:], retainUntilConsumed: true)

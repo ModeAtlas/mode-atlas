@@ -206,13 +206,29 @@ function createSocial({db,auth,messaging,now=Date.now}){
     });
   }
   async function state(uid,user){
-    const [doc,role,restricted]=await Promise.all([accountRef(uid).get(),staff.current(user),moderation.restriction(uid)]);
-    const a=doc.data(),canModerate=role!=='member';
-    if(restricted)return {active:false,restricted:true,canModerate};
-    if(a?.deleting)return {active:false,deleting:true};
-    if(!a?.active)return {active:false,accountPhoto:accountPhoto(user),canModerate,role};
-    return {active:true,canModerate,role,profile:publicProfile(uid,a,now()),preferences:a.profile,accountPhoto:accountPhoto(user),code:a.code,
-      counts:{friends:keys(a.friends).length,incoming:keys(a.incoming).length,outgoing:keys(a.outgoing).length,blocked:a.blockedCount}};
+    // One consistent read owns the self snapshot. Do not refresh the projection,
+    // re-read the account and then fetch its entitlements a second time.
+    return db.runTransaction(async tx=>{
+      const [[doc,restriction],staffAccess,access]=await Promise.all([
+        tx.getAll(accountRef(uid),db.doc('socialRestrictions/'+uid)),
+        staff.read(tx,user),rewards.read(user,tx)
+      ]);
+      const a=doc.data(),role=staffAccess.role,canModerate=role!=='member';
+      if(restriction.exists)return {active:false,restricted:true,canModerate};
+      if(a?.deleting)return {active:false,deleting:true};
+      if(!a?.active)return {active:false,accountPhoto:accountPhoto(user),canModerate,role};
+      // The saved-data trigger owns ordinary progress projection. Reading the
+      // complete private history on every Friends visit duplicated that owner.
+      // Only policy/access migrations need to rebuild it on this read path.
+      if(a.summary?.projectionVersion!==PROJECTION_VERSION||!a.rewardAccess||rewards.key(a.rewardAccess)!==rewards.key(access)){
+        const save=await tx.get(saveRef(uid)),syncedAt=save.updateTime?.toMillis()||0;
+        a.rewardAccess=access;a.summary=projectSave(save.data(),a.profile.timeZone,syncedAt,access);
+        tx.update(doc.ref,{rewardAccess:access,summary:a.summary});
+      }
+      const profile=publicProfile(uid,a,now());profile.role=role;rewards.sanitize(profile,access);
+      return {active:true,canModerate,role,profile,preferences:a.profile,accountPhoto:accountPhoto(user),code:a.code,
+        counts:{friends:keys(a.friends).length,incoming:keys(a.incoming).length,outgoing:keys(a.outgoing).length,blocked:a.blockedCount}};
+    });
   }
   async function list(uid,data){
     fields(data,['kind','metric','cursor']);
@@ -355,7 +371,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     }
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
-    if(['avatarState','avatarUpdate','updateProfile','shop','shopPurchase','shopDeveloper'].includes(action))await rewards.retainEquipped(user);
+    if(['avatarState','avatarUpdate','updateProfile','shop','shopPurchase','shopDeveloper','state'].includes(action))await rewards.retainEquipped(user);
     if(action==='rewards')return rewards.read(user);
     if(action==='avatarState'||action==='avatarUpdate'){
       if(action==='avatarUpdate'&&data.displayName!==undefined)await identities.ensureReady();
@@ -388,13 +404,10 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(action==='state'){
       // The save trigger and shop own wallet awards. A social read only needs
       // the current learning projection, not a second commerce transaction.
-      await refreshSummary(uid,user,{awardLevels:false});
       const result=await state(uid,user);
-      if(result.profile){
-        result.profile.role=result.role;
-        const [access,firstPage]=await Promise.all([rewards.read(user),data.listKind?list(uid,{kind:data.listKind}):null]);
-        rewards.sanitize(result.profile,access);
-        if(firstPage){await decorate(firstPage.rows);result.list={kind:data.listKind,...firstPage};}
+      if(result.profile&&data.listKind){
+        const firstPage=await list(uid,{kind:data.listKind});
+        await decorate(firstPage.rows);result.list={kind:data.listKind,...firstPage};
       }
       return result;
     }

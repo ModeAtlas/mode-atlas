@@ -17,12 +17,13 @@
   }
   function render({skill,getSettings,onChange,locked=false,targetFields=false}){
     const s=getSettings(),state=L.read(),evidence=L.snapshot(),host=document.createElement('div');host.className='ma-kana-practice-form';
+    if(s.kanaDirection==='both')skill='both';
     const selectedFamily=family(s),eligible=L.testScripts(skill,state,evidence);
     const change=values=>{if(!locked)onChange({...getSettings(),...values});};
     function field(label,value,options,action){
       const wrap=document.createElement('label');wrap.className='ma-kana-field';const name=document.createElement('span');name.textContent=label;
       const select=document.createElement('select');select.className='ma-input';select.setAttribute('aria-label',label);select.disabled=locked;
-      for(const [id,text,disabled]of options){const o=document.createElement('option');o.value=id;o.textContent=text;o.disabled=!!disabled;select.append(o);}select.value=String(value);select.addEventListener('change',()=>action(select.value));wrap.append(name,select);host.append(wrap);return select;
+      for(const [id,text,disabled]of options){if(label==='Session'&&s.kanaDirection==='both'&&['daily','test','sequence'].includes(id))continue;const o=document.createElement('option');o.value=id;o.textContent=text;o.disabled=!!disabled;select.append(o);}select.value=String(value);select.addEventListener('change',()=>action(select.value));wrap.append(name,select);host.append(wrap);return select;
     }
     function chooseFamily(value){
       change(forFamily(s,value,skill));

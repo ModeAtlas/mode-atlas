@@ -407,7 +407,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await expect(page.locator('.ma-social-row')).toHaveCount(1);await expect(page.locator('.ma-social-status')).toBeHidden();
     for(const kind of ['incoming','outgoing','blocked','friends']){
       await page.getByLabel('Friends list',{exact:true}).selectOption(kind);
-      await expect.poll(()=>page.evaluate(()=>socialCalls.filter(call=>call.action==='list').at(-1).input.kind)).toBe(kind);
+      await expect(page.locator('.ma-social-row')).toHaveCount(['incoming','friends'].includes(kind)?1:0);
     }
     expect(await page.evaluate(()=>socialCalls.filter(call=>call.action==='list'&&call.input.kind!=='rankings').every(call=>!('metric' in call.input)))).toBe(true);
     await page.locator('#maSocialTab-rankings').click();
@@ -431,6 +431,21 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
     await expect(page.getByRole('button',{name:'Join weekly competition',exact:true})).toBeVisible();
   });
 }
+
+test('friend cards show status, right-aligned avatars and reuse the list when returning',async({page},info)=>{
+  await prepare(page,{native:true,width:393});
+  await page.evaluate(()=>Object.assign(socialFixture.friend,{avatar:'character',character:{...ModeAtlasAvatarRules.defaults},greeting:'I just learnt あ today!'}));
+  await page.getByRole('button',{name:'Refresh',exact:true}).click();
+  await expect(page.locator('.ma-social-friend__status')).toHaveText('I just learnt あ today!');
+  const art=await page.locator('.ma-social-friend__art').boundingBox(),figure=await page.locator('.ma-social-friend__figure').boundingBox();
+  expect(figure.x+figure.width/2).toBeGreaterThan(art.x+art.width*.65);
+  const before=await page.evaluate(()=>socialCalls.filter(call=>['state','list'].includes(call.action)).length);
+  await page.locator('.ma-social-friend .ma-social-person').click();
+  await page.getByRole('button',{name:'← Friends',exact:true}).click();
+  await expect(page.locator('.ma-social-friend__status')).toBeVisible();
+  expect(await page.evaluate(()=>socialCalls.filter(call=>['state','list'].includes(call.action)).length)).toBe(before);
+  await fits(page);await page.screenshot({path:info.outputPath('friends-status.png'),animations:'disabled'});
+});
 
 test('weekly deep links open the ladder and delayed weekly rows cannot replace Friends',async({page})=>{
   await prepare(page);

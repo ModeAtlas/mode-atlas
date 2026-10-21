@@ -187,6 +187,8 @@
     if(confusable) storeRemove('modeAtlasConfusableMode');
     if(!confusable&&!daily&&!formal&&!review&&!guided&&!due&&!target.length) return;
     const s=getSettings();
+    // A lesson/review link explicitly chooses its skill, even after a mixed set.
+    s.kanaDirection=isWriting?'writing':'reading';
     if(confusable){
       delete s.kanaRows;
       Object.assign(s,{confusableKana:true,hint:false,srs:true,focusWeak:false,endless:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,speedRun:false,dakuten:false,yoon:false,extendedKatakana:false,hiraganaRows:CONF_HIRA_ROWS.slice(),katakanaRows:CONF_KATA_ROWS.slice(),activeBottomTab:'modifiers',practiceCount:0});

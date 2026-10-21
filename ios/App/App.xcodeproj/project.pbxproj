@@ -33,6 +33,7 @@
 		279000000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 279000000000000000000001 /* PrivacyInfo.xcprivacy */; };
 		279000000000000000000004 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 279000000000000000000003 /* PrivacyInfo.xcprivacy */; };
 		289100000000000000000002 /* ModeAtlasRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 289100000000000000000001 /* ModeAtlasRouter.swift */; };
+		291160000000000000000002 /* ModeAtlasPronunciationPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291160000000000000000001 /* ModeAtlasPronunciationPlayer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,6 +66,7 @@
 		279000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		279000000000000000000003 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		289100000000000000000001 /* ModeAtlasRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasRouter.swift; sourceTree = "<group>"; };
+		291160000000000000000001 /* ModeAtlasPronunciationPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeAtlasPronunciationPlayer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +121,7 @@
 				50B271D01FEDC1A000F3C39B /* public */,
 				279000000000000000000001 /* PrivacyInfo.xcprivacy */,
 				289100000000000000000001 /* ModeAtlasRouter.swift */,
+				291160000000000000000001 /* ModeAtlasPronunciationPlayer.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -237,6 +240,7 @@
 				03BBF6327B3872DFE1D66971,
 				F291D0B0592B66D3ADDAE019,
 				289100000000000000000002 /* ModeAtlasRouter.swift */,
+				291160000000000000000002 /* ModeAtlasPronunciationPlayer.swift */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,7 +393,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.115.0;
+				MARKETING_VERSION = 2.116.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -414,7 +418,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.115.0;
+				MARKETING_VERSION = 2.116.0;
 				PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -432,7 +436,7 @@
                 CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.115.0;
+                MARKETING_VERSION = 2.116.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;
@@ -450,7 +454,7 @@
                 CURRENT_PROJECT_VERSION = "$(MODE_ATLAS_BUILD_NUMBER)";
                 INFOPLIST_FILE = ModeAtlasWidgets/Info.plist;
                 LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
-                MARKETING_VERSION = 2.115.0;
+                MARKETING_VERSION = 2.116.0;
                 PRODUCT_BUNDLE_IDENTIFIER = app.modeatlas.widgets;
                 PRODUCT_NAME = "$(TARGET_NAME)";
                 SKIP_INSTALL = YES;

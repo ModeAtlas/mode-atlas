@@ -4,6 +4,10 @@
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=text;return node;};
   const identityPolicy=root.ModeAtlasSocialIdentity;
   const number=value=>Number(value||0).toLocaleString();
+  // Screen-local snapshots avoid re-fetching the same first page on Back/tab
+  // navigation. They never survive an account change or a relationship action.
+  const pages=new Map();
+  const pageKey=()=>JSON.stringify([owner,tab,kind,tab==='rankings'?metric:'']);
   let host=null,body=null,notice=null,state=null,owner=null,authPhase='',generation=0,tab='friends',kind='friends',metric='weekly',lifetimeMetric='xp',weeklyScope='global';
   const accountPhase=()=>root.KanaCloudSync?.isAuthResolved?.()===false?(root.KanaCloudSync.getSyncStatus?.().state||'restoring'):'resolved';
   const alive=ticket=>!!host?.isConnected && ticket===generation && owner===root.KanaCloudSync?.getUser?.()?.uid;
@@ -32,6 +36,7 @@
   async function run(action,onSuccess){
     if(!host || host.getAttribute('aria-busy')==='true')return;
     const ticket=generation;status('');host.setAttribute('aria-busy','true');
+    pages.clear();
     const controls=[...host.querySelectorAll('button,input,select,textarea')];controls.forEach(node=>{node.dataset.wasDisabled=String(node.disabled);node.disabled=true;});
     try{const result=await action();if(alive(ticket))await onSuccess?.(result);}
     catch(error){root.ModeAtlasDiagnostics?.record('friends',error);if(alive(ticket))status(root.ModeAtlasSocial.message(error),'error');}
@@ -43,6 +48,7 @@
   function back(label,action){body.append(button('← '+label,action,'ma-button ma-button--ghost ma-social-back'));}
   async function load(){
     if(!host?.isConnected)return;
+    pages.clear();
     const ticket=screen();state=null;
     if(!root.KanaCloudSync?.getUser?.()){
       if(accountPhase()==='restore-error'){
@@ -111,7 +117,7 @@
     }
     const list=el('div','ma-social-list');list.id='maSocialList';list.dataset.layout=tab==='friends'&&kind==='friends'?'friends':'ranking';list.setAttribute('role','tabpanel');list.setAttribute('aria-labelledby','maSocialTab-'+tab);body.append(list);
     if(tab==='rankings'&&metric==='weekly')void loadWeekly(list);
-    else if(tab==='friends'&&firstPage?.kind===kind)renderPage(list,firstPage,null);
+    else if(tab==='friends'&&firstPage?.kind===kind){pages.set(pageKey(),{at:Date.now(),result:firstPage});renderPage(list,firstPage,null);}
     else void loadPage(list,null);
     if(tab==='friends'){
       const privacy=el('details','ma-social-privacy');privacy.append(el('summary','','Friends privacy'),el('p','ma-social-note','Leaving removes your friends profile, code, connections and requests. Your learning progress stays saved.'),button('Leave Friends',()=>confirmAction('Leave Friends?','Your friends profile, code, connections, requests and blocked list will be removed. Your learning progress stays saved.','Leave Friends','leave',{},load),'ma-button ma-button--danger'));body.append(privacy);
@@ -131,6 +137,7 @@
       if(profile.avatar==='character'&&profile.character){const figure=el('span','ma-social-friend__figure');root.ModeAtlasAvatarArt.render(figure,profile.character);art.append(figure);}
       else art.append(avatar(profile));
       const caption=el('span','ma-social-friend__caption');caption.append(identity(profile),el('span','ma-social-score',`${number(profile.stats.streak)}d streak`));
+      if(profile.greeting){const phrase=el('span','ma-social-friend__status',profile.greeting);phrase.setAttribute('aria-label','Status: '+profile.greeting);caption.append(phrase);}
       open.append(art,caption);card.append(open);return card;
     }
     const card=profileCard(profile,'ma-social-row');if(profile.uid===owner)card.dataset.self='true';
@@ -153,10 +160,13 @@
     return card;
   }
   async function loadPage(list,cursor){
+    const key=pageKey(),cached=pages.get(key);
+    if(!cursor&&cached&&Date.now()-cached.at<30000){renderPage(list,cached.result,null);return;}
     const ticket=generation,loading=el('p','ma-social-note','Loading…');list.append(loading);
     try{
       const result=await root.ModeAtlasSocial.call('list',{kind:tab==='rankings'?'rankings':kind,...(tab==='rankings'?{metric}:{}),...(cursor?{cursor}:{})});
       if(!alive(ticket))return;loading.remove();
+      if(!cursor)pages.set(key,{at:Date.now(),result});
       renderPage(list,result,cursor);
     }catch(error){if(alive(ticket)){loading.remove();status(root.ModeAtlasSocial.message(error),'error');}}
   }
@@ -271,7 +281,7 @@
     wrap.append(help);return wrap;
   }
   async function showProfile(uid){
-    const ticket=screen();back(tab==='rankings'?'Rankings':'Friends',load);
+    const ticket=screen();back(tab==='rankings'?'Rankings':'Friends',home);
     try{
       const result=await root.ModeAtlasSocial.call('profile',{uid});if(!alive(ticket))return;
       const profile=result.profile;body.classList.add('ma-social-profile');if(root.ModeAtlasRewardRules.item('themes',profile.theme))body.dataset.maProfileTheme=profile.theme;const card=profileCard(profile,'ma-social-self');card.append(avatar(profile),identity(profile));body.append(card);
@@ -396,6 +406,7 @@
   }
   function mount(parent){
     if(!root.ModeAtlasSocial.isEnabled())return;
+    pages.clear();
     owner=root.KanaCloudSync?.getUser?.()?.uid;authPhase=accountPhase();state=null;tab=new URLSearchParams(location.search).get('ranking')==='weekly'?'rankings':'friends';kind='friends';weeklyScope='global';
     metric='weekly';lifetimeMetric='xp';
     const container=el('div','ma-social');host=container;
@@ -404,7 +415,7 @@
     parent.replaceChildren(container);
     queueMicrotask(()=>{if(host===container)void load();});
     return ()=>{
-      if(host===container){generation++;host=body=notice=state=null;}
+      if(host===container){generation++;pages.clear();host=body=notice=state=null;}
       container.remove();
     };
   }

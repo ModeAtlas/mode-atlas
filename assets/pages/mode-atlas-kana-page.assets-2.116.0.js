@@ -6,7 +6,7 @@
   const L=root.ModeAtlasKanaLearning,P=root.ModeAtlasKanaPlacement,Store=root.ModeAtlasStorage;
   const params=new URLSearchParams(location.search);
   let view=['learn','path','practice','mastery','tests'].includes(params.get('view'))?params.get('view'):'learn';
-  let script=L.scripts.includes(params.get('script'))?params.get('script'):'hiragana',skill=L.skills.includes(params.get('skill'))?params.get('skill'):'reading';
+  let script=L.scripts.includes(params.get('script'))?params.get('script'):'hiragana',skill=[...L.skills,'both'].includes(params.get('skill'))?params.get('skill'):'reading';
   let lesson=null,placement=null,placementSetup=false,practiceSettings=null,customizing=false,placementKeyboard=null;
   const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
   function run(action){try{action();}catch(error){root.ModeAtlasToast?.show?.(error.message);const status=host.querySelector('[role=status]')||el('p','ma-status ma-status--error');status.setAttribute('role','status');status.textContent=error.message;if(!status.parentNode)host.append(status);}}
@@ -89,12 +89,7 @@
     actions.append(link(skill==='handwriting'?'Practise handwriting':'Practise '+L.names[skill],L.practiceUrl(skill,next.chars),skill==='handwriting'));current.append(actions);host.append(current);
     const due=skill==='handwriting'?[]:root.ModeAtlasReview.due(evidence[skill+'Review']).filter(c=>L.available(skill,state,evidence).has(c));
     if(due.length)host.append(link(`Review ${due.length} ready kana`,L.practiceUrl(skill,due,{hints:'off'})));
-    let group='';for(const row of rows){
-      if(row.group!==group){group=row.group;host.append(el('h2','ma-kana-group-title',row.groupName));}
-      const item=el('div','ma-kana-path-row');item.dataset.locked=String(!row.unlocked);item.dataset.complete=String(row.complete);
-      const copy=el('div');copy.append(el('strong','',row.name),el('span','ma-kana-path-chars',row.chars.join(' ')));
-      const action=button(row.complete?'Revisit':row.unlocked?'Learn':'Locked',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,row.chars));else{lesson={row,index:0};render();}});action.disabled=!row.unlocked;item.append(copy,action);host.append(item);
-    }
+    host.append(pathPreview(false));
     host.append(button('Check my starting point',openPlacement));
   }
   function nextRow(direction=skill,alphabet=script,state=L.read(),evidence=L.snapshot()){
@@ -117,7 +112,7 @@
       const a=link(`Revisit ${due.length} kana · ${L.names[direction]}`,L.practiceUrl(direction,due,{hints:'off'}));a.className='ma-kana-review-link';target.append(a);
     }
   }
-  function pathPreview(){
+  function pathPreview(includeExplore=true){
     const state=L.read(),evidence=L.snapshot(),rows=L.path(script,skill,state,evidence),next=nextRow(skill,script,state,evidence);
     const aside=el('aside','ma-kana-path-preview');aside.setAttribute('aria-label','Your complete Kana path');
     aside.append(el('span','ma-kicker',script==='hiragana'?'HIRAGANA':'KATAKANA'),el('h2','','Your path'));
@@ -127,6 +122,10 @@
       group.open=groupId===next.group;
       const heading=el('summary');heading.append(el('strong','',groupRows[0].groupName),el('span','',`${groupRows.filter(row=>row.complete).length} / ${groupRows.length}`));group.append(heading);
       const list=el('div','ma-kana-path-steps');
+      const trail=document.createElementNS('http://www.w3.org/2000/svg','svg'),line=document.createElementNS(trail.namespaceURI,'path');
+      trail.classList.add('ma-kana-path-trail');trail.setAttribute('viewBox',`0 0 320 ${groupRows.length*128}`);trail.setAttribute('preserveAspectRatio','none');trail.setAttribute('aria-hidden','true');
+      let d='M 90 27';for(let i=1;i<groupRows.length;i++){const from=i%2?90:230,to=i%2?230:90,y=(i-1)*128+27;d+=` C ${from} ${y+64}, ${to} ${y+64}, ${to} ${y+128}`;}
+      line.setAttribute('d',d);trail.append(line);list.append(trail);
       for(const row of groupRows){
         const item=button('',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,row.chars));else{lesson={row,index:0};render();root.scrollTo({top:0,behavior:'instant'});}});
         item.className='ma-kana-path-step';item.disabled=!row.unlocked;item.dataset.current=String(row.id===next.id);item.dataset.row=row.id;
@@ -138,7 +137,7 @@
       }
       group.append(list);aside.append(group);
     }
-    const all=button('Explore your path →',()=>chooseView('path'));all.className='ma-kana-text-action';all.setAttribute('aria-label','Explore your path');aside.append(all);
+    if(includeExplore){const all=button('Explore your path →',()=>chooseView('path'));all.className='ma-kana-text-action';all.setAttribute('aria-label','Explore your path');aside.append(all);}
     return aside;
   }
   function workspace(stage){const frame=el('div','ma-kana-workspace');frame.append(stage,pathPreview());host.append(frame);}
@@ -176,17 +175,20 @@
   }
   function settingsForPractice(){
     if(practiceSettings)return practiceSettings;
-    const saved=Store.readModeJSON(skill,'settings',{}),next=nextRow();
+    const saved=Store.readModeJSON(skill==='both'?'reading':skill,'settings',{}),next=nextRow();
     const previous=saved.kanaSelection&&Object.keys(L.selection(saved,skill)).length?saved:{};
     practiceSettings={practiceCount:20,feedbackStyle:'learn',hint:false,srs:true,endless:false,speedRun:false,timeTrial:false,dailyChallenge:false,testMode:false,comboKana:false,focusWeak:false,confusableKana:false,...previous,kanaRows:previous.kanaRows||[next.id],kanaSelection:true};
+    practiceSettings.kanaDirection=skill;
+    if(skill==='both'&&(practiceSettings.dailyChallenge||practiceSettings.testMode||practiceSettings.comboKana))practiceSettings=root.ModeAtlasKanaPractice.forFamily(practiceSettings,'practice',skill);
     if(practiceSettings.testMode&&!L.testScripts(skill).includes(practiceSettings.kanaTestScript))practiceSettings=root.ModeAtlasKanaPractice.forFamily(practiceSettings,'practice',skill);
     return practiceSettings;
   }
   function openSession(){
     const settings=settingsForPractice(),pool=settings.testMode?L.testPool(settings,skill):L.selection(settings,skill);
     if(!Object.keys(pool).length)throw new Error('Choose at least one available row.');
-    if(!Store.writeModeJSON(skill,'settings',settings))throw new Error('Your session settings could not be saved. Please try again.');
-    root.KanaCloudSync?.markSectionUpdated?.(skill);navigate('/'+(skill==='writing'?'writing':'reading')+'/');
+    const owner=skill==='both'?'reading':skill;
+    if(!Store.writeModeJSON(owner,'settings',settings))throw new Error('Your session settings could not be saved. Please try again.');
+    root.KanaCloudSync?.markSectionUpdated?.(owner);navigate('/'+(skill==='writing'?'writing':'reading')+'/');
   }
   function customize(){
     const content=el('div','ma-kana-customize');customizing=true;
@@ -202,8 +204,9 @@
   }
   function practise(){
     title('Kana · Practice','Build the reflex.');
-    host.append(segmented('Kana skill',L.skills.map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();}));
-    const explanation={reading:'See あ, type “a”. Connect each shape with its sound.',writing:'See “a”, choose or type あ. Bring the shape to mind.',handwriting:'Trace the strokes, then try writing from memory.'};
+    host.append(segmented('Kana skill',['reading','writing','both'].map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();}));
+    host.append(link('Practise handwriting','/kana/handwriting/'));
+    const explanation={reading:'See あ, type “a”. Connect each shape with its sound.',writing:'See “a”, choose or type あ. Bring the shape to mind.',both:'あ → a, then a → あ. Alternate Read and Recall in one session.',handwriting:'Trace the strokes, then try writing from memory.'};
     host.append(el('p','ma-kana-skill-explanation',explanation[skill]));
     const stage=el('div','ma-kana-practice-stage');
     const card=el('section','ma-kana-next ma-kana-session');card.dataset.skill=skill;
@@ -230,6 +233,7 @@
     reviewLink(stage);stage.append(el('h2','ma-kana-section-title','Try a different pace'));
     const activities=el('div','ma-kana-activities');
     for(const [id,label,copy,mark]of [['practice','At your pace','Short sets or keep going.','あ'],['daily','Daily session','Twenty questions for today.','20'],['timed','Timed challenge','Build speed in one minute.','60'],['sequence','Character sequences','Practise reading kana together.','あい']]){
+      if(skill==='both'&&['daily','sequence'].includes(id))continue;
       const tool=activity(label,copy,mark,()=>{practiceSettings=root.ModeAtlasKanaPractice.forFamily(settings,id,skill);render();root.scrollTo({top:0,behavior:'instant'});});tool.setAttribute('aria-pressed',String(id===family));activities.append(tool);
     }stage.append(activities);workspace(stage);
   }
@@ -247,6 +251,7 @@
     const scroll=root.scrollY;host.replaceChildren(button('Back to mastery map',()=>{render();requestAnimationFrame(()=>{root.scrollTo({top:scroll,behavior:'instant'});host.querySelector(`[data-ma-mastery-kana="${char}"]`)?.focus({preventScroll:true});});}),detail);root.scrollTo({top:0,behavior:'instant'});
   }));}
   function render(){
+    if(view!=='practice'&&skill==='both')skill='reading';
     placementKeyboard?.destroy();placementKeyboard=null;
     const rowOpen=host.querySelector('.ma-kana-row-picker')?.open,focus=host.contains(document.activeElement)?document.activeElement.getAttribute('aria-label'):null;
     host.replaceChildren();const state=L.read();
