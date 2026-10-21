@@ -36,8 +36,12 @@ function verifiedContext(uid){return rules.authenticatedContext(uid,{email_verif
 async function learner(label,correct=20){
   const uid=`${label.replace(/[^a-z0-9]/gi,'')}-${++serial}`,email=`${uid}@example.test`,password='emulator-password';
   await auth.createUser({uid,email,password,emailVerified:true});
-  const login=await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})}).then(r=>r.json());
-  assert.ok(login.idToken,JSON.stringify(login));
+  let login;
+  const reauthenticate=async(nextEmail=email)=>{
+    login=await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:nextEmail,password,returnSecureToken:true})}).then(r=>r.json());
+    assert.ok(login.idToken,JSON.stringify(login));
+  };
+  await reauthenticate();
   const call=async(action,data={},expectedUid=uid)=>{
     if(directService){
       try{return await service.call({auth:{uid,token:{auth_time:Math.floor(Date.now()/1000)}},data:{action,data,expectedUid}});}
@@ -49,7 +53,7 @@ async function learner(label,correct=20){
   await db.doc(`users/${uid}/appData/kanaTrainer`).set(save(correct));
   await seedEarned(uid,save(correct));
   await call('updateProfile',{displayName:label,avatar:'kana',timeZone:'Australia/Melbourne'});
-  return {uid,email,call,token:login.idToken,code:(await call('state')).code};
+  return {uid,email,call,reauthenticate,get token(){return login.idToken;},code:(await call('state')).code};
 }
 function save(correct){return {sections:{progress:{data:{state:{version:3,legacySeeded:true,sources:{device:{'kana.reading.correct':correct}},appearance:{landmark:'horizon',at:1}}}},reading:{data:{stats:{'あ':{correct:60,wrong:0}},times:{'あ':800},srs:{}}},wordBank:{data:{items:[{english:'private word'}]}}}};}
 // Admin-only fixture: economic evidence is seeded separately from editable
@@ -1126,6 +1130,9 @@ test('avatar identity edits are atomic, unique and private until Friends opt-in'
 test('verified tester receives Shiro once, with no client email authority or forced re-equipping',async()=>{
   const a=await learner('SpitzTester'),chars=require('../functions/shared/mode-atlas-avatar-rules.js');
   await auth.updateUser(a.uid,{email:'evelyn.chelsea24@gmail.com',emailVerified:true});
+  // Email changes revoke older sessions. This fixture must behave like a real
+  // new sign-in, even when the emulator crosses a whole-second boundary.
+  await a.reauthenticate('evelyn.chelsea24@gmail.com');
   let current=await a.call('avatarState',{characterVersion:3});assert.equal(current.character.pet,'japanese-spitz');assert.equal(current.character.petName,'Shiro');
   assert.ok((await a.call('rewards')).grants.includes('shop-japanese-spitz'));
   const revision=current.revision;assert.equal((await a.call('avatarState',{characterVersion:3})).revision,revision);
