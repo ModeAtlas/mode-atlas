@@ -570,6 +570,8 @@ for(const width of [320,393,1280])test(`banner compositions and weekly identitie
  await fits(page);await page.screenshot({path:info.outputPath('friend-composition.png')});
  await page.getByRole('tab',{name:'Rankings',exact:true}).click();
  await expect(page.locator('.ma-weekly-podium .ma-social-rank')).toHaveText(['1','2','3']);
+ const banners=await page.locator('.ma-weekly-podium .ma-banner-scene').evaluateAll(items=>items.map(el=>{const style=getComputedStyle(el),art=getComputedStyle(el,'::before');return {opacity:style.opacity,artOpacity:art.opacity,mask:art.maskImage,background:art.backgroundImage};}));
+ expect(banners.every(b=>b.opacity==='1'&&b.artOpacity==='1'&&b.mask==='none')).toBe(true);expect(banners[0].background).toContain('hunny');
  const rows=await page.locator('.ma-weekly-podium .ma-social-row').evaluateAll(items=>items.map(c=>({width:c.clientWidth,scroll:c.scrollWidth,text:c.querySelector('.ma-social-identity').getBoundingClientRect().width,height:c.getBoundingClientRect().height})));
  expect(rows.every(c=>c.scroll<=c.width&&c.text>70&&c.height<300)).toBe(true);
  await fits(page);await page.screenshot({path:info.outputPath('weekly-composition.png')});

@@ -141,8 +141,7 @@
       if(profile.greeting){const phrase=el('span','ma-social-friend__status');phrase.append(el('span','ma-social-friend__phrase',profile.greeting));phrase.setAttribute('aria-label','Status: '+profile.greeting);art.append(phrase);}
       open.append(art,caption);card.append(open);return card;
     }
-    const card=el('div','ma-social-row');
-    const artwork=profileCard(profile,'ma-social-row__art ma-banner-scene');artwork.setAttribute('aria-hidden','true');card.append(artwork);
+    const card=profileCard(profile,'ma-social-row ma-banner-scene');
     if(profile.uid===owner)card.dataset.self='true';
     if(ranking){card.dataset.rank=String(profile.rank);card.append(el('strong','ma-social-rank',String(profile.rank)));}
     const open=button('',()=>showProfile(profile.uid),'ma-social-person');open.append(avatar(profile),identity(profile));card.append(open);
