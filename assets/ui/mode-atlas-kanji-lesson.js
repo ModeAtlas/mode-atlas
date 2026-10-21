@@ -30,7 +30,7 @@
       }details.append(readings);
       if(entry.kun.some(v=>/[.-]/.test(v)))details.append(el('p','','A dot separates the kanji reading from kana written after it; a dash marks a reading used as part of a word.'));
       if(entry.meanings.length>1)details.append(el('p','',`Other meanings: ${entry.meanings.slice(1).join(' · ')}`));view.append(details);
-      const footer=el('div','ma-kanji-lesson-actions');footer.append(button('Write it',()=>root.ModeAtlasHandwriting.open(entry.char)),action('Check meaning',()=>root.ModeAtlasKanjiSession.lessonStep()));view.append(footer);
+      const footer=el('div','ma-kanji-lesson-actions');footer.append(button('Save word',()=>{root.ModeAtlasWordBank.add({written:lesson.word,reading:lesson.reading,english:lesson.gloss});root.ModeAtlasToast?.show?.('Saved to Word Bank');}),button('Write it',()=>root.ModeAtlasHandwriting.open(entry.char)),action('Check meaning',()=>root.ModeAtlasKanjiSession.lessonStep()));view.append(footer);
     }else{
       view.append(el('h2','',phase==='recognise'?'What does it mean?':'How do you read this word?'),glyph);
       const feedback=current.lessonFeedback;

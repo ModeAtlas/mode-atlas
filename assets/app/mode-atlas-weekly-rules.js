@@ -11,5 +11,5 @@
     date.setUTCDate(date.getUTCDate()-(date.getUTCDay()+6)%7);
     const startAt=date.getTime();return {id:date.toISOString().slice(0,10),startAt,endAt:startAt+7*86400000};
   }
-  return Object.freeze({period,prizes,coinPrizes,minimumScore:100,minimumPlayers:2,dailyCap:20000,runLifetime:3600000,batchSize:20});
+  return Object.freeze({period,prizes,coinPrizes,minimumScore:100,minimumPlayers:2,dailyCap:20000,maxDailyAnswers:4000,runLifetime:3600000,batchSize:20});
 });

@@ -21,7 +21,7 @@
       <section class="ma-settings-section" aria-labelledby="maApplicationTitle">
         ${heading('maApplicationTitle','Explore & support','compass')}
         <div class="ma-settings-action-grid">
-          ${action('Quick tour','compass','data-ma-tour')}
+          ${action('Learning tours','compass','data-ma-tour')}
           ${action('Send feedback','message','data-ma-support')}
           ${action('About','info','data-ma-about-open')}
           ${native?'':action('Install app','download','data-ma-install')}

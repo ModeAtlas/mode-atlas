@@ -92,7 +92,7 @@
     }
     function finish(completed){
       const state=snapshot(),current=study();if(!current)return;
-      root.ModeAtlasWeekly?.finish(current);
+      root.ModeAtlasWeekly?.finish(current,completed);
       rewardContext(current);
       addXp(root.ModeAtlasProgress.finishRun({runId:current.runId,direction:config.mode,day:current.mode==='dailyChallenge'?current.dateKey:root.getTodayKey(),mode:current.mode,count:current.count,
         answered:state.sessionStats.answered,correct:state.sessionStats.correct,unique:Object.keys(current.items).length,
@@ -103,6 +103,7 @@
     }
     function prepareAnswer(){
       const state=snapshot();
+      root.ModeAtlasKanaEvidence.seed(answerMode(),state.stats,state.times);
       // Freeze legacy achievements before the answer changes averages/counts.
       // This runs inside the same transaction as scoring and the checkpoint.
       for(const kana of root.ModeAtlasKanaData.splitKana(state.currentChar)){
@@ -120,6 +121,7 @@
         row[answer.correct?'correct':'wrong']+=1;
       }
       const state=snapshot(),at=Date.now(),assisted=!!current.hintShown;
+      root.ModeAtlasKanaEvidence.record(answerMode(),{id:current.runId,index:state.sessionStats.answered,chars:root.ModeAtlasKanaData.splitKana(answer.kana),correct:answer.correct,elapsed:state.sessionStats.timings.at(-1)||0,at});
       if(assisted)current.assisted+=1;current.hintShown=false;current.questionAnswered=true;
       const supported=assisted||current.hintsEnabled;
       current.independentStreak=answer.correct&&!supported?(current.independentStreak||0)+1:0;

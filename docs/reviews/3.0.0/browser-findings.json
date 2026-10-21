@@ -1,0 +1,386 @@
+[
+  {
+    "surface": "desktop",
+    "route": "/",
+    "readyMs": 685,
+    "overflow": false,
+    "heading": [
+      "Good to see you.",
+      "Find your starting point",
+      "Your learning",
+      "Build the reflex.",
+      "Today’s goals",
+      "Ready to revisit"
+    ],
+    "buttons": 3,
+    "scripts": 83
+  },
+  {
+    "surface": "desktop",
+    "route": "/learn/",
+    "readyMs": 537,
+    "overflow": false,
+    "heading": [
+      "Learn",
+      "Find your starting point"
+    ],
+    "buttons": 0,
+    "scripts": 83
+  },
+  {
+    "surface": "desktop",
+    "route": "/kana/",
+    "readyMs": 452,
+    "overflow": false,
+    "heading": [
+      "Find your starting point"
+    ],
+    "buttons": 2,
+    "scripts": 88
+  },
+  {
+    "surface": "desktop",
+    "route": "/kanji/",
+    "readyMs": 479,
+    "overflow": false,
+    "heading": [
+      "Kanji",
+      "Learn your next kanji",
+      "Your first ten",
+      "Put it into practice"
+    ],
+    "buttons": 4,
+    "scripts": 88
+  },
+  {
+    "surface": "desktop",
+    "route": "/wordbank/",
+    "readyMs": 442,
+    "overflow": false,
+    "heading": [
+      "Word Bank",
+      "Saved words"
+    ],
+    "buttons": 3,
+    "scripts": 81
+  },
+  {
+    "surface": "desktop",
+    "route": "/progress/",
+    "readyMs": 424,
+    "overflow": false,
+    "heading": [
+      "Progress"
+    ],
+    "buttons": 8,
+    "scripts": 82
+  },
+  {
+    "surface": "desktop",
+    "route": "/friends/",
+    "readyMs": 460,
+    "overflow": false,
+    "heading": [
+      "Friends"
+    ],
+    "buttons": 1,
+    "scripts": 82
+  },
+  {
+    "surface": "desktop",
+    "route": "/shop/",
+    "readyMs": 455,
+    "overflow": false,
+    "heading": [
+      "Atlas Shop"
+    ],
+    "buttons": 19,
+    "scripts": 82
+  },
+  {
+    "surface": "desktop",
+    "route": "/reading/",
+    "readyMs": 658,
+    "overflow": false,
+    "heading": [
+      "Read · Practice"
+    ],
+    "buttons": 9,
+    "scripts": 96
+  },
+  {
+    "surface": "desktop",
+    "route": "/writing/",
+    "readyMs": 459,
+    "overflow": false,
+    "heading": [
+      "Recall · Practice"
+    ],
+    "buttons": 9,
+    "scripts": 96
+  },
+  {
+    "surface": "desktop",
+    "route": "/results/",
+    "readyMs": 404,
+    "overflow": false,
+    "heading": [
+      "Test Results"
+    ],
+    "buttons": 0,
+    "scripts": 84
+  },
+  {
+    "surface": "desktop",
+    "route": "/results/kanji/",
+    "readyMs": 419,
+    "overflow": false,
+    "heading": [
+      "Test Results"
+    ],
+    "buttons": 0,
+    "scripts": 82
+  },
+  {
+    "surface": "desktop",
+    "route": "/kana/handwriting/",
+    "readyMs": 415,
+    "overflow": false,
+    "heading": [
+      "Handwriting"
+    ],
+    "buttons": 0,
+    "scripts": 84
+  },
+  {
+    "surface": "desktop",
+    "panel": "Profile",
+    "text": "Profile\nProfile\nShop\nSettings\nあ\nGuest\nNot signed in\nTrail Finder\nEdit avatar & pet\nSign in with Google\nAtlas Level 1\n0 XP\n0 / 100 XP\nRead\n0\ncorrect kana\nRecall\n0\ncorrect kana\n0\nachievements\nAchievements\nSave status\nOn device\nSaved on this device\nSign in to save your progress to your account and use it on other devices.",
+    "overflow": false
+  },
+  {
+    "surface": "desktop",
+    "panel": "Shop",
+    "text": "Shop\nProfile\nShop\nSettings\nAtlas Coins\n\nSign in\n\nStudy Tokens\ni\n\nSign in\n\nBuy 500 coins\nSee full shop\nChange your atmosphere\nSee all\nCOLLECTION\nEvergreen\n750 coins\nCOLLECTION\nSakura\n750 coins\nThe finishing touches\nSee all\nOcean waves kimono\n520 coins / 4,160 tokens\nMeadow dress\n420 coins / 3,360 tokens\nStreak essentials\nSee all\nStreak Freeze\n150 coins / 900 tokens · 0 ready\nStreak Repair\n300 coins / 1,800 tokens · 0 ready\nYour rewards\nYour collections, wardrobe, themes and streak items.",
+    "overflow": false
+  },
+  {
+    "surface": "desktop",
+    "panel": "Settings",
+    "text": "Settings\nProfile\nShop\nSettings\nMake it yours\nDisplay\nAuto\nDesktop\nTablet\nPhone\nSound\nOn\nLoud\nOff\nThemes & rewards\nExplore & support\nQuick tour\nSend feedback\nAbout\nInstall app\nCheck for updates\nCurrent version: 2.117.1\n\nMode Atlas 2.117.1\n\nData & account\nRepair save\nReset data",
+    "overflow": false
+  },
+  {
+    "surface": "desktop",
+    "wordBankEntry": {
+      "id": "wb_1792556044665_x2psii",
+      "kana": "日本",
+      "romaji": "日本",
+      "english": "",
+      "notes": "",
+      "favorite": false,
+      "createdAt": "2026-10-21T04:14:04.665Z",
+      "updatedAt": "2026-10-21T04:14:04.665Z"
+    }
+  },
+  {
+    "surface": "desktop",
+    "juuFeedback": "Keep this one in mind\n\nじゅう\n\nYour answer: juu\nten\nListen\nSlower"
+  },
+  {
+    "surface": "desktop",
+    "errors": []
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/",
+    "readyMs": 1782,
+    "overflow": false,
+    "heading": [
+      "Good to see you.",
+      "Find your starting point",
+      "Your learning",
+      "Build the reflex.",
+      "Today’s goals",
+      "Ready to revisit"
+    ],
+    "buttons": 4,
+    "scripts": 81
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/learn/",
+    "readyMs": 281,
+    "overflow": false,
+    "heading": [
+      "Learn",
+      "Find your starting point"
+    ],
+    "buttons": 1,
+    "scripts": 81
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/kana/",
+    "readyMs": 238,
+    "overflow": false,
+    "heading": [
+      "Find your starting point"
+    ],
+    "buttons": 2,
+    "scripts": 86
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/kanji/",
+    "readyMs": 297,
+    "overflow": false,
+    "heading": [
+      "Kanji",
+      "Learn your next kanji",
+      "Your first ten",
+      "Put it into practice"
+    ],
+    "buttons": 5,
+    "scripts": 86
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/wordbank/",
+    "readyMs": 210,
+    "overflow": false,
+    "heading": [
+      "Word Bank",
+      "Saved words"
+    ],
+    "buttons": 3,
+    "scripts": 79
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/progress/",
+    "readyMs": 245,
+    "overflow": false,
+    "heading": [
+      "Progress"
+    ],
+    "buttons": 9,
+    "scripts": 80
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/friends/",
+    "readyMs": 214,
+    "overflow": false,
+    "heading": [
+      "Friends"
+    ],
+    "buttons": 2,
+    "scripts": 80
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/shop/",
+    "readyMs": 260,
+    "overflow": false,
+    "heading": [
+      "Atlas Shop"
+    ],
+    "buttons": 20,
+    "scripts": 80
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/reading/",
+    "readyMs": 301,
+    "overflow": false,
+    "heading": [
+      "Read · Practice"
+    ],
+    "buttons": 12,
+    "scripts": 94
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/writing/",
+    "readyMs": 305,
+    "overflow": false,
+    "heading": [
+      "Recall · Practice"
+    ],
+    "buttons": 12,
+    "scripts": 94
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/results/",
+    "readyMs": 238,
+    "overflow": false,
+    "heading": [
+      "Test Results"
+    ],
+    "buttons": 0,
+    "scripts": 82
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/results/kanji/",
+    "readyMs": 454,
+    "overflow": false,
+    "heading": [
+      "Test Results"
+    ],
+    "buttons": 0,
+    "scripts": 80
+  },
+  {
+    "surface": "iOS simulation",
+    "route": "/kana/handwriting/",
+    "readyMs": 245,
+    "overflow": false,
+    "heading": [
+      "Handwriting"
+    ],
+    "buttons": 1,
+    "scripts": 82
+  },
+  {
+    "surface": "iOS simulation",
+    "panel": "Profile",
+    "text": "Profile\nあ\nProfile\nShop\nSettings\nあ\nGuest\nNot signed in\nTrail Finder\nEdit avatar & pet\nSign in\nAtlas Level 1\n0 XP\n0 / 100 XP\nRead\n0\ncorrect kana\nRecall\n0\ncorrect kana\n0\nachievements\nAchievements\nSave status\nOn device\nSaved on this device\nSign in to save your progress to your account and use it on other devices.",
+    "overflow": false
+  },
+  {
+    "surface": "iOS simulation",
+    "panel": "Shop",
+    "text": "Shop\nあ\nProfile\nShop\nSettings\nAtlas Coins\n\nSign in\n\nStudy Tokens\ni\n\nSign in\n\nBuy 500 coins\nSee full shop\nChange your atmosphere\nSee all\nCOLLECTION\nEvergreen\n750 coins\nCOLLECTION\nSakura\n750 coins\nThe finishing touches\nSee all\nOcean waves kimono\n520 coins / 4,160 tokens\nMeadow dress\n420 coins / 3,360 tokens\nStreak essentials\nSee all\nStreak Freeze\n150 coins / 900 tokens · 0 ready\nStreak Repair\n300 coins / 1,800 tokens · 0 ready\nYour rewards\nYour collections, wardrobe, themes and streak items.",
+    "overflow": false
+  },
+  {
+    "surface": "iOS simulation",
+    "panel": "Settings",
+    "text": "Settings\nあ\nProfile\nShop\nSettings\nMake it yours\nSound\nOn\nLoud\nOff\nHaptics\nOn\nOff\nThemes & rewards\nNotifications\nDaily study reminder\nRemind me at\nDaily goals ending\nWeekly goals ending\nStreak at risk\nOvertaken in weekly ranking\nAlert times & quiet hours\niPhone notification settings\nReminders are unavailable in this build.\nExplore & support\nQuick tour\nSend feedback\nAbout\n\nMode Atlas 2.117.1\n\nData & account\nRepair save\nReset data",
+    "overflow": false
+  },
+  {
+    "surface": "iOS simulation",
+    "wordBankEntry": {
+      "id": "wb_1792556052042_2je6dm",
+      "kana": "日本",
+      "romaji": "日本",
+      "english": "",
+      "notes": "",
+      "favorite": false,
+      "createdAt": "2026-10-21T04:14:12.042Z",
+      "updatedAt": "2026-10-21T04:14:12.042Z"
+    }
+  },
+  {
+    "surface": "iOS simulation",
+    "juuFeedback": "Keep this one in mind\n\nじゅう\n\nYour answer: juu\nten\nListen\nSlower"
+  },
+  {
+    "surface": "iOS simulation",
+    "errors": []
+  }
+]

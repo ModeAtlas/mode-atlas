@@ -1,4 +1,5 @@
 'use strict';
+const {readSave}=require('./account-data.cjs');
 // Private avatar selection is canonical; Friends and the ladder publish a
 // sanitized projection only after the learner has joined those features.
 const {createHash}=require('node:crypto');
@@ -76,7 +77,7 @@ function createAvatars({db,identities,now=Date.now}){
     return db.runTransaction(async tx=>{
       const socialRef=db.doc('socialAccounts/'+user.uid),[social,save,awards,deleting,deleted,restriction]=await tx.getAll(socialRef,db.doc('users/'+user.uid+'/appData/kanaTrainer'),db.doc('rewardEntitlements/'+user.uid),db.doc('accountDeletions/'+user.uid),db.doc('socialDeleted/'+hash(user.uid)),db.doc('socialRestrictions/'+user.uid));
       if(deleting.exists||deleted.exists&&(Date.parse(user.metadata?.creationTime)||0)<=deleted.data().at)fail('unauthenticated','This account is being deleted.');
-      const account=social.data(),level=levelFromSave(save.data()),access=entitlement(user,awards.data(),now());
+      const account=social.data(),level=levelFromSave((await readSave(tx,save))),access=entitlement(user,awards.data(),now());
       if(action==='avatarState'){
         const ref=reference(user.uid),stored=(await tx.get(ref)).data(),value=record(stored,account?.profile,user);
         if(isTester(user)&&stored?.testerCompanionSeeded!==true){value.revision++;tx.set(ref,{...value,updatedAt:now()});}
@@ -92,7 +93,7 @@ function createAvatars({db,identities,now=Date.now}){
         const profile={...account.profile};delete profile.character;delete profile.avatarURL;
         Object.assign(profile,update.profile);
         if(data.displayName!==undefined)delete profile.requiresNameChange;
-        tx.update(socialRef,{profile,rewardAccess:access,summary:projectSave(save.data(),profile.timeZone,save.updateTime?.toMillis()||0,access),updatedAt:now()});
+        tx.update(socialRef,{profile,rewardAccess:access,summary:projectSave((await readSave(tx,save)),profile.timeZone,save.updateTime?.toMillis()||0,access),updatedAt:now()});
       }
       return response(update.value);
     });

@@ -3,7 +3,9 @@ import Foundation
 @main
 struct WidgetSnapshotTests {
     static func main() throws {
-        let now = Date()
+        // Millisecond-aligned fixture: live sub-millisecond timestamps can
+        // round-trip through JSON milliseconds just inside the 24-hour edge.
+        let now = Date(timeIntervalSince1970: 1792540800)
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -23,6 +25,8 @@ struct WidgetSnapshotTests {
         assert(!sample(progress: 1.1).isValid)
         assert(!sample(progress: .nan).isValid)
         assert(!sample(age: 86400).isFresh(at: now))
+        assert(sample(age: 86399).isFresh(at: now))
+        assert(!sample(age: 86401).isFresh(at: now))
         assert(sample(age: 86400 * 30).isUsable(at: now), "Last-known totals must remain available after inactivity")
         assert(!sample(age: -301).isFresh(at: now))
         assert(!sample(age: -301).isUsable(at: now))

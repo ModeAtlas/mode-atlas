@@ -2,6 +2,7 @@ const {test,expect}=require('@playwright/test');
 async function setup(page,{native=false,theme='dark'}={}){
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
   await page.addInitScript(({native,theme})=>{
+    localStorage.setItem('modeAtlasBranchToursSeen',JSON.stringify({kana:true,kanji:true,words:true}));
     if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
     localStorage.setItem('modeAtlasThemePreference',theme);localStorage.setItem('modeAtlasSound','off');localStorage.setItem('maWhatsNewSeen','kana-learning');
@@ -27,6 +28,7 @@ for(const native of [false,true])test(`combined practice alternates and saves ea
   await expect(page.locator('.ma-kana-skill-explanation')).toContainText('Alternate Read and Recall');
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
   await expect(page).toHaveURL(/\/reading\//);await page.locator('#startBtn').click();await page.clock.install();
+  expect(errors).toEqual([]);
   const first=await page.evaluate(()=>({char:currentChar,answer:getAnswerForCurrentChar()}));
   if(native){for(const char of first.answer)await page.locator(`.ma-ios-reading-keyboard [data-key="${char}"]`).click();}
   else await page.locator('#input').fill(first.answer);
@@ -57,8 +59,8 @@ test('placement resumes after reload, stops each direction at a gap, and saves n
   await setup(page);await open(page);await page.getByRole('button',{name:/Take a starting-point test/}).click();await page.getByRole('button',{name:'Begin check',exact:true}).click();
   for(let i=0;i<2;i++){const answer=await page.evaluate(()=>ModeAtlasKanaPlacement.question(ModeAtlasKanaPlacement.read()).roman);await page.getByLabel('Reading answer').fill(answer);await page.getByRole('button',{name:'Check answer',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}
   await page.reload();await page.getByRole('button',{name:'Check my starting point',exact:true}).click();await expect(page.locator('.ma-kana-page-heading')).toContainText('Ka row');
-  await page.getByRole('button',{name:'I don’t know yet',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();await expect(page.locator('.ma-kana-page-heading')).toContainText('Recall');
-  await page.getByRole('button',{name:'I don’t know yet',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
+  for(let i=0;i<2;i++){await page.getByRole('button',{name:'I don’t know yet',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}await expect(page.locator('.ma-kana-page-heading')).toContainText('Recall');
+  for(let i=0;i<2;i++){await page.getByRole('button',{name:'I don’t know yet',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}
   await expect(page.getByRole('heading',{name:'Your learning path is ready'})).toBeVisible();
   const result=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),read:ModeAtlasKanaLearning.path('hiragana','reading')[1].unlocked,recall:ModeAtlasKanaLearning.path('hiragana','writing')[1].unlocked}));expect(result).toEqual({xp:0,read:true,recall:false});
 });
@@ -177,11 +179,11 @@ for(const theme of ['light','dark'])test(`mastery displays exact next targets wi
     ModeAtlasStorage.writeModeJSON('reading','srs',{'あ':{reviewVersion:1,level:4,days:['2026-10-12','2026-10-13','2026-10-14','2026-10-15'],recent:Array.from({length:8},(_,i)=>({id:String(i),at:i+1,quality:2}))}});
   });await open(page,'/kana/?view=mastery');await page.getByRole('button',{name:'あ mastery details: Confident',exact:true}).click();
   const read=page.locator('.ma-kana-skill-evidence').first();await expect(read).toBeVisible();await expect(read.locator('[data-check="correct"]')).toHaveAttribute('data-status','met');await expect(read.locator('[data-check="correct"]')).toContainText('✓ Met');
-  await expect(read.locator('[data-check="accuracy"]')).toHaveAttribute('data-status','needed');await expect(read.locator('[data-check="time"]')).toHaveAttribute('data-status','needed');await expect(read.locator('[data-check="time"]')).toContainText('1.100s');await expect(read.locator('[data-check="time"]')).toContainText('≤ 1.000s');
+  await expect(read.locator('[data-check="accuracy"]')).toHaveAttribute('data-status','reference');await expect(read.locator('[data-check="time"]')).toHaveAttribute('data-status','reference');await expect(read.locator('[data-check="recent-attempts"]')).toHaveAttribute('data-status','needed');await expect(read.locator('[data-check="time"]')).toContainText('1.100s');await expect(read.locator('[data-check="time"]')).toContainText('Does not block mastery');
   await expect(read.locator('details')).toHaveCount(0);await page.screenshot({path:info.outputPath(`mastery-targets-${theme}.png`),fullPage:true});
   await page.getByRole('button',{name:'Recall · Familiar',exact:true}).click();await expect(read).toBeHidden();await expect(page.locator('.ma-kana-skill-evidence').nth(1)).toBeVisible();
   await page.getByRole('button',{name:'Handwrite · New',exact:true}).click();await expect(page.locator('.ma-kana-skill-evidence').nth(2)).toContainText('Clean writes without a guide');
-  await page.getByRole('button',{name:'Back to mastery map',exact:true}).click();await page.locator('.ma-kana-mastery-help summary').click();await expect(page.locator('.ma-kana-stage-guide')).toContainText('50 correct, 95% overall accuracy');
+  await page.getByRole('button',{name:'Back to mastery map',exact:true}).click();await page.locator('.ma-kana-mastery-help summary').click();await expect(page.locator('.ma-kana-stage-guide')).toContainText('50 correct');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 
@@ -196,7 +198,7 @@ test('native placement keeps the shared app keyboard ready between answers and d
   }
   // Hardware editing still works on the readonly input without summoning iOS input.
   await page.keyboard.type('xy');await expect(input).toHaveValue('xy');await page.keyboard.press('Backspace');await expect(input).toHaveValue('x');
-  await page.getByRole('button',{name:'I don’t know yet',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();await expect(page.locator('.ma-kana-placement-choices')).toBeVisible();await expect(page.locator('.ma-ios-reading-keyboard')).toHaveCount(0);
+  for(let misses=0;misses<2;misses++){await page.getByRole('button',{name:'I don’t know yet',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}await expect(page.locator('.ma-kana-placement-choices')).toBeVisible();await expect(page.locator('.ma-ios-reading-keyboard')).toHaveCount(0);
   await page.getByRole('button',{name:'Finish with my progress so far',exact:true}).click();await expect(page.locator('.ma-ios-accessibility-status')).toHaveCount(0);expect(errors).toEqual([]);expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);
 });
 

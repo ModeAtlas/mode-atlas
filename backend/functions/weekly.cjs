@@ -1,4 +1,5 @@
 'use strict';
+const {readSave,writeSection}=require('./account-data.cjs');
 const {randomUUID,createHash}=require('node:crypto');
 const {FieldPath}=require('firebase-admin/firestore');
 const {HttpsError}=require('firebase-functions/v2/https');
@@ -13,31 +14,7 @@ const map=Object.assign({},...Object.values(kana.maps));
 const fail=(code,message)=>{throw new HttpsError(code,message);};
 function fields(data,allowed){if(!data||typeof data!=='object'||Array.isArray(data)||Object.keys(data).some(key=>!allowed.includes(key)))fail('invalid-argument','Unsupported weekly competition request.');}
 function active(account){return account?.active&&!account.deleting&&!account.restricted&&account.weekly?.enabled===true;}
-function scoreAnswers(run,answers,at){
-  if(run.branch==='kanji')return kanji.score(run,answers,at);
-  if(!Array.isArray(answers)||!answers.length||answers.length>policy.batchSize)fail('invalid-argument','Send at most 20 new answers.');
-  let index=run.index,elapsed=run.elapsed,score=0;
-  const seen=new Set(run.seen),pool=new Set(run.pool);
-  for(const item of answers){
-    fields(item,['index','kana','answer','elapsed']);
-    if(!Number.isInteger(item.index)||item.index<1||typeof item.kana!=='string'||item.kana.length>20||typeof item.answer!=='string'||item.answer.length>40||!Number.isInteger(item.elapsed))fail('invalid-argument','Invalid study answer.');
-    if(item.index<=run.index)continue; // Retry after a lost response: no second credit.
-    if(item.index!==index+1||item.elapsed<elapsed+200||item.elapsed>at-run.startedAt+60000)fail('failed-precondition','Weekly answers must arrive in order during live practice.');
-    const units=kana.splitKana(item.kana);
-    if(!units.length||units.length>5||units.some(char=>!pool.has(char)))fail('invalid-argument','That kana is outside this session.');
-    units.forEach(char=>seen.add(char));
-    const expected=units.map(char=>map[char]).join('');
-    const direction=run.direction==='both'?(item.index%2?'reading':'writing'):run.direction;
-    const response=direction==='reading'?item.answer.trim().toLowerCase().replace(/\s+/g,''):item.answer.trim();
-    const written=kana.splitKana(response);
-    const correct=direction==='reading'?response===expected:run.mode==='testMode'?response===item.kana:
-      written.length===units.length&&written.every((char,i)=>pool.has(char)&&map[char]===map[units[i]]);
-    // The declared pool cannot inflate scores from repeating only a few kana.
-    if(correct)score+=units.length*rewards.kanaRate(Math.min(run.pool.length,seen.size),run.hints);
-    index=item.index;elapsed=item.elapsed;
-  }
-  return {index,elapsed,seen:[...seen],score};
-}
+const {scoreAnswers}=require('./answer-verification.cjs');
 function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
   const account=uid=>db.doc('socialAccounts/'+uid),weeks=db.collection('weeklyCompetitions');
   const entries=week=>weeks.doc(week).collection('entries');
@@ -69,7 +46,7 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
     return db.runTransaction(async tx=>{
       const ref=runs.doc(uid),[self,old,week,save]=await tx.getAll(account(uid),ref,weeks.doc(period.id),...(branch==='kanji'?[db.doc('users/'+uid+'/appData/kanaTrainer')]:[]));
       if(!active(self.data()))return {enabled:false};
-      if(branch==='kanji')kanji.unlocked(data,save?.data());
+      if(branch==='kanji')kanji.unlocked(data,await readSave(tx,save));
       const previous=old.data();
       if(previous?.id===data.id&&previous.week===period.id&&previous.expiresAt.toMillis()>now())return {enabled:true,token:previous.token,week:period.id,expiresAt:previous.expiresAt.toMillis(),index:previous.index,earned:previous.earned||0};
       const expiresAt=Math.min(now()+policy.runLifetime,period.endAt),token=randomUUID();
@@ -86,10 +63,15 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
       if(!active(self.data()))fail('failed-precondition','Join the weekly competition to submit practice.');
       if(!run||run.token!==data.token||run.week!==period.id||run.expiresAt.toMillis()<=at)fail('failed-precondition','This weekly session has ended. Start a new practice session.');
       const result=scoreAnswers(run,data.answers,at),old=current.data()||{score:0,days:{}};
-      const day=new Date(at).toISOString().slice(0,10),earned=Math.min(result.score,Math.max(0,policy.dailyCap-(old.days[day]||0)));
+      const day=new Date(at).toISOString().slice(0,10),added=result.index-run.index,attempts={...old.attempts,[day]:(old.attempts?.[day]||0)+added};
+      if(attempts[day]>policy.maxDailyAnswers)fail('resource-exhausted','Today’s ranked practice allowance is complete. Your personal practice still counts.');
+      const integrity={answers:old.integrity?.answers||0,nearMinimum:old.integrity?.nearMinimum||0,reviewRequired:old.integrity?.reviewRequired===true};
+      let elapsed=run.elapsed;for(const answer of result.verified){integrity.answers++;if(answer.elapsed-elapsed<220)integrity.nearMinimum++;elapsed=answer.elapsed;}
+      if(integrity.answers>=500&&integrity.nearMinimum/integrity.answers>.98)integrity.reviewRequired=true;
+      const earned=Math.min(result.score,Math.max(0,policy.dailyCap-(old.days[day]||0)));
       const runEarned=(run.earned||0)+earned;
       tx.update(ref,{index:result.index,elapsed:result.elapsed,seen:result.seen,earned:runEarned});
-      if(result.index!==run.index)tx.set(entry,{uid,week:period.id,active:true,score:old.score+earned,days:{...old.days,[day]:(old.days[day]||0)+earned},updatedAt:at,expiresAt:new Date(period.endAt+90*86400000)});
+      if(result.index!==run.index)tx.set(entry,{uid,week:period.id,active:true,score:old.score+earned,attempts,integrity,days:{...old.days,[day]:(old.days[day]||0)+earned},updatedAt:at,expiresAt:new Date(period.endAt+90*86400000)});
       return {index:result.index,earned,runEarned,score:old.score+earned,week:period.id};
     });
   }
@@ -135,9 +117,23 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
     }
     rows.sort((a,b)=>b.score-a.score||a.uid.localeCompare(b.uid));
     const ranks=new Map();
-    if(data.scope!=='friends')await Promise.all([...new Set(rows.map(row=>row.score))].map(async score=>{
-      const above=await entries(period.id).where('active','==',true).where('score','>',score).count().get();ranks.set(score,above.data().count+1);
-    }));
+    if(data.scope==='global'&&docs.length){
+      const first=docs[0],score=first.data().score;
+      // Two bounded aggregates per page preserve absolute ranks and ties, even
+      // if a cursor splits a tie or privacy removes some displayed profiles.
+      const [position,higher]=await Promise.all([
+        eligible(period.id).orderBy('score','desc').orderBy(FieldPath.documentId()).endBefore(score,first.id).count().get(),
+        eligible(period.id).where('score','>',score).count().get()
+      ]);
+      let last=score,place=higher.data().count+1;
+      docs.forEach((doc,i)=>{const value=doc.data().score;if(value!==last){place=position.data().count+i+1;last=value;}ranks.set(value,place);});
+    }else if(data.scope==='nearby'){
+      // Older clients may still request this retired view. Its small, fixed
+      // neighborhood retains compatibility without affecting the global page.
+      await Promise.all([...new Set(rows.map(row=>row.score))].map(async score=>{
+        const above=await eligible(period.id).where('score','>',score).count().get();ranks.set(score,above.data().count+1);
+      }));
+    }
     rows.forEach((row,i)=>{if(!ranks.has(row.score))ranks.set(row.score,i+1);row.rank=ranks.get(row.score);});
     return {rows,nextCursor,period,scope:data.scope};
   }
@@ -180,18 +176,21 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
       await db.runTransaction(async tx=>{
         const [existing,self,receipt,barrier,current]=await tx.getAll(prize,account(uid),history,db.doc('accountDeletions/'+uid),entry.ref);
         if(barrier.exists||!self.exists||!current.exists||receipt.data()?.results?.[week])return;
-        const awardPrize=eligiblePrize&&active(self.data())&&!existing.exists;
+        const held=eligiblePrize&&current.data()?.integrity?.reviewRequired===true;
+        const awardPrize=eligiblePrize&&!held&&active(self.data())&&!existing.exists;
         const save=awardPrize?await tx.get(saveRef):null;
+        if(save)await readSave(tx,save);
         const coinAward=awardPrize&&policy.coinPrizes[place-1]?await commerce.prepareWeeklyPrize(tx,uid,week,policy.coinPrizes[place-1]):null;
-        const xp=existing.data()?.xp||(awardPrize?policy.prizes[place-1]:0),coins=coinAward?.amount||existing.data()?.coins||0,result={week,rank:place,xp,coins,score,at:now()};
+        const xp=existing.data()?.xp||(awardPrize?policy.prizes[place-1]:0),coins=coinAward?.amount||existing.data()?.coins||0,result={week,rank:place,xp,coins,score,at:now(),...(held?{rewardStatus:'review'}:{})};
+        if(held)tx.set(db.doc('weeklyRewardReviews/'+week+'-'+uid),{uid,week,rank:place,score,reason:'timing-pattern',at:now()});
         const previous=receipt.data()||{},results={...previous.results,[week]:result},awards={...previous.weeks};
         if(awardPrize){
           coinAward?.commit();
-          const value=save.data()||{},state=progress.normalizeState(value.sections?.progress?.data?.state||{legacySeeded:true});
+          const value=await readSave(tx,save),state=progress.normalizeState(value.sections?.progress?.data?.state||{legacySeeded:true});
           state.claims[`v5:weekly:${week}:prize`]=xp;state.updatedAt=now();
           awards[week]=result;
           tx.set(prize,{...result,uid,expiresAt:new Date(period.endAt+90*86400000)});
-          tx.set(saveRef,{...value,updatedAt:now(),sections:{...value.sections,progress:{updatedAt:now(),data:{state}}}});
+          writeSection(tx,save,'progress',{updatedAt:now(),data:{state}});
         }
         const recent=rows=>Object.fromEntries(Object.entries(rows).sort(([a],[b])=>b.localeCompare(a)).slice(0,52));
         tx.set(history,{weeks:recent(awards),results:recent(results)});
@@ -211,6 +210,8 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
   }
   async function erase(uid){
     await Promise.all([runs.doc(uid).delete(),db.doc('weeklyAwards/'+uid).delete()]);
+    const held=await db.collection('weeklyRewardReviews').where('uid','==',uid).get();
+    if(!held.empty){const batch=db.batch();held.docs.forEach(doc=>batch.delete(doc.ref));await batch.commit();}
     for(const collection of ['entries','awards']){
       let found;
       do{

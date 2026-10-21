@@ -1,0 +1,15 @@
+const fs=require('node:fs'),vm=require('node:vm'),{createRequire}=require('node:module');
+const base=require('node:path').resolve(__dirname, '../../..') + '/';
+const req=createRequire(base+'tests/backend.test.js');
+const helper={require:id=>id==='node:test'?()=>{}:req(id),__dirname:base+'tests',module:{exports:{}},setTimeout,clearTimeout,Blob,CompressionStream,DecompressionStream,btoa,atob,structuredClone,TextEncoder,TextDecoder,console};
+vm.runInNewContext(fs.readFileSync(base+'tests/backend.test.js','utf8')+'\nmodule.exports={createBaseContext,patchFirebaseLoader};',helper);
+const {createBaseContext,patchFirebaseLoader}=helper.module.exports;
+const {context,window,localStorage}=createBaseContext();
+vm.runInContext(fs.readFileSync(base+'assets/app/mode-atlas-storage.js','utf8'),context);
+vm.runInContext(fs.readFileSync(base+'cloud-sync.js','utf8'),context);
+localStorage.setItem('charStats',JSON.stringify({'あ':{correct:5,wrong:0}}));
+localStorage.setItem('kanaWordBank',JSON.stringify([{id:'local',kana:'みず',english:'water'}]));
+context.remote={sections:{reading:{updatedAt:200,data:{stats:{'い':{correct:7,wrong:0}},times:{},srs:{},settings:{},scoreHistory:{},dailyChallengeHistory:{}}},wordBank:{updatedAt:200,data:{items:[{id:'remote',kana:'ねこ',english:'cat'}]}}}};
+vm.runInContext("storeSet(SECTION_DEFS.reading.updatedAtKey,'100');storeSet(SECTION_DEFS.wordBank.updatedAtKey,'100');mergeCloudIntoLocal(remote);",context);
+console.log('Merge after independent offline edits:',JSON.stringify({reading:JSON.parse(localStorage.getItem('charStats')),wordBank:JSON.parse(localStorage.getItem('kanaWordBank'))}));
+process.exit(0);

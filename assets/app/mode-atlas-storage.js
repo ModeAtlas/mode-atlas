@@ -127,6 +127,12 @@
     'modeAtlasOnboardingComplete',
     'modeAtlasOnboardingPreset',
     'modeAtlasKanaSetupComplete',
+    'modeAtlasKanaEvidence:reading',
+    'modeAtlasKanaEvidence:writing',
+    'modeAtlasResultsDeleted:reading',
+    'modeAtlasResultsDeleted:writing',
+    'modeAtlasResultsDeleted:kanji',
+    'modeAtlasWordBankDeleted',
     'modeAtlasPresetAchievementProgress',
     'modeAtlasPresetAchievementUpdatedAt',
     'modeAtlasSaveSchemaMigrated',
@@ -167,6 +173,10 @@
     'modeAtlasPracticeTransaction',
     'modeAtlasPracticeCheckpoint:reading',
     'modeAtlasPracticeCheckpoint:writing',
+    'modeAtlasSaveGeneration',
+    'modeAtlasEarningsOutbox',
+    'modeAtlasBranchToursSeen',
+    'modeAtlasKanjiPlacement',
     'modeAtlasKanjiCheckpoint',
     'modeAtlasKanaPlacementCheckpoint'
   ].filter((value, index, list) => value && list.indexOf(value) === index));

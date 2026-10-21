@@ -41,9 +41,9 @@ test('placement assesses directions separately, grants rows once, and never awar
   const {L,P,root,values}=load();let s=P.begin(['hiragana']);
   for(let i=0;i<2;i++){s=P.answer(s,P.question(s).roman);s=root.ModeAtlasStorage.transaction(()=>P.advance(s));}
   assert.equal(L.path('hiragana','reading')[1].unlocked,true);assert.equal(L.stage('あ'),0);assert.equal(values.has('charStats'),false);
-  s=P.answer(s,'wrong');s=P.advance(s);assert.equal(P.question(s).skill,'writing');assert.equal(P.question(s).row.id,'hiragana:base:a');
+  s=P.advance(P.answer(s,'wrong'));assert.equal(P.question(s).skill,'reading','one error gets a confirmation question');s=P.advance(P.answer(s,'wrong'));assert.equal(P.question(s).skill,'writing');assert.equal(P.question(s).row.id,'hiragana:base:a');
   const q=P.question(s);assert.equal(P.grade(q,q.roman),false);assert.equal(P.grade(q,q.char),true);assert.equal(P.choices(s).length,6);
-  s=P.answer(s,'wrong');s=P.advance(s);assert.ok(s.finished);assert.equal(L.path('hiragana','writing')[1].unlocked,false);assert.equal(values.has('modeAtlasProgress'),false);
+  s=P.advance(P.answer(s,'wrong'));s=P.advance(P.answer(s,'wrong'));assert.ok(s.finished);assert.equal(L.path('hiragana','writing')[1].unlocked,false);assert.equal(values.has('modeAtlasProgress'),false);
 });
 test('placement checkpoint survives reload, rejects malformed or foreign saves and retains partial grants',()=>{
   const {L,P,owner}=load();let s=P.begin(['katakana']);s=P.answer(s,P.question(s).roman);assert.deepEqual(plain(P.read()),plain(s));s=P.advance(s);s=P.answer(s,P.question(s).roman);s=P.advance(s);P.finish(s);assert.equal(L.path('katakana','reading')[1].unlocked,true);
@@ -74,7 +74,7 @@ test('failed curriculum saves report failure and placement checkpoint/grant reco
 test('social profiles use earned skills and include Mastered+ in ordinary mastery totals',()=>{
   const {L}=load(),state=L.normalize({earned:{reading:{'あ':5,'い':5},writing:{'あ':5},handwriting:{'あ':5}}});
   const result=require('../backend/functions/projection.cjs').projectSave({sections:{kanaLearning:{data:{state}}}});
-  assert.equal(result.readingMastered,2);assert.equal(result.writingMastered,1);assert.equal(result.combinedMastered,1);assert.equal(result.projectionVersion,6);
+  assert.equal(result.readingMastered,2);assert.equal(result.writingMastered,1);assert.equal(result.combinedMastered,1);assert.equal(result.projectionVersion,7);
 });
 
 test('malformed scalar fields and placement tracks cannot break curriculum or public profiles',()=>{
@@ -86,16 +86,16 @@ test('malformed scalar fields and placement tracks cannot break curriculum or pu
   assert.equal(result.readingMastered,0);assert.equal(result.combinedMastered,0);
 });
 
-test('mastery guidance follows the next earned milestone and compares exact evidence without rounding',()=>{
+test('mastery guidance distinguishes required recall evidence from lifetime and fluency diagnostics',()=>{
   const {L}=load(),s=L.start();s.earned.reading['あ']=4;
-  const record={reviewVersion:1,level:4,days:['2026-10-12','2026-10-13','2026-10-14','2026-10-15'],recent:Array.from({length:8},(_,i)=>({id:String(i),at:i+1,quality:2}))};
-  const e={readingStats:{'あ':{correct:52,wrong:3}},readingTimes:{'あ':1100},readingReview:{'あ':record}};
+  const record={reviewVersion:1,level:4,days:['2026-10-12','2026-10-13','2026-10-14','2026-10-15'],recent:Array.from({length:19},(_,i)=>({id:String(i),at:i+1,quality:2}))};
+  const e={readingStats:{'あ':{correct:52,wrong:30}},readingTimes:{'あ':1600},readingReview:{'あ':record}};
   let guide=L.guidance('あ','reading',s,e);assert.equal(guide.label,'Mastered');
-  const checks=Object.fromEntries(guide.checks.map(c=>[c.id,c]));assert.equal(checks.correct.met,true);assert.equal(checks.accuracy.met,false);assert.equal(checks.time.met,false);assert.equal(checks.spacing.met,true);
-  e.readingStats['あ']={correct:57,wrong:3};e.readingTimes['あ']=1000;
-  assert.equal(L.currentStage('あ','reading',e,s),5);assert.ok(L.guidance('あ','reading',s,e).checks.every(c=>c.met));
-  e.readingTimes['あ']=1000.00001;assert.equal(L.currentStage('あ','reading',e,s),4);assert.equal(L.guidance('あ','reading',s,e).checks.find(c=>c.id==='time').met,false);
-  s.earned.reading['あ']=5;assert.equal(L.earned('あ','reading',s,e),5);assert.equal(L.guidance('あ','reading',s,e).checks.find(c=>c.id==='time').met,false);
+  const checks=Object.fromEntries(guide.checks.map(c=>[c.id,c]));assert.equal(checks.correct.met,true);assert.equal(checks.accuracy.met,null);assert.equal(checks.time.met,null);assert.equal(checks['recent-attempts'].met,false);assert.equal(checks.spacing.met,true);
+  record.recent.push({id:'last',at:20,quality:2});
+  assert.equal(L.currentStage('あ','reading',e,s),5);assert.ok(L.guidance('あ','reading',s,e).checks.filter(c=>c.required!==false).every(c=>c.met));
+  s.earned.reading['あ']=5;record.recent[0].quality=0;record.recent[1].quality=0;
+  assert.equal(L.earned('あ','reading',s,e),5);assert.equal(L.guidance('あ','reading',s,e).checks.find(c=>c.id==='recent-accuracy').met,false);
 });
 test('familiar and handwriting targets use the same evidence as advancement, with no hinted shortcuts',()=>{
   const {L}=load(),s=L.start(),e={readingStats:{'あ':{correct:20,wrong:1}},readingReview:{'あ':{reviewVersion:1,recent:[2,2,2,1,0].map((quality,i)=>({id:String(i),at:i+1,quality}))}}};
@@ -109,5 +109,5 @@ test('legacy and optional evidence is labelled honestly until new practice adds 
   const e={readingStats:{'あ':{correct:10,wrong:0}},readingReview:{}};
   let guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,5);assert.equal(guide.legacy,true);assert.equal(guide.checks.find(c=>c.id==='days').met,null);
   e.readingStats['あ'].correct=3;e.readingReview['あ']={reviewVersion:1,recent:[{id:'x',at:1,quality:2}]};
-  guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,4);assert.equal(guide.legacy,false);assert.equal(guide.checks.find(c=>c.id==='days').met,false);assert.equal(guide.checks.find(c=>c.id==='time').met,true);assert.equal(guide.checks.find(c=>c.id==='time').optional,true);
+  guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,4);assert.equal(guide.legacy,false);assert.equal(guide.checks.find(c=>c.id==='days').met,false);assert.equal(guide.checks.find(c=>c.id==='time').met,null);assert.equal(guide.checks.find(c=>c.id==='time').optional,true);
 });

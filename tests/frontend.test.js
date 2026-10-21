@@ -96,10 +96,10 @@ test('build-time frontend manifest owns page dependencies, loader markup, and le
   const wordbank = read('wordbank/index.html');
   const storagePos = wordbank.indexOf('mode-atlas-storage.assets-');
   const wordbankControllerPos = wordbank.indexOf('mode-atlas-wordbank-page.assets-', storagePos);
-  const saveRepairPos = wordbank.indexOf('mode-atlas-save-repair.assets-', wordbankControllerPos);
+  const saveRepairPos = wordbank.indexOf('mode-atlas-save-repair.assets-');
   const cloudPos = wordbank.indexOf('cloud-sync.assets-', saveRepairPos);
-  assert.ok(storagePos >= 0 && storagePos < wordbankControllerPos && wordbankControllerPos < saveRepairPos && saveRepairPos < cloudPos,
-    'Word Bank early controller order must remain storage → page → save repair → cloud');
+  assert.ok(storagePos >= 0 && storagePos < saveRepairPos && saveRepairPos < cloudPos && cloudPos < wordbankControllerPos,
+    'shared storage and models must load before the Word Bank page');
 
   for (const [rel, target] of Object.entries({
     'kana.html': '/kana/', 'default.html': '/reading/', 'reverse.html': '/writing/', 'test.html': '/results/', 'wordbank.html': '/wordbank/'
@@ -365,7 +365,7 @@ test('feedback system owns dialogs, inline status, and destructive confirmations
   assert.match(settings, /data-ma-save-status/);
   assert.match(dataControls, /ModeAtlasFeedback\?\.confirm/);
   assert.match(dataControls, /title: 'Reset all Mode Atlas data\?'/);
-  assert.match(wordbank, /title: `Delete \$\{entry\.kana\}\?`/);
+  assert.match(wordbank, /title: `Delete \$\{entry\.written\}\?`/);
   assert.match(wordbank, /title: 'Clear the entire Word Bank\?'/);
 });
 
@@ -469,7 +469,7 @@ class WordBankElementMock {
 function runWordBankAddHarness({ saveSucceeds = true } = {}) {
   const source = read('assets/pages/mode-atlas-wordbank-page.js');
   const ids = [
-    'wordBankAddForm', 'kanaInput', 'addWordBtn', 'clearInputBtn', 'statusMsg', 'entries',
+    'wordBankReviewBtn','wordReadingInput','wordBankAddForm', 'kanaInput', 'addWordBtn', 'clearInputBtn', 'statusMsg', 'entries',
     'searchInput', 'sortSelect', 'filterSelect', 'exportBtn', 'importFile',
     'clearAllBtn', 'statTotal', 'statEnglish', 'statFavorites', 'statMissing',
   ];
@@ -492,6 +492,7 @@ function runWordBankAddHarness({ saveSucceeds = true } = {}) {
       return true;
     },
     now(key) { values.set(key, String(Date.now())); return values.get(key); },
+    transaction(fn){return fn();},set(key,value){values.set(key,String(value));return true;},
   };
   const window = {
     listeners: new Map(),
@@ -532,12 +533,13 @@ function runWordBankAddHarness({ saveSucceeds = true } = {}) {
   };
   const context = {
     window, self: window, document, localStorage,
-    Date, Math, JSON, Object, Array, Set, Number, String, Promise, console,
+    Date, Math, JSON, Object, Array, Set, Number, String, Promise, console,CustomEvent:class{constructor(type){this.type=type;}},
     Blob: class {},
     URL: { createObjectURL() { return 'blob:test'; }, revokeObjectURL() {} },
     FileReader: class {},
   };
   vm.createContext(context);
+  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-japanese','app/mode-atlas-wordbank'])vm.runInContext(read('assets/'+file+'.js'),context);
   vm.runInContext(source, context, { filename: 'mode-atlas-wordbank-page.js' });
   return { window, elements, values, order };
 }
@@ -548,9 +550,9 @@ test('Word Bank Add writes local data before cloud stamping and only reports suc
   success.elements.addWordBtn.dispatch('click');
   const stored = JSON.parse(success.values.get('kanaWordBank'));
   assert.equal(stored.length, 1);
-  assert.equal(stored[0].kana, 'ねこ');
+  assert.equal(stored[0].written, 'ねこ');
   assert.equal(stored[0].romaji, 'neko');
-  assert.deepEqual(success.order.slice(0, 3), ['setJSON', 'mark:wordBank', 'scheduleSync']);
+  assert.deepEqual(success.order.slice(0, 4), ['setJSON', 'setJSON', 'mark:wordBank', 'scheduleSync']);
   assert.match(success.elements.statusMsg.textContent, /Added ねこ/);
   assert.equal(success.elements.kanaInput.value, '');
 
@@ -564,7 +566,7 @@ test('Word Bank Add writes local data before cloud stamping and only reports suc
 });
 
 
-test('Word Bank Add has no native navigation path and binds before cloud/profile scripts', () => {
+test('Word Bank Add binds after its model without waiting for cloud hydration', () => {
   const html = read('wordbank/index.html');
   const js = read('assets/pages/mode-atlas-wordbank-page.js');
   assert.match(html, /<div[^>]*id="wordBankAddGroup"/);
@@ -577,7 +579,8 @@ test('Word Bank Add has no native navigation path and binds before cloud/profile
   const wordBankIndex = html.indexOf('<script src="../assets/pages/mode-atlas-wordbank-page.assets-');
   const cloudIndex = html.indexOf('cloud-sync.assets-');
   assert.ok(storageIndex >= 0 && wordBankIndex > storageIndex, 'Word Bank controller should load after storage');
-  assert.ok(cloudIndex < 0 || wordBankIndex < cloudIndex, 'Word Bank controller should bind before cloud startup');
+  assert.ok(html.indexOf('mode-atlas-wordbank.assets-')<wordBankIndex,'the model loads before its page');
+  assert.doesNotMatch(js,/await.*KanaCloudSync.*ready/,'local editing does not await cloud');
 });
 
 test('shared drawer, card, and form primitives replace page-local surface ownership', () => {
@@ -1298,8 +1301,8 @@ test('2.41 Atlas Level uses one mergeable semantic progression owner and Profile
   assert.match(progress, /function getLifetimeCorrect/);
 
   assert.match(cloud, /progress: \{\s*updatedAtKey:/);
-  assert.match(cloud, /name === 'progress'/);
-  assert.match(cloud, /ModeAtlasProgress\?\.mergeStates/);
+  assert.match(read('assets/app/mode-atlas-save-merge.js'), /owner.mergeStates/);
+  assert.match(read('assets/app/mode-atlas-save-merge.js'), /progress:root.ModeAtlasProgress/);
   assert.match(cloud, /progress: 'Atlas Level'/);
 
   for (const page of [reading, writing]) {
@@ -1462,7 +1465,7 @@ test('2.44 app-wide UX vocabulary keeps product destinations and actions semanti
   assert.match(resultsPage, /correct \/ \$\{item\.wrong\} incorrect/);
   assert.match(resultsPage, /Correct: \$\{row\.correct\} · Incorrect: \$\{row\.wrong\}/);
 
-  assert.match(wordbank, />Kana word<\/label>/);
+  assert.match(wordbank, />Word<\/label>/);
   assert.match(wordbank, />Add word<\/button>/);
   assert.match(wordbankJs, /"Save changes"/);
   assert.match(wordbankJs, /Clear search and filters/);

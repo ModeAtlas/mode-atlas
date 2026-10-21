@@ -12,7 +12,7 @@
 
   function recommendation(){
     const last = store.json('modeAtlasLastMode', null);
-    return window.ModeAtlasStudyPlan.recommend({
+    return window.ModeAtlasBranches.recommend(window.ModeAtlasStudyPlan.recommend({
       lastMode: /writing|reverse/i.test(last?.href || '') ? 'writing' : 'reading',
       readingSettings: store.json('settings', undefined),
       writingSettings: store.json('reverseSettings', undefined),
@@ -20,7 +20,7 @@
       writingStats: store.readModeJSON('writing','charStats',{}),
       readingReview: store.readModeJSON('reading','srs',{}),
       writingReview: store.readModeJSON('writing','srs',{})
-    });
+    }));
   }
   function render(){
     const isUser = onboarded(), next = recommendation();

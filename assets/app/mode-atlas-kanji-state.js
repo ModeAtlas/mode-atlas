@@ -39,7 +39,7 @@
     for(const [char,at]of Object.entries(object(value.completions)))if(levels.has(char)&&number(at))completions[char]=number(at);
     const runs=Object.fromEntries(Object.entries(object(value.runs)).filter(([id,r])=>safe(id)&&number(r?.at)).sort((a,b)=>b[1].at-a[1].at||a[0].localeCompare(b[0])).slice(0,32).map(([id,r])=>[id,{index:number(r.index),at:number(r.at)}]));
     const settings=object(value.settings);
-    return {version:1,sources,lessons,introductions,completions,runs,settings:{level:[1,2,3,4,5].includes(settings.level)?settings.level:5,romaji:settings.romaji===true,at:number(settings.at)},updatedAt:number(value.updatedAt)};
+    return {version:1,sources,lessons,introductions,completions,runs,entry:{mode:['beginner','placement','confident'].includes(value.entry?.mode)?value.entry.mode:'',bands:[...new Set((Array.isArray(value.entry?.bands)?value.entry.bands:[]).filter(n=>[1,2,3,4,5].includes(n)))],at:number(value.entry?.at)},settings:{level:[1,2,3,4,5].includes(settings.level)?settings.level:5,romaji:settings.romaji===true,at:number(settings.at)},updatedAt:number(value.updatedAt)};
   }
   function merge(left,right){
     const a=normalize(left),b=normalize(right);
@@ -62,6 +62,7 @@
     for(const [char,at]of Object.entries(b.completions))a.completions[char]=Math.min(a.completions[char]||at,at);
     for(const [id,r]of Object.entries(b.runs)){const old=a.runs[id];a.runs[id]={index:Math.max(old?.index||0,r.index),at:Math.max(old?.at||0,r.at)};}
     if(b.settings.at>a.settings.at||(b.settings.at===a.settings.at&&JSON.stringify(b.settings)>JSON.stringify(a.settings)))a.settings=b.settings;
+    if(b.entry.at>a.entry.at||(b.entry.at===a.entry.at&&JSON.stringify(b.entry)>JSON.stringify(a.entry)))a.entry=b.entry;
     a.updatedAt=Math.max(a.updatedAt,b.updatedAt);return normalize(a);
   }
   function read(){return normalize(root.ModeAtlasStorage?.json(KEY,{}));}
@@ -94,14 +95,14 @@
     let unlocked=true;
     return bands.map(band=>{
       const chars=[...band.chars],complete=chars.filter(char=>completed(state,char)).length;
-      const result={...band,total:chars.length,complete,unlocked,mastered:chars.filter(char=>stage(state,char)===3).length};
+      const result={...band,total:chars.length,complete,unlocked:allowed(band.level,state),mastered:chars.filter(char=>stage(state,char)===3).length};
       unlocked=unlocked&&complete===chars.length;return result;
     });
   }
-  function allowed(level,state=read()){return [1,2,3,4,5].includes(level)&&bands.filter(band=>band.level>level).every(band=>[...band.chars].every(char=>completed(state,char)));}
+  function allowed(level,state=read()){return [1,2,3,4,5].includes(level)&&(state.entry?.mode==='confident'||state.entry?.bands.includes(level)||bands.filter(band=>band.level>level).every(band=>[...band.chars].every(char=>completed(state,char))));}
   const introductory=[...bands[0].intro];
   function introduced(state,char){return !!state.introductions[char]||completed(state,char);}
-  function introReady(state=read()){return introductory.every(char=>introduced(state,char));}
+  function introReady(state=read()){return ['placement','confident'].includes(state.entry?.mode)||introductory.every(char=>introduced(state,char));}
   function studyPool(level,state=read()){
     const band=bands.find(b=>b.level===level);if(!band||!allowed(level,state))return [];
     if(level!==5||introReady(state))return [...band.chars];
@@ -128,11 +129,14 @@
     else if(!input.correct)r[S]=0;
     const due=before.last&&at>=before.due;
     r[R]=input.correct?Math.min(8,before.reviews+(independent&&due?1:0)):0;
-    r[AT]=at;r[DUE]=at+(input.correct?[60000,10*60000,DAY,3*DAY,7*DAY,14*DAY,30*DAY,60*DAY,90*DAY][r[R]]:60000);
+    r[AT]=at;r[DUE]=input.correct&&before.last&&!due?before.due:at+(input.correct?[60000,10*60000,DAY,3*DAY,7*DAY,14*DAY,30*DAY,60*DAY,90*DAY][r[R]]:60000);
     state.sources[id][char][skill]=r;state.runs[runId]={index,at};
     if(completed(state,char))state.completions[char]||=at;
     save(state);return true;
   }
+  function entered(state=read()){return !!state.entry?.mode||Object.keys(state.lessons).length>0||Object.keys(state.sources).length>0;}
+  function access(state,char){return state.entry?.mode==='confident'||state.entry?.mode==='placement'&&state.entry.bands.includes(levels.get(char));}
+  function enter(mode,bands=[5]){const value=read();value.entry={mode,bands:mode==='beginner'?[]:bands,at:Math.max(Date.now(),value.entry.at+1)};save(value);return value;}
   function settings(patch){const state=read();state.settings={...state.settings,...patch,at:Date.now()};save(state);return state.settings;}
-  return Object.freeze({KEY,UPDATED,skills,levels,normalize,merge,read,save,metrics,completed,stage,assessment,summary,allowed,introductory,introduced,introReady,studyPool,reviewSets,lesson,introduction,record,settings});
+  return Object.freeze({KEY,UPDATED,skills,levels,normalize,merge,read,save,metrics,completed,stage,assessment,summary,allowed,introductory,introduced,introReady,studyPool,reviewSets,lesson,introduction,record,settings,entered,enter,access});
 });

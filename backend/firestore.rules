@@ -6,7 +6,8 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/accountDeletions/$(uid));
     }
     function progressVersion(data) {
-      return data.get('sections', {}).get('progress', {}).get('data', {}).get('state', {}).get('version', 0);
+      let section = data.get('sections', {}).get('progress', {});
+      return section.get('storage', {}).get('schemaVersion', section.get('data', {}).get('state', {}).get('version', 0));
     }
     // Preserve the live project's owner-only profile and app-data access.
     // These are two exact document depths, not a recursive users wildcard.
@@ -14,10 +15,25 @@ service cloud.firestore {
       allow read, write: if ownsActiveAccount(uid);
     }
     match /users/{uid}/appData/{docId} {
-      allow read, create, delete: if ownsActiveAccount(uid);
+      allow read: if ownsActiveAccount(uid);
+      allow create: if ownsActiveAccount(uid);
+      allow delete: if ownsActiveAccount(uid) && resource.data.get('storageVersion', 1) < 2;
       // Older clients must not restore retired level credits or erase goal evidence.
       allow update: if ownsActiveAccount(uid)
-        && progressVersion(request.resource.data) >= progressVersion(resource.data);
+        && progressVersion(request.resource.data) >= progressVersion(resource.data)
+        && (resource.data.get('storageVersion', 1) < 2 ||
+          (request.resource.data.get('storageVersion', 0) == 2
+          && request.resource.data.get('revision', 0) == resource.data.get('revision', 0) + 1
+          && request.resource.data.get('generation', 0) >= resource.data.get('generation', 0)
+          && request.resource.data.get('generation', 0) <= resource.data.get('generation', 0) + 1));
+    }
+    match /users/{uid}/appData/kanaTrainer/parts/{partId} {
+      allow read, delete: if ownsActiveAccount(uid);
+      allow create, update: if ownsActiveAccount(uid)
+        && partId.matches('section-[a-zA-Z]+-[0-9]+')
+        && request.resource.data.keys().hasOnly(['text'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 480000;
     }
     // Social collections are accessed only through authenticated callables.
     // Admin SDK operations enforce their own ownership and relationship checks.

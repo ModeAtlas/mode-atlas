@@ -18,7 +18,10 @@ async function prepare(page,{native=true,width=393,height=852,theme='dark',auth=
       GoogleAuthProvider=class{setCustomParameters(){}};
       onAuthStateChanged=(_auth,callback)=>{window.testAuthChanged=callback;queueMicrotask(()=>callback({uid:'test-account',displayName:'Jack',email:'learner@example.test',emailVerified:true,providerData:[{providerId:'google.com'}]}));};
       getFirestore=()=>({});doc=(_db,...parts)=>parts.join('/');
-      getDoc=async()=>({exists:()=>false});setDoc=async()=>{if(window.stallCloud)await new Promise(resolve=>{window.finishCloud=resolve;});};
+      const records=new Map();
+      getDoc=async ref=>({exists:()=>records.has(ref),data:()=>structuredClone(records.get(ref)),metadata:{fromCache:false}});
+      setDoc=async(ref,value)=>{records.set(ref,structuredClone(value));};
+      runTransaction=async(_db,action)=>{const changes=[];const result=await action({get:getDoc,set:(ref,value)=>changes.push(()=>records.set(ref,structuredClone(value))),delete:ref=>changes.push(()=>records.delete(ref))});if(changes.length&&window.stallCloud)await new Promise(resolve=>{window.finishCloud=resolve;});changes.forEach(commit=>commit());return result;};
       signOut=async()=>window.testAuthChanged(null);return true;
     }`;
     await page.route('**/cloud-sync.assets-*.js',route=>route.fulfill({contentType:'text/javascript',body:"window.ModeAtlasEnv={...window.ModeAtlasEnv,canUseFirebase:true};window.KANA_FIREBASE_CONFIG={apiKey:'test',projectId:'test',appId:'test'};\n"+source.slice(0,start)+loader+source.slice(end)}));
@@ -119,7 +122,7 @@ test('large purchase preview keeps the item visible, retries errors and spends t
 for(const width of [320,393])test(`compact branch, wallet and About layout stays usable at ${width}px`,async({page})=>{
   await prepare(page,{width});
   await page.addInitScript(()=>{window.Capacitor.Plugins.ModeAtlasNative={setAppIcon:async()=>true};});
-  await page.goto('/kanji/');await expect(page.locator('.ma-kanji-level')).toHaveCount(5);
+  await page.goto('/kanji/');await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();await expect(page.locator('.ma-kanji-level')).toHaveCount(5);
   const levels=await page.locator('.ma-kanji-level').evaluateAll(nodes=>nodes.map(node=>({width:node.clientWidth,scroll:node.scrollWidth,top:node.getBoundingClientRect().top})));
   expect(levels.every(box=>box.scroll<=box.width+1)).toBe(true);expect(new Set(levels.map(box=>box.top)).size).toBe(1);
   await expect(page.locator('.ma-kanji-course-summary')).toContainText('N5 · Foundations');

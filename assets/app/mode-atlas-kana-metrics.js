@@ -45,9 +45,11 @@
     return `${safe.getFullYear()}-${String(safe.getMonth()+1).padStart(2,'0')}-${String(safe.getDate()).padStart(2,'0')}`;
   }
 
+  function firstHistory(keys){for(const key of keys){const rows=arr(key);if(rows.length)return rows;}return [];}
   function createSnapshot({includeStreak=true}={}){
     const tests={};
-    [...READING_TEST_KEYS,...WRITING_TEST_KEYS].forEach(key=>{ tests[key]=arr(key); });
+    tests.testModeResults=root.ModeAtlasResultsStorage?.read('reading')||firstHistory(READING_TEST_KEYS);
+    tests.writingTestModeResults=root.ModeAtlasResultsStorage?.read('writing')||firstHistory(WRITING_TEST_KEYS);
     return Object.freeze({
       __modeAtlasKanaMetricsSnapshot:true,
       studyStreak:includeStreak?(root.ModeAtlasProgress?.routine?.().streak||0):0,

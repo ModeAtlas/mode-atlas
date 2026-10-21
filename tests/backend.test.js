@@ -81,7 +81,7 @@ test('unordered Firestore maps do not re-upload or re-render an unchanged accoun
   assert.equal(changed(),before,'unchanged reads do not trigger app-wide refresh work');
   assert.equal(window.KanaCloudSync.getSyncStatus().state,'cloud');
   assert.equal(window.ModeAtlasProgress.readState().personalGoals.daily.repeat,true);
-  assert.ok(Array.from(lastOptions.mergeFields).includes('sections'),'complete section maps replace obsolete nested fields');
+  assert.equal(remote.storageVersion,2);assert.ok(remote.revision>0,'the save is committed with an atomic revision');
   localStorage.setItem('kanaWordBank',JSON.stringify([{kana:'みず',english:'water'}]));
   await window.KanaCloudSync.syncNow();assert.equal(writes,count+1,'a real local edit still uploads');
   assert.equal(remote.sections.wordBank.data.items[0].english,'water');
@@ -121,7 +121,8 @@ function createBaseContext({ configured = false } = {}) {
   };
   Object.assign(window,{Blob,CompressionStream,DecompressionStream,btoa,atob});
   vm.createContext(context);
-  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-review','app/mode-atlas-kana-learning','data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-results'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
+  vm.runInContext(STORAGE_SOURCE,context);
+  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-review','app/mode-atlas-kana-learning','data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-results','app/mode-atlas-japanese','app/mode-atlas-kana-evidence','app/mode-atlas-wordbank','app/mode-atlas-save-merge','results/mode-atlas-results-storage','app/mode-atlas-account-transport'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
   return { context, window, localStorage, sessionStorage };
 }
 
@@ -139,6 +140,7 @@ function patchFirebaseLoader(source) {
     signInWithPopup=m.signInWithPopup;
     signInWithRedirect=m.signInWithRedirect; getRedirectResult=m.getRedirectResult; signOut=m.signOut;
     onAuthStateChanged=m.onAuthStateChanged; getFirestore=m.getFirestore; doc=m.doc; getDoc=m.getDoc; setDoc=m.setDoc;
+    runTransaction=m.runTransaction||async function(_db,callback){const writes=[];const result=await callback({get:m.getDoc,set:(ref,data)=>writes.push(()=>m.setDoc(ref,data)),delete:ref=>writes.push(()=>m.deleteDoc?.(ref))});for(const write of writes)await write();return result;};
     return true;
   }`;
   return source.slice(0, start) + replacement + source.slice(end);
@@ -157,6 +159,7 @@ function patchFirebaseLoaderWithTransientFailure(source) {
     GoogleAuthProvider=m.GoogleAuthProvider; signInWithCredential=m.signInWithCredential; signInWithPopup=m.signInWithPopup;
     signInWithRedirect=m.signInWithRedirect; getRedirectResult=m.getRedirectResult; signOut=m.signOut;
     onAuthStateChanged=m.onAuthStateChanged; getFirestore=m.getFirestore; doc=m.doc; getDoc=m.getDoc; setDoc=m.setDoc;
+    runTransaction=m.runTransaction||async function(_db,callback){const writes=[];const result=await callback({get:m.getDoc,set:(ref,data)=>writes.push(()=>m.setDoc(ref,data)),delete:ref=>writes.push(()=>m.deleteDoc?.(ref))});for(const write of writes)await write();return result;};
     return true;
   }`;
   return source.slice(0, start) + replacement + source.slice(end);
@@ -255,7 +258,7 @@ test('Mode Atlas storage boundary protects unrelated origin data', async () => {
   assert.equal(localStorage.getItem('thirdPartyPreference'), 'still-here');
   assert.equal(sessionStorage.getItem('thirdPartySession'), 'still-here-too');
 });
-test('cloud-sync falls back to localStorage and bindUi is idempotent', async () => {
+test('cloud-sync reads the shared storage owner and bindUi is idempotent', async () => {
   const { context, window, localStorage } = createBaseContext({ configured: false });
   localStorage.setItem('charStats', JSON.stringify({ 'あ': { correct: 3, wrong: 1 } }));
   localStorage.setItem('settings', JSON.stringify({ hiraganaRows: ['h_a'] }));
@@ -565,10 +568,8 @@ test('in-flight cloud sync preserves local section changes made while Firestore 
   });
 
   assert.equal(await pendingSync, true);
-  assert.deepEqual(JSON.parse(localStorage.getItem('kanaWordBank')), newestLocal,
-    'remote data older than the live local edit must not overwrite the new Word Bank entry');
-  assert.deepEqual(latestWrite.sections.wordBank.data.items, newestLocal,
-    'the Firestore write must use the live local section, not the stale snapshot captured before getDoc');
+  assert.deepEqual(JSON.parse(localStorage.getItem('kanaWordBank')).map(row=>row.id).sort(), ['new','remote'],'both independent words survive');
+  assert.deepEqual(latestWrite.sections.wordBank.data.items.map(row=>row.id).sort(),['new','remote']);
   assert.equal(Number(latestWrite.sections.wordBank.updatedAt), 500);
 });
 
@@ -626,15 +627,14 @@ test('initial cloud hydration preserves local section changes made while Firesto
   });
 
   assert.equal(await window.KanaCloudSync.waitForInitialHydration(), true);
-  assert.deepEqual(JSON.parse(localStorage.getItem('kanaWordBank')), newestLocal,
-    'initial hydration must not overwrite a local section changed after the read began');
-  assert.ok(Number(localStorage.getItem('kanaWordBankUpdatedAt')) > 999,
+  assert.deepEqual(JSON.parse(localStorage.getItem('kanaWordBank')).map(row=>row.id).sort(),['new-local','remote-old-content']);
+  assert.ok(Number(localStorage.getItem('kanaWordBankUpdatedAt')) >= 999,
     'the preserved local section must receive a logical clock newer than the conflicting remote snapshot');
 
   // The preserved local section should be queued back to cloud.
   await delay(300);
   assert.ok(latestWrite, 'preserved local data should be scheduled for cloud sync');
-  assert.deepEqual(latestWrite.sections.wordBank.data.items, newestLocal);
+  assert.deepEqual(latestWrite.sections.wordBank.data.items.map(row=>row.id).sort(),['new-local','remote-old-content']);
 });
 
 for(const recovery of ['online','manual'])test(`Firebase setup preserves the save after failure and recovers through ${recovery} retry`, async () => {

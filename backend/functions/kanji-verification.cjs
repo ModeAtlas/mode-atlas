@@ -16,15 +16,17 @@ function unlocked(data,save){
 }
 function score(run,answers,at){
   if(!Array.isArray(answers)||!answers.length||answers.length>policy.batchSize)fail('invalid-argument','Send at most 20 new answers.');
-  const pool=new Set(run.pool),seen=new Set(run.seen);let index=run.index,elapsed=run.elapsed,total=0;
+  const pool=new Set(run.pool),seen=new Set(run.seen);let index=run.index,elapsed=run.elapsed,total=0;const verified=[];
   for(const item of answers){
     if(!item||Object.keys(item).some(k=>!['index','kana','answer','elapsed'].includes(k))||!Number.isInteger(item.index)||item.index<1||typeof item.kana!=='string'||!pool.has(item.kana)||typeof item.answer!=='string'||item.answer.length>160||!Number.isInteger(item.elapsed))fail('invalid-argument','Invalid Kanji answer.');
     if(item.index<=run.index)continue;
     if(item.index!==index+1||item.elapsed<elapsed+200||item.elapsed>at-run.startedAt+60000)fail('failed-precondition','Weekly answers must arrive in order during live practice.');
     seen.add(item.kana);
-    if(content.grade(item.kana,run.direction,item.answer))total+=rewards.kanaRate(Math.min(run.pool.length,seen.size),run.hints||run.direction==='match');
+    const correct=content.grade(item.kana,run.direction,item.answer)||(run.direction==='pronunciation'&&(content.get(item.kana).legacyReadings||[]).some(expected=>content.kana(item.answer)===content.hira(expected)));
+    verified.push({index:item.index,char:item.kana,correct,elapsed:item.elapsed,poolSize:Math.min(run.pool.length,seen.size),units:1,direction:run.direction});
+    if(correct)total+=rewards.kanaRate(Math.min(run.pool.length,seen.size),run.hints||run.direction==='match');
     index=item.index;elapsed=item.elapsed;
   }
-  return {index,elapsed,seen:[...seen],score:total};
+  return {index,elapsed,seen:[...seen],score:total,verified};
 }
 module.exports={valid,unlocked,score};

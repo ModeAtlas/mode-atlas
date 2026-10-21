@@ -34,6 +34,7 @@ async function seedStableLocalState(page) {
     try {
       if (localStorage.getItem('modeAtlasSmokeSeeded') === '1') return;
       localStorage.clear();
+      localStorage.setItem('modeAtlasBranchToursSeen',JSON.stringify({kana:true,kanji:true,words:true}));
       localStorage.setItem('modeAtlasSmokeSeeded', '1');
       localStorage.setItem('modeAtlasKanaLearning', JSON.stringify({version:1,startedAt:1,startKind:'beginner'}));
       localStorage.setItem('modeAtlasStarterSeen', 'true');
@@ -229,7 +230,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(page).toHaveURL(/\/wordbank\/$/);
       await expect(page.locator('details.wordbank-entry[data-id]').filter({ hasText: 'ねこ' }).first()).toBeVisible();
       const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('kanaWordBank') || '[]'));
-      expect(stored.some(item => item && item.kana === 'ねこ')).toBe(true);
+      expect(stored.some(item => item && item.written === 'ねこ')).toBe(true);
     });
   });
 

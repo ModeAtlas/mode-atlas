@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'The same learning tools, with a more consistent look.';
+  const WHATS_NEW_COPY = 'Stronger lessons, useful reviews and progress that travels with you.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'More space for learning, with clearer Kana and Kanji layouts on smaller screens.',
-    'A quicker route to your next look in the Shop, and a tidier Rewards collection.',
-    'A consistent Mode Atlas identity across the app, website and Home Screen.'
+    'Learn Kanji through useful words and clearer beginner lessons, or check your starting point.',
+    'Review your saved words and return to Kana or Kanji when your next review is ready.',
+    'Improved progress syncing across devices, clearer mastery targets and quicker Friends lists.'
   ];
 
   function storeGet(key, fallback = '') {

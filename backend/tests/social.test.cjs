@@ -16,7 +16,7 @@ test('combined weekly sessions verify alternating directions on the server',()=>
   const read={index:1,kana:'あ',answer:'a',elapsed:300},recall={index:2,kana:'あ',answer:'あ',elapsed:600};
   const right=scoreAnswers(run,[read,recall],1000),wrong=scoreAnswers(run,[read,{...recall,answer:'a'}],1000);
   assert.equal(right.index,2);assert.ok(right.score>wrong.score);
-  assert.throws(()=>scoreAnswers(run,[{...read,direction:'writing'}],1000),/Unsupported weekly/);
+  assert.throws(()=>scoreAnswers(run,[{...read,direction:'writing'}],1000),/Invalid study receipt/);
 });
 
 const {createService}=require('../functions/service.cjs');
@@ -46,10 +46,17 @@ async function learner(label,correct=20){
     const result=await response.json();if(result.error)throw Object.assign(new Error(result.error.message),{code:result.error.status});return result.result;
   };
   await db.doc(`users/${uid}/appData/kanaTrainer`).set(save(correct));
+  await seedEarned(uid,save(correct));
   await call('updateProfile',{displayName:label,avatar:'kana',timeZone:'Australia/Melbourne'});
   return {uid,email,call,token:login.idToken,code:(await call('state')).code};
 }
 function save(correct){return {sections:{progress:{data:{state:{version:3,legacySeeded:true,sources:{device:{'kana.reading.correct':correct}},appearance:{landmark:'horizon',at:1}}}},reading:{data:{stats:{'あ':{correct:60,wrong:0}},times:{'あ':800},srs:{}}},wordBank:{data:{items:[{english:'private word'}]}}}};}
+// Admin-only fixture: economic evidence is seeded separately from editable
+// learning saves. Tests that mutate a personal save do not implicitly earn money.
+async function seedEarned(uid,data){
+  const progress=require('../functions/shared/mode-atlas-progress.js')({ModeAtlasRewardRules:require('../functions/shared/mode-atlas-reward-rules.js'),ModeAtlasDates:require('../functions/shared/mode-atlas-date.js')});
+  await db.doc('studyEarnings/'+uid).set({version:1,state:progress.normalizeState(data.sections?.progress?.data?.state),answerOffset:0,streakOffset:0,days:require('../functions/projection.cjs').studyDaysFromSave(data,'UTC')});
+}
 async function friend(a,b){await a.call('sendRequest',{code:b.code});await b.call('accept',{uid:a.uid});}
 async function until(check){for(let i=0;i<200;i++){if(await check())return;await new Promise(resolve=>setTimeout(resolve,100));}assert.fail('Expected emulator trigger did not finish');}
 
@@ -86,6 +93,16 @@ test('an older client cannot overwrite migrated progress; current saves and expl
   await assertSucceeds(setDoc(ref,reset));
 });
 
+test('partitioned account saves require atomic revisions and protect private chunks from other accounts',async()=>{
+  const client=rules.authenticatedContext('partition-owner').firestore(),stranger=rules.authenticatedContext('partition-other').firestore();
+  const root=doc(client,'users/partition-owner/appData/kanaTrainer'),part=doc(client,'users/partition-owner/appData/kanaTrainer/parts/section-progress-0');
+  const value={storageVersion:2,revision:1,generation:0,sections:{progress:{updatedAt:1,data:{},storage:{format:'json-parts-v1',parts:['section-progress-0'],schemaVersion:7}}}};
+  await assertSucceeds(setDoc(part,{text:JSON.stringify({state:{version:7}})}));await assertSucceeds(setDoc(root,value));
+  await assertFails(getDoc(doc(stranger,part.path)));await assertFails(setDoc(doc(stranger,part.path),{text:'stolen'}));
+  await assertFails(setDoc(root,save(1000)));await assertFails(setDoc(root,{...value,revision:1}));await assertSucceeds(setDoc(root,{...value,revision:2,generation:1}));
+  await assertFails(require('firebase/firestore').deleteDoc(root));
+});
+
 test('rules preserve owner-only profile/app-data access and deny every direct social read/write',async()=>{
   const mine=rules.authenticatedContext('rules-owner').firestore(),other=rules.authenticatedContext('rules-other').firestore(),anon=rules.unauthenticatedContext().firestore();
   for(const path of ['users/rules-owner','users/rules-owner/appData/kanaTrainer','users/rules-owner/appData/otherSave']){
@@ -100,7 +117,7 @@ test('rules preserve owner-only profile/app-data access and deny every direct so
     await assertFails(getDoc(doc(mine,path)));
     await assertFails(setDoc(doc(mine,path),{}));
   }
-  for(const collection of ['avatarProfiles','commerceMigrations','socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','commerceAccounts','shopCatalogue','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices']){
+  for(const collection of ['avatarProfiles','commerceMigrations','socialAccounts','socialCodes','socialBlocks','socialLimits','socialDeleted','socialNames','socialMigrations','socialReports','socialReportLimits','socialRestrictions','socialStaff','socialWarnings','rewardEntitlements','commerceAccounts','shopCatalogue','accountDeletions','weeklyRuns','weeklyAwards','weeklyCompetitions','notificationAccounts','notificationDevices','studyEarnings','weeklyRewardReviews','socialProjectionQueue']){
     await assertFails(setDoc(doc(mine,`${collection}/rules-owner`),{xp:99999}));
     await assertFails(getDoc(doc(mine,`${collection}/rules-owner`)));
   }
@@ -783,7 +800,7 @@ test('notification timing preserves old-client schedules and suppresses overlap 
   at=Date.parse('2092-10-02T21:45:00Z');await notifications.send(a.uid,{id:'late-test',kind:'dailyGoals',title:'Late',body:'No delivery',destination:'yourAtlas',expiresAt:at+3600000});assert.equal(sent.length,1);
 });
 
-test('cached mastery projections refresh on Friends views without waiting for another study session',async()=>{
+test('Friends lists queue stale projections without loading every private save',async()=>{
   const a=await learner('Mastery Reader'),b=await learner('Mastery Friend');await friend(a,b);
   const snapshot=save(20),review={reviewVersion:1,level:4,peak:3,days:['2026-10-01','2026-10-02','2026-10-03','2026-10-04'],recent:Array.from({length:12},(_,i)=>({id:'recall-'+i,at:1791000000000+i*86400000,quality:2}))};
   snapshot.sections.reading.data={stats:{'あ':{correct:52,wrong:3},'お':{correct:86,wrong:14}},times:{'あ':1100,'お':1600},srs:{'あ':review,'お':review}};
@@ -792,9 +809,13 @@ test('cached mastery projections refresh on Friends views without waiting for an
   await until(async()=>(await db.doc('socialAccounts/'+b.uid).get()).data().summary.readingMastered===0);
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.readingMastered':2,'summary.combinedMastered':1});
   const result=await a.call('list',{kind:'rankings',metric:'mastery'}),peer=result.rows.find(row=>row.uid===b.uid);
+  assert.equal((await db.doc('socialProjectionQueue/'+b.uid).get()).exists,true);
+  await service.maintainEngagement();
+  const refreshed=(await a.call('list',{kind:'rankings',metric:'mastery'})).rows.find(row=>row.uid===b.uid);
+  Object.assign(peer,refreshed);
   assert.equal(peer.stats.readingMastered,0);assert.equal(peer.stats.writingMastered,0);assert.equal(peer.stats.combinedMastered,0);
   assert.equal(peer.stats.insights.kana.mastered,0);assert.equal(peer.stats.insights.kana.total,240);assert.equal(peer.stats.insights.achievements.total,91);
-  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,6);
+  assert.equal((await db.doc('socialAccounts/'+b.uid).get()).data().summary.projectionVersion,7);
   const saved=(await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis();
   await a.call('list',{kind:'friends'});assert.equal((await db.doc('socialAccounts/'+b.uid).get()).updateTime.toMillis(),saved);
   await db.doc('socialAccounts/'+b.uid).update({'summary.projectionVersion':2,'summary.combinedMastered':1});
@@ -820,6 +841,8 @@ test('level catch-up uses the current curve, preserves an existing wallet and ca
   await ref.set({version:1,currency:'atlas-tokens',balance:73});
   const old=save(7003);old.sections.progress.data.state.version=4;old.sections.progress.data.state.curveCredit=999999;
   await saveRef.set(old);
+  assert.equal((await a.call('shop',{version:2,timeZone})).balance,73,'editable totals cannot retroactively mint coins');
+  await seedEarned(a.uid,old);
   const wallets=await Promise.all(Array.from({length:4},()=>a.call('shop',{version:2,timeZone})));
   for(const wallet of wallets){assert.equal(wallet.balance,98);assert.equal(wallet.levelRewards.throughLevel,12);assert.equal(wallet.levelRewards.total,25);}
   assert.equal((await ref.collection('operations').where('action','==','levelReward').get()).size,1);
@@ -827,12 +850,12 @@ test('level catch-up uses the current curve, preserves an existing wallet and ca
   await a.call('shopPurchase',spend);await a.call('shopPurchase',spend);
   await saveRef.set(save(0));assert.equal((await a.call('shop',{version:2,timeZone})).balance,48);
   await saveRef.set(save(7003));assert.equal((await a.call('shop',{version:2,timeZone})).balance,48);
-  await saveRef.set(save(10000));const increased=await a.call('shop',{version:2,timeZone});assert.equal(increased.balance,48);assert.equal(increased.levelRewards.throughLevel,14);
+  await saveRef.set(save(10000));await seedEarned(a.uid,save(10000));const increased=await a.call('shop',{version:2,timeZone});assert.equal(increased.balance,48);assert.equal(increased.levelRewards.throughLevel,14);
   await assert.rejects(a.call('shop',{version:2,timeZone,level:999}),{code:'INVALID_ARGUMENT'});
 });
 test('a resumed coin backfill reaches accounts outside Friends and checkpoints pages without re-awarding coins',async()=>{
   const a=await learner('DormantCoins'),b=await learner('DormantCoinsTwo');await a.call('leave');await b.call('leave');
-  await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(7003));await db.doc(`users/${b.uid}/appData/kanaTrainer`).set(save(10000));
+  await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(7003));await db.doc(`users/${b.uid}/appData/kanaTrainer`).set(save(10000));await seedEarned(a.uid,save(7003));await seedEarned(b.uid,save(10000));
   const records=await Promise.all([auth.getUser(a.uid),auth.getUser(b.uid)]),marker=db.doc('commerceMigrations/study-currency-v2');await marker.delete();
   let failOnce=true,pages=0;
   const {createCommerce}=require('../functions/commerce.cjs');
@@ -845,9 +868,12 @@ test('a resumed coin backfill reaches accounts outside Friends and checkpoints p
     assert.equal((await a.call('state')).active,false);
   }finally{await marker.delete();}
 });
-test('learning save triggers award coins without Friends; deletion barriers prevent stale triggers recreating wallets',async()=>{
+test('trusted earnings award coins without Friends; editable saves and deletion barriers cannot mint coins',async()=>{
   const a=await learner('TriggerCoins');await a.call('leave');const ref=db.doc('commerceAccounts/'+a.uid);
   await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(7003));
+  await service.refreshSummary(a.uid);assert.equal((await ref.get()).data()?.balance||0,0);
+  await seedEarned(a.uid,save(7003));
+  await service.refreshSummary(a.uid);
   if(directService)await service.refreshSummary(a.uid);
   await until(async()=> (await ref.get()).data()?.levelRewards?.throughLevel===12);
   assert.equal((await ref.get()).data().balance,25);
@@ -1119,14 +1145,14 @@ test('two currencies debit independently and reject mixed, stale and repeated pa
   await a.call('leave');assert.equal((await a.call('shop',{version:3,timeZone})).tokenBalance,9700);
 });
 
-test('Study Tokens catch up weighted answers, levels and streaks without replay or reset awards',async()=>{
+test('Study Tokens use private verified evidence and preserve existing balances across retries and personal resets',async()=>{
   const a=await learner('StudyEarnings',0),user=await auth.getUser(a.uid),ref=db.doc('commerceAccounts/'+a.uid),saved=db.doc('users/'+a.uid+'/appData/kanaTrainer');
   const {createCommerce}=require('../functions/commerce.cjs'),commerce=createCommerce({db,now:()=>Date.parse('2026-10-15T12:00:00Z')}),state=()=>commerce.run(user,'shop',{version:3,timeZone:'UTC'});
   await ref.set({version:2,currency:'atlas-coins',balance:333,levelRewards:{version:1,throughLevel:12,total:320}});
   const data=save(80);data.sections.progress.data.state.version=5;data.sections.progress.data.state.credits={device:{answer:0}};
   data.sections.reading.data.dailyChallengeHistory=Object.fromEntries([...Array.from({length:8},(_,i)=>`2026-10-${String(i+1).padStart(2,'0')}`),'2099-01-01'].map(day=>[day,{}]));
-  await saved.set(data);let first=await state();assert.equal(first.balance,333);assert.equal(first.tokenRewards.answers,10);assert.equal(first.tokenRewards.streaks,85);
-  data.sections.progress.data.state.credits.device.answer=240;await saved.set(data);const broad=await state();assert.equal(broad.tokenRewards.answers,40);assert.ok(broad.tokenBalance>=first.tokenBalance+30);assert.equal(broad.balance,333);
+  await saved.set(data);await seedEarned(a.uid,data);let first=await state();assert.equal(first.balance,333);assert.equal(first.tokenRewards.answers,10);assert.equal(first.tokenRewards.streaks,85);
+  data.sections.progress.data.state.credits.device.answer=240;await saved.set(data);assert.equal((await state()).tokenBalance,first.tokenBalance,'forged save credits do not affect the wallet');await seedEarned(a.uid,data);const broad=await state();assert.equal(broad.tokenRewards.answers,40);assert.ok(broad.tokenBalance>=first.tokenBalance+30);assert.equal(broad.balance,333);
   assert.equal(broad.tokenRewards.levels,catalogue.studyTokens.levelTotal(require('../functions/projection.cjs').levelFromSave(data)));
   const before=broad.tokenBalance;await saved.set(save(0));assert.equal((await state()).tokenBalance,before);await saved.set(data);
   const retries=await Promise.all([state(),state(),state()]);for(const value of retries)assert.equal(value.tokenBalance,before);
@@ -1188,4 +1214,26 @@ test('ordinary Friends reads use the public projection without loading private l
   const result=await isolated.call({auth:{uid:a.uid},data:{expectedUid:a.uid,action:'state',data:{listKind:'friends'}}});
   assert.equal(result.active,true);assert.equal(result.list.rows.length,0);
   assert.equal(reads.some(path=>path===`users/${a.uid}/appData/kanaTrainer`),false);
+});
+
+test('a 100-friend list fetches one display page rather than every private or public profile',async()=>{
+  const a=await learner('PageBudget'),template=(await db.doc('socialAccounts/'+a.uid).get()).data(),friends={};
+  const batch=db.batch();
+  for(let i=0;i<100;i++){const uid='page-budget-'+String(i).padStart(3,'0');friends[uid]=1;batch.set(db.doc('socialAccounts/'+uid),{...template,profile:{...template.profile,displayName:'Page Learner '+i},friends:{[a.uid]:1}});}
+  batch.update(db.doc('socialAccounts/'+a.uid),{friends});await batch.commit();
+  const reads=[];
+  const tracked=new Proxy(db,{get(target,key){if(key==='getAll')return async(...refs)=>{reads.push(...refs.map(r=>r.path));return target.getAll(...refs);};const value=target[key];return typeof value==='function'?value.bind(target):value;}});
+  const bounded=createSocial({db:tracked,auth});const result=await bounded.call({auth:{uid:a.uid},data:{expectedUid:a.uid,action:'list',data:{kind:'friends'}}});
+  assert.equal(result.rows.length,20);assert.ok(result.nextCursor);assert.ok(reads.filter(name=>name.startsWith('socialAccounts/page-budget-')).length<=20);
+  assert.equal(reads.filter(name=>name.startsWith('users/')).length,0);
+});
+
+test('verified study receipts credit once and editable progress cannot forge the next wallet award',async()=>{
+  const a=await learner('VerifiedReceipt',0),at=Date.now();
+  const receipt={id:'verified-receipt-first',startedAt:at-10000,config:{pool:['あ','い'],direction:'reading',mode:'guided',hints:false},answers:[{index:1,kana:'あ',answer:'a',elapsed:1000},{index:2,kana:'い',answer:'i',elapsed:2000}],complete:true};
+  assert.equal((await a.call('earnStudy',receipt)).index,2);
+  const before=(await db.doc('studyEarnings/'+a.uid).get()).data();await a.call('earnStudy',receipt);assert.deepEqual((await db.doc('studyEarnings/'+a.uid).get()).data(),before);
+  const first=await a.call('shop',{version:3,timeZone:'UTC'});await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(999999));const next=await a.call('shop',{version:3,timeZone:'UTC'});
+  assert.equal(next.balance,first.balance);assert.equal(next.tokenBalance,first.tokenBalance);
+  await assert.rejects(a.call('earnStudy',{...receipt,id:'forged-receipt',xp:99999}),{code:'INVALID_ARGUMENT'});
 });

@@ -378,10 +378,10 @@ def main() -> int:
     wordbank_html = text(ROOT / 'wordbank/index.html')
     storage_pos = wordbank_html.find('mode-atlas-storage.assets-')
     wordbank_controller_pos = wordbank_html.find('mode-atlas-wordbank-page.assets-', storage_pos)
-    save_repair_pos = wordbank_html.find('mode-atlas-save-repair.assets-', wordbank_controller_pos)
+    save_repair_pos = wordbank_html.find('mode-atlas-save-repair.assets-')
     cloud_pos = wordbank_html.find('cloud-sync.assets-', save_repair_pos)
-    if not (storage_pos >= 0 and storage_pos < wordbank_controller_pos < save_repair_pos < cloud_pos):
-        fail(errors, 'Word Bank dependency contract drifted: storage -> page controller -> save repair -> cloud sync')
+    if not (storage_pos >= 0 and storage_pos < save_repair_pos < cloud_pos < wordbank_controller_pos):
+        fail(errors, 'Word Bank dependency contract drifted: storage -> save repair -> cloud owner -> page controller')
 
     redirect_targets = {
         'kana.html': '/kana/', 'default.html': '/reading/', 'reverse.html': '/writing/',
@@ -544,12 +544,14 @@ def main() -> int:
         fail(errors, "cloud-sync does not expose auth-owned initial hydration readiness")
     if "cloudSyncPromise" not in cloud or "performSyncOnce" not in cloud:
         fail(errors, "cloud writes do not have a single in-flight sync owner")
-    if len(re.findall(r"if\s*\(!sameAccount\(uid,\s*epoch\)\)\s*return false", cloud)) < 5 or "currentUser?.uid===uid&&accountEpoch===epoch&&accountSaveReady" not in cloud:
-        fail(errors, "cloud operations are missing account and session-generation guards")
-    if "snap.exists() && !hasLocalImportGuard()" not in cloud:
-        fail(errors, "cloud sync does not protect authoritative manual imports from remote merge races")
-    if "const localSection = snapshotSectionFixed(name);" not in cloud or "snapshot.sections[name] = localSection;" not in cloud:
-        fail(errors, "cloud sync can merge against a stale local snapshot after an in-flight Firestore read")
+    transport = text(ROOT / 'assets/app/mode-atlas-account-transport.js')
+    merge = text(ROOT / 'assets/app/mode-atlas-save-merge.js')
+    if 'valid:()=>sameAccount(uid,epoch)' not in cloud or 'check();' not in transport or 'currentUser?.uid===uid&&accountEpoch===epoch&&accountSaveReady' not in cloud:
+        fail(errors, 'cloud transport must retain account and session-generation guards')
+    if 'replace:!merge||hasLocalImportGuard()' not in cloud or 'generation:' not in transport or 'if (a !== b)' not in merge:
+        fail(errors, 'manual import/reset must advance a generation that stale devices cannot resurrect')
+    if 'latest:()=>merge&&!hasLocalImportGuard()?buildLocalSnapshot():snapshot' not in cloud or 'const current = latest();' not in transport or 'runTransaction(db' not in transport:
+        fail(errors, 'transactional cloud merges must read live local changes on each retry')
     for marker in (
         "firebaseModulesLoaded = loaded === true;",
         "firebaseModulesPromise = null;",

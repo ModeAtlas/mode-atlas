@@ -15,6 +15,13 @@
         const stats=el('p','',`${m.correct} correct / ${m.attempts} attempts · ${(m.accuracy*100).toFixed(2)}% accuracy`);section.append(stats);
         section.append(el('p','',`${m.independent} unassisted correct · ${m.days.length} study days · ${m.reviews} spaced successes`));
         if(m.average)section.append(el('p','',`Average answer time: ${(m.average/1000).toFixed(1)}s`));
+        const target=state.stage(snapshot,char,skill)>=2?{correct:30,accuracy:.95,days:4,reviews:4}:{correct:10,accuracy:.85,days:2,reviews:2};
+        const checks=el('ul','ma-mastery-checks');
+        for(const [label,value,needed]of [['Unassisted correct',m.independent,target.correct],['Accuracy',m.accuracy*100,target.accuracy*100],['Study days',m.days.length,target.days],['Spaced successes',m.reviews,target.reviews]]){
+          const met=value>=needed,item=el('li','',`${met?'✓':'○'} ${label}: ${Number.isInteger(value)?value:value.toFixed(2)} / ${needed}${label==='Accuracy'?'%':''}`);
+          item.dataset.met=String(met);checks.append(item);
+        }
+        section.append(checks);
         const action=el('a','ma-button ma-button--ghost',`Practise ${skill}`);action.href='/kanji/?'+new URLSearchParams({char,mode:skill});section.append(action);host.append(section);
       }
       const guide=el('details');guide.append(el('summary','','How Kanji mastery works'),el('p','','Reviewing: 10 unassisted correct, at least 85% overall accuracy, recall on 2 days and 2 spaced successes. Mastered: 30 unassisted correct, at least 95% accuracy, recall on 4 days, 4 spaced successes and 3 recent independent successes. Both skills must qualify. Typing time is shown for your reference.'));

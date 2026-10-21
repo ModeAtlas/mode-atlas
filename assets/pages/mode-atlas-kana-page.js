@@ -48,14 +48,14 @@
       input.setAttribute('aria-label','Reading answer');input.autocomplete='off';input.spellcheck=false;input.autocapitalize='none';input.maxLength=20;input.placeholder='Type the sound';input.enterKeyHint='go';
       if(placement.feedback){input.value=q.roman;input.disabled=true;}
       form.append(input);
-      if(placement.feedback){const feedback=el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. We’ll start this skill around here.`);feedback.setAttribute('role','status');form.append(feedback);}
+      if(placement.feedback){const feedback=el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. Let’s check another character from this row.`);feedback.setAttribute('role','status');form.append(feedback);}
       if(root.ModeAtlasIOSKeyboard){const keys=el('div','ma-kana-placement-keyboard');form.append(keys);placementKeyboard=root.ModeAtlasIOSKeyboard.mount({input,container:keys,onSubmit:()=>form.requestSubmit()});}
       const actions=el('div','ma-kana-check-actions'),submit=el('button','ma-button ma-button--primary',placement.feedback?'Continue':'Check answer');submit.type='submit';actions.append(submit);
       if(!placement.feedback)actions.append(button('I don’t know yet',()=>{placement=Store.transaction(()=>P.answer(placement,''));render();}));form.append(actions);
       form.addEventListener('submit',event=>{event.preventDefault();if(event.isComposing)return;if(placement.feedback||input.value.trim())run(()=>{placement=Store.transaction(()=>placement.feedback?P.advance(placement):P.answer(placement,input.value));render();});});stage.append(form);
       focusTarget=placement.feedback?submit:input;
     }else if(placement.feedback){
-      stage.append(el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. We’ll start this skill around here.`));
+      stage.append(el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. Let’s check another character from this row.`));
       stage.append(button('Continue',()=>{placement=Store.transaction(()=>P.advance(placement));render();},true));
     }else{
       const choices=el('div','ma-kana-placement-choices');choices.setAttribute('role','group');choices.setAttribute('aria-label','Kana answers');

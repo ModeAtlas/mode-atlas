@@ -1,0 +1,34 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const base=require('node:path').resolve(__dirname, '../../..') + '/';
+const dates=require(base+'assets/app/mode-atlas-date.js');
+const review=require(base+'assets/app/mode-atlas-review.js')({ModeAtlasDates:dates});
+const at=Date.parse('2026-10-21T12:00:00Z');
+const first=review.answer({}, {correct:true,assisted:false,id:'first',at},{correct:1,wrong:0},800).entry;
+const failed=review.answer({}, {correct:false,assisted:false,id:'miss',at},{correct:0,wrong:1},800).entry;
+console.log('Kana first success:',JSON.stringify({level:first.level,dueMinutes:(first.due-at)/60000,dueNextDay:review.due({'あ':first},['あ'],at+86400000)}));
+console.log('Kana failed attempt:',JSON.stringify({level:failed.level,dueMinutes:(failed.due-at)/60000,dueNextDay:review.due({'あ':failed},['あ'],at+86400000)}));
+const store=new Map();
+const root={Date,ModeAtlasDates:dates,ModeAtlasStorage:{json:(k,d)=>store.has(k)?JSON.parse(store.get(k)):d,setJSON:(k,v)=>{store.set(k,JSON.stringify(v));return true;},set:(k,v)=>store.set(k,v)},ModeAtlasProgress:{getDeviceId:()=> 'audit-device'}};
+root.window=root;
+const context=vm.createContext(root);
+for(const n of ['data/mode-atlas-kana-data','data/mode-atlas-kanji-curriculum','data/mode-atlas-kanji-data','app/mode-atlas-kanji-content','app/mode-atlas-kanji-state','app/mode-atlas-kanji-teaching'])vm.runInContext(fs.readFileSync(base+'assets/'+n+'.js','utf8'),context);
+const entries=root.ModeAtlasKanjiContent.entries();
+console.log('Kanji coverage:',JSON.stringify(root.ModeAtlasKanjiCurriculum.map(b=>{const es=entries.filter(e=>e.level===b.level);return {level:b.level,entries:es.length,examples:es.filter(e=>e.example).length,wordSameAsCharacter:es.filter(e=>e.example?.word===e.char).length};})));
+console.log('Romanization:',JSON.stringify(['コーヒー','まっちゃ','スーパー','しんよう'].map(text=>({text,romaji:root.ModeAtlasKanjiContent.romaji(text)}))));
+console.log('Example grading:',JSON.stringify(['男','来','小','本','月'].map(char=>{const e=root.ModeAtlasKanjiContent.get(char);return {char,meanings:e.meanings,example:e.example,prompt:root.ModeAtlasKanjiContent.pronunciation(e)};})));
+const content=root.ModeAtlasKanjiContent;
+const roundtrip=entries.flatMap(e=>content.pronunciation(e).answers.flatMap(a=>{const roman=content.romaji(a);return content.grade(e.char,'pronunciation',roman)?[]:[{char:e.char,answer:a,romaji:roman,converted:content.kana(roman)}];}));
+console.log('Displayed pronunciation romaji rejected on input:',JSON.stringify({count:roundtrip.length,examples:roundtrip.slice(0,12)}));
+console.log('Everyday meaning synonyms:',JSON.stringify([['男','man'],['父','father'],['学','study'],['大','large'],['木','tree']].map(([c,a])=>({char:c,answer:a,accepted:content.grade(c,'meaning',a)}))));
+const ks=root.ModeAtlasKanjiState;
+ks.record({char:'水',skill:'meaning',runId:'audit',index:1,at,elapsed:1000,correct:true});
+const before=ks.metrics(ks.read(),'水','meaning');
+ks.record({char:'水',skill:'meaning',runId:'audit',index:2,at:at+30000,elapsed:1000,correct:true});
+const after=ks.metrics(ks.read(),'水','meaning');
+console.log('Kanji early repetition:',JSON.stringify({beforeDue:before.due-at,afterDue:after.due-at,reviewsBefore:before.reviews,reviewsAfter:after.reviews}));
+const projection=require(base+'backend/functions/projection.cjs'),catalogue=require(base+'assets/app/mode-atlas-shop-catalogue.js');
+for(const correct of [0,7003,1000000]){
+ const save={sections:{progress:{data:{state:{version:7,legacySeeded:true,sources:{device:{'kana.reading.correct':correct}}}}}}};
+ const e=projection.earningEvidence(save),level=projection.levelFromSave(save);
+ console.log('Owner-writable evidence projection:',JSON.stringify({correct,level,answerUnits:e.answerUnits,coinMilestones:catalogue.levelCoins.total(level),tokensFromLevel:catalogue.studyTokens.levelTotal(level),tokensFromAnswers:Math.floor(e.answerUnits/catalogue.studyTokens.answerDivisor)}));
+}
