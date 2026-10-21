@@ -211,6 +211,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         bridge?.notificationRouter.localNotificationHandler = self
         observers.append(NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
             self?.speech.stop()
+            if self?.reloadWork != nil { self?.reloadWidgets(immediate: true) }
         })
         observers.append(NotificationCenter.default.addObserver(forName: ModeAtlasNavigation.event, object: nil, queue: .main) { [weak self] _ in
             self?.notifyListeners("destinationAction", data: [:], retainUntilConsumed: true)
@@ -320,24 +321,36 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         let work = DispatchWorkItem { [weak self] in
             WidgetCenter.shared.reloadTimelines(ofKind: ModeAtlasWidgetStore.kind)
             self?.lastReload = Date()
+            self?.reloadWork = nil
         }
         reloadWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + (immediate ? 0 : max(0, 60 - Date().timeIntervalSince(lastReload))), execute: work)
     }
     @objc func publishWidgetSnapshot(_ call: CAPPluginCall) {
-        guard let json = call.getString("snapshot"), let data = json.data(using: .utf8), data.count <= 4096,
+        guard let json = call.getString("snapshot"), let data = json.data(using: .utf8), data.count <= ModeAtlasWidgetStore.maximumSnapshotBytes,
               let snapshot = try? JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: data), snapshot.isValid else {
             call.reject("Invalid widget snapshot"); return
         }
         enqueue(call) { [self] in
-            guard ModeAtlasWidgetStore.container != nil else {
+            guard let container = ModeAtlasWidgetStore.container else {
                 return ["stored": false, "widgetAvailable": true]
             }
-            try ModeAtlasWidgetStore.write(snapshot)
+            var value = snapshot
+            value.avatarKey = ModeAtlasWidgetStore.read()?.avatarKey
+            var avatarStored = false
+            if let png = call.getString("avatarPNG") {
+                // An unavailable portrait must never prevent fresh streak data.
+                if let key = try? ModeAtlasWidgetArtwork.store(png, in: container) {
+                    value.avatarKey = key
+                    avatarStored = true
+                }
+            }
+            try ModeAtlasWidgetStore.write(value)
+            ModeAtlasWidgetArtwork.prune(keeping: value.avatarKey, in: container)
             // A delayed work item can be suspended with the app. Ask WidgetKit
             // to read the final snapshot now when leaving the foreground.
-            reloadWidgets(immediate: UIApplication.shared.applicationState != .active)
-            return ["stored": true, "widgetAvailable": true]
+            reloadWidgets(immediate: call.getBool("refreshImmediately") == true || UIApplication.shared.applicationState != .active)
+            return ["stored": true, "avatarStored": avatarStored, "widgetAvailable": true]
         }
     }
     @objc func getNotificationStatus(_ call: CAPPluginCall) { enqueue(call) { await self.permission() } }
@@ -400,6 +413,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
             center.removePendingNotificationRequests(withIdentifiers: [Self.reminderID, Self.testID])
             center.removeAllDeliveredNotifications()
             try ModeAtlasWidgetStore.clear()
+            ModeAtlasWidgetArtwork.prune(keeping: nil, in: ModeAtlasWidgetStore.container)
             reloadWidgets(immediate: true)
             return ["reset": true]
         }

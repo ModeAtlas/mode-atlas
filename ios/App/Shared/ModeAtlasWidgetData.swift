@@ -49,9 +49,12 @@ struct ModeAtlasWidgetSnapshot: Codable {
     var weekly: ModeAtlasWidgetWeekly? = nil
     var protectedThrough: String? = nil
     var freezesRemaining: Int? = nil
+    var kanjiCorrect: Int? = nil
+    // Native-owned content hash, never a remote URL or a user identity.
+    var avatarKey: String? = nil
 
     var isValid: Bool {
-        guard [1, 2, 3, 4, 5, 6].contains(schemaVersion), updatedAt.isFinite, updatedAt > 0,
+        guard (1...7).contains(schemaVersion), updatedAt.isFinite, updatedAt > 0,
               (1...999).contains(level), (0...1_000_000_000_000).contains(correct),
               (0...100_000).contains(streak), levelProgress.isFinite,
               (0...1).contains(levelProgress), ["kana", "daily", "yourAtlas"].contains(destination) else { return false }
@@ -59,7 +62,12 @@ struct ModeAtlasWidgetSnapshot: Codable {
         if schemaVersion >= 2 && lastActivityAt == nil { return false }
         if let words = words, !(0...1_000_000).contains(words) { return false }
         if let reading = readingCorrect, let writing = writingCorrect,
-           reading < 0 || writing < 0 || reading > correct || writing > correct || reading + writing != correct { return false }
+           reading < 0 || writing < 0 || reading > correct || writing > correct || reading + writing > correct { return false }
+        if schemaVersion >= 7 {
+            guard let kanjiCorrect, (0...correct).contains(kanjiCorrect),
+                  (readingCorrect ?? 0) + (writingCorrect ?? 0) + kanjiCorrect <= correct else { return false }
+        }
+        if let avatarKey, avatarKey.range(of: "^[a-f0-9]{64}$", options: .regularExpression) == nil { return false }
         if let xp = levelXp, !(0...1_000_000_000_000).contains(xp) { return false }
         if let requirement = levelRequirement, !(1...20_000_000).contains(requirement) { return false }
         if let activity = lastActivityAt, !activity.isFinite || activity < 0 || activity > updatedAt + 300_000 { return false }
@@ -70,12 +78,18 @@ struct ModeAtlasWidgetSnapshot: Codable {
                   let goals, goals.allSatisfy(\.isValid), Set(goals.map(\.id)).count == goals.count else { return false }
             if schemaVersion == 3 && Set(goals.map(\.id)) != Set(["recall", "balance", "review", "week"]) { return false }
             if (4...5).contains(schemaVersion) && (goals.filter { $0.period == "daily" }.count != 3 || goals.filter { $0.period == "weekly" }.count != 2 || goals.count != 5) { return false }
-            if schemaVersion >= 6 {
+            if schemaVersion == 6 {
                 let personal = goals.filter { $0.id.hasPrefix("personal-") }
                 guard personal.allSatisfy({ $0.id == "personal-" + ($0.period ?? "") }), personal.count <= 2,
                       goals.filter({ $0.period == "daily" && !$0.id.hasPrefix("personal-") }).count == 3,
                       goals.filter({ $0.period == "weekly" && !$0.id.hasPrefix("personal-") }).count == 2,
                       goals.count == 5 + personal.count else { return false }
+            }
+            if schemaVersion >= 7 {
+                // The progression owner chooses attainable goals. A smaller pool
+                // must not invalidate every statistic, including the streak.
+                guard goals.count <= 7, goals.allSatisfy({ ["daily", "weekly"].contains($0.period ?? "") }),
+                      goals.filter({ $0.id.hasPrefix("personal-") }).allSatisfy({ $0.id == "personal-" + ($0.period ?? "") }) else { return false }
             }
             if let lastStudyDay, !Self.validDay(lastStudyDay) { return false }
             if studyStreak > 0 && lastStudyDay == nil { return false }
@@ -177,6 +191,7 @@ struct ModeAtlasWidgetRoutine {
 }
 
 enum ModeAtlasWidgetStore {
+    static let maximumSnapshotBytes = 16 * 1024
     static let kind = "ModeAtlasStudyWidget"
     static let launchURL = URL(string: "modeatlas://open/?section=atlas")!
     static var container: URL? {
@@ -188,14 +203,16 @@ enum ModeAtlasWidgetStore {
     private static var legacyFile: URL? { container?.appendingPathComponent("mode-atlas-widget-snapshot-v1.json") }
     static func read() -> ModeAtlasWidgetSnapshot? {
         for url in [file, legacyFile].compactMap({ $0 }) {
-            if let data = try? Data(contentsOf: url), data.count <= 4096,
+            if let data = try? Data(contentsOf: url), data.count <= maximumSnapshotBytes,
                let value = try? JSONDecoder().decode(ModeAtlasWidgetSnapshot.self, from: data), value.isValid { return value }
         }
         return nil
     }
     static func write(_ value: ModeAtlasWidgetSnapshot) throws {
         guard value.isValid, let url = file else { throw CocoaError(.fileWriteNoPermission) }
-        try JSONEncoder().encode(value).write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+        let data = try JSONEncoder().encode(value)
+        guard data.count <= maximumSnapshotBytes else { throw CocoaError(.fileWriteInapplicableStringEncoding) }
+        try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         if let legacy = legacyFile { try? FileManager.default.removeItem(at: legacy) }
     }
     static func clear() throws {

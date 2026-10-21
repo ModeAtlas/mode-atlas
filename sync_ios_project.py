@@ -50,37 +50,14 @@ def next_build() -> int:
     return value
 
 
-def sync_privacy_resources(source: str) -> str:
-    """Deterministic resources also update locally retained signing projects."""
-    targets = (
-        ("279000000000000000000001", "279000000000000000000002", "504EC3061FED79650016851F", "504EC3021FED79650016851F"),
-        ("279000000000000000000003", "279000000000000000000004", "C7700313516F038757BAEF16", "3FE72E556019EC3F3A1FF736"),
-    )
-    for ref, build, group, phase in targets:
-        if not re.search(rf"{ref}[^\n]*= ", source):
-            source = source.replace("/* End PBXFileReference section */", f'\t\t{ref} /* PrivacyInfo.xcprivacy */ = {{isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; }};\n/* End PBXFileReference section */')
-        if not re.search(rf"{build}[^\n]*= ", source):
-            source = source.replace("/* End PBXBuildFile section */", f'\t\t{build} /* PrivacyInfo.xcprivacy in Resources */ = {{isa = PBXBuildFile; fileRef = {ref} /* PrivacyInfo.xcprivacy */; }};\n/* End PBXBuildFile section */')
-        for owner, field, item in ((group, 'children', ref), (phase, 'files', build)):
-            pattern = rf'(^[ \t]*{owner}(?: /\*[^\n]*?\*/)? = \{{[^{{}}]*?{field} = \()([^)]*)(\))'
-            def include(match):
-                entries = match.group(2)
-                if item not in entries:
-                    entries = entries.rstrip() + f'\n\t\t\t\t{item} /* PrivacyInfo.xcprivacy */,\n\t\t\t'
-                return match.group(1) + entries + match.group(3)
-            source, count = re.subn(pattern, include, source, count=1, flags=re.S | re.M)
-            if count != 1:
-                raise SystemExit(f"Could not locate iOS resource owner {owner}; project left unchanged.")
-    return source
-
-
-def sync_native_source(source: str, name: str, ref: str, build: str) -> str:
-    """Include a native owner when retaining a locally signed project."""
+def sync_project_file(source: str, name: str, ref: str, build: str, group: str,
+                      phase: str, file_type: str, kind: str) -> str:
+    """One registration path for generated resources and native source owners."""
     if not re.search(rf'{ref}[^\n]*= ', source):
-        source = source.replace('/* End PBXFileReference section */', f'\t\t{ref} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {name}; sourceTree = "<group>"; }};\n/* End PBXFileReference section */')
+        source = source.replace('/* End PBXFileReference section */', f'\t\t{ref} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = {file_type}; path = {name}; sourceTree = "<group>"; }};\n/* End PBXFileReference section */')
     if not re.search(rf'{build}[^\n]*= ', source):
-        source = source.replace('/* End PBXBuildFile section */', f'\t\t{build} /* {name} in Sources */ = {{isa = PBXBuildFile; fileRef = {ref} /* {name} */; }};\n/* End PBXBuildFile section */')
-    for owner, field, item in [('504EC3061FED79650016851F', 'children', ref), ('504EC3001FED79650016851F', 'files', build)]:
+        source = source.replace('/* End PBXBuildFile section */', f'\t\t{build} /* {name} in {kind} */ = {{isa = PBXBuildFile; fileRef = {ref} /* {name} */; }};\n/* End PBXBuildFile section */')
+    for owner, field, item in [(group, 'children', ref), (phase, 'files', build)]:
         pattern = rf'(^[ \t]*{owner}(?: /\*[^\n]*?\*/)? = \{{[^{{}}]*?{field} = \()([^)]*)(\))'
         def include(match):
             entries = match.group(2)
@@ -89,7 +66,42 @@ def sync_native_source(source: str, name: str, ref: str, build: str) -> str:
             return match.group(1) + entries + match.group(3)
         source, count = re.subn(pattern, include, source, count=1, flags=re.S | re.M)
         if count != 1:
-            raise SystemExit(f'Could not locate iOS source owner {owner}; project left unchanged.')
+            raise SystemExit(f'Could not locate iOS file owner {owner}; project left unchanged.')
+    return source
+
+
+def sync_privacy_resources(source: str) -> str:
+    for ref, build, group, phase in (
+        ('279000000000000000000001', '279000000000000000000002', '504EC3061FED79650016851F', '504EC3021FED79650016851F'),
+        ('279000000000000000000003', '279000000000000000000004', 'C7700313516F038757BAEF16', '3FE72E556019EC3F3A1FF736'),
+    ):
+        source = sync_project_file(source, 'PrivacyInfo.xcprivacy', ref, build, group, phase, 'text.xml', 'Resources')
+    return source
+
+
+def sync_native_source(source: str, name: str, ref: str, build: str) -> str:
+    return sync_project_file(source, name, ref, build, '504EC3061FED79650016851F',
+                             '504EC3001FED79650016851F', 'sourcecode.swift', 'Sources')
+
+
+def sync_widget_artwork(source: str) -> str:
+    for build, phase in [('291210000000000000000002', '504EC3001FED79650016851F'),
+                         ('291210000000000000000003', '745764688D705D4EF7062BCF')]:
+        source = sync_project_file(source, 'ModeAtlasWidgetArtwork.swift', '291210000000000000000001',
+                                   build, 'F2B31C9786B4BF0A9A4AAF84', phase, 'sourcecode.swift', 'Sources')
+    source = sync_project_file(source, 'WidgetAssets.xcassets', '291210000000000000000004',
+                               '291210000000000000000005', 'C7700313516F038757BAEF16',
+                               '3FE72E556019EC3F3A1FF736', 'folder.assetcatalog', 'Resources')
+    catalogue = ROOT / 'ios/App/ModeAtlasWidgets/WidgetAssets.xcassets'
+    images = catalogue / 'AtlasMark.imageset'
+    images.mkdir(parents=True, exist_ok=True)
+    (catalogue / 'Contents.json').write_text(json.dumps({'info': {'author': 'xcode', 'version': 1}}, indent=2) + '\n')
+    (images / 'Contents.json').write_text(json.dumps({
+        'images': [{'filename': 'atlas-mark.svg', 'idiom': 'universal'}],
+        'info': {'author': 'xcode', 'version': 1},
+        'properties': {'preserves-vector-representation': True}
+    }, indent=2) + '\n')
+    (images / 'atlas-mark.svg').write_bytes((ROOT / 'assets/brand/mode-atlas-micro.svg').read_bytes())
     return source
 
 
@@ -143,6 +155,7 @@ def sync() -> tuple[str, int, bool]:
     updated = sync_native_source(updated, 'ModeAtlasRouter.swift', '289100000000000000000001', '289100000000000000000002')
     updated = sync_native_source(updated, 'ModeAtlasPronunciationPlayer.swift', '291160000000000000000001', '291160000000000000000002')
     updated = sync_privacy_resources(updated)
+    updated = sync_widget_artwork(updated)
     updated = sync_auth_entitlements(updated)
     info_path = ROOT / 'ios/App/App/Info.plist'
     with info_path.open('rb') as handle:

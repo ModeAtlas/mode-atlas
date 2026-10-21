@@ -235,7 +235,7 @@ test('native engagement snapshot excludes identity and permission requires an ex
     ModeAtlasEnv:{isNativeApp:true},
     ModeAtlasDates:{localDateKey:()=> '2026-09-30'},
     ModeAtlasRewardRules:require('../assets/app/mode-atlas-reward-rules.js'),
-    ModeAtlasProgress:{readState:()=>({appearance:{landmark:'grove'}}),studyDays:()=>['2026-09-29'],routine:()=>({streak:3,goals:[{id:'read-20',period:'daily',label:'Read 20 kana correctly',value:35,target:20},{id:'broad-15',period:'daily',label:'Recall 15 kana from a pool of at least 45',value:6,target:15},{id:'streak-10',period:'daily',label:'Reach a 10-answer streak without hints',value:2,target:10},{id:'days-3',period:'weekly',label:'Practise on 3 days this week',value:3,target:3},{id:'tests-2',period:'weekly',label:'Complete 2 formal tests this week',value:1,target:2}]}),getSummary:() => ({level:4,lifetimeCorrect:73,readingCorrect:50,writingCorrect:23,levelXp:125,levelRequirement:250,progress:.5,uid:'private',email:'private@example.com'})},
+    ModeAtlasProgress:{readState:()=>({appearance:{landmark:'grove'}}),studyDays:()=>['2026-09-29'],routine:()=>({streak:3,goals:[{id:'read-20',period:'daily',label:'Read 20 kana correctly',value:35,target:20},{id:'broad-15',period:'daily',label:'Recall 15 kana from a pool of at least 45',value:6,target:15},{id:'streak-10',period:'daily',label:'Reach a 10-answer streak without hints',value:2,target:10},{id:'days-3',period:'weekly',label:'Practise on 3 days this week',value:3,target:3},{id:'tests-2',period:'weekly',label:'Complete 2 formal tests this week',value:1,target:2}]}),getSummary:() => ({level:4,lifetimeCorrect:80,readingCorrect:50,writingCorrect:23,kanjiCorrect:7,levelXp:125,levelRequirement:250,progress:.5,uid:'private',email:'private@example.com'})},
     ModeAtlasStorage:{KEYS:{wordBank:'kanaWordBank'},json:()=>[{kana:'private word'},{kana:'second private word'}],number:()=>123456789},
     ModeAtlasKanaMetrics:{kanaStats:() => ({streak:3,dailyDone:true})},
     AtlasPlatform:{
@@ -253,11 +253,12 @@ test('native engagement snapshot excludes identity and permission requires an ex
   assert.equal(calls.length,0);
   await refresh();
   assert.equal(calls[0][0],'snapshot');
-  assert.equal(calls[0][1].correct,73);
-  assert.equal(calls[0][1].schemaVersion,6);
+  assert.equal(calls[0][1].correct,80);
+  assert.equal(calls[0][1].schemaVersion,7);
   assert.equal(calls[0][1].words,2);
   assert.equal(calls[0][1].readingCorrect,50);
   assert.equal(calls[0][1].writingCorrect,23);
+  assert.equal(calls[0][1].kanjiCorrect,7);
   assert.equal(calls[0][1].lastActivityAt,123456789);
   assert.equal(calls[0][1].destination,'yourAtlas');
   assert.equal(calls[0][1].title,'Trail Finder','locked appearances never reach widgets');
@@ -387,4 +388,33 @@ test('native widgets batch active practice but publish after finishing and backg
   assert.equal(timers.size,1);assert.equal([...timers.values()][0].ms,29000);assert.equal(calls.length,1);
   events.modeAtlasProgressChanged({detail:{source:'practice.finish'}});assert.equal([...timers.values()][0].ms,350);await [...timers.values()][0].fn();assert.equal(calls.length,2);
   events.modeAtlasAppStateChanged({detail:{isActive:false}});await Promise.resolve();assert.equal(calls.length,3);
+});
+
+test('widget producer includes Kanji in the same study streak and answer totals as the app',()=>{
+  const e=require('./helpers/widget-fixture.cjs')(),snapshot=e.snapshot(),p=e.root.ModeAtlasProgress;
+  assert.equal(snapshot.correct,40);assert.equal(snapshot.kanjiCorrect,20);assert.equal(snapshot.readingCorrect,20);
+  assert.equal(snapshot.studyStreak,8);assert.equal(snapshot.studyStreak,p.routine().streak);
+  assert.equal(snapshot.goals.length,7);assert.equal(snapshot.correct,p.getSummary().lifetimeCorrect);
+  assert.ok(Buffer.byteLength(JSON.stringify(snapshot))<16*1024);
+});
+
+test('widget account changes clear cached data, block mismatched owners and resume guest study',async()=>{
+  const e=require('./helpers/widget-fixture.cjs')(),root=e.root,calls=[];let uid='alice',resetDone;
+  root.KanaCloudSync={getUser:()=>uid?{uid}:null,isAuthResolved:()=>true};
+  e.values.set('modeAtlasLocalSaveOwner','alice');
+  root.AtlasPlatform.publishWidgetSnapshot=async(value,options)=>{calls.push({value,options});return {stored:true};};
+  root.AtlasPlatform.resetEngagement=()=>new Promise(resolve=>{resetDone=resolve;});
+  const event=(type,detail)=>root.dispatchEvent(new root.CustomEvent(type,{detail}));
+  event('modeAtlasAppStateChanged',{isActive:false});await Promise.resolve();assert.equal(calls.length,1);
+  event('modeAtlasAccountWillChange');uid='bob';
+  event('kanaCloudSyncStatusChanged');event('modeAtlasAppStateChanged',{isActive:false});assert.equal(calls.length,1);
+  e.values.set('modeAtlasLocalSaveOwner','bob');event('kanaCloudSyncStatusChanged');
+  event('modeAtlasAppStateChanged',{isActive:false});assert.equal(calls.length,1,'clearing must finish before publishing another owner');
+  resetDone();await new Promise(setImmediate);
+  event('modeAtlasAppStateChanged',{isActive:false});assert.equal(calls.length,2);
+  event('modeAtlasAccountSignedOut');uid=null;e.values.set('modeAtlasLocalSaveOwner','guest');
+  root.ModeAtlasProgress.persistState({version:7,legacySeeded:true});event('kanaCloudSyncStatusChanged');
+  resetDone();await new Promise(setImmediate);
+  event('modeAtlasAppStateChanged',{isActive:false});assert.equal(calls.at(-1).value.correct,0);
+  assert.equal(calls.at(-1).options.refreshImmediately,true);
 });
