@@ -53,7 +53,7 @@
     if(goal.metric==='kana.katakana')chars=root.ModeAtlasKanaData.collections.katakana;
     if(goal.metric==='kana.variety')chars=goal.target>46?[...root.ModeAtlasKanaData.collections.hiragana,...root.ModeAtlasKanaData.collections.katakana]:root.ModeAtlasKanaData.collections.hiragana;
     if(goal.planVersion===1){
-      const seen=[...new Set(Object.values(root.ModeAtlasProgress.readState().activity).flatMap(row=>row.kana))];
+      const seen=[...new Set(Object.values(root.ModeAtlasProgress.readSnapshot().activity).flatMap(row=>row.kana))];
       if(chars){
         const relevant=seen.filter(kana=>chars.includes(kana));
         const minimum=goal.metric==='kana.variety'?goal.target:goal.metric==='kana.broad'?45:1;

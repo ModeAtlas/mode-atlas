@@ -3,7 +3,25 @@
    separately owned by mode-atlas-version-check.js / visit-flows.js. */
 (function(root, factory){
   if(typeof module === 'object' && module.exports) module.exports = factory();
-  else root.ModeAtlasDates = factory();
+  else {
+    root.ModeAtlasDates = factory();
+    if(!root.document?.addEventListener)return;
+    // One calendar boundary for visible goals and summaries. A suspended app
+    // checks on return; an open page needs only its next local-midnight timer.
+    let day=root.ModeAtlasDates.localDateKey(),timer;
+    function check(){
+      clearTimeout(timer);
+      const next=root.ModeAtlasDates.localDateKey();
+      if(next!==day){const previous=day;day=next;root.dispatchEvent(new CustomEvent('modeAtlasDayChanged',{detail:{previous,day}}));}
+      if(root.document?.hidden)return;
+      const midnight=new Date();midnight.setHours(24,0,0,0);
+      timer=setTimeout(check,Math.max(1,midnight.getTime()-Date.now()));
+    }
+    root.addEventListener('pageshow',check);
+    root.document?.addEventListener('visibilitychange',check);
+    root.addEventListener('modeAtlasAppStateChanged',event=>{if(event.detail.isActive)check();else clearTimeout(timer);});
+    check();
+  }
 })(typeof self !== 'undefined' ? self : globalThis, function ModeAtlasDateHelpers(){
   'use strict';
 

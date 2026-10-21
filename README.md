@@ -6,8 +6,9 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.114.0
+Version: 2.115.0
 
+Account recovery, repeating goals, navigation performance and logo consistency: [2.115.0](docs/development-2.115.0.md).
 Achievement collection and artwork, account-wide profiles, and session celebrations: [2.114.0](docs/development-2.114.0.md).
 Faster navigation, redesigned Settings and Shop, and complete UI review: [2.113.0](docs/development-2.113.0.md).
 Complete Kana path, personal goals, Profile and UI review: [2.112.0](docs/development-2.112.0.md).

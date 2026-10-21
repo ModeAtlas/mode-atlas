@@ -27,7 +27,7 @@
   const suspendedKey='modeAtlasWidgetSuspended';
   const suspended=()=>root.ModeAtlasStorage?.get?.(suspendedKey)==='true';
   function snapshot(){
-    const owner=root.ModeAtlasProgress,state=owner?.readState?.();
+    const owner=root.ModeAtlasProgress,state=owner?.readSnapshot?.();
     const progress = owner?.getSummary?.(state) || {};
     const routine=owner?.routine?.(state)||{streak:0,goals:[]};
     const appearance=root.ModeAtlasRewardRules?.appearance(state?.appearance?.landmark,progress.level,root.ModeAtlasRewardAccess?.current());
@@ -92,6 +92,7 @@
   root.addEventListener('modeAtlasProgressChanged', refresh);
   root.addEventListener('modeAtlasShopChanged', refresh);
   root.addEventListener('modeAtlasCloudDataChanged', refresh);
+  root.addEventListener('modeAtlasDayChanged', refresh);
   root.addEventListener('modeAtlasActivityChanged', refresh);
   root.addEventListener('storage', refresh);
   const resetPreferences = () => reset().catch(error=>console.warn('Could not clear native preferences',error));

@@ -4,7 +4,8 @@
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!=null)node.textContent=text;return node;};
   const identityPolicy=root.ModeAtlasSocialIdentity;
   const number=value=>Number(value||0).toLocaleString();
-  let host=null,body=null,notice=null,state=null,owner=null,generation=0,tab='friends',kind='friends',metric='weekly',lifetimeMetric='xp',weeklyScope='global';
+  let host=null,body=null,notice=null,state=null,owner=null,authPhase='',generation=0,tab='friends',kind='friends',metric='weekly',lifetimeMetric='xp',weeklyScope='global';
+  const accountPhase=()=>root.KanaCloudSync?.isAuthResolved?.()===false?(root.KanaCloudSync.getSyncStatus?.().state||'restoring'):'resolved';
   const alive=ticket=>!!host?.isConnected && ticket===generation && owner===root.KanaCloudSync?.getUser?.()?.uid;
   function button(label,action,cls='ma-button ma-button--ghost'){
     const node=el('button',cls,label);node.type='button';if(action)node.addEventListener('click',action);return node;
@@ -44,6 +45,11 @@
     if(!host?.isConnected)return;
     const ticket=screen();state=null;
     if(!root.KanaCloudSync?.getUser?.()){
+      if(accountPhase()==='restore-error'){
+        const status=root.KanaCloudSync.getSyncStatus();
+        empty(status.text,status.detail).append(button('Try again',()=>root.KanaCloudSync.retryConnection()));return;
+      }
+      if(accountPhase()==='restoring'){empty('Restoring your account…','');return;}
       const card=empty('Learn alongside friends','Sign in to share your progress and connect with other learners.');
       card.append(button('Sign in',()=>root.ModeAtlasAccountNavigation.open('profile'),'ma-button ma-button--primary'));return;
     }
@@ -390,7 +396,7 @@
   }
   function mount(parent){
     if(!root.ModeAtlasSocial.isEnabled())return;
-    owner=root.KanaCloudSync?.getUser?.()?.uid;state=null;tab=new URLSearchParams(location.search).get('ranking')==='weekly'?'rankings':'friends';kind='friends';weeklyScope='global';
+    owner=root.KanaCloudSync?.getUser?.()?.uid;authPhase=accountPhase();state=null;tab=new URLSearchParams(location.search).get('ranking')==='weekly'?'rankings':'friends';kind='friends';weeklyScope='global';
     metric='weekly';lifetimeMetric='xp';
     const container=el('div','ma-social');host=container;
     notice=el('p','ma-social-status');notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.hidden=true;
@@ -404,7 +410,8 @@
   }
   function open(){root.ModeAtlasAccountNavigation?.open('friends');}
   root.addEventListener('kanaCloudSyncStatusChanged',()=>{
-    if(host && owner!==root.KanaCloudSync?.getUser?.()?.uid){owner=root.KanaCloudSync?.getUser?.()?.uid;generation++;state=null;void load();}
+    const phase=accountPhase();
+    if(host && (owner!==root.KanaCloudSync?.getUser?.()?.uid||authPhase!==phase)){owner=root.KanaCloudSync?.getUser?.()?.uid;authPhase=phase;generation++;state=null;void load();}
   });
   root.addEventListener('modeAtlasAvatarChanged',()=>{
     const profile=root.ModeAtlasAvatar.current();if(!profile||owner!==root.KanaCloudSync?.getUser?.()?.uid)return;

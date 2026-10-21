@@ -46,6 +46,7 @@ test('iOS home scrolls on portrait phones and keeps its last action above the do
 });
 
 test('native account chooser uses enabled methods and Settings owns account deletion', async ({ page }, testInfo) => {
+  await require('./helpers/firebase-guest')(page);
   await page.addInitScript(() => {
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {
       FirebaseAuthentication: { signInWithGoogle: async () => ({}), signInWithApple: async () => ({}) }

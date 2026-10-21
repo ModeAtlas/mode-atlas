@@ -3,6 +3,7 @@ const socialConfig=require('../assets/app/mode-atlas-social-config.js');
 async function launch(page,{native=true,theme='dark',width=393,share=false}={}){
   await page.setViewportSize({width,height:852});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await require('./helpers/firebase-guest')(page);
   await page.addInitScript(({native,theme,share})=>{
     if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
     if(share){window.sharedCodes=[];window.nextShare='cancelled';window.Capacitor.Plugins.ModeAtlasNative={shareFriendCode:async value=>{sharedCodes.push(value);if(nextShare==='failed')throw new Error('sharing failed');return {status:nextShare};}};}

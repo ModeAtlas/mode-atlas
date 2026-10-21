@@ -21,20 +21,14 @@
   "lang": "en-AU",
   "icons": [
     {
-      "src": "/assets/android-chrome-512.png",
+      "src": "/assets/brand/mode-atlas-app.c520ab8c3372.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/assets/apple-touch-icon.png",
+      "src": "/assets/brand/mode-atlas-touch.54148e9c603d.png",
       "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/assets/favicon-32.png",
-      "sizes": "32x32",
       "type": "image/png",
       "purpose": "any"
     }

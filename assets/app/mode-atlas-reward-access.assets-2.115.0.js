@@ -38,6 +38,11 @@
     if(uid!==lastUid){epoch++;pending=null;lastAttempt=0;lastUid=uid;status='idle';changed();}
     if(!uid)return current();
     if(pending)return pending;
+    const cached=read();
+    if(!force&&cached?.uid===uid&&cached.checkedAt<=now()&&now()-cached.checkedAt<60000&&cached.access?.validUntil>now()){
+      if(status==='idle'){status='ready';changed();}
+      return current();
+    }
     if(!force&&lastAttempt&&now()-lastAttempt<60000)return current();
     if(!online()){status='offline';changed();return current();}
     const ticket=epoch;lastAttempt=now();status='loading';changed();

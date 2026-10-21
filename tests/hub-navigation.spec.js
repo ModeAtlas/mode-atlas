@@ -4,6 +4,7 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.setViewportSize({width,height:852});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await require('./helpers/firebase-guest')(page);
   await page.addInitScript(({native,theme})=>{
     if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');

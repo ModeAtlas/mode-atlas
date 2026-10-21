@@ -194,6 +194,7 @@ const READING_TEST_IMPORT_KEYS = compatList('readingTests', [
   'kanaTrainerTestModeResults',
   'kanaTrainerReadingTestModeResults'
 ]);
+const arraySections=new Set(['readingTests','writingTests','wordBank','kanjiTests']);
 const WRITING_TEST_IMPORT_KEYS = compatList('writingTests', [
   keyOr('writingTestResults', 'writingTestModeResults'),
   keyOr('writingTestResultsBackup', 'reverseTestModeResults'),
@@ -405,9 +406,7 @@ function snapshotSectionFixed(sectionName) {
     data[field] = storeGet(key, '0') || '0';
   });
   Object.entries(def.json).forEach(([field, key]) => {
-    let fallback = {};
-    if (sectionName === 'readingTests' || sectionName === 'writingTests') fallback = [];
-    if (sectionName === 'wordBank') fallback = [];
+    const fallback = arraySections.has(sectionName) ? [] : {};
     data[field] = readJSON(key, fallback);
   });
   return {
@@ -475,7 +474,7 @@ function snapshotFromStorageMap(rawMap, fallbackTimestamp = 0) {
       data[field] = readStringFromMap(map, key, '0');
     });
     Object.entries(def.json).forEach(([field, key]) => {
-      const fallback = sectionName === 'wordBank' || sectionName === 'readingTests' || sectionName === 'writingTests' ? [] : {};
+      const fallback = arraySections.has(sectionName) ? [] : {};
       data[field] = readJSONFromMap(map, key, fallback);
     });
     sections[sectionName] = {
@@ -652,6 +651,9 @@ function buildEmptySnapshot() {
     readingTests: { primary: [], backup: [], altPrimary: [], altBackup: [] },
     writingTests: { primary: [], backup: [] },
     wordBank: { items: [] },
+    kanaLearning: {state:window.ModeAtlasKanaLearning.normalize({})},
+    kanji: {state:window.ModeAtlasKanjiState.normalize({})},
+    kanjiTests: {items:[]},
     progress: { state: window.ModeAtlasProgress.normalizeState({version:window.ModeAtlasProgress.STATE_VERSION,legacySeeded:true,updatedAt:now}) }
   };
   const sections = {};
@@ -695,7 +697,7 @@ function writeSectionToLocal(sectionName, payload, updatedAt) {
     storeSet(key, String(data[field] ?? '0'));
   });
   Object.entries(def.json).forEach(([field, key]) => {
-    const fallback = sectionName === 'wordBank' || sectionName === 'readingTests' || sectionName === 'writingTests' ? [] : {};
+    const fallback = arraySections.has(sectionName) ? [] : {};
     writeJSON(key, data[field] ?? fallback);
   });
   storeSet(def.updatedAtKey, String(normalizeTimestamp(updatedAt)));
@@ -768,6 +770,11 @@ function mergeCloudIntoLocal(snapshot, options = {}) {
   const changedSections = [];
   const applyRemote = (name, data, updatedAt) => {
     if ((name==='reading'||name==='writing')&&window.ModeAtlasReview) data={...data,srs:window.ModeAtlasReview.mergeMaps(getLocalSectionData(name).srs,data.srs)};
+    if(stableJSON(data)===stableJSON(getLocalSectionData(name))){
+      const key=SECTION_DEFS[name].updatedAtKey;
+      if(updatedAt>normalizeTimestamp(storeGet(key,'0')))storeSet(key,String(updatedAt));
+      return;
+    }
     writeSectionToLocal(name, data, updatedAt);
     changedSections.push(name);
   };
@@ -786,8 +793,8 @@ function mergeCloudIntoLocal(snapshot, options = {}) {
     if(name==='kanaLearning'||name==='kanji'||name==='kanjiTests'){
       const field=name==='kanjiTests'?'items':'state',owner=name==='kanaLearning'?window.ModeAtlasKanaLearning:name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
       const merged=owner.merge(localData[field],remoteData[field]);
-      if(JSON.stringify(merged)!==JSON.stringify(localData[field]))applyRemote(name,{[field]:merged},Math.max(localUpdatedAt,remoteUpdatedAt,Date.now()));
-      if(JSON.stringify(merged)!==JSON.stringify(remoteData[field]))localPreferred=true;
+      if(stableJSON(merged)!==stableJSON(localData[field]))applyRemote(name,{[field]:merged},Math.max(localUpdatedAt,remoteUpdatedAt,Date.now()));
+      if(stableJSON(merged)!==stableJSON(remoteData[field]))localPreferred=true;
       return;
     }
     if (name === 'progress') {
@@ -795,9 +802,9 @@ function mergeCloudIntoLocal(snapshot, options = {}) {
       const localState = localData.state || {};
       const remoteState = remoteData.state || {};
       const mergedState = typeof mergeProgress === 'function' ? mergeProgress(localState, remoteState) : remoteState;
-      const localSig = JSON.stringify(localState);
-      const remoteSig = JSON.stringify(remoteState);
-      const mergedSig = JSON.stringify(mergedState);
+      const localSig = stableJSON(localState);
+      const remoteSig = stableJSON(remoteState);
+      const mergedSig = stableJSON(mergedState);
       if (mergedSig !== localSig) {
         applyRemote(name, { state: mergedState }, Math.max(localUpdatedAt, remoteUpdatedAt, Date.now()));
       }
@@ -807,7 +814,7 @@ function mergeCloudIntoLocal(snapshot, options = {}) {
     if ((name==='reading'||name==='writing')&&window.ModeAtlasReview) {
       const mergedSrs=window.ModeAtlasReview.mergeMaps(localData.srs,remoteData.srs);
       remoteData.srs=mergedSrs;
-      if(JSON.stringify(mergedSrs)!==JSON.stringify(localData.srs)){
+      if(stableJSON(mergedSrs)!==stableJSON(localData.srs)){
         STORAGE.writeModeJSON(name,'srs',mergedSrs);localPreferred=true;changedSections.push(name);
       }
     }
@@ -857,6 +864,7 @@ let auth = null;
 let db = null;
 let currentUser = null;
 let authResolved = false;
+let authStartupFailed = false;
 let resolveAuthReady;
 const authReady = new Promise((resolve) => {
   resolveAuthReady = resolve;
@@ -907,7 +915,10 @@ function invalidateAccountWork(){
   sessionCloudPauseActive=false;window.ModeAtlasSessionCloudPause=false;
 }
 const sameAccount=(uid,epoch)=>currentUser?.uid===uid&&accountEpoch===epoch&&accountSaveReady;
-const snapshotData=snapshot=>JSON.stringify(Object.keys(SECTION_DEFS).map(name=>snapshot.sections[name]?.data));
+// Firestore returns map keys in its own order. Compare data by value, keeping
+// array order meaningful, so a read of an unchanged save cannot dirty it again.
+const stableJSON=value=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.keys(item).sort().map(key=>[key,item[key]])):item);
+const snapshotData=snapshot=>stableJSON(Object.keys(SECTION_DEFS).map(name=>snapshot?.sections?.[name]?.data));
 
 function setCloudState(ok, message = '') {
   try {
@@ -934,6 +945,10 @@ function getSyncStatus() {
   const state = storeGet(CLOUD_STATE_KEY, '') || '';
   const lastSyncLabel = lastSync ? new Date(lastSync).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'No cloud save confirmed yet';
   const value=(state,tone,text,detail,extra={})=>({state,tone,text,detail,lastSync,lastSyncLabel,user,...extra});
+  if(CONFIG_READY&&!authResolved){
+    if(authStartupFailed)return value('restore-error','warning','Couldn’t restore your account','Your device save is still available. Check your connection and try again.',{canRetry:true});
+    return value('restoring','neutral','Restoring your account…','Your device save stays available while your sign-in is restored.');
+  }
   if (!CONFIG_READY || !user) return value('local','neutral','Saved on this device','Sign in to save your progress to your account and use it on other devices.');
   if (!accountSaveReady) return value('paused','warning','Account switch paused','Free some device storage, then reopen Mode Atlas.');
   if (!online) return value('offline','warning','Offline · saved on this device','Keep practising. Your changes will sync when the connection returns.');
@@ -983,9 +998,10 @@ function setCloudElementVisible(el, visible = true) {
 
 function updateUiBinding(binding) {
   const user = currentUser;
+  const restoring=CONFIG_READY&&!authResolved;
   if (binding.statusEl) binding.statusEl.textContent = binding.customStatus || lastStatus;
-  if (binding.nameEl) binding.nameEl.textContent = (user && window.ModeAtlasAvatar?.current?.()?.displayName) || user?.displayName || user?.email || 'Guest';
-  if (binding.emailEl) binding.emailEl.textContent = user?.email || (CONFIG_READY ? 'Not signed in' : 'Cloud sync unavailable');
+  if (binding.nameEl) binding.nameEl.textContent = (user && window.ModeAtlasAvatar?.current?.()?.displayName) || user?.displayName || user?.email || (restoring?'Your account':'Guest');
+  if (binding.emailEl) binding.emailEl.textContent = user?.email || (restoring?(authStartupFailed?'Connection unavailable':'Restoring your sign-in…'):CONFIG_READY ? 'Not signed in' : 'Cloud sync unavailable');
   if (binding.photoEl) {
     if (user?.photoURL) {
       binding.photoEl.src = user.photoURL;
@@ -997,20 +1013,20 @@ function updateUiBinding(binding) {
       setCloudElementVisible(binding.photoEl, !binding.hidePhotoIfNoUser);
     }
   }
-  if (binding.signInBtn) setCloudElementVisible(binding.signInBtn, !user);
+  if (binding.signInBtn) setCloudElementVisible(binding.signInBtn, !user&&!restoring);
   if (binding.signOutBtn) setCloudElementVisible(binding.signOutBtn, !!user);
   if (binding.authBtn) {
     const label = binding.authBtn.querySelector('[data-profile-auth-label]');
-    const text = user ? (signingOut ? 'Signing out…' : 'Sign out') : (binding.signInLabel || 'Sign in with Google');
+    const text = user ? (signingOut ? 'Signing out…' : 'Sign out') : restoring?(authStartupFailed?'Retry connection':'Restoring account…'):(binding.signInLabel || 'Sign in with Google');
     if (label) label.textContent = text;
     else binding.authBtn.textContent = text;
     binding.authBtn.classList.toggle('ma-button--primary', !user);
     binding.authBtn.setAttribute('aria-label', text);
-    binding.authBtn.disabled = !!accountActionPromise;
+    binding.authBtn.disabled = !!accountActionPromise||(restoring&&!authStartupFailed);
     binding.authBtn.setAttribute('aria-busy',String(signingOut));
   }
   if (binding.signedInEls) binding.signedInEls.forEach((el) => setCloudElementVisible(el, !!user));
-  if (binding.signedOutEls) binding.signedOutEls.forEach((el) => setCloudElementVisible(el, !user));
+  if (binding.signedOutEls) binding.signedOutEls.forEach((el) => setCloudElementVisible(el, !user&&!restoring));
 }
 
 
@@ -1075,7 +1091,8 @@ function bindUi(options = {}) {
   if (binding.authBtn && !boundAuthButtons.has(binding.authBtn)) {
     boundAuthButtons.add(binding.authBtn);
     binding.authBtn.addEventListener('click', () => {
-      if (currentUser) void signOutUser();
+      if(CONFIG_READY&&!authResolved)void retryConnection();
+      else if (currentUser) void signOutUser();
       else if (binding.onSignIn) binding.onSignIn();
       else void signInWithGoogle();
     });
@@ -1092,7 +1109,11 @@ async function setupFirebase() {
   if (app && auth && authListenerInstalled) return true;
   if (firebaseSetupPromise) return firebaseSetupPromise;
 
-  const attempt = (async () => {
+  // Publish the pending owner before notifying listeners: visit/readiness
+  // observers may synchronously join startup from the status event.
+  const attempt = Promise.resolve().then(async () => {
+    authStartupFailed = false;
+    emitStatus();
     if (!CONFIG_READY) {
       authResolved = true;
       resolveAuthReady?.();
@@ -1102,8 +1123,7 @@ async function setupFirebase() {
 
     const modulesLoaded = await loadFirebaseModules();
     if (!modulesLoaded) {
-      authResolved = true;
-      resolveAuthReady?.();
+      authStartupFailed = true;
       setCloudState(false, (window.ModeAtlasEnv && window.ModeAtlasEnv.canUseFirebase === false) ? 'Cloud sync unavailable in this environment' : 'Firebase modules unavailable');
       return false;
     }
@@ -1142,6 +1162,7 @@ async function setupFirebase() {
         storeSet('modeAtlasLastUserId',accountId);
         if (!user || user.uid !== previousUid) hydratedForUserId = null;
         authResolved = true;
+        authStartupFailed = false;
         resolveAuthReady?.();
         emitStatus();
 
@@ -1161,11 +1182,16 @@ async function setupFirebase() {
     }
 
     return true;
-  })();
+  });
 
   firebaseSetupPromise = (async () => {
     try {
       return await attempt;
+    } catch (error) {
+      authStartupFailed = true;
+      console.warn('Firebase setup failed.', error);
+      setCloudState(false, error?.message || 'Firebase setup failed');
+      return false;
     } finally {
       firebaseSetupPromise = null;
     }
@@ -1191,7 +1217,9 @@ async function writeAccountDocument(uid,snapshot,merge=true){
   const data=structuredClone(snapshot),section=data.sections?.kanji;
   if(section)section.data={...section.data,state:await window.ModeAtlasKanjiCodec.pack(section.data?.state)};
   if(!sameAccount(uid,epoch))throw new Error('The signed-in account changed before this save.');
-  return setDoc(getDocRef(uid),data,merge?{merge:true}:undefined);
+  // This owner supplies complete sections. Replacing that field removes deleted
+  // nested values; recursive merge would leave obsolete goals/rows in the save.
+  return setDoc(getDocRef(uid),data,merge?{mergeFields:Object.keys(data)}:undefined);
 }
 
 async function hydrateFromCloud(force = false) {
@@ -1235,9 +1263,10 @@ async function hydrateFromCloud(force = false) {
         hydratedForUserId = uid;
         // A cache hit or a merged local change is not a confirmed cloud save.
         // Stamp the time only for matching server data or an acknowledged write.
+        const localData=snapshotData(buildLocalSnapshot());
         const matches=!localPreferred&&!hasLocalImportGuard()&&!snap.metadata?.fromCache&&!snap.metadata?.hasPendingWrites
-          &&snapshotData(snap.data())===snapshotData(buildLocalSnapshot());
-        if(matches){confirmedAccountData=snapshotData(buildLocalSnapshot());setCloudState(true);}
+          &&snapshotData(snap.data())===localData;
+        if(matches){confirmedAccountData=localData;setCloudState(true);}
         emitCloudDataChanged('hydrate', changedSections);
         if (!matches) scheduleSync(250);
       } else {
@@ -1286,17 +1315,20 @@ function waitWithTimeout(promise, ms = 1400, label = 'cloud startup') {
   });
 }
 
-async function beforePageLoad() {
-  // Compatibility/readiness helper only. Cloud startup and initial hydration
-  // are owned by setupFirebase() + onAuthStateChanged(), not by individual pages.
-  await waitWithTimeout(setupFirebase(), 1400, 'cloud setup');
+async function waitForAuthRestore(){
+  if(!CONFIG_READY)return true;
+  // Readiness observers wait; only explicit sync/sign-in/reconnect actions
+  // retry failed startup. Otherwise a failure notification restarts itself.
+  if(authStartupFailed)return false;
+  if(!await waitWithTimeout(setupFirebase(),1400,'cloud setup'))return false;
   await waitWithTimeout(authReady, 1400, 'auth check');
-  return true;
+  return authResolved;
 }
 
+async function beforePageLoad(){return waitForAuthRestore();}
+
 async function waitForInitialHydration(timeoutMs = 2600) {
-  await waitWithTimeout(setupFirebase(), 1400, 'cloud setup');
-  await waitWithTimeout(authReady, 1400, 'auth check');
+  if(!await waitForAuthRestore())return false;
   if (!currentUser) return true;
   if (hydratedForUserId === currentUser.uid) return true;
   const result = await waitWithTimeout(initialHydrationPromise, timeoutMs, 'cloud hydrate');
@@ -1627,6 +1659,7 @@ async function performSyncOnce() {
     window.ModeAtlasDeferredCloudSync = true;
     return false;
   }
+  if (!await setupFirebase()) return false;
   await authReady;
   if (!CONFIG_READY || !currentUser || !accountSaveReady) return false;
   const uid = currentUser.uid, epoch = accountEpoch;
@@ -1662,23 +1695,28 @@ async function performSyncOnce() {
         const remoteUpdatedAt = normalizeTimestamp(remoteSection?.updatedAt);
         if(name==='kanaLearning'||name==='kanji'||name==='kanjiTests'){
           const field=name==='kanjiTests'?'items':'state',owner=name==='kanaLearning'?window.ModeAtlasKanaLearning:name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
-          const data={[field]:owner.merge(localData[field],remoteData[field])},updatedAt=Math.max(localUpdatedAt,remoteUpdatedAt,Date.now());
-          snapshot.sections[name]={...localSection,data,updatedAt};writeSectionToLocal(name,data,updatedAt);changedSections.push(name);
+          const data={[field]:owner.merge(localData[field],remoteData[field])};
+          const updatedAt=Math.max(localUpdatedAt,remoteUpdatedAt,stableJSON(data)!==stableJSON(remoteData)?Date.now():0);
+          snapshot.sections[name]={...localSection,data,updatedAt};
+          if(stableJSON(data)!==stableJSON(localData)){writeSectionToLocal(name,data,updatedAt);changedSections.push(name);}
         } else if (name === 'progress' && window.ModeAtlasProgress?.mergeStates) {
           const state=window.ModeAtlasProgress.mergeStates(localData.state,remoteData.state);
-          const updatedAt=Math.max(localUpdatedAt,remoteUpdatedAt,Date.now());
+          const updatedAt=Math.max(localUpdatedAt,remoteUpdatedAt,stableJSON(state)!==stableJSON(remoteData.state)?Date.now():0);
           snapshot.sections[name]={...localSection,data:{state},updatedAt};
-          writeSectionToLocal(name,{state},updatedAt);
-          changedSections.push(name);
+          if(stableJSON(state)!==stableJSON(localData.state)){writeSectionToLocal(name,{state},updatedAt);changedSections.push(name);}
         } else if (sectionHasMeaningfulData(name, remoteData) && (!sectionHasMeaningfulData(name, localData) || remoteUpdatedAt > localUpdatedAt)) {
           snapshot.sections[name] = remoteSection;
-          writeSectionToLocal(name, remoteData, remoteUpdatedAt);
-          changedSections.push(name);
+          if(stableJSON(remoteData)!==stableJSON(localData)){
+            writeSectionToLocal(name, remoteData, remoteUpdatedAt);
+            changedSections.push(name);
+          }else if(remoteUpdatedAt>localUpdatedAt)storeSet(SECTION_DEFS[name].updatedAtKey,String(remoteUpdatedAt));
         }
         if((name==='reading'||name==='writing')&&window.ModeAtlasReview){
           const srs=window.ModeAtlasReview.mergeMaps(localData.srs,remoteData.srs);
           snapshot.sections[name]={...snapshot.sections[name],data:{...snapshot.sections[name].data,srs}};
-          STORAGE.writeModeJSON(name,'srs',srs);
+          if(stableJSON(srs)!==stableJSON(localData.srs)){
+            STORAGE.writeModeJSON(name,'srs',srs);changedSections.push(name);
+          }
         }
       });
     }
@@ -1686,7 +1724,8 @@ async function performSyncOnce() {
     // Never let an operation captured for one signed-in account write after
     // auth has moved to another account or signed out.
     if (!sameAccount(uid,epoch)) return false;
-    await writeAccountDocument(uid, snapshot);
+    const matches=snap.exists()&&!snap.metadata?.fromCache&&!snap.metadata?.hasPendingWrites&&snapshotData(snapshot)===snapshotData(snap.data());
+    if(!matches)await writeAccountDocument(uid, snapshot);
     if (!sameAccount(uid,epoch)) return false;
     confirmedAccountData=snapshotData(snapshot);
 
@@ -1755,6 +1794,14 @@ function scheduleSync(delay = 800) {
   }, delay);
   emitStatus();
   return true;
+}
+
+function retryConnection(){
+  // Browsers retain failed ES-module imports for the life of a document. A
+  // deliberate retry restarts that document, preserving its saved account data
+  // and avoiding a second Firebase app/auth registry under cache-busted URLs.
+  if(CONFIG_READY&&!authResolved&&authStartupFailed){location.reload();return Promise.resolve(false);}
+  return syncNow();
 }
 
 function markSectionUpdated(sectionName) {
@@ -2021,12 +2068,7 @@ async function resetAllData() {
   }
 }
 
-setupFirebase().catch((error) => {
-  console.warn('Firebase setup failed.', error);
-  authResolved = true;
-  resolveAuthReady?.();
-  setCloudState(false, error?.message || 'Firebase setup failed');
-});
+void setupFirebase();
 
 try {
   window.addEventListener('storage',event=>{
@@ -2078,6 +2120,7 @@ window.KanaCloudSync = {
   getFirebaseApp,
   isConfigured: () => CONFIG_READY,
   getSyncStatus,
+  retryConnection,
   createBackup,
   importLocalBackup,
   previewLocalBackup,

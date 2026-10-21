@@ -43,6 +43,21 @@ function save(correct){return {sections:{progress:{data:{state:{version:3,legacy
 async function friend(a,b){await a.call('sendRequest',{code:b.code});await b.call('accept',{uid:a.uid});}
 async function until(check){for(let i=0;i<200;i++){if(await check())return;await new Promise(resolve=>setTimeout(resolve,100));}assert.fail('Expected emulator trigger did not finish');}
 
+test('owned save sections replace removed map fields and retain repeating personal goals',async()=>{
+  const client=rules.authenticatedContext('section-replace').firestore(),ref=doc(client,'users/section-replace/appData/kanaTrainer');
+  const old=save(20);old.sections.progress.data.state.version=7;
+  old.sections.progress.data.state.personalGoals={daily:{id:'kana-correct',target:20,repeat:true,start:'2026-10-20',at:1792454400000},weekly:{id:'kana-correct',target:100,repeat:false,start:'2026-10-19',at:1792454400000}};
+  old.sections.reading.data.stats['い']={correct:3,wrong:0};
+  await assertSucceeds(setDoc(ref,{...old,unrelated:'preserved'}));
+  const next=structuredClone(old);delete next.sections.progress.data.state.personalGoals.weekly;delete next.sections.reading.data.stats['い'];
+  await assertSucceeds(setDoc(ref,next,{mergeFields:Object.keys(next)}));
+  const saved=(await getDoc(ref)).data();
+  assert.equal(saved.sections.progress.data.state.personalGoals.daily.repeat,true);
+  assert.equal(saved.sections.progress.data.state.personalGoals.weekly,undefined);
+  assert.equal(saved.sections.reading.data.stats['い'],undefined);
+  assert.equal(saved.unrelated,'preserved');
+});
+
 test('an older client cannot overwrite migrated progress; current saves and explicit current resets remain allowed',async()=>{
   const mine=rules.authenticatedContext('curve-migration').firestore(),ref=doc(mine,'users/curve-migration/appData/kanaTrainer');
   await assertSucceeds(setDoc(ref,save(6175)));

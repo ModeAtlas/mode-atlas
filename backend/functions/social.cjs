@@ -246,7 +246,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(result.stale.length){
       // Only a policy migration loads private saves. Normal list requests retain
       // their original read cost; migrations use bounded, separate transactions.
-      for(let i=0;i<result.stale.length;i+=10)await Promise.all(result.stale.slice(i,i+10).map(id=>refreshSummary(id,null,true)));
+      for(let i=0;i<result.stale.length;i+=10)await Promise.all(result.stale.slice(i,i+10).map(id=>refreshSummary(id,null,{cachedAccess:true})));
       return list(uid,data);
     }
     return result.response;
@@ -262,13 +262,13 @@ function createSocial({db,auth,messaging,now=Date.now}){
       const relationship=uid===data.uid?'self':friend?'friend':has(a.incoming,data.uid)?'incoming':has(a.outgoing,data.uid)?'outgoing':'none';
       return {profile:value,friend,relationship,canRequest:relationship==='none'&&weeklyActive(a)&&weeklyActive(b),stale:b.summary?.projectionVersion!==PROJECTION_VERSION};
     });
-    if(result.stale){await refreshSummary(data.uid,null,true);return profile(uid,data);}
+    if(result.stale){await refreshSummary(data.uid,null,{cachedAccess:true});return profile(uid,data);}
     delete result.stale;await decorate([result.profile]);return result;
   }
-  async function refreshSummary(uid,user,cachedAccess=false){
+  async function refreshSummary(uid,user,{cachedAccess=false,awardLevels=!cachedAccess}={}){
     if(!validUid(uid))return;
     if(!user&&!cachedAccess)user=await staff.user(uid);
-    if(!cachedAccess)await commerce.awardLevels(uid,user);
+    if(awardLevels)await commerce.awardLevels(uid,user);
     await db.runTransaction(async tx=>{
       const ref=accountRef(uid),[doc,save]=await tx.getAll(ref,saveRef(uid)),a=doc.data();
       if(!a?.active || a.deleting)return;
@@ -386,7 +386,9 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(action==='weeklySubmit')return weekly.submit(uid,data);
     if(action==='weeklyList'){const result=await weekly.list(uid,data);await decorate(result.rows);return result;}
     if(action==='state'){
-      await refreshSummary(uid,user);
+      // The save trigger and shop own wallet awards. A social read only needs
+      // the current learning projection, not a second commerce transaction.
+      await refreshSummary(uid,user,{awardLevels:false});
       const result=await state(uid,user);
       if(result.profile){
         result.profile.role=result.role;
@@ -401,7 +403,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(action==='lookup'){const result=await lookup(uid,data);await decorate(result.rows||[result.profile]);return result;}
     if(action==='sendRequest')return sendRequest(uid,data);
     if(action==='list'){const result=await list(uid,data);await decorate(result.rows||[result.profile]);return result;}
-    if(action==='profile'){const result=await profile(uid,data);await decorate(result.rows||[result.profile]);return result;}
+    if(action==='profile')return profile(uid,data);
     if(action==='leave')return erase(uid);
     return relationship(uid,action,data);
   }

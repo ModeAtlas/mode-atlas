@@ -4,7 +4,7 @@ function load(){
   const values=new Map();let now=Date.parse('2026-10-18T12:00:00Z'),serial=0,failed=false,uid='guest';
   class Clock extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
   const localStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>{if(failed&&k==='modeAtlasKanaLearning'){failed=false;throw Error('Quota');}values.set(k,String(v));},removeItem:k=>values.delete(k),get length(){return values.size;},key:i=>[...values.keys()][i]??null};
-  const root={Date:Clock,URLSearchParams,console,structuredClone,localStorage,sessionStorage:localStorage,crypto:{randomUUID:()=>String(++serial)},CustomEvent:class{},dispatchEvent(){},addEventListener(){},document:{addEventListener(){}},KanaCloudSync:{getUser:()=>uid==='guest'?null:{uid},scheduleSync(){},markSectionUpdated(){}}};root.window=root;
+  const root={setTimeout:()=>0,clearTimeout(){},Date:Clock,URLSearchParams,console,structuredClone,localStorage,sessionStorage:localStorage,crypto:{randomUUID:()=>String(++serial)},CustomEvent:class{},dispatchEvent(){},addEventListener(){},document:{addEventListener(){}},KanaCloudSync:{getUser:()=>uid==='guest'?null:{uid},scheduleSync(){},markSectionUpdated(){}}};root.window=root;
   const context=vm.createContext(root);
   for(const file of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-review','data/mode-atlas-kana-data','app/mode-atlas-kana-learning','app/mode-atlas-kana-placement'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',file+'.js'),'utf8'),context);
   return {L:root.ModeAtlasKanaLearning,P:root.ModeAtlasKanaPlacement,root,values,advance:ms=>now+=ms,fail:()=>failed=true,owner:value=>uid=value};

@@ -14,6 +14,9 @@
   const DEVICE_KEY = 'modeAtlasProgressDeviceId';
   const STATE_VERSION = 7;
   const LEGACY_SOURCE = 'legacy-baseline';
+  const snapshots=new WeakSet();
+  const summaries=new WeakMap();
+  let snapshotRaw,snapshotValue;
 
   const COUNTER_XP = Object.freeze({
     'kana.reading.correct': 1,
@@ -476,7 +479,7 @@
     return [...legacyDays];
   }
   function studyDays(input,legacy=legacyStudyDays()){
-    const state=input?normalizeState(input):readState();
+    const state=viewState(input);
     return [...new Set([...Object.keys(state.activity).filter(day=>correctAcrossBranches(activityTotals(state,day))>=5),...legacy])]
       .filter(day=>/^\d{4}-\d{2}-\d{2}$/.test(day)).sort();
   }
@@ -505,7 +508,8 @@
     return {used,remaining,protection:[...covered].sort()};
   }
   function routine(input,at=Date.now()){
-    const state=input?normalizeState(input):readState(),today=dayKey(at);
+    let state=viewState(input);const today=dayKey(at);
+    if(!state.goalPlans['daily:'+today]||!state.goalPlans['weekly:'+weekKey(today)])state=normalizeState(state);
     const changed=ensureGoalPlans(state,today,at);
     if(changed&&!input)persistState(state,{source:'goals.assign',emit:false});
     const streak=studyStreak(studyDays(state),today,root.ModeAtlasShop?.protection?.()||[]);
@@ -518,7 +522,7 @@
     return {streak,weekDays:weekDays(state,today),goals};
   }
   function weeklyRecap(input,at=Date.now(),previous=false){
-    const state=input?normalizeState(input):readState(),today=dayKey(at),start=weekKey(root.ModeAtlasDates.shiftDateKey(today,previous?-7:0));
+    const state=viewState(input),today=dayKey(at),start=weekKey(root.ModeAtlasDates.shiftDateKey(today,previous?-7:0));
     const metrics=periodMetrics(state,start,'weekly'),daily=activityTotals(state,today);
     const weeklyGoals=goalCount(state,start,'weekly');
     return {start,end:root.ModeAtlasDates.shiftDateKey(start,6),studyDays:metrics['study.days']||0,
@@ -527,7 +531,7 @@
       todayReading:daily.reading,todayWriting:daily.writing};
   }
   function achievementStats(input){
-    const state=input?normalizeState(input):readState(),days=new Set(),dailyKeys=new Set(),weeklyKeys=new Set();
+    const state=viewState(input),days=new Set(),dailyKeys=new Set(),weeklyKeys=new Set();
     for(const [key,n]of Object.entries(state.claims))if(n){
       const daily=/^v5:personal:daily:(\d{4}-\d{2}-\d{2})$/.exec(key)||/^v4:daily:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:(recall|balance|review)$/.exec(key);
       const weekly=/^v5:personal:weekly:(\d{4}-\d{2}-\d{2})$/.exec(key)||/^v4:weekly:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:week$/.exec(key);
@@ -585,6 +589,23 @@
     return normalizeState(store()?.json?.(STORAGE_KEY, {}) || {});
   }
 
+  // Read-only consumers share one validated snapshot for the exact saved bytes.
+  // Editors still receive an independent mutable state through readState().
+  function readSnapshot(){
+    const raw=store()?.get?.(STORAGE_KEY,null);
+    if(typeof raw==='string'&&raw===snapshotRaw)return snapshotValue;
+    const state=readState();
+    function freeze(value){for(const child of Object.values(value))if(child&&typeof child==='object')freeze(child);return Object.freeze(value);}
+    freeze(state);snapshots.add(state);
+    if(typeof raw==='string'){snapshotRaw=raw;snapshotValue=state;}
+    return state;
+  }
+  function viewState(input,seed=false){
+    if(input)return snapshots.has(input)?input:normalizeState(input);
+    const state=readSnapshot();
+    return seed&&!state.legacySeeded?ensureSeeded({sync:false,emit:false}):state;
+  }
+
   function recordAchievements(ids){
     const state=readState();let changed=false;
     for(const id of ids)if(root.ModeAtlasAchievements?.validId(id)&&!state.achievements[id]){state.achievements[id]=Date.now();changed=true;}
@@ -608,7 +629,7 @@
   function persistState(input, options = {}){
     const storage = store();
     if (!storage?.setJSON) return normalizeState(input);
-    const previousSummary = getSummary(readState());
+    const previousSummary = getSummary(readSnapshot());
     const state = normalizeState(input);
     state.updatedAt = Math.max(Date.now(), finiteCount(state.updatedAt));
     const saved=storage.setJSON(STORAGE_KEY, state);
@@ -677,12 +698,12 @@
   }
 
   function getLifetimeCorrect(input){
-    const state = input ? normalizeState(input) : ensureSeeded({ sync: false, emit: false });
+    const state = viewState(input,true);
     return Math.min(Number.MAX_SAFE_INTEGER, counterTotal(state, 'kana.reading.correct') + counterTotal(state, 'kana.writing.correct') + counterTotal(state, 'kanji.correct'));
   }
 
   function getXP(input){
-    const state = input ? normalizeState(input) : ensureSeeded({ sync: false, emit: false });
+    const state = viewState(input,true);
     return sumXP(state);
   }
   function sumXP(state){
@@ -721,13 +742,14 @@
   }
 
   function getSummary(input){
-    const state = input ? normalizeState(input) : ensureSeeded({ sync: false, emit: false });
+    const state = viewState(input,true);
+    if(summaries.has(state))return {...summaries.get(state)};
     const xp = sumXP(state);
     const levelInfo = getLevelFromXP(xp);
     const readingCorrect = counterTotal(state, 'kana.reading.correct');
     const writingCorrect = counterTotal(state, 'kana.writing.correct');
     const kanjiCorrect = counterTotal(state, 'kanji.correct');
-    return {
+    const summary = {
       level: levelInfo.level,
       xp,
       levelXp: levelInfo.intoLevel,
@@ -739,6 +761,8 @@
       kanjiCorrect,
       lifetimeCorrect: Math.min(Number.MAX_SAFE_INTEGER, readingCorrect + writingCorrect + kanjiCorrect)
     };
+    if(snapshots.has(state))summaries.set(state,summary);
+    return {...summary};
   }
 
   function debugAdjustXP(amount){
@@ -758,7 +782,7 @@
   return Object.freeze({
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
-    normalizeState, mergeStates, readState, persistState, ensureSeeded,
+    normalizeState, mergeStates, readState, readSnapshot, persistState, ensureSeeded,
     award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordAchievements, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, selectTheme, levelRequirement,
     setPersonalGoal, removePersonalGoal, recordKanaMilestone, personalGoal, getXP, getLifetimeCorrect, getLevelFromXP, getSummary, getDeviceId, recordKanjiAnswer
   });
