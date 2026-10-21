@@ -133,14 +133,17 @@
     if(!ranking&&kind==='friends'){
       const card=el('div','ma-social-row ma-social-friend');
       const open=button('',()=>showProfile(profile.uid),'ma-social-person');
-      const art=profileCard(profile,'ma-social-friend__art');art.setAttribute('aria-hidden','true');
+      const art=profileCard(profile,'ma-social-friend__art ma-banner-scene');
+      art.dataset.portrait=profile.avatar==='character'&&profile.character?'character':'photo';
       if(profile.avatar==='character'&&profile.character){const figure=el('span','ma-social-friend__figure');root.ModeAtlasAvatarArt.render(figure,profile.character);art.append(figure);}
       else art.append(avatar(profile));
       const caption=el('span','ma-social-friend__caption');caption.append(identity(profile),el('span','ma-social-score',`${number(profile.stats.streak)}d streak`));
-      if(profile.greeting){const phrase=el('span','ma-social-friend__status',profile.greeting);phrase.setAttribute('aria-label','Status: '+profile.greeting);caption.append(phrase);}
+      if(profile.greeting){const phrase=el('span','ma-social-friend__status');phrase.append(el('span','ma-social-friend__phrase',profile.greeting));phrase.setAttribute('aria-label','Status: '+profile.greeting);art.append(phrase);}
       open.append(art,caption);card.append(open);return card;
     }
-    const card=profileCard(profile,'ma-social-row');if(profile.uid===owner)card.dataset.self='true';
+    const card=el('div','ma-social-row');
+    const artwork=profileCard(profile,'ma-social-row__art ma-banner-scene');artwork.setAttribute('aria-hidden','true');card.append(artwork);
+    if(profile.uid===owner)card.dataset.self='true';
     if(ranking){card.dataset.rank=String(profile.rank);card.append(el('strong','ma-social-rank',String(profile.rank)));}
     const open=button('',()=>showProfile(profile.uid),'ma-social-person');open.append(avatar(profile),identity(profile));card.append(open);
     if(ranking)card.append(el('strong','ma-social-score',score(profile)));

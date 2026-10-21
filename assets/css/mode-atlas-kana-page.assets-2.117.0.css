@@ -142,3 +142,6 @@ html[data-ma-runtime="ios"] .ma-kana-path-step>span:last-child{gap:3px;backgroun
 html[data-ma-runtime="ios"] .ma-kana-path-marker{flex:0 0 46px;width:46px;box-shadow:0 4px 0 var(--ma-border);}
 html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-trail{display:none;}
 html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-step{height:auto;min-height:128px;}
+
+.ma-kana-practice-skills{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));}
+@media(max-width:600px){.ma-kana-practice-skills{grid-template-columns:repeat(2,minmax(0,1fr));}}

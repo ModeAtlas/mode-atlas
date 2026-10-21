@@ -256,3 +256,13 @@ test('Confident, Mastered and Mastered+ have distinct colours in the legend and 
   const colours=await page.locator('.ma-kana-mastery-legend>[data-stage]').evaluateAll(nodes=>nodes.filter(n=>Number(n.dataset.stage)>=4).map(n=>getComputedStyle(n).borderLeftColor));expect(new Set(colours).size).toBe(3);
   await page.getByRole('button',{name:'あ mastery details: Mastered+',exact:true}).click();await expect(page.locator('.ma-kana-mastery-heading')).toHaveAttribute('data-stage','6');
 });
+
+test('practice presents four equal skill choices and handwriting remains usable',async({page},info)=>{
+ await page.setViewportSize({width:393,height:852});await setup(page,{native:true});await open(page);await page.getByRole('button',{name:/Start as a beginner/}).click();await open(page,'/kana/?view=practice');
+ const choices=page.getByRole('group',{name:'Kana skill',exact:true});await expect(choices.getByRole('button')).toHaveText(['Read','Recall','Read + Recall','Handwrite']);
+ const boxes=await choices.getByRole('button').evaluateAll(items=>items.map(x=>{const r=x.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width};}));
+ expect(Math.abs(boxes[0].w-boxes[3].w)).toBeLessThan(1);expect(boxes[2].y).toBeGreaterThan(boxes[0].y);expect(boxes[2].x).toBe(boxes[0].x);
+ await page.screenshot({path:info.outputPath('practice-skills.png')});
+ await choices.getByRole('button',{name:'Handwrite',exact:true}).click();await expect(page.getByRole('link',{name:'Open handwriting',exact:true})).toBeVisible();
+ await page.getByRole('link',{name:'Open handwriting',exact:true}).click();await expect(page).toHaveURL(/kana\/handwriting/);
+});
