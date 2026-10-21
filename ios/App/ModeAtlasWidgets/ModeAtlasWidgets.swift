@@ -52,7 +52,7 @@ struct StudyWidgetCard: View {
             Text("Mode Atlas").font(.system(size: family == .systemSmall ? 11 : 13, weight: .bold)).layoutPriority(1)
             Spacer(minLength: 2)
             if let value {
-                Text("Lv \(value.level)").font(.system(size: family == .systemSmall ? 10 : 11, weight: .bold)).monospacedDigit()
+                Text("Lv \(value.level)").font(.system(size: family == .systemSmall ? 10 : 11, weight: .bold)).monospacedDigit().fixedSize()
                     .foregroundStyle(blue).padding(.horizontal, family == .systemSmall ? 5 : 7).padding(.vertical, 4)
                     .background(blue.opacity(0.10), in: Capsule())
             }
