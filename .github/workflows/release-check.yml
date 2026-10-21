@@ -67,7 +67,7 @@ jobs:
 
       - name: Upload native layout evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: native-layout-${{ github.sha }}
           path: test-results/**/*.png
@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload browser results and timings
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-results-${{ github.sha }}
           path: .build/test-reports/*.json
@@ -110,7 +110,7 @@ jobs:
 
       - name: Upload validated source artifact
         if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Mode-Atlas-${{ steps.release.outputs.version }}-${{ github.sha }}
           path: ${{ runner.temp }}/mode-atlas-release
@@ -120,7 +120,7 @@ jobs:
 
       - name: Upload validated iOS web payload
         if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Mode-Atlas-iOS-Web-${{ steps.release.outputs.version }}-${{ github.sha }}
           path: .build/ios-web
@@ -157,7 +157,7 @@ jobs:
         run: npm run test:polish -- --project=desktop-chromium --shard=${{ matrix.shard }}/3
       - name: Upload polish evidence and timings
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: polish-${{ matrix.shard }}-${{ github.sha }}
           path: |
@@ -211,7 +211,7 @@ jobs:
           npm --prefix backend test
       - name: Upload emulator diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: social-emulator-${{ github.sha }}
           path: backend/*-debug.log
@@ -269,7 +269,7 @@ jobs:
           "$preview_bundle/MacOS/WidgetReview" "${RUNNER_TEMP}/widget-layouts" "${RUNNER_TEMP}/widget-contract.json" tests/fixtures/widgets/avatar.png
 
       - name: Upload native widget layout evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: widget-layouts-${{ github.sha }}
           path: ${{ runner.temp }}/widget-layouts/*.png
