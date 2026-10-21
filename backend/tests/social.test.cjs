@@ -19,18 +19,6 @@ test('combined weekly sessions verify alternating directions on the server',()=>
   assert.throws(()=>scoreAnswers(run,[{...read,direction:'writing'}],1000),/Unsupported weekly/);
 });
 
-test('ordinary Friends reads use the public projection without loading private learning history',async()=>{
-  const a=await learner('Projection Reader');await a.call('state');
-  const reads=[];
-  const tracked=new Proxy(db,{get(target,key){
-    if(key==='doc')return path=>{reads.push(path);return target.doc(path);};
-    const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
-  }});
-  const isolated=createSocial({db:tracked,auth});
-  const result=await isolated.call({auth:{uid:a.uid},data:{expectedUid:a.uid,action:'state',data:{listKind:'friends'}}});
-  assert.equal(result.active,true);assert.equal(result.list.rows.length,0);
-  assert.equal(reads.some(path=>path===`users/${a.uid}/appData/kanaTrainer`),false);
-});
 const {createService}=require('../functions/service.cjs');
 const {createAccounts}=require('../functions/accounts.cjs');
 const {projectSave,publicProfile}=require('../functions/projection.cjs');
@@ -1186,4 +1174,18 @@ test('Kanji weekly receipts enforce level gates, dictionary answers and idempote
   assert.equal((await weekly.submit(a.uid,{token:match.token,answers:[answers[0]]})).earned,1);
   const completions=Object.fromEntries([...band[0].chars].map(char=>[char,at]));await db.doc(`users/${a.uid}/appData/kanaTrainer`).set({sections:{kanji:{data:{state:{version:1,completions,sources:{},evidence:{encoding:'gzip-base64-v1',data:'unused-by-competition'}}}}}},{merge:true});
   assert.equal((await weekly.start(a.uid,{...config,id:'kanji-unlocked-run',pool:[[...band[1].chars][0]]})).enabled,true);
+});
+
+test('ordinary Friends reads use the public projection without loading private learning history',async()=>{
+  // Keep the first-use identity migration fixture ahead of account creation.
+  const a=await learner('Projection Reader');await a.call('state');
+  const reads=[];
+  const tracked=new Proxy(db,{get(target,key){
+    if(key==='doc')return path=>{reads.push(path);return target.doc(path);};
+    const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
+  }});
+  const isolated=createSocial({db:tracked,auth});
+  const result=await isolated.call({auth:{uid:a.uid},data:{expectedUid:a.uid,action:'state',data:{listKind:'friends'}}});
+  assert.equal(result.active,true);assert.equal(result.list.rows.length,0);
+  assert.equal(reads.some(path=>path===`users/${a.uid}/appData/kanaTrainer`),false);
 });
