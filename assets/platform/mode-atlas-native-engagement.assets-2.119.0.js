@@ -70,20 +70,28 @@
     if(revision!==preferenceRevision)return {enabled:false,cancelled:true};
     return platform.configureStudyReminder({enabled, hour, minute});
   }
-  let timer;
+  let timer,lastPublishedAt=0;
   function publish(){
-    clearTimeout(timer);
+    clearTimeout(timer);timer=null;
     if (suspended()||!platform?.getCapabilities?.().widgetSnapshots) return;
+    lastPublishedAt=Date.now();
     void refreshRanking();
     return platform.publishWidgetSnapshot(snapshot()).catch(error => console.warn('Mode Atlas snapshot unavailable', error));
   }
-  function refresh(){
+  function refresh(event){
+    const studying=document.body?.classList?.contains('trainer-session-active')||root.ModeAtlasKanjiSession?.current?.()?.finished===false;
+    const finished=event?.detail?.source==='practice.finish';
+    // Rebuilding the account-wide widget is expensive and does not belong to
+    // every answer. Keep it fresh at bounded intervals, at completion and when
+    // the app backgrounds, without delaying the answer's durable local save.
+    if(studying&&!finished&&timer)return;
     clearTimeout(timer);
-    timer = setTimeout(publish, 350);
+    timer = setTimeout(publish,studying&&!finished?Math.max(350,30000-(Date.now()-lastPublishedAt)):350);
   }
   async function reset(){
     preferenceRevision += 1;
     clearTimeout(timer);
+    timer=null;lastPublishedAt=0;
     root.ModeAtlasStorage?.remove?.(rankingKey);
     await platform.resetEngagement();
     root.dispatchEvent(new CustomEvent('modeAtlasEngagementChanged'));

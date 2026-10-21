@@ -41,7 +41,12 @@
     }catch(error){root.ModeAtlasDiagnostics?.record('study-rewards',error);}
     finally{busy=false;if(credited&&user()===uid)root.dispatchEvent(new CustomEvent('modeAtlasEarningsChanged'));}
   }
-  for(const event of ['online','kanaCloudSyncStatusChanged'])root.addEventListener(event,()=>void flush());
+  root.addEventListener('online',()=>void flush());
+  // Sync status changes for every locally saved answer. They are not a request
+  // to bypass the 20-answer / 15-second receipt batch and refresh the wallet.
+  let observedUser=user();
+  root.addEventListener('kanaCloudSyncStatusChanged',()=>{const next=user();if(next!==observedUser){observedUser=next;if(next)void flush();}});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)void flush();});
   root.ModeAtlasEarnings=Object.freeze({start,answer,finish,flush,pending});
+  queueMicrotask(()=>void flush());
 })(window);

@@ -16,6 +16,7 @@
   const LEGACY_SOURCE = 'legacy-baseline';
   const snapshots=new WeakSet();
   const summaries=new WeakMap();
+  const goalById=new Map(root.ModeAtlasRewardRules.goalCatalogue.map(goal=>[goal.id,goal]));
   let snapshotRaw,snapshotValue;
 
   const COUNTER_XP = Object.freeze({
@@ -343,10 +344,10 @@
     const out={};
     for(const [key,plan]of Object.entries(object(input))){
       const match=/^(daily|weekly):(\d{4}-\d{2}-\d{2})$/.exec(key);
-      if(!match||!plan||![0,1].includes(plan.version)||!Array.isArray(plan.ids))continue;
+      if(!match||!plan||![0,1,2].includes(plan.version)||!Array.isArray(plan.ids))continue;
       const instant=Date.parse(match[2]+'T12:00:00Z');
       if(!Number.isFinite(instant)||new Date(instant).toISOString().slice(0,10)!==match[2]||(match[1]==='weekly'&&weekKey(match[2])!==match[2]))continue;
-      const goals=plan.ids.map(id=>root.ModeAtlasRewardRules.goalCatalogue.find(goal=>goal.id===id&&goal.period===match[1]));
+      const goals=plan.ids.map(id=>goalById.get(id)).filter(goal=>goal?.period===match[1]);
       const size=match[1]==='daily'?3:2;
       if(goals.length!==size||goals.some((goal,index)=>!goal||goal.slot!==index))continue;
       out[key]={version:plan.version,at:finiteCount(plan.at),assisted:plan.assisted===true,ids:goals.map(goal=>goal.id)};
@@ -356,25 +357,78 @@
     const out=normalizeGoalPlans(left);
     for(const [key,plan]of Object.entries(normalizeGoalPlans(right))){
       const previous=out[key];
-      // Earliest assignment wins; deterministic tie-breaking converges offline devices.
-      if(!previous||plan.at<previous.at||(plan.at===previous.at&&JSON.stringify(plan)<JSON.stringify(previous)))out[key]=plan;
+      // Capability-aware plans supersede legacy assignments. Explicit changes
+      // converge by timestamp; historical v0/v1 plans retain their old policy.
+      if(!previous||plan.version>previous.version||(plan.version===previous.version&&(plan.version===2?plan.at>previous.at:plan.at<previous.at))||(plan.version===previous.version&&plan.at===previous.at&&JSON.stringify(plan)<JSON.stringify(previous)))out[key]=plan;
     }return out;
   }
-  function ensureGoalPlans(state,day,at){
-    let changed=false;
-    for(const period of ['daily','weekly']){
-      const key=period==='daily'?day:weekKey(day),id=period+':'+key;if(state.goalPlans[id])continue;
-      const active=Object.entries(state.activity).filter(([date])=>period==='daily'?date===day:weekKey(date)===key);
-      const legacy=active.some(([,row])=>row.goalVersion===4)||Object.keys(state.claims).some(claim=>claim.startsWith(`v4:${period}:${key}:goal:`));
-      const known=new Set(),profile={variety:0,katakana:0,independent:0,kanji:0,daysAvailable:7-((new Date(day+'T12:00:00Z').getUTCDay()+6)%7)};
-      for(const [date,row]of Object.entries(state.activity))if(date<=day){
-        for(const kana of row.kana)known.add(kana);
-        const metrics=activityTotals(state,date).metrics;profile.katakana+=metrics['kana.katakana']||0;profile.independent+=metrics['kana.independent']||0;profile.kanji+=metrics['kanji.correct']||0;
+  function goalProfile(state,day){
+    const known=new Set(),profile={variety:10,katakana:5,independent:0,kanjiReady:0,kanaTests:false,remainingKana:240,improvableKana:240,daysAvailable:7-((new Date(day+'T12:00:00Z').getUTCDay()+6)%7)};
+    for(const [date,row]of Object.entries(state.activity))if(date<=day){
+      for(const char of row.kana)known.add(char);
+      const totals=activityTotals(state,date);profile.independent+=totals.metrics['kana.independent']||0;
+      if(date<day&&weekKey(date)===weekKey(day)&&correctAcrossBranches(totals)>=5)profile.daysAvailable++;
+    }
+    const learning=root.ModeAtlasKanaLearning;
+    if(learning?.available){
+      const saved=learning.read(),evidence=learning.snapshot(),read=learning.available('reading',saved,evidence),recall=learning.available('writing',saved,evidence),available=new Set([...read,...recall]);
+      profile.variety=available.size;profile.katakana=[...available].filter(char=>/^[ァ-ヺー]+$/.test(char)).length;
+      profile.kanaTests=['reading','writing'].some(skill=>learning.testScripts(skill,saved,evidence).length>0);
+      const stages=Object.keys(learning.map).map(char=>learning.stage(char,saved,evidence));
+      profile.remainingKana=stages.filter(stage=>stage<3).length;profile.improvableKana=stages.filter(stage=>stage<6).length;
+    }else profile.variety=Math.max(10,known.size);
+    const kanji=root.ModeAtlasKanjiState;
+    if(kanji){
+      const saved=kanji.read();
+      for(const level of [5,4,3,2,1]){
+        const ready=kanji.studyPool(level,saved).filter(char=>kanji.access(saved,char)||saved.lessons[char]||kanji.introduced(saved,char)||kanji.skills.some(skill=>kanji.metrics(saved,char,skill).attempts));
+        profile.kanjiReady=Math.max(profile.kanjiReady,ready.length);
       }
-      profile.variety=known.size;
-      state.goalPlans[id]={version:legacy?0:1,at:finiteCount(at),assisted:!legacy&&profile.independent<20,ids:root.ModeAtlasRewardRules.goals(key,period,legacy?undefined:profile).map(goal=>goal.id)};
+    }
+    return profile;
+  }
+  function ensureGoalPlans(state,day,at){
+    let changed=false,profile;
+    for(const period of ['daily','weekly']){
+      const key=period==='daily'?day:weekKey(day),id=period+':'+key;let old=state.goalPlans[id];if(old?.version===2)continue;
+      if(!old&&Object.entries(state.activity).some(([date,row])=>row.goalVersion===4&&(period==='daily'?date===key:weekKey(date)===key)))old={ids:root.ModeAtlasRewardRules.goals(key,period).map(goal=>goal.id),assisted:false};
+      profile||=goalProfile(state,day);
+      const awards=goalAwards(state,key,period),metrics=periodMetrics(state,key,period),next=root.ModeAtlasRewardRules.goals(key,period,profile);
+      // Keep completed goals and usable goals with progress. Repair impossible
+      // assignments immediately rather than making the learner wait for reset.
+      let kanjiSelected=false;
+      const ids=next.map(goal=>{
+        const previous=goalById.get(old?.ids[goal.slot]),complete=previous&&(awards[goal.slot]||(metrics[previous.metric]||0)>=previous.target);
+        let selected=previous&&(complete||root.ModeAtlasRewardRules.suitable(previous,profile))?previous:goal;
+        if(!complete&&kanjiSelected&&selected.branch==='kanji')selected=root.ModeAtlasRewardRules.goalCatalogue.find(item=>item.period===period&&item.slot===goal.slot&&item.branch==='kana'&&root.ModeAtlasRewardRules.suitable(item,profile));
+        if(selected.branch==='kanji')kanjiSelected=true;return selected.id;
+      });
+      state.goalPlans[id]={version:2,at:finiteCount(at),assisted:old?.assisted??profile.independent<20,ids};
       changed=true;
     }return changed;
+  }
+  function goalChoices(period,slot,at=Date.now()){
+    if(!['daily','weekly'].includes(period))return [];
+    const state=readSnapshot(),day=dayKey(at),key=period==='daily'?day:weekKey(day),profile=goalProfile(state,day),plan=state.goalPlans[period+':'+key];
+    if(goalAwards(state,key,period)[slot])return [];
+    return root.ModeAtlasRewardRules.goalCatalogue.filter(goal=>goal.period===period&&goal.slot===slot&&goal.id!==plan?.ids[slot]&&root.ModeAtlasRewardRules.suitable(goal,profile));
+  }
+  function replaceGoal(period,slot,id,at=Date.now()){
+    const state=ensureSeeded({sync:false,emit:false}),day=dayKey(at),key=period==='daily'?day:weekKey(day);
+    if(!goalChoices(period,slot,at).some(goal=>goal.id===id))throw Error('Choose an available unfinished goal.');
+    ensureGoalPlans(state,day,at);const plan=state.goalPlans[period+':'+key],current=goalById.get(plan.ids[slot]);
+    if((periodMetrics(state,key,period)[current.metric]||0)>=current.target)throw Error('Completed goals stay on your board.');
+    plan.ids[slot]=id;plan.at=Math.max(at,plan.at+1);reconcileGoals(state,day);
+    return persistState(state,{source:'goals.replace',requireSaved:true});
+  }
+  function personalGoalChoices(period){
+    if(!['daily','weekly'].includes(period))return [];
+    const profile=goalProfile(readSnapshot(),dayKey());
+    return root.ModeAtlasRewardRules.personalGoals.flatMap(goal=>{
+      if(goal.metric==='kana.testScore'&&!profile.kanaTests||goal.metric==='kanji.testScore'&&profile.kanjiReady<10||goal.metric==='kanji.correct'&&!profile.kanjiReady)return [];
+      const maximum=goal.metric==='kana.learned'?profile.remainingKana:goal.metric==='kana.improved'?profile.improvableKana:Infinity;
+      const targets=goal[period].filter(target=>target<=maximum);return targets.length?[{...goal,[period]:targets}]:[];
+    });
   }
   function periodGoals(state,key,period){
     const plan=state.goalPlans[period+':'+key];
@@ -509,7 +563,7 @@
   }
   function routine(input,at=Date.now()){
     let state=viewState(input);const today=dayKey(at);
-    if(!state.goalPlans['daily:'+today]||!state.goalPlans['weekly:'+weekKey(today)])state=normalizeState(state);
+    if(state.goalPlans['daily:'+today]?.version!==2||state.goalPlans['weekly:'+weekKey(today)]?.version!==2)state=normalizeState(state);
     const changed=ensureGoalPlans(state,today,at);
     if(changed&&!input)persistState(state,{source:'goals.assign',emit:false});
     const streak=studyStreak(studyDays(state),today,root.ModeAtlasShop?.protection?.()||[]);
@@ -535,9 +589,10 @@
     for(const [key,n]of Object.entries(state.claims))if(n){
       const daily=/^v5:personal:daily:(\d{4}-\d{2}-\d{2})$/.exec(key)||/^v4:daily:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:(recall|balance|review)$/.exec(key);
       const weekly=/^v5:personal:weekly:(\d{4}-\d{2}-\d{2})$/.exec(key)||/^v4:weekly:(\d{4}-\d{2}-\d{2}):/.exec(key)||/^v3:(\d{4}-\d{2}-\d{2}):goal:week$/.exec(key);
-      if(daily){dailyKeys.add(daily[1]);if(rotatingGoalCount(state,daily[1],'daily')>=3)days.add(daily[1]);}
+      if(daily)dailyKeys.add(daily[1]);
       if(weekly)weeklyKeys.add(weekly[1]);
     }
+    for(const day of dailyKeys)if(rotatingGoalCount(state,day,'daily')>=3)days.add(day);
     const dailyGoals=[...dailyKeys].reduce((sum,key)=>sum+dailyGoalCount(state,key),0),weeklyGoals=[...weeklyKeys].reduce((sum,key)=>sum+goalCount(state,key,'weekly'),0);
     const metrics={};let bestStreak=0;
     for(const day of Object.keys(state.activity))for(const [key,n]of Object.entries(activityTotals(state,day).metrics)){metrics[key]=(metrics[key]||0)+n;if(key==='kana.streak')bestStreak=Math.max(bestStreak,n);}
@@ -639,7 +694,7 @@
       try { root.KanaCloudSync?.markSectionUpdated?.('progress'); } catch {}
       try { root.KanaCloudSync?.scheduleSync?.(); } catch {}
     }
-    const summary = getSummary(state);
+    const summary = summaryForState(state);
     if (options.emit !== false) emit(summary, options.source || 'local', previousSummary);
     return state;
   }
@@ -716,12 +771,14 @@
     Object.values(state.credits).forEach(row=>{xp+=Object.values(row).reduce((n,value)=>n+value,0);});
     // Claim IDs retain the compatible v4 format. Each period has one award per
     // slot, even if two offline devices were assigned different eligible goals.
-    const periods=new Map();
+    const slots=new Map();
     for(const [id,value]of Object.entries(state.claims)){
-      const match=/^v4:(daily|weekly):(\d{4}-\d{2}-\d{2}):goal:/.exec(id);
-      if(match)periods.set(match[1]+':'+match[2],[match[1],match[2]]);else xp+=value;
+      const match=/^v4:(daily|weekly):(\d{4}-\d{2}-\d{2}):goal:(.+)$/.exec(id);
+      if(!match){xp+=value;continue;}
+      const goal=goalById.get(match[3]);if(goal?.period!==match[1])continue;
+      const key=match[1]+':'+match[2]+':'+goal.slot;slots.set(key,Math.max(slots.get(key)||0,value));
     }
-    for(const [period,key]of periods.values())xp+=Object.values(goalAwards(state,key,period)).reduce((sum,value)=>sum+value,0);
+    for(const value of slots.values())xp+=value;
     return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(xp)));
   }
 
@@ -743,6 +800,9 @@
 
   function getSummary(input){
     const state = viewState(input,true);
+    return summaryForState(state);
+  }
+  function summaryForState(state){
     if(summaries.has(state))return {...summaries.get(state)};
     const xp = sumXP(state);
     const levelInfo = getLevelFromXP(xp);
@@ -784,7 +844,7 @@
     COUNTER_XP, EVENT_XP,
     normalizeState, mergeStates, readState, readSnapshot, persistState, ensureSeeded,
     award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordAchievements, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, selectTheme, levelRequirement,
-    setPersonalGoal, removePersonalGoal, recordKanaMilestone, personalGoal, getXP, getLifetimeCorrect, getLevelFromXP, getSummary, getDeviceId, recordKanjiAnswer
+    goalProfile, goalChoices, replaceGoal, personalGoalChoices, setPersonalGoal, removePersonalGoal, recordKanaMilestone, personalGoal, getXP, getLifetimeCorrect, getLevelFromXP, getSummary, getDeviceId, recordKanjiAnswer
   });
 
 });

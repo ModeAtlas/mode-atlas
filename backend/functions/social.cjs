@@ -8,6 +8,7 @@ const identity=require('./shared/mode-atlas-social-identity.js');
 const {createIdentityStore,mayUseName,accountPhoto}=require('./identity.cjs');
 const {createModeration}=require('./moderation.cjs');
 const {createStaff}=require('./staff.cjs');
+const {createAdministration}=require('./administration.cjs');
 const {createRewards}=require('./rewards.cjs');
 const {createCommerce}=require('./commerce.cjs');
 const {createAvatars}=require('./avatars.cjs');
@@ -66,6 +67,7 @@ function slicePage(items,cursor){
 function createSocial({db,auth,messaging,now=Date.now}){
   const identities=createIdentityStore({db,auth,now});
   const staff=createStaff({db,auth,now});
+  const administration=createAdministration({db,auth,staff});
   const moderation=createModeration({db,identities,staff,now});
   const rewards=createRewards({db,now});
   const commerce=createCommerce({db,auth,now}),earnings=createEarnings({db,now});
@@ -86,7 +88,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(marker.exists && createdAt<=marker.data().at)fail('unauthenticated','This account has been deleted.');
   }
   async function limit(uid,action,createdAt){
-    const bucket=action==='lookup' || action==='sendRequest'?'lookup':['avatarState','shop','rewards','state','list','profile','weeklyState','weeklyList','notificationState','accountNotices','staffProfile','listWarnings','listModerators','listReports','listRestrictions'].includes(action)?'read':'write';
+    const bucket=action==='lookup' || action==='sendRequest'?'lookup':['adminUsers','adminInspect','avatarState','shop','rewards','state','list','profile','weeklyState','weeklyList','notificationState','accountNotices','staffProfile','listWarnings','listModerators','listReports','listRestrictions'].includes(action)?'read':'write';
     const max={lookup:12,read:60,write:30}[bucket],at=now();
     await db.runTransaction(async tx=>{
       const ref=limits.doc(uid),[doc,marker]=await tx.getAll(ref,deletionRef(uid)),data=doc.data()||{};
@@ -372,7 +374,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['earnStudy','avatarState','avatarUpdate','shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
+    const actions=['adminUsers','adminInspect','earnStudy','avatarState','avatarUpdate','shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
     if(['rewards','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
     if(action==='state'){
@@ -381,6 +383,8 @@ function createSocial({db,auth,messaging,now=Date.now}){
     }
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
+    if(action==='adminUsers')return administration.directory(user,data);
+    if(action==='adminInspect')return administration.inspect(user,data);
     if(['avatarState','avatarUpdate','updateProfile','shop','shopPurchase','shopDeveloper','state'].includes(action))await rewards.retainEquipped(user);
     if(action==='earnStudy'){const result=await earnings.submit(uid,data);await commerce.awardLevels(uid,user);return result;}
     if(action==='rewards')return rewards.read(user);

@@ -376,3 +376,15 @@ assert 'DEVELOPMENT_TEAM = LOCALTEAM;' in sync_privacy_resources(source)
 `],{cwd:ROOT,encoding:'utf8'});
   assert.equal(check.status,0,check.stderr);
 });
+
+test('native widgets batch active practice but publish after finishing and backgrounding',async()=>{
+  const events={},timers=new Map(),calls=[];let active=false,now=100000,id=0;
+  class Clock extends Date{static now(){return now;}}
+  const window={ModeAtlasEnv:{isNativeApp:true},ModeAtlasDates:{localDateKey:()=> '2026-10-21'},ModeAtlasProgress:{getSummary:()=>({}),routine:()=>({goals:[]}),studyDays:()=>[]},ModeAtlasStorage:{KEYS:{wordBank:'words'},json:()=>[],number:()=>0},AtlasPlatform:{getCapabilities:()=>({widgetSnapshots:true}),publishWidgetSnapshot:async value=>calls.push(value)},addEventListener:(name,fn)=>events[name]=fn};
+  vm.runInNewContext(read('assets/platform/mode-atlas-native-engagement.js'),{window,document:{body:{classList:{contains:()=>active}},addEventListener(){}},Date:Clock,console,setTimeout:(fn,ms)=>{timers.set(++id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id)});
+  await [...timers.values()][0].fn();assert.equal(calls.length,1);active=true;now+=1000;
+  for(let i=0;i<30;i++)events.modeAtlasProgressChanged({detail:{source:'practice.answer'}});
+  assert.equal(timers.size,1);assert.equal([...timers.values()][0].ms,29000);assert.equal(calls.length,1);
+  events.modeAtlasProgressChanged({detail:{source:'practice.finish'}});assert.equal([...timers.values()][0].ms,350);await [...timers.values()][0].fn();assert.equal(calls.length,2);
+  events.modeAtlasAppStateChanged({detail:{isActive:false}});await Promise.resolve();assert.equal(calls.length,3);
+});

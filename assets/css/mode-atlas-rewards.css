@@ -105,6 +105,12 @@
 .ma-atlas-icon-choice:disabled{opacity:.65;cursor:default;}
 .ma-atlas-icon-choice[aria-busy="true"]{opacity:.6;}
 .ma-atlas-landmark:focus-visible,.ma-atlas-icon-choice:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
+.ma-goal-editable{display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:6px;align-items:center;}
+.ma-goal-change{width:40px;height:44px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-surface);color:var(--ma-text);font-size:24px;cursor:pointer;}
+.ma-goal-choices{display:grid;gap:8px;}
+.ma-goal-choice{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:52px;padding:12px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-surface);color:var(--ma-text);text-align:left;font:inherit;cursor:pointer;}
+.ma-goal-choice small{white-space:nowrap;color:var(--ma-muted);}
+.ma-goal-change:focus-visible,.ma-goal-choice:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:2px;}
 .ma-profile-banner,.ma-account-card[data-ma-banner="hunny"] .ma-account-user{position:relative;isolation:isolate;}
 .ma-profile-banner::before,.ma-account-card[data-ma-banner="hunny"] .ma-account-user::before{content:"";position:absolute;inset:1px;border-radius:inherit;z-index:-1;pointer-events:none;box-sizing:border-box;padding-inline-start:var(--ma-banner-art-inset,0);background-color:var(--ma-banner-canvas,transparent);background-image:var(--ma-banner-art,none);background-origin:content-box;background-size:var(--ma-banner-fit,auto);background-position:var(--ma-banner-position,center);background-repeat:var(--ma-banner-repeat,repeat);}
 /* Illustrated surfaces own a complete palette. App appearance never supplies
@@ -120,7 +126,7 @@
 }
 /* Supplied artwork keeps its proportions inside the right-hand area; its canvas
    fills the whole card and owns readable text colours in either app theme. */
-[data-ma-banner="hunny"]{--ma-banner-art:url('../rewards/hunny.webp');--ma-banner-canvas:#fff;--ma-banner-art-space:5rem;--ma-banner-art-inset:calc(100% - var(--ma-banner-art-space));--ma-banner-fit:contain;--ma-banner-position:right center;--ma-banner-repeat:no-repeat;--ma-banner-ink:#243042;--ma-banner-muted:#53616b;--ma-banner-control:#eef1f4;--ma-banner-hover:#e2e8ee;--ma-banner-edge:#b4bfcb;--ma-banner-accent:#73501d;--ma-banner-on-accent:#fff;}
+[data-ma-banner="hunny"]{--ma-banner-art:url('../rewards/hunny.webp');--ma-banner-canvas:#fff;--ma-banner-art-space:clamp(5rem,32%,9rem);--ma-banner-art-inset:calc(100% - var(--ma-banner-art-space));--ma-banner-fit:contain;--ma-banner-position:right center;--ma-banner-repeat:no-repeat;--ma-banner-ink:#243042;--ma-banner-muted:#53616b;--ma-banner-control:#eef1f4;--ma-banner-hover:#e2e8ee;--ma-banner-edge:#b4bfcb;--ma-banner-accent:#73501d;--ma-banner-on-accent:#fff;}
 .ma-atlas-banner-choice[data-ma-banner="hunny"]{--ma-banner-art-space:3rem;}
 .ma-profile-banner[data-ma-banner="hunny"]:not(.ma-account-card):not(.ma-banner-scene),.ma-account-card[data-ma-banner="hunny"] .ma-account-user{padding-inline-end:var(--ma-banner-art-space);}
 .ma-social-self[data-ma-banner="hunny"]{flex-wrap:wrap;}

@@ -102,3 +102,15 @@ test('empty receipt retries do not refresh wallets and unfinished runs send thei
   vm.runInNewContext(fs.readFileSync(path.join(ROOT,'assets/app/mode-atlas-study-earnings.js'),'utf8'),{window:root,document:{addEventListener(){}},CustomEvent:class{constructor(type){this.type=type;}},Date,setTimeout,clearTimeout,queueMicrotask});
   await root.ModeAtlasEarnings.flush();assert.equal(events.length,0);const run={runId:'partial-session'};root.ModeAtlasEarnings.start(run,{pool:['あ'],mode:'guided',direction:'reading',hints:false});root.ModeAtlasEarnings.answer(run,{kana:'あ',answer:'a'});root.ModeAtlasEarnings.finish(run,false);await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,1);assert.equal(calls[0].complete,true);assert.equal(calls[0].completed,false);assert.equal(root.ModeAtlasEarnings.pending(),0);assert.deepEqual(events,['modeAtlasEarningsChanged']);await root.ModeAtlasEarnings.flush();assert.equal(events.length,1);
 });
+
+test('per-answer cloud status events cannot bypass receipt batching',async()=>{
+  const {root}=browser(),listeners={},timers=new Map(),calls=[];let tick=0;
+  root.addEventListener=(name,fn)=>{listeners[name]=fn;};root.KanaCloudSync={getUser:()=>({uid:'owner'})};
+  root.ModeAtlasSocial={call:async(_action,data)=>{calls.push(data);return {index:data.answers.at(-1)?.index||0,done:data.complete};}};
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT,'assets/app/mode-atlas-study-earnings.js'),'utf8'),{window:root,document:{addEventListener(){}},CustomEvent:class{},Date,queueMicrotask,setTimeout:fn=>{timers.set(++tick,fn);return tick;},clearTimeout:id=>timers.delete(id)});
+  await new Promise(resolve=>setImmediate(resolve));const run={runId:'batch-session'};root.ModeAtlasEarnings.start(run,{pool:['あ'],direction:'reading',mode:'free',hints:false});
+  for(let i=0;i<19;i++){root.ModeAtlasEarnings.answer(run,{kana:'あ',answer:'a'});for(let j=0;j<5;j++)listeners.kanaCloudSyncStatusChanged();}
+  await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,0);assert.equal(timers.size,1);
+  root.ModeAtlasEarnings.answer(run,{kana:'あ',answer:'a'});await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,1);assert.equal(calls[0].answers.length,20);
+  root.ModeAtlasEarnings.answer(run,{kana:'あ',answer:'a'});const timer=[...timers.values()][0];timer();await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,2);assert.equal(calls[1].answers.length,1);
+});

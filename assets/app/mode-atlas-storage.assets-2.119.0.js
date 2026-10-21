@@ -281,6 +281,7 @@
   try{replayTransaction();}catch(error){console.warn('Practice recovery is waiting for available storage.',error);}
   function transaction(action){
     if(pendingWrites)return action();
+    const started=window.performance?.now?.();
     // Preserve an interrupted commit until it can finish; a later answer must
     // never replace its recovery journal when storage is still unavailable.
     if(localStorage.getItem(TRANSACTION_KEY))replayTransaction();
@@ -290,6 +291,7 @@
       if(Object.keys(writes).length){localStorage.setItem(TRANSACTION_KEY,JSON.stringify(writes));replayTransaction();}
       return result;
     }catch(error){pendingWrites=null;throw error;}
+    finally{if(started!==undefined)window.ModeAtlasDiagnostics?.duration?.('local-save',window.performance.now()-started);}
   }
   function get(key, fallback = '') {
     try { const value = pendingWrites&&Object.prototype.hasOwnProperty.call(pendingWrites,key)?pendingWrites[key]:localStorage.getItem(key); return value == null ? fallback : value; } catch { return fallback; }
