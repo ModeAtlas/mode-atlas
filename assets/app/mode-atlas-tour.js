@@ -5,17 +5,33 @@
   'use strict';
   const key='modeAtlasActiveTour',native=!!root.ModeAtlasEnv?.isNativeApp;
   const el=(tag,cls,text)=>{const node=document.createElement(tag);node.className=cls||'';if(text!=null)node.textContent=text;return node;};
-  function read(){try{const value=JSON.parse(sessionStorage.getItem(key));return value&&Number.isInteger(value.step)&&value.step>=0&&value.step<7&&Date.now()-value.at<1800000?value:null;}catch{return null;}}
+  const tours={
+    hub:[
+      {path:'/',title:'Your daily starting point',text:'Atlas brings together your next learning step, due reviews and goals. Your avatar opens Profile, Shop and Settings.',selector:'.atlas-home-continue'},
+      {path:'/learn/',title:'Choose a branch',text:'Kana connects shapes and sounds. Kanji builds readings and meanings. Word Bank collects words you meet. Each branch has its own learning tools and tour.',selector:'.ma-branch-library'},
+      {path:'/progress/',title:'See your goals grow',text:'Daily and weekly goals rotate. Add one personal goal for each period, choose a target, and turn on Repeat if you want it to return next period.',selector:'.ma-routine-goal'},
+      {path:'/progress/',title:'Make your Atlas your own',text:'Rewards is where you equip your banners, themes, frames, avatar and pet. Your unlocked appearance follows you across the app.',rewards:true,selector:'[data-reward-category="banners"] > summary'},
+      {path:'/friends/',title:'Learn alongside friends',text:'Share a friend code or meet people in the weekly ladder. Friends can see each other’s learning progress. You can report or block a profile at any time.',selector:'.ma-social'},
+      {path:'/shop/',title:'Find your next look',text:'Explore wardrobe items, pets, themes and streak items. Open an item for a closer look and its price before choosing to buy.',selector:'.ma-shop'},
+      {path:'/',title:'Your preferences, together',text:'Settings keeps sound, appearance and help together. Open Learning tours here whenever you want another look around.',section:'settings',selector:'.ma-theme-panel'}
+    ],
+    kana:[
+      {path:'/kana/',title:'Find your starting point',text:'Start with the A-rows, take a check to find the rows you know, or choose confident entry. Placement opens access; it does not award mastery.',selector:'#maKanaLearning'},
+      {path:'/kana/',title:'Learn, then practise',text:'Follow Your path to meet a row and revisit its lesson. Read connects a kana to its sound; Recall goes back from sound to kana. Read & Recall practises both. More tools appear as your rows open.',selector:'#maKanaLearning'},
+      {path:'/kana/?view=mastery',title:'Evidence you can understand',text:'Tap a kana to see which targets you meet and what needs practice. Spaced, independent recall builds mastery. Handwriting is optional and adds Mastered+ without holding back Read or Recall.',selector:'#maKanaLearning'}
+    ],
+    kanji:[
+      {path:'/kanji/',title:'Choose your Kanji starting point',text:'Begin with ten common N5 characters, check what you know, or open every level if you are confident. N5–N1 are study groupings, not an official complete JLPT list.',selector:'#maKanjiContent'},
+      {path:'/kanji/',title:'Hear it, connect it, recall it',text:'Lessons introduce a character, a useful word and its pronunciation. On’yomi are readings derived from Chinese; kun’yomi are Japanese readings. Words tell you which reading to use. Listen, make a connection, then recall.',selector:'#maKanjiContent'},
+      {path:'/kanji/',title:'Build lasting recognition',text:'Practise pronunciation, meaning or meaning matches. Due reviews revisit older learning without postponing it when you practise early. Handwriting is optional. Save lesson words to your Word Bank.',selector:'#maKanjiContent'}
+    ],
+    words:[
+      {path:'/wordbank/',title:'Keep words you meet',text:'Save a word’s written form, its kana reading and an English meaning. Add an example or note from the place you found it.',selector:'#entries'},
+      {path:'/wordbank/',title:'Recall your own collection',text:'Review words shows the written form first. Recall the meaning, reveal it, then choose Again or Remembered. Your honest self-check sets the next review; it does not award test marks.',selector:'#wordBankReviewBtn'}
+    ]
+  };
+  function read(){try{const value=JSON.parse(sessionStorage.getItem(key));const scope=value?.scope||'hub';return value&&tours[scope]&&Number.isInteger(value.step)&&value.step>=0&&value.step<tours[scope].length&&Date.now()-value.at<1800000?{...value,scope}:null;}catch{return null;}}
   let state=read(),layer=null,target=null,observer=null,frame=0,previousFocus=null;
-  const steps=[
-    {path:'/',title:'Your daily starting point',text:'Atlas is your daily starting point. Learn gathers your learning branches, Progress shows your goals and rewards, and Friends opens your social space. Your avatar opens Profile and Settings.',selector:native?'.ma-ios-tabs':'.ma-nav'},
-    {path:'/reading/',title:'Make practice yours',text:'Reading asks you to recall the sound of a kana. Practice setup is here whenever you want to choose a session or change your kana selection.',selector:'#modifiersTab'},
-    {path:'/reading/',title:'Choose your session',text:'Choose a short set or keep going. Daily sessions, timed challenges and character sequences offer different ways to practise your unlocked rows.',setup:true,selector:'.ma-kana-practice-form'},
-    {path:'/progress/',title:'See your goals grow',text:'Progress rotates daily and weekly goals. Use Set daily goal or Set weekly goal to add one of your own: new kana, mastery, test accuracy or correct answers. Choose a target and turn on Repeat to keep it next period. Tap your goal to see what counts or change it.',selector:'.ma-routine-goal'},
-    {path:'/progress/',title:'Make your Atlas your own',text:'Open a reward collection to choose banners, titles and profile frames as you level up. Eligible exclusive rewards appear here too. On iOS, some milestones also unlock an app icon. Your appearance carries into your profile and Friends.',rewards:true,selector:'[data-reward-category="banners"] > summary'},
-    {path:'/friends/',title:'Learn alongside friends',text:'Friends is optional. Sign in and choose a display name and avatar, then share your friend code. Accepted friends can compare progress. You can report or block a profile at any time.',selector:'.ma-social'},
-    {path:'/reading/',title:'Find your preferences here',text:'Settings keeps appearance, sound, saved data and support together. You can replay this tour here any time.',section:'settings',selector:'.ma-theme-panel'}
-  ];
   function save(){try{sessionStorage.setItem(key,JSON.stringify(state));}catch{}}
   function destroy(){cancelAnimationFrame(frame);observer?.disconnect();observer=null;root.removeEventListener('resize',layout);root.visualViewport?.removeEventListener('resize',layout);root.visualViewport?.removeEventListener('scroll',layout);document.removeEventListener('scroll',layout,true);document.removeEventListener('keydown',onKey,true);layer?.remove();layer=null;target=null;}
   function finish(practice=false){
@@ -54,8 +70,8 @@
   }
   async function show(){
     if(!state)return;
-    const step=steps[state.step],path=root.ModeAtlasVersionFile.appUrl(step.path);
-    if(location.pathname!==path){save();location.assign(path);return;}
+    const steps=tours[state.scope],step=steps[state.step],path=root.ModeAtlasVersionFile.appUrl(step.path);
+    if(location.pathname+location.search!==path){save();location.assign(path);return;}
     destroy();root.ModeAtlasPracticeSetup?.close();root.ModeAtlasAccountNavigation?.close();
     // Account markup is installed synchronously at DOM ready. Wait for its owner
     // if cloud initialization or document parsing is still completing.
@@ -86,12 +102,26 @@
     layout();title.focus({preventScroll:true});
   }
   function advance(amount){if(!state)return;state.step+=amount;save();void show();}
-  function start(){
+  function start(scope='hub'){
     if(state)return;previousFocus=document.activeElement;
     let firstUse=false;try{firstUse=sessionStorage.getItem('modeAtlasTourPending')==='1';sessionStorage.removeItem('modeAtlasTourPending');}catch{}
     const practiceHref=root.ModeAtlasStudyPlan.recommend({readingSettings:root.ModeAtlasStorage.json('settings',undefined),writingSettings:root.ModeAtlasStorage.json('reverseSettings',undefined)}).href;
-    root.ModeAtlas?.markWhatsNewSeen?.();state={step:0,at:Date.now(),firstUse,practiceHref,returnPath:location.pathname+location.search};save();void show();
+    root.ModeAtlas?.markWhatsNewSeen?.();state={scope:tours[scope]?scope:'hub',step:0,at:Date.now(),firstUse,practiceHref,returnPath:location.pathname+location.search};save();void show();
   }
-  root.ModeAtlasTour=Object.freeze({start,isOpen:()=>!!state,finish});
+  function choose(){
+    const content=el('div','ma-action-row');
+    for(const [scope,title]of [['hub','Around Mode Atlas'],['kana','Kana'],['kanji','Kanji'],['words','Word Bank']]){
+      const button=el('button','ma-button',title);button.type='button';button.addEventListener('click',()=>{root.ModeAtlasDialog.close();start(scope);});content.append(button);
+    }
+    root.ModeAtlasDialog.feature({title:'Learning tours',contentNode:content});
+  }
+  async function offer(scope){
+    if(scope==='hub'||!tours[scope]||state||root.ModeAtlasDialog.isOpen())return;
+    const seen=root.ModeAtlasStorage.json('modeAtlasBranchToursSeen',{});if(seen[scope])return;
+    const owner=root.KanaCloudSync?.getUser?.()?.uid||'guest';
+    seen[scope]=true;root.ModeAtlasStorage.setJSON('modeAtlasBranchToursSeen',seen);
+    if(await root.ModeAtlasDialog.confirm({title:'A quick look around '+(root.ModeAtlasBranches.items.find(b=>b.id===scope)?.name||'this branch')+'?',message:'See the learning path and practice tools. You can replay this tour from Settings.',confirmLabel:'Show me',cancelLabel:'Explore myself'})&&(root.KanaCloudSync?.getUser?.()?.uid||'guest')===owner)start(scope);
+  }
+  root.ModeAtlasTour=Object.freeze({start,choose,offer,isOpen:()=>!!state,finish});
   document.addEventListener('DOMContentLoaded',()=>{if(state)requestAnimationFrame(show);},{once:true});
 })(window);

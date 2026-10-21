@@ -1,4 +1,6 @@
 'use strict';
+const {readSave}=require('./account-data.cjs');
+const earnings=require('./study-earnings.cjs');
 // Coins, inventory, receipts and access are committed in one server transaction.
 const {createHash,randomUUID}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
@@ -94,8 +96,8 @@ function createCommerce({db,auth,now=Date.now}){
     w.balance+=amount;w.levelRewards={version:2,throughLevel:level,total:previous.total+amount,lastAmount:amount,awardedAt:at};
     tx.set(ref.collection('operations').doc('level-v2-'+level),{action:'levelReward',fromLevel:previous.throughLevel+1,toLevel:level,amount,at,balanceAfter:w.balance});
   }
-  function creditTokens(tx,ref,w,save,at,zone){
-    const evidence=earningEvidence(save,zone),today=dates.dateKeyInTimeZone(at,zone);
+  function creditTokens(tx,ref,w,ledger,at,zone){
+    const evidence={...earningEvidence(earnings.asSave(ledger),zone),days:ledger.days},today=dates.dateKeyInTimeZone(at,zone);
     const days=[...new Set(evidence.days)].filter(day=>day<=today).sort(),covered=new Set(Object.keys(w.covered));
     let streak=0,previous=null,streaks=0;
     for(const day of days){
@@ -103,7 +105,7 @@ function createCommerce({db,auth,now=Date.now}){
       while(contiguous&&next<day){if(!covered.has(next)){contiguous=false;break;}next=dates.shiftDateKey(next,1);}
       streak=contiguous?streak+1:1;streaks+=catalogue.studyTokens.streakDay(streak);previous=day;
     }
-    const totals={answers:Math.floor(evidence.answerUnits/catalogue.studyTokens.answerDivisor),levels:catalogue.studyTokens.levelTotal(evidence.level),streaks};
+    const totals={answers:Math.floor((evidence.answerUnits+(ledger.answerOffset||0))/catalogue.studyTokens.answerDivisor),levels:catalogue.studyTokens.levelTotal(evidence.level),streaks:streaks+(ledger.streakOffset||0)};
     let amount=0;const rewards={...w.tokenRewards};
     for(const key of Object.keys(totals)){const target=Math.max(rewards[key],totals[key]);amount+=target-rewards[key];rewards[key]=target;}
     if(!Number.isSafeInteger(amount)||w.tokenBalance+amount>1_000_000_000)fail('failed-precondition','Your Study Tokens balance has reached its limit. Contact support.');
@@ -117,11 +119,13 @@ function createCommerce({db,auth,now=Date.now}){
     if(user.disabled||!user.emailVerified)return;
     const ref=reference(uid);
     return db.runTransaction(async tx=>{
-      const [record,save,deleting,deleted,social]=await tx.getAll(ref,db.doc('users/'+uid+'/appData/kanaTrainer'),db.doc('accountDeletions/'+uid),db.doc('socialDeleted/'+hash(uid)),db.doc('socialAccounts/'+uid));
+      const [record,save,deleting,deleted,social,earned]=await tx.getAll(ref,db.doc('users/'+uid+'/appData/kanaTrainer'),db.doc('accountDeletions/'+uid),db.doc('socialDeleted/'+hash(uid)),db.doc('socialAccounts/'+uid),db.doc('studyEarnings/'+uid));
       if(!save.exists||deleting.exists||deleted.exists&&(Date.parse(user.metadata?.creationTime)||0)<=deleted.data().at)return;
       const w=wallet(record.data()),before=JSON.stringify(w),zone=social.data()?.profile?.timeZone||'UTC',at=now();
-      reconcile(w,studyDaysFromSave(save.data(),zone),dates.dateKeyInTimeZone(at,zone),zone);
-      creditLevels(tx,ref,w,save.data(),at);creditTokens(tx,ref,w,save.data(),at,zone);
+      reconcile(w,studyDaysFromSave((await readSave(tx,save)),zone),dates.dateKeyInTimeZone(at,zone),zone);
+      const ledger=earned.data()||earnings.opening(w);
+      if(!earned.exists)tx.set(earned.ref,ledger);
+      creditLevels(tx,ref,w,earnings.asSave(ledger),at);creditTokens(tx,ref,w,ledger,at,zone);
       if(before!==JSON.stringify(w)||record.data()?.version!==3)tx.set(ref,w);
     });
   }
@@ -155,16 +159,18 @@ function createCommerce({db,auth,now=Date.now}){
     const fingerprint=JSON.stringify([action,data.productId||null,data.coinPrice??data.price??null,data.amount??null,data.operation||null,...(data.currency?[payment]:[])]);
     const ref=reference(uid),accessRef=db.doc('rewardEntitlements/'+uid),receipt=action==='shop'?null:ref.collection('operations').doc(hash(data.requestId));
     return db.runTransaction(async tx=>{
-      const refs=[ref,accessRef,db.doc('users/'+uid+'/appData/kanaTrainer'),db.doc('shopCatalogue/current'),db.doc('accountDeletions/'+uid),db.doc('socialDeleted/'+hash(uid))];
+      const refs=[ref,accessRef,db.doc('users/'+uid+'/appData/kanaTrainer'),db.doc('shopCatalogue/current'),db.doc('accountDeletions/'+uid),db.doc('socialDeleted/'+hash(uid)),db.doc('studyEarnings/'+uid)];
       if(receipt)refs.push(receipt);
-      const [record,awards,save,rotation,deleting,deleted,prior]=await tx.getAll(...refs);
+      const [record,awards,save,rotation,deleting,deleted,earned,prior]=await tx.getAll(...refs);
       if(deleting.exists||deleted.exists&&(Date.parse(user.metadata?.creationTime)||0)<=deleted.data().at)fail('unauthenticated','This account is being deleted.');
       const w=wallet(record.data()),access={...(awards.data()||{}),grants:{...(awards.data()?.grants||{})}};
-      const original=JSON.stringify(w),days=studyDaysFromSave(save.data(),zone),eligibility=entitlement(user,access,at);
+      const original=JSON.stringify(w),days=studyDaysFromSave((await readSave(tx,save)),zone),eligibility=entitlement(user,access,at);
       const offers=catalogue.products.map(p=>catalogue.offer(p,rotation.data()?.offers,at,eligibility)).filter(Boolean);
-      creditLevels(tx,ref,w,save.data(),at);
+      const ledger=earned.data()||earnings.opening(w);
+      if(!earned.exists)tx.set(earned.ref,ledger);
+      creditLevels(tx,ref,w,earnings.asSave(ledger),at);
       if(legacy){if(JSON.stringify(w)!==original||record.data()?.version!==3)tx.set(ref,w);return {version:1,currency:'atlas-tokens',balance:w.balance,purchasesEnabled:false};}
-      reconcile(w,days,today,zone);creditTokens(tx,ref,w,save.data(),at,zone);
+      reconcile(w,days,today,zone);creditTokens(tx,ref,w,ledger,at,zone);
       if(prior?.exists&&prior.data().fingerprint!==fingerprint)fail('invalid-argument','That purchase request has already been used.');
       let accessChanged=false;
       if(action!=='shop'&&!prior.exists){
@@ -215,6 +221,6 @@ function createCommerce({db,auth,now=Date.now}){
         protection:Object.keys(w.covered).sort(),repairDay:repair?.days.at(-1)||null,repair,timeZone:zone,checkedAt:at,developer:isAdmin(user)};
     });
   }
-  return {run,awardLevels,backfillLevels,prepareWeeklyPrize,erase:uid=>db.recursiveDelete(reference(uid))};
+  return {run,awardLevels,backfillLevels,prepareWeeklyPrize,erase:async uid=>{await db.recursiveDelete(reference(uid));await db.recursiveDelete(db.doc('studyEarnings/'+uid));}};
 }
 module.exports={createCommerce,reconcile,repairDay,repairGap,streakStatus};

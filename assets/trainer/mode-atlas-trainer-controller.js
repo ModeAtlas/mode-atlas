@@ -255,6 +255,7 @@
       call(hooks.renderScoreHistory);
       call(hooks.showIdleState);
       root.ModeAtlasSessionRecovery.render(mode,hooks.startSession);
+      byId('startBtn').disabled=false;
     }
 
     function normalizeStoredTestModeResults(list){

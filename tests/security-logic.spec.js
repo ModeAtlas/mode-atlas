@@ -51,3 +51,14 @@ for(const native of [false,true]){
     await page.evaluate(()=>ModeAtlasStorage.clearAppData());await expect(page.locator('.wordbank-entry')).toHaveCount(0);
   });
 }
+
+for(const native of [false,true])test(`Word recall ${native?'iOS':'web'} reveals meaning and persists its review schedule`,async({page})=>{
+  await words(page,native,[{id:'nihon',written:'日本',reading:'にほん',english:'Japan'}]);
+  await expect(page.getByRole('button',{name:'Review words',exact:true})).toHaveCount(1);
+  await page.getByRole('button',{name:'Review words',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'Review your words'});await expect(dialog.getByRole('heading',{name:'日本'})).toBeVisible();await expect(dialog).not.toContainText('Japan');
+  await dialog.getByRole('button',{name:'Reveal',exact:true}).click();await expect(dialog).toContainText('にほん');await expect(dialog).toContainText('Japan');
+  await dialog.getByRole('button',{name:'Remembered',exact:true}).click();await expect(dialog).toContainText('Set complete');
+  expect(await page.evaluate(()=>ModeAtlasWordBank.read()[0].review.due)).toBeGreaterThan(Date.now());
+  await page.reload();expect(await page.evaluate(()=>ModeAtlasWordBank.due().length)).toBe(0);
+});

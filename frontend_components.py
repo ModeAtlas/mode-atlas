@@ -323,17 +323,23 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-pwa.js',
     'assets/app/mode-atlas-about.js',
     'assets/app/mode-atlas-help.js',
+    'assets/app/mode-atlas-branches.js',
     'assets/app/mode-atlas-tour.js',
     'assets/app/mode-atlas-visit-flows.js',
     'assets/app/mode-atlas-data-controls.js',
     'assets/app/mode-atlas-review.js',
     'assets/data/mode-atlas-kana-data.js',
+    'assets/app/mode-atlas-japanese.js',
+    'assets/app/mode-atlas-wordbank.js',
     'assets/app/mode-atlas-kana-learning.js',
+    'assets/app/mode-atlas-kana-evidence.js',
     'assets/data/mode-atlas-kanji-curriculum.js',
     'assets/app/mode-atlas-kanji-state.js',
     'assets/app/mode-atlas-kanji-codec.js',
     'assets/app/mode-atlas-kanji-content.js',
     'assets/app/mode-atlas-kanji-results.js',
+    'assets/app/mode-atlas-save-merge.js',
+    'assets/results/mode-atlas-results-storage.js',
     'assets/ui/mode-atlas-kanji-mastery.js',
     'assets/app/mode-atlas-kana-metrics.js',
     'assets/achievements/mode-atlas-achievements.js',
@@ -350,6 +356,7 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
 ACCOUNT_SCRIPTS = (
     'assets/platform/mode-atlas-firebase-loader.js',
     'firebase-config.js',
+    'assets/app/mode-atlas-account-transport.js',
     'cloud-sync.js',
     'assets/app/mode-atlas-social-config.js',
     'assets/ui/mode-atlas-avatar-art.js',
@@ -359,6 +366,7 @@ ACCOUNT_SCRIPTS = (
     'assets/ui/mode-atlas-portrait.js',
     'assets/ui/mode-atlas-avatar-ui.js',
     'assets/app/mode-atlas-weekly-rules.js',
+    'assets/app/mode-atlas-study-earnings.js',
     'assets/app/mode-atlas-weekly.js',
     'assets/app/mode-atlas-notification-rules.js',
     'assets/platform/mode-atlas-notifications.js',
@@ -438,7 +446,6 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
                 'assets/trainer/mode-atlas-session-recovery.js',
                 'assets/trainer/mode-atlas-study-session.js',
                 'assets/trainer/mode-atlas-trainer-controller.js',
-                'assets/results/mode-atlas-results-storage.js',
                 'assets/pages/mode-atlas-default-page.js',
                 'assets/trainer/mode-atlas-modifier-menu.js',
                 'assets/trainer/mode-atlas-session-controls.js',
@@ -461,7 +468,6 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
                 'assets/trainer/mode-atlas-session-recovery.js',
                 'assets/trainer/mode-atlas-study-session.js',
                 'assets/trainer/mode-atlas-trainer-controller.js',
-                'assets/results/mode-atlas-results-storage.js',
                 'assets/pages/mode-atlas-reverse-page.js',
                 'assets/trainer/mode-atlas-input-controls.js',
                 'assets/trainer/mode-atlas-modifier-menu.js',
@@ -474,7 +480,6 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-test-page.css', 'assets/css/mode-atlas-results-navigation.css'),
         body_scripts=_interactive_scripts(
             page_scripts=(
-                'assets/results/mode-atlas-results-storage.js',
                 'assets/results/mode-atlas-results-engine.js',
                 'assets/results/mode-atlas-results-ui.js',
                 'assets/pages/mode-atlas-test-page.js',
@@ -487,7 +492,7 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
     ),
     'kanji/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kanji.css','assets/css/mode-atlas-handwriting.css'),
-        body_scripts=_interactive_scripts(page_scripts=('assets/app/mode-atlas-kanji-teaching.js','assets/app/mode-atlas-stroke-matcher.js','assets/ui/mode-atlas-pronunciation.js','assets/ui/mode-atlas-handwriting.js','assets/app/mode-atlas-kanji-session.js','assets/ui/mode-atlas-kanji-lesson.js','assets/pages/mode-atlas-kanji-page.js')),
+        body_scripts=_interactive_scripts(page_scripts=('assets/platform/mode-atlas-ios-keyboard.js','assets/app/mode-atlas-kanji-placement.js','assets/app/mode-atlas-kanji-teaching.js','assets/app/mode-atlas-stroke-matcher.js','assets/ui/mode-atlas-pronunciation.js','assets/ui/mode-atlas-handwriting.js','assets/app/mode-atlas-kanji-session.js','assets/ui/mode-atlas-kanji-lesson.js','assets/pages/mode-atlas-kanji-page.js')),
     ),
     'results/kanji/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kanji.css', 'assets/css/mode-atlas-results-navigation.css'),
@@ -497,7 +502,7 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
     'wordbank/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-wordbank-page.css',),
         body_scripts=_interactive_scripts(
-            after_storage=('assets/pages/mode-atlas-wordbank-page.js',),
+            page_scripts=('assets/ui/mode-atlas-word-review.js','assets/pages/mode-atlas-wordbank-page.js',),
         ),
     ),
     'privacy/index.html': FrontendAssetConfig(styles=LEGAL_STYLES, body_scripts=LEGAL_BODY_SCRIPTS),
@@ -800,7 +805,7 @@ def render_trainer_shell(config: TrainerConfig) -> str:
         <div class="start-wrap" id="startWrap">
             <div class="ma-study-setup" id="studySetSetup"><label for="studyLength">Make time for a little practice</label><select id="studyLength" class="ma-input" aria-describedby="studySetDescription"><option value="0">Keep going</option><option value="10">10 questions</option><option value="20">20 questions</option><option value="30">30 questions</option></select><p id="studySetDescription">Choose a short set or keep going.</p></div>
             <button class="ma-button ma-button--ghost" id="kanaHintsQuick" type="button" aria-pressed="false">Hints off</button>
-            <button class="btn btn-start ma-button ma-button--accent ma-trainer-button" id="startBtn" type="button"><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg><span>Start practice</span></button>
+            <button class="btn btn-start ma-button ma-button--accent ma-trainer-button" id="startBtn" type="button" disabled><svg class="ma-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-play"></use></svg><span>Start practice</span></button>
         </div>
         <div class="session-actions" id="sessionActions" hidden>
             <button class="btn btn-secondary ma-button ma-button--ghost ma-trainer-button ma-trainer-skip" id="skipKanaBtn" data-ma-click-sound="none" type="button"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-skip"></use></svg><span>I don’t know</span></button>

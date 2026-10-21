@@ -1,6 +1,6 @@
 let initializeApp, getApps, getApp;
 let getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, linkWithCredential, reauthenticateWithPopup, reauthenticateWithCredential, updateProfile, signOut, onAuthStateChanged;
-let getFirestore, doc, getDoc, setDoc;
+let getFirestore, doc, getDoc, setDoc, runTransaction;
 let firebaseModulesPromise = null;
 let firebaseModulesLoaded = false;
 let firestoreModulePromise = null;
@@ -18,7 +18,7 @@ async function loadFirestoreModule() {
   // Backend tests and local harnesses may inject the Firestore API through the
   // core loader. Treat an already-complete API surface as loaded rather than
   // issuing a real network import.
-  if ([getFirestore, doc, getDoc, setDoc].every((fn) => typeof fn === 'function')) {
+  if ([getFirestore, doc, getDoc, setDoc, runTransaction].every((fn) => typeof fn === 'function')) {
     firestoreModuleLoaded = true;
     return true;
   }
@@ -30,6 +30,7 @@ async function loadFirestoreModule() {
       doc = firestoreMod.doc;
       getDoc = firestoreMod.getDoc;
       setDoc = firestoreMod.setDoc;
+      runTransaction = firestoreMod.runTransaction;
       return true;
     })
     .catch((error) => {
@@ -133,6 +134,7 @@ const SECTION_DEFS = {
     json: {
       settings: keyOr('readingSettings', 'settings'),
       stats: keyOr('readingCharStats', 'charStats'),
+      evidence:'modeAtlasKanaEvidence:reading',
       times: keyOr('readingCharTimes', 'charTimes'),
       srs: keyOr('readingSrs', 'charSrs'),
       scoreHistory: keyOr('readingScoreHistory', 'scoreHistory'),
@@ -145,40 +147,26 @@ const SECTION_DEFS = {
     json: {
       settings: keyOr('writingSettings', 'reverseSettings'),
       stats: keyOr('writingCharStats', 'reverseCharStats'),
+      evidence:'modeAtlasKanaEvidence:writing',
       times: keyOr('writingCharTimes', 'reverseCharTimes'),
       srs: keyOr('writingSrs', 'reverseCharSrs'),
       scoreHistory: keyOr('writingScoreHistory', 'reverseScoreHistory'),
       dailyChallengeHistory: keyOr('writingDailyHistory', 'reverseDailyChallengeHistory')
     }
   },
-  readingTests: {
-    updatedAtKey: keyOr('testResultsUpdatedAt', 'testModeResultsUpdatedAt'),
-    scalar: {},
-    json: {
-      primary: keyOr('readingTestResults', 'testModeResults'),
-      backup: 'kanaTrainerTestModeResults',
-      altPrimary: keyOr('readingTestResultsBackup', 'readingTestModeResults'),
-      altBackup: 'kanaTrainerReadingTestModeResults'
-    }
-  },
-  writingTests: {
-    updatedAtKey: keyOr('writingTestResultsUpdatedAt', 'writingTestModeResultsUpdatedAt'),
-    scalar: {},
-    json: {
-      primary: keyOr('writingTestResults', 'writingTestModeResults'),
-      backup: 'kanaTrainerWritingTestModeResults'
-    }
-  },
+  readingTests: {updatedAtKey:'testModeResultsUpdatedAt',scalar:{},json:{primary:'testModeResults',deleted:'modeAtlasResultsDeleted:reading'}},
+  writingTests: {updatedAtKey:'writingTestModeResultsUpdatedAt',scalar:{},json:{primary:'writingTestModeResults',deleted:'modeAtlasResultsDeleted:writing'}},
   wordBank: {
     updatedAtKey: 'kanaWordBankUpdatedAt',
     scalar: {},
     json: {
-      items: keyOr('wordBank', 'kanaWordBank')
+      items: keyOr('wordBank', 'kanaWordBank'),
+      deleted:'modeAtlasWordBankDeleted'
     }
   },
   kanaLearning: {updatedAtKey:'modeAtlasKanaLearningUpdatedAt',scalar:{},json:{state:'modeAtlasKanaLearning'}},
   kanji: {updatedAtKey:'modeAtlasKanjiUpdatedAt',scalar:{},json:{state:'modeAtlasKanji'}},
-  kanjiTests: {updatedAtKey:'modeAtlasKanjiTestsUpdatedAt',scalar:{},json:{items:'modeAtlasKanjiTests'}},
+  kanjiTests: {updatedAtKey:'modeAtlasKanjiTestsUpdatedAt',scalar:{},json:{items:'modeAtlasKanjiTests',deleted:'modeAtlasResultsDeleted:kanji'}},
   progress: {
     updatedAtKey: keyOr('progressUpdatedAt', 'modeAtlasProgressUpdatedAt'),
     scalar: {},
@@ -283,24 +271,8 @@ function setSectionTimestampAliases(sectionName, updatedAt) {
 }
 function ensureResultIdsInSectionData(sectionName, data) {
   if (sectionName !== 'readingTests' && sectionName !== 'writingTests') return data;
-  const copy = { ...(data || {}) };
-  Object.keys(copy).forEach((field) => {
-    if (!Array.isArray(copy[field])) return;
-    const seen = new Set();
-    copy[field] = copy[field].map((item, index) => {
-      if (!item || typeof item !== 'object') return item;
-      const row = { ...item };
-      const base = Date.parse(row.createdAt || row.completedAt || row.date || row.timestamp || '') || Number(row.timestamp || 0) || Date.now();
-      if (!row.id) row.id = 'session_' + base.toString(36) + '_' + index.toString(36);
-      if (seen.has(row.id)) row.id = row.id + '_' + index.toString(36);
-      seen.add(row.id);
-      if (!row.createdAt) row.createdAt = new Date(base).toISOString();
-      if (!row.updatedAt) row.updatedAt = new Date(base).toISOString();
-      if (!row.source) row.source = sectionName === 'writingTests' ? 'writing' : 'reading';
-      return row;
-    });
-  });
-  return copy;
+  const mode = sectionName === 'writingTests' ? 'writing' : 'reading';
+  return {...data,primary:window.ModeAtlasSaveMerge.testRecords(data.primary,mode)};
 }
 
 function readJSON(key, fallback) {
@@ -357,56 +329,33 @@ function firstArrayFromData(data, fieldNames, modeHint = '') {
   return [];
 }
 
-function normalizeImportedTestItem(item, modeHint = '', index = 0) {
-  if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
-  const row = { ...item };
-  if (!row.mode) {
-    if (modeHint === 'writing' || row.source === 'writing' || row.practiceMode === 'writing' || row.section === 'writing') row.mode = 'writing';
-    else row.mode = 'reading';
-  }
-  const base = Date.parse(row.createdAt || row.completedAt || row.date || row.timestamp || '') || Number(row.timestamp || row.completedAtMs || 0) || Date.now();
-  if (!row.id) row.id = `${row.mode}-test-${base}-${index}`;
-  if (!row.createdAt) row.createdAt = new Date(base).toISOString();
-  if (!row.updatedAt) row.updatedAt = row.createdAt;
-  return row;
+function normalizeImportedTestItem(item, modeHint = 'reading') {
+  return window.ModeAtlasSaveMerge.testRecords([item],modeHint || 'reading')[0] || null;
+}
+function normalizeImportedTestList(list, modeHint = 'reading') {
+  return window.ModeAtlasSaveMerge.testRecords(list,modeHint || 'reading');
 }
 
-function normalizeImportedTestList(list, modeHint = '') {
-  if (!Array.isArray(list)) return [];
-  return list.map((item, index) => normalizeImportedTestItem(item, modeHint, index)).filter(Boolean);
-}
-
-function normalizeTestSectionPayload(sectionName, payload) {
-  const data = coerceStorageMap(payload);
-  if (sectionName === 'readingTests') {
-    const primary = firstArrayFromData(data, ['primary', SECTION_DEFS.readingTests.json.primary, SECTION_DEFS.readingTests.json.altPrimary], 'reading')
-      .filter((item) => (item.mode || 'reading') === 'reading');
-    const backup = firstArrayFromData(data, ['backup', 'kanaTrainerTestModeResults'], 'reading')
-      .filter((item) => (item.mode || 'reading') === 'reading');
-    const altPrimary = firstArrayFromData(data, ['altPrimary', SECTION_DEFS.readingTests.json.altPrimary], 'reading')
-      .filter((item) => (item.mode || 'reading') === 'reading');
-    const altBackup = firstArrayFromData(data, ['altBackup', 'kanaTrainerReadingTestModeResults'], 'reading')
-      .filter((item) => (item.mode || 'reading') === 'reading');
-    return { ...data, primary, backup, altPrimary, altBackup };
-  }
-  if (sectionName === 'writingTests') {
-    const primary = firstArrayFromData(data, ['primary', SECTION_DEFS.writingTests.json.primary, keyOr('writingTestResultsBackup', 'reverseTestModeResults')], 'writing')
-      .filter((item) => item.mode === 'writing');
-    const backup = firstArrayFromData(data, ['backup', SECTION_DEFS.writingTests.json.backup], 'writing')
-      .filter((item) => item.mode === 'writing');
-    return { ...data, primary, backup };
+function normalizeTestSectionPayload(sectionName,payload){
+  const data=coerceStorageMap(payload);
+  if(sectionName==='readingTests'||sectionName==='writingTests'){
+    const mode=sectionName==='writingTests'?'writing':'reading';
+    const keys=['primary','backup','altPrimary','altBackup',...(mode==='writing'?WRITING_TEST_IMPORT_KEYS:READING_TEST_IMPORT_KEYS)];
+    const rows=keys.flatMap(key=>normalizeImportedTestList(data[key],mode));
+    return {primary:window.ModeAtlasSaveMerge.records(rows,[],data.deleted),deleted:data.deleted||{}};
   }
   return data;
 }
 
 function snapshotSectionFixed(sectionName) {
   const def = SECTION_DEFS[sectionName];
+  if(sectionName==='readingTests'||sectionName==='writingTests')window.ModeAtlasResultsStorage.read(sectionName==='writingTests'?'writing':'reading');
   const data = {};
   Object.entries(def.scalar).forEach(([field, key]) => {
     data[field] = storeGet(key, '0') || '0';
   });
   Object.entries(def.json).forEach(([field, key]) => {
-    const fallback = arraySections.has(sectionName) ? [] : {};
+    const fallback = field==='deleted'||field==='evidence' ? {} : arraySections.has(sectionName) ? [] : {};
     data[field] = readJSON(key, fallback);
   });
   return {
@@ -474,7 +423,7 @@ function snapshotFromStorageMap(rawMap, fallbackTimestamp = 0) {
       data[field] = readStringFromMap(map, key, '0');
     });
     Object.entries(def.json).forEach(([field, key]) => {
-      const fallback = arraySections.has(sectionName) ? [] : {};
+      const fallback = field==='deleted'||field==='evidence' ? {} : arraySections.has(sectionName) ? [] : {};
       data[field] = readJSONFromMap(map, key, fallback);
     });
     sections[sectionName] = {
@@ -631,6 +580,7 @@ function buildLocalSnapshot() {
   Object.keys(sections).forEach((name) => setSectionTimestampAliases(name, sections[name].updatedAt || now));
   return {
     version: 'cloud-v' + CLOUD_SNAPSHOT_VERSION + '-restore-guard',
+    generation:Number(storeGet('modeAtlasSaveGeneration','0'))||0,
     updatedAt: now,
     sectionTimestamps: {
       settingsUpdatedAt: normalizeTimestamp(storeGet('settingsUpdatedAt', '0')),
@@ -691,14 +641,14 @@ function writeSectionToLocal(sectionName, payload, updatedAt) {
   let data = ensureResultIdsInSectionData(sectionName, normalizeTestSectionPayload(sectionName, payload || {}));
   if(sectionName==='kanaLearning')data={state:window.ModeAtlasKanaLearning.normalize(data.state)};
   if(sectionName==='kanji')data={state:window.ModeAtlasKanjiState.normalize(data.state)};
-  if(sectionName==='kanjiTests')data={items:window.ModeAtlasKanjiResults.normalize(data.items)};
+  if(sectionName==='kanjiTests')data={items:window.ModeAtlasKanjiResults.normalize(data.items),deleted:data.deleted||{}};
   if(sectionName==='progress'&&window.ModeAtlasProgress)data={...data,state:window.ModeAtlasProgress.normalizeState(data.state)};
   Object.entries(def.scalar).forEach(([field, key]) => {
-    storeSet(key, String(data[field] ?? '0'));
+    if(!storeSet(key, String(data[field] ?? '0')))throw Error('Your device could not finish saving.');
   });
   Object.entries(def.json).forEach(([field, key]) => {
-    const fallback = arraySections.has(sectionName) ? [] : {};
-    writeJSON(key, data[field] ?? fallback);
+    const fallback = field==='deleted'||field==='evidence' ? {} : arraySections.has(sectionName) ? [] : {};
+    if(!storeSetJSON(key, data[field] ?? fallback))throw Error('Your device could not finish saving.');
   });
   storeSet(def.updatedAtKey, String(normalizeTimestamp(updatedAt)));
   setSectionTimestampAliases(sectionName, updatedAt);
@@ -755,107 +705,20 @@ function getLocalSectionData(sectionName) {
   return snapshotSectionFixed(sectionName).data || {};
 }
 
-function mergeCloudIntoLocal(snapshot, options = {}) {
-  if (!snapshot || typeof snapshot !== 'object' || !snapshot.sections) return { localPreferred: false, changedSections: [] };
-  // A hydration read is asynchronous. If a local section changes after the read
-  // begins, that user action is authoritative for this merge regardless of the
-  // remote timestamp. This prevents a cold-start restore from erasing progress
-  // created while Firestore was still responding.
-  const localBaseline = options.localBaseline && typeof options.localBaseline === 'object' ? options.localBaseline : null;
-  // A manual import is authoritative until it has been pushed to cloud. Any
-  // hydration that overlaps that window must preserve the imported local save.
-  if (hasLocalImportGuard()) return { localPreferred: true, changedSections: [] };
-  const forceRemote = !!options.forceRemote;
-  let localPreferred = false;
-  const changedSections = [];
-  const applyRemote = (name, data, updatedAt) => {
-    if ((name==='reading'||name==='writing')&&window.ModeAtlasReview) data={...data,srs:window.ModeAtlasReview.mergeMaps(getLocalSectionData(name).srs,data.srs)};
-    if(stableJSON(data)===stableJSON(getLocalSectionData(name))){
-      const key=SECTION_DEFS[name].updatedAtKey;
-      if(updatedAt>normalizeTimestamp(storeGet(key,'0')))storeSet(key,String(updatedAt));
-      return;
+function mergeCloudIntoLocal(snapshot) {
+  if (!snapshot?.sections) return {localPreferred:false,changedSections:[]};
+  if (hasLocalImportGuard()) return {localPreferred:true,changedSections:[]};
+  const local=buildLocalSnapshot(), merged=window.ModeAtlasSaveMerge.snapshot(local,snapshot), changedSections=[];
+  STORAGE.transaction(()=>{
+  for(const [name,section] of Object.entries(merged.sections||{})) {
+    if(!SECTION_DEFS[name])continue;
+    if(stableJSON(section.data)!==stableJSON(local.sections[name]?.data)) {
+      writeSectionToLocal(name,section.data,section.updatedAt);changedSections.push(name);
     }
-    writeSectionToLocal(name, data, updatedAt);
-    changedSections.push(name);
-  };
-
-  Object.keys(SECTION_DEFS).forEach((name) => {
-    const remoteSection = snapshot.sections[name];
-    if (!remoteSection) return;
-    const localUpdatedAt = normalizeTimestamp(storeGet(SECTION_DEFS[name].updatedAtKey, '0'));
-    const remoteUpdatedAt = normalizeTimestamp(remoteSection.updatedAt);
-    const remoteData = {...(remoteSection.data || {})};
-    const localData = getLocalSectionData(name);
-    const remoteHasData = sectionHasMeaningfulData(name, remoteData);
-    const localHasData = sectionHasMeaningfulData(name, localData);
-    const baselineUpdatedAt = localBaseline ? normalizeTimestamp(localBaseline[name]) : 0;
-
-    if(name==='kanaLearning'||name==='kanji'||name==='kanjiTests'){
-      const field=name==='kanjiTests'?'items':'state',owner=name==='kanaLearning'?window.ModeAtlasKanaLearning:name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
-      const merged=owner.merge(localData[field],remoteData[field]);
-      if(stableJSON(merged)!==stableJSON(localData[field]))applyRemote(name,{[field]:merged},Math.max(localUpdatedAt,remoteUpdatedAt,Date.now()));
-      if(stableJSON(merged)!==stableJSON(remoteData[field]))localPreferred=true;
-      return;
-    }
-    if (name === 'progress') {
-      const mergeProgress = window.ModeAtlasProgress?.mergeStates;
-      const localState = localData.state || {};
-      const remoteState = remoteData.state || {};
-      const mergedState = typeof mergeProgress === 'function' ? mergeProgress(localState, remoteState) : remoteState;
-      const localSig = stableJSON(localState);
-      const remoteSig = stableJSON(remoteState);
-      const mergedSig = stableJSON(mergedState);
-      if (mergedSig !== localSig) {
-        applyRemote(name, { state: mergedState }, Math.max(localUpdatedAt, remoteUpdatedAt, Date.now()));
-      }
-      if (mergedSig !== remoteSig) localPreferred = true;
-      return;
-    }
-    if ((name==='reading'||name==='writing')&&window.ModeAtlasReview) {
-      const mergedSrs=window.ModeAtlasReview.mergeMaps(localData.srs,remoteData.srs);
-      remoteData.srs=mergedSrs;
-      if(stableJSON(mergedSrs)!==stableJSON(localData.srs)){
-        STORAGE.writeModeJSON(name,'srs',mergedSrs);localPreferred=true;changedSections.push(name);
-      }
-    }
-
-    if (localBaseline && localUpdatedAt > baselineUpdatedAt) {
-      // This local mutation happened after the hydration read began. Promote its
-      // logical section clock beyond the remote snapshot so the follow-up sync
-      // cannot immediately undo the conflict decision because of device clock
-      // skew or an older remote timestamp that happens to be numerically larger.
-      const promotedUpdatedAt = Math.max(Date.now(), localUpdatedAt, remoteUpdatedAt + 1);
-      storeSet(SECTION_DEFS[name].updatedAtKey, String(promotedUpdatedAt));
-      setSectionTimestampAliases(name, promotedUpdatedAt);
-      localPreferred = true;
-      return;
-    }
-
-    // Repair for earlier builds that stamped a fresh timestamp onto blank/default local data.
-    // If forceRemote is requested, trust Firestore for any section that contains real data.
-    if (forceRemote && remoteHasData) {
-      applyRemote(name, remoteData, remoteUpdatedAt || Date.now());
-      return;
-    }
-
-    if (remoteHasData && !localHasData) {
-      applyRemote(name, remoteData, remoteUpdatedAt || Date.now());
-      return;
-    }
-
-    // Never let a newer-but-empty cloud section erase real local progress.
-    if (!remoteHasData && localHasData) {
-      localPreferred = true;
-      return;
-    }
-
-    if (remoteUpdatedAt > localUpdatedAt && remoteHasData) {
-      applyRemote(name, remoteData, remoteUpdatedAt);
-    } else if (localUpdatedAt > remoteUpdatedAt && localHasData) {
-      localPreferred = true;
-    }
+  }
+  if(!storeSet('modeAtlasSaveGeneration',String(merged.generation||0)))throw Error('Your device could not finish saving.');
   });
-  return { localPreferred, changedSections: Array.from(new Set(changedSections)) };
+  return {localPreferred:snapshotData(merged)!==snapshotData(snapshot),changedSections};
 }
 
 
@@ -1203,33 +1066,19 @@ function getDocRef(uid) {
   return doc(db, 'users', uid, 'appData', 'kanaTrainer');
 }
 
-// The Kanji owner controls its storage representation. All account reads and
-// writes cross this boundary, including reset/import; local backups stay plain.
-async function readAccountDocument(uid){
-  const snap=await getDoc(getDocRef(uid));
-  if(!snap.exists()||!snap.data()?.sections?.kanji)return snap;
-  const data=snap.data(),section=data.sections.kanji;
-  section.data={...section.data,state:await window.ModeAtlasKanjiCodec.unpack(section.data?.state)};
-  return {exists:()=>true,data:()=>data,metadata:snap.metadata};
+function accountTransport(uid,epoch=accountEpoch){
+  return window.ModeAtlasAccountTransport.create({db,doc,runTransaction,valid:()=>sameAccount(uid,epoch)});
 }
+async function readAccountDocument(uid){return accountTransport(uid).read(uid);}
 async function writeAccountDocument(uid,snapshot,merge=true){
   const epoch=accountEpoch;
-  const data=structuredClone(snapshot),section=data.sections?.kanji;
-  if(section)section.data={...section.data,state:await window.ModeAtlasKanjiCodec.pack(section.data?.state)};
-  if(!sameAccount(uid,epoch))throw new Error('The signed-in account changed before this save.');
-  // This owner supplies complete sections. Replacing that field removes deleted
-  // nested values; recursive merge would leave obsolete goals/rows in the save.
-  return setDoc(getDocRef(uid),data,merge?{mergeFields:Object.keys(data)}:undefined);
+  const saved=await accountTransport(uid,epoch).write(uid,snapshot,{replace:!merge||hasLocalImportGuard(),latest:()=>merge&&!hasLocalImportGuard()?buildLocalSnapshot():snapshot});
+  if(!sameAccount(uid,epoch))throw Error('The signed-in account changed before this save finished.');
+  storeSet('modeAtlasSaveGeneration',String(saved.generation||0));
+  return saved;
 }
 
 async function hydrateFromCloud(force = false) {
-  // Capture the local mutation clocks before the first await. In the auth
-  // callback, authReady is resolved immediately before hydrateFromCloud() is
-  // called; awaiting it still yields to the microtask queue, which previously
-  // allowed a user edit to happen before the baseline was captured.
-  const hydrationBaseline = Object.fromEntries(
-    Object.keys(SECTION_DEFS).map((name) => [name, normalizeTimestamp(storeGet(SECTION_DEFS[name].updatedAtKey, '0'))])
-  );
   await authReady;
   if (!CONFIG_READY || !currentUser || !accountSaveReady) return false;
   const uid = currentUser.uid, epoch = accountEpoch;
@@ -1256,10 +1105,7 @@ async function hydrateFromCloud(force = false) {
       const snap = await readAccountDocument(uid);
       if (!sameAccount(uid,epoch)) return false;
       if (snap.exists()) {
-        const { localPreferred, changedSections } = mergeCloudIntoLocal(snap.data(), {
-          forceRemote: !!force,
-          localBaseline: hydrationBaseline
-        });
+        const { localPreferred, changedSections } = mergeCloudIntoLocal(snap.data());
         hydratedForUserId = uid;
         // A cache hit or a merged local change is not a confirmed cloud save.
         // Stamp the time only for matching server data or an acknowledged write.
@@ -1582,19 +1428,21 @@ async function performSignOut() {
   // questions are already saved and can now be flushed before clearing the device.
   window.suspendTrainerForAccountChange?.();
   setSessionCloudPause(false);
-  const confirmed=()=>sameAccount(uid,epoch)&&confirmedAccountData!==null&&confirmedAccountData===snapshotData(buildLocalSnapshot());
+  const confirmed=()=>sameAccount(uid,epoch)&&confirmedAccountData!==null&&confirmedAccountData===snapshotData(buildLocalSnapshot())&&!(window.ModeAtlasEarnings?.pending?.());
   let update=null,open=true;
   const prompt=()=>{
     const status=getSyncStatus(),saved=confirmed();
     return {confirmLabel:saved?'Sign out':'Sign out and clear',message:[
       saved?'Your latest progress is saved to your account.':status.state==='cloud'?'Checking your latest changes…':status.text.replace(/[.…]+$/,'')+'.',
       'Last confirmed cloud save: '+status.lastSyncLabel+'.',
+      window.ModeAtlasEarnings?.pending?.()?'Your latest study rewards are waiting to sync.':'',
       'Signing out clears this account’s data from this device. Your cloud save stays in your account.',
       saved?'':'Any changes that have not synced will be lost if you sign out now.'
     ].filter(Boolean).join('\n\n')};
   };
   const changed=()=>{if(open&&sameAccount(uid,epoch))update?.(prompt());};
   window.addEventListener('kanaCloudSyncStatusChanged',changed);
+  window.addEventListener('modeAtlasEarningsChanged',changed);
   let proceed=false;
   try{
     // Open immediately. Sync runs behind the visible, cancellable confirmation;
@@ -1602,8 +1450,9 @@ async function performSignOut() {
     const choice=window.ModeAtlasFeedback?.confirm?.({title:'Sign out?',...prompt(),cancelLabel:'Keep studying',tone:'danger',
       onOpen:handle=>{update=handle.update;changed();}});
     if(!confirmed()&&navigator.onLine!==false)void syncNow().catch(()=>{});
+    void window.ModeAtlasEarnings?.flush?.();
     proceed=await choice;
-  }finally{open=false;window.removeEventListener?.('kanaCloudSyncStatusChanged',changed);}
+  }finally{open=false;window.removeEventListener?.('kanaCloudSyncStatusChanged',changed);window.removeEventListener?.('modeAtlasEarningsChanged',changed);}
   if(!proceed||!sameAccount(uid,epoch))return false;
   try{
     signingOut=true;emitStatus();
@@ -1670,75 +1519,23 @@ async function performSyncOnce() {
     return false;
   }
 
-  const snapshot = buildLocalSnapshot();
-  const changedSections = [];
-
   try {
-    const snap = await readAccountDocument(uid);
-    if (!sameAccount(uid,epoch)) return false;
-
-    if (snap.exists() && !hasLocalImportGuard()) {
-      const existing = snap.data() || {};
-      const existingSections = existing.sections || {};
-      Object.keys(SECTION_DEFS).forEach((name) => {
-        // getDoc() is asynchronous, so local data may have changed after the
-        // sync snapshot was first captured. Always re-read the live section
-        // before deciding whether a remote section is newer. Otherwise an
-        // in-flight sync can overwrite a word/result/progress change made
-        // while its Firestore read was pending.
-        const localSection = snapshotSectionFixed(name);
-        snapshot.sections[name] = localSection;
-        const localData = localSection?.data || {};
-        const remoteSection = existingSections[name];
-        const remoteData = remoteSection?.data || {};
-        const localUpdatedAt = normalizeTimestamp(localSection?.updatedAt);
-        const remoteUpdatedAt = normalizeTimestamp(remoteSection?.updatedAt);
-        if(name==='kanaLearning'||name==='kanji'||name==='kanjiTests'){
-          const field=name==='kanjiTests'?'items':'state',owner=name==='kanaLearning'?window.ModeAtlasKanaLearning:name==='kanji'?window.ModeAtlasKanjiState:window.ModeAtlasKanjiResults;
-          const data={[field]:owner.merge(localData[field],remoteData[field])};
-          const updatedAt=Math.max(localUpdatedAt,remoteUpdatedAt,stableJSON(data)!==stableJSON(remoteData)?Date.now():0);
-          snapshot.sections[name]={...localSection,data,updatedAt};
-          if(stableJSON(data)!==stableJSON(localData)){writeSectionToLocal(name,data,updatedAt);changedSections.push(name);}
-        } else if (name === 'progress' && window.ModeAtlasProgress?.mergeStates) {
-          const state=window.ModeAtlasProgress.mergeStates(localData.state,remoteData.state);
-          const updatedAt=Math.max(localUpdatedAt,remoteUpdatedAt,stableJSON(state)!==stableJSON(remoteData.state)?Date.now():0);
-          snapshot.sections[name]={...localSection,data:{state},updatedAt};
-          if(stableJSON(state)!==stableJSON(localData.state)){writeSectionToLocal(name,{state},updatedAt);changedSections.push(name);}
-        } else if (sectionHasMeaningfulData(name, remoteData) && (!sectionHasMeaningfulData(name, localData) || remoteUpdatedAt > localUpdatedAt)) {
-          snapshot.sections[name] = remoteSection;
-          if(stableJSON(remoteData)!==stableJSON(localData)){
-            writeSectionToLocal(name, remoteData, remoteUpdatedAt);
-            changedSections.push(name);
-          }else if(remoteUpdatedAt>localUpdatedAt)storeSet(SECTION_DEFS[name].updatedAtKey,String(remoteUpdatedAt));
-        }
-        if((name==='reading'||name==='writing')&&window.ModeAtlasReview){
-          const srs=window.ModeAtlasReview.mergeMaps(localData.srs,remoteData.srs);
-          snapshot.sections[name]={...snapshot.sections[name],data:{...snapshot.sections[name].data,srs}};
-          if(stableJSON(srs)!==stableJSON(localData.srs)){
-            STORAGE.writeModeJSON(name,'srs',srs);changedSections.push(name);
-          }
-        }
-      });
-    }
-
-    // Never let an operation captured for one signed-in account write after
-    // auth has moved to another account or signed out.
-    if (!sameAccount(uid,epoch)) return false;
-    const matches=snap.exists()&&!snap.metadata?.fromCache&&!snap.metadata?.hasPendingWrites&&snapshotData(snapshot)===snapshotData(snap.data());
-    if(!matches)await writeAccountDocument(uid, snapshot);
-    if (!sameAccount(uid,epoch)) return false;
-    confirmedAccountData=snapshotData(snapshot);
-
-    if (hasLocalImportGuard()) clearLocalImportGuard();
-    // A successful read/merge/write also completes a failed initial hydration.
-    hydratedForUserId = uid;
-    setCloudState(true);
-    emitCloudDataChanged('sync-merge', changedSections);
+    const local=buildLocalSnapshot();
+    const saved=await writeAccountDocument(uid,local);
+    if(!sameAccount(uid,epoch))return false;
+    // Include edits made while a commit was pending in the next sync, without
+    // marking those unacknowledged edits as already saved.
+    if(hasLocalImportGuard())clearLocalImportGuard();
+    const result=mergeCloudIntoLocal(saved);
+    confirmedAccountData=snapshotData(saved);
+    hydratedForUserId=uid;setCloudState(true);
+    emitCloudDataChanged('sync-merge',result.changedSections);
+    if(snapshotData(buildLocalSnapshot())!==confirmedAccountData)cloudSyncPending=true;
     return true;
-  } catch (error) {
-    console.warn('Cloud save sync failed.', error);
+  } catch(error) {
+    console.warn('Cloud save sync failed.',error);
     window.ModeAtlasDiagnostics?.record('cloud-sync',error);
-    if (sameAccount(uid,epoch)) setCloudState(false, error?.message || 'Cloud sync failed');
+    if(sameAccount(uid,epoch))setCloudState(false,error?.message||'Cloud sync failed');
     return false;
   }
 }
@@ -2054,14 +1851,17 @@ async function resetAllData() {
     try { await cloudHydrationPromise; } catch {}
   }
 
+  let resetGeneration=Number(storeGet('modeAtlasSaveGeneration','0'))+1;
   try {
     const resetUid = currentUser?.uid || null;
     const firestoreReady = resetUid ? await ensureFirestore() : false;
     if (CONFIG_READY && resetUid && firestoreReady) {
-      await writeAccountDocument(resetUid, buildEmptySnapshot(),false);
+      const saved=await writeAccountDocument(resetUid, buildEmptySnapshot(),false);
+      resetGeneration=saved.generation;
       if (currentUser?.uid === resetUid) hydratedForUserId = resetUid;
     }
     clearLocalAppData();
+    storeSet('modeAtlasSaveGeneration',String(resetGeneration));
     return true;
   } finally {
     if (restoreCloudActivity) setSessionCloudPause(false);

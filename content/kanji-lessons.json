@@ -1,0 +1,4137 @@
+{
+  "日": {
+    "example": {
+      "word": "日",
+      "kana": "ひ",
+      "readings": [
+        "ひ"
+      ],
+      "meanings": [
+        "day",
+        "sun"
+      ],
+      "dictionaryId": 1463770
+    },
+    "cue": "A window around the sun: 日 can mean both sun and day.",
+    "acceptedMeanings": [
+      "sun",
+      "day"
+    ]
+  },
+  "一": {
+    "example": {
+      "word": "一",
+      "kana": "いち",
+      "readings": [
+        "いち"
+      ],
+      "meanings": [
+        "one"
+      ],
+      "dictionaryId": 1160790
+    },
+    "cue": "One horizontal stroke represents one.",
+    "acceptedMeanings": [
+      "one"
+    ]
+  },
+  "国": {
+    "example": {
+      "word": "国",
+      "kana": "くに",
+      "readings": [
+        "くに"
+      ],
+      "meanings": [
+        "country"
+      ],
+      "dictionaryId": 1592250
+    },
+    "cue": "Picture a country enclosed by its borders.",
+    "acceptedMeanings": [
+      "country",
+      "nation"
+    ]
+  },
+  "人": {
+    "example": {
+      "word": "人",
+      "kana": "ひと",
+      "readings": [
+        "ひと"
+      ],
+      "meanings": [
+        "person"
+      ],
+      "dictionaryId": 1580640
+    },
+    "cue": "Two strokes stand like a person's two legs.",
+    "acceptedMeanings": [
+      "person",
+      "human"
+    ]
+  },
+  "年": {
+    "example": {
+      "word": "年",
+      "kana": "とし",
+      "readings": [
+        "とし"
+      ],
+      "meanings": [
+        "year"
+      ],
+      "dictionaryId": 1468060
+    },
+    "cue": "Use 年 for a year; contrast it with 月 for a month.",
+    "acceptedMeanings": [
+      "year"
+    ]
+  },
+  "大": {
+    "example": {
+      "word": "大きい",
+      "kana": "おおきい",
+      "readings": [
+        "おおきい"
+      ],
+      "meanings": [
+        "big"
+      ],
+      "dictionaryId": 1588880
+    },
+    "cue": "A person stretches their arms wide: big. Compare 小, small.",
+    "acceptedMeanings": [
+      "big",
+      "large"
+    ]
+  },
+  "十": {
+    "example": {
+      "word": "十",
+      "kana": "じゅう",
+      "readings": [
+        "じゅう"
+      ],
+      "meanings": [
+        "ten"
+      ],
+      "dictionaryId": 1579840
+    },
+    "cue": "Two crossing strokes form ten. Add 一 after it for eleven.",
+    "acceptedMeanings": [
+      "ten"
+    ]
+  },
+  "二": {
+    "example": {
+      "word": "二",
+      "kana": "に",
+      "readings": [
+        "に"
+      ],
+      "meanings": [
+        "two"
+      ],
+      "dictionaryId": 1461140
+    },
+    "cue": "Two horizontal strokes, with the lower line longer.",
+    "acceptedMeanings": [
+      "two"
+    ]
+  },
+  "本": {
+    "example": {
+      "word": "本",
+      "kana": "ほん",
+      "readings": [
+        "ほん"
+      ],
+      "meanings": [
+        "book"
+      ],
+      "dictionaryId": 1522150
+    },
+    "cue": "A mark near the root of 木 changes tree into 本. Learn it here as book.",
+    "acceptedMeanings": [
+      "book",
+      "origin"
+    ]
+  },
+  "中": {
+    "example": {
+      "word": "中",
+      "kana": "なか",
+      "readings": [
+        "なか"
+      ],
+      "meanings": [
+        "middle"
+      ],
+      "dictionaryId": 1423310
+    },
+    "cue": "A line passes through the middle of a box.",
+    "acceptedMeanings": [
+      "middle",
+      "inside",
+      "center"
+    ]
+  },
+  "長": {
+    "example": {
+      "word": "長い",
+      "kana": "ながい",
+      "readings": [
+        "ながい"
+      ],
+      "meanings": [
+        "long"
+      ],
+      "dictionaryId": 1429750
+    },
+    "cue": "Learn 長い as long: keep the kana い when you write the word.",
+    "acceptedMeanings": [
+      "long"
+    ]
+  },
+  "出": {
+    "example": {
+      "word": "出る",
+      "kana": "でる",
+      "readings": [
+        "でる"
+      ],
+      "meanings": [
+        "to appear",
+        "to leave"
+      ],
+      "dictionaryId": 1338240
+    },
+    "cue": "Picture something coming out. 出る means to go or come out.",
+    "acceptedMeanings": [
+      "exit",
+      "leave",
+      "go out"
+    ]
+  },
+  "三": {
+    "example": {
+      "word": "三",
+      "kana": "さん",
+      "readings": [
+        "さん"
+      ],
+      "meanings": [
+        "three"
+      ],
+      "dictionaryId": 1579350
+    },
+    "cue": "Three horizontal strokes; keep the middle one short.",
+    "acceptedMeanings": [
+      "three"
+    ]
+  },
+  "時": {
+    "example": {
+      "word": "時間",
+      "kana": "じかん",
+      "readings": [
+        "じかん"
+      ],
+      "meanings": [
+        "time"
+      ],
+      "dictionaryId": 1315920
+    },
+    "cue": "The 日 side connects this character with time. 時間 is time or hours.",
+    "acceptedMeanings": [
+      "time",
+      "hour"
+    ]
+  },
+  "行": {
+    "example": {
+      "word": "行く",
+      "kana": "いく",
+      "readings": [
+        "いく"
+      ],
+      "meanings": [
+        "to go"
+      ],
+      "dictionaryId": 1578850
+    },
+    "cue": "Learn 行く as go. Its opposite in this course is 来る, come.",
+    "acceptedMeanings": [
+      "go"
+    ]
+  },
+  "見": {
+    "example": {
+      "word": "見る",
+      "kana": "みる",
+      "readings": [
+        "みる"
+      ],
+      "meanings": [
+        "to see",
+        "to watch"
+      ],
+      "dictionaryId": 1259290
+    },
+    "cue": "An eye above two legs: look and see.",
+    "acceptedMeanings": [
+      "see",
+      "look"
+    ]
+  },
+  "月": {
+    "example": {
+      "word": "月",
+      "kana": "つき",
+      "readings": [
+        "つき"
+      ],
+      "meanings": [
+        "moon"
+      ]
+    },
+    "cue": "Two short lines inside the moon. 月 can also count months.",
+    "acceptedMeanings": [
+      "moon",
+      "month"
+    ]
+  },
+  "分": {
+    "example": {
+      "word": "分かる",
+      "kana": "わかる",
+      "readings": [
+        "わかる"
+      ],
+      "meanings": [
+        "to be understood"
+      ],
+      "dictionaryId": 1606560
+    },
+    "cue": "分かる means to understand; 分 also appears in minutes and parts.",
+    "acceptedMeanings": [
+      "part",
+      "minute",
+      "divide"
+    ]
+  },
+  "後": {
+    "example": {
+      "word": "後",
+      "kana": "あと",
+      "readings": [
+        "あと"
+      ],
+      "meanings": [
+        "afterwards"
+      ],
+      "dictionaryId": 1269320
+    },
+    "cue": "Think of what comes after, or is behind. Contrast 前.",
+    "acceptedMeanings": [
+      "after",
+      "behind"
+    ]
+  },
+  "前": {
+    "example": {
+      "word": "前",
+      "kana": "まえ",
+      "readings": [
+        "まえ"
+      ],
+      "meanings": [
+        "before"
+      ],
+      "dictionaryId": 1392580
+    },
+    "cue": "In front, or before. Contrast 後, behind or after.",
+    "acceptedMeanings": [
+      "before",
+      "front"
+    ]
+  },
+  "生": {
+    "example": {
+      "word": "生まれる",
+      "kana": "うまれる",
+      "readings": [
+        "うまれる"
+      ],
+      "meanings": [
+        "to be born"
+      ],
+      "dictionaryId": 1378690
+    },
+    "cue": "Life and growth: 生まれる means to be born.",
+    "acceptedMeanings": [
+      "life",
+      "birth",
+      "live"
+    ]
+  },
+  "五": {
+    "example": {
+      "word": "五",
+      "kana": "ご",
+      "readings": [
+        "ご"
+      ],
+      "meanings": [
+        "five"
+      ],
+      "dictionaryId": 1268060
+    },
+    "cue": "A compact five. Practise it beside 四 and 六.",
+    "acceptedMeanings": [
+      "five"
+    ]
+  },
+  "間": {
+    "example": {
+      "word": "間",
+      "kana": "あいだ",
+      "readings": [
+        "あいだ"
+      ],
+      "meanings": [
+        "a space"
+      ],
+      "dictionaryId": 1215230
+    },
+    "cue": "The sun 日 appears between the doors 門: a space between.",
+    "acceptedMeanings": [
+      "between",
+      "interval"
+    ]
+  },
+  "上": {
+    "example": {
+      "word": "上",
+      "kana": "うえ",
+      "readings": [
+        "うえ"
+      ],
+      "meanings": [
+        "on top of"
+      ],
+      "dictionaryId": 1352130
+    },
+    "cue": "The short stroke sits above the baseline. Compare 下.",
+    "acceptedMeanings": [
+      "up",
+      "above"
+    ]
+  },
+  "東": {
+    "example": {
+      "word": "東",
+      "kana": "ひがし",
+      "readings": [
+        "ひがし"
+      ],
+      "meanings": [
+        "east"
+      ],
+      "dictionaryId": 1447440
+    },
+    "cue": "Learn this as east, where the sun rises. Compare 西, west.",
+    "acceptedMeanings": [
+      "east"
+    ]
+  },
+  "四": {
+    "example": {
+      "word": "四",
+      "kana": "し",
+      "readings": [
+        "し"
+      ],
+      "meanings": [
+        "four"
+      ],
+      "dictionaryId": 1579470
+    },
+    "cue": "Four has a box around its inner strokes. Read it as よん or し.",
+    "acceptedMeanings": [
+      "four"
+    ]
+  },
+  "今": {
+    "example": {
+      "word": "今",
+      "kana": "いま",
+      "readings": [
+        "いま"
+      ],
+      "meanings": [
+        "now"
+      ],
+      "dictionaryId": 1288850
+    },
+    "cue": "Now: use 今 for the present moment, not this year or today alone.",
+    "acceptedMeanings": [
+      "now"
+    ]
+  },
+  "金": {
+    "example": {
+      "word": "お金",
+      "kana": "おかね",
+      "readings": [
+        "おかね"
+      ],
+      "meanings": [
+        "money"
+      ],
+      "dictionaryId": 1001820
+    },
+    "cue": "Gold and metal; in お金 it means money.",
+    "acceptedMeanings": [
+      "gold",
+      "money",
+      "metal"
+    ]
+  },
+  "九": {
+    "example": {
+      "word": "九",
+      "kana": "きゅう",
+      "readings": [
+        "きゅう"
+      ],
+      "meanings": [
+        "nine"
+      ],
+      "dictionaryId": 1578150
+    },
+    "cue": "Nine has a distinctive curved hook. Compare 力 later.",
+    "acceptedMeanings": [
+      "nine"
+    ]
+  },
+  "入": {
+    "example": {
+      "word": "入る",
+      "kana": "はいる",
+      "readings": [
+        "はいる"
+      ],
+      "meanings": [
+        "to enter",
+        "to contain"
+      ],
+      "dictionaryId": 1465590
+    },
+    "cue": "Two strokes come together to enter. Compare 人, person.",
+    "acceptedMeanings": [
+      "enter"
+    ]
+  },
+  "学": {
+    "example": {
+      "word": "学生",
+      "kana": "がくせい",
+      "readings": [
+        "がくせい"
+      ],
+      "meanings": [
+        "student"
+      ],
+      "dictionaryId": 1206900
+    },
+    "cue": "A child 子 under a roof: picture learning at school.",
+    "acceptedMeanings": [
+      "study",
+      "learn",
+      "learning"
+    ]
+  },
+  "高": {
+    "example": {
+      "word": "高い",
+      "kana": "たかい",
+      "readings": [
+        "たかい"
+      ],
+      "meanings": [
+        "tall",
+        "expensive"
+      ],
+      "dictionaryId": 1283190
+    },
+    "cue": "A tall building stacked upward: high or tall.",
+    "acceptedMeanings": [
+      "high",
+      "tall"
+    ]
+  },
+  "子": {
+    "example": {
+      "word": "子供",
+      "kana": "こども",
+      "readings": [
+        "こども"
+      ],
+      "meanings": [
+        "child"
+      ]
+    },
+    "cue": "Picture a child with arms out. 子供 means children or a child.",
+    "acceptedMeanings": [
+      "child"
+    ]
+  },
+  "外": {
+    "example": {
+      "word": "外",
+      "kana": "そと",
+      "readings": [
+        "そと"
+      ],
+      "meanings": [
+        "outside"
+      ],
+      "dictionaryId": 1203250
+    },
+    "cue": "Outside. Compare 中, inside.",
+    "acceptedMeanings": [
+      "outside"
+    ]
+  },
+  "八": {
+    "example": {
+      "word": "八",
+      "kana": "はち",
+      "readings": [
+        "はち"
+      ],
+      "meanings": [
+        "eight"
+      ],
+      "dictionaryId": 1583090
+    },
+    "cue": "Two strokes spread apart: eight.",
+    "acceptedMeanings": [
+      "eight"
+    ]
+  },
+  "六": {
+    "example": {
+      "word": "六",
+      "kana": "ろく",
+      "readings": [
+        "ろく"
+      ],
+      "meanings": [
+        "six"
+      ],
+      "dictionaryId": 1585310
+    },
+    "cue": "A little roof over two legs: six. Keep it distinct from 八.",
+    "acceptedMeanings": [
+      "six"
+    ]
+  },
+  "下": {
+    "example": {
+      "word": "下",
+      "kana": "した",
+      "readings": [
+        "した"
+      ],
+      "meanings": [
+        "below"
+      ],
+      "dictionaryId": 1184140
+    },
+    "cue": "The short stroke hangs below the baseline. Compare 上.",
+    "acceptedMeanings": [
+      "down",
+      "below"
+    ]
+  },
+  "来": {
+    "example": {
+      "word": "来る",
+      "kana": "くる",
+      "readings": [
+        "くる"
+      ],
+      "meanings": [
+        "to come"
+      ],
+      "dictionaryId": 1547720
+    },
+    "cue": "来る means come. Compare 行く, go; the whole words sound different.",
+    "acceptedMeanings": [
+      "come"
+    ]
+  },
+  "気": {
+    "example": {
+      "word": "天気",
+      "kana": "てんき",
+      "readings": [
+        "てんき"
+      ],
+      "meanings": [
+        "weather"
+      ],
+      "dictionaryId": 1438690
+    },
+    "cue": "In 天気, 気 helps make the word weather; in 元気 it relates to energy.",
+    "acceptedMeanings": [
+      "spirit",
+      "energy"
+    ]
+  },
+  "小": {
+    "example": {
+      "word": "小さい",
+      "kana": "ちいさい",
+      "readings": [
+        "ちいさい"
+      ],
+      "meanings": [
+        "little"
+      ],
+      "dictionaryId": 1347750
+    },
+    "cue": "Three small strokes: small. Compare 大, big.",
+    "acceptedMeanings": [
+      "small",
+      "little"
+    ]
+  },
+  "七": {
+    "example": {
+      "word": "七",
+      "kana": "しち",
+      "readings": [
+        "しち"
+      ],
+      "meanings": [
+        "seven"
+      ],
+      "dictionaryId": 1319210
+    },
+    "cue": "Seven has a stroke that turns upward. Learn なな and しち as readings of 七.",
+    "acceptedMeanings": [
+      "seven"
+    ]
+  },
+  "山": {
+    "example": {
+      "word": "山",
+      "kana": "やま",
+      "readings": [
+        "やま"
+      ],
+      "meanings": [
+        "mountain"
+      ],
+      "dictionaryId": 1302680
+    },
+    "cue": "Three peaks form a mountain.",
+    "acceptedMeanings": [
+      "mountain"
+    ]
+  },
+  "話": {
+    "example": {
+      "word": "話す",
+      "kana": "はなす",
+      "readings": [
+        "はなす"
+      ],
+      "meanings": [
+        "to speak"
+      ],
+      "dictionaryId": 1562350
+    },
+    "cue": "The speech side 言 signals speaking. 話す means to talk.",
+    "acceptedMeanings": [
+      "talk",
+      "speak",
+      "story"
+    ]
+  },
+  "女": {
+    "example": {
+      "word": "女",
+      "kana": "おんな",
+      "readings": [
+        "おんな"
+      ],
+      "meanings": [
+        "woman"
+      ],
+      "dictionaryId": 1344930
+    },
+    "cue": "Learn 女 as woman. Compare 男, man.",
+    "acceptedMeanings": [
+      "woman",
+      "female"
+    ]
+  },
+  "北": {
+    "example": {
+      "word": "北",
+      "kana": "きた",
+      "readings": [
+        "きた"
+      ],
+      "meanings": [
+        "north"
+      ],
+      "dictionaryId": 1520670
+    },
+    "cue": "North. Use it with 南, south, to build your compass.",
+    "acceptedMeanings": [
+      "north"
+    ]
+  },
+  "午": {
+    "example": {
+      "word": "午前",
+      "kana": "ごぜん",
+      "readings": [
+        "ごぜん"
+      ],
+      "meanings": [
+        "morning"
+      ],
+      "dictionaryId": 1269060
+    },
+    "cue": "午前 is before noon; 午後 is after noon. Compare 牛, cow, later.",
+    "acceptedMeanings": [
+      "noon"
+    ]
+  },
+  "百": {
+    "example": {
+      "word": "百",
+      "kana": "ひゃく",
+      "readings": [
+        "ひゃく"
+      ],
+      "meanings": [
+        "hundred"
+      ],
+      "dictionaryId": 1488000
+    },
+    "cue": "One hundred: the white-looking shape is 白 with another line above.",
+    "acceptedMeanings": [
+      "hundred"
+    ]
+  },
+  "書": {
+    "example": {
+      "word": "書く",
+      "kana": "かく",
+      "readings": [
+        "かく"
+      ],
+      "meanings": [
+        "to write"
+      ],
+      "dictionaryId": 1343950
+    },
+    "cue": "Picture stacked lines of writing. 書く means to write.",
+    "acceptedMeanings": [
+      "write"
+    ]
+  },
+  "先": {
+    "example": {
+      "word": "先生",
+      "kana": "せんせい",
+      "readings": [
+        "せんせい"
+      ],
+      "meanings": [
+        "teacher",
+        "doctor"
+      ],
+      "dictionaryId": 1387990
+    },
+    "cue": "Ahead or before. A 先生 is someone who went ahead: a teacher.",
+    "acceptedMeanings": [
+      "ahead",
+      "previous"
+    ]
+  },
+  "名": {
+    "example": {
+      "word": "名前",
+      "kana": "なまえ",
+      "readings": [
+        "なまえ"
+      ],
+      "meanings": [
+        "name"
+      ],
+      "dictionaryId": 1531710
+    },
+    "cue": "Your name: learn it in 名前.",
+    "acceptedMeanings": [
+      "name"
+    ]
+  },
+  "川": {
+    "example": {
+      "word": "川",
+      "kana": "かわ",
+      "readings": [
+        "かわ"
+      ],
+      "meanings": [
+        "river"
+      ],
+      "dictionaryId": 1390020
+    },
+    "cue": "Three streams flow downward to form a river.",
+    "acceptedMeanings": [
+      "river"
+    ]
+  },
+  "千": {
+    "example": {
+      "word": "千",
+      "kana": "せん",
+      "readings": [
+        "せん"
+      ],
+      "meanings": [
+        "thousand"
+      ],
+      "dictionaryId": 1388740
+    },
+    "cue": "A slanting stroke above 十 turns ten into thousand.",
+    "acceptedMeanings": [
+      "thousand"
+    ]
+  },
+  "水": {
+    "example": {
+      "word": "水",
+      "kana": "みず",
+      "readings": [
+        "みず"
+      ],
+      "meanings": [
+        "water"
+      ],
+      "dictionaryId": 1371260
+    },
+    "cue": "Water spreads outward from the middle stroke.",
+    "acceptedMeanings": [
+      "water"
+    ]
+  },
+  "半": {
+    "example": {
+      "word": "半分",
+      "kana": "はんぶん",
+      "readings": [
+        "はんぶん"
+      ],
+      "meanings": [
+        "half minute"
+      ],
+      "dictionaryId": 1479890
+    },
+    "cue": "Half. 半分 repeats the idea of a divided part.",
+    "acceptedMeanings": [
+      "half"
+    ]
+  },
+  "男": {
+    "example": {
+      "word": "男",
+      "kana": "おとこ",
+      "readings": [
+        "おとこ"
+      ],
+      "meanings": [
+        "man"
+      ],
+      "dictionaryId": 1419990
+    },
+    "cue": "A field 田 above strength 力 is a memory hook for man, not a rule about people.",
+    "acceptedMeanings": [
+      "man",
+      "male"
+    ]
+  },
+  "西": {
+    "example": {
+      "word": "西",
+      "kana": "にし",
+      "readings": [
+        "にし"
+      ],
+      "meanings": [
+        "west"
+      ],
+      "dictionaryId": 1380840
+    },
+    "cue": "West, where the sun sets. Contrast 東, east.",
+    "acceptedMeanings": [
+      "west"
+    ]
+  },
+  "電": {
+    "example": {
+      "word": "電車",
+      "kana": "でんしゃ",
+      "readings": [
+        "でんしゃ"
+      ],
+      "meanings": [
+        "electric train"
+      ],
+      "dictionaryId": 1443530
+    },
+    "cue": "The rain-shaped top appears in 電: electricity. 電車 is a train.",
+    "acceptedMeanings": [
+      "electricity",
+      "electric"
+    ]
+  },
+  "無": {
+    "example": {
+      "word": "無くす",
+      "kana": "なくす",
+      "readings": [
+        "なくす"
+      ],
+      "meanings": [
+        "to lose something"
+      ],
+      "dictionaryId": 1529530
+    },
+    "cue": "Absence: 無理 describes something unreasonable or impossible.",
+    "acceptedMeanings": [
+      "without",
+      "none",
+      "nothing"
+    ]
+  },
+  "校": {
+    "example": {
+      "word": "学校",
+      "kana": "がっこう",
+      "readings": [
+        "がっこう"
+      ],
+      "meanings": [
+        "school"
+      ],
+      "dictionaryId": 1206730
+    },
+    "cue": "The tree-shaped side 木 appears in 校. Learn the whole word 学校, school.",
+    "acceptedMeanings": [
+      "school"
+    ]
+  },
+  "語": {
+    "example": {
+      "word": "日本語",
+      "kana": "にほんご",
+      "readings": [
+        "にほんご"
+      ],
+      "meanings": [
+        "Japanese language"
+      ]
+    },
+    "cue": "Speech 言 on the left: 日本語 is the Japanese language.",
+    "acceptedMeanings": [
+      "language",
+      "word"
+    ]
+  },
+  "土": {
+    "example": {
+      "word": "土",
+      "kana": "つち",
+      "readings": [
+        "つち"
+      ],
+      "meanings": [
+        "soil"
+      ]
+    },
+    "cue": "Two horizontal strokes crossed by a vertical one: earth or soil.",
+    "acceptedMeanings": [
+      "earth",
+      "soil",
+      "ground"
+    ]
+  },
+  "木": {
+    "example": {
+      "word": "木",
+      "kana": "き",
+      "readings": [
+        "き"
+      ],
+      "meanings": [
+        "tree",
+        "wood"
+      ],
+      "dictionaryId": 1534520
+    },
+    "cue": "A trunk, branches and roots form a tree.",
+    "acceptedMeanings": [
+      "tree",
+      "wood"
+    ]
+  },
+  "聞": {
+    "example": {
+      "word": "聞く",
+      "kana": "きく",
+      "readings": [
+        "きく"
+      ],
+      "meanings": [
+        "to hear",
+        "to listen to",
+        "to ask"
+      ],
+      "dictionaryId": 1591110
+    },
+    "cue": "An ear 耳 inside a doorway 門: listen and hear.",
+    "acceptedMeanings": [
+      "hear",
+      "listen"
+    ]
+  },
+  "食": {
+    "example": {
+      "word": "食べる",
+      "kana": "たべる",
+      "readings": [
+        "たべる"
+      ],
+      "meanings": [
+        "to eat"
+      ],
+      "dictionaryId": 1358280
+    },
+    "cue": "Learn 食べる as eat; keep べる after the kanji.",
+    "acceptedMeanings": [
+      "eat",
+      "food"
+    ]
+  },
+  "車": {
+    "example": {
+      "word": "車",
+      "kana": "くるま",
+      "readings": [
+        "くるま"
+      ],
+      "meanings": [
+        "car",
+        "vehicle"
+      ],
+      "dictionaryId": 1323080
+    },
+    "cue": "Picture a wheel and axle. 車 is a car or vehicle.",
+    "acceptedMeanings": [
+      "car",
+      "vehicle"
+    ]
+  },
+  "何": {
+    "example": {
+      "word": "何",
+      "kana": "なん",
+      "readings": [
+        "なん"
+      ],
+      "meanings": [
+        "what"
+      ],
+      "dictionaryId": 1577100
+    },
+    "cue": "What? Learn 何 as a question, with readings なに and なん depending on the phrase.",
+    "acceptedMeanings": [
+      "what"
+    ]
+  },
+  "南": {
+    "example": {
+      "word": "南",
+      "kana": "みなみ",
+      "readings": [
+        "みなみ"
+      ],
+      "meanings": [
+        "south"
+      ],
+      "dictionaryId": 1459870
+    },
+    "cue": "South. Pair it with 北, north.",
+    "acceptedMeanings": [
+      "south"
+    ]
+  },
+  "万": {
+    "example": {
+      "word": "万",
+      "kana": "まん",
+      "readings": [
+        "まん"
+      ],
+      "meanings": [
+        "ten thousand"
+      ],
+      "dictionaryId": 1584460
+    },
+    "cue": "Ten thousand, not one thousand. Compare 千.",
+    "acceptedMeanings": [
+      "ten thousand"
+    ]
+  },
+  "毎": {
+    "example": {
+      "word": "毎日",
+      "kana": "まいにち",
+      "readings": [
+        "まいにち"
+      ],
+      "meanings": [
+        "every day"
+      ],
+      "dictionaryId": 1524720
+    },
+    "cue": "Every. 毎日 means every day.",
+    "acceptedMeanings": [
+      "every",
+      "each"
+    ]
+  },
+  "白": {
+    "example": {
+      "word": "白い",
+      "kana": "しろい",
+      "readings": [
+        "しろい"
+      ],
+      "meanings": [
+        "white"
+      ],
+      "dictionaryId": 1474910
+    },
+    "cue": "White: compare it with 日, sun, and 百, hundred.",
+    "acceptedMeanings": [
+      "white"
+    ]
+  },
+  "天": {
+    "example": {
+      "word": "天気",
+      "kana": "てんき",
+      "readings": [
+        "てんき"
+      ],
+      "meanings": [
+        "weather"
+      ],
+      "dictionaryId": 1438690
+    },
+    "cue": "The sky above a person 大: heaven or sky.",
+    "acceptedMeanings": [
+      "sky",
+      "heaven"
+    ]
+  },
+  "母": {
+    "example": {
+      "word": "母",
+      "kana": "はは",
+      "readings": [
+        "はは"
+      ],
+      "meanings": [
+        "mother"
+      ]
+    },
+    "cue": "The two dots help distinguish mother from related box shapes.",
+    "acceptedMeanings": [
+      "mother"
+    ]
+  },
+  "火": {
+    "example": {
+      "word": "火",
+      "kana": "ひ",
+      "readings": [
+        "ひ"
+      ],
+      "meanings": [
+        "fire"
+      ],
+      "dictionaryId": 1193610
+    },
+    "cue": "Picture flames rising around a central stroke.",
+    "acceptedMeanings": [
+      "fire"
+    ]
+  },
+  "右": {
+    "example": {
+      "word": "右",
+      "kana": "みぎ",
+      "readings": [
+        "みぎ"
+      ],
+      "meanings": [
+        "right side"
+      ],
+      "dictionaryId": 1171010
+    },
+    "cue": "Right contains 口, a mouth-shaped box. Compare 左.",
+    "acceptedMeanings": [
+      "right"
+    ]
+  },
+  "読": {
+    "example": {
+      "word": "読む",
+      "kana": "よむ",
+      "readings": [
+        "よむ"
+      ],
+      "meanings": [
+        "to read"
+      ],
+      "dictionaryId": 1456360
+    },
+    "cue": "The speech side 言 appears again. 読む means to read.",
+    "acceptedMeanings": [
+      "read"
+    ]
+  },
+  "友": {
+    "example": {
+      "word": "友達",
+      "kana": "ともだち",
+      "readings": [
+        "ともだち"
+      ],
+      "meanings": [
+        "friend"
+      ],
+      "dictionaryId": 1540170
+    },
+    "cue": "Think of helping hands: a friend. Learn the word 友達.",
+    "acceptedMeanings": [
+      "friend"
+    ]
+  },
+  "左": {
+    "example": {
+      "word": "左",
+      "kana": "ひだり",
+      "readings": [
+        "ひだり"
+      ],
+      "meanings": [
+        "left hand side"
+      ],
+      "dictionaryId": 1290800
+    },
+    "cue": "Left contains 工. Compare the inner part of 右, right.",
+    "acceptedMeanings": [
+      "left"
+    ]
+  },
+  "休": {
+    "example": {
+      "word": "休む",
+      "kana": "やすむ",
+      "readings": [
+        "やすむ"
+      ],
+      "meanings": [
+        "to rest"
+      ],
+      "dictionaryId": 1227560
+    },
+    "cue": "A person 亻 rests beside a tree 木.",
+    "acceptedMeanings": [
+      "rest",
+      "holiday"
+    ]
+  },
+  "父": {
+    "example": {
+      "word": "父",
+      "kana": "ちち",
+      "readings": [
+        "ちち"
+      ],
+      "meanings": [
+        "father"
+      ]
+    },
+    "cue": "Father. Learn it alongside 母, mother.",
+    "acceptedMeanings": [
+      "father"
+    ]
+  },
+  "雨": {
+    "example": {
+      "word": "雨",
+      "kana": "あめ",
+      "readings": [
+        "あめ"
+      ],
+      "meanings": [
+        "rain"
+      ],
+      "dictionaryId": 1171900
+    },
+    "cue": "Drops fall beneath a roof: rain.",
+    "acceptedMeanings": [
+      "rain"
+    ]
+  },
+  "丈": {
+    "example": {
+      "word": "大丈夫",
+      "kana": "だいじょうぶ",
+      "readings": [
+        "だいじょうぶ"
+      ],
+      "meanings": [
+        "all right"
+      ],
+      "dictionaryId": 1414150
+    },
+    "cue": "In 大丈夫, learn the whole word だいじょうぶ, all right; don't guess it from the parts.",
+    "acceptedMeanings": [
+      "height",
+      "length"
+    ]
+  },
+  "誰": {
+    "example": {
+      "word": "誰",
+      "kana": "だれ",
+      "readings": [
+        "だれ"
+      ],
+      "meanings": [
+        "who"
+      ],
+      "dictionaryId": 1416830
+    },
+    "cue": "Who? The speech side 言 helps connect this with asking about a person.",
+    "acceptedMeanings": [
+      "who"
+    ]
+  },
+  "貼": {
+    "example": {
+      "word": "貼る",
+      "kana": "はる",
+      "readings": [
+        "はる"
+      ],
+      "meanings": [
+        "to stick"
+      ],
+      "dictionaryId": 1427900
+    },
+    "cue": "貼る means to stick or paste something onto a surface.",
+    "acceptedMeanings": [
+      "stick",
+      "paste"
+    ]
+  },
+  "会": {
+    "example": {
+      "word": "会う",
+      "kana": "あう",
+      "readings": [
+        "あう"
+      ],
+      "meanings": [
+        "to meet"
+      ],
+      "dictionaryId": 1198180
+    },
+    "acceptedMeanings": [
+      "meet",
+      "meeting"
+    ]
+  },
+  "同": {
+    "example": {
+      "word": "同じ",
+      "kana": "おなじ",
+      "readings": [
+        "おなじ"
+      ],
+      "meanings": [
+        "same"
+      ],
+      "dictionaryId": 1451750
+    },
+    "acceptedMeanings": [
+      "same"
+    ]
+  },
+  "事": {
+    "example": {
+      "word": "事故",
+      "kana": "じこ",
+      "readings": [
+        "じこ"
+      ],
+      "meanings": [
+        "accident"
+      ],
+      "dictionaryId": 1313850
+    },
+    "acceptedMeanings": [
+      "thing",
+      "matter"
+    ]
+  },
+  "自": {
+    "example": {
+      "word": "自分",
+      "kana": "じぶん",
+      "readings": [
+        "じぶん"
+      ],
+      "meanings": [
+        "oneself"
+      ],
+      "dictionaryId": 1318610
+    },
+    "acceptedMeanings": [
+      "self"
+    ]
+  },
+  "社": {
+    "example": {
+      "word": "会社",
+      "kana": "かいしゃ",
+      "readings": [
+        "かいしゃ"
+      ],
+      "meanings": [
+        "company"
+      ],
+      "dictionaryId": 1198550
+    },
+    "acceptedMeanings": [
+      "company"
+    ]
+  },
+  "発": {
+    "example": {
+      "word": "発音",
+      "kana": "はつおん",
+      "readings": [
+        "はつおん"
+      ],
+      "meanings": [
+        "pronunciation"
+      ],
+      "dictionaryId": 1477170
+    },
+    "acceptedMeanings": [
+      "departure",
+      "depart"
+    ]
+  },
+  "者": {
+    "example": {
+      "word": "医者",
+      "kana": "いしゃ",
+      "readings": [
+        "いしゃ"
+      ],
+      "meanings": [
+        "medical doctor"
+      ],
+      "dictionaryId": 1159980
+    },
+    "acceptedMeanings": [
+      "person"
+    ]
+  },
+  "地": {
+    "example": {
+      "word": "地図",
+      "kana": "ちず",
+      "readings": [
+        "ちず"
+      ],
+      "meanings": [
+        "map"
+      ],
+      "dictionaryId": 1421290
+    },
+    "acceptedMeanings": [
+      "ground",
+      "earth"
+    ]
+  },
+  "業": {
+    "example": {
+      "word": "卒業",
+      "kana": "そつぎょう",
+      "readings": [
+        "そつぎょう"
+      ],
+      "meanings": [
+        "graduation"
+      ],
+      "dictionaryId": 1405890
+    },
+    "acceptedMeanings": [
+      "business",
+      "work"
+    ]
+  },
+  "方": {
+    "example": {
+      "word": "仕方",
+      "kana": "しかた",
+      "readings": [
+        "しかた"
+      ],
+      "meanings": [
+        "method"
+      ],
+      "dictionaryId": 1594110
+    }
+  },
+  "新": {
+    "example": {
+      "word": "新聞",
+      "kana": "しんぶん",
+      "readings": [
+        "しんぶん"
+      ],
+      "meanings": [
+        "newspaper"
+      ],
+      "dictionaryId": 1362360
+    },
+    "acceptedMeanings": [
+      "new"
+    ]
+  },
+  "場": {
+    "example": {
+      "word": "場合",
+      "kana": "ばあい",
+      "readings": [
+        "ばあい"
+      ],
+      "meanings": [
+        "situation"
+      ],
+      "dictionaryId": 1355810
+    }
+  },
+  "員": {
+    "example": {
+      "word": "店員",
+      "kana": "てんいん",
+      "readings": [
+        "てんいん"
+      ],
+      "meanings": [
+        "shop assistant"
+      ],
+      "dictionaryId": 1440670
+    },
+    "acceptedMeanings": [
+      "member"
+    ]
+  },
+  "立": {
+    "example": {
+      "word": "立つ",
+      "kana": "たつ",
+      "readings": [
+        "たつ"
+      ],
+      "meanings": [
+        "to stand"
+      ],
+      "dictionaryId": 1597040
+    },
+    "acceptedMeanings": [
+      "stand"
+    ]
+  },
+  "開": {
+    "example": {
+      "word": "開く",
+      "kana": "あく",
+      "readings": [
+        "あく"
+      ],
+      "meanings": [
+        "to open",
+        "to become open"
+      ],
+      "dictionaryId": 1586270
+    },
+    "acceptedMeanings": [
+      "open"
+    ]
+  },
+  "手": {
+    "example": {
+      "word": "手",
+      "kana": "て",
+      "readings": [
+        "て"
+      ],
+      "meanings": [
+        "hand"
+      ]
+    },
+    "acceptedMeanings": [
+      "hand"
+    ]
+  },
+  "力": {
+    "example": {
+      "word": "力",
+      "kana": "ちから",
+      "readings": [
+        "ちから"
+      ],
+      "meanings": [
+        "strength",
+        "power"
+      ],
+      "dictionaryId": 1554820
+    },
+    "acceptedMeanings": [
+      "power",
+      "strength"
+    ]
+  },
+  "問": {
+    "example": {
+      "word": "問題",
+      "kana": "もんだい",
+      "readings": [
+        "もんだい"
+      ],
+      "meanings": [
+        "problem"
+      ],
+      "dictionaryId": 1536010
+    },
+    "acceptedMeanings": [
+      "question",
+      "ask"
+    ]
+  },
+  "代": {
+    "example": {
+      "word": "時代",
+      "kana": "じだい",
+      "readings": [
+        "じだい"
+      ],
+      "meanings": [
+        "era"
+      ],
+      "dictionaryId": 1316300
+    }
+  },
+  "明": {
+    "example": {
+      "word": "明るい",
+      "kana": "あかるい",
+      "readings": [
+        "あかるい"
+      ],
+      "meanings": [
+        "bright"
+      ]
+    },
+    "acceptedMeanings": [
+      "bright"
+    ]
+  },
+  "動": {
+    "example": {
+      "word": "動く",
+      "kana": "うごく",
+      "readings": [
+        "うごく"
+      ],
+      "meanings": [
+        "to move"
+      ],
+      "dictionaryId": 1451210
+    },
+    "acceptedMeanings": [
+      "move"
+    ]
+  },
+  "目": {
+    "example": {
+      "word": "目",
+      "kana": "め",
+      "readings": [
+        "め"
+      ],
+      "meanings": [
+        "eye"
+      ],
+      "dictionaryId": 1604890
+    },
+    "acceptedMeanings": [
+      "eye"
+    ]
+  },
+  "通": {
+    "example": {
+      "word": "普通",
+      "kana": "ふつう",
+      "readings": [
+        "ふつう"
+      ],
+      "meanings": [
+        "usually",
+        "normally",
+        "ordinary",
+        "local train (stopping at every station)"
+      ],
+      "dictionaryId": 1497190
+    },
+    "acceptedMeanings": [
+      "pass",
+      "commute"
+    ]
+  },
+  "言": {
+    "example": {
+      "word": "言う",
+      "kana": "いう",
+      "readings": [
+        "いう"
+      ],
+      "meanings": [
+        "to say"
+      ],
+      "dictionaryId": 1587040
+    },
+    "acceptedMeanings": [
+      "say",
+      "speak"
+    ]
+  },
+  "理": {
+    "example": {
+      "word": "地理",
+      "kana": "ちり",
+      "readings": [
+        "ちり"
+      ],
+      "meanings": [
+        "geography"
+      ],
+      "dictionaryId": 1421540
+    }
+  },
+  "体": {
+    "example": {
+      "word": "体",
+      "kana": "からだ",
+      "readings": [
+        "からだ"
+      ],
+      "meanings": [
+        "body"
+      ],
+      "dictionaryId": 1409140
+    },
+    "acceptedMeanings": [
+      "body"
+    ]
+  },
+  "田": {
+    "example": {
+      "word": "田舎",
+      "kana": "いなか",
+      "readings": [
+        "いなか"
+      ],
+      "meanings": [
+        "countryside"
+      ],
+      "dictionaryId": 1442750
+    },
+    "acceptedMeanings": [
+      "rice field",
+      "rice paddy"
+    ]
+  },
+  "主": {
+    "example": {
+      "word": "御主人",
+      "kana": "ごしゅじん",
+      "readings": [
+        "ごしゅじん"
+      ],
+      "meanings": [
+        "(honorable) your husband"
+      ],
+      "dictionaryId": 1270390
+    }
+  },
+  "題": {
+    "example": {
+      "word": "問題",
+      "kana": "もんだい",
+      "readings": [
+        "もんだい"
+      ],
+      "meanings": [
+        "problem"
+      ],
+      "dictionaryId": 1536010
+    },
+    "acceptedMeanings": [
+      "topic",
+      "subject"
+    ]
+  },
+  "意": {
+    "example": {
+      "word": "意味",
+      "kana": "いみ",
+      "readings": [
+        "いみ"
+      ],
+      "meanings": [
+        "meaning"
+      ],
+      "dictionaryId": 1156800
+    },
+    "acceptedMeanings": [
+      "idea",
+      "meaning"
+    ]
+  },
+  "不": {
+    "example": {
+      "word": "不便",
+      "kana": "ふべん",
+      "readings": [
+        "ふべん"
+      ],
+      "meanings": [
+        "inconvenience"
+      ],
+      "dictionaryId": 1494860
+    }
+  },
+  "作": {
+    "example": {
+      "word": "作る",
+      "kana": "つくる",
+      "readings": [
+        "つくる"
+      ],
+      "meanings": [
+        "to make"
+      ],
+      "dictionaryId": 1597890
+    },
+    "acceptedMeanings": [
+      "make"
+    ]
+  },
+  "用": {
+    "example": {
+      "word": "利用",
+      "kana": "りよう",
+      "readings": [
+        "りよう"
+      ],
+      "meanings": [
+        "utilization"
+      ],
+      "dictionaryId": 1549660
+    },
+    "acceptedMeanings": [
+      "use"
+    ]
+  },
+  "度": {
+    "example": {
+      "word": "一度",
+      "kana": "いちど",
+      "readings": [
+        "いちど"
+      ],
+      "meanings": [
+        "once"
+      ],
+      "dictionaryId": 1576250
+    }
+  },
+  "強": {
+    "example": {
+      "word": "強い",
+      "kana": "つよい",
+      "readings": [
+        "つよい"
+      ],
+      "meanings": [
+        "powerful"
+      ],
+      "dictionaryId": 1236070
+    },
+    "acceptedMeanings": [
+      "strong"
+    ]
+  },
+  "公": {
+    "example": {
+      "word": "公園",
+      "kana": "こうえん",
+      "readings": [
+        "こうえん"
+      ],
+      "meanings": [
+        "park"
+      ],
+      "dictionaryId": 1273270
+    }
+  },
+  "持": {
+    "example": {
+      "word": "持つ",
+      "kana": "もつ",
+      "readings": [
+        "もつ"
+      ],
+      "meanings": [
+        "to hold"
+      ],
+      "dictionaryId": 1315720
+    },
+    "acceptedMeanings": [
+      "hold"
+    ]
+  },
+  "野": {
+    "example": {
+      "word": "野菜",
+      "kana": "やさい",
+      "readings": [
+        "やさい"
+      ],
+      "meanings": [
+        "vegetable"
+      ],
+      "dictionaryId": 1537370
+    },
+    "acceptedMeanings": [
+      "field"
+    ]
+  },
+  "以": {
+    "example": {
+      "word": "以下",
+      "kana": "いか",
+      "readings": [
+        "いか"
+      ],
+      "meanings": [
+        "less than"
+      ],
+      "dictionaryId": 1155060
+    }
+  },
+  "思": {
+    "example": {
+      "word": "思う",
+      "kana": "おもう",
+      "readings": [
+        "おもう"
+      ],
+      "meanings": [
+        "to think",
+        "to feel"
+      ],
+      "dictionaryId": 1589350
+    },
+    "acceptedMeanings": [
+      "think"
+    ]
+  },
+  "家": {
+    "example": {
+      "word": "家",
+      "kana": "いえ",
+      "readings": [
+        "いえ"
+      ],
+      "meanings": [
+        "house"
+      ]
+    },
+    "acceptedMeanings": [
+      "house",
+      "home"
+    ]
+  },
+  "世": {
+    "example": {
+      "word": "世話",
+      "kana": "せわ",
+      "readings": [
+        "せわ"
+      ],
+      "meanings": [
+        "to look after"
+      ],
+      "dictionaryId": 1374300
+    }
+  },
+  "多": {
+    "example": {
+      "word": "多い",
+      "kana": "おおい",
+      "readings": [
+        "おおい"
+      ],
+      "meanings": [
+        "many"
+      ],
+      "dictionaryId": 1407460
+    },
+    "acceptedMeanings": [
+      "many",
+      "much"
+    ]
+  },
+  "正": {
+    "example": {
+      "word": "正しい",
+      "kana": "ただしい",
+      "readings": [
+        "ただしい"
+      ],
+      "meanings": [
+        "correct"
+      ],
+      "dictionaryId": 1376600
+    },
+    "acceptedMeanings": [
+      "correct",
+      "right"
+    ]
+  },
+  "安": {
+    "example": {
+      "word": "安い",
+      "kana": "やすい",
+      "readings": [
+        "やすい"
+      ],
+      "meanings": [
+        "cheap"
+      ],
+      "dictionaryId": 1153670
+    },
+    "acceptedMeanings": [
+      "cheap",
+      "peaceful"
+    ]
+  },
+  "院": {
+    "example": {
+      "word": "病院",
+      "kana": "びょういん",
+      "readings": [
+        "びょういん"
+      ],
+      "meanings": [
+        "hospital"
+      ],
+      "dictionaryId": 1490220
+    }
+  },
+  "心": {
+    "example": {
+      "word": "安心",
+      "kana": "あんしん",
+      "readings": [
+        "あんしん"
+      ],
+      "meanings": [
+        "relief"
+      ],
+      "dictionaryId": 1153890
+    },
+    "acceptedMeanings": [
+      "heart",
+      "mind"
+    ]
+  },
+  "界": {
+    "example": {
+      "word": "世界",
+      "kana": "せかい",
+      "readings": [
+        "せかい"
+      ],
+      "meanings": [
+        "the world"
+      ],
+      "dictionaryId": 1373860
+    },
+    "acceptedMeanings": [
+      "world"
+    ]
+  },
+  "教": {
+    "example": {
+      "word": "教える",
+      "kana": "おしえる",
+      "readings": [
+        "おしえる"
+      ],
+      "meanings": [
+        "to teach",
+        "to tell"
+      ],
+      "dictionaryId": 1236900
+    },
+    "acceptedMeanings": [
+      "teach"
+    ]
+  },
+  "文": {
+    "example": {
+      "word": "文化",
+      "kana": "ぶんか",
+      "readings": [
+        "ぶんか"
+      ],
+      "meanings": [
+        "culture"
+      ],
+      "dictionaryId": 1505120
+    }
+  },
+  "元": {
+    "example": {
+      "word": "元気",
+      "kana": "げんき",
+      "readings": [
+        "げんき"
+      ],
+      "meanings": [
+        "health",
+        "vitality"
+      ],
+      "dictionaryId": 1260720
+    }
+  },
+  "重": {
+    "example": {
+      "word": "重い",
+      "kana": "おもい",
+      "readings": [
+        "おもい"
+      ],
+      "meanings": [
+        "heavy"
+      ],
+      "dictionaryId": 1335750
+    },
+    "acceptedMeanings": [
+      "heavy"
+    ]
+  },
+  "近": {
+    "example": {
+      "word": "近い",
+      "kana": "ちかい",
+      "readings": [
+        "ちかい"
+      ],
+      "meanings": [
+        "near"
+      ],
+      "dictionaryId": 1242130
+    },
+    "acceptedMeanings": [
+      "near",
+      "close"
+    ]
+  },
+  "考": {
+    "example": {
+      "word": "考える",
+      "kana": "かんがえる",
+      "readings": [
+        "かんがえる"
+      ],
+      "meanings": [
+        "to consider"
+      ],
+      "dictionaryId": 1281020
+    },
+    "acceptedMeanings": [
+      "think",
+      "consider"
+    ]
+  },
+  "画": {
+    "example": {
+      "word": "映画",
+      "kana": "えいが",
+      "readings": [
+        "えいが"
+      ],
+      "meanings": [
+        "movie"
+      ],
+      "dictionaryId": 1173720
+    }
+  },
+  "海": {
+    "example": {
+      "word": "海",
+      "kana": "うみ",
+      "readings": [
+        "うみ"
+      ],
+      "meanings": [
+        "sea"
+      ],
+      "dictionaryId": 1201190
+    },
+    "acceptedMeanings": [
+      "sea",
+      "ocean"
+    ]
+  },
+  "売": {
+    "example": {
+      "word": "売る",
+      "kana": "うる",
+      "readings": [
+        "うる"
+      ],
+      "meanings": [
+        "to sell"
+      ],
+      "dictionaryId": 1473950
+    },
+    "acceptedMeanings": [
+      "sell"
+    ]
+  },
+  "知": {
+    "example": {
+      "word": "知る",
+      "kana": "しる",
+      "readings": [
+        "しる"
+      ],
+      "meanings": [
+        "to know"
+      ],
+      "dictionaryId": 1420470
+    },
+    "acceptedMeanings": [
+      "know"
+    ]
+  },
+  "道": {
+    "example": {
+      "word": "道",
+      "kana": "みち",
+      "readings": [
+        "みち"
+      ],
+      "meanings": [
+        "street"
+      ],
+      "dictionaryId": 1454080
+    },
+    "acceptedMeanings": [
+      "road",
+      "way"
+    ]
+  },
+  "集": {
+    "example": {
+      "word": "集まる",
+      "kana": "あつまる",
+      "readings": [
+        "あつまる"
+      ],
+      "meanings": [
+        "to gather"
+      ],
+      "dictionaryId": 1333550
+    },
+    "acceptedMeanings": [
+      "gather"
+    ]
+  },
+  "別": {
+    "example": {
+      "word": "特別",
+      "kana": "とくべつ",
+      "readings": [
+        "とくべつ"
+      ],
+      "meanings": [
+        "special"
+      ],
+      "dictionaryId": 1455280
+    },
+    "acceptedMeanings": [
+      "separate",
+      "different"
+    ]
+  },
+  "物": {
+    "example": {
+      "word": "着物",
+      "kana": "きもの",
+      "readings": [
+        "きもの"
+      ],
+      "meanings": [
+        "kimono"
+      ],
+      "dictionaryId": 1423240
+    },
+    "acceptedMeanings": [
+      "thing"
+    ]
+  },
+  "使": {
+    "example": {
+      "word": "使う",
+      "kana": "つかう",
+      "readings": [
+        "つかう"
+      ],
+      "meanings": [
+        "to use"
+      ],
+      "dictionaryId": 1305990
+    },
+    "acceptedMeanings": [
+      "use"
+    ]
+  },
+  "品": {
+    "example": {
+      "word": "品物",
+      "kana": "しなもの",
+      "readings": [
+        "しなもの"
+      ],
+      "meanings": [
+        "goods"
+      ],
+      "dictionaryId": 1490670
+    },
+    "acceptedMeanings": [
+      "goods",
+      "article"
+    ]
+  },
+  "計": {
+    "example": {
+      "word": "時計",
+      "kana": "とけい",
+      "readings": [
+        "とけい"
+      ],
+      "meanings": [
+        "watch",
+        "clock"
+      ],
+      "dictionaryId": 1316140
+    },
+    "acceptedMeanings": [
+      "measure",
+      "plan"
+    ]
+  },
+  "死": {
+    "example": {
+      "word": "死ぬ",
+      "kana": "しぬ",
+      "readings": [
+        "しぬ"
+      ],
+      "meanings": [
+        "to die"
+      ],
+      "dictionaryId": 1310730
+    },
+    "acceptedMeanings": [
+      "die",
+      "death"
+    ]
+  },
+  "特": {
+    "example": {
+      "word": "特に",
+      "kana": "とくに",
+      "readings": [
+        "とくに"
+      ],
+      "meanings": [
+        "particularly",
+        "especially"
+      ],
+      "dictionaryId": 1454670
+    }
+  },
+  "私": {
+    "example": {
+      "word": "私",
+      "kana": "わたし",
+      "readings": [
+        "わたし"
+      ],
+      "meanings": [
+        "I"
+      ]
+    },
+    "acceptedMeanings": [
+      "I",
+      "me",
+      "private"
+    ]
+  },
+  "始": {
+    "example": {
+      "word": "始まる",
+      "kana": "はじまる",
+      "readings": [
+        "はじまる"
+      ],
+      "meanings": [
+        "to begin"
+      ],
+      "dictionaryId": 1307500
+    },
+    "acceptedMeanings": [
+      "begin",
+      "start"
+    ]
+  },
+  "朝": {
+    "example": {
+      "word": "朝",
+      "kana": "あさ",
+      "readings": [
+        "あさ"
+      ],
+      "meanings": [
+        "morning"
+      ],
+      "dictionaryId": 1428280
+    },
+    "acceptedMeanings": [
+      "morning"
+    ]
+  },
+  "運": {
+    "example": {
+      "word": "運ぶ",
+      "kana": "はこぶ",
+      "readings": [
+        "はこぶ"
+      ],
+      "meanings": [
+        "to transport"
+      ],
+      "dictionaryId": 1172660
+    }
+  },
+  "終": {
+    "example": {
+      "word": "終る",
+      "kana": "おわる",
+      "readings": [
+        "おわる"
+      ],
+      "meanings": [
+        "to finish"
+      ],
+      "dictionaryId": 1589600
+    },
+    "acceptedMeanings": [
+      "end",
+      "finish"
+    ]
+  },
+  "台": {
+    "example": {
+      "word": "台風",
+      "kana": "たいふう",
+      "readings": [
+        "たいふう"
+      ],
+      "meanings": [
+        "typhoon"
+      ],
+      "dictionaryId": 1596780
+    }
+  },
+  "広": {
+    "example": {
+      "word": "広い",
+      "kana": "ひろい",
+      "readings": [
+        "ひろい"
+      ],
+      "meanings": [
+        "spacious",
+        "wide"
+      ],
+      "dictionaryId": 1278410
+    },
+    "acceptedMeanings": [
+      "wide",
+      "spacious"
+    ]
+  },
+  "住": {
+    "example": {
+      "word": "住む",
+      "kana": "すむ",
+      "readings": [
+        "すむ"
+      ],
+      "meanings": [
+        "to live in"
+      ],
+      "dictionaryId": 1334040
+    },
+    "acceptedMeanings": [
+      "live",
+      "reside"
+    ]
+  },
+  "真": {
+    "example": {
+      "word": "写真",
+      "kana": "しゃしん",
+      "readings": [
+        "しゃしん"
+      ],
+      "meanings": [
+        "photograph"
+      ],
+      "dictionaryId": 1321900
+    }
+  },
+  "有": {
+    "example": {
+      "word": "有名",
+      "kana": "ゆうめい",
+      "readings": [
+        "ゆうめい"
+      ],
+      "meanings": [
+        "famous"
+      ],
+      "dictionaryId": 1541620
+    },
+    "acceptedMeanings": [
+      "have",
+      "exist"
+    ]
+  },
+  "口": {
+    "example": {
+      "word": "口",
+      "kana": "くち",
+      "readings": [
+        "くち"
+      ],
+      "meanings": [
+        "mouth",
+        "opening"
+      ],
+      "dictionaryId": 1275640
+    },
+    "acceptedMeanings": [
+      "mouth"
+    ]
+  },
+  "少": {
+    "example": {
+      "word": "少し",
+      "kana": "すこし",
+      "readings": [
+        "すこし"
+      ],
+      "meanings": [
+        "few"
+      ],
+      "dictionaryId": 1348870
+    },
+    "acceptedMeanings": [
+      "few",
+      "little"
+    ]
+  },
+  "町": {
+    "example": {
+      "word": "町",
+      "kana": "まち",
+      "readings": [
+        "まち"
+      ],
+      "meanings": [
+        "town",
+        "city"
+      ],
+      "dictionaryId": 1603990
+    },
+    "acceptedMeanings": [
+      "town"
+    ]
+  },
+  "料": {
+    "example": {
+      "word": "料理",
+      "kana": "りょうり",
+      "readings": [
+        "りょうり"
+      ],
+      "meanings": [
+        "cuisine"
+      ],
+      "dictionaryId": 1554310
+    }
+  },
+  "工": {
+    "example": {
+      "word": "工場",
+      "kana": "こうじょう",
+      "readings": [
+        "こうじょう"
+      ],
+      "meanings": [
+        "factory"
+      ],
+      "dictionaryId": 1578700
+    },
+    "acceptedMeanings": [
+      "work",
+      "craft"
+    ]
+  },
+  "建": {
+    "example": {
+      "word": "建物",
+      "kana": "たてもの",
+      "readings": [
+        "たてもの"
+      ],
+      "meanings": [
+        "building"
+      ],
+      "dictionaryId": 1257540
+    },
+    "acceptedMeanings": [
+      "build"
+    ]
+  },
+  "空": {
+    "example": {
+      "word": "空",
+      "kana": "そら",
+      "readings": [
+        "そら"
+      ],
+      "meanings": [
+        "sky"
+      ]
+    },
+    "acceptedMeanings": [
+      "sky",
+      "empty"
+    ]
+  },
+  "急": {
+    "example": {
+      "word": "急ぐ",
+      "kana": "いそぐ",
+      "readings": [
+        "いそぐ"
+      ],
+      "meanings": [
+        "to hurry"
+      ],
+      "dictionaryId": 1228650
+    },
+    "acceptedMeanings": [
+      "hurry",
+      "urgent"
+    ]
+  },
+  "止": {
+    "example": {
+      "word": "止む",
+      "kana": "やむ",
+      "readings": [
+        "やむ"
+      ],
+      "meanings": [
+        "to stop"
+      ],
+      "dictionaryId": 1310640
+    },
+    "acceptedMeanings": [
+      "stop"
+    ]
+  },
+  "送": {
+    "example": {
+      "word": "送る",
+      "kana": "おくる",
+      "readings": [
+        "おくる"
+      ],
+      "meanings": [
+        "to send"
+      ],
+      "dictionaryId": 1402730
+    },
+    "acceptedMeanings": [
+      "send"
+    ]
+  },
+  "切": {
+    "example": {
+      "word": "切る",
+      "kana": "きる",
+      "readings": [
+        "きる"
+      ],
+      "meanings": [
+        "to cut"
+      ],
+      "dictionaryId": 1384830
+    },
+    "acceptedMeanings": [
+      "cut"
+    ]
+  },
+  "転": {
+    "example": {
+      "word": "運転",
+      "kana": "うんてん",
+      "readings": [
+        "うんてん"
+      ],
+      "meanings": [
+        "to drive"
+      ],
+      "dictionaryId": 1172830
+    }
+  },
+  "研": {
+    "example": {
+      "word": "研究",
+      "kana": "けんきゅう",
+      "readings": [
+        "けんきゅう"
+      ],
+      "meanings": [
+        "research"
+      ],
+      "dictionaryId": 1258520
+    }
+  },
+  "足": {
+    "example": {
+      "word": "足",
+      "kana": "あし",
+      "readings": [
+        "あし"
+      ],
+      "meanings": [
+        "foot",
+        "leg"
+      ]
+    },
+    "acceptedMeanings": [
+      "foot",
+      "leg"
+    ]
+  },
+  "究": {
+    "example": {
+      "word": "研究",
+      "kana": "けんきゅう",
+      "readings": [
+        "けんきゅう"
+      ],
+      "meanings": [
+        "research"
+      ],
+      "dictionaryId": 1258520
+    }
+  },
+  "楽": {
+    "example": {
+      "word": "音楽",
+      "kana": "おんがく",
+      "readings": [
+        "おんがく"
+      ],
+      "meanings": [
+        "music"
+      ],
+      "dictionaryId": 1183720
+    },
+    "acceptedMeanings": [
+      "enjoyment",
+      "comfort"
+    ]
+  },
+  "起": {
+    "example": {
+      "word": "起きる",
+      "kana": "おきる",
+      "readings": [
+        "おきる"
+      ],
+      "meanings": [
+        "to get up"
+      ],
+      "dictionaryId": 1223640
+    },
+    "acceptedMeanings": [
+      "wake",
+      "rise"
+    ]
+  },
+  "着": {
+    "example": {
+      "word": "着る",
+      "kana": "きる",
+      "readings": [
+        "きる"
+      ],
+      "meanings": [
+        "to put on from the shoulders down"
+      ],
+      "dictionaryId": 1423000
+    },
+    "acceptedMeanings": [
+      "wear",
+      "arrive"
+    ]
+  },
+  "店": {
+    "example": {
+      "word": "店",
+      "kana": "みせ",
+      "readings": [
+        "みせ"
+      ],
+      "meanings": [
+        "shop"
+      ],
+      "dictionaryId": 1582120
+    },
+    "acceptedMeanings": [
+      "shop",
+      "store"
+    ]
+  },
+  "病": {
+    "example": {
+      "word": "病気",
+      "kana": "びょうき",
+      "readings": [
+        "びょうき"
+      ],
+      "meanings": [
+        "illness"
+      ],
+      "dictionaryId": 1490230
+    },
+    "acceptedMeanings": [
+      "illness",
+      "disease"
+    ]
+  },
+  "質": {
+    "example": {
+      "word": "質問",
+      "kana": "しつもん",
+      "readings": [
+        "しつもん"
+      ],
+      "meanings": [
+        "question"
+      ],
+      "dictionaryId": 1320760
+    }
+  },
+  "待": {
+    "example": {
+      "word": "待つ",
+      "kana": "まつ",
+      "readings": [
+        "まつ"
+      ],
+      "meanings": [
+        "to wait"
+      ],
+      "dictionaryId": 1410590
+    },
+    "acceptedMeanings": [
+      "wait"
+    ]
+  },
+  "試": {
+    "example": {
+      "word": "試合",
+      "kana": "しあい",
+      "readings": [
+        "しあい"
+      ],
+      "meanings": [
+        "match",
+        "game"
+      ],
+      "dictionaryId": 1312420
+    },
+    "acceptedMeanings": [
+      "try",
+      "test"
+    ]
+  },
+  "族": {
+    "example": {
+      "word": "家族",
+      "kana": "かぞく",
+      "readings": [
+        "かぞく"
+      ],
+      "meanings": [
+        "family"
+      ],
+      "dictionaryId": 1192150
+    }
+  },
+  "銀": {
+    "example": {
+      "word": "銀行",
+      "kana": "ぎんこう",
+      "readings": [
+        "ぎんこう"
+      ],
+      "meanings": [
+        "bank"
+      ],
+      "dictionaryId": 1243490
+    }
+  },
+  "早": {
+    "example": {
+      "word": "早い",
+      "kana": "はやい",
+      "readings": [
+        "はやい"
+      ],
+      "meanings": [
+        "early"
+      ],
+      "dictionaryId": 1404975
+    },
+    "acceptedMeanings": [
+      "early"
+    ]
+  },
+  "映": {
+    "example": {
+      "word": "映画",
+      "kana": "えいが",
+      "readings": [
+        "えいが"
+      ],
+      "meanings": [
+        "movie"
+      ],
+      "dictionaryId": 1173720
+    }
+  },
+  "親": {
+    "example": {
+      "word": "親",
+      "kana": "おや",
+      "readings": [
+        "おや"
+      ],
+      "meanings": [
+        "parents"
+      ],
+      "dictionaryId": 1365040
+    },
+    "acceptedMeanings": [
+      "parent"
+    ]
+  },
+  "験": {
+    "example": {
+      "word": "試験",
+      "kana": "しけん",
+      "readings": [
+        "しけん"
+      ],
+      "meanings": [
+        "examination"
+      ],
+      "dictionaryId": 1312350
+    }
+  },
+  "英": {
+    "example": {
+      "word": "英語",
+      "kana": "えいご",
+      "readings": [
+        "えいご"
+      ],
+      "meanings": [
+        "English language"
+      ],
+      "dictionaryId": 1174420
+    }
+  },
+  "医": {
+    "example": {
+      "word": "医者",
+      "kana": "いしゃ",
+      "readings": [
+        "いしゃ"
+      ],
+      "meanings": [
+        "medical doctor"
+      ],
+      "dictionaryId": 1159980
+    },
+    "acceptedMeanings": [
+      "medicine",
+      "doctor"
+    ]
+  },
+  "仕": {
+    "example": {
+      "word": "仕事",
+      "kana": "しごと",
+      "readings": [
+        "しごと"
+      ],
+      "meanings": [
+        "job"
+      ],
+      "dictionaryId": 1304970
+    }
+  },
+  "去": {
+    "example": {
+      "word": "去年",
+      "kana": "きょねん",
+      "readings": [
+        "きょねん"
+      ],
+      "meanings": [
+        "last year"
+      ],
+      "dictionaryId": 1231690
+    },
+    "acceptedMeanings": [
+      "leave",
+      "past"
+    ]
+  },
+  "味": {
+    "example": {
+      "word": "味",
+      "kana": "あじ",
+      "readings": [
+        "あじ"
+      ],
+      "meanings": [
+        "flavour"
+      ],
+      "dictionaryId": 1526960
+    },
+    "acceptedMeanings": [
+      "taste",
+      "flavor"
+    ]
+  },
+  "写": {
+    "example": {
+      "word": "写す",
+      "kana": "うつす",
+      "readings": [
+        "うつす"
+      ],
+      "meanings": [
+        "to copy or photograph"
+      ],
+      "dictionaryId": 1588320
+    }
+  },
+  "字": {
+    "example": {
+      "word": "漢字",
+      "kana": "かんじ",
+      "readings": [
+        "かんじ"
+      ],
+      "meanings": [
+        "Chinese character"
+      ],
+      "dictionaryId": 1213170
+    },
+    "acceptedMeanings": [
+      "character",
+      "letter"
+    ]
+  },
+  "答": {
+    "example": {
+      "word": "答える",
+      "kana": "こたえる",
+      "readings": [
+        "こたえる"
+      ],
+      "meanings": [
+        "to answer"
+      ],
+      "dictionaryId": 1449540
+    },
+    "acceptedMeanings": [
+      "answer"
+    ]
+  },
+  "夜": {
+    "example": {
+      "word": "夜",
+      "kana": "よる",
+      "readings": [
+        "よる"
+      ],
+      "meanings": [
+        "evening",
+        "night"
+      ],
+      "dictionaryId": 1536350
+    },
+    "acceptedMeanings": [
+      "night"
+    ]
+  },
+  "音": {
+    "example": {
+      "word": "音",
+      "kana": "おと",
+      "readings": [
+        "おと"
+      ],
+      "meanings": [
+        "sound",
+        "note"
+      ],
+      "dictionaryId": 1576900
+    },
+    "acceptedMeanings": [
+      "sound"
+    ]
+  },
+  "注": {
+    "example": {
+      "word": "注意",
+      "kana": "ちゅうい",
+      "readings": [
+        "ちゅうい"
+      ],
+      "meanings": [
+        "caution"
+      ],
+      "dictionaryId": 1426530
+    }
+  },
+  "帰": {
+    "example": {
+      "word": "帰る",
+      "kana": "かえる",
+      "readings": [
+        "かえる"
+      ],
+      "meanings": [
+        "to go back"
+      ],
+      "dictionaryId": 1221270
+    },
+    "acceptedMeanings": [
+      "return"
+    ]
+  },
+  "古": {
+    "example": {
+      "word": "古い",
+      "kana": "ふるい",
+      "readings": [
+        "ふるい"
+      ],
+      "meanings": [
+        "old (not used for people)"
+      ],
+      "dictionaryId": 1265070
+    },
+    "acceptedMeanings": [
+      "old"
+    ]
+  },
+  "歌": {
+    "example": {
+      "word": "歌う",
+      "kana": "うたう",
+      "readings": [
+        "うたう"
+      ],
+      "meanings": [
+        "to sing"
+      ],
+      "dictionaryId": 1588120
+    },
+    "acceptedMeanings": [
+      "song",
+      "sing"
+    ]
+  },
+  "買": {
+    "example": {
+      "word": "買う",
+      "kana": "かう",
+      "readings": [
+        "かう"
+      ],
+      "meanings": [
+        "to buy"
+      ],
+      "dictionaryId": 1473740
+    },
+    "acceptedMeanings": [
+      "buy"
+    ]
+  },
+  "悪": {
+    "example": {
+      "word": "悪い",
+      "kana": "わるい",
+      "readings": [
+        "わるい"
+      ],
+      "meanings": [
+        "bad"
+      ],
+      "dictionaryId": 1151260
+    },
+    "acceptedMeanings": [
+      "bad"
+    ]
+  },
+  "図": {
+    "example": {
+      "word": "地図",
+      "kana": "ちず",
+      "readings": [
+        "ちず"
+      ],
+      "meanings": [
+        "map"
+      ],
+      "dictionaryId": 1421290
+    },
+    "acceptedMeanings": [
+      "diagram",
+      "map"
+    ]
+  },
+  "週": {
+    "example": {
+      "word": "今週",
+      "kana": "こんしゅう",
+      "readings": [
+        "こんしゅう"
+      ],
+      "meanings": [
+        "this week"
+      ],
+      "dictionaryId": 1289220
+    },
+    "acceptedMeanings": [
+      "week"
+    ]
+  },
+  "室": {
+    "example": {
+      "word": "教室",
+      "kana": "きょうしつ",
+      "readings": [
+        "きょうしつ"
+      ],
+      "meanings": [
+        "classroom"
+      ],
+      "dictionaryId": 1237150
+    },
+    "acceptedMeanings": [
+      "room"
+    ]
+  },
+  "歩": {
+    "example": {
+      "word": "歩く",
+      "kana": "あるく",
+      "readings": [
+        "あるく"
+      ],
+      "meanings": [
+        "to walk"
+      ],
+      "dictionaryId": 1514320
+    },
+    "acceptedMeanings": [
+      "walk"
+    ]
+  },
+  "風": {
+    "example": {
+      "word": "風",
+      "kana": "かぜ",
+      "readings": [
+        "かぜ"
+      ],
+      "meanings": [
+        "wind"
+      ]
+    },
+    "acceptedMeanings": [
+      "wind"
+    ]
+  },
+  "紙": {
+    "example": {
+      "word": "紙",
+      "kana": "かみ",
+      "readings": [
+        "かみ"
+      ],
+      "meanings": [
+        "paper"
+      ],
+      "dictionaryId": 1311530
+    },
+    "acceptedMeanings": [
+      "paper"
+    ]
+  },
+  "黒": {
+    "example": {
+      "word": "黒い",
+      "kana": "くろい",
+      "readings": [
+        "くろい"
+      ],
+      "meanings": [
+        "black"
+      ],
+      "dictionaryId": 1287420
+    },
+    "acceptedMeanings": [
+      "black"
+    ]
+  },
+  "花": {
+    "example": {
+      "word": "花",
+      "kana": "はな",
+      "readings": [
+        "はな"
+      ],
+      "meanings": [
+        "flower"
+      ]
+    },
+    "acceptedMeanings": [
+      "flower"
+    ]
+  },
+  "春": {
+    "example": {
+      "word": "春",
+      "kana": "はる",
+      "readings": [
+        "はる"
+      ],
+      "meanings": [
+        "spring"
+      ],
+      "dictionaryId": 1341000
+    },
+    "acceptedMeanings": [
+      "spring"
+    ]
+  },
+  "赤": {
+    "example": {
+      "word": "赤い",
+      "kana": "あかい",
+      "readings": [
+        "あかい"
+      ],
+      "meanings": [
+        "red"
+      ],
+      "dictionaryId": 1383240
+    },
+    "acceptedMeanings": [
+      "red"
+    ]
+  },
+  "青": {
+    "example": {
+      "word": "青い",
+      "kana": "あおい",
+      "readings": [
+        "あおい"
+      ],
+      "meanings": [
+        "blue"
+      ],
+      "dictionaryId": 1381390
+    },
+    "acceptedMeanings": [
+      "blue"
+    ]
+  },
+  "館": {
+    "example": {
+      "word": "旅館",
+      "kana": "りょかん",
+      "readings": [
+        "りょかん"
+      ],
+      "meanings": [
+        "Japanese hotel"
+      ],
+      "dictionaryId": 1553130
+    }
+  },
+  "屋": {
+    "example": {
+      "word": "部屋",
+      "kana": "へや",
+      "readings": [
+        "へや"
+      ],
+      "meanings": [
+        "room"
+      ],
+      "dictionaryId": 1499320
+    },
+    "acceptedMeanings": [
+      "roof",
+      "shop"
+    ]
+  },
+  "色": {
+    "example": {
+      "word": "色",
+      "kana": "いろ",
+      "readings": [
+        "いろ"
+      ],
+      "meanings": [
+        "colour"
+      ],
+      "dictionaryId": 1357600
+    },
+    "acceptedMeanings": [
+      "color"
+    ]
+  },
+  "走": {
+    "example": {
+      "word": "走る",
+      "kana": "はしる",
+      "readings": [
+        "はしる"
+      ],
+      "meanings": [
+        "to run"
+      ],
+      "dictionaryId": 1402540
+    },
+    "acceptedMeanings": [
+      "run"
+    ]
+  },
+  "秋": {
+    "example": {
+      "word": "秋",
+      "kana": "あき",
+      "readings": [
+        "あき"
+      ],
+      "meanings": [
+        "autumn"
+      ],
+      "dictionaryId": 1332650
+    },
+    "acceptedMeanings": [
+      "autumn",
+      "fall"
+    ]
+  },
+  "夏": {
+    "example": {
+      "word": "夏",
+      "kana": "なつ",
+      "readings": [
+        "なつ"
+      ],
+      "meanings": [
+        "summer"
+      ],
+      "dictionaryId": 1191320
+    },
+    "acceptedMeanings": [
+      "summer"
+    ]
+  },
+  "習": {
+    "example": {
+      "word": "習う",
+      "kana": "ならう",
+      "readings": [
+        "ならう"
+      ],
+      "meanings": [
+        "to learn"
+      ],
+      "dictionaryId": 1333070
+    },
+    "acceptedMeanings": [
+      "learn",
+      "practise",
+      "practice"
+    ]
+  },
+  "駅": {
+    "example": {
+      "word": "駅",
+      "kana": "えき",
+      "readings": [
+        "えき"
+      ],
+      "meanings": [
+        "station"
+      ],
+      "dictionaryId": 1175140
+    },
+    "acceptedMeanings": [
+      "station"
+    ]
+  },
+  "洋": {
+    "example": {
+      "word": "洋服",
+      "kana": "ようふく",
+      "readings": [
+        "ようふく"
+      ],
+      "meanings": [
+        "western-style clothes"
+      ],
+      "dictionaryId": 1546020
+    }
+  },
+  "旅": {
+    "example": {
+      "word": "旅行",
+      "kana": "りょこう",
+      "readings": [
+        "りょこう"
+      ],
+      "meanings": [
+        "travel"
+      ],
+      "dictionaryId": 1553170
+    },
+    "acceptedMeanings": [
+      "travel"
+    ]
+  },
+  "服": {
+    "example": {
+      "word": "洋服",
+      "kana": "ようふく",
+      "readings": [
+        "ようふく"
+      ],
+      "meanings": [
+        "western-style clothes"
+      ],
+      "dictionaryId": 1546020
+    },
+    "acceptedMeanings": [
+      "clothes",
+      "clothing"
+    ]
+  },
+  "夕": {
+    "example": {
+      "word": "夕方",
+      "kana": "ゆうがた",
+      "readings": [
+        "ゆうがた"
+      ],
+      "meanings": [
+        "evening"
+      ],
+      "dictionaryId": 1542790
+    },
+    "acceptedMeanings": [
+      "evening"
+    ]
+  },
+  "借": {
+    "example": {
+      "word": "借りる",
+      "kana": "かりる",
+      "readings": [
+        "かりる"
+      ],
+      "meanings": [
+        "to borrow"
+      ],
+      "dictionaryId": 1323560
+    },
+    "acceptedMeanings": [
+      "borrow"
+    ]
+  },
+  "曜": {
+    "example": {
+      "word": "土曜日",
+      "kana": "どようび",
+      "readings": [
+        "どようび"
+      ],
+      "meanings": [
+        "Saturday"
+      ],
+      "dictionaryId": 1445590
+    }
+  },
+  "飲": {
+    "example": {
+      "word": "飲む",
+      "kana": "のむ",
+      "readings": [
+        "のむ"
+      ],
+      "meanings": [
+        "to drink"
+      ],
+      "dictionaryId": 1169870
+    },
+    "acceptedMeanings": [
+      "drink"
+    ]
+  },
+  "肉": {
+    "example": {
+      "word": "肉",
+      "kana": "にく",
+      "readings": [
+        "にく"
+      ],
+      "meanings": [
+        "meat"
+      ],
+      "dictionaryId": 1463520
+    },
+    "acceptedMeanings": [
+      "meat"
+    ]
+  },
+  "貸": {
+    "example": {
+      "word": "貸す",
+      "kana": "かす",
+      "readings": [
+        "かす"
+      ],
+      "meanings": [
+        "to lend"
+      ],
+      "dictionaryId": 1411160
+    },
+    "acceptedMeanings": [
+      "lend"
+    ]
+  },
+  "堂": {
+    "example": {
+      "word": "講堂",
+      "kana": "こうどう",
+      "readings": [
+        "こうどう"
+      ],
+      "meanings": [
+        "auditorium"
+      ],
+      "dictionaryId": 1282340
+    }
+  },
+  "鳥": {
+    "example": {
+      "word": "鳥",
+      "kana": "とり",
+      "readings": [
+        "とり"
+      ],
+      "meanings": [
+        "bird"
+      ]
+    },
+    "acceptedMeanings": [
+      "bird"
+    ]
+  },
+  "飯": {
+    "example": {
+      "word": "ご飯",
+      "kana": "ごはん",
+      "readings": [
+        "ごはん"
+      ],
+      "meanings": [
+        "rice",
+        "meal"
+      ]
+    },
+    "acceptedMeanings": [
+      "rice",
+      "meal"
+    ]
+  },
+  "勉": {
+    "example": {
+      "word": "勉強",
+      "kana": "べんきょう",
+      "readings": [
+        "べんきょう"
+      ],
+      "meanings": [
+        "to study"
+      ],
+      "dictionaryId": 1512670
+    }
+  },
+  "冬": {
+    "example": {
+      "word": "冬",
+      "kana": "ふゆ",
+      "readings": [
+        "ふゆ"
+      ],
+      "meanings": [
+        "winter"
+      ],
+      "dictionaryId": 1446070
+    },
+    "acceptedMeanings": [
+      "winter"
+    ]
+  },
+  "昼": {
+    "example": {
+      "word": "昼",
+      "kana": "ひる",
+      "readings": [
+        "ひる"
+      ],
+      "meanings": [
+        "noon",
+        "daytime"
+      ],
+      "dictionaryId": 1426250
+    },
+    "acceptedMeanings": [
+      "daytime",
+      "noon"
+    ]
+  },
+  "茶": {
+    "example": {
+      "word": "お茶",
+      "kana": "おちゃ",
+      "readings": [
+        "おちゃ"
+      ],
+      "meanings": [
+        "green tea"
+      ],
+      "dictionaryId": 1002430
+    },
+    "acceptedMeanings": [
+      "tea"
+    ]
+  },
+  "弟": {
+    "example": {
+      "word": "弟",
+      "kana": "おとうと",
+      "readings": [
+        "おとうと"
+      ],
+      "meanings": [
+        "younger brother"
+      ],
+      "dictionaryId": 1581930
+    },
+    "acceptedMeanings": [
+      "younger brother"
+    ]
+  },
+  "牛": {
+    "example": {
+      "word": "牛肉",
+      "kana": "ぎゅうにく",
+      "readings": [
+        "ぎゅうにく"
+      ],
+      "meanings": [
+        "beef"
+      ],
+      "dictionaryId": 1231580
+    },
+    "acceptedMeanings": [
+      "cow",
+      "cattle"
+    ]
+  },
+  "魚": {
+    "example": {
+      "word": "魚",
+      "kana": "さかな",
+      "readings": [
+        "さかな"
+      ],
+      "meanings": [
+        "fish"
+      ],
+      "dictionaryId": 1578010
+    },
+    "acceptedMeanings": [
+      "fish"
+    ]
+  },
+  "兄": {
+    "example": {
+      "word": "兄",
+      "kana": "あに",
+      "readings": [
+        "あに"
+      ],
+      "meanings": [
+        "older brother"
+      ]
+    },
+    "acceptedMeanings": [
+      "older brother"
+    ]
+  },
+  "犬": {
+    "example": {
+      "word": "犬",
+      "kana": "いぬ",
+      "readings": [
+        "いぬ"
+      ],
+      "meanings": [
+        "dog"
+      ],
+      "dictionaryId": 1258330
+    },
+    "acceptedMeanings": [
+      "dog"
+    ]
+  },
+  "妹": {
+    "example": {
+      "word": "妹",
+      "kana": "いもうと",
+      "readings": [
+        "いもうと"
+      ],
+      "meanings": [
+        "(humble) younger sister"
+      ],
+      "dictionaryId": 1524590
+    },
+    "acceptedMeanings": [
+      "younger sister"
+    ]
+  },
+  "姉": {
+    "example": {
+      "word": "姉",
+      "kana": "あね",
+      "readings": [
+        "あね"
+      ],
+      "meanings": [
+        "older sister"
+      ]
+    },
+    "acceptedMeanings": [
+      "older sister"
+    ]
+  },
+  "漢": {
+    "example": {
+      "word": "漢字",
+      "kana": "かんじ",
+      "readings": [
+        "かんじ"
+      ],
+      "meanings": [
+        "Chinese character"
+      ],
+      "dictionaryId": 1213170
+    }
+  },
+  "坊": {
+    "example": {
+      "word": "寝坊",
+      "kana": "ねぼう",
+      "readings": [
+        "ねぼう"
+      ],
+      "meanings": [
+        "sleeping in late"
+      ],
+      "dictionaryId": 1360320
+    }
+  },
+  "凄": {
+    "example": {
+      "word": "凄い",
+      "kana": "すごい",
+      "readings": [
+        "すごい"
+      ],
+      "meanings": [
+        "terrific"
+      ],
+      "dictionaryId": 1374550
+    },
+    "acceptedMeanings": [
+      "amazing",
+      "terrific"
+    ]
+  },
+  "痩": {
+    "example": {
+      "word": "痩せる",
+      "kana": "やせる",
+      "readings": [
+        "やせる"
+      ],
+      "meanings": [
+        "to become thin"
+      ],
+      "dictionaryId": 1605510
+    },
+    "acceptedMeanings": [
+      "thin",
+      "lose weight"
+    ]
+  },
+  "円": {
+    "example": {
+      "word": "円",
+      "kana": "えん",
+      "readings": [
+        "えん"
+      ],
+      "meanings": [
+        "yen"
+      ]
+    },
+    "cue": "Learn 円 with prices: the Japanese yen.",
+    "acceptedMeanings": [
+      "yen",
+      "circle"
+    ]
+  },
+  "京": {
+    "example": {
+      "word": "東京",
+      "kana": "とうきょう",
+      "readings": [
+        "とうきょう"
+      ],
+      "meanings": [
+        "Tokyo"
+      ]
+    },
+    "acceptedMeanings": [
+      "capital"
+    ]
+  }
+}

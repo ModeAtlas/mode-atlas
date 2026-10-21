@@ -15,13 +15,14 @@
   ];
   function format(value,check){return value===null?'Not recorded':check.unit==='ms'?(value/1000).toFixed(3)+'s':check.percent?value.toFixed(2)+'%':String(value);}
   function checkView(check){
-    const optional=check.optional&&check.value===null,status=optional?'optional':check.met===null?'earlier':check.met?'met':'needed';
+    const optional=check.optional&&check.value===null,status=optional?'optional':check.met===null?(check.required===false&&['accuracy','time'].includes(check.id)?'reference':'earlier'):check.met?'met':'needed';
     const item=el('div','ma-kana-target');item.dataset.status=status;item.dataset.check=check.id;
     const label=el('dt','',check.label),result=el('dd'),value=el('strong','',format(check.value,check));
     // Do not round an unmet result into a number that looks like a pass.
     if(check.met===false&&format(check.value,check)===format(check.target,check))value.textContent=(check.maximum?'> ':'< ')+format(check.target,check);
-    const target=el('span','ma-kana-target-goal',`Target: ${check.maximum?'≤ ':'≥ '}${format(check.target,check)}${check.optional?' when recorded':''}`);
-    const state=el('span','ma-kana-target-state',status==='met'?'✓ Met':status==='needed'?'↑ To build':status==='optional'?'Optional':'Earlier practice');
+    const diagnostic=check.required===false&&['accuracy','time'].includes(check.id);
+    const target=el('span','ma-kana-target-goal',diagnostic?'For reference':`Target: ${check.maximum?'≤ ':'≥ '}${format(check.target,check)}${check.optional?' when recorded':''}`);
+    const state=el('span','ma-kana-target-state',status==='met'?'✓ Met':status==='needed'?'↑ To build':status==='optional'?'Optional':diagnostic?'Does not block mastery':'Earlier practice');
     result.append(value,target,state);item.append(label,result);return item;
   }
   function detail(char){
@@ -43,7 +44,7 @@
       const checks=el('dl','ma-kana-targets');for(const check of guide.checks)checks.append(checkView(check));section.append(checks);
       if(entry.skill==='handwriting')section.append(el('p','ma-kana-muted','Write with the guide hidden and no stroke corrections. Mastered+ needs Read and Recall Mastered too.'));
       else{
-        section.append(el('p','ma-kana-muted','Correct answers with hints do not count as unassisted. Recent results use your last 12 answers.'));
+        section.append(el('p','ma-kana-muted','Correct answers with hints do not count as unassisted. Recent results use your last 24 answers.'));
         if(guide.legacy)section.append(el('p','ma-kana-muted','Earlier practice is checked against accuracy and speed. New answers also build the spaced-review targets.'));
         else if(guide.target>=4){
           let copy='Study days do not need to be consecutive. A correct unassisted answer when this kana is due advances its spaced recall step.';
@@ -60,7 +61,7 @@
   function masteryHelp(){
     const help=el('details','ma-kana-mastery-help');help.append(el('summary','','How mastery works'));
     const familiar=L.requirements.familiar,hand=L.requirements.handwriting[5];
-    const recallRule=stage=>{const r=R.requirements[stage];return `${r.correct} correct, ${r.lifetimeAccuracy*100}% overall accuracy, average ≤ ${r.maxTime/1000}s${stage===2?' when timing is recorded':''}; ${r.attempts} recent unassisted attempts at ${r.accuracy*100}% accuracy, recall on ${r.days} days and ${r.level} spaced steps.`;};
+    const recallRule=stage=>{const r=R.requirements[stage];return `${r.correct} correct; ${r.attempts} recent unassisted attempts at ${r.accuracy*100}% accuracy, recall on ${r.days} days and ${r.level} spaced steps. Overall accuracy and speed are shown for reference.`;};
     const explanations=[
       'No lesson or practice recorded yet.',
       'Met in a lesson. Answer in Read or Recall to start practising.',
@@ -71,7 +72,7 @@
       `Mastered, plus ${hand.correct} clean writes without a guide across ${hand.days} days. Handwriting is optional and has its own row progression.`
     ];
     const list=el('dl','ma-kana-stage-guide');L.labels.forEach((label,i)=>list.append(el('dt','',label),el('dd','',explanations[i])));help.append(list);
-    help.append(el('p','','Recent means the last 12 answers; correct answers with hints are excluded. Spaced steps advance on correct unassisted answers when a review is due, not by repeating quickly. Earned milestones and unlocked rows stay earned. Earlier practice without review history uses accuracy and speed until new answers add that history.'));return help;
+    help.append(el('p','','Recent means the last 24 answers; correct answers with hints are excluded. Spaced steps advance on correct unassisted answers when a review is due, not by repeating quickly. Earned milestones and unlocked rows stay earned. Earlier practice without review history uses accuracy and speed until new answers add that history.'));return help;
   }
   function render(onOpen){
     const state=L.read(),evidence=M.createSnapshot(),wrap=el('div','ma-kana-mastery-map'),counts=Object.fromEntries(L.labels.map(label=>[label,0]));

@@ -224,16 +224,16 @@ test('review schedules cross days and weeks; rapid or assisted repeats do not ac
   const later=r.answer(row,{id:'4',at:row.due,correct:true});assert.equal(later.reviewed,true);assert.equal(later.entry.due-row.due,3*86400000);
   const assisted=r.answer(later.entry,{id:'5',at:later.entry.due,correct:true,assisted:true});assert.equal(assisted.reviewed,false);assert.ok(assisted.entry.level<=1);
 });
-test('mastery requires precise lifetime performance plus sustained independent recall and retains earned milestones',()=>{
+test('mastery uses sustained recent independent recall while lifetime errors and input speed remain diagnostic',()=>{
   const e=load(),r=e.review;let row={};
-  for(let i=0;i<8;i++){const at=Math.max(e.now()+i*86400000,row.due||0);row=r.answer(row,{id:String(i),at,correct:true},{correct:43+i,wrong:0},950).entry;}
-  assert.equal(r.stage(row,{correct:50,wrong:0},950),3);assert.equal(row.peak,3);
-  for(const [correct,wrong,time] of [[52,3,1100],[86,14,1600],[49,0,900],[18999,1001,900],[50,0,1000.001],[50,0,0]])assert.notEqual(r.stage(row,{correct,wrong},time),3,JSON.stringify({correct,wrong,time}));
-  assert.equal(r.stage(row,{correct:57,wrong:3},1000),3,'Exact 95% and 1 second qualify without rounding');
-  assert.equal(r.stage({...row,recent:[],legacy:3},{correct:52,wrong:3},1100),2,'A saved legacy label cannot bypass current evidence');
-  assert.equal(r.stage(row),1,'A spaced schedule without lifetime evidence cannot grant mastery');
-  for(let i=0;i<4;i++)row=r.answer(row,{id:'wrong'+i,at:row.lastSeen+1000,correct:false},{correct:50,wrong:i+1},950).entry;
-  assert.equal(r.stage(row,{correct:50,wrong:4},950),1);assert.equal(row.peak,3);assert.ok(row.recent.length<=12);
+  for(let i=0;i<20;i++){const at=Math.max(e.now()+i*86400000,row.due||0);row=r.answer(row,{id:String(i),at,correct:true},{correct:31+i,wrong:40},1600).entry;}
+  assert.equal(r.stage(row,{correct:50,wrong:40},1600),3);assert.equal(row.peak,3);
+  assert.notEqual(r.stage(row,{correct:49,wrong:0},900),3,'at least 50 correct answers are still required');
+  assert.equal(r.stage(row,{correct:57,wrong:3},1000.00001),3,'typing speed cannot block learned mastery');
+  assert.equal(r.stage({...row,recent:[],legacy:3},{correct:52,wrong:3},1100),2,'a legacy label alone cannot bypass evidence');
+  assert.equal(r.stage(row),1,'a spaced schedule without correct-answer evidence cannot grant mastery');
+  for(let i=0;i<7;i++)row=r.answer(row,{id:'wrong'+i,at:row.lastSeen+1000,correct:false},{correct:50,wrong:i+1},950).entry;
+  assert.equal(r.stage(row,{correct:50,wrong:7},950),1);assert.equal(row.peak,3);assert.ok(row.recent.length<=24);
   assert.equal(r.stage(undefined,{correct:50,wrong:0},{avg:900}),3,'legacy accomplishments remain visible before new evidence');
 });
 test('review evidence merges independent offline answers in both orders',()=>{

@@ -34,7 +34,7 @@
     if(!modes.includes(mode)||!state.allowed(level,current))throw new Error('Complete the previous level to open this one.');
     const band=root.ModeAtlasKanjiCurriculum.find(b=>b.level===level),runId=id(),skill=mode==='pronunciation'?'pronunciation':'meaning';
     let pool=state.studyPool(level,current);
-    if(mode!=='learn')pool=pool.filter(c=>current.lessons[c]||state.introduced(current,c)||state.skills.some(skill=>state.metrics(current,c,skill).attempts));
+    if(mode!=='learn')pool=pool.filter(c=>state.access(current,c)||current.lessons[c]||state.introduced(current,c)||state.skills.some(skill=>state.metrics(current,c,skill).attempts));
     if(chars.length)pool=pool.filter(c=>chars.includes(c));
     if(focus==='due')pool=pool.filter(c=>{const m=state.metrics(current,c,skill);return m.last&&m.due<=Date.now();});
     if(focus==='new'&&mode==='learn')pool=pool.filter(c=>!state.introduced(current,c));
@@ -130,6 +130,7 @@
         write();
       }else{active.feedback=null;active.hinted=false;active.questionElapsed=0;active.lessonPhase='teach';active.lessonFeedback=null;write();}
     });}catch(error){active=before;throw error;}
+    root.ModeAtlasVisitFlows?.recordActivity('kanji');
     if(active.finished)root.ModeAtlasWeekly.finish(active);
     questionStarted=active.finished?0:Date.now();root.dispatchEvent(new CustomEvent('modeAtlasKanjiChanged'));return active;
   }

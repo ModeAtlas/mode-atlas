@@ -5,6 +5,7 @@ async function setup(page,native=false,width=1280,theme='light',experienced=true
   await page.setViewportSize({width,height:900});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
   await page.addInitScript(({native,theme,experienced})=>{
+    localStorage.setItem('modeAtlasBranchToursSeen',JSON.stringify({kana:true,kanji:true,words:true}));
     if(native)window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
     localStorage.setItem('maWhatsNewSeen','kanji');if(!localStorage.getItem('modeAtlasThemePreference'))localStorage.setItem('modeAtlasThemePreference',theme);
@@ -29,7 +30,7 @@ async function finishLesson(page){
   await page.locator('.ma-kanji-choices').getByRole('button',{name:label,exact:true}).click();await page.getByRole('button',{name:answer.last?'Finish set':'Next kanji',exact:true}).click();
 }
 test('guided Kanji teaching checks meaning and pronunciation, then resumes the same small set',async({page})=>{
-  await setup(page,false,1280,'light',false);await ready(page);
+  await setup(page,false,1280,'light',false);await ready(page);await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();
   await expect(page.getByRole('button',{name:'N4 Everyday, locked',exact:true})).toBeDisabled();
   await page.getByRole('button',{name:'Start learning',exact:true}).click();await expect(page.locator('.ma-kanji-glyph')).toHaveText('一');
   await page.getByRole('button',{name:'Show romaji',exact:true}).click();await expect(page.locator('.ma-kanji-focus-reading')).toHaveText('ichi');
@@ -160,4 +161,14 @@ test('Kanji recap celebrates a level gain and lists only the ranks earned in thi
   await expect(page.locator('.ma-session-achievements')).toContainText('Meaning maker');
   await expect(page.locator('.ma-session-achievements')).not.toContainText('First impressions');
   await page.getByRole('button',{name:'Back to Kanji',exact:true}).click();await expect(page.locator('.ma-level-up-card')).toHaveCount(0);
+});
+
+test('Kanji starting-point check grants access without XP or fabricated mastery',async({page})=>{
+  await setup(page,false,393,'light',false);await ready(page);await page.getByRole('button',{name:'Check my starting point',exact:true}).click();
+  for(let i=0;i<8;i++){
+    const item=await page.evaluate(()=>{const q=ModeAtlasKanjiPlacement.question(ModeAtlasKanjiPlacement.read()),c=ModeAtlasKanjiContent;return {skill:q.skill,answer:q.skill==='meaning'?c.get(q.char).meanings[0]:c.romaji(c.pronunciation(c.get(q.char)).answers[0])};});
+    await page.getByLabel(item.skill==='meaning'?'English meaning':'Kana or romaji answer',{exact:true}).fill(item.answer);await page.getByRole('button',{name:'Check answer',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
+  }
+  await expect(page.locator('#maKanjiContent .ma-kicker')).toContainText('N4');await page.getByRole('button',{name:'Finish here',exact:true}).click();
+  await expect(page.getByRole('button',{name:'N4 Everyday',exact:true})).toBeEnabled();expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);expect(await page.evaluate(()=>ModeAtlasKanjiState.summary().every(b=>b.mastered===0))).toBe(true);
 });

@@ -31,97 +31,13 @@ function refreshProfileShell() {
       resultsMeta: document.getElementById('wordBankResultsMeta')
     };
 
-    const baseMap = {
-      'あ':'a','い':'i','う':'u','え':'e','お':'o',
-      'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
-      'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
-      'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
-      'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
-      'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
-      'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
-      'や':'ya','ゆ':'yu','よ':'yo',
-      'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
-      'わ':'wa','を':'wo','ん':'n',
-      'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
-      'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
-      'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do',
-      'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
-      'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
-      'ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o',
-      'ゔ':'vu','ゎ':'wa',
-      'ア':'a','イ':'i','ウ':'u','エ':'e','オ':'o',
-      'カ':'ka','キ':'ki','ク':'ku','ケ':'ke','コ':'ko',
-      'サ':'sa','シ':'shi','ス':'su','セ':'se','ソ':'so',
-      'タ':'ta','チ':'chi','ツ':'tsu','テ':'te','ト':'to',
-      'ナ':'na','ニ':'ni','ヌ':'nu','ネ':'ne','ノ':'no',
-      'ハ':'ha','ヒ':'hi','フ':'fu','ヘ':'he','ホ':'ho',
-      'マ':'ma','ミ':'mi','ム':'mu','メ':'me','モ':'mo',
-      'ヤ':'ya','ユ':'yu','ヨ':'yo',
-      'ラ':'ra','リ':'ri','ル':'ru','レ':'re','ロ':'ro',
-      'ワ':'wa','ヲ':'wo','ン':'n',
-      'ガ':'ga','ギ':'gi','グ':'gu','ゲ':'ge','ゴ':'go',
-      'ザ':'za','ジ':'ji','ズ':'zu','ゼ':'ze','ゾ':'zo',
-      'ダ':'da','ヂ':'ji','ヅ':'zu','デ':'de','ド':'do',
-      'バ':'ba','ビ':'bi','ブ':'bu','ベ':'be','ボ':'bo',
-      'パ':'pa','ピ':'pi','プ':'pu','ペ':'pe','ポ':'po',
-      'ァ':'a','ィ':'i','ゥ':'u','ェ':'e','ォ':'o',
-      'ヴ':'vu','ヮ':'wa'
-    };
-
-    const yoonMap = {
-      'きゃ':'kya','きゅ':'kyu','きょ':'kyo','ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
-      'しゃ':'sha','しゅ':'shu','しょ':'sho','じゃ':'ja','じゅ':'ju','じょ':'jo',
-      'ちゃ':'cha','ちゅ':'chu','ちょ':'cho',
-      'にゃ':'nya','にゅ':'nyu','にょ':'nyo','ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo',
-      'びゃ':'bya','びゅ':'byu','びょ':'byo','ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
-      'みゃ':'mya','みゅ':'myu','みょ':'myo','りゃ':'rya','りゅ':'ryu','りょ':'ryo',
-      'ゔぁ':'va','ゔぃ':'vi','ゔぇ':'ve','ゔぉ':'vo','ゔゅ':'vyu',
-      'シェ':'she','ジェ':'je','チェ':'che','ティ':'ti','ディ':'di','トゥ':'tu','ドゥ':'du',
-      'ファ':'fa','フィ':'fi','フェ':'fe','フォ':'fo','フュ':'fyu',
-      'ウィ':'wi','ウェ':'we','ウォ':'wo',
-      'ヴァ':'va','ヴィ':'vi','ヴェ':'ve','ヴォ':'vo','ヴュ':'vyu',
-      'キャ':'kya','キュ':'kyu','キョ':'kyo','ギャ':'gya','ギュ':'gyu','ギョ':'gyo',
-      'シャ':'sha','シュ':'shu','ショ':'sho','ジャ':'ja','ジュ':'ju','ジョ':'jo',
-      'チャ':'cha','チュ':'chu','チョ':'cho',
-      'ニャ':'nya','ニュ':'nyu','ニョ':'nyo','ヒャ':'hya','ヒュ':'hyu','ヒョ':'hyo',
-      'ビャ':'bya','ビュ':'byu','ビョ':'byo','ピャ':'pya','ピュ':'pyu','ピョ':'pyo',
-      'ミャ':'mya','ミュ':'myu','ミョ':'myo','リャ':'rya','リュ':'ryu','リョ':'ryo'
-    };
-
     let wordBank = loadWordBank();
     let accountRevision = 0;
     const expandedEntries = new Set();
 
-    function loadWordBank() {
-      try {
-        const parsed = window.ModeAtlasStorage.json(STORAGE_KEY, []);
-        if(!Array.isArray(parsed))return [];
-        const ids=new Set();
-        return parsed.flatMap((entry,index)=>{
-          if(!entry||typeof entry!=='object'||typeof entry.kana!=='string')return [];
-          const kana=normalizeKana(entry.kana);if(!kana)return [];
-          let id=typeof entry.id==='string'&&entry.id.length<=128?entry.id:'';
-          if(!id||ids.has(id))id='wb_recovered_'+index;
-          while(ids.has(id))id+='_';ids.add(id);
-          const text=key=>typeof entry[key]==='string'?entry[key]:'';
-          return [{id,kana,romaji:getRomajiForKana(kana),english:text('english'),notes:text('notes'),favorite:entry.favorite===true,
-            createdAt:text('createdAt'),updatedAt:text('updatedAt')}];
-        });
-      } catch {
-        return [];
-      }
-    }
-
-    function saveWordBank(nextWordBank = wordBank) {
-      const store = window.ModeAtlasStorage;
-      if (!store?.setJSON?.(STORAGE_KEY, nextWordBank)) return false;
-
-      wordBank = nextWordBank;
-      if (window.KanaCloudSync?.markSectionUpdated) window.KanaCloudSync.markSectionUpdated('wordBank');
-      else store.now?.('kanaWordBankUpdatedAt');
-      window.KanaCloudSync?.scheduleSync?.();
-      window.ModeAtlasVisitFlows?.recordActivity('wordBank');
-      return true;
+    function loadWordBank(){return window.ModeAtlasWordBank.read();}
+    function saveWordBank(next=wordBank){
+      try{wordBank=window.ModeAtlasWordBank.save(next);return true;}catch{return false;}
     }
 
     function normalizeKana(value) {
@@ -140,69 +56,7 @@ function refreshProfileShell() {
       window.ModeAtlasFeedback?.clearStatus?.(elements.statusMsg);
     }
 
-    function getRomajiForKana(input) {
-      const kana = normalizeKana(input);
-      if (!kana) return '';
-
-      let result = '';
-      let geminate = false;
-
-      for (let i = 0; i < kana.length; i++) {
-        const char = kana[i];
-        const next = kana[i + 1] || '';
-        const pair = char + next;
-
-        if (char === 'っ' || char === 'ッ') {
-          geminate = true;
-          continue;
-        }
-
-        if (char === 'ー') {
-          const lastVowel = getLastVowel(result);
-          if (lastVowel) result += lastVowel;
-          continue;
-        }
-
-        let chunk = '';
-        let consumedPair = false;
-
-        if (yoonMap[pair]) {
-          chunk = yoonMap[pair];
-          consumedPair = true;
-        } else {
-          chunk = baseMap[char] || char;
-        }
-
-        // Keep syllabic n distinct from the next vowel/ya-row syllable.
-        if((char==='ん'||char==='ン')&&/^[aeiouy]/.test(yoonMap[next+(kana[i+2]||'')]||baseMap[next]||next))chunk="n'";
-
-        if (geminate && chunk) {
-          const consonant = getLeadingConsonant(chunk);
-          if (consonant) result += consonant;
-          geminate = false;
-        }
-
-        result += chunk;
-        if (consumedPair) i++;
-      }
-
-      result = result.replace(/nn([bmp])/g, 'n$1');
-      return result;
-    }
-
-    function getLeadingConsonant(chunk) {
-      const match = chunk.match(/^[^aeiou]+/i);
-      if (!match) return '';
-      if (match[0] === 'ch') return 'c';
-      if (match[0] === 'sh') return 's';
-      if (match[0] === 'ts') return 't';
-      return match[0][0] || '';
-    }
-
-    function getLastVowel(text) {
-      const match = text.match(/[aeiou](?!.*[aeiou])/i);
-      return match ? match[0].toLowerCase() : '';
-    }
+    function getRomajiForKana(value){return window.ModeAtlasJapanese.romaji(value);}
 
     function classifyKanaType(kana) {
       if (!kana) return 'mixed';
@@ -217,7 +71,8 @@ function refreshProfileShell() {
       const now = getTimestamp();
       return {
         id: `wb_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        kana,
+        written:kana,
+        reading:document.getElementById('wordReadingInput').value,
         romaji: getRomajiForKana(kana),
         english: '',
         notes: '',
@@ -230,11 +85,11 @@ function refreshProfileShell() {
     function addWord() {
       const kana = normalizeKana(elements.kanaInput.value);
       if (!kana) {
-        showStatus('Enter a kana word first.', 'warning');
+        showStatus('Enter a word first.', 'warning');
         return;
       }
 
-      const existing = wordBank.find(entry => entry.kana === kana);
+      const existing = wordBank.find(entry => entry.written === kana);
       if (existing) {
         showStatus(`"${kana}" is already in your Word Bank.`, 'warning');
         renderEntries(existing.id);
@@ -249,6 +104,7 @@ function refreshProfileShell() {
       }
       expandedEntries.add(entry.id);
       elements.kanaInput.value = '';
+      document.getElementById('wordReadingInput').value='';
       clearStatus();
       showStatus(`Added ${kana} to your Word Bank.`, 'success');
       renderEntries(entry.id);
@@ -260,8 +116,8 @@ function refreshProfileShell() {
       if (index === -1) return;
 
       const next = { ...wordBank[index], ...patch, updatedAt: getTimestamp() };
-      next.kana = normalizeKana(next.kana);
-      next.romaji = getRomajiForKana(next.kana);
+      next.written = normalizeKana(next.written);
+      next.romaji = next.reading?getRomajiForKana(next.reading):'';
       const nextWordBank = wordBank.slice();
       nextWordBank[index] = next;
       if (!saveWordBank(nextWordBank)) {
@@ -278,7 +134,7 @@ function refreshProfileShell() {
       if (!entry) return;
       const confirmed = await window.ModeAtlasFeedback?.confirm?.({
         kicker: 'Word Bank',
-        title: `Delete ${entry.kana}?`,
+        title: `Delete ${entry.written}?`,
         message: 'This removes the word from your Word Bank. This action cannot be undone.',
         confirmLabel: 'Delete word',
         cancelLabel: 'Keep word',
@@ -291,7 +147,7 @@ function refreshProfileShell() {
         return;
       }
       renderEntries();
-      showStatus(`Deleted ${entry.kana}.`, 'success');
+      showStatus(`Deleted ${entry.written}.`, 'success');
     }
 
     async function clearAllWords() {
@@ -325,8 +181,8 @@ function refreshProfileShell() {
       const filter = elements.filterSelect.value;
 
       let items = wordBank.filter(entry => {
-        const type = classifyKanaType(entry.kana);
-        const matchesQuery = !query || [entry.kana, entry.romaji, entry.english, entry.notes]
+        const type = classifyKanaType(entry.written);
+        const matchesQuery = !query || [entry.written, entry.romaji, entry.english, entry.notes]
           .join(' ')
           .toLowerCase()
           .includes(query);
@@ -346,8 +202,8 @@ function refreshProfileShell() {
         if (sort === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
         if (sort === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
         if (sort === 'updated') return new Date(b.updatedAt) - new Date(a.updatedAt);
-        if (sort === 'kanaAZ') return a.kana.localeCompare(b.kana, 'ja');
-        if (sort === 'kanaZA') return b.kana.localeCompare(a.kana, 'ja');
+        if (sort === 'kanaAZ') return a.written.localeCompare(b.written, 'ja');
+        if (sort === 'kanaZA') return b.written.localeCompare(a.written, 'ja');
         if (sort === 'romajiAZ') return a.romaji.localeCompare(b.romaji);
         if (sort === 'englishAZ') return (a.english || '').localeCompare(b.english || '');
         return 0;
@@ -453,7 +309,7 @@ function refreshProfileShell() {
     function makeEntryCard(entry) {
       const entryId = String(entry.id || "");
       const safeId = safeEntryDomId(entryId);
-      const type = classifyKanaType(entry.kana);
+      const type = classifyKanaType(entry.written);
       const englishMissing = !String(entry.english || "").trim();
       const isExpanded = expandedEntries.has(entryId);
 
@@ -467,7 +323,7 @@ function refreshProfileShell() {
 
       const main = createEl("div", "card-summary-main");
       const wordLine = createEl("div", "wordbank-word-line");
-      wordLine.append(createEl("div", "kana", entry.kana || ""));
+      wordLine.append(createEl("div", "kana", entry.written || ""));
       if (entry.favorite) {
         const favouriteMark = createEl("span", "wordbank-favourite-mark");
         favouriteMark.title = "Favourite";
@@ -512,10 +368,14 @@ function refreshProfileShell() {
       const fields = createEl("div", "fields");
       const fieldGrid = createEl("div", "field-grid");
       fieldGrid.append(
-        makeTextInput({ id: `kana-${safeId}`, label: "Kana", value: entry.kana, field: "kana", entryId }),
+        makeTextInput({ id: `kana-${safeId}`, label: "Word", value: entry.written, field: "written", entryId }),
         makeTextInput({ id: `english-${safeId}`, label: "English", value: entry.english, field: "english", entryId, placeholder: "Add meaning now or later" })
       );
 
+      fieldGrid.append(
+        makeTextInput({id:`reading-${safeId}`,label:'Reading (kana)',value:entry.reading,field:'reading',entryId,placeholder:'e.g. にほん'}),
+        makeTextInput({id:`example-${safeId}`,label:'Example',value:entry.example,field:'example',entryId,placeholder:'A phrase or sentence you met'})
+      );
       const notesGrid = createEl("div", "field-grid single");
       const notesWrap = createEl("div", "field-small ma-field");
       const notesLabel = document.createElement("label");
@@ -552,7 +412,7 @@ function refreshProfileShell() {
       del.dataset.action = "delete";
       del.dataset.id = entryId;
       del.title = "Delete word";
-      del.setAttribute("aria-label", `Delete ${entry.kana || 'word'}`);
+      del.setAttribute("aria-label", `Delete ${entry.written || 'word'}`);
       del.append(createIcon("delete"));
       inline.append(save, del);
       actions.append(inline);
@@ -616,7 +476,7 @@ function refreshProfileShell() {
       window.ModeAtlasDialog?.feature?.({
         kicker: 'Word Bank',
         title: 'Add word',
-        message: 'Enter kana first. Mode Atlas saves the word immediately and generates its romaji.',
+        message:'Save a word you met. Add its reading and meaning whenever you’re ready.',
         contentNode: elements.addPanel,
         dismissOnBackdrop: true
       });
@@ -632,9 +492,11 @@ function refreshProfileShell() {
       });
     }
 
+    document.getElementById('wordBankReviewBtn').addEventListener('click',()=>window.ModeAtlasWordReview.open());
     elements.addJumpBtn?.addEventListener('click', openAddWordDialog);
     elements.actionsBtn?.addEventListener('click', openCollectionActionsDialog);
 
+    document.getElementById('wordBankReviewBtn').addEventListener('click',()=>window.ModeAtlasWordReview.open());
     elements.addWordBtn.addEventListener('click', addWord);
     elements.kanaInput.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' || event.isComposing || event.keyCode === 229) return;
@@ -645,6 +507,7 @@ function refreshProfileShell() {
     elements.addWordBtn.setAttribute('aria-disabled', 'false');
     elements.clearInputBtn.addEventListener('click', () => {
       elements.kanaInput.value = '';
+      document.getElementById('wordReadingInput').value='';
       clearStatus();
       });
 
@@ -681,16 +544,16 @@ function refreshProfileShell() {
 
       if (action === 'save') {
         const row=button.closest('.wordbank-entry');
-        const kanaField = row.querySelector('[data-field="kana"]');
+        const kanaField = row.querySelector('[data-field="written"]');
         const englishField = row.querySelector('[data-field="english"]');
         const notesField = row.querySelector('[data-field="notes"]');
         const nextKana = normalizeKana(kanaField?.value || '');
         if (!nextKana) {
-          showStatus('Kana cannot be empty.', 'error');
+          showStatus('The word cannot be empty.', 'error');
           return;
         }
 
-        const duplicate = wordBank.find(entry => entry.id !== id && entry.kana === nextKana);
+        const duplicate = wordBank.find(entry => entry.id !== id && entry.written === nextKana);
         if (duplicate) {
           showStatus(`Cannot save. "${nextKana}" already exists in your Word Bank.`, 'error');
           renderEntries(duplicate.id);
@@ -698,7 +561,9 @@ function refreshProfileShell() {
         }
 
         const saved = updateEntry(id, {
-          kana: nextKana,
+          written:nextKana,
+          reading:row.querySelector('[data-field="reading"]').value,
+          example:row.querySelector('[data-field="example"]').value,
           english: (englishField?.value || '').trim(),
           notes: (notesField?.value || '').trim()
         });

@@ -8,6 +8,7 @@ SOURCES = (
     "assets/data/mode-atlas-kanji-data.js",
     "assets/app/mode-atlas-kanji-state.js",
     "assets/app/mode-atlas-kanji-content.js",
+    "assets/app/mode-atlas-japanese.js",
     "assets/app/mode-atlas-social-config.js",
     "assets/app/mode-atlas-social-identity.js",
     "assets/app/mode-atlas-avatar-rules.js",

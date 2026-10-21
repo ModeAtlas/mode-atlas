@@ -21,7 +21,7 @@
     const isOn=entry.on.some(v=>content.hira(v)===plain),isKun=entry.kun.some(v=>content.hira(v.replace(/[.-]/g,''))===plain);
     const kind=isKun?'kun':isOn?'on':'word';
     return {word:pronunciation.prompt,reading,meaning:entry.meanings[0],gloss:entry.example?.meanings[0]||entry.meanings[0],kind,
-      cue:cues[entry.char]?.[0]||`Find ${entry.char} inside ${pronunciation.prompt}. Say the whole word, then connect it with “${entry.example?.meanings[0]||entry.meanings[0]}”.`,
+      cue:entry.cue||cues[entry.char]?.[0]||`Find ${entry.char} inside ${pronunciation.prompt}. Say the whole word, then connect it with “${entry.example?.meanings[0]||entry.meanings[0]}”.`,
       japanese:cues[entry.char]?.[1]||`「${reading}」を こえに だして、かんじと いみを おぼえましょう。`};
   }
   function choices(char,phase,seed){

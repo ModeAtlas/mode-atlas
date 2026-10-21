@@ -5,6 +5,7 @@ Only dictionary data and one example word per character enter the runtime.
 No sentence corpus, name readings or third-party application code is shipped.
 """
 from argparse import ArgumentParser
+from kanji_lessons import curate
 from pathlib import Path
 import hashlib
 import json
@@ -41,13 +42,14 @@ def build(source: Path):
                 example = {'word': w['word'], 'kana': w['reading'], 'readings': readings, 'meanings': w['meanings']}
             meanings = [m for m in row['meanings'] if not re.search(r'radical \(no\.|Kangxi radical', m, re.I)] or row['meanings']
             records.append({'char': char, 'level': int(level), 'strokes': row['strokes'], 'on': row.get('onyomi', []), 'kun': row.get('kunyomi', []), 'meanings': meanings, 'example': example})
+    records = curate(records)
     prefix = '/* Derived from OpenJLPT / EDRDG / Jonathan Waller. CC BY-SA 4.0. See /assets/data/kanji-NOTICE.txt. */\n'
     def module(name, payload):
         return prefix + f"(function(root,factory){{if(typeof module==='object'&&module.exports)module.exports=factory();else root.{name}=factory();}})(typeof window==='undefined'?globalThis:window,function(){{'use strict';return " + json.dumps(payload, ensure_ascii=False, separators=(',', ':')) + ';});\n'
     data = ROOT / 'assets/data'
     data.mkdir(exist_ok=True)
     (data / 'mode-atlas-kanji-data.js').write_text(module('ModeAtlasKanjiData', records))
-    curriculum = [{'level': int(n), 'name': {5:'Foundations',4:'Everyday',3:'Connections',2:'Fluency',1:'Advanced'}[int(n)], 'chars': ''.join(r['character'] for r in rows)} for n, rows in bands.items()]
+    curriculum = [{'level': int(n), 'name': {5:'Foundations',4:'Everyday',3:'Connections',2:'Expansion',1:'Advanced'}[int(n)], 'chars': ''.join(r['character'] for r in rows)} for n, rows in bands.items()]
     curriculum[0]['intro'] = '一二三人日月木山川水'
     (data / 'mode-atlas-kanji-curriculum.js').write_text(module('ModeAtlasKanjiCurriculum', curriculum))
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=source, text=True).strip()

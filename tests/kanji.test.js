@@ -10,7 +10,7 @@ function load({experienced=true}={}){
   class Clock extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
   const root={setTimeout:()=>0,clearTimeout(){},Date:Clock,console,localStorage,sessionStorage:localStorage,structuredClone,TextEncoder,TextDecoder,Blob,CompressionStream,DecompressionStream,btoa,atob,crypto:{randomUUID:()=>`kanji-test-${++serial}`},CustomEvent:class{constructor(type){this.type=type;}},document:{addEventListener(){}},addEventListener:(type,cb)=>{const list=listeners.get(type)||[];list.push(cb);listeners.set(type,list);},dispatchEvent:event=>{for(const cb of listeners.get(event.type)||[])cb(event);},ModeAtlasWeekly:{start(){},answer(){},finish(){}}};root.window=root;root.self=root;
   const context=vm.createContext(root);
-  for(const name of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-reward-rules','app/mode-atlas-progress','data/mode-atlas-kana-data','data/mode-atlas-kanji-curriculum','data/mode-atlas-kanji-data','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-content','app/mode-atlas-kanji-results','app/mode-atlas-kanji-teaching','app/mode-atlas-kanji-session'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',name+'.js'),'utf8'),context);
+  for(const name of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-reward-rules','app/mode-atlas-progress','data/mode-atlas-kana-data','app/mode-atlas-japanese','data/mode-atlas-kanji-curriculum','data/mode-atlas-kanji-data','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-content','app/mode-atlas-kanji-results','app/mode-atlas-kanji-teaching','app/mode-atlas-kanji-session'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',name+'.js'),'utf8'),context);
   if(experienced){const s=root.ModeAtlasKanjiState.read();for(const c of root.ModeAtlasKanjiCurriculum[0].chars){s.lessons[c]=now;s.introductions[c]=now;}root.ModeAtlasKanjiState.save(s);}
   return {root,values,now:()=>now,advance:ms=>now+=ms,fail:()=>fail=true,state:root.ModeAtlasKanjiState,content:root.ModeAtlasKanjiContent,session:root.ModeAtlasKanjiSession,progress:root.ModeAtlasProgress};
 }
@@ -24,10 +24,10 @@ test('licensed curriculum covers five distinct levels with valid prompts and ans
   for(const entry of entries){
     assert.equal(e.state.levels.get(entry.char),entry.level);assert.ok(entry.meanings.length);
     const prompt=e.content.pronunciation(entry);assert.ok(prompt.prompt&&prompt.answers.length,entry.char);
-    for(const answer of prompt.answers)assert.ok(e.content.grade(entry.char,'pronunciation',answer),entry.char+answer);
+    for(const answer of prompt.answers){assert.ok(e.content.grade(entry.char,'pronunciation',answer),entry.char+answer);assert.ok(e.content.grade(entry.char,'pronunciation',e.content.romaji(answer)),entry.char+e.content.romaji(answer));}
     assert.ok(e.content.grade(entry.char,'meaning',entry.meanings[0]),entry.char);
     if('水日土木人学大小川女'.includes(entry.char)){const choices=e.content.choices(entry.char,'curriculum');assert.equal(choices.filter(answer=>e.content.grade(entry.char,'match',answer)).length,1,entry.char);}
-    if(entry.example){assert.ok(/^[ぁ-ゖー]+$/.test(entry.example.kana),entry.char);for(const c of entry.example.word)if(e.state.levels.has(c))assert.ok(e.state.levels.get(c)>=entry.level,entry.char);}
+    if(entry.example){assert.ok(/^[ぁ-ゖー]+$/.test(entry.example.kana),entry.char);assert.ok(entry.example.word.includes(entry.char),entry.char);}
   }
 });
 

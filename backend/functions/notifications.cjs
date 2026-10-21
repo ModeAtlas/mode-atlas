@@ -1,4 +1,5 @@
 'use strict';
+const {readSave}=require('./account-data.cjs');
 const {createHash,randomUUID}=require('node:crypto');
 const {FieldPath}=require('firebase-admin/firestore');
 const {HttpsError}=require('firebase-functions/v2/https');
@@ -71,7 +72,7 @@ function createNotifications({db,messaging,weekly,now=Date.now}){
       if(!notice.kind&&!['dailyGoals','weeklyGoals','streak'].some(key=>value.preferences?.[key]))return [];
       if(!notice.kind){
         const [save,wallet]=await tx.getAll(db.doc(`users/${uid}/appData/kanaTrainer`),db.doc('commerceAccounts/'+uid));
-        const fresh=evening(save.data(),value.preferences,value.timeZone,now(),value.schedule,wallet.data());
+        const fresh=evening((await readSave(tx,save)),value.preferences,value.timeZone,now(),value.schedule,wallet.data());
         if(!fresh)return [];notice=fresh;
       }
       notice.expiresAt=Math.min(notice.expiresAt,timing.expiresAt(now(),value.timeZone,value.schedule,!notice.kind));
@@ -95,7 +96,7 @@ function createNotifications({db,messaging,weekly,now=Date.now}){
   async function inspect(uid){
     const ref=accounts.doc(uid),settings=(await ref.get()).data();if(!settings?.enabled)return;
     const at=now(),[save,wallet]=await db.getAll(db.doc(`users/${uid}/appData/kanaTrainer`),db.doc('commerceAccounts/'+uid));
-    const notice=evening(save.data(),settings.preferences,settings.timeZone,at,settings.schedule,wallet.data());
+    const notice=evening((await readSave(db,save)),settings.preferences,settings.timeZone,at,settings.schedule,wallet.data());
     if(notice)await send(uid,notice);
     if(!settings.preferences.overtaken)return;
     const period=weeklyRules.period(at),place=await weekly.rank(uid,period.id),previous=settings.rank;

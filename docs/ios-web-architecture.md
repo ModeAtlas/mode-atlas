@@ -102,12 +102,13 @@ merging or overwriting data. Native Apple sign-in requires the Apple capability
 for `app.modeatlas` on the signing team and Apple enabled in Firebase Auth. The
 app project contains the entitlement and provider integration; account and
 data deletion use the shared Firebase JS session. Account deletion reauthenticates,
-removes the one app-data document, revokes a fresh Apple authorization when
-applicable, then deletes the Auth user; if Auth deletion
-fails, it restores the document while the user is still signed in. This is a
-client-side sequence, not an atomic server transaction; a production rollout
-should verify Firestore delete permissions and Apple credential revocation on a
-real signed device before App Store submission.
+revokes Apple authorization when applicable, and calls the server deletion owner.
+An account-deletion barrier prevents new writes while recursive account data,
+partitioned save parts, social connections, commerce and study receipts are removed.
+Cleanup is retryable after the Auth user is deleted; the client clears its local
+account state and signs out. Physical-device verification of provider revocation,
+offline transitions and shared-device cleanup remains a release acceptance check.
+
 
 ## Current navigation tradeoff
 

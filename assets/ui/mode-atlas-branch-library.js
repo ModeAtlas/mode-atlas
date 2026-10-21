@@ -2,11 +2,7 @@
    Destinations enter the real branch controllers; this module owns no progress. */
 (function(root){
   'use strict';
-  const branches=Object.freeze([
-    {id:'kana',name:'Kana',href:'/kana/',description:'Connect shapes and sounds.',detail:'Read · Recall · Handwrite',action:'Kana learning path'},
-    {id:'kanji',name:'Kanji',href:'/kanji/',description:'Build a world of meaning.',detail:'Learn · Recognise · Remember',action:'Open Kanji'},
-    {id:'words',name:'Word Bank',href:'/wordbank/',description:'Your Japanese, collected.',detail:'Words · Examples · Your notes',action:'Open Word Bank'}
-  ]);
+  const branches=root.ModeAtlasBranches.items;
   function render(host,{compact=false}={}){
     if(!host)return;
     host.replaceChildren();host.className='ma-branch-library'+(compact?' ma-branch-library--compact':'');

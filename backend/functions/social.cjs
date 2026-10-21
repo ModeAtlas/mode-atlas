@@ -1,4 +1,6 @@
 'use strict';
+const {readSave}=require('./account-data.cjs');
+const {createEarnings}=require('./study-earnings.cjs');
 const {randomBytes,randomUUID,createHash}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
 const {projectSave,publicProfile,rankProfiles,PROJECTION_VERSION}=require('./projection.cjs');
@@ -66,7 +68,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
   const staff=createStaff({db,auth,now});
   const moderation=createModeration({db,identities,staff,now});
   const rewards=createRewards({db,now});
-  const commerce=createCommerce({db,auth,now});
+  const commerce=createCommerce({db,auth,now}),earnings=createEarnings({db,now});
   const avatars=createAvatars({db,identities,now});
   const weekly=createWeekly({db,now,commerce});
   const notifications=createNotifications({db,messaging,weekly,now});
@@ -107,7 +109,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
       if(existing.exists && existing.data().uid!==uid)fail('aborted','Please try creating your code again.');
       const commitName=await identities.claim(tx,uid,profile,account.profile);
       const rewardAccess=await rewards.read(user,tx);
-      const summary=projectSave(save.data(),profile.timeZone,save.updateTime?.toMillis()||0,rewardAccess);
+      const summary=projectSave((await readSave(tx,save)),profile.timeZone,save.updateTime?.toMillis()||0,rewardAccess);
       const avatar=await avatars.prepare(tx,user,{avatar:profile.avatar,displayName:profile.displayName,...(profile.greeting===undefined?{}:{greeting:profile.greeting}),...(data.character===undefined?{}:{character:data.character}),...(data.avatarRevision===undefined?{}:{revision:data.avatarRevision})},{legacy:account.profile,level:summary.level,access:rewardAccess});
       delete profile.avatarURL;Object.assign(profile,avatar.profile);avatar.commit();
       commitName();
@@ -222,7 +224,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
       // Only policy/access migrations need to rebuild it on this read path.
       if(a.summary?.projectionVersion!==PROJECTION_VERSION||!a.rewardAccess||rewards.key(a.rewardAccess)!==rewards.key(access)){
         const save=await tx.get(saveRef(uid)),syncedAt=save.updateTime?.toMillis()||0;
-        a.rewardAccess=access;a.summary=projectSave(save.data(),a.profile.timeZone,syncedAt,access);
+        a.rewardAccess=access;a.summary=projectSave((await readSave(tx,save)),a.profile.timeZone,syncedAt,access);
         tx.update(doc.ref,{rewardAccess:access,summary:a.summary});
       }
       const profile=publicProfile(uid,a,now());profile.role=role;rewards.sanitize(profile,access);
@@ -243,6 +245,14 @@ function createSocial({db,auth,messaging,now=Date.now}){
         ids=found.docs.map(doc=>doc.data().members.find(id=>id!==uid)).sort();
       }else ids=keys(a[kind==='rankings'?'friends':kind]).sort();
       if(kind==='rankings')ids=[uid,...ids];
+      const total=ids.length;
+      let nextCursor=null;
+      if(kind!=='rankings'){
+        if(data.cursor!=null&&(typeof data.cursor!=='string'||!ids.includes(data.cursor)))fail('invalid-argument','Refresh the list to continue.');
+        const start=data.cursor?ids.indexOf(data.cursor)+1:0;
+        const page=ids.slice(start,start+LIMITS.page);
+        nextCursor=start+page.length<ids.length?page.at(-1):null;ids=page;
+      }
       const docs=ids.length?await tx.getAll(...ids.map(accountRef)):[];
       let profiles=docs.flatMap(doc=>{
         const b=doc.data();
@@ -257,13 +267,13 @@ function createSocial({db,auth,messaging,now=Date.now}){
       else profiles.sort((a,b)=>a.displayName.localeCompare(b.displayName,'en')||a.uid.localeCompare(b.uid,'en'));
       const visible=new Set(profiles.map(row=>row.uid));
       const stale=kind==='friends'||kind==='rankings'?docs.filter(doc=>visible.has(doc.id)&&doc.data().summary?.projectionVersion!==PROJECTION_VERSION).map(doc=>doc.id):[];
-      return {response:{...slicePage(profiles,data.cursor),total:profiles.length,metric},stale};
+      return {response:{...(kind==='rankings'?slicePage(profiles,data.cursor):{rows:profiles,nextCursor}),total,metric},stale};
     });
     if(result.stale.length){
-      // Only a policy migration loads private saves. Normal list requests retain
-      // their original read cost; migrations use bounded, separate transactions.
-      for(let i=0;i<result.stale.length;i+=10)await Promise.all(result.stale.slice(i,i+10).map(id=>refreshSummary(id,null,{cachedAccess:true})));
-      return list(uid,data);
+      // Queue migrations; a list request never rebuilds friends' private saves.
+      const batch=db.batch();
+      for(const id of result.stale)batch.set(db.doc('socialProjectionQueue/'+id),{at:now()});
+      await batch.commit();
     }
     return result.response;
   }
@@ -292,7 +302,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
       const syncedAt=save.updateTime?.toMillis()||0;
       const rewardAccess=cachedAccess?a.rewardAccess||{}:await rewards.read(user,tx);
       if(a.summary?.projectionVersion===PROJECTION_VERSION&&a.summary?.syncedAt===syncedAt&&a.rewardAccess&&rewards.key(a.rewardAccess)===rewards.key(rewardAccess))return;
-      tx.update(ref,{rewardAccess,summary:projectSave(save.data(),a.profile.timeZone,syncedAt,rewardAccess)});
+      tx.update(ref,{rewardAccess,summary:projectSave((await readSave(tx,save)),a.profile.timeZone,syncedAt,rewardAccess)});
     });
   }
   async function beginErase(uid){
@@ -345,7 +355,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     const id=await beginErase(uid);await weekly.syncAccount(uid);await cleanup(uid,id);
     // Opting out must not reset rate limits. Auth deletion removes them too.
     if(deletedAccount && validUid(uid)){
-      await Promise.all([weekly.erase(uid),notifications.erase(uid),rewards.erase(uid),commerce.erase(uid),avatars.erase(uid),staff.erase(uid),db.doc('socialWarnings/'+uid).delete(),limits.doc(uid).delete(),db.doc('socialRestrictions/'+uid).delete(),db.doc('socialReportLimits/'+uid).delete()]);
+      await Promise.all([weekly.erase(uid),notifications.erase(uid),rewards.erase(uid),commerce.erase(uid),avatars.erase(uid),staff.erase(uid),db.doc('socialWarnings/'+uid).delete(),limits.doc(uid).delete(),db.doc('socialRestrictions/'+uid).delete(),db.doc('socialReportLimits/'+uid).delete(),db.doc('socialProjectionQueue/'+uid).delete()]);
       for(const field of ['target','reporter'])while(true){
         const found=await db.collection('socialReports').where(field,'==',uid).limit(100).get();if(found.empty)break;
         const batch=db.batch();found.docs.forEach(doc=>batch.delete(doc.ref));await batch.commit();
@@ -362,7 +372,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['avatarState','avatarUpdate','shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
+    const actions=['earnStudy','avatarState','avatarUpdate','shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
     if(['rewards','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
     if(action==='state'){
@@ -372,6 +382,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     const createdAt=Date.parse(user.metadata?.creationTime)||0;
     await limit(uid,action,createdAt);
     if(['avatarState','avatarUpdate','updateProfile','shop','shopPurchase','shopDeveloper','state'].includes(action))await rewards.retainEquipped(user);
+    if(action==='earnStudy'){const result=await earnings.submit(uid,data);await commerce.awardLevels(uid,user);return result;}
     if(action==='rewards')return rewards.read(user);
     if(action==='avatarState'||action==='avatarUpdate'){
       if(action==='avatarUpdate'&&data.displayName!==undefined)await identities.ensureReady();
@@ -423,6 +434,8 @@ function createSocial({db,auth,messaging,now=Date.now}){
   return {call,refreshSummary,beginErase,cleanup,erase,
     refreshCompetition:weekly.syncAccount,
     maintainEngagement:async()=>{
+      const queued=await db.collection('socialProjectionQueue').orderBy('at').limit(20).get();
+      for(const row of queued.docs){await refreshSummary(row.id,null,{cachedAccess:true});await row.ref.delete();}
       const results=await Promise.allSettled([commerce.backfillLevels(),(async()=>{await weekly.maintain();await notifications.maintain();})()]);
       const failures=results.filter(result=>result.status==='rejected');if(failures.length)throw new AggregateError(failures.map(result=>result.reason),'Engagement maintenance needs a retry.');
     }};

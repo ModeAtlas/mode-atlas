@@ -29,10 +29,10 @@
   const hasObj=k=>{const v=j(k,null);return v&&typeof v==='object'&&!Array.isArray(v)&&Object.keys(v).length>0};
   const hasArr=k=>{const v=j(k,null);return Array.isArray(v)&&v.length>0};
   const studyDate=(d=new Date())=>{const x=new Date(d);if(x.getHours()<4)x.setDate(x.getDate()-1);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
-  const BRANCH_PATHS=new Set(['/kana/','/reading/','/writing/','/results/','/wordbank/']);
+  const BRANCH_PATHS=new Set(['/kana/','/reading/','/writing/','/results/','/wordbank/','/kanji/']);
   const onboardingComplete=()=>storeGet(K.complete)==='true'||storeGet(K.first)==='true';
   function branchDestination(raw){try{const u=new URL(raw||location.href,location.origin);return u.origin===location.origin&&BRANCH_PATHS.has(u.pathname)?u.pathname+u.search+u.hash:''}catch{return''}}
-  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/writing/'))return'Kana Recall';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Read';return'Kana Trainer'}
+  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/kanji/'))return'Kanji';if(p.startsWith('/writing/'))return'Kana Recall';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Read';return'Kana Trainer'}
   function needsSetup(raw){return !onboardingComplete()}
   function vEl(tag, className='', text=''){const el=document.createElement(tag);if(className)el.className=className;if(className==='ma-visit-title')el.id='maVisitTitle';if(text!=='')el.textContent=String(text);return el}
   function vBtn(className='', text=''){const btn=vEl('button',className,text);btn.type='button';return btn}
@@ -45,10 +45,10 @@
   // Activity is recorded by successful study/word-bank actions, never inferred
   // from a click, document load or background snapshot refresh.
   function recordActivity(kind){
-    if(!['reading','writing','wordBank'].includes(kind))return;
-    const obj=kind==='wordBank'
-      ? {branch:'Word Bank',page:'Word Bank',href:'wordbank.html',mode:'Vocabulary Review'}
-      : {branch:'Kana Trainer',page:kind==='writing'?'Recall':'Read',href:kind==='writing'?'reverse.html':'default.html',mode:mode(kind)};
+    if(!['reading','writing','wordBank','kanji'].includes(kind))return;
+    const obj=kind==='kanji'?{branchId:'kanji',branch:'Kanji',page:'Kanji',href:'/kanji/',mode:'Learn and recall'}:kind==='wordBank'
+      ? {branchId:'words',branch:'Word Bank',page:'Word Bank',href:'/wordbank/',mode:'Vocabulary Review'}
+      : {branchId:'kana',branch:'Kana Trainer',page:kind==='writing'?'Recall':'Read',href:kind==='writing'?'reverse.html':'default.html',mode:mode(kind)};
     storeSet(K.lastStudied,String(Date.now()));
     storeSetJSON(K.lastMode,obj);
     window.dispatchEvent(new CustomEvent('modeAtlasActivityChanged'));
@@ -195,6 +195,7 @@
     if(!current){if(onboardingComplete()&&hasData())streak();return;}
     if(needsSetup(current)){visitDecisionMade=true;return first(current);}
     if(hasData())streak();
+    visitDecisionMade=true;void window.ModeAtlasTour?.offer(window.ModeAtlasBranches.current());
   }
   function triggerFirst(){storeRemove(K.forceFirst);sessionStorage.removeItem(K.forceFirst);first(branchDestination(location.href)||'/kana/',{force:true})}
   function triggerReturn(){storeRemove(K.forceReturn);sessionStorage.removeItem(K.forceReturn);if(page()==='index.html')ret();else{sessionStorage.setItem(K.forceReturn,'1');navigateApp('/?devReturn=1')}}
@@ -216,7 +217,7 @@
   }
   function showTour(){window.ModeAtlasTour?.start();}
   function maybeTour(){if(sessionStorage.getItem('modeAtlasTourPending')==='1'&&!document.querySelector('#maVisitModal.open'))showTour();}
-  document.addEventListener('click',event=>{if(event.target.closest?.('[data-ma-tour]')){event.preventDefault();showTour();}});
+  document.addEventListener('click',event=>{if(event.target.closest?.('[data-ma-tour]')){event.preventDefault();window.ModeAtlasTour?.choose();}});
   document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(maybeTour),{once:true});
   function init(){document.addEventListener('click',gateLink);maybe();window.addEventListener('kanaCloudSyncStatusChanged',maybe);document.addEventListener('ma:ui-refresh',maybe)} if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

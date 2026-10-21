@@ -16,6 +16,7 @@
     changed:()=>root.dispatchEvent(new CustomEvent('modeAtlasShopChanged'))});
   root.ModeAtlasShop=owner;
   root.addEventListener('modeAtlasAccountWillChange',owner.clear);
+  root.addEventListener('modeAtlasEarningsChanged',()=>void owner.refresh(true));
   root.addEventListener('modeAtlasAccountSignedOut',owner.clear);
   for(const event of ['kanaCloudSyncStatusChanged','modeAtlasCloudDataChanged','online','pageshow'])root.addEventListener(event,()=>{void owner.refresh();});
   root.addEventListener('modeAtlasAppStateChanged',event=>{if(event.detail.isActive)void owner.refresh();});

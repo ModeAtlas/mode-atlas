@@ -1,4 +1,5 @@
 'use strict';
+const {readSave}=require('./account-data.cjs');
 // Private account entitlements. Client saves and token email never award access.
 const {createHash}=require('node:crypto');
 const {isAdmin}=require('./identity.cjs');
@@ -32,7 +33,7 @@ function createRewards({db,now=Date.now}){
     await db.runTransaction(async tx=>{
       const [awards,avatar,social,save,deleting,deleted]=await tx.getAll(ref,db.doc('avatarProfiles/'+user.uid),db.doc('socialAccounts/'+user.uid),db.doc('users/'+user.uid+'/appData/kanaTrainer'),db.doc('accountDeletions/'+user.uid),db.doc('socialDeleted/'+createHash('sha256').update(user.uid).digest('hex')));
       if(awards.data()?.wardrobeMigration===1||deleting.exists||deleted.exists&&(Date.parse(user.metadata?.creationTime)||0)<=deleted.data().at)return;
-      const record=awards.data()||{},granted={...(record.grants||{})},look=avatar.data()?.character||social.data()?.profile?.character,level=levelFromSave(save.data());
+      const record=awards.data()||{},granted={...(record.grants||{})},look=avatar.data()?.character||social.data()?.profile?.character,level=levelFromSave((await readSave(tx,save)));
       if(characters.valid(look))for(const [slot,type]of Object.entries(characters.slots)){
         const item=rules.item(type,look[slot]);
         if(item?.legacyLevel&&level>=item.legacyLevel&&!Object.hasOwn(granted,item.grant))granted[item.grant]={awardedAt:now(),source:'equipped-migration'};
