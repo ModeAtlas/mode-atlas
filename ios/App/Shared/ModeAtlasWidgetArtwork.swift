@@ -38,8 +38,10 @@ enum ModeAtlasWidgetArtwork {
     }
     static func prune(keeping key: String?, in container: URL?) {
         guard let container, let files = try? FileManager.default.contentsOfDirectory(at: container, includingPropertiesForKeys: nil) else { return }
-        let keep = url(for: key, in: container)
-        for file in files where file.lastPathComponent.hasPrefix(prefix) && file.pathExtension == "png" && file != keep {
+        let keep = url(for: key, in: container)?.lastPathComponent
+        // Directory enumeration can return absolute URLs while appending a
+        // component retains a base URL. Compare the owned filename, not URL form.
+        for file in files where file.lastPathComponent.hasPrefix(prefix) && file.pathExtension == "png" && file.lastPathComponent != keep {
             try? FileManager.default.removeItem(at: file)
         }
     }

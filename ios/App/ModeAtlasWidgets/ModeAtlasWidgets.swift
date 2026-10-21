@@ -34,6 +34,7 @@ struct StudyProvider: TimelineProvider {
 // The avatar is decoded once per timeline, never once per entry or text update.
 struct StudyWidgetCard: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: StudyEntry
     let family: WidgetFamily
     private var blue: Color { colorScheme == .dark ? Color(hex: 0x9bc0ff) : Color(hex: 0x245fce) }
@@ -41,10 +42,12 @@ struct StudyWidgetCard: View {
     private var flame: Color { colorScheme == .dark ? Color(hex: 0xf0c977) : Color(hex: 0xb45d12) }
     private let hero = Color(hex: 0x243f81)
     private let mint = Color(hex: 0xb8f3dd)
+    private var heroSurface: Color { renderingMode == .fullColor ? hero : Color.primary.opacity(0.10) }
+    private var heroText: Color { renderingMode == .fullColor ? .white : .primary }
 
     private func header(_ value: ModeAtlasWidgetSnapshot? = nil) -> some View {
         HStack(spacing: 6) {
-            Image("AtlasMark").resizable().scaledToFit().frame(width: 20, height: 20).accessibilityHidden(true)
+            Image("AtlasMark").resizable().widgetAccentedRenderingMode(.accentedDesaturated).scaledToFit().frame(width: 20, height: 20).accessibilityHidden(true)
             Text("Mode Atlas").font(.system(size: 13, weight: .bold))
             Spacer(minLength: 2)
             if let value {
@@ -187,7 +190,7 @@ struct StudyWidgetCard: View {
                 avatar(onHero: true).frame(width: 108)
             }.padding(.horizontal, 12).padding(.vertical, 6)
                 .frame(height: min(122, max(102, height * 0.34)))
-                .foregroundStyle(.white).background(hero, in: RoundedRectangle(cornerRadius: 18))
+                .foregroundStyle(heroText).background(heroSurface, in: RoundedRectangle(cornerRadius: 18))
             HStack(alignment: .top, spacing: 14) {
                 goalColumn(value, weekly: false)
                 goalColumn(value, weekly: true)
@@ -207,7 +210,7 @@ struct StudyWidgetCard: View {
                     avatar(onHero: true).frame(maxWidth: .infinity, maxHeight: .infinity)
                     xp(value, onHero: true)
                 }.padding(14).frame(width: size.width * 0.32)
-                    .foregroundStyle(.white).background(hero, in: RoundedRectangle(cornerRadius: 20))
+                    .foregroundStyle(heroText).background(heroSurface, in: RoundedRectangle(cornerRadius: 20))
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(alignment: .top, spacing: 22) {
                         goalColumn(value, weekly: false, spacious: true)
