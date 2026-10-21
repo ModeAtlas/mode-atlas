@@ -18,11 +18,11 @@
     write(queue);
     if(row.answers.length>=20)queueMicrotask(()=>void flush());else if(!timer)timer=setTimeout(()=>{timer=null;void flush();},15000);
   }
-  function finish(current){const queue=read(),row=queue[current.runId];if(!row||row.uid!==user())return;row.complete=true;write(queue);void flush();}
+  function finish(current,completed=false){const queue=read(),row=queue[current.runId];if(!row||row.uid!==user())return;row.complete=true;row.completed=completed===true;write(queue);void flush();}
   function pending(){return Object.values(read()).filter(row=>row.uid===user()&&(row.answers.length||row.complete)).length;}
   async function flush(){
     if(busy||!user()||root.navigator?.onLine===false)return;
-    busy=true;clearTimeout(timer);timer=null;const uid=user();
+    busy=true;clearTimeout(timer);timer=null;const uid=user();let credited=false;
     try{
       for(const item of Object.values(read())){
         if(item.uid!==uid||user()!==uid)continue;
@@ -30,16 +30,16 @@
         let current=read()[item.id];
         while(current&&(current.answers.length||current.complete)&&user()===uid){
           const answers=current.answers.slice(0,20),complete=current.complete&&current.answers.length<=20;
-          const result=await root.ModeAtlasSocial.call('earnStudy',{id:current.id,config:current.config,startedAt:current.startedAt,answers,complete},uid);
+          const result=await root.ModeAtlasSocial.call('earnStudy',{id:current.id,config:current.config,startedAt:current.startedAt,answers,complete,completed:complete&&current.completed===true},uid);
           if(user()!==uid)return;
+          credited=true;
           const queue=read(),live=queue[item.id];if(!live)break;
           live.answers=live.answers.filter(answer=>answer.index>result.index);
           if(result.done)delete queue[item.id];write(queue);current=queue[item.id];
         }
       }
-      root.dispatchEvent(new CustomEvent('modeAtlasEarningsChanged'));
     }catch(error){root.ModeAtlasDiagnostics?.record('study-rewards',error);}
-    finally{busy=false;}
+    finally{busy=false;if(credited&&user()===uid)root.dispatchEvent(new CustomEvent('modeAtlasEarningsChanged'));}
   }
   for(const event of ['online','kanaCloudSyncStatusChanged'])root.addEventListener(event,()=>void flush());
   document.addEventListener('visibilitychange',()=>{if(document.hidden)void flush();});

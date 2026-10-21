@@ -59,7 +59,7 @@
 .ma-kanji-lesson-details{font-size:.8rem;color:var(--ma-text-soft);}
 .ma-kanji-lesson-details summary{display:flex;align-items:center;min-height:44px;cursor:pointer;}
 .ma-kanji-lesson-details p{margin:8px 0;font-family:var(--ma-font-jp);}
-.ma-kanji-lesson-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;}
+.ma-kanji-lesson-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}.ma-kanji-lesson-actions>.ma-button--primary{grid-column:1/-1;}
 .ma-kanji-lesson[data-phase="recognise"],.ma-kanji-lesson[data-phase="reading"]{text-align:center;}
 .ma-kanji-lesson>.ma-kanji-glyph{font-size:5rem;}
 .ma-kanji-lesson .ma-kanji-choices{margin:4px 0;}

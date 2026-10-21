@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/returning-tours')(page));
 const socialConfig=require('../assets/app/mode-atlas-social-config.js');
 async function launch(page,{native=true,theme='dark',width=393,share=false}={}){
   await page.setViewportSize({width,height:852});

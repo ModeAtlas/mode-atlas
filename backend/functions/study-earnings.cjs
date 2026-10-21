@@ -20,7 +20,7 @@ function opening(wallet={}){
 function asSave(ledger){return {sections:{progress:{data:{state:ledger.state}}}};}
 function createEarnings({db,now=Date.now}){
   async function submit(uid,data){
-    if(!data||Object.keys(data).some(k=>!['id','config','startedAt','answers','complete'].includes(k))||!/^[a-zA-Z0-9-]{8,100}$/.test(data.id)||!Number.isInteger(data.startedAt)||data.startedAt<now()-7*DAY||data.startedAt>now()+60000||!Array.isArray(data.answers)||data.answers.length>20||typeof data.complete!=='boolean')fail('invalid-argument','This practice receipt could not be verified.');
+    if(!data||Object.keys(data).some(k=>!['id','config','startedAt','answers','complete','completed'].includes(k))||!/^[a-zA-Z0-9-]{8,100}$/.test(data.id)||!Number.isInteger(data.startedAt)||data.startedAt<now()-7*DAY||data.startedAt>now()+60000||!Array.isArray(data.answers)||data.answers.length>20||typeof data.complete!=='boolean'||(data.completed!==undefined&&typeof data.completed!=='boolean'))fail('invalid-argument','This practice receipt could not be verified.');
     const cfg=data.config;
     if(!cfg||Object.keys(cfg).some(k=>!['branch','pool','direction','mode','hints'].includes(k)))fail('invalid-argument','Invalid practice selection.');
     const branch=cfg.branch||'kana';
@@ -36,7 +36,10 @@ function createEarnings({db,now=Date.now}){
       const run=old||{...cfg,branch,zone:profile.data()?.profile?.timeZone||'UTC',signature,startedAt:data.startedAt,index:0,elapsed:0,seen:[],correct:0,streak:0,bestStreak:0};
       const result=data.answers.length?scoreAnswers(run,data.answers,now()):{index:run.index,elapsed:run.elapsed,seen:run.seen,score:0,verified:[]};
       const daily=budget.data()||{answers:0,elapsed:0};
-      const elapsed=Math.max(0,result.elapsed-run.elapsed),added=result.index-run.index;
+      // A resumed offline session may span a night. Bound each answer's
+      // contribution so suspended time does not consume the study allowance.
+      let previousElapsed=run.elapsed;
+      const elapsed=result.verified.reduce((sum,answer)=>{const interval=Math.max(0,answer.elapsed-previousElapsed);previousElapsed=answer.elapsed;return sum+Math.min(interval,300000);},0),added=result.index-run.index;
       if(daily.answers+added>4000||daily.elapsed+elapsed>18*3600000)fail('resource-exhausted','Today’s reward allowance is complete. Your personal practice still counts.');
       let state=ledger.state;
       const storage={json:(key,fallback)=>key==='modeAtlasProgress'?state:fallback,setJSON:(_key,value)=>{state=value;return true;},get:(key,fallback)=>key==='modeAtlasProgressDeviceId'?'verified-study':fallback,set:()=>true,readModeJSON:(_m,_k,fallback)=>fallback};
@@ -49,7 +52,7 @@ function createEarnings({db,now=Date.now}){
         if(branch==='kanji')owner.recordKanjiAnswer({...common,skill:cfg.direction});
         else {const chars=kana.splitKana(answer.char);owner.recordAnswer({...common,mode:answer.direction,units:chars.length,kana:chars,streak:run.streak,hiragana:chars.filter(c=>/^[ぁ-ゖ]+$/.test(c)).length,katakana:chars.filter(c=>/^[ァ-ヺー]+$/.test(c)).length,reviewed:[],milestones:[]});}
       }
-      if(data.complete&&result.index)owner.finishRun({runId:data.id,branch,direction:branch==='kanji'?'kanji-'+cfg.direction:cfg.direction,mode:cfg.mode,count:result.index,poolSize:result.seen.length,answered:result.index,correct:run.correct,unique:result.seen.length,bestStreak:run.bestStreak,completed:true,assisted:cfg.hints,hintsEnabled:cfg.hints,day:dates.dateKeyInTimeZone(data.startedAt+result.elapsed,run.zone||'UTC')});
+      if(data.complete&&result.index)owner.finishRun({runId:data.id,branch,direction:branch==='kanji'?'kanji-'+cfg.direction:cfg.direction,mode:cfg.mode,count:result.index,poolSize:result.seen.length,answered:result.index,correct:run.correct,unique:result.seen.length,bestStreak:run.bestStreak,completed:data.completed===true,assisted:cfg.hints,hintsEnabled:cfg.hints,day:dates.dateKeyInTimeZone(data.startedAt+result.elapsed,run.zone||'UTC')});
       ledger.state=state;ledger.days=[...new Set([...ledger.days,...owner.studyDays(state)])].sort();
       // Keep recent goal evidence; compact its already-earned XP, not raw history.
       const before=owner.getSummary(state).xp,cutoff=new Date(now()-56*DAY).toISOString().slice(0,10);

@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/returning-tours')(page));
 const fs=require('node:fs/promises');
 
 async function prepare(page,{native=false,production=false,theme='dark'}={}){

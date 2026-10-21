@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/returning-tours')(page));
 
 const READING_SETTINGS = {
   focusWeak: false,

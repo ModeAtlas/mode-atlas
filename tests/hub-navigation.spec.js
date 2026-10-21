@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/returning-tours')(page));
 for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768,'light'],[false,1280,'dark']])test(`shared hub navigation ${native?'iOS':'web'} ${width} ${theme}`,async({page},info)=>{
   test.setTimeout(60000);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));

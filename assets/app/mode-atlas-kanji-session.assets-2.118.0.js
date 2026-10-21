@@ -131,7 +131,7 @@
       }else{active.feedback=null;active.hinted=false;active.questionElapsed=0;active.lessonPhase='teach';active.lessonFeedback=null;write();}
     });}catch(error){active=before;throw error;}
     root.ModeAtlasVisitFlows?.recordActivity('kanji');
-    if(active.finished)root.ModeAtlasWeekly.finish(active);
+    if(active.finished)root.ModeAtlasWeekly.finish(active,true);
     questionStarted=active.finished?0:Date.now();root.dispatchEvent(new CustomEvent('modeAtlasKanjiChanged'));return active;
   }
   function pause(){if(!active||active.finished||active.paused)return;checkpoint();active.paused=true;write();}

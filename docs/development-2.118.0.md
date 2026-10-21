@@ -13,7 +13,7 @@ Source ownership is explicit: Japanese conversion, Kana evidence, save merge, cl
 
 ## Validation and release evidence
 
-- Local source/native-web gate: 245 JavaScript tests and 15 Python tests passed, including a save larger than 1 MiB, no-op partition writes, stale-device reset protection and forged-save currency isolation.
+- Local source/native-web gate: 248 JavaScript tests and 15 Python tests passed, including a save larger than 1 MiB, no-op partition writes, stale-device reset protection and forged-save currency isolation.
 - Content validation covers every configured Kanji reading; editorial work covers N5 cues and N5/N4 word choices, not an expert linguistic review of the entire N1–N5 dictionary.
 - Browser checks exercise mobile and desktop entry, study, results, account boundaries, tours and Word Bank review. Exact final browser/Firebase/native job outcomes and durations are in the GitHub Actions run for this release's branch head.
 - The release workflow retains Firebase emulator rules/callable/deletion checks, simulator compilation, Swift widget/navigation/router tests and an unsigned Release archive. A successful unsigned archive is not an App Store upload or a signed-device test.

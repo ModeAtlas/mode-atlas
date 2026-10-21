@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/returning-tours')(page));
 test.use({timezoneId:'Australia/Melbourne'});
 test.describe.configure({mode:'parallel'});
 

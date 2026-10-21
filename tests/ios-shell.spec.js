@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+test.beforeEach(async({page})=>require('./helpers/returning-tours')(page));
 
 test('Atlas home shares one responsive composition with native chrome', async ({ page }) => {
   await page.goto('/');

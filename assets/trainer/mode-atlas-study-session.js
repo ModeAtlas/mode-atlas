@@ -92,7 +92,7 @@
     }
     function finish(completed){
       const state=snapshot(),current=study();if(!current)return;
-      root.ModeAtlasWeekly?.finish(current);
+      root.ModeAtlasWeekly?.finish(current,completed);
       rewardContext(current);
       addXp(root.ModeAtlasProgress.finishRun({runId:current.runId,direction:config.mode,day:current.mode==='dailyChallenge'?current.dateKey:root.getTodayKey(),mode:current.mode,count:current.count,
         answered:state.sessionStats.answered,correct:state.sessionStats.correct,unique:Object.keys(current.items).length,

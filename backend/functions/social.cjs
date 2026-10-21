@@ -267,7 +267,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
       else profiles.sort((a,b)=>a.displayName.localeCompare(b.displayName,'en')||a.uid.localeCompare(b.uid,'en'));
       const visible=new Set(profiles.map(row=>row.uid));
       const stale=kind==='friends'||kind==='rankings'?docs.filter(doc=>visible.has(doc.id)&&doc.data().summary?.projectionVersion!==PROJECTION_VERSION).map(doc=>doc.id):[];
-      return {response:{...(kind==='rankings'?slicePage(profiles,data.cursor):{rows:profiles,nextCursor}),total,metric},stale};
+      return {response:{...(kind==='rankings'?slicePage(profiles,data.cursor):{rows:profiles,nextCursor}),total:total-(ids.length-profiles.length),metric},stale};
     });
     if(result.stale.length){
       // Queue migrations; a list request never rebuilds friends' private saves.

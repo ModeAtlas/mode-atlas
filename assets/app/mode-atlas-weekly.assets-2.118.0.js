@@ -57,7 +57,7 @@
     if(state.pending.length>=20)void flush(job);
     else if(!job.timer)job.timer=setTimeout(()=>{job.timer=null;void flush(job);},15000);
   }
-  function finish(current){root.ModeAtlasEarnings?.finish(current);const job=sessions.get(current.runId);if(job){job.finished=true;void flush(job);}}
+  function finish(current,completed=false){root.ModeAtlasEarnings?.finish(current,completed);const job=sessions.get(current.runId);if(job){job.finished=true;void flush(job);}}
   function reset(){for(const job of sessions.values())clearTimeout(job.timer);sessions.clear();}
   root.addEventListener('modeAtlasAccountSignedOut',reset);
   root.addEventListener('online',()=>{for(const job of sessions.values())void flush(job);});

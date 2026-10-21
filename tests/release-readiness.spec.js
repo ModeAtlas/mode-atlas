@@ -1,5 +1,5 @@
 const {test,expect}=require('@playwright/test');
-test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
+test.beforeEach(async({page},info)=>{if(!info.title.startsWith('first branch tour'))return require('./helpers/kana-fixture')(page);});
 const {execFileSync}=require('node:child_process');
 const path=require('node:path');
 test.beforeAll(()=>execFileSync('python3',['build_ios_web.py'],{cwd:path.resolve(__dirname,'..'),stdio:'pipe'}));
@@ -157,4 +157,12 @@ test('a legal reader temporarily owns focus over first-use setup and restores th
   expect(await page.evaluate(()=>document.activeElement.closest('.ma-dialog')!==null)).toBe(true);
   await page.keyboard.press('Escape');await expect(policy).toBeHidden();await expect(page.locator('#maVisitModal [role=dialog]')).not.toHaveAttribute('inert','');
   await expect(page.locator('#maVisitModal.open')).toBeVisible();
+});
+
+test('first branch tour is optional and replayable without changing course access',async({page})=>{
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await page.addInitScript(()=>{for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');localStorage.setItem('maWhatsNewSeen','tour');});
+  await page.goto('/kana/');const offer=page.getByRole('dialog',{name:'A quick look around Kana?'});await expect(offer).toBeVisible();await offer.getByRole('button',{name:'Explore myself',exact:true}).click();
+  await expect(page.getByRole('button',{name:/Start as a beginner/})).toBeVisible();await page.reload();await expect(offer).toHaveCount(0);
+  await page.evaluate(()=>ModeAtlasTour.start('kana'));await expect(page.locator('.ma-tour-layer')).toBeVisible();await page.getByRole('button',{name:'Skip tour',exact:true}).click();expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);
 });

@@ -103,16 +103,6 @@ test('partitioned account saves require atomic revisions and protect private chu
   await assertFails(require('firebase/firestore').deleteDoc(root));
 });
 
-test('verified study receipts credit once and editable progress cannot forge the next wallet award',async()=>{
-  const a=await learner('VerifiedReceipt',0),at=Date.now();
-  const receipt={id:'verified-receipt-first',startedAt:at-10000,config:{pool:['あ','い'],direction:'reading',mode:'guided',hints:false},answers:[{index:1,kana:'あ',answer:'a',elapsed:1000},{index:2,kana:'い',answer:'i',elapsed:2000}],complete:true};
-  assert.equal((await a.call('earnStudy',receipt)).index,2);
-  const before=(await db.doc('studyEarnings/'+a.uid).get()).data();await a.call('earnStudy',receipt);assert.deepEqual((await db.doc('studyEarnings/'+a.uid).get()).data(),before);
-  const first=await a.call('shop',{version:3,timeZone:'UTC'});await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(999999));const next=await a.call('shop',{version:3,timeZone:'UTC'});
-  assert.equal(next.balance,first.balance);assert.equal(next.tokenBalance,first.tokenBalance);
-  await assert.rejects(a.call('earnStudy',{...receipt,id:'forged-receipt',xp:99999}),{code:'INVALID_ARGUMENT'});
-});
-
 test('rules preserve owner-only profile/app-data access and deny every direct social read/write',async()=>{
   const mine=rules.authenticatedContext('rules-owner').firestore(),other=rules.authenticatedContext('rules-other').firestore(),anon=rules.unauthenticatedContext().firestore();
   for(const path of ['users/rules-owner','users/rules-owner/appData/kanaTrainer','users/rules-owner/appData/otherSave']){
@@ -1236,4 +1226,14 @@ test('a 100-friend list fetches one display page rather than every private or pu
   const bounded=createSocial({db:tracked,auth});const result=await bounded.call({auth:{uid:a.uid},data:{expectedUid:a.uid,action:'list',data:{kind:'friends'}}});
   assert.equal(result.rows.length,20);assert.ok(result.nextCursor);assert.ok(reads.filter(name=>name.startsWith('socialAccounts/page-budget-')).length<=20);
   assert.equal(reads.filter(name=>name.startsWith('users/')).length,0);
+});
+
+test('verified study receipts credit once and editable progress cannot forge the next wallet award',async()=>{
+  const a=await learner('VerifiedReceipt',0),at=Date.now();
+  const receipt={id:'verified-receipt-first',startedAt:at-10000,config:{pool:['あ','い'],direction:'reading',mode:'guided',hints:false},answers:[{index:1,kana:'あ',answer:'a',elapsed:1000},{index:2,kana:'い',answer:'i',elapsed:2000}],complete:true};
+  assert.equal((await a.call('earnStudy',receipt)).index,2);
+  const before=(await db.doc('studyEarnings/'+a.uid).get()).data();await a.call('earnStudy',receipt);assert.deepEqual((await db.doc('studyEarnings/'+a.uid).get()).data(),before);
+  const first=await a.call('shop',{version:3,timeZone:'UTC'});await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(999999));const next=await a.call('shop',{version:3,timeZone:'UTC'});
+  assert.equal(next.balance,first.balance);assert.equal(next.tokenBalance,first.tokenBalance);
+  await assert.rejects(a.call('earnStudy',{...receipt,id:'forged-receipt',xp:99999}),{code:'INVALID_ARGUMENT'});
 });

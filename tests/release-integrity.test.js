@@ -4,7 +4,7 @@ const ROOT=path.resolve(__dirname,'..'),plain=value=>JSON.parse(JSON.stringify(v
 function browser(){
   const values=new Map(),storage={get:(k,f='')=>values.get(k)??f,set:(k,v)=>{values.set(k,String(v));return true;},remove:k=>values.delete(k),json:(k,f)=>values.has(k)?JSON.parse(values.get(k)):f,setJSON:(k,v)=>{values.set(k,JSON.stringify(v));return true;},readModeJSON:(_m,_k,f)=>f,transaction:fn=>fn()};
   const root={ModeAtlasStorage:storage,crypto:require('node:crypto').webcrypto,Blob,CompressionStream,DecompressionStream,btoa,atob,dispatchEvent:()=>{},addEventListener:()=>{}};
-  const context=vm.createContext({window:root,console,Date,TextEncoder,TextDecoder,structuredClone,CustomEvent:class{},setTimeout,clearTimeout});
+  const context=vm.createContext({window:root,self:root,console,Date,TextEncoder,TextDecoder,structuredClone,CustomEvent:class{},setTimeout,clearTimeout});
   for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-date','app/mode-atlas-reward-rules','app/mode-atlas-progress','app/mode-atlas-review','app/mode-atlas-japanese','app/mode-atlas-kana-learning','app/mode-atlas-kana-evidence','data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-wordbank','app/mode-atlas-save-merge','results/mode-atlas-results-storage','app/mode-atlas-account-transport'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
   return {root,storage,values};
 }
@@ -80,4 +80,25 @@ test('economic receipts reject arbitrary XP, validate answers and remain idempot
   await assert.rejects(()=>earnings.submit('learner',{...receipt,id:'other-receipt',xp:99999}),/verified/);
   await assert.rejects(()=>earnings.submit('learner',{...receipt,id:'other-receipt',answers:[{index:1,kana:'か',answer:'ka',elapsed:1000}]}),/outside/);
   await assert.rejects(()=>earnings.submit('learner',{...receipt,id:'other-receipt',startedAt:at-8*86400000}),/verified/);
+});
+
+test('closing an unfinished receipt keeps answer credit without awarding completion XP',async()=>{
+  const {db,rows}=database(),at=Date.parse('2026-10-21T12:00:00Z'),earnings=backend('study-earnings.cjs').createEarnings({db,now:()=>at});
+  const pool=['あ','い','う'],roman=['a','i','u'];const answers=Array.from({length:12},(_,i)=>({index:i+1,kana:pool[i%3],answer:roman[i%3],elapsed:(i+1)*1000}));
+  const receipt={id:'unfinished-receipt',startedAt:at-15000,config:{pool,direction:'reading',mode:'guided',hints:false},answers,complete:true,completed:false};
+  await earnings.submit('unfinished',receipt);await earnings.submit('finished',{...receipt,completed:true});
+  const {root}=browser(),xp=id=>root.ModeAtlasProgress.getSummary(rows.get('studyEarnings/'+id).state).xp;
+  assert.ok(xp('unfinished')>0);assert.ok(xp('finished')>xp('unfinished'));assert.equal(rows.get('studyEarnings/unfinished/runs/'+receipt.id).done,true);
+});
+
+test('resuming offline study after a night does not spend a whole day of reward allowance',async()=>{
+  const {db,rows}=database(),at=Date.parse('2026-10-21T12:00:00Z'),earnings=backend('study-earnings.cjs').createEarnings({db,now:()=>at});
+  await earnings.submit('offline',{id:'offline-resumed',startedAt:at-86400000,config:{pool:['あ'],direction:'reading',mode:'guided',hints:false},answers:[{index:1,kana:'あ',answer:'a',elapsed:86400000}],complete:true,completed:false});
+  assert.equal(rows.get('studyEarnings/offline/days/2026-10-20').elapsed,300000);assert.equal(rows.get('studyEarnings/offline/days/2026-10-20').answers,1);
+});
+
+test('empty receipt retries do not refresh wallets and unfinished runs send their true completion state',async()=>{
+  const {root}=browser(),calls=[],events=[];root.KanaCloudSync={getUser:()=>({uid:'owner'})};root.dispatchEvent=e=>events.push(e.type);root.ModeAtlasSocial={call:async(action,data)=>{calls.push(data);return {index:data.answers.at(-1)?.index||0,done:data.complete};}};
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT,'assets/app/mode-atlas-study-earnings.js'),'utf8'),{window:root,document:{addEventListener(){}},CustomEvent:class{constructor(type){this.type=type;}},Date,setTimeout,clearTimeout,queueMicrotask});
+  await root.ModeAtlasEarnings.flush();assert.equal(events.length,0);const run={runId:'partial-session'};root.ModeAtlasEarnings.start(run,{pool:['あ'],mode:'guided',direction:'reading',hints:false});root.ModeAtlasEarnings.answer(run,{kana:'あ',answer:'a'});root.ModeAtlasEarnings.finish(run,false);await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,1);assert.equal(calls[0].complete,true);assert.equal(calls[0].completed,false);assert.equal(root.ModeAtlasEarnings.pending(),0);assert.deepEqual(events,['modeAtlasEarningsChanged']);await root.ModeAtlasEarnings.flush();assert.equal(events.length,1);
 });
