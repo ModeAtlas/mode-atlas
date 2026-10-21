@@ -37,7 +37,8 @@
 .ma-social-empty{padding:24px 16px;border:1px dashed var(--ma-border);border-radius:18px;color:var(--ma-muted);text-align:center;line-height:1.6;}
 .ma-social-empty h3{color:var(--ma-text);margin-bottom:8px;}
 .ma-social-empty .ma-button{margin-top:12px;}
-.ma-social-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 10px;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-card);}
+.ma-social-row{position:relative;isolation:isolate;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:14px 10px;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-card);}
+.ma-social-row.ma-banner-scene .ma-social-score{background:var(--ma-card);border-radius:8px;padding:5px 8px;}
 .ma-social-row[data-self="true"]{border-color:var(--ma-atlas);}
 .ma-social-person{display:flex;flex:1;gap:12px;align-items:center;min-width:120px;border:0;background:none;padding:4px;color:inherit;font:inherit;text-align:left;}
 button.ma-social-person{cursor:pointer;}
@@ -140,10 +141,10 @@ html[data-ma-large-text] .ma-social-moderation-tabs{grid-template-columns:repeat
 
 /* Real leaderboard rows form the podium; the same profile action and rank data
    are retained. Ties and partial boards display the server's actual places. */
-.ma-weekly-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:12px;padding:12px 0;}
+.ma-weekly-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:12px;padding:12px 0;}
 .ma-weekly-podium[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr));}
 .ma-weekly-podium .ma-social-row{display:flex;flex-direction:column;flex-wrap:nowrap;gap:10px;padding:18px 10px;min-width:0;text-align:center;}
-.ma-weekly-podium .ma-social-row[data-rank="1"]{padding-top:24px;border-color:var(--ma-results);}
+.ma-weekly-podium .ma-social-row[data-rank="1"]{border-color:var(--ma-results);}
 .ma-weekly-podium .ma-social-person{min-width:0;width:100%;flex-direction:column;gap:12px;}
 .ma-weekly-podium .ma-social-avatar{width:62px;height:62px;flex-basis:62px;}
 .ma-weekly-podium .ma-social-identity{text-align:center;width:100%;}
@@ -151,22 +152,41 @@ html[data-ma-large-text] .ma-social-moderation-tabs{grid-template-columns:repeat
 .ma-weekly-podium .ma-social-identity strong{font-size:.85rem;}
 .ma-weekly-podium .ma-social-identity small{font-size:.68rem;}
 .ma-weekly-podium .ma-social-score{text-align:center;max-width:100%;}
-.ma-weekly-podium .ma-social-rank{color:var(--ma-results);font-size:1.2rem;}
-.ma-social-list[data-layout="friends"]{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;}
+.ma-weekly-podium .ma-social-rank{color:var(--ma-banner-accent,var(--ma-results));font-size:1.2rem;background:var(--ma-card);border-radius:10px;padding:4px;}
+.ma-social-list[data-layout="friends"]{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;}
 .ma-social-list[data-layout="friends"]>:not(.ma-social-row){grid-column:1/-1;}
 .ma-social-friend{display:block;min-width:0;padding:0;overflow:hidden;border-radius:18px;}
 .ma-social-friend .ma-social-person{display:flex;flex-direction:column;align-items:stretch;gap:0;width:100%;min-width:0;padding:0;}
-.ma-social-friend__art{display:flex;align-items:center;justify-content:flex-end;padding:0 8px;width:100%;height:170px;border-radius:17px 17px 0 0;background:var(--ma-card);box-sizing:border-box;}
-.ma-social-friend__figure{height:100%;width:clamp(96px,52%,180px);max-width:100%;display:block;}.ma-social-friend__figure svg{display:block;height:100%;width:100%;}
-.ma-social-friend__art .ma-social-avatar{width:64px;height:64px;flex-basis:64px;}
+/* The scene owns portrait composition; banner artwork never sets content padding. */
+.ma-social-friend__art{display:flex;align-items:flex-end;justify-content:center;padding:68px 8px 12px;width:100%;height:204px;border-radius:17px 17px 0 0;background:var(--ma-card);box-sizing:border-box;}
+.ma-social-friend__art:has(.ma-social-friend__status)::before{padding-top:68px;}
+.ma-social-friend__art[data-portrait="character"]{justify-content:flex-start;padding-bottom:0;}
+.ma-social-friend__figure{height:136px;width:52%;max-width:180px;display:block;}.ma-social-friend__figure svg{display:block;height:100%;width:100%;}
+.ma-social-friend__art .ma-social-avatar{width:68px;height:68px;flex:0 0 68px;margin-bottom:22px;}
 .ma-social-friend__caption{display:grid;gap:10px;min-width:0;padding:16px;}
-.ma-social-friend__status{font-size:.82rem;line-height:1.5;text-align:left;overflow-wrap:anywhere;color:var(--ma-text);border-left:3px solid var(--ma-primary);padding-left:10px;}
+.ma-social-friend__status{position:absolute;top:10px;left:10px;right:10px;box-sizing:border-box;height:58px;padding:8px 10px;border-radius:13px;background:#fff;color:#243042;box-shadow:0 2px 8px #0002;font-size:.75rem;line-height:1.35;text-align:left;overflow-wrap:anywhere;display:flex;align-items:center;}
+.ma-social-friend__phrase{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+.ma-social-friend__status::after{content:"";position:absolute;top:100%;left:calc(50% - 6px);border:6px solid transparent;border-top-color:#fff;}
+.ma-social-friend__art[data-portrait="character"] .ma-social-friend__status::after{left:24%;}
+.ma-social-friend .ma-social-identity{grid-template-columns:minmax(0,1fr);}
+.ma-social-friend .ma-social-name{min-width:0;flex-wrap:nowrap;}
+.ma-social-friend .ma-social-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ma-social-friend .ma-social-score{text-align:left;max-width:none;padding:0;font-size:.72rem;color:var(--ma-muted);}
-.ma-social-friend .ma-social-identity small{font-size:.72rem;line-height:1.4;}
+.ma-social-friend .ma-social-identity small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.72rem;line-height:1.4;}
 .ma-social-friend .ma-social-identity strong{font-size:.95rem;}
-.ma-social-friend .ma-official-badge{font-size:.6rem;padding:2px 5px;}
+.ma-social-friend .ma-official-badge{flex:none;font-size:.6rem;padding:2px 5px;}
 @media(min-width:1050px){.ma-social-list[data-layout="friends"]{grid-template-columns:repeat(3,minmax(0,1fr));}}
-@media(max-width:480px){.ma-social-friend__art{height:142px;}.ma-social-friend__caption{padding:12px;}.ma-social-friend .ma-social-identity strong{font-size:.85rem;}.ma-social-friend .ma-social-identity small{font-size:.67rem;}}
+@media(max-width:480px){.ma-social-friend__art{height:164px;}.ma-social-friend__figure{height:96px;}.ma-social-friend__art .ma-social-avatar{margin-bottom:8px;}.ma-social-friend__caption{padding:12px;}.ma-social-friend .ma-social-identity strong{font-size:.85rem;}.ma-social-friend .ma-social-identity small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.67rem;}}
 html[data-ma-large-text] .ma-social-list[data-layout="friends"]{grid-template-columns:1fr;}
-@media(max-width:420px){.ma-weekly-podium{gap:6px;}.ma-weekly-podium .ma-social-row{padding:14px 6px;}.ma-weekly-podium .ma-social-identity strong{font-size:.72rem;}.ma-weekly-podium .ma-social-identity small{font-size:.63rem;}.ma-weekly-podium .ma-social-avatar{width:50px;height:50px;flex-basis:50px;}.ma-weekly-podium .ma-social-score{font-size:.7rem;}}
+/* Narrow leaderboards use full-width rows instead of squeezing three identities. */
+@media(max-width:600px){
+ .ma-weekly-podium,.ma-weekly-podium[data-count="2"]{grid-template-columns:1fr;gap:10px;}
+ .ma-weekly-podium .ma-social-row{flex-direction:row;align-items:center;padding:14px 12px;text-align:left;}
+ .ma-weekly-podium .ma-social-person{flex-direction:row;width:auto;gap:12px;}
+ .ma-weekly-podium .ma-social-avatar{width:48px;height:48px;flex-basis:48px;}
+ .ma-weekly-podium .ma-social-identity{text-align:left;width:auto;}
+ .ma-weekly-podium .ma-social-name{justify-content:flex-start;}
+ .ma-weekly-podium .ma-social-score{flex:0 0 auto;padding:0;max-width:70px;text-align:right;font-size:.75rem;}
+ .ma-weekly-podium .ma-social-rank{flex:0 0 20px;font-size:1rem;}
+}
 html[data-ma-large-text] .ma-weekly-podium{grid-template-columns:1fr;}

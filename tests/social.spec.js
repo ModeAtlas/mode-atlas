@@ -432,13 +432,14 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
   });
 }
 
-test('friend cards show status, right-aligned avatars and reuse the list when returning',async({page},info)=>{
+test('friend cards show status, left-aligned avatars and reuse the list when returning',async({page},info)=>{
   await prepare(page,{native:true,width:393});
   await page.evaluate(()=>Object.assign(socialFixture.friend,{avatar:'character',character:{...ModeAtlasAvatarRules.defaults},greeting:'I just learnt あ today!'}));
   await page.getByRole('button',{name:'Refresh',exact:true}).click();
   await expect(page.locator('.ma-social-friend__status')).toHaveText('I just learnt あ today!');
   const art=await page.locator('.ma-social-friend__art').boundingBox(),figure=await page.locator('.ma-social-friend__figure').boundingBox();
-  expect(figure.x+figure.width/2).toBeGreaterThan(art.x+art.width*.65);
+  expect(figure.x+figure.width/2).toBeLessThan(art.x+art.width*.4);
+  const speech=await page.locator('.ma-social-friend__status').boundingBox();expect(speech.y).toBeGreaterThan(art.y);expect(speech.y+speech.height).toBeLessThan(figure.y+10);
   const before=await page.evaluate(()=>socialCalls.filter(call=>['state','list'].includes(call.action)).length);
   await page.locator('.ma-social-friend .ma-social-person').click();
   await page.getByRole('button',{name:'← Friends',exact:true}).click();
@@ -553,4 +554,25 @@ for(const native of [true,false])test(`account-wide friend insights distinguish 
   await expect(page.locator('.ma-social-branch__legend').first()).toContainText('144 Confident');
   await page.getByText('How mastery is counted',{exact:true}).click();await expect(page.locator('.ma-social-mastery-help')).toContainText('including locked characters');await fits(page);
   await page.screenshot({path:info.outputPath(`account-insights-${native?'ios':'web'}.png`),fullPage:true,animations:'disabled'});
+});
+
+for(const width of [320,393,1280])test(`banner compositions and weekly identities stay readable at ${width}`,async({page},info)=>{
+ await prepare(page,{native:width<600,width});
+ await page.evaluate(()=>{
+  Object.assign(socialFixture.friend,{displayName:'Ev',banner:'hunny',avatar:'character',character:{...ModeAtlasAvatarRules.defaults},greeting:'I just learnt あ today! Now I am practising a whole new row of hiragana.'});
+  const admin={...socialFixture.friend,uid:'admin',displayName:'Admin',avatar:'kana',character:null,banner:'skyline',role:'admin',greeting:'Hello, I am the Admin for Mode Atlas!'};
+  socialFixture.friends=[socialFixture.friend,admin];socialFixture.weeklyEnabled=true;
+  const call=ModeAtlasSocial.call;ModeAtlasSocial.call=async(action,input)=>action==='weeklyList'?{rows:[socialFixture.friend,{...socialFixture.self,banner:'bridge'},admin].map((p,i)=>({...p,rank:i+1,score:118-i*16})),nextCursor:null}:call(action,input);
+ });
+ await page.getByRole('button',{name:'Refresh',exact:true}).click();
+ const cards=await page.locator('.ma-social-friend').evaluateAll(items=>items.map(c=>{const art=c.querySelector('.ma-social-friend__art'),box=art.getBoundingClientRect(),photo=art.querySelector('.ma-social-avatar')?.getBoundingClientRect();return {height:c.getBoundingClientRect().height,centered:!photo||Math.abs(photo.x+photo.width/2-box.x-box.width/2)<2,bubble:!!art.querySelector('.ma-social-friend__status')};}));
+ expect(cards.every(c=>c.centered&&c.bubble)).toBe(true);expect(Math.abs(cards[0].height-cards[1].height)).toBeLessThan(2);
+ await fits(page);await page.screenshot({path:info.outputPath('friend-composition.png')});
+ await page.getByRole('tab',{name:'Rankings',exact:true}).click();
+ await expect(page.locator('.ma-weekly-podium .ma-social-rank')).toHaveText(['1','2','3']);
+ const banners=await page.locator('.ma-weekly-podium .ma-banner-scene').evaluateAll(items=>items.map(el=>{const style=getComputedStyle(el),art=getComputedStyle(el,'::before');return {opacity:style.opacity,artOpacity:art.opacity,mask:art.maskImage,background:art.backgroundImage};}));
+ expect(banners.every(b=>b.opacity==='1'&&b.artOpacity==='1'&&b.mask==='none')).toBe(true);expect(banners[0].background).toContain('hunny');
+ const rows=await page.locator('.ma-weekly-podium .ma-social-row').evaluateAll(items=>items.map(c=>({width:c.clientWidth,scroll:c.scrollWidth,text:c.querySelector('.ma-social-identity').getBoundingClientRect().width,height:c.getBoundingClientRect().height})));
+ expect(rows.every(c=>c.scroll<=c.width&&c.text>70&&c.height<300)).toBe(true);
+ await fits(page);await page.screenshot({path:info.outputPath('weekly-composition.png')});
 });

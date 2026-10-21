@@ -204,8 +204,8 @@
   }
   function practise(){
     title('Kana · Practice','Build the reflex.');
-    host.append(segmented('Kana skill',['reading','writing','both'].map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();}));
-    host.append(link('Practise handwriting','/kana/handwriting/'));
+    const choices=segmented('Kana skill',['reading','writing','both','handwriting'].map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();});
+    choices.classList.add('ma-kana-practice-skills');host.append(choices);
     const explanation={reading:'See あ, type “a”. Connect each shape with its sound.',writing:'See “a”, choose or type あ. Bring the shape to mind.',both:'あ → a, then a → あ. Alternate Read and Recall in one session.',handwriting:'Trace the strokes, then try writing from memory.'};
     host.append(el('p','ma-kana-skill-explanation',explanation[skill]));
     const stage=el('div','ma-kana-practice-stage');
