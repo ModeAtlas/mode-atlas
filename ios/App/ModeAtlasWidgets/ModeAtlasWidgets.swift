@@ -46,13 +46,14 @@ struct StudyWidgetCard: View {
     private var heroText: Color { renderingMode == .fullColor ? .white : .primary }
 
     private func header(_ value: ModeAtlasWidgetSnapshot? = nil) -> some View {
-        HStack(spacing: 6) {
-            Image("AtlasMark").resizable().widgetAccentedRenderingMode(.accentedDesaturated).scaledToFit().frame(width: 20, height: 20).accessibilityHidden(true)
-            Text("Mode Atlas").font(.system(size: 13, weight: .bold))
+        HStack(spacing: family == .systemSmall ? 4 : 6) {
+            Image("AtlasMark").resizable().widgetAccentedRenderingMode(.accentedDesaturated).scaledToFit()
+                .frame(width: family == .systemSmall ? 18 : 20, height: 20).accessibilityHidden(true)
+            Text("Mode Atlas").font(.system(size: family == .systemSmall ? 11 : 13, weight: .bold)).layoutPriority(1)
             Spacer(minLength: 2)
             if let value {
-                Text("Lv \(value.level)").font(.system(size: 11, weight: .bold)).monospacedDigit()
-                    .foregroundStyle(blue).padding(.horizontal, 7).padding(.vertical, 4)
+                Text("Lv \(value.level)").font(.system(size: family == .systemSmall ? 10 : 11, weight: .bold)).monospacedDigit()
+                    .foregroundStyle(blue).padding(.horizontal, family == .systemSmall ? 5 : 7).padding(.vertical, 4)
                     .background(blue.opacity(0.10), in: Capsule())
             }
         }.lineLimit(1).minimumScaleFactor(0.8)
@@ -80,7 +81,7 @@ struct StudyWidgetCard: View {
                 Spacer(minLength: 0)
                 Image(systemName: "arrow.up.right").accessibilityHidden(true)
             }.font(.system(size: 10, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.75)
-            ProgressView(value: value.levelProgress).tint(onHero ? mint : blue)
+            WidgetProgressBar(value: value.levelProgress, tint: onHero ? mint : blue)
                 .accessibilityLabel("Progress to level \(value.level + 1)")
         }
     }
@@ -108,7 +109,7 @@ struct StudyWidgetCard: View {
     }
     private func goalColumn(_ value: ModeAtlasWidgetSnapshot, weekly: Bool, spacious: Bool = false) -> some View {
         let goals = value.goals(at: entry.date).filter { $0.isWeekly == weekly }
-        return VStack(alignment: .leading, spacing: spacious ? 14 : 7) {
+        return VStack(alignment: .leading, spacing: spacious ? 12 : 7) {
             HStack(spacing: 4) {
                 Image(systemName: weekly ? "calendar" : "scope").foregroundStyle(blue).accessibilityHidden(true)
                 Text(weekly ? "THIS WEEK" : "TODAY").tracking(0.8)
@@ -119,12 +120,10 @@ struct StudyWidgetCard: View {
                     HStack(spacing: 3) {
                         Text(goal.displayLabel).font(.system(size: spacious ? 13 : 10, weight: .medium)).lineLimit(spacious ? 2 : 1).minimumScaleFactor(0.8)
                         Spacer(minLength: 0)
+                        Text("\(goal.value)/\(goal.target)").font(.system(size: spacious ? 11 : 9, weight: .medium)).monospacedDigit().foregroundStyle(.secondary).fixedSize()
                         if goal.value >= goal.target { Image(systemName: "checkmark.circle.fill").font(.system(size: 10)).foregroundStyle(green) }
                     }
-                    HStack(spacing: 5) {
-                        ProgressView(value: Double(goal.value), total: Double(goal.target)).tint(goal.value >= goal.target ? green : blue)
-                        Text("\(goal.value)/\(goal.target)").font(.system(size: 9, weight: .medium)).monospacedDigit().foregroundStyle(.secondary)
-                    }
+                    WidgetProgressBar(value: Double(goal.value) / Double(goal.target), tint: goal.value >= goal.target ? green : blue)
                 }.accessibilityElement(children: .ignore).accessibilityLabel("\(goal.label): \(goal.value) of \(goal.target)")
             }
         }.frame(maxWidth: .infinity, alignment: .topLeading)
@@ -180,7 +179,7 @@ struct StudyWidgetCard: View {
         }
     }
     private func large(_ value: ModeAtlasWidgetSnapshot, height: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 8) {
             header(value)
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -211,7 +210,7 @@ struct StudyWidgetCard: View {
                     xp(value, onHero: true)
                 }.padding(14).frame(width: size.width * 0.32)
                     .foregroundStyle(heroText).background(heroSurface, in: RoundedRectangle(cornerRadius: 20))
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .top, spacing: 22) {
                         goalColumn(value, weekly: false, spacious: true)
                         goalColumn(value, weekly: true, spacious: true)
@@ -244,6 +243,22 @@ struct StudyWidgetCard: View {
             }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }.foregroundStyle(colorScheme == .dark ? Color(hex: 0xf4f4f5) : Color(hex: 0x172b4a))
             .privacySensitive().widgetURL(ModeAtlasWidgetStore.launchURL)
+    }
+}
+
+// A fixed-height SwiftUI bar keeps layout identical across widget families and
+// native render checks, without embedding an AppKit/UIKit progress control.
+private struct WidgetProgressBar: View {
+    let value: Double
+    let tint: Color
+    private var fraction: Double { min(1, max(0, value)) }
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule().fill(tint.opacity(0.20))
+                Capsule().fill(tint).frame(width: geometry.size.width * fraction)
+            }
+        }.frame(height: 4).accessibilityValue("\(Int(fraction * 100)) percent")
     }
 }
 
