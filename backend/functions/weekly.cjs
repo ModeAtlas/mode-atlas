@@ -27,9 +27,10 @@ function scoreAnswers(run,answers,at){
     if(!units.length||units.length>5||units.some(char=>!pool.has(char)))fail('invalid-argument','That kana is outside this session.');
     units.forEach(char=>seen.add(char));
     const expected=units.map(char=>map[char]).join('');
-    const response=run.direction==='reading'?item.answer.trim().toLowerCase().replace(/\s+/g,''):item.answer.trim();
+    const direction=run.direction==='both'?(item.index%2?'reading':'writing'):run.direction;
+    const response=direction==='reading'?item.answer.trim().toLowerCase().replace(/\s+/g,''):item.answer.trim();
     const written=kana.splitKana(response);
-    const correct=run.direction==='reading'?response===expected:run.mode==='testMode'?response===item.kana:
+    const correct=direction==='reading'?response===expected:run.mode==='testMode'?response===item.kana:
       written.length===units.length&&written.every((char,i)=>pool.has(char)&&map[char]===map[units[i]]);
     // The declared pool cannot inflate scores from repeating only a few kana.
     if(correct)score+=units.length*rewards.kanaRate(Math.min(run.pool.length,seen.size),run.hints);
@@ -62,7 +63,7 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
   async function start(uid,data){
     fields(data,['id','pool','direction','mode','hints','branch']);
     const branch=data.branch||'kana';
-    const kanaValid=['reading','writing'].includes(data.direction)&&['guided','free','endless','dailyChallenge','testMode','speedRun','timeTrial','comboKana'].includes(data.mode)&&typeof data.hints==='boolean'&&Array.isArray(data.pool)&&data.pool.length>0&&data.pool.length<=512&&data.pool.every(char=>typeof char==='string'&&Object.hasOwn(map,char));
+    const kanaValid=['reading','writing','both'].includes(data.direction)&&['guided','free','endless','dailyChallenge','testMode','speedRun','timeTrial','comboKana'].includes(data.mode)&&!(data.direction==='both'&&['dailyChallenge','testMode','comboKana'].includes(data.mode))&&typeof data.hints==='boolean'&&Array.isArray(data.pool)&&data.pool.length>0&&data.pool.length<=512&&data.pool.every(char=>typeof char==='string'&&Object.hasOwn(map,char));
     if(typeof data.id!=='string'||!/^[a-zA-Z0-9-]{8,100}$/.test(data.id)||!['kana','kanji'].includes(branch)||(branch==='kanji'?!kanji.valid(data):!kanaValid))fail('invalid-argument','Choose a valid practice session.');
     const period=policy.period(now());
     return db.runTransaction(async tx=>{

@@ -9,6 +9,28 @@ const {getAuth}=functionsRequire('firebase-admin/auth');
 const {initializeTestEnvironment,assertFails,assertSucceeds}=require('@firebase/rules-unit-testing');
 const {doc,getDoc,setDoc}=require('firebase/firestore');
 const {createSocial}=require('../functions/social.cjs');
+
+test('combined weekly sessions verify alternating directions on the server',()=>{
+  const {scoreAnswers}=require('../functions/weekly.cjs');
+  const run={direction:'both',mode:'guided',pool:['あ'],index:0,elapsed:0,seen:[],startedAt:0,hints:false};
+  const read={index:1,kana:'あ',answer:'a',elapsed:300},recall={index:2,kana:'あ',answer:'あ',elapsed:600};
+  const right=scoreAnswers(run,[read,recall],1000),wrong=scoreAnswers(run,[read,{...recall,answer:'a'}],1000);
+  assert.equal(right.index,2);assert.ok(right.score>wrong.score);
+  assert.throws(()=>scoreAnswers(run,[{...read,direction:'writing'}],1000),/Unsupported weekly/);
+});
+
+test('ordinary Friends reads use the public projection without loading private learning history',async()=>{
+  const a=await learner('Projection Reader');await a.call('state');
+  const reads=[];
+  const tracked=new Proxy(db,{get(target,key){
+    if(key==='doc')return path=>{reads.push(path);return target.doc(path);};
+    const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;
+  }});
+  const isolated=createSocial({db:tracked,auth});
+  const result=await isolated.call({auth:{uid:a.uid},data:{expectedUid:a.uid,action:'state',data:{listKind:'friends'}}});
+  assert.equal(result.active,true);assert.equal(result.list.rows.length,0);
+  assert.equal(reads.some(path=>path===`users/${a.uid}/appData/kanaTrainer`),false);
+});
 const {createService}=require('../functions/service.cjs');
 const {createAccounts}=require('../functions/accounts.cjs');
 const {projectSave,publicProfile}=require('../functions/projection.cjs');

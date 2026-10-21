@@ -5,6 +5,7 @@
     const cfg = config || {};
     const section = cfg.section || "reading";
     const mode = cfg.mode || (section === "writing" ? "writing" : "reading");
+    const evidenceMode = cfg.evidenceMode || mode;
     const Store = window.ModeAtlasStorage;
     try { window.KanaCloudSync?.markSectionUpdated?.(section); } catch {}
 
@@ -13,12 +14,13 @@
     };
 
     writeJson("settings", cfg.settings || {});
-    writeJson("charStats", cfg.stats || {});
-    writeJson("charTimes", cfg.times || {});
-    writeJson("srs", cfg.srs || {});
-    writeJson("scoreHistory", cfg.scoreHistory || {});
-    writeJson("dailyHistory", cfg.dailyChallengeHistory || {});
-    Store.writeModeNumber(mode, "highScore", Number(cfg.highScore || 0));
+    for(const [key,value] of [['charStats',cfg.stats],['charTimes',cfg.times],['srs',cfg.srs]])Store.writeModeJSON(evidenceMode,key,value||{});
+    if(evidenceMode!==mode)window.KanaCloudSync?.markSectionUpdated?.(evidenceMode);
+    if(cfg.settings?.kanaDirection!=='both'){
+      writeJson("scoreHistory", cfg.scoreHistory || {});
+      writeJson("dailyHistory", cfg.dailyChallengeHistory || {});
+      Store.writeModeNumber(mode, "highScore", Number(cfg.highScore || 0));
+    }
 
     try { window.KanaCloudSync?.scheduleSync?.(); } catch {}
   }

@@ -10,6 +10,7 @@
   };
   function create(config){
     const snapshot=config.getSnapshot, byId=id=>document.getElementById(id);
+    const answerMode=()=>config.getAnswerMode?.()||config.mode;
     let pendingReview=[];
     const study=()=>snapshot().sessionStats?.study;
     function focusChars(){
@@ -60,7 +61,7 @@
       current.xpParts={};current.milestones=[];current.retryQueue=[];current.assisted=0;current.questionAnswered=false;
       root.ModeAtlasProgress.startRun(current.runId);
       const rankingPool=current.focusChars.length?current.focusChars:root.ModeAtlasPracticeModes.fixedPool(state.settings)?Object.keys(root.getAnswerMapForCurrentMode()):state.activeChars;
-      root.ModeAtlasWeekly?.start(current,{pool:[...new Set(rankingPool.flatMap(kana=>root.ModeAtlasKanaData.splitKana(kana)))],direction:config.mode,mode:current.mode,hints:current.hintsEnabled});
+      root.ModeAtlasWeekly?.start(current,{pool:[...new Set(rankingPool.flatMap(kana=>root.ModeAtlasKanaData.splitKana(kana)))],direction:state.settings.kanaDirection==='both'?'both':config.mode,mode:current.mode,hints:current.hintsEnabled});
       pendingReview=[];clearFeedback();
     }
     function pool(chars){
@@ -98,7 +99,7 @@
         bestStreak:state.sessionStats.bestStreak,assisted:current.assisted,poolSize:current.poolSize,hintsEnabled:current.hintsEnabled,completed}));
     }
     function captureMilestone(kana,state,track=true){
-      root.ModeAtlasKanaLearning.recordRecall(config.mode,kana,{[config.mode+'Stats']:state.stats,[config.mode+'Review']:state.srs,[config.mode+'Times']:state.times},track);
+      const mode=answerMode();root.ModeAtlasKanaLearning.recordRecall(mode,kana,{[mode+'Stats']:state.stats,[mode+'Review']:state.srs,[mode+'Times']:state.times},track);
     }
     function prepareAnswer(){
       const state=snapshot();
@@ -112,7 +113,7 @@
     function recordAnswer(answer){
       const current=study();if(!current)return;
       rewardContext(current);
-      current.lastAnswer={kana:String(answer.kana).slice(0,20),answer:String(answer.answer||'').slice(0,40),correct:!!answer.correct,skipped:!!answer.skipped};
+      current.lastAnswer={kana:String(answer.kana).slice(0,20),answer:String(answer.answer||'').slice(0,40),direction:answerMode(),correct:!!answer.correct,skipped:!!answer.skipped};
       root.ModeAtlasWeekly?.answer(current,current.lastAnswer);
       for(const kana of root.ModeAtlasKanaData.splitKana(answer.kana)){
         const row=current.items[kana]||(current.items[kana]={kana,correct:0,wrong:0});
@@ -133,7 +134,7 @@
       }
       current.milestones.push(...milestones);
       const units=root.ModeAtlasKanaData.splitKana(answer.kana);
-      addXp(root.ModeAtlasProgress.recordAnswer({runId:current.runId,index:state.sessionStats.answered,at,mode:config.mode,correct:answer.correct,
+      addXp(root.ModeAtlasProgress.recordAnswer({runId:current.runId,index:state.sessionStats.answered,at,mode:answerMode(),correct:answer.correct,
         units:units.length,kana:units,poolSize:current.poolSize,assisted:supported,streak:current.independentStreak,
         hiragana:units.filter(kana=>/^[\u3040-\u309f]+$/.test(kana)).length,katakana:units.filter(kana=>/^[\u30a0-\u30ff]+$/.test(kana)).length,reviewed,milestones}));
       sync();
@@ -147,7 +148,7 @@
       const current=study(),answer=current?.lastAnswer;
       if(!answer)return false;
       const reading=root.ModeAtlasKanaData.splitKana(answer.kana).map(kana=>root.ModeAtlasKanaCoaching.reading(kana)).join('');
-      const correct=config.mode==='writing'?answer.kana:reading;
+      const correct=(answer.direction||config.mode)==='writing'?answer.kana:reading;
       const outcome=answer.correct?'correct':answer.skipped?'skipped':'incorrect';
       const label=answer.correct?'✓ Correct':answer.skipped?'− Skipped':'✕ Incorrect';
       const quick=byId('answerFeedback');
@@ -232,7 +233,7 @@
       }
       if(current.mode==='testMode'&&complete){const results=el('a','ma-button ma-button--ghost','View Results');results.href='/results/';actions.appendChild(results);}
       content.append(actions);
-      root.ModeAtlasProgressUI.presentSession(current,()=>root.ModeAtlasDialog.feature({kicker:`${config.mode==='writing'?'Recall':'Read'} · ${mode.label}`,title,contentNode:content})).then(()=>{
+      root.ModeAtlasProgressUI.presentSession(current,()=>root.ModeAtlasDialog.feature({kicker:`${state.settings.kanaDirection==='both'?'Read + Recall':config.mode==='writing'?'Recall':'Read'} · ${mode.label}`,title,contentNode:content})).then(()=>{
         root.removeEventListener('modeAtlasWeeklyChanged',onWeekly);
         if(reviewing){root.ModeAtlasTrainerControls.setPracticeCount(10);config.start();}else config.naturalBreak();
       });

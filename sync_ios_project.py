@@ -74,10 +74,8 @@ def sync_privacy_resources(source: str) -> str:
     return source
 
 
-def sync_document_router_source(source: str) -> str:
-    """Include the native route owner when retaining a locally signed project."""
-    name = 'ModeAtlasRouter.swift'
-    ref, build = '289100000000000000000001', '289100000000000000000002'
+def sync_native_source(source: str, name: str, ref: str, build: str) -> str:
+    """Include a native owner when retaining a locally signed project."""
     if not re.search(rf'{ref}[^\n]*= ', source):
         source = source.replace('/* End PBXFileReference section */', f'\t\t{ref} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {name}; sourceTree = "<group>"; }};\n/* End PBXFileReference section */')
     if not re.search(rf'{build}[^\n]*= ', source):
@@ -91,7 +89,7 @@ def sync_document_router_source(source: str) -> str:
             return match.group(1) + entries + match.group(3)
         source, count = re.subn(pattern, include, source, count=1, flags=re.S | re.M)
         if count != 1:
-            raise SystemExit(f'Could not locate iOS router source owner {owner}; project left unchanged.')
+            raise SystemExit(f'Could not locate iOS source owner {owner}; project left unchanged.')
     return source
 
 
@@ -142,7 +140,8 @@ def sync() -> tuple[str, int, bool]:
     if updated.count(f"GOOGLE_REVERSED_CLIENT_ID = {reversed_client_id};") != 2:
         raise SystemExit("Could not synchronize the Firebase callback scheme in both Xcode configurations.")
 
-    updated = sync_document_router_source(updated)
+    updated = sync_native_source(updated, 'ModeAtlasRouter.swift', '289100000000000000000001', '289100000000000000000002')
+    updated = sync_native_source(updated, 'ModeAtlasPronunciationPlayer.swift', '291160000000000000000001', '291160000000000000000002')
     updated = sync_privacy_resources(updated)
     updated = sync_auth_entitlements(updated)
     info_path = ROOT / 'ios/App/App/Info.plist'

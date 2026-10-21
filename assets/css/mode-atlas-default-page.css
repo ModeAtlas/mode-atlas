@@ -9,3 +9,9 @@ body.ma-reading-page{
   --ma-trainer-active-text:var(--ma-collection-text,var(--ma-native-selected-text,#d9ffe7));
   --ma-trainer-test-bg:var(--ma-collection-page,var(--ma-native-page,#133127));
 }
+/* Combined practice shares the trainer, with Recall's choice input in place of romaji. */
+.ma-mixed-recall .ma-ios-reading-keyboard{display:none;}
+.ma-mixed-recall{--ma-ios-custom-kb-height:0px;}
+#mixedRecallChoices{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px auto;max-width:480px;}
+#mixedRecallChoices[hidden]{display:none;}
+#mixedRecallChoices button{min-height:54px;font:500 1.5rem var(--ma-font-jp);}

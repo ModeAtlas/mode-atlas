@@ -8,7 +8,7 @@
   const KEY='modeAtlasKanaLearning',UPDATED='modeAtlasKanaLearningUpdatedAt';
   const data=root.ModeAtlasKanaData,review=root.ModeAtlasReview;
   const skills=Object.freeze(['reading','writing','handwriting']);
-  const names=Object.freeze({reading:'Read',writing:'Recall',handwriting:'Handwrite'});
+  const names=Object.freeze({reading:'Read',writing:'Recall',both:'Read + Recall',handwriting:'Handwrite'});
   const labels=Object.freeze(['New','Introduced','Learning','Familiar','Confident','Mastered','Mastered+']);
   const requirements=Object.freeze({familiar:Object.freeze({correct:3,accuracy:.8}),handwriting:Object.freeze({3:Object.freeze({correct:1,days:1}),4:Object.freeze({correct:3,days:2}),5:Object.freeze({correct:5,days:3})})});
   const scripts=Object.freeze(['hiragana','katakana']);
@@ -124,6 +124,10 @@
   }
   function rowComplete(row,skill,state,evidence){return !!state.placed[skill][row.id]||row.chars.every(char=>earned(char,skill,state,evidence)>=3);}
   function path(script,skill,state=read(),evidence=snapshot()){
+    if(skill==='both'){
+      const recall=path(script,'writing',state,evidence);
+      return path(script,'reading',state,evidence).map((row,i)=>({...row,unlocked:row.unlocked&&recall[i].unlocked,complete:row.complete&&recall[i].complete,ready:Math.min(row.ready,recall[i].ready)}));
+    }
     const sequence=rows.filter(row=>row.script===script),lastPlaced=sequence.reduce((last,row,i)=>state.placed[skill][row.id]?i:last,-1);
     let previous=true;
     return sequence.map((row,i)=>{
@@ -139,7 +143,7 @@
     return scripts.filter(script=>path(script,skill,state,evidence).filter(row=>row.group==='base').every(row=>row.unlocked));
   }
   function selection(settings,skill,state=read(),evidence=snapshot()){
-    const allowed=available(skill,state,evidence),ids=Array.isArray(settings.kanaRows)?settings.kanaRows:[];
+    const allowed=available(settings.kanaDirection==='both'?'both':skill,state,evidence),ids=Array.isArray(settings.kanaRows)?settings.kanaRows:[];
     const selected=Array.isArray(settings.kanaRows)?ids.filter(id=>rowById.has(id)).flatMap(id=>rowById.get(id).chars):Object.keys(data.selectedKanaMap(settings));
     return Object.fromEntries([...new Set(selected)].filter(char=>allowed.has(char)&&(!settings.confusableKana||confusable.has(char))).map(char=>[char,map[char]]));
   }

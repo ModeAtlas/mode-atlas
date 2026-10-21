@@ -65,7 +65,7 @@
     const debugPanel = () => typeof config.getDebugPanel === 'function' ? config.getDebugPanel() : null;
     const rowMaps = () => typeof config.getRows === 'function' ? (config.getRows() || {}) : {};
     const study = root.ModeAtlasStudySession.create({
-      mode, getSnapshot: snapshot,
+      mode, getAnswerMode:config.getAnswerMode, getSnapshot: snapshot,
       finish: () => hooks.endSession(true), start: () => hooks.startSession(),
       naturalBreak: () => root.settleTrainerProgressionBreak('trainer-session-summary')
     });
@@ -82,6 +82,7 @@
       const state = snapshot();
       const result = root.ModeAtlasTrainerCore.saveTrainerState({
         mode,
+        evidenceMode:config.getAnswerMode?.()||mode,
         section: mode,
         settings: state.settings,
         stats: state.stats,
@@ -119,7 +120,7 @@
 
       if (!titleEl || !sublineEl) return;
       const state = snapshot(), descriptor = root.ModeAtlasPracticeModes.describe(state.settings);
-      titleEl.textContent = `${mode === 'writing' ? 'Recall' : 'Read'} · ${descriptor.label}`;
+      titleEl.textContent = `${snapshot().settings.kanaDirection==='both'?'Read + Recall':mode === 'writing' ? 'Recall' : 'Read'} · ${descriptor.label}`;
       sublineEl.textContent = dailyActive ? labels.dailySubline : testActive ? labels.testSubline : descriptor.detail;
       const start = byId('startBtn')?.querySelector('span');
       if (start) start.textContent = descriptor.action;
@@ -278,6 +279,7 @@
     function updateBestScores(completed = false){
       const state = snapshot();
       const settings = state.settings || {};
+      if(settings.kanaDirection==='both')return state.scoreHistory;
       const sessionStats = state.sessionStats || {};
       let history = root.normalizeScoreHistory(state.scoreHistory);
 

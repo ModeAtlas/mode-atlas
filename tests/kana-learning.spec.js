@@ -8,6 +8,37 @@ async function setup(page,{native=false,theme='dark'}={}){
   },{native,theme});
 }
 async function open(page,url='/kana/') {await page.goto(url);await expect(page.locator('#maLoadingScreen')).toBeHidden();}
+
+test('native path winds across the available width and keeps every row reachable',async({page},info)=>{
+  await page.setViewportSize({width:393,height:852});await setup(page,{native:true});await open(page);
+  await page.getByRole('button',{name:/Start as a beginner/}).click();
+  const group=page.locator('.ma-kana-path-group[open]').first();await group.scrollIntoViewIfNeeded();
+  const first=await group.locator('.ma-kana-path-marker').nth(0).boundingBox(),second=await group.locator('.ma-kana-path-marker').nth(1).boundingBox();
+  expect(second.x-first.x).toBeGreaterThan(80);expect(second.y-first.y).toBe(128);
+  await expect(group.locator('.ma-kana-path-trail')).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:info.outputPath('native-path.png'),animations:'disabled'});
+});
+
+for(const native of [false,true])test(`combined practice alternates and saves each skill independently ${native?'iOS':'web'}`,async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await setup(page,{native});await open(page);await page.getByRole('button',{name:/Start as a beginner/}).click();
+  await open(page,'/kana/?view=practice');await page.getByRole('button',{name:'Read + Recall',exact:true}).click();
+  await expect(page.locator('.ma-kana-skill-explanation')).toContainText('Alternate Read and Recall');
+  await page.getByRole('button',{name:'Start practice',exact:true}).click();
+  await expect(page).toHaveURL(/\/reading\//);await page.locator('#startBtn').click();await page.clock.install();
+  const first=await page.evaluate(()=>({char:currentChar,answer:getAnswerForCurrentChar()}));
+  if(native){for(const char of first.answer)await page.locator(`.ma-ios-reading-keyboard [data-key="${char}"]`).click();}
+  else await page.locator('#input').fill(first.answer);
+  await page.clock.runFor(500);
+  await expect(page.locator('#mixedRecallChoices')).toBeVisible();
+  const second=await page.evaluate(()=>currentChar);
+  await page.locator('#mixedRecallChoices').getByRole('button',{name:second,exact:true}).click();await page.clock.runFor(500);
+  const evidence=await page.evaluate(({first,second})=>({read:ModeAtlasStorage.readModeJSON('reading','charStats',{})[first]?.correct,recall:ModeAtlasStorage.readModeJSON('writing','charStats',{})[second]?.correct,answered:sessionStats.answered,mode:answerMode}),{first:first.char,second});
+  expect(evidence).toEqual({read:1,recall:1,answered:2,mode:'reading'});
+  await expect(page.locator('#input')).toBeVisible();await expect(page.locator('#mixedRecallChoices')).toBeHidden();
+  expect(errors).toEqual([]);
+});
 test('fresh entry offers placement or beginner, with one path and independently locked rows',async({page},info)=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);await open(page);
   await expect(page.getByRole('button',{name:/Take a starting-point test/})).toBeVisible();await page.getByRole('button',{name:/Start as a beginner/}).click();
@@ -15,9 +46,9 @@ test('fresh entry offers placement or beginner, with one path and independently 
   await expect(page.locator('#maKanaLearning select')).toHaveCount(0);
   await page.getByRole('button',{name:'Explore your path',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Your learning path'})).toBeVisible();
-  await expect(page.locator('.ma-kana-path-row[data-locked="false"]')).toHaveCount(1);
+  await expect(page.locator('.ma-kana-path-step:enabled')).toHaveCount(1);
   await page.getByRole('button',{name:'Katakana',exact:true}).click();await expect(page.locator('.ma-kana-next-chars')).toHaveText('ア イ ウ エ オ');
-  await page.getByRole('button',{name:'Recall',exact:true}).click();await expect(page.locator('.ma-kana-path-row[data-locked="false"]')).toHaveCount(1);
+  await page.getByRole('button',{name:'Recall',exact:true}).click();await expect(page.locator('.ma-kana-path-step:enabled')).toHaveCount(1);
   await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Tests',exact:true}).click();await expect(page.getByText(/Unlock every basic row/)).toHaveCount(2);
   expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);expect(errors).toEqual([]);
   await page.screenshot({path:info.outputPath('kana-course.png')});

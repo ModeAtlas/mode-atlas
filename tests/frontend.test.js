@@ -827,7 +827,7 @@ test('Kana, Results, and Word Bank consume shared page UI primitives without re-
   assert.match(components, /border-radius:var\(--ma-button-radius,var\(--ma-radius-control\)\)/);
 
   assert.match(kanaHtml, /id="maKanaLearning"/);
-  assert.match(kanaJs, /ma-kana-path-row/);
+  assert.match(kanaJs, /ma-kana-path-step/);
   assert.doesNotMatch(kanaJs, /kana-next-card|kana-stage-card|kana-record-card/);
   const kanaActionBlock = kanaCss.match(/\.kana-primary-action,[\s\S]*?\.kana-inline-btn \{([\s\S]*?)\n\}/)?.[1] || '';
   assert.doesNotMatch(kanaActionBlock, /appearance:\s*none/,
