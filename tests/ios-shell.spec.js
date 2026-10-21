@@ -388,6 +388,7 @@ test('compact native reminders keep notification testing in the authorised dev m
     await window.ModeAtlasDevConsoleLoader.loadIfEligible();
     window.ModeAtlasDevConsole.open();
   });
+  await page.getByRole('button',{name:'Testing',exact:true}).click();
   await page.locator('[data-ma-dev-test-notification]').click();
   await expect.poll(()=>page.evaluate(()=>window.engagementTest.calls.filter(x=>x==='test').length)).toBe(1);
   expect(await page.evaluate(()=>window.engagementTest.calls.filter(x=>x==='permission').length)).toBe(1);

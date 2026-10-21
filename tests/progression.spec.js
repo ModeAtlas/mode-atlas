@@ -824,6 +824,7 @@ test('developer shop reset clears paid selections and uses the signed-in account
     await ModeAtlasRewardAccess.refresh(true);await ModeAtlasShop.refresh(true);ModeAtlasProgress.selectBanner('sakura');ModeAtlasProgress.selectAppearance('sakura');ModeAtlasTheme.set('sakura',{toast:false});
     await ModeAtlasDevConsoleLoader.loadIfEligible();ModeAtlasDevConsole.open();
   });
+  await page.getByRole('button',{name:'Testing',exact:true}).click();
   await page.locator('[data-ma-dev-shop]').click();await page.locator('[data-ma-dev-coins]').fill('1500');await page.getByRole('button',{name:'Add currency',exact:true}).click();
   await expect(page.locator('[data-ma-dev-shop-status]')).toContainText('1,500 Atlas Coins added');
   await page.getByRole('button',{name:'Reset purchases',exact:true}).click();await expect(page.locator('.ma-dialog__title')).toHaveText('Reset your shop purchases?');
