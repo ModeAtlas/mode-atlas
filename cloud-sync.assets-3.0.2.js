@@ -1521,7 +1521,7 @@ function scheduleSync(delay = 800) {
 }
 
 function retryConnection(){
-  // Browsers retain failed ES-module imports for the life of a document. A
+  // Failed ES-module imports can remain cached for the life of a document. A
   // deliberate retry restarts that document, preserving its saved account data
   // and avoiding a second Firebase app/auth registry under cache-busted URLs.
   if(CONFIG_READY&&!authResolved&&authStartupFailed){location.reload();return Promise.resolve(false);}

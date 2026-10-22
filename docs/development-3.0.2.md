@@ -55,3 +55,9 @@ After publication is confirmed, an existing Mac checkout should fetch and fast-f
 ## Publication authorization — 23 October 2026
 
 The user explicitly approved publishing the accumulated code, generated assets, tests, review documents and screenshots to the public `ModeAtlas/mode-atlas` repository on `agent/mode-atlas-2.68.0-ios-theme`. The rejection and remote-state descriptions above record the state before this authorization. Publication is being resumed through the connected GitHub integration; successful publication must be verified against the committed source tree. Main/production remains under the user’s control.
+
+## GitHub CI correction — 23 October 2026
+
+The approved accumulated source was published as `b925f313d127466629f153f03fec1d4216b09cfa`; its Git tree exactly matched the local source. In push run `39792120102`, source validation, backend checks, native iOS compilation and two browser shards passed. Browser shard 3 failed one account-retry test; the dependent aggregate gate correctly failed and publication was skipped.
+
+The test assumed an aborted module download could never be retried within the same document. GitHub Chromium made another request and recovered successfully, so its fixed request-count assertion failed. The corrected fixture keeps the SDK offline during manual sync, then brings it online immediately before the explicit retry. It verifies unresolved account state while offline, a fresh document after Try again, a new SDK request and resolved account state afterward. Required checks remain intact. All 14 stability cases pass locally across desktop and mobile Chromium. The correction's GitHub checks must pass before merging PR #64.

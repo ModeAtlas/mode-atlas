@@ -82,11 +82,21 @@ test('an explicit retry reloads failed SDK imports and restores the account stat
     return route.abort();
   });
   await page.goto('/friends/');await expect(page.locator('.ma-social-body')).toContainText('Couldn’t restore your account');
-  online=true;await page.evaluate(()=>KanaCloudSync.syncNow());
-  expect(authRequests).toBe(1,'the failed import is cached until the document reloads');
+  // Network-failure caching differs between Chromium versions. Keep the SDK
+  // unavailable through a background/manual sync so the explicit retry remains
+  // the action under test, regardless of whether import() makes another request.
+  await page.evaluate(()=>KanaCloudSync.syncNow());
+  await expect(page.locator('.ma-social-body')).toContainText('Couldn’t restore your account');
+  expect(await page.evaluate(()=>KanaCloudSync.isAuthResolved())).toBe(false);
+  const failedRequests=authRequests;
+  expect(failedRequests).toBeGreaterThanOrEqual(1);
+  await page.evaluate(()=>{window.__retryDocumentMarker=true;});
+  online=true;
   await page.getByRole('button',{name:'Try again',exact:true}).click();
   await expect(page.locator('.ma-social-body')).toContainText('Learn alongside friends');
-  expect(authRequests).toBe(2);expect(await page.evaluate(()=>KanaCloudSync.isAuthResolved())).toBe(true);
+  expect(authRequests).toBeGreaterThan(failedRequests);
+  expect(await page.evaluate(()=>window.__retryDocumentMarker)).toBeUndefined();
+  expect(await page.evaluate(()=>KanaCloudSync.isAuthResolved())).toBe(true);
 });
 
 test('browser tabs and installed-app manifests share fingerprinted current brand assets',async({page})=>{
