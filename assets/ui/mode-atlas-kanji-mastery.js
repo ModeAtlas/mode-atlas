@@ -9,22 +9,23 @@
     const host=el('section','ma-kanji-mastery-detail');host.append(button('‹ Back to map',back),el('h3','',char),el('p','','Loading character…'));
     void content.load().then(()=>{
       const entry=content.get(char),snapshot=state.read();host.replaceChildren(button('‹ Back to map',back),el('h3','',char),el('p','',entry.meanings.join(' · ')));
-      const completed=state.completed(snapshot,char);host.append(el('p','',completed?'Level progress complete':'Complete 3 unassisted recalls in each skill at 80% accuracy or better.'));
+      const completed=state.completed(snapshot,char);host.append(el('p','',completed?'✓ Band progress complete':'To complete: 3 recent correct per skill at 80% accuracy.'));
       for(const skill of state.skills){
         const m=state.metrics(snapshot,char,skill),section=el('section','ma-mastery-next');section.append(el('h4','',`${skill==='pronunciation'?'Pronunciation':'Meaning'} · ${labels[state.stage(snapshot,char,skill)]}`));
-        const stats=el('p','',`${m.correct} correct / ${m.attempts} attempts · ${(m.accuracy*100).toFixed(2)}% accuracy`);section.append(stats);
-        section.append(el('p','',`${m.independent} unassisted correct · ${m.days.length} study days · ${m.reviews} spaced successes`));
-        if(m.average)section.append(el('p','',`Average answer time: ${(m.average/1000).toFixed(1)}s`));
-        const target=state.stage(snapshot,char,skill)>=2?{correct:30,accuracy:.95,days:4,reviews:4}:{correct:10,accuracy:.85,days:2,reviews:2};
+        section.append(el('p','',m.recentAttempts?`${m.recentCorrect} / ${m.recentAttempts} recent correct`:'No recent practice'));
+        if(state.readiness(snapshot,char,skill)<state.stage(snapshot,char,skill))section.append(el('p','','Revisit this skill.'));
+        const record=el('details');record.append(el('summary','','Progress details'),el('p','',`All time: ${m.correct} / ${m.attempts} correct · ${(m.accuracy*100).toFixed(2)}%`));
+        if(m.average)record.append(el('p','',`Average answer: ${(m.average/1000).toFixed(1)}s`));
+        const target=state.stage(snapshot,char,skill)>=2?{correct:30,recent:10,accuracy:.9,days:4,reviews:4}:{correct:10,recent:5,accuracy:.8,days:2,reviews:2};
         const checks=el('ul','ma-mastery-checks');
-        for(const [label,value,needed]of [['Unassisted correct',m.independent,target.correct],['Accuracy',m.accuracy*100,target.accuracy*100],['Study days',m.days.length,target.days],['Spaced successes',m.reviews,target.reviews]]){
-          const met=value>=needed,item=el('li','',`${met?'✓':'○'} ${label}: ${Number.isInteger(value)?value:value.toFixed(2)} / ${needed}${label==='Accuracy'?'%':''}`);
+        for(const [label,value,needed]of [['Unassisted correct',m.independent,target.correct],['Recent correct',m.recentCorrect,target.recent],['Recent accuracy',m.recentAccuracy*100,target.accuracy*100],['Study days',m.days.length,target.days],['Spaced successes',m.reviews,target.reviews]]){
+          const met=value>=needed,item=el('li','',`${met?'✓':'○'} ${label}: ${Number.isInteger(value)?value:value.toFixed(2)} / ${needed}${label==='Recent accuracy'?'%':''}`);
           item.dataset.met=String(met);checks.append(item);
         }
-        section.append(checks);
+        record.append(checks);section.append(record);
         const action=el('a','ma-button ma-button--ghost',`Practise ${skill}`);action.href='/kanji/?'+new URLSearchParams({char,mode:skill});section.append(action);host.append(section);
       }
-      const guide=el('details');guide.append(el('summary','','How Kanji mastery works'),el('p','','Reviewing: 10 unassisted correct, at least 85% overall accuracy, recall on 2 days and 2 spaced successes. Mastered: 30 unassisted correct, at least 95% accuracy, recall on 4 days, 4 spaced successes and 3 recent independent successes. Both skills must qualify. Typing time is shown for your reference.'));
+      const guide=el('details');guide.append(el('summary','','How Kanji mastery works'),el('p','','Practise readings and meanings without hints across several days. Your last 12 answers show what to revisit. Earned milestones stay saved.'));
       host.append(guide);
     }).catch(error=>{host.lastChild.textContent=error.message;});return host;
   }

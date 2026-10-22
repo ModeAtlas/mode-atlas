@@ -60,16 +60,19 @@ test('privacy and terms remain readable with large text in a narrow native viewp
 
 test('sign-out prevents a background widget refresh from republishing the previous save',async({page})=>{
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await require('./helpers/firebase-guest')(page);
   await page.addInitScript(()=>{
     window.snapshots=[];window.resetCount=0;
     window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{ModeAtlasNative:{
       publishWidgetSnapshot:async value=>{snapshots.push(value);},resetEngagement:async()=>{resetCount++;}
     }}};
   });
-  await page.goto('/');await expect.poll(()=>page.evaluate(()=>snapshots.length)).toBeGreaterThan(0);
-  await page.evaluate(()=>{window.dispatchEvent(new Event('modeAtlasAccountSignedOut'));snapshots=[];window.dispatchEvent(new CustomEvent('modeAtlasAppStateChanged',{detail:{isActive:false}}));ModeAtlasNativeEngagement.refresh();});
+  await page.goto('/');await page.evaluate(()=>KanaCloudSync.ready);
+  await page.evaluate(()=>{window.widgetUser={uid:'previous-account'};KanaCloudSync.getUser=()=>widgetUser;ModeAtlasStorage.set('modeAtlasLocalSaveOwner','previous-account');ModeAtlasStorage.set('modeAtlasLastStudiedAt','123');ModeAtlasNativeEngagement.refresh();});
+  await expect.poll(()=>page.evaluate(()=>JSON.parse(snapshots.at(-1)?.snapshot||'{}').lastActivityAt)).toBe(123);
+  await page.evaluate(()=>{widgetUser=null;window.dispatchEvent(new Event('modeAtlasAccountSignedOut'));snapshots=[];window.dispatchEvent(new CustomEvent('modeAtlasAppStateChanged',{detail:{isActive:false}}));ModeAtlasNativeEngagement.refresh();});
   await page.waitForTimeout(500);expect(await page.evaluate(()=>snapshots.length)).toBe(0);expect(await page.evaluate(()=>resetCount)).toBe(1);
-  await page.evaluate(()=>{KanaCloudSync={...KanaCloudSync,getUser:()=>({uid:'next-account'})};window.dispatchEvent(new Event('kanaCloudSyncStatusChanged'));});
+  await page.evaluate(()=>{widgetUser={uid:'next-account'};ModeAtlasStorage.set('modeAtlasLocalSaveOwner','next-account');ModeAtlasStorage.remove('modeAtlasLastStudiedAt');window.dispatchEvent(new Event('kanaCloudSyncStatusChanged'));});
   await expect.poll(()=>page.evaluate(()=>snapshots.length)).toBeGreaterThan(0);
 });
 
@@ -107,7 +110,7 @@ test('visual tour opens real practice setup, goals, rewards and account sections
   await expect(page.locator('.ma-branch-library')).toBeVisible();
   const before=await page.evaluate(()=>ModeAtlasProgress.getXP());
   await tour.getByRole('button',{name:'Next',exact:true}).click();
-  await expect(page).toHaveURL(/\/progress\/$/);await expect(page.locator('#atlasPanel0')).toBeVisible();
+  await expect(page).toHaveURL(/\/progress\/\?tab=goals$/);await expect(page.locator('#atlasPanel0')).toBeVisible();
   await page.screenshot({path:test.info().outputPath('tour-goals.png')});
   await tour.getByRole('button',{name:'Next',exact:true}).click();await expect(page.locator('#atlasPanel1')).toBeVisible();
   await expect(page.locator('[data-reward-category="banners"] > summary')).toBeInViewport();
@@ -162,7 +165,7 @@ test('a legal reader temporarily owns focus over first-use setup and restores th
 test('first branch tour is optional and replayable without changing course access',async({page})=>{
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
   await page.addInitScript(()=>{for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');localStorage.setItem('maWhatsNewSeen','tour');});
-  await page.goto('/kana/');const offer=page.getByRole('dialog',{name:'A quick look around Kana?'});await expect(offer).toBeVisible();await offer.getByRole('button',{name:'Explore myself',exact:true}).click();
-  await expect(page.getByRole('button',{name:/Start as a beginner/})).toBeVisible();await page.reload();await expect(offer).toHaveCount(0);
+  await page.goto('/kana/');const offer=page.getByRole('dialog',{name:'A quick look around Kana?'});await expect(offer).toHaveCount(0);
+  await expect(page.getByRole('button',{name:/Start lesson/})).toBeVisible();await page.reload();await expect(offer).toHaveCount(0);
   await page.evaluate(()=>ModeAtlasTour.start('kana'));await expect(page.locator('.ma-tour-layer')).toBeVisible();await page.getByRole('button',{name:'Skip tour',exact:true}).click();expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);
 });

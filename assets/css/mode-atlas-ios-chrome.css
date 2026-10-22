@@ -1,16 +1,44 @@
 /* Native iOS composition. Every selector is gated by the Capacitor runtime. */
 html[data-ma-runtime="ios"]{
+  --ma-safe-top:env(safe-area-inset-top,0px);
+  --ma-safe-right:env(safe-area-inset-right,0px);
+  --ma-safe-bottom:env(safe-area-inset-bottom,0px);
+  --ma-safe-left:env(safe-area-inset-left,0px);
+  --ma-ios-rail-width:0px;
   font-size:calc(16px * var(--ma-ios-text-scale,1));
   /* Reserve the full dock before JavaScript measures it, including the home indicator. */
-  --ma-ios-dock-height:calc(60px + env(safe-area-inset-bottom,0px));
-  --ma-page-inset-top:max(12px,env(safe-area-inset-top,0px));
+  --ma-ios-dock-height:calc(60px + var(--ma-safe-bottom));
+  --ma-page-inset-top:max(12px,var(--ma-safe-top));
+  --ma-page-inset-left:calc(var(--ma-safe-left) + var(--ma-page-pad,16px));
+  --ma-page-inset-right:calc(var(--ma-safe-right) + var(--ma-ios-rail-width) + var(--ma-page-pad,16px));
   --ma-page-inset-bottom:calc(var(--ma-ios-dock-height) + 20px);
   --ma-toast-inset-bottom:var(--ma-page-inset-bottom);
 }
 html[data-ma-runtime="ios"] body{
   padding-top:var(--ma-page-inset-top);
   padding-bottom:var(--ma-page-inset-bottom);
+  padding-left:var(--ma-page-inset-left);
+  padding-right:var(--ma-page-inset-right);
 }
+html[data-ma-runtime="ios"] .ma-page-frame{width:100%;min-width:0;}
+/* All four insets are independent. Dialogs use the safe viewport even when
+   the keyboard or a fold changes its height without navigation. */
+html[data-ma-runtime="ios"] .ma-dialog-layer{
+  --ma-dialog-top:max(var(--ma-page-inset-top),calc(var(--ma-safe-top) + 12px));
+  padding:var(--ma-dialog-top) calc(var(--ma-safe-right) + 12px) calc(var(--ma-safe-bottom) + 12px) calc(var(--ma-safe-left) + 12px);
+}
+html[data-ma-runtime="ios"] .ma-dialog{
+  max-height:min(760px,calc(var(--ma-overlay-height,100dvh) - var(--ma-dialog-top) - var(--ma-safe-bottom) - 12px));
+}
+/* Chosen from usable space, not an iPhone/iPad or orientation assumption. */
+html[data-ma-runtime="ios"][data-ma-navigation="rail"]{--ma-ios-rail-width:88px;--ma-page-inset-bottom:calc(var(--ma-safe-bottom) + 20px);}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tabs{
+  left:auto;right:var(--ma-safe-right);top:var(--ma-safe-top);bottom:var(--ma-safe-bottom);width:88px;
+  padding:16px 8px;border-top:0;border-left:1px solid var(--ma-border);box-shadow:none;
+}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tabs__links{grid-template-columns:1fr;gap:12px;}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tab{min-height:64px;font-size:.75rem;}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] body.study-nav-hidden .ma-ios-tabs #studyNavShowBtn{width:100%;padding:8px;white-space:normal;}
 html[data-ma-runtime="ios"] .ma-nav,
 html[data-ma-runtime="ios"] .ma-nav-spacer{display:none!important;}
 
@@ -45,7 +73,7 @@ html[data-ma-runtime="ios"] .ma-ios-tabs{
   --ma-ios-accent:var(--ma-atlas);
   position:fixed;z-index:100;left:0;right:0;bottom:0;
   display:block;
-  padding:5px max(10px,env(safe-area-inset-right,0px)) calc(5px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));
+  padding:5px max(10px,var(--ma-safe-right)) calc(5px + var(--ma-safe-bottom)) max(10px,var(--ma-safe-left));
   border-top:1px solid var(--ma-border);
   background:var(--ma-surface-strong);
   box-shadow:var(--ma-native-chrome-shadow);
@@ -106,7 +134,7 @@ html[data-ma-runtime="ios"] .ma-ios-reading-keyboard{display:none;}
 html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open) .ma-ios-reading-keyboard,
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard--inline{
   position:fixed;z-index:101;left:0;right:0;bottom:0;
-  display:grid;gap:7px;padding:11px max(4px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));
+  display:grid;gap:7px;padding:11px max(4px,var(--ma-safe-right)) calc(10px + var(--ma-safe-bottom)) max(4px,var(--ma-safe-left));
   border-top:1px solid var(--ma-border);background:var(--ma-surface-strong);
   box-shadow:var(--ma-native-chrome-shadow);
 }
@@ -134,8 +162,8 @@ html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:focus-visible{outline:
 /* The dock trigger opens the same accessible dialog as the web trainer. */
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only{display:none;}
 html[data-ma-runtime="ios"] .ma-practice-sheet{
-  width:min(760px,100%);margin:auto auto 0;max-height:calc(100dvh - env(safe-area-inset-top,0px) - 12px);
-  border-radius:28px 28px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);
+  width:min(760px,100%);margin:auto auto 0;max-height:calc(100dvh - var(--ma-safe-top) - 12px);
+  border-radius:28px 28px 0 0;border-bottom:0;padding-bottom:var(--ma-safe-bottom);
 }
 html[data-ma-runtime="ios"] .ma-practice-sheet__handle{display:grid;place-items:center;flex:none;height:24px;touch-action:none;}
 html[data-ma-runtime="ios"] .ma-practice-sheet__handle span{height:5px;width:36px;border-radius:5px;background:var(--ma-border-strong,var(--ma-muted));opacity:.6;}
@@ -153,7 +181,7 @@ html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-train
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-session-controls{width:100%;justify-items:center;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).study-nav-hidden .ma-trainer-shell{
   display:flex;align-items:center;justify-content:center;
-  min-height:calc(100svh - var(--ma-ios-dock-height) - env(safe-area-inset-top,0px) - 26px);
+  min-height:calc(100svh - var(--ma-ios-dock-height) - var(--ma-safe-top) - 26px);
 }
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).study-nav-hidden .ma-trainer-card{margin:0 auto;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-trainer-shell{

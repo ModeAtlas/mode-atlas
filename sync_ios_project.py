@@ -160,8 +160,17 @@ def sync() -> tuple[str, int, bool]:
     info_path = ROOT / 'ios/App/App/Info.plist'
     with info_path.open('rb') as handle:
         info = plistlib.load(handle)
+    info_changed = False
     if info.get('FirebaseMessagingAutoInitEnabled') is not False:
         info['FirebaseMessagingAutoInitEnabled'] = False
+        info_changed = True
+    shortcut_titles = {'app.modeatlas.reading': 'Kana Read', 'app.modeatlas.writing': 'Kana Recall'}
+    for shortcut in info.get('UIApplicationShortcutItems', []):
+        title = shortcut_titles.get(shortcut.get('UIApplicationShortcutItemType'))
+        if title and shortcut.get('UIApplicationShortcutItemTitle') != title:
+            shortcut['UIApplicationShortcutItemTitle'] = title
+            info_changed = True
+    if info_changed:
         info_path.write_bytes(plistlib.dumps(info, sort_keys=False))
     try:
         sync_widget_configuration()

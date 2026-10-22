@@ -27,11 +27,14 @@ function writeSection(tx,snapshot,name,section){
   const raw=structuredClone(snapshot.data()||{}),text=JSON.stringify(section.data||{}),parts=[];
   const next={...section};
   if(Buffer.byteLength(text)>24000){
-    for(let at=0;at<text.length;at+=120000){const id='section-'+name+'-'+parts.length;parts.push(id);tx.set(snapshot.ref.collection('parts').doc(id),{text:text.slice(at,at+120000)});}
+    for(let at=0;at<text.length;at+=120000){const id='section-'+name+'-'+parts.length;parts.push(id);}
     next.data={};next.storage={format:'json-parts-v1',parts,schemaVersion:Number(section.data?.state?.version)||0};
   }
+  const manifest={...raw,storageVersion:2,revision:(raw.revision||0)+1,generation:raw.generation||0,updatedAt:section.updatedAt,sections:{...raw.sections,[name]:next}};
+  const budget=limits.envelope(manifest);limits.parse(text);
+  for(let i=0;i<parts.length;i++){const chunk=text.slice(i*120000,(i+1)*120000);budget.add(chunk);tx.set(snapshot.ref.collection('parts').doc(parts[i]),{text:chunk});}
   for(const id of raw.sections?.[name]?.storage?.parts||[])if(!parts.includes(id))tx.delete(snapshot.ref.collection('parts').doc(id));
-  tx.set(snapshot.ref,{...raw,storageVersion:2,revision:(raw.revision||0)+1,generation:raw.generation||0,updatedAt:section.updatedAt,sections:{...raw.sections,[name]:next}});
+  tx.set(snapshot.ref,manifest);
 }
 async function skipInvalidSave(task,uid){
   try{await task();return true;}catch(error){

@@ -125,7 +125,7 @@ function createCommerce({db,auth,now=Date.now}){
       reconcile(w,studyDaysFromSave((await readSave(tx,save)),zone),dates.dateKeyInTimeZone(at,zone),zone);
       const ledger=earned.data()||earnings.opening(w);
       if(!earned.exists)tx.set(earned.ref,ledger);
-      creditLevels(tx,ref,w,earnings.asSave(ledger),at);creditTokens(tx,ref,w,ledger,at,zone);
+      if(!ledger.integrity?.reviewRequired){creditLevels(tx,ref,w,earnings.asSave(ledger),at);creditTokens(tx,ref,w,ledger,at,zone);}
       if(before!==JSON.stringify(w)||record.data()?.version!==3)tx.set(ref,w);
     });
   }
@@ -168,9 +168,9 @@ function createCommerce({db,auth,now=Date.now}){
       const offers=catalogue.products.map(p=>catalogue.offer(p,rotation.data()?.offers,at,eligibility)).filter(Boolean);
       const ledger=earned.data()||earnings.opening(w);
       if(!earned.exists)tx.set(earned.ref,ledger);
-      creditLevels(tx,ref,w,earnings.asSave(ledger),at);
+      if(!ledger.integrity?.reviewRequired)creditLevels(tx,ref,w,earnings.asSave(ledger),at);
       if(legacy){if(JSON.stringify(w)!==original||record.data()?.version!==3)tx.set(ref,w);return {version:1,currency:'atlas-tokens',balance:w.balance,purchasesEnabled:false};}
-      reconcile(w,days,today,zone);creditTokens(tx,ref,w,ledger,at,zone);
+      reconcile(w,days,today,zone);if(!ledger.integrity?.reviewRequired)creditTokens(tx,ref,w,ledger,at,zone);
       if(prior?.exists&&prior.data().fingerprint!==fingerprint)fail('invalid-argument','That purchase request has already been used.');
       let accessChanged=false;
       if(action!=='shop'&&!prior.exists){
@@ -214,7 +214,7 @@ function createCommerce({db,auth,now=Date.now}){
       if(JSON.stringify(w)!==original||record.data()?.version!==3)tx.set(ref,w);
       if(accessChanged)tx.set(accessRef,access);
       const owned=entitlement(user,access,at).grants,repair=repairGap(w,days,today);
-      return {version:data.version===3||data.currency?3:2,currency:catalogue.currency.id,balance:w.balance,tokenBalance:w.tokenBalance,earnedCurrency:catalogue.earnedCurrency.id,tokenRewards:w.tokenRewards,coinPurchasesEnabled:false,offers,
+      return {version:data.version===3||data.currency?3:2,currency:catalogue.currency.id,balance:w.balance,tokenBalance:w.tokenBalance,earnedCurrency:catalogue.earnedCurrency.id,tokenRewards:w.tokenRewards,coinPurchasesEnabled:false,rewardsHeld:ledger.integrity?.reviewRequired===true,offers,
         levelRewards:w.levelRewards,
         owned:catalogue.products.filter(p=>p.grant&&owned.includes(p.grant)).map(p=>p.id),
         inventory:Object.fromEntries(consumables.map(p=>[p.id,w.inventory[p.id].length])),

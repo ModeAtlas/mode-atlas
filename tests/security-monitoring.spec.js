@@ -27,7 +27,7 @@ test('guest reports need explicit opt-in, contain limited summaries and withdraw
   const consent=page.getByRole('dialog').last();await expect(consent).toContainText('typed answers');
   await consent.getByRole('button',{name:'Share guest learning',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>usageCalls.filter(row=>row.action==='report').length)).toBe(1);
-  const data=await page.evaluate(()=>usageCalls[0]);expect(data.id).toMatch(/^[a-f0-9]{64}$/);expect(Object.keys(data.snapshot).sort()).toEqual(['attempts','branch','correct','introduced','kana','level','platform','version','xp']);
+  const data=await page.evaluate(()=>usageCalls[0]);expect(data.id).toMatch(/^[a-f0-9]{64}$/);expect(Object.keys(data.snapshot).sort()).toEqual(['attempts','branch','correct','funnel','funnelBranches','funnelStartDay','introduced','kana','level','platform','version','xp']);
   await page.evaluate(()=>dispatchEvent(new CustomEvent('modeAtlasAccountWillChange')));
   await expect.poll(()=>page.evaluate(()=>usageCalls.filter(row=>row.action==='delete').length)).toBe(1);
   expect(await page.evaluate(()=>ModeAtlasUsage.enabled())).toBe(false);

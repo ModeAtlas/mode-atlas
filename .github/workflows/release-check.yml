@@ -222,14 +222,17 @@ jobs:
     name: Build native iOS shell
     # Each job validates the same commit independently. The workflow passes only
     # when browser, Firebase and native checks all succeed; no serial wait needed.
-    runs-on: macos-15
+    runs-on: xcode-27
     timeout-minutes: 30
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Select a Duo-capable release SDK
+        run: |
+          mode_atlas_developer="$(python3 select_ios_toolchain.py)"
+          echo "DEVELOPER_DIR=$mode_atlas_developer" >> "$GITHUB_ENV"
 
       - name: Verify selected Xcode and SDK
         run: |

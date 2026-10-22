@@ -12,7 +12,7 @@
   const STORAGE_KEY = 'modeAtlasProgress';
   const UPDATED_AT_KEY = 'modeAtlasProgressUpdatedAt';
   const DEVICE_KEY = 'modeAtlasProgressDeviceId';
-  const STATE_VERSION = 7;
+  const STATE_VERSION = 8;
   const LEGACY_SOURCE = 'legacy-baseline';
   const snapshots=new WeakSet();
   const summaries=new WeakMap();
@@ -202,7 +202,7 @@
       const reviews={};for(const mode of ['reading','writing'])reviews[mode]=[...new Set((Array.isArray(row.reviews?.[mode])?row.reviews[mode]:[]).filter(x=>typeof x==='string'&&x.length<8))].sort().slice(0,5);
       const metrics={};for(const [id,counts]of Object.entries(object(row.metrics)))if(safeKey(id))metrics[id]=normalizeMetrics(counts);
       const kana=[...new Set((Array.isArray(row.kana)?row.kana:[]).filter(k=>typeof k==='string'&&k.length<8))].sort().slice(0,512);
-      out[day]={sources,reviews,metrics,kana,goalVersion:row.goalVersion===4?4:3};
+      out[day]={sources,reviews,metrics,kana,practice:normalizePractice(row.practice),goalVersion:row.goalVersion===4?4:3};
     }return out;
   }
   function mergeActivity(left,right){
@@ -214,11 +214,26 @@
         a.metrics[id]||={};for(const [key,n]of Object.entries(metrics))a.metrics[id][key]=Math.max(a.metrics[id][key]||0,n);
       }
       a.kana=[...new Set([...a.kana,...b.kana])].sort().slice(0,512);
+      for(const branch of ['wordbank','handwriting'])a.practice[branch]=[...new Set([...a.practice[branch],...b.practice[branch]])].sort().slice(0,5);
       a.goalVersion=Math.max(a.goalVersion,b.goalVersion);
       out[day]=a;
     }return out;
   }
-  function emptyActivity(){return {sources:{},reviews:{reading:[],writing:[]},metrics:{},kana:[],goalVersion:3};}
+  function normalizePractice(input){return Object.fromEntries(['wordbank','handwriting'].map(branch=>[branch,[...new Set((Array.isArray(input?.[branch])?input[branch]:[]).filter(id=>typeof id==='string'&&/^[a-zA-Z0-9:_-]{1,160}$/.test(id)))].sort().slice(0,5)]));}
+  function emptyActivity(){return {sources:{},reviews:{reading:[],writing:[]},metrics:{},kana:[],practice:normalizePractice(),goalVersion:3};}
+  function habitUnits(state,day){
+    const totals=activityTotals(state,day),metrics=totals.metrics,practice=state.activity[day]?.practice;
+    return Math.max(correctAcrossBranches(totals),(metrics['kana.attempts']||0)+(metrics['kanji.attempts']||0))+(practice?.wordbank?.length||0)+(practice?.handwriting?.length||0);
+  }
+  // Five meaningful attempts make a study day. These bounded, convergent
+  // receipts grant no answer XP and are never sent as competitive receipts.
+  function recordHabit({branch,id,at=Date.now()}){
+    if(!['wordbank','handwriting'].includes(branch)||typeof id!=='string'||!/^[a-zA-Z0-9:_-]{1,160}$/.test(id))return false;
+    const state=ensureSeeded({sync:false,emit:false}),day=dayKey(at),row=state.activity[day]||emptyActivity();
+    if(row.practice[branch].includes(id)||row.practice[branch].length>=5)return false;
+    row.practice[branch].push(id);row.practice[branch].sort();state.activity[day]=row;
+    persistState(state,{source:branch+'.practice',requireSaved:true});return true;
+  }
   const maxMetric=key=>key.endsWith('.streak')||key.endsWith('.testScore');
   function normalizeMetrics(input){
     return Object.fromEntries(Object.entries(object(input)).filter(([key])=>/^(kana|kanji|wordbank|listening|grammar|comprehension)\.[a-zA-Z]+$/.test(key)).map(([key,n])=>[key,finiteCount(n)]));
@@ -245,7 +260,7 @@
   }
   function weekKey(day){const d=new Date(day+'T12:00:00Z');return root.ModeAtlasDates.shiftDateKey(day,-((d.getUTCDay()+6)%7));}
   function correctAcrossBranches(totals){return totals.correct+Object.entries(totals.metrics).filter(([id])=>id.endsWith('.correct')&&!id.startsWith('kana.')).reduce((sum,[,n])=>sum+n,0);}
-  function weekDays(state,day){const first=weekKey(day);return Object.keys(state.activity).filter(key=>weekKey(key)===first&&correctAcrossBranches(activityTotals(state,key))>=5).length;}
+  function weekDays(state,day){const first=weekKey(day);return Object.keys(state.activity).filter(key=>weekKey(key)===first&&habitUnits(state,key)>=5).length;}
   function claim(state,id,value){const key='v3:'+id,old=state.claims[key]||0;state.claims[key]=Math.max(old,finiteCount(value));return state.claims[key]-old;}
   function goalClaimKey(period,key,goal){return `v4:${period}:${key}:goal:${goal.id}`;}
   const personalClaimKey=(period,key)=>`v5:personal:${period}:${key}`;
@@ -367,7 +382,7 @@
     for(const [date,row]of Object.entries(state.activity))if(date<=day){
       for(const char of row.kana)known.add(char);
       const totals=activityTotals(state,date);profile.independent+=totals.metrics['kana.independent']||0;
-      if(date<day&&weekKey(date)===weekKey(day)&&correctAcrossBranches(totals)>=5)profile.daysAvailable++;
+      if(date<day&&weekKey(date)===weekKey(day)&&habitUnits(state,date)>=5)profile.daysAvailable++;
     }
     const learning=root.ModeAtlasKanaLearning;
     if(learning?.available){
@@ -443,7 +458,7 @@
       for(const [id,n]of Object.entries(totals.metrics))metrics[id]=maxMetric(id)?Math.max(metrics[id]||0,n):(metrics[id]||0)+n;
       for(const char of state.activity[day]?.kana||[])kana.add(char);
       metrics['study.goals']=(metrics['study.goals']||0)+dailyGoalCount(state,day);
-      if(correctAcrossBranches(totals)>=5)metrics['study.days']=(metrics['study.days']||0)+1;
+      if(habitUnits(state,day)>=5)metrics['study.days']=(metrics['study.days']||0)+1;
     }
     return {...metrics,'kana.correct':reading+writing,'kana.reading':reading,'kana.writing':writing,'kana.balance':Math.min(10,reading)+Math.min(10,writing),'kana.variety':kana.size};
   }
@@ -480,6 +495,7 @@
     const source=state.sources[sourceId]||{};source[`kana.${mode}.correct`]=finiteCount(source[`kana.${mode}.correct`])+count;state.sources[sourceId]=source;
     addCredit(state,'answer',count*(rate-1));
     const metrics={'kana.independent':input.assisted?0:count,'kana.broad':input.poolSize>=45?count:0,'kana.hiragana':input.correct?finiteCount(input.hiragana):0,'kana.katakana':input.correct?finiteCount(input.katakana):0,'kana.streak':input.assisted?0:finiteCount(input.streak)};
+    metrics['kana.attempts']=1;
     const activity=addActivity(state,day,metrics,input.correct?(input.kana||[]):[]);
     activity.sources[sourceId]||=[0,0];activity.sources[sourceId][mode==='writing'?1:0]+=count;
     activity.reviews[mode]=[...new Set([...activity.reviews[mode],...(input.reviewed||[])])].sort().slice(0,5);state.activity[day]=activity;
@@ -497,7 +513,7 @@
     const rate=root.ModeAtlasRewardRules.kanaRate(input.poolSize,input.assisted);
     state.sources[id]||={};state.sources[id]['kanji.correct']=(state.sources[id]['kanji.correct']||0)+count;
     addCredit(state,'answer',count*(rate-1));
-    addActivity(state,day,{'kanji.correct':count,'kanji.pronunciation':input.skill==='pronunciation'?count:0,'kanji.meaning':input.skill==='meaning'?count:0,'kanji.independent':input.assisted?0:count});
+    addActivity(state,day,{'kanji.attempts':1,'kanji.correct':count,'kanji.pronunciation':input.skill==='pronunciation'?count:0,'kanji.meaning':input.skill==='meaning'?count:0,'kanji.independent':input.assisted?0:count});
     const parts={answers:count*rate,goals:reconcileGoals(state,day)};run.answers=input.index;run.at=at;persistState(state,{source:'kanji.answer'});
     return {duplicate:false,xp:Object.values(parts).reduce((a,b)=>a+b,0),parts};
   }
@@ -534,7 +550,7 @@
   }
   function studyDays(input,legacy=legacyStudyDays()){
     const state=viewState(input);
-    return [...new Set([...Object.keys(state.activity).filter(day=>correctAcrossBranches(activityTotals(state,day))>=5),...legacy])]
+    return [...new Set([...Object.keys(state.activity).filter(day=>habitUnits(state,day)>=5),...legacy])]
       .filter(day=>/^\d{4}-\d{2}-\d{2}$/.test(day)).sort();
   }
   function studyStreak(days,today,protectedDays=[]){
@@ -573,7 +589,7 @@
       goals.push(...periodGoals(state,key,period).map(goal=>({...goal,value:goalAwards(state,key,period)[goal.slot]?goal.target:metrics[goal.metric]||0})));
       const personal=personalGoal(state,key,period);if(personal)goals.push(personal);
     }
-    return {streak,weekDays:weekDays(state,today),goals};
+    return {streak,weekDays:weekDays(state,today),todayUnits:habitUnits(state,today),goals};
   }
   function weeklyRecap(input,at=Date.now(),previous=false){
     const state=viewState(input),today=dayKey(at),start=weekKey(root.ModeAtlasDates.shiftDateKey(today,previous?-7:0));
@@ -842,7 +858,7 @@
   return Object.freeze({
     STORAGE_KEY, UPDATED_AT_KEY, DEVICE_KEY, STATE_VERSION,
     COUNTER_XP, EVENT_XP,
-    normalizeState, mergeStates, readState, readSnapshot, persistState, ensureSeeded,
+    normalizeState, mergeStates, readState, readSnapshot, persistState, ensureSeeded, recordHabit,
     award, awardOnce, debugAdjustXP, startRun, recordAnswer, recordActivity, finishRun, routine, weeklyRecap, achievementStats, recordAchievements, recordRewardGrants, studyDays, studyStreak, protectStreak, selectAppearance, selectBanner, selectTheme, levelRequirement,
     goalProfile, goalChoices, replaceGoal, personalGoalChoices, setPersonalGoal, removePersonalGoal, recordKanaMilestone, personalGoal, getXP, getLifetimeCorrect, getLevelFromXP, getSummary, getDeviceId, recordKanjiAnswer
   });

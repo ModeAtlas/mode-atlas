@@ -74,6 +74,7 @@
       if(host.dataset.selection!==selection)renderCategory(host,{update:false});
       const balance=host.querySelector('[data-ma-coin-balance]');balance.dataset.value=String(Number.isSafeInteger(wallet.balance));balance.textContent=wallet.balance!==null?wallet.balance.toLocaleString():wallet.status==='guest'?'Sign in':wallet.status==='loading'?'Checking balance…':wallet.status==='offline'?'Connect to view your balance':'Couldn’t load your balance';
       const tokens=host.querySelector('[data-ma-token-balance]');tokens.dataset.value=String(Number.isSafeInteger(wallet.tokenBalance));tokens.textContent=wallet.tokenBalance!==null&&wallet.tokenBalance!==undefined?wallet.tokenBalance.toLocaleString():wallet.status==='guest'?'Sign in':wallet.status==='loading'?'Checking…':'—';
+      host.querySelector('[data-ma-reward-hold]').hidden=wallet.rewardsHeld!==true;
       host.querySelector('[data-ma-shop-refresh]').hidden=!['unavailable','offline'].includes(wallet.status);
       for(const product of catalogue.products){
         const item=host.querySelector('[data-ma-shop-product="'+product.id+'"]');
@@ -82,6 +83,9 @@
         item.hidden=!!product.audience&&!offer||wallet.offers!==null&&!offer;
         const filter=host.querySelector('[data-ma-wardrobe-filter]')?.value;
         if(filter&&filter!=='all'&&product.kind==='cosmetic'&&product.rewards[0].type!==filter)item.hidden=true;
+        const availabilityFilter=host.querySelector('[data-ma-wardrobe-availability]')?.value;
+        if(availabilityFilter==='owned'&&!isOwned)item.hidden=true;
+        if(availabilityFilter==='affordable'&&(isOwned||!offer||!((Number.isFinite(wallet.balance)&&offer.coinPrice<=wallet.balance)||(offer.tokenPrice&&Number.isFinite(wallet.tokenBalance)&&offer.tokenPrice<=wallet.tokenBalance))))item.hidden=true;
         item.querySelector('[data-ma-shop-availability]').textContent=product.kind==='consumable'?`${availability(product,wallet,isOwned)} · ${wallet.inventory?.[product.id]||0} ready`:availability(product,wallet,isOwned);
         item.dataset.owned=String(isOwned);
         const ending=item.querySelector('[data-ma-shop-ends]');
@@ -170,6 +174,7 @@
   }
   function renderCategory(host,{update=true}={}){
     const filter=host.querySelector('[data-ma-wardrobe-filter]')?.value;
+    const availabilityFilter=host.querySelector('[data-ma-wardrobe-availability]')?.value;
     const content=host.querySelector('[data-ma-shop-content]'),category=host.dataset.category,full=host.dataset.maShop==='full';host.dataset.selection=JSON.stringify(state().offers?.map(item=>item.id)||null);content.replaceChildren();
     if(category==='featured'){
       section(content,'themes','Change your atmosphere','collection',2);
@@ -179,7 +184,9 @@
     }else if(category==='wardrobe'){
       const filters=el('label','ma-shop-filter','Explore your wardrobe'),select=el('select');select.dataset.maWardrobeFilter='';select.setAttribute('aria-label','Wardrobe type');
       for(const [value,label]of [['all','All styles'],['hairstyles','Hair'],['hairColours','Hair colours'],['outfits','Tops & dresses'],['pants','Pants & skirts'],['headwear','Headwear'],['accessories','Accessories']]){const option=el('option','',label);option.value=value;select.append(option);}
-      select.value=filter||'all';select.addEventListener('change',refresh);filters.append(select);content.append(filters);section(content,'wardrobe','Find your look','cosmetic');
+      select.value=filter||'outfits';select.addEventListener('change',refresh);filters.append(select);content.append(filters);
+      const available=el('label','ma-shop-filter','Availability'),pick=el('select');pick.dataset.maWardrobeAvailability='';pick.setAttribute('aria-label','Wardrobe availability');
+      for(const [value,label]of [['all','All items'],['owned','Already owned'],['affordable','Within my balance']]){const option=el('option','',label);option.value=value;pick.append(option);}pick.value=availabilityFilter||'all';pick.addEventListener('change',refresh);available.append(pick);content.append(available);section(content,'wardrobe','Find your look','cosmetic');
     }else if(category==='pets')section(content,'pets','A friend for every chapter','cosmetic');
     else if(category==='themes')section(content,'themes','A whole new atmosphere','collection');
     else if(category==='streak'){
@@ -205,9 +212,9 @@
     const header=el('div','ma-shop-header'),wallet=el('section','ma-shop-wallet');wallet.setAttribute('aria-label','Your balances');
     const coin=el('span','ma-shop-coin');coin.append(icon('star'));
     const copy=el('div','ma-shop-wallet__copy'),value=el('p','ma-shop-wallet__balance');value.dataset.maCoinBalance='';value.setAttribute('role','status');copy.append(coin,el('strong','',catalogue.currency.name),value);
-    const tokenCopy=el('div','ma-shop-wallet__copy ma-shop-wallet__tokens'),tokenValue=el('p','ma-shop-wallet__balance');tokenValue.dataset.maTokenBalance='';tokenValue.setAttribute('role','status');const tokenHelp=button('i','ma-shop-wallet__help');tokenHelp.setAttribute('aria-label','How to earn Study Tokens');tokenHelp.addEventListener('click',()=>void root.ModeAtlasDialog.alert({title:'Study Tokens',message:'Earn tokens through correct answers, level-ups and consistent study days. Wider kana practice earns more, and hints reduce the rate. Your tokens arrive when your progress syncs.',confirmLabel:'Got it'}));const tokenLabel=el('div','ma-shop-wallet__label');tokenLabel.append(el('strong','',catalogue.earnedCurrency.name),tokenHelp);tokenCopy.append(tokenLabel,tokenValue);
+    const tokenCopy=el('div','ma-shop-wallet__copy ma-shop-wallet__tokens'),tokenValue=el('p','ma-shop-wallet__balance');tokenValue.dataset.maTokenBalance='';tokenValue.setAttribute('role','status');const tokenHelp=button('i','ma-shop-wallet__help');tokenHelp.setAttribute('aria-label','How to earn Study Tokens');tokenHelp.addEventListener('click',()=>void root.ModeAtlasDialog.alert({title:'Study Tokens',message:'Earn tokens through correct answers, level-ups and consistent study days. Wider kana practice earns more, and hints reduce the rate. Sign in and connect before starting a session to earn verified rewards. Offline practice still saves your personal learning progress.',confirmLabel:'Got it'}));const tokenLabel=el('div','ma-shop-wallet__label');tokenLabel.append(el('strong','',catalogue.earnedCurrency.name),tokenHelp);tokenCopy.append(tokenLabel,tokenValue);
     const topup=button('Buy 500 coins','ma-button ma-button--primary ma-button--small');topup.dataset.maPurchaseCoins='';topup.addEventListener('click',()=>void coinPrompt());
-    const retry=button('Refresh balance','ma-button ma-button--ghost ma-button--small');retry.dataset.maShopRefresh='';retry.hidden=true;retry.addEventListener('click',()=>void root.ModeAtlasShop.refresh(true));wallet.append(copy,tokenCopy,topup,retry);header.append(wallet);
+    const retry=button('Refresh balance','ma-button ma-button--ghost ma-button--small');retry.dataset.maShopRefresh='';retry.hidden=true;retry.addEventListener('click',()=>void root.ModeAtlasShop.refresh(true));wallet.append(copy,tokenCopy,topup,retry);header.append(wallet);const held=el('p','ma-status','New study rewards are paused while unusual answer timing is reviewed. Your learning progress and existing balance are safe. Contact support@mode-atlas.com for a review.');held.dataset.maRewardHold='';held.hidden=true;held.setAttribute('role','status');header.append(held);
     if(!full){const link=shopLink('See full shop','featured','ma-button ma-button--ghost ma-shop-open');link.append(icon('arrow'));header.append(link);}
     else{
       const tabs=el('div','ma-shop-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Shop categories');

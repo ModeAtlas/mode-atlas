@@ -5,7 +5,7 @@
   else root.ModeAtlasAccountTransport = factory(root);
 })(typeof window === 'undefined' ? globalThis : window, function(root) {
   'use strict';
-  const PART = 120000, INLINE = 24000, MAX_PARTS = 350;
+  const PART = 120000, INLINE = 24000, MAX_PARTS = 32;
   const bytes = value => new TextEncoder().encode(JSON.stringify(value)).length;
   function create({db, doc, runTransaction, valid}) {
     const reference = uid => doc(db,'users',uid,'appData','kanaTrainer');

@@ -9,7 +9,7 @@
     '三':['Three lines, three. Keep the middle line short.','よこせんが みっつ。さん です。'],
     '人':['Picture a person standing on two legs.','ひとが たっている すがたを おもいうかべましょう。'],
     '日':['Picture the sun framed in a window. This character also means a day.','ひは、たいようや いちにちを あらわします。'],
-    '月':['Moon or month. In 一月 (one month), 一 is read ひと and 月 is read つき.','つきです。ひとつきの「つき」にも つかいます。'],
+    '月':['Moon or month. 月 on its own can mean the moon, read つき. In dates, readings change with the whole word.','つきです。よるの そらに みえます。'],
     '木':['Picture a tree: trunk in the middle, branches on either side.','まんなかが みき、りょうがわが えだです。'],
     '山':['Picture a mountain range with three peaks.','みっつの みねが ある やまを おもいうかべましょう。'],
     '川':['Picture three streams of water flowing down a river.','かわの みずが ながれる ようすを おもいうかべましょう。'],
@@ -21,7 +21,7 @@
     const isOn=entry.on.some(v=>content.hira(v)===plain),isKun=entry.kun.some(v=>content.hira(v.replace(/[.-]/g,''))===plain);
     const kind=isKun?'kun':isOn?'on':'word';
     return {word:pronunciation.prompt,reading,meaning:entry.meanings[0],gloss:entry.example?.meanings[0]||entry.meanings[0],kind,
-      cue:entry.cue||cues[entry.char]?.[0]||`Find ${entry.char} inside ${pronunciation.prompt}. Say the whole word, then connect it with “${entry.example?.meanings[0]||entry.meanings[0]}”.`,
+      cue:!entry.example?'Practise this character’s reading on its own.':entry.cue||cues[entry.char]?.[0]||`Find ${entry.char} inside ${pronunciation.prompt}. Say the whole word, then connect it with “${entry.example?.meanings[0]||entry.meanings[0]}”.`,
       japanese:cues[entry.char]?.[1]||`「${reading}」を こえに だして、かんじと いみを おぼえましょう。`};
   }
   function choices(char,phase,seed){

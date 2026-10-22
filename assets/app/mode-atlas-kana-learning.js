@@ -169,7 +169,9 @@
     const before=stage(char,state,{}),entries=state.handwriting[char]||=[];if(entries.some(r=>r.id===event.id))return false;
     entries.push({id:event.id,at:event.at,independent:event.mode==='write'&&!event.assisted&&event.errors===0});
     if(event.mode==='write'&&!event.assisted&&event.errors===0)state.handwritingDays[char]=[...(state.handwritingDays[char]||[]),root.ModeAtlasDates.localDateKey(new Date(event.at))];
-    state.earned.handwriting[char]=Math.max(state.earned.handwriting[char]||0,currentStage(char,'handwriting',{},state));save(state);root.ModeAtlasProgress?.recordKanaMilestone(char,stage(char,state,{}),before,event.at);return true;
+    state.earned.handwriting[char]=Math.max(state.earned.handwriting[char]||0,currentStage(char,'handwriting',{},state));
+    root.ModeAtlasStorage.transaction(()=>{save(state);root.ModeAtlasProgress?.recordKanaMilestone(char,stage(char,state,{}),before,event.at);root.ModeAtlasProgress?.recordHabit?.({branch:'handwriting',id:event.id,at:event.at});});
+    root.ModeAtlasVisitFlows?.recordActivity('handwriting');return true;
   }
   function details(char,state=read(),evidence=snapshot()){
     return {stage:stage(char,state,evidence),skills:skills.map(skill=>{

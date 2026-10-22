@@ -5,7 +5,7 @@
   const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
   const button=(label,action,cls='ma-button ma-button--ghost')=>{const node=el('button',cls,label);node.type='button';if(action)node.addEventListener('click',action);return node;};
   function picker(initial={}){
-    let selected=initial.avatar==='account'?'account':'character',character=rules.normalize(initial.character),tab='look',greeting=initial.greeting||'',displayName=initial.displayName||'',editingBio=false;
+    let selected=initial.avatar==='account'?'account':'character',character=rules.normalize(initial.character),tab='look',wardrobe='outfit',ownedOnly=true,greeting=initial.greeting||'',displayName=initial.displayName||'',editingBio=false;
     const petNames={...initial.petNames};if(character.pet!=='none')petNames[character.pet]=character.petName;
     const level=()=>Number.isInteger(initial.level)?initial.level:root.ModeAtlasProgress.getSummary().level,access=()=>root.ModeAtlasRewardAccess?.current();
     const host=el('div','ma-avatar-editor'),modes=el('div','ma-avatar-modes'),body=el('div','ma-avatar-editor__body');
@@ -32,6 +32,7 @@
         const swatches=items.every(item=>item.value),field=el('fieldset','ma-avatar-field');field.append(el('legend','',title));const grid=el('div',swatches?'ma-avatar-swatches':'ma-avatar-items');
         for(const item of items){
           if(type&&!rewards.visible(item,level(),access()))continue;
+          if(tab==='wardrobe'&&ownedOnly&&type&&!rewards.unlocked(item,level(),access()))continue;
           const available=!type||rewards.unlocked(item,level(),access());
           const choice=button('',()=>{
             if(key==='pet'){if(character.pet!=='none')petNames[character.pet]=character.petName;character.petName=petNames[item.id]||'';}
@@ -47,10 +48,14 @@
         choices('skin','Skin tone',rules.choices.skin);choices('hair','Hairstyle',rewards.hairstyles,'hairstyles');
         choices('hairColor','Hair colour',rules.choices.hairColor,'hairColours');choices('eyes','Eye colour',rules.choices.eyes);
       }else if(tab==='wardrobe'){
-        choices('outfit','Tops & dresses',rewards.outfits,'outfits');
-        if(rules.colourableOutfits.includes(character.outfit))choices('outfitColor','Clothing colour',rules.choices.outfitColor.filter(item=>character.outfit!=='seigaiha-kimono'||rules.kimonoColours.includes(item.id)));
-        if(!['day-dress','pinafore','meadow-dress','seigaiha-kimono'].includes(character.outfit)){choices('pants','Pants & skirts',rewards.pants,'pants');choices('pantsColor','Bottoms colour',rules.choices.pantsColor);}
-        choices('headwear','Headwear',rewards.headwear,'headwear');choices('accessory','Accessories',rewards.accessories,'accessories');
+        const category=el('label','','Clothing category'),select=el('select');select.setAttribute('aria-label','Clothing category');
+        for(const [id,label]of [['outfit','Tops & dresses'],['pants','Pants & skirts'],['headwear','Headwear'],['accessory','Accessories']]){const option=el('option','',label);option.value=id;select.append(option);}select.value=wardrobe;select.addEventListener('change',()=>{wardrobe=select.value;paint();});category.append(select);options.append(category);
+        const available=button(ownedOnly?'Available items':'All items',()=>{ownedOnly=!ownedOnly;paint();});available.setAttribute('aria-pressed',String(ownedOnly));options.append(available);
+
+        if(wardrobe==='outfit')choices('outfit','Tops & dresses',rewards.outfits,'outfits');
+        if(wardrobe==='outfit'&&rules.colourableOutfits.includes(character.outfit))choices('outfitColor','Clothing colour',rules.choices.outfitColor.filter(item=>character.outfit!=='seigaiha-kimono'||rules.kimonoColours.includes(item.id)));
+        if(wardrobe==='pants'&&!['day-dress','pinafore','meadow-dress','seigaiha-kimono'].includes(character.outfit)){choices('pants','Pants & skirts',rewards.pants,'pants');choices('pantsColor','Bottoms colour',rules.choices.pantsColor);}
+        if(wardrobe==='headwear')choices('headwear','Headwear',rewards.headwear,'headwear');if(wardrobe==='accessory')choices('accessory','Accessories',rewards.accessories,'accessories');
       }else{
         choices('pet','Your companion',rewards.pets,'pets');
         if(character.pet!=='none'){

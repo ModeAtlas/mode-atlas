@@ -26,3 +26,9 @@ syllabus; Mode Atlas is independent of the JLPT organisers.
 Maintainers: review upstream data monthly; regenerate using build_kanji_data.py.
 Source updates are reviewed with content and curriculum regression checks before
 release. Existing character identifiers retain their learning history.
+
+Supplemental JMdict examples: EDRDG JMdict_e, CC BY-SA 4.0.
+XML SHA-256: 7db87554cc1fa46727f5e85ac9342255c8f74cac41ad964aecc4c8fcb4b6513f
+Archive: https://github.com/Jitendex/edrdg-archive
+Pinned commit: 8f795e324a097815b128814414f0b460ec209ba1
+Selection: respect reading/sense restrictions; omit rare, obsolete and name senses.

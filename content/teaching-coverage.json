@@ -1,0 +1,53 @@
+{
+  "kind": "Structural and editorial coverage; independent review pending",
+  "kanji": [
+    {
+      "level": 5,
+      "entries": 84,
+      "examples": 84,
+      "cues": 84,
+      "acceptedMeaningSets": 84,
+      "confusionGuidance": 8,
+      "contexts": 0
+    },
+    {
+      "level": 4,
+      "entries": 169,
+      "examples": 169,
+      "cues": 7,
+      "acceptedMeaningSets": 131,
+      "confusionGuidance": 7,
+      "contexts": 7
+    },
+    {
+      "level": 3,
+      "entries": 387,
+      "examples": 387,
+      "cues": 11,
+      "acceptedMeaningSets": 0,
+      "confusionGuidance": 11,
+      "contexts": 4
+    },
+    {
+      "level": 2,
+      "entries": 398,
+      "examples": 398,
+      "cues": 10,
+      "acceptedMeaningSets": 0,
+      "confusionGuidance": 10,
+      "contexts": 5
+    },
+    {
+      "level": 1,
+      "entries": 1345,
+      "examples": 1337,
+      "cues": 17,
+      "acceptedMeaningSets": 0,
+      "confusionGuidance": 17,
+      "contexts": 6
+    }
+  ],
+  "wordUnits": 6,
+  "wordItems": 30,
+  "contextTasks": 18
+}

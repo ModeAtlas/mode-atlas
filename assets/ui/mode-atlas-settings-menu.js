@@ -14,7 +14,8 @@
           ${native?'':`<div class="ma-preference-row ma-display-panel"><span class="ma-setting-row__label">Display</span><div class="ma-setting-row__control ma-segmented ma-settings-segmented ma-settings-segmented--display">${['auto','desktop','tablet','phone'].map(value=>`<button class="ma-button ma-display-option" data-display="${value}" type="button">${value[0].toUpperCase()+value.slice(1)}</button>`).join('')}</div></div>`}
           <div class="ma-preference-row ma-sound-panel"><span class="ma-setting-row__label">Sound</span><div class="ma-setting-row__control ma-segmented ma-settings-segmented" style="--ma-segment-count:3">${[['soft','On'],['loud','Loud'],['off','Off']].map(([value,label])=>`<button class="ma-button ma-sound-toggle" data-ma-sound-choice="${value}" type="button">${label}</button>`).join('')}</div></div>
           ${native?`<div class="ma-preference-row"><span class="ma-setting-row__label">Haptics</span><div class="ma-setting-row__control ma-segmented ma-settings-segmented" style="--ma-segment-count:2"><button class="ma-button" type="button" data-ma-haptic-choice="on" aria-pressed="true">On</button><button class="ma-button" type="button" data-ma-haptic-choice="off" aria-pressed="false">Off</button></div></div>`:''}
-          ${action('Themes & rewards','palette','data-ma-rewards-open="rewards"','ma-theme-panel')}
+          <div class="ma-preference-row ma-theme-panel"><span class="ma-setting-row__label">Appearance</span><div class="ma-setting-row__control ma-segmented ma-settings-segmented" style="--ma-segment-count:3">${[['system','System'],['light','Light'],['dark','Dark']].map(([value,label])=>`<button class="ma-button" data-ma-theme-choice="${value}" type="button">${label}</button>`).join('')}</div></div>
+          ${action('Collected themes & rewards','palette','data-ma-rewards-open="rewards"')}
         </div>
       </section>
       ${native?(window.ModeAtlasNativeSettings?.markup?.()||''):''}
@@ -33,6 +34,8 @@
       <section class="ma-settings-section ma-save-section" aria-labelledby="maDataTitle">
         ${heading('maDataTitle','Data & account','shield')}
         <div class="ma-settings-action-grid">
+          ${action('Export learning backup','download','data-ma-export-learning')}
+          ${action('Restore learning backup','upload','data-ma-restore-learning')}
           ${action('Repair save','refresh','data-ma-repair-data')}
           ${action('Share guest learning','shield','data-ma-usage-settings hidden')}
           ${action('Reset data','delete','data-ma-unified-reset','ma-settings-action--danger')}

@@ -24,9 +24,11 @@
     }
     const detail=el('section','ma-kanji-result-detail'),correct=current.answers.filter(a=>a.correct).length,stats=el('div','ma-kanji-result-stats');
     for(const [value,label]of [[`${correct}/${current.answers.length}`,'Correct'],[`${(correct/current.answers.length*100).toFixed(1)}%`,'Accuracy'],[`${(current.answers.reduce((n,a)=>n+a.elapsed,0)/current.answers.length/1000).toFixed(1)}s`,'Average answer']]){const item=el('div');item.append(el('strong','',value),el('span','',label));stats.append(item);}
-    detail.append(el('h2','',`N${current.level} · ${labels[current.mode]}`),stats);
+    detail.append(el('h2','',`${labels[current.mode]} · N${current.level} content band`),stats);
     const actions=el('div','ma-kanji-actions');actions.append(link('Take another test','/kanji/?'+new URLSearchParams({level:String(current.level),test:current.mode})));
     const missed=current.answers.filter(a=>!a.correct).map(a=>a.char);
+    detail.append(root.ModeAtlasSessionOutcome.render({skill:labels[current.mode],scope:'Character/word test',missed,due:root.ModeAtlasSessionOutcome.kanjiDates(current.answers.map(a=>a.char),current.mode)}));
+    actions.prepend(link('Review '+(current.mode==='pronunciation'?'readings':'meanings'),'/kanji/?'+new URLSearchParams({level:String(current.level),practice:current.mode==='match'?'meaning':current.mode,focus:'due'})));
     if(missed.length)actions.append(link('Revisit mistakes','/kanji/?'+new URLSearchParams({level:String(current.level),chars:missed.join(''),mode:'learn'})));detail.append(actions);
     const answers=el('ol','ma-kanji-result-answers');
     for(const answer of current.answers){

@@ -122,7 +122,7 @@ test('About reports the cloud owner status and shared menus toggle consistently'
   await prepare(page,layouts[2],'dark');
   await page.goto('/',{waitUntil:'domcontentloaded'});
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
-  await page.locator('[data-settings-open]').click();
+  await page.locator('.ma-nav [data-settings-open]').click();
   await expect(page.locator('#maAccount-settings')).toHaveAttribute('aria-hidden','false');
   await page.evaluate(()=>document.querySelector('[data-settings-open]').click());
   await expect(page.locator('#maAccount-settings')).toHaveAttribute('aria-hidden','true');

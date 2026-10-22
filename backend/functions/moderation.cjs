@@ -1,5 +1,5 @@
 'use strict';
-const {createHash}=require('node:crypto');
+const {createHash,randomUUID}=require('node:crypto');
 const {FieldPath}=require('firebase-admin/firestore');
 const {HttpsError}=require('firebase-functions/v2/https');
 const policy=require('./shared/mode-atlas-social-identity.js');
@@ -14,6 +14,7 @@ function createModeration({db,identities,staff,now=Date.now}){
   const reports=db.collection('socialReports'),restrictions=db.collection('socialRestrictions');
   const account=uid=>db.doc('socialAccounts/'+uid);
   const warnings=db.collection('socialWarnings');
+  function audit(tx,actor,target,operation,reason){tx.set(db.doc('securityAudit/'+randomUUID()),{actor:actor.uid,target,operation,reason,at:now(),status:'complete',expiresAt:new Date(now()+90*86400000)});}
   async function requireStaff(user){if(await staff.current(user)==='member')fail('permission-denied','This action is available to the moderation team.');}
   async function report(uid,data){
     fields(data,['uid','reason','note','code']);
@@ -81,6 +82,7 @@ function createModeration({db,identities,staff,now=Date.now}){
         tx.set(restrictions.doc(report.target),{restricted:true,at:now(),report:data.id});
         if(a&&!a.deleting)tx.update(target,{restricted:true});
       }
+      audit(tx,user,report.target,'report-'+data.decision,'Report '+data.id+': '+report.reason);
       tx.update(ref,{state:'closed',decision:data.decision,reviewedAt:now(),reviewedBy:user.uid});return {ok:true};
     });
   }
@@ -101,6 +103,7 @@ function createModeration({db,identities,staff,now=Date.now}){
     await db.runTransaction(async tx=>{
       staff.requireAction(await staff.read(tx,user,target));
       const ref=account(data.uid),doc=await tx.get(ref);
+      audit(tx,user,data.uid,'friends-restored','Staff confirmed restoration');
       tx.delete(restrictions.doc(data.uid));if(doc.exists)tx.update(ref,{restricted:false});
     });return {ok:true};
   }
@@ -147,6 +150,7 @@ function createModeration({db,identities,staff,now=Date.now}){
       if(old.history.some(row=>row.id===data.requestId))return {ok:true};
       if(old.pending.length>=20)fail('resource-exhausted','This account has 20 unread warnings. Wait for them to be read.');
       const row={id:data.requestId,message,at:now(),by:user.uid};
+      audit(tx,user,target.uid,'warning-issued','Warning '+data.requestId);
       tx.set(ref,{count:old.count+1,history:[row,...old.history].slice(0,50),pending:[...old.pending,row]});
       return {ok:true};
     });
@@ -156,6 +160,7 @@ function createModeration({db,identities,staff,now=Date.now}){
     fields(data,['uid']);const target=await staff.user(data.uid);
     await db.runTransaction(async tx=>{
       const access=await staff.read(tx,user,target);if(!access.canManage)fail('permission-denied','Only Admin can clear warnings.');
+      audit(tx,user,data.uid,'warnings-cleared','Administrator confirmed warning removal');
       tx.delete(warnings.doc(data.uid));
     });return {ok:true};
   }

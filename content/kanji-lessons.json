@@ -16,6 +16,12 @@
     "acceptedMeanings": [
       "sun",
       "day"
+    ],
+    "contrasts": [
+      {
+        "char": "目",
+        "note": "日 has one inner horizontal line, 目 has two. Compare sun/day with eye."
+      }
     ]
   },
   "一": {
@@ -69,6 +75,12 @@
     "acceptedMeanings": [
       "person",
       "human"
+    ],
+    "contrasts": [
+      {
+        "char": "入",
+        "note": "The diagonal strokes meet differently. Compare 人 (person) with 入る (enter); trace each starting stroke."
+      }
     ]
   },
   "年": {
@@ -409,6 +421,12 @@
     "acceptedMeanings": [
       "between",
       "interval"
+    ],
+    "contrasts": [
+      {
+        "char": "問",
+        "note": "Inside 門, 間 has 日 and 問 has 口. Compare 間 (space between) with 問題 (question or problem)."
+      }
     ]
   },
   "上": {
@@ -532,6 +550,12 @@
     "cue": "Two strokes come together to enter. Compare 人, person.",
     "acceptedMeanings": [
       "enter"
+    ],
+    "contrasts": [
+      {
+        "char": "人",
+        "note": "The diagonal strokes meet differently. Compare 人 (person) with 入る (enter); trace each starting stroke."
+      }
     ]
   },
   "学": {
@@ -813,6 +837,12 @@
     "cue": "午前 is before noon; 午後 is after noon. Compare 牛, cow, later.",
     "acceptedMeanings": [
       "noon"
+    ],
+    "contrasts": [
+      {
+        "char": "牛",
+        "note": "The vertical stroke in 牛 extends above the upper horizontal. Compare 牛肉 (beef) with 午前 (morning)."
+      }
     ]
   },
   "百": {
@@ -917,6 +947,12 @@
     "cue": "A slanting stroke above 十 turns ten into thousand.",
     "acceptedMeanings": [
       "thousand"
+    ],
+    "contrasts": [
+      {
+        "char": "干",
+        "note": "千 begins with a slanted stroke; 干 has a horizontal top stroke. Compare 千 (thousand) with 干す (dry)."
+      }
     ]
   },
   "水": {
@@ -1075,6 +1111,12 @@
       "earth",
       "soil",
       "ground"
+    ],
+    "contrasts": [
+      {
+        "char": "士",
+        "note": "In 土 the lower horizontal stroke is longer. In 士 the upper one is longer. Compare soil with the character in 博士."
+      }
     ]
   },
   "木": {
@@ -1305,6 +1347,12 @@
     "cue": "Right contains 口, a mouth-shaped box. Compare 左.",
     "acceptedMeanings": [
       "right"
+    ],
+    "contrasts": [
+      {
+        "char": "石",
+        "note": "Both end in 口. Notice the first two strokes above it: 右 is right, 石 is stone."
+      }
     ]
   },
   "読": {
@@ -1750,7 +1798,20 @@
     "acceptedMeanings": [
       "question",
       "ask"
-    ]
+    ],
+    "contrasts": [
+      {
+        "char": "間",
+        "note": "Inside 門, 間 has 日 and 問 has 口. Compare 間 (space between) with 問題 (question or problem)."
+      }
+    ],
+    "cue": "Inside 門, 間 has 日 and 問 has 口. Compare 間 (space between) with 問題 (question or problem).",
+    "context": {
+      "text": "この問題は難しいです。",
+      "reading": "このもんだいはむずかしいです。",
+      "translation": "This question is difficult.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
   },
   "代": {
     "example": {
@@ -1810,7 +1871,20 @@
     },
     "acceptedMeanings": [
       "eye"
-    ]
+    ],
+    "contrasts": [
+      {
+        "char": "日",
+        "note": "日 has one inner horizontal line, 目 has two. Compare sun/day with eye."
+      }
+    ],
+    "cue": "日 has one inner horizontal line, 目 has two. Compare sun/day with eye.",
+    "context": {
+      "text": "目が痛いです。",
+      "reading": "めがいたいです。",
+      "translation": "My eyes hurt.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
   },
   "通": {
     "example": {
@@ -2043,7 +2117,20 @@
     },
     "acceptedMeanings": [
       "hold"
-    ]
+    ],
+    "contrasts": [
+      {
+        "char": "待",
+        "note": "持 has the hand component 扌 and means hold; 待 has 彳 and means wait. Compare 持つ with 待つ."
+      }
+    ],
+    "cue": "持 has the hand component 扌 and means hold; 待 has 彳 and means wait. Compare 持つ with 待つ.",
+    "context": {
+      "text": "重い荷物を持つのは大変です。",
+      "reading": "おもいにもつをもつのはたいへんです。",
+      "translation": "Carrying heavy luggage is hard.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
   },
   "野": {
     "example": {
@@ -2355,7 +2442,20 @@
     },
     "acceptedMeanings": [
       "sell"
-    ]
+    ],
+    "contrasts": [
+      {
+        "char": "買",
+        "note": "Buying and selling are opposites. 買 contains 貝 below; 売 has 儿 at the bottom. Practise 買う and 売る together."
+      }
+    ],
+    "cue": "Buying and selling are opposites. 買 contains 貝 below; 売 has 儿 at the bottom. Practise 買う and 売る together.",
+    "context": {
+      "text": "この店は魚を売る店です。",
+      "reading": "このみせはさかなをうるみせです。",
+      "translation": "This is a shop that sells fish.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
   },
   "知": {
     "example": {
@@ -3025,7 +3125,20 @@
     },
     "acceptedMeanings": [
       "wait"
-    ]
+    ],
+    "contrasts": [
+      {
+        "char": "持",
+        "note": "持 has the hand component 扌 and means hold; 待 has 彳 and means wait. Compare 持つ with 待つ."
+      }
+    ],
+    "cue": "持 has the hand component 扌 and means hold; 待 has 彳 and means wait. Compare 持つ with 待つ.",
+    "context": {
+      "text": "ここで待つことにします。",
+      "reading": "ここでまつことにします。",
+      "translation": "I will wait here.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
   },
   "試": {
     "example": {
@@ -3362,7 +3475,20 @@
     },
     "acceptedMeanings": [
       "buy"
-    ]
+    ],
+    "contrasts": [
+      {
+        "char": "売",
+        "note": "Buying and selling are opposites. 買 contains 貝 below; 売 has 儿 at the bottom. Practise 買う and 売る together."
+      }
+    ],
+    "cue": "Buying and selling are opposites. 買 contains 貝 below; 売 has 儿 at the bottom. Practise 買う and 売る together.",
+    "context": {
+      "text": "パンを買うつもりです。",
+      "reading": "ぱんをかうつもりです。",
+      "translation": "I plan to buy bread.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
   },
   "悪": {
     "example": {
@@ -3962,7 +4088,20 @@
     "acceptedMeanings": [
       "cow",
       "cattle"
-    ]
+    ],
+    "contrasts": [
+      {
+        "char": "午",
+        "note": "The vertical stroke in 牛 extends above the upper horizontal. Compare 牛肉 (beef) with 午前 (morning)."
+      }
+    ],
+    "cue": "The vertical stroke in 牛 extends above the upper horizontal. Compare 牛肉 (beef) with 午前 (morning).",
+    "context": {
+      "text": "今日は牛肉を食べます。",
+      "reading": "きょうはぎゅうにくをたべます。",
+      "translation": "I will eat beef today.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
   },
   "魚": {
     "example": {
@@ -4133,5 +4272,441 @@
     "acceptedMeanings": [
       "capital"
     ]
+  },
+  "未": {
+    "contrasts": [
+      {
+        "char": "末",
+        "note": "In 未 the upper horizontal stroke is shorter; in 末 it is longer. Compare 未来 (future) with 末 (end)."
+      }
+    ],
+    "cue": "In 未 the upper horizontal stroke is shorter; in 末 it is longer. Compare 未来 (future) with 末 (end).",
+    "context": {
+      "text": "未来のことを考えます。",
+      "reading": "みらいのことをかんがえます。",
+      "translation": "I think about the future.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "末": {
+    "contrasts": [
+      {
+        "char": "未",
+        "note": "In 未 the upper horizontal stroke is shorter; in 末 it is longer. Compare 未来 (future) with 末 (end)."
+      }
+    ],
+    "cue": "In 未 the upper horizontal stroke is shorter; in 末 it is longer. Compare 未来 (future) with 末 (end)."
+  },
+  "士": {
+    "contrasts": [
+      {
+        "char": "土",
+        "note": "In 土 the lower horizontal stroke is longer. In 士 the upper one is longer. Compare soil with the character in 博士."
+      }
+    ],
+    "cue": "In 土 the lower horizontal stroke is longer. In 士 the upper one is longer. Compare soil with the character in 博士."
+  },
+  "王": {
+    "contrasts": [
+      {
+        "char": "玉",
+        "note": "玉 adds a dot to 王. Compare 玉 (ball) with 王 (king)."
+      }
+    ],
+    "cue": "玉 adds a dot to 王. Compare 玉 (ball) with 王 (king)."
+  },
+  "玉": {
+    "contrasts": [
+      {
+        "char": "王",
+        "note": "玉 adds a dot to 王. Compare 玉 (ball) with 王 (king)."
+      }
+    ],
+    "cue": "玉 adds a dot to 王. Compare 玉 (ball) with 王 (king)."
+  },
+  "干": {
+    "contrasts": [
+      {
+        "char": "千",
+        "note": "千 begins with a slanted stroke; 干 has a horizontal top stroke. Compare 千 (thousand) with 干す (dry)."
+      }
+    ],
+    "cue": "千 begins with a slanted stroke; 干 has a horizontal top stroke. Compare 千 (thousand) with 干す (dry)."
+  },
+  "石": {
+    "contrasts": [
+      {
+        "char": "右",
+        "note": "Both end in 口. Notice the first two strokes above it: 右 is right, 石 is stone."
+      }
+    ],
+    "cue": "Both end in 口. Notice the first two strokes above it: 右 is right, 石 is stone."
+  },
+  "晴": {
+    "contrasts": [
+      {
+        "char": "清",
+        "note": "晴 has 日 on the left and relates to clear weather. 清 has 氵 and relates to clarity or purity."
+      }
+    ],
+    "cue": "晴 has 日 on the left and relates to clear weather. 清 has 氵 and relates to clarity or purity.",
+    "context": {
+      "text": "今日は晴れです。",
+      "reading": "きょうははれです。",
+      "translation": "It is clear today.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "清": {
+    "contrasts": [
+      {
+        "char": "晴",
+        "note": "晴 has 日 on the left and relates to clear weather. 清 has 氵 and relates to clarity or purity."
+      }
+    ],
+    "cue": "晴 has 日 on the left and relates to clear weather. 清 has 氵 and relates to clarity or purity."
+  },
+  "輪": {
+    "contrasts": [
+      {
+        "char": "輸",
+        "note": "Both have 車 on the left. Compare the right-hand components in 指輪 (ring) and 輸入 (import)."
+      }
+    ],
+    "cue": "Both have 車 on the left. Compare the right-hand components in 指輪 (ring) and 輸入 (import).",
+    "context": {
+      "text": "指輪をなくしました。",
+      "reading": "ゆびわをなくしました。",
+      "translation": "I lost my ring.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "輸": {
+    "contrasts": [
+      {
+        "char": "輪",
+        "note": "Both have 車 on the left. Compare the right-hand components in 指輪 (ring) and 輸入 (import)."
+      }
+    ],
+    "cue": "Both have 車 on the left. Compare the right-hand components in 指輪 (ring) and 輸入 (import).",
+    "context": {
+      "text": "この会社は食品を輸入しています。",
+      "reading": "このかいしゃはしょくひんをゆにゅうしています。",
+      "translation": "This company imports food.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "練": {
+    "contrasts": [
+      {
+        "char": "錬",
+        "note": "練 has 糸 on the left, 錬 has 金. 練習 is practice; 錬 appears in words about refining or tempering."
+      }
+    ],
+    "cue": "練 has 糸 on the left, 錬 has 金. 練習 is practice; 錬 appears in words about refining or tempering.",
+    "context": {
+      "text": "毎日、練習します。",
+      "reading": "まいにち、れんしゅうします。",
+      "translation": "I practise every day.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "錬": {
+    "contrasts": [
+      {
+        "char": "練",
+        "note": "練 has 糸 on the left, 錬 has 金. 練習 is practice; 錬 appears in words about refining or tempering."
+      }
+    ],
+    "cue": "練 has 糸 on the left, 錬 has 金. 練習 is practice; 錬 appears in words about refining or tempering."
+  },
+  "概": {
+    "contrasts": [
+      {
+        "char": "慨",
+        "note": "概 has 木 on the left, 慨 has 忄. Compare 概論 (overview) with 感慨 (deep emotion)."
+      }
+    ],
+    "cue": "概 has 木 on the left, 慨 has 忄. Compare 概論 (overview) with 感慨 (deep emotion)."
+  },
+  "慨": {
+    "contrasts": [
+      {
+        "char": "概",
+        "note": "概 has 木 on the left, 慨 has 忄. Compare 概論 (overview) with 感慨 (deep emotion)."
+      }
+    ],
+    "cue": "概 has 木 on the left, 慨 has 忄. Compare 概論 (overview) with 感慨 (deep emotion)."
+  },
+  "採": {
+    "contrasts": [
+      {
+        "char": "彩",
+        "note": "採 has 扌 on the left; 彩 has 彡 on the right. Compare 採る (adopt or pick) with 色彩 (colour)."
+      }
+    ],
+    "cue": "採 has 扌 on the left; 彩 has 彡 on the right. Compare 採る (adopt or pick) with 色彩 (colour)."
+  },
+  "彩": {
+    "contrasts": [
+      {
+        "char": "採",
+        "note": "採 has 扌 on the left; 彩 has 彡 on the right. Compare 採る (adopt or pick) with 色彩 (colour)."
+      }
+    ],
+    "cue": "採 has 扌 on the left; 彩 has 彡 on the right. Compare 採る (adopt or pick) with 色彩 (colour).",
+    "context": {
+      "text": "この絵は色彩が豊かです。",
+      "reading": "このえはしきさいがゆたかです。",
+      "translation": "This picture is rich in colour.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "増": {
+    "contrasts": [
+      {
+        "char": "憎",
+        "note": "増 has 土 on the left; 憎 has 忄. Compare 増える (increase) with 憎い (hateful)."
+      }
+    ],
+    "cue": "増 has 土 on the left; 憎 has 忄. Compare 増える (increase) with 憎い (hateful)."
+  },
+  "憎": {
+    "contrasts": [
+      {
+        "char": "増",
+        "note": "増 has 土 on the left; 憎 has 忄. Compare 増える (increase) with 憎い (hateful)."
+      }
+    ],
+    "cue": "増 has 土 on the left; 憎 has 忄. Compare 増える (increase) with 憎い (hateful)."
+  },
+  "微": {
+    "contrasts": [
+      {
+        "char": "徴",
+        "note": "Look closely at the middle of these similar characters. 微妙 means subtle; 特徴 means a distinctive feature."
+      }
+    ],
+    "cue": "Look closely at the middle of these similar characters. 微妙 means subtle; 特徴 means a distinctive feature.",
+    "context": {
+      "text": "二つの色には微妙な違いがあります。",
+      "reading": "ふたつのいろにはびみょうなちがいがあります。",
+      "translation": "There is a subtle difference between the two colours.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "徴": {
+    "contrasts": [
+      {
+        "char": "微",
+        "note": "Look closely at the middle of these similar characters. 微妙 means subtle; 特徴 means a distinctive feature."
+      }
+    ],
+    "cue": "Look closely at the middle of these similar characters. 微妙 means subtle; 特徴 means a distinctive feature.",
+    "context": {
+      "text": "この町の特徴を教えてください。",
+      "reading": "このまちのとくちょうをおしえてください。",
+      "translation": "Please tell me what is distinctive about this town.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "機": {
+    "contrasts": [
+      {
+        "char": "幾",
+        "note": "機 adds 木 on the left of 幾. Compare 飛行機 (airplane) with 幾分 (somewhat)."
+      }
+    ],
+    "cue": "機 adds 木 on the left of 幾. Compare 飛行機 (airplane) with 幾分 (somewhat).",
+    "context": {
+      "text": "飛行機で大阪に行きます。",
+      "reading": "ひこうきでおおさかにいきます。",
+      "translation": "I will go to Osaka by plane.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "幾": {
+    "contrasts": [
+      {
+        "char": "機",
+        "note": "機 adds 木 on the left of 幾. Compare 飛行機 (airplane) with 幾分 (somewhat)."
+      }
+    ],
+    "cue": "機 adds 木 on the left of 幾. Compare 飛行機 (airplane) with 幾分 (somewhat)."
+  },
+  "猫": {
+    "contrasts": [
+      {
+        "char": "描",
+        "note": "猫 has 犭 on the left; 描 has 扌. Compare 猫 (cat) with 描く (draw)."
+      }
+    ],
+    "cue": "猫 has 犭 on the left; 描 has 扌. Compare 猫 (cat) with 描く (draw).",
+    "context": {
+      "text": "猫が寝ています。",
+      "reading": "ねこがねています。",
+      "translation": "The cat is sleeping.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "描": {
+    "contrasts": [
+      {
+        "char": "猫",
+        "note": "猫 has 犭 on the left; 描 has 扌. Compare 猫 (cat) with 描く (draw)."
+      }
+    ],
+    "cue": "猫 has 犭 on the left; 描 has 扌. Compare 猫 (cat) with 描く (draw)."
+  },
+  "緑": {
+    "contrasts": [
+      {
+        "char": "縁",
+        "note": "Both begin with 糸. Compare the right-hand shapes in 緑 (green) and 縁 (rim or connection)."
+      }
+    ],
+    "cue": "Both begin with 糸. Compare the right-hand shapes in 緑 (green) and 縁 (rim or connection).",
+    "context": {
+      "text": "緑のかばんを買いました。",
+      "reading": "みどりのかばんをかいました。",
+      "translation": "I bought a green bag.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "縁": {
+    "contrasts": [
+      {
+        "char": "緑",
+        "note": "Both begin with 糸. Compare the right-hand shapes in 緑 (green) and 縁 (rim or connection)."
+      }
+    ],
+    "cue": "Both begin with 糸. Compare the right-hand shapes in 緑 (green) and 縁 (rim or connection)."
+  },
+  "織": {
+    "contrasts": [
+      {
+        "char": "識",
+        "note": "織 begins with 糸 and 識 with 言. Compare 組織 (organisation) with 意識 (consciousness)."
+      }
+    ],
+    "cue": "織 begins with 糸 and 識 with 言. Compare 組織 (organisation) with 意識 (consciousness).",
+    "context": {
+      "text": "組織の仕組みを説明します。",
+      "reading": "そしきのしくみをせつめいします。",
+      "translation": "I will explain how the organisation works.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "識": {
+    "contrasts": [
+      {
+        "char": "織",
+        "note": "織 begins with 糸 and 識 with 言. Compare 組織 (organisation) with 意識 (consciousness)."
+      },
+      {
+        "char": "職",
+        "note": "識 begins with 言, 職 with 耳. Compare 意識 (consciousness) with 職 (job)."
+      }
+    ],
+    "cue": "織 begins with 糸 and 識 with 言. Compare 組織 (organisation) with 意識 (consciousness)."
+  },
+  "職": {
+    "contrasts": [
+      {
+        "char": "識",
+        "note": "識 begins with 言, 職 with 耳. Compare 意識 (consciousness) with 職 (job)."
+      }
+    ],
+    "cue": "識 begins with 言, 職 with 耳. Compare 意識 (consciousness) with 職 (job)."
+  },
+  "衰": {
+    "contrasts": [
+      {
+        "char": "哀",
+        "note": "The middle differs: 哀 contains 口. Compare 衰 in 老衰 (decline with age) with 哀れ (pity)."
+      }
+    ],
+    "cue": "The middle differs: 哀 contains 口. Compare 衰 in 老衰 (decline with age) with 哀れ (pity)."
+  },
+  "哀": {
+    "contrasts": [
+      {
+        "char": "衰",
+        "note": "The middle differs: 哀 contains 口. Compare 衰 in 老衰 (decline with age) with 哀れ (pity)."
+      }
+    ],
+    "cue": "The middle differs: 哀 contains 口. Compare 衰 in 老衰 (decline with age) with 哀れ (pity)."
+  },
+  "紛": {
+    "contrasts": [
+      {
+        "char": "粉",
+        "note": "紛 begins with 糸, 粉 with 米. Compare 紛争 (dispute) with 粉 (flour or powder)."
+      }
+    ],
+    "cue": "紛 begins with 糸, 粉 with 米. Compare 紛争 (dispute) with 粉 (flour or powder).",
+    "context": {
+      "text": "紛争の解決について話し合います。",
+      "reading": "ふんそうのかいけつについてはなしあいます。",
+      "translation": "We will discuss resolving the dispute.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "粉": {
+    "contrasts": [
+      {
+        "char": "紛",
+        "note": "紛 begins with 糸, 粉 with 米. Compare 紛争 (dispute) with 粉 (flour or powder)."
+      }
+    ],
+    "cue": "紛 begins with 糸, 粉 with 米. Compare 紛争 (dispute) with 粉 (flour or powder).",
+    "context": {
+      "text": "この白い粉は何ですか。",
+      "reading": "このしろいこなはなんですか。",
+      "translation": "What is this white powder?",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "閥": {
+    "contrasts": [
+      {
+        "char": "閣",
+        "note": "Both have 門 outside. Compare 伐 inside 閥 with 各 inside 閣: 派閥 (faction), 内閣 (cabinet)."
+      }
+    ],
+    "cue": "Both have 門 outside. Compare 伐 inside 閥 with 各 inside 閣: 派閥 (faction), 内閣 (cabinet)."
+  },
+  "閣": {
+    "contrasts": [
+      {
+        "char": "閥",
+        "note": "Both have 門 outside. Compare 伐 inside 閥 with 各 inside 閣: 派閥 (faction), 内閣 (cabinet)."
+      }
+    ],
+    "cue": "Both have 門 outside. Compare 伐 inside 閥 with 各 inside 閣: 派閥 (faction), 内閣 (cabinet).",
+    "context": {
+      "text": "新しい内閣が発足しました。",
+      "reading": "あたらしいないかくがほっそくしました。",
+      "translation": "A new cabinet has been formed.",
+      "source": "Mode Atlas original; independent educator review pending"
+    }
+  },
+  "喝": {
+    "contrasts": [
+      {
+        "char": "渇",
+        "note": "喝 has 口 on the left; 渇 has 氵. Compare 恐喝 (extortion) with 渇く (be thirsty)."
+      }
+    ],
+    "cue": "喝 has 口 on the left; 渇 has 氵. Compare 恐喝 (extortion) with 渇く (be thirsty)."
+  },
+  "渇": {
+    "contrasts": [
+      {
+        "char": "喝",
+        "note": "喝 has 口 on the left; 渇 has 氵. Compare 恐喝 (extortion) with 渇く (be thirsty)."
+      }
+    ],
+    "cue": "喝 has 口 on the left; 渇 has 氵. Compare 恐喝 (extortion) with 渇く (be thirsty)."
   }
 }

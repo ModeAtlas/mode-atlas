@@ -14,7 +14,7 @@ function load({experienced=true}={}){
   if(experienced){const s=root.ModeAtlasKanjiState.read();for(const c of root.ModeAtlasKanjiCurriculum[0].chars){s.lessons[c]=now;s.introductions[c]=now;}root.ModeAtlasKanjiState.save(s);}
   return {root,values,now:()=>now,advance:ms=>now+=ms,fail:()=>fail=true,state:root.ModeAtlasKanjiState,content:root.ModeAtlasKanjiContent,session:root.ModeAtlasKanjiSession,progress:root.ModeAtlasProgress};
 }
-function evidence(correct=30,wrong=0){return [correct,wrong,correct,3,120000,1792022400000,1792108800000,4,'2026-10-10,2026-10-11,2026-10-12,2026-10-13'];}
+function evidence(correct=30,wrong=0){return [correct,wrong,correct,3,120000,1792022400000,1792108800000,4,'2026-10-10,2026-10-11,2026-10-12,2026-10-13',''];}
 function learned(state,char,c=3,w=0){return state.normalize({sources:{a:{[char]:{pronunciation:evidence(c,w),meaning:evidence(c,w)}}}});}
 
 test('licensed curriculum covers five distinct levels with valid prompts and answer keys',()=>{
@@ -39,13 +39,13 @@ test('pronunciation handles IME kana, katakana and romaji without conflating n, 
   assert.equal(c.english(' The colour '),'color');assert.ok(!c.grade('水','unknown','water'));
 });
 
-test('completion opens levels permanently; mastery keeps exact accuracy and independent spaced recall',()=>{
+test('migration preserves earned milestones and separates current readiness from historical accuracy',()=>{
   const {state,root}=load(),s=learned(state,'水');
   assert.ok(state.completed(s,'水'));assert.equal(state.stage(s,'水'),1);assert.ok(!state.allowed(4,s));
   const weak=learned(state,'水',30,2);assert.equal(state.stage(weak,'水'),2);
   const strong=learned(state,'水',30,1);assert.equal(state.stage(strong,'水'),3);
-  strong.sources.a['水'].meaning[8]='2026-10-13';assert.equal(state.stage(strong,'水'),1);
-  const assisted=learned(state,'水',100);assisted.sources.a['水'].meaning[2]=0;assert.ok(!state.completed(assisted,'水'));
+  strong.sources.a['水'].meaning[8]='2026-10-13';assert.equal(state.stage(strong,'水'),3);assert.equal(state.readiness(strong,'水'),1);
+  const assisted=learned(state,'水',100);assisted.sources.a['水'].meaning[2]=0;delete assisted.completions['水'];assert.ok(!state.completed(assisted,'水'));
   for(const char of root.ModeAtlasKanjiCurriculum[0].chars)s.completions[char]=1;
   assert.ok(state.allowed(4,s));assert.ok(!state.allowed(3,s));
   s.sources.a['水'].meaning[1]=100;assert.ok(state.completed(s,'水'),'completion is retained when later reviews are missed');
@@ -65,6 +65,49 @@ test('session transactions roll back failed saves and duplicate taps cannot awar
   e.fail();assert.throws(()=>s.answer('water'),/save|storage/i);assert.equal(e.state.metrics(e.state.read(),'水','meaning').attempts,0);assert.equal(e.progress.getXP(),initial);assert.equal(s.current().answers.length,0);
   s.answer('water');const xp=e.progress.getXP();assert.ok(xp>initial);assert.equal(s.answer('water'),null);assert.equal(e.progress.getXP(),xp);
   s.next();assert.equal(e.state.metrics(e.state.read(),'水','meaning').correct,1);assert.equal(s.saved(),null);
+});
+
+test('normalized Kanji snapshots cannot be mutated by readers and refresh after an external replacement',()=>{
+ const e=load(),first=e.state.read();first.lessons['水']=123;
+ assert.notEqual(e.state.read().lessons['水'],123);
+ const imported={version:2,sources:{remote:{'水':{meaning:evidence(8)}}},lessons:{'水':44}};
+ e.values.set('modeAtlasKanji',JSON.stringify(imported));
+ assert.deepEqual(plain(e.state.read()),plain(e.state.normalize(imported)));
+ e.values.delete('modeAtlasKanji');assert.deepEqual(plain(e.state.read()),plain(e.state.normalize({})));
+});
+
+test('answer updates keep the canonical shape and bounded receipts without rebuilding unchanged history',()=>{
+ const e=load();
+ for(let i=1;i<=40;i++){
+  e.state.record({char:'水',skill:'meaning',runId:'bounded-run-'+i,index:1,correct:i%3!==0,assisted:i%4===0,elapsed:500,at:e.now()+i});
+  const saved=e.state.read();assert.deepEqual(plain(saved),plain(e.state.normalize(saved)));
+ }
+ assert.equal(Object.keys(e.state.read().runs).length,32);
+ assert.equal(e.state.metrics(e.state.read(),'水','meaning').attempts,40);
+});
+
+test('save observers run only after the outer durable commit and cannot turn a saved answer into an error',()=>{
+ const e=load(),store=e.root.ModeAtlasStorage,seen=[];
+ assert.throws(()=>store.transaction(()=>{store.afterCommit(()=>seen.push('failed'));throw Error('Stop');}),/Stop/);
+ assert.deepEqual(seen,[]);
+ store.transaction(()=>{
+  store.setJSON('modeAtlasWordLessons',{polite:{index:1}});
+  store.transaction(()=>store.afterCommit(()=>seen.push(JSON.parse(e.values.get('modeAtlasWordLessons')).polite.index)));
+  assert.deepEqual(seen,[]);
+  store.afterCommit(()=>{throw Error('Observer failed');});
+ });
+ assert.deepEqual(seen,[1]);assert.equal(store.json('modeAtlasWordLessons',{}).polite.index,1);
+});
+
+test('reordered receipt maps recover through a small journal without duplicating the large save',()=>{
+ const e=load(),store=e.root.ModeAtlasStorage;
+ const old={payload:'x'.repeat(70000),runs:{one:1,two:2}},next={payload:old.payload,runs:{two:2,one:3}};
+ store.setJSON('modeAtlasKanji',old);e.fail();
+ assert.throws(()=>store.transaction(()=>store.setJSON('modeAtlasKanji',next)),/Quota/);
+ const journal=e.values.get('modeAtlasPracticeTransaction');assert.ok(journal.length<2000);
+ assert.equal(JSON.parse(journal).modeAtlasKanji.kind,'json-patch-v1');
+ store.transaction(()=>{});
+ assert.equal(e.values.get('modeAtlasKanji'),JSON.stringify(next));assert.equal(e.values.has('modeAtlasPracticeTransaction'),false);
 });
 
 test('hints and matching cannot grant independent completion; pause excludes idle time',()=>{
@@ -89,6 +132,7 @@ test('completed tests save independent history and count toward shared XP, goals
 test('five complete device histories fit cloud storage and survive compression without evidence loss',async()=>{
   const e=load(),state=e.state.normalize({updatedAt:e.now()});
   for(let d=0;d<5;d++){const source=state.sources['device-'+d]={};let i=0;for(const char of e.state.levels.keys()){const r=evidence(100+i%57,i%9);r[4]+=i*200;r[5]+=i*1000;source[char]={pronunciation:r,meaning:[...r]};i++;}}
+  state.version=1;
   const packed=await e.root.ModeAtlasKanjiCodec.pack(state),bytes=Buffer.byteLength(JSON.stringify(packed));
   assert.ok(bytes<600000,`cloud bytes ${bytes}`);const unpacked=await e.root.ModeAtlasKanjiCodec.unpack(packed);
   assert.deepEqual(plain(unpacked.sources),plain(state.sources));assert.equal(Object.keys(unpacked.completions).length,2383);assert.ok(e.state.allowed(1,unpacked));
@@ -149,4 +193,19 @@ test('web pronunciation uses a Japanese voice and cancels requests waiting for v
   assert.equal((await adapter.speakJapanese('に',true)).played,true);assert.equal(played[0].text,'に');assert.equal(played[0].voice.lang,'ja-JP');
   await adapter.speakJapanese('に',false);assert.ok(played[1].rate<1);assert.ok(played[0].rate<played[1].rate*.5);
   voices=[{lang:'en-US'}];assert.equal((await adapter.speakJapanese('さん',false)).played,false);assert.equal(played.length,2);
+});
+
+test('recent Kanji recall can recover after early mistakes and mastered milestones remain earned',()=>{
+  const e=load(),s=e.state;
+  for(const skill of s.skills){
+    for(let i=1;i<=10;i++){s.record({char:'水',skill,runId:'early-'+skill,index:i,correct:false,at:e.now()});e.advance(1000);}
+    for(let i=1;i<=30;i++){
+      s.record({char:'水',skill,runId:'later-'+skill,index:i,correct:true,assisted:false,at:e.now()});e.advance(86400000*100);
+    }
+  }
+  const learned=s.read();assert.ok(s.completed(learned,'水'));assert.equal(s.stage(learned,'水'),3);assert.equal(s.readiness(learned,'水'),3);
+  assert.equal(s.metrics(learned,'水','meaning').accuracy,.75);assert.equal(s.metrics(learned,'水','meaning').recentAccuracy,1);
+  s.record({char:'水',skill:'meaning',runId:'missed-review',index:1,correct:false,at:e.now()});
+  assert.equal(s.stage(s.read(),'水'),3);assert.ok(s.readiness(s.read(),'水')<3);
+  assert.ok(s.read().recent['水'].meaning.split(',').length<=16);
 });

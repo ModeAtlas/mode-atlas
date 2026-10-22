@@ -14,7 +14,7 @@ async function prepare(page,native=false){
 
 for(const native of [false,true])test(`repeating goals reset in the open page at Melbourne midnight and Monday ${native?'iOS':'web'}`,async({page})=>{
   await prepare(page,native);await page.clock.install({time:new Date('2026-10-25T23:59:30+11:00')});
-  await page.goto('/progress/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.goto('/progress/?tab=goals');await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.evaluate(()=>{
     const p=ModeAtlasProgress,day=ModeAtlasDates.localDateKey();
     p.setPersonalGoal('daily',{id:'kana-correct',target:20,repeat:true});
@@ -30,7 +30,7 @@ for(const native of [false,true])test(`repeating goals reset in the open page at
 });
 
 test('returning after suspended calendar days refreshes repeating goals and expires one-off goals',async({page})=>{
-  await prepare(page,true);await page.clock.install({time:new Date('2026-10-25T15:00:00+11:00')});await page.goto('/progress/');
+  await prepare(page,true);await page.clock.install({time:new Date('2026-10-25T15:00:00+11:00')});await page.goto('/progress/?tab=goals');
   await page.evaluate(()=>{
     ModeAtlasProgress.setPersonalGoal('daily',{id:'kana-correct',target:20,repeat:true});
     ModeAtlasProgress.setPersonalGoal('weekly',{id:'kana-correct',target:100,repeat:false});
@@ -82,11 +82,21 @@ test('an explicit retry reloads failed SDK imports and restores the account stat
     return route.abort();
   });
   await page.goto('/friends/');await expect(page.locator('.ma-social-body')).toContainText('Couldn’t restore your account');
-  online=true;await page.evaluate(()=>KanaCloudSync.syncNow());
-  expect(authRequests).toBe(1,'the failed import is cached until the document reloads');
+  // Network-failure caching differs between Chromium versions. Keep the SDK
+  // unavailable through a background/manual sync so the explicit retry remains
+  // the action under test, regardless of whether import() makes another request.
+  await page.evaluate(()=>KanaCloudSync.syncNow());
+  await expect(page.locator('.ma-social-body')).toContainText('Couldn’t restore your account');
+  expect(await page.evaluate(()=>KanaCloudSync.isAuthResolved())).toBe(false);
+  const failedRequests=authRequests;
+  expect(failedRequests).toBeGreaterThanOrEqual(1);
+  await page.evaluate(()=>{window.__retryDocumentMarker=true;});
+  online=true;
   await page.getByRole('button',{name:'Try again',exact:true}).click();
   await expect(page.locator('.ma-social-body')).toContainText('Learn alongside friends');
-  expect(authRequests).toBe(2);expect(await page.evaluate(()=>KanaCloudSync.isAuthResolved())).toBe(true);
+  expect(authRequests).toBeGreaterThan(failedRequests);
+  expect(await page.evaluate(()=>window.__retryDocumentMarker)).toBeUndefined();
+  expect(await page.evaluate(()=>KanaCloudSync.isAuthResolved())).toBe(true);
 });
 
 test('browser tabs and installed-app manifests share fingerprinted current brand assets',async({page})=>{

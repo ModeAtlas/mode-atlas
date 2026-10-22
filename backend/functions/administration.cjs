@@ -81,8 +81,9 @@ function createAdministration({db,auth,staff,now=Date.now}){
   }
   async function security(actor,data){
     await authorize(actor);fields(data,[]);
-    const [audit,reviews]=await Promise.all([db.collection('securityAudit').where('at','>=',now()-90*86400000).orderBy('at','desc').limit(30).get(),db.collection('weeklyRewardReviews').orderBy('at','desc').limit(20).get()]);
+    const [audit,reviews,studyReviews]=await Promise.all([db.collection('securityAudit').where('at','>=',now()-90*86400000).orderBy('at','desc').limit(30).get(),db.collection('weeklyRewardReviews').orderBy('at','desc').limit(20).get(),db.collection('studyRewardReviews').orderBy('at','desc').limit(20).get()]);
     return {appCheckEnforced:process.env.MODE_ATLAS_ENFORCE_APP_CHECK==='true',usageRequiresAppCheck:true,
+      studyReviews:studyReviews.docs.map(doc=>{const {uid,reason,at}=doc.data();return {uid,reason,at};}),
       rewardReviews:reviews.docs.map(doc=>{const {uid,week,rank,reason,at}=doc.data();return {uid,week,rank,reason,at};}),
       audit:audit.docs.map(doc=>{const {actor,target,operation,reason,at,status}=doc.data();return {actor,target,operation,reason,at,status};})};
   }
@@ -94,7 +95,7 @@ function createAdministration({db,auth,staff,now=Date.now}){
     let query=db.collection('usageReports').where('lastSeen','>=',cutoff).orderBy('lastSeen','desc').orderBy('__name__');
     if(cursor)query=query.startAfter(cursor.at,cursor.id);
     const [page,...counts]=await Promise.all([query.limit(25).get(),...[1,7,30].map(days=>db.collection('usageReports').where('lastSeen','>=',now()-days*86400000).count().get())]);
-    return {counts:counts.map(result=>result.data().count),rows:page.docs.map(doc=>{const {platform,version,firstSeen,lastSeen,level,xp,kana,introduced,correct,attempts,branch}=doc.data();return {id:doc.id.slice(0,8),platform,version,firstSeen,lastSeen,level,xp,kana,introduced,correct,attempts,branch};}),
+    return {counts:counts.map(result=>result.data().count),rows:page.docs.map(doc=>{const {platform,version,firstSeen,lastSeen,level,xp,kana,introduced,correct,attempts,branch,funnel}=doc.data();return {id:doc.id.slice(0,8),platform,version,firstSeen,lastSeen,level,xp,kana,introduced,correct,attempts,branch,funnel:funnel||null};}),
       nextCursor:page.size===25?{at:page.docs.at(-1).data().lastSeen,id:page.docs.at(-1).id}:null};
   }
   return {directory,inspect,access,security,usage};

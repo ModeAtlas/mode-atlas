@@ -1,0 +1,39 @@
+{
+  "measuredOn": "2026-10-22",
+  "runtime": "Local Chromium, not physical iPhone or WKWebView",
+  "eagerScripts": {
+    "61cf9a9": {
+      "scripts": 92,
+      "rawBytes": 771457,
+      "gzipBytes": 253895
+    },
+    "working": {
+      "scripts": 89,
+      "rawBytes": 718342,
+      "gzipBytes": 238998
+    }
+  },
+  "largeSave": {
+    "storageBytesUTF16": 3289058,
+    "samples": 20,
+    "warmupWrites": 4,
+    "baselineOwner": "61cf9a9",
+    "baselineMedianMs": 97.6,
+    "baselineP95Ms": 111.9,
+    "finalMedianMs": 49.5,
+    "finalP95Ms": 60.3,
+    "targetP95Ms": 50,
+    "targetMet": false
+  },
+  "economy": {
+    "studyDays": 3,
+    "answers": 30,
+    "correct": 24,
+    "balanceBefore": 156,
+    "purchaseCost": 120,
+    "balanceAfter": 36,
+    "product": "rose",
+    "usedDeveloperCredits": false,
+    "usedCoinPurchase": false
+  }
+}

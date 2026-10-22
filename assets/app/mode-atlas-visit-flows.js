@@ -32,7 +32,7 @@
   const BRANCH_PATHS=new Set(['/kana/','/reading/','/writing/','/results/','/wordbank/','/kanji/']);
   const onboardingComplete=()=>storeGet(K.complete)==='true'||storeGet(K.first)==='true';
   function branchDestination(raw){try{const u=new URL(raw||location.href,location.origin);return u.origin===location.origin&&BRANCH_PATHS.has(u.pathname)?u.pathname+u.search+u.hash:''}catch{return''}}
-  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/kanji/'))return'Kanji';if(p.startsWith('/writing/'))return'Kana Recall';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Read';return'Kana Trainer'}
+  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/kanji/'))return'Kanji';if(p.startsWith('/writing/'))return'Kana Recall';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Read';return'Kana'}
   function needsSetup(raw){return !onboardingComplete()}
   function vEl(tag, className='', text=''){const el=document.createElement(tag);if(className)el.className=className;if(className==='ma-visit-title')el.id='maVisitTitle';if(text!=='')el.textContent=String(text);return el}
   function vBtn(className='', text=''){const btn=vEl('button',className,text);btn.type='button';return btn}
@@ -45,15 +45,15 @@
   // Activity is recorded by successful study/word-bank actions, never inferred
   // from a click, document load or background snapshot refresh.
   function recordActivity(kind){
-    if(!['reading','writing','wordBank','kanji'].includes(kind))return;
-    const obj=kind==='kanji'?{branchId:'kanji',branch:'Kanji',page:'Kanji',href:'/kanji/',mode:'Learn and recall'}:kind==='wordBank'
+    if(!['reading','writing','handwriting','wordBank','kanji'].includes(kind))return;
+    const obj=kind==='handwriting'?{branchId:'kana',branch:'Kana',page:'Handwriting',href:'/kana/handwriting/',mode:'Handwriting'}:kind==='kanji'?{branchId:'kanji',branch:'Kanji',page:'Kanji',href:'/kanji/',mode:'Learn and recall'}:kind==='wordBank'
       ? {branchId:'words',branch:'Word Bank',page:'Word Bank',href:'/wordbank/',mode:'Vocabulary Review'}
       : {branchId:'kana',branch:'Kana Trainer',page:kind==='writing'?'Recall':'Read',href:kind==='writing'?'reverse.html':'default.html',mode:mode(kind)};
     storeSet(K.lastStudied,String(Date.now()));
     storeSetJSON(K.lastMode,obj);
     window.dispatchEvent(new CustomEvent('modeAtlasActivityChanged'));
   }
-  window.ModeAtlasVisitFlows=Object.freeze({recordActivity,showTour});
+  window.ModeAtlasVisitFlows=Object.freeze({recordActivity,showTour,ready:onboardingComplete});
   const ROWS=[['あ row','あいうえお'],['か row','かきくけこ'],['さ row','さしすせそ'],['た row','たちつてと'],['な row','なにぬねの'],['は row','はひふへほ'],['ま row','まみむめも'],['や row','やゆよ'],['ら row','らりるれろ'],['わ row','わをん'],['ア row','アイウエオ'],['カ row','カキクケコ'],['サ row','サシスセソ'],['タ row','タチツテト'],['ナ row','ナニヌネノ']];
   function suggestions(){const st=j('charStats',{}),tm=j('charTimes',{});const a=ROWS.map(([name,chars])=>{let c=0,w=0,ms=0,n=0;[...chars].forEach(ch=>{c+=Number(st[ch]?.correct||0);w+=Number(st[ch]?.wrong||0);if(tm[ch]?.avg&&tm[ch]?.count){ms+=tm[ch].avg*tm[ch].count;n+=tm[ch].count}});const total=c+w,acc=total?c/total:1;return{name,total,score:w*4+(1-acc)*50+Math.min((n?ms/n:0)/500,12)+(total?0:-100)}}).filter(r=>r.total>0).sort((a,b)=>b.score-a.score).slice(0,3);return a.length?a:[{name:'あ row'},{name:'か row'},{name:'さ row'}]}
   function name(){const u=window.KanaCloudSync?.getUser?.();const n=(u?.displayName||u?.email||'').trim();if(n)return n.split(/\s+/)[0].split('@')[0];for(const id of ['profileName','drawerName','studyProfileName','identityName']){const e=document.getElementById(id),t=(e?.textContent||'').trim();if(t&&!/guest/i.test(t))return t.split(/\s+/)[0]}return'there'}
@@ -127,7 +127,7 @@
       if(begin.disabled)return;
       try{window.ModeAtlasStorage.transaction(()=>{markLegalComplete();storeSet(K.first,'true');storeSet(K.return,studyDate());storeRemove(K.pending);});}
       catch(_){error.textContent='Your choice could not be saved. Please try again.';return;}
-      sessionStorage.setItem('modeAtlasTourPending','1');window.ModeAtlas?.markWhatsNewSeen?.();closeModal(true,false);
+      window.ModeAtlas?.markWhatsNewSeen?.();closeModal(true,false);
       document.dispatchEvent(new CustomEvent('ma:onboarding-complete'));navigateApp(target);
     });openModal(true);
   }
@@ -195,7 +195,9 @@
     if(!current){if(onboardingComplete()&&hasData())streak();return;}
     if(needsSetup(current)){visitDecisionMade=true;return first(current);}
     if(hasData())streak();
-    visitDecisionMade=true;void window.ModeAtlasTour?.offer(window.ModeAtlasBranches.current());
+    // The branch itself teaches the first task. Full tours remain in Settings;
+    // an automatic second modal must not interrupt the new learner's lesson.
+    visitDecisionMade=true;
   }
   function triggerFirst(){storeRemove(K.forceFirst);sessionStorage.removeItem(K.forceFirst);first(branchDestination(location.href)||'/kana/',{force:true})}
   function triggerReturn(){storeRemove(K.forceReturn);sessionStorage.removeItem(K.forceReturn);if(page()==='index.html')ret();else{sessionStorage.setItem(K.forceReturn,'1');navigateApp('/?devReturn=1')}}

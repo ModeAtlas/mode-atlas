@@ -25,7 +25,7 @@ async function prepare(page,{native=false,production=false,theme='dark'}={}){
 }
 async function openFiles(page,{admin=false}={}){
   await page.evaluate(async admin=>{
-    if(admin)window.KanaCloudSync.getUser=()=>({uid:'developer',email:'admin@mode-atlas.com'});
+    if(admin)window.KanaCloudSync.getUser=()=>({uid:'developer',email:'renamed@example.test',getIdTokenResult:async()=>({claims:{modeAtlasAdmin:true}})});
     await window.ModeAtlasDevConsoleLoader.loadIfEligible();
     window.ModeAtlasDevConsole.open();
   },admin);
@@ -137,7 +137,7 @@ test('developer import rejects malformed files and an account switch during file
 for(const width of [393,1280])test(`developer console account directory and account boundary at ${width}`,async({page},info)=>{
   await prepare(page,{theme:'dark'});await page.setViewportSize({width,height:900});const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.evaluate(async()=>{
-    window.consoleUser={uid:'developer',email:'admin@mode-atlas.com'};KanaCloudSync.getUser=()=>consoleUser;
+    window.consoleUser={uid:'developer',email:'renamed@example.test',getIdTokenResult:async()=>({claims:{modeAtlasAdmin:true}})};KanaCloudSync.getUser=()=>consoleUser;
     window.directoryCalls=[];ModeAtlasSocial={...ModeAtlasSocial,call:async(action,data)=>{
       directoryCalls.push({action,data});
       if(action==='adminUsers')return {rows:[{uid:'one',displayName:'Test Learner',email:'learner@example.test',role:'member',verified:true,friends:false}],nextCursor:data.cursor?null:'next-page'};

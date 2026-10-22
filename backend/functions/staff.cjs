@@ -1,6 +1,7 @@
 'use strict';
 // One server-owned role registry. Firebase Auth, never token email/client data,
 // identifies Admin. Role reads participate in transactions that change accounts.
+const {randomUUID}=require('node:crypto');
 const {HttpsError}=require('firebase-functions/v2/https');
 const {isAdmin}=require('./identity.cjs');
 const fail=(code,message)=>{throw new HttpsError(code,message);};
@@ -24,8 +25,9 @@ function createStaff({db,auth,now=Date.now}){
   function requireStaff(access){if(access.role==='member')fail('permission-denied','This action is available to the moderation team.');}
   function requireAction(access){requireStaff(access);if(!access.canAct)fail('permission-denied','Only Admin can action accounts belonging to the moderation team.');}
   async function current(actor){return db.runTransaction(async tx=>(await read(tx,actor)).role);}
-  async function assign(actor,data){
+  async function assign(actor,data,token){
     if(!isAdmin(actor))fail('permission-denied','Only Admin can assign moderators.');
+    const age=now()/1000-Number(token?.auth_time);if(!Number.isFinite(age)||age< -60||age>300)fail('failed-precondition','Confirm your sign-in again before changing staff access.');
     if(!data||Object.keys(data).some(key=>!['uid','moderator'].includes(key))||!validUid(data.uid)||typeof data.moderator!=='boolean')fail('invalid-argument','Choose a moderator role.');
     const target=await user(data.uid);
     if(data.moderator&&(!enabled(target)||isAdmin(target)))fail('permission-denied','Choose a verified member account.');
@@ -36,6 +38,7 @@ function createStaff({db,auth,now=Date.now}){
       if(data.moderator){if(!Object.hasOwn(moderators,target.uid)&&Object.keys(moderators).length>=50)fail('resource-exhausted','The moderator team is full.');moderators[target.uid]={at:now(),by:actor.uid,label:a.profile.displayName};}
       else delete moderators[data.uid];
       tx.set(registry,{moderators});
+      tx.set(db.doc('securityAudit/'+randomUUID()),{actor:actor.uid,target:data.uid,operation:data.moderator?'moderator-granted':'moderator-removed',reason:'Administrator confirmed staff role change',at:now(),status:'complete',expiresAt:new Date(now()+90*86400000)});
     });return {ok:true};
   }
   async function list(actor,data){

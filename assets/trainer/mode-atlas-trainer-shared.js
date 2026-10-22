@@ -773,7 +773,7 @@ function finishTrainerSession(autoEnded, resetPrompt) {
     });
 }
 
-function prepareTrainerSessionStart(options = {}) {
+async function prepareTrainerSessionStart(options = {}) {
     window.ModeAtlasSessionControls?.reset();
     window.ModeAtlasPracticeSetup.close();
     recordTrainerActivity();
@@ -783,11 +783,11 @@ function prepareTrainerSessionStart(options = {}) {
     const sessionStats = recovered ? recovered.sessionStats : createEmptySessionStats();
     sessionStats.active = true;
     sessionStats.startTime = now-(recovered?.elapsed||0);
-    if(recovered)sessionStats.study.resumeKana=recovered.pendingKana||'';
+    if(recovered){sessionStats.study.resumeKana=recovered.pendingKana||'';if(sessionStats.study.weeklyConfig)await window.ModeAtlasWeekly.start(sessionStats.study,sessionStats.study.weeklyConfig);}
     else{
       window.ModeAtlasSessionRecovery.discard(trainerController.mode);
       sessionStats.startXp = Math.max(0, Number(window.ModeAtlasProgress?.getXP?.() || 0));
-      options.study?.begin(sessionStats);
+      await options.study?.begin(sessionStats);
     }
     window.ModeAtlasStudyFocus?.begin();
 

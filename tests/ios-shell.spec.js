@@ -15,20 +15,20 @@ test('Atlas home shares one responsive composition with native chrome', async ({
   await expect(page.locator('.ma-nav')).toBeHidden();
   await expect(page.locator('.atlas-home')).toHaveCount(1);
   await expect(page.locator('#homeContinueAction')).toHaveAttribute('href', '/kana/');
-  await expect(page.locator('#homeGoals [data-goal]')).toHaveCount(3);
-  await expect(page.locator('.atlas-home [data-ma-rewards-open]')).toBeVisible();
+  await expect(page.locator('#homeGoals [data-goal]')).toHaveCount(0);
+  await expect(page.locator('.atlas-home-personal')).toBeHidden();
   await page.evaluate(() => {
     for (const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted']) localStorage.setItem(key, 'true');
     localStorage.setItem('maWhatsNewSeen', 'guided-study');
   });
   await page.locator('#homeContinueAction').click();
   await expect(page).toHaveURL(/\/kana\/$/);
-  await expect(page.getByRole('button',{name:/Take a starting-point test/})).toBeVisible();
-  await page.getByRole('button',{name:/Start as a beginner/}).click();
-  await expect(page.locator('.ma-kana-lesson-tile strong')).toHaveText(['あ','い','う','え','お']);
+  await expect(page.getByRole('button',{name:/Take a starting-point test/})).toBeHidden();
+  await page.getByRole('button',{name:/Start lesson/}).click();
+  await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');
 });
 
-test('iOS home scrolls on portrait phones and keeps its last action above the dock', async ({ page }) => {
+test('iOS home can reach its last action above the dock on portrait phones', async ({ page }) => {
   await page.addInitScript(() => {
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'ios', Plugins: {} };
   });
@@ -38,11 +38,11 @@ test('iOS home scrolls on portrait phones and keeps its last action above the do
     await page.setViewportSize(size);
     await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
     await expect.poll(() => page.evaluate(() => ({
-      scrolls: document.documentElement.scrollHeight > innerHeight && scrollY > 0,
+      reachable: document.documentElement.scrollHeight <= innerHeight || scrollY > 0,
       clear: document.querySelector('.atlas-home').getBoundingClientRect().bottom
         <= document.querySelector('.ma-ios-tabs').getBoundingClientRect().top,
       width: document.documentElement.scrollWidth <= innerWidth
-    }))).toEqual({scrolls:true,clear:true,width:true});
+    }))).toEqual({reachable:true,clear:true,width:true});
   }
 });
 
@@ -54,8 +54,8 @@ test('native account chooser uses enabled methods and Settings owns account dele
     } };
   });
   await page.goto('/');
-  await expect(page.locator('#profileAuthBtn')).toHaveText('Sign in');
   await page.evaluate(() => window.ModeAtlasProfile.open());
+  await expect(page.locator('#profileAuthBtn')).toHaveText('Sign in');
   await page.locator('#profileAuthBtn').click();
   await expect(page.locator('[data-ma-account-provider="google.com"]')).toHaveText('Continue with Google');
   await expect(page.locator('[data-ma-account-provider="apple.com"]')).toHaveText('Continue with Apple');
@@ -197,7 +197,9 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await page.locator('.ma-ios-tab[href="/learn/"]').click();
   await expect(page).toHaveURL(/\/learn\/$/);
   await page.getByRole('link',{name:'Kana learning path',exact:true}).click();
-  await page.getByRole('button',{name:/Start as a beginner/}).click();
+  await page.getByRole('button',{name:/Start lesson/}).click();
+  await page.getByRole('button',{name:'Back to Kana',exact:true}).click();
+  await page.getByRole('button',{name:'Explore all Kana tools',exact:true}).click();
   await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practice',exact:true}).click();
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
   await expect(page).toHaveURL(/\/reading\/$/);
@@ -384,7 +386,7 @@ test('compact native reminders keep notification testing in the authorised dev m
   await page.evaluate(async()=>{
     window.ModeAtlasSettings.close();
     Object.assign(window.engagementTest.state.reminder,{granted:true,status:'authorized'});
-    window.KanaCloudSync={...window.KanaCloudSync,getUser:()=>({email:'admin@mode-atlas.com'})};
+    window.KanaCloudSync={...window.KanaCloudSync,getUser:()=>({uid:'developer',email:'renamed-admin@example.test',getIdTokenResult:async()=>({claims:{modeAtlasAdmin:true}})})};
     await window.ModeAtlasDevConsoleLoader.loadIfEligible();
     window.ModeAtlasDevConsole.open();
   });

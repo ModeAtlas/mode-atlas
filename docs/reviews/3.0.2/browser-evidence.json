@@ -1,0 +1,1213 @@
+[
+  {
+    "file": "account-navigation.spec.js",
+    "title": "iOS 393 dark: profile, shop and settings share one account surface",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "account-navigation.spec.js",
+    "title": "iOS 393 light: profile, shop and settings share one account surface",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "account-navigation.spec.js",
+    "title": "iOS 320 dark: profile, shop and settings share one account surface",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "account-navigation.spec.js",
+    "title": "iOS 820 light: profile, shop and settings share one account surface",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "account-navigation.spec.js",
+    "title": "web 1280 dark: profile, shop and settings share one account surface",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "account-navigation.spec.js",
+    "title": "account navigation keeps focus and settings context across a cancelled destructive action",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "account-navigation.spec.js",
+    "title": "account section keys and repeated avatar taps keep one navigation owner",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "shop categories and pinned preview iOS 320",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "shop categories and pinned preview iOS 393",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "shop categories and pinned preview iOS 820",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "shop categories and pinned preview web 1280",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "sign-out opens before a slow sync, shows the last save and updates when it finishes",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "a cancelled sign-out cannot update the next dialog when its sync finishes",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "repair inventory previews the entire eligible gap and its calendar expiry",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "large purchase preview keeps the item visible, retries errors and spends the chosen currency",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "compact branch, wallet and About layout stays usable at 320px",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "compact branch, wallet and About layout stays usable at 393px",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "account-shop.spec.js",
+    "title": "unopened shops stay unmounted and catalogue refresh projects progress once",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "backup-3.spec.js",
+    "title": "Settings restore shows the actual contents, supports cancellation, then restores only after confirmation",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /learn/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /kana/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /kanji/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /kana/handwriting/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /reading/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /writing/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /results/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /results/kanji/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /progress/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /wordbank/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /friends/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizable native surface /shop/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "fold, close, reload and backup preserve a lesson and its independent review",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "account UI is fetched on activation and respects either side safe area",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-final-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "a production task requires a phrase and advances the recommended sequence",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "nearly full browser storage preserves the last save and recovers after space is freed",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-final-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "consented first-time Home remains an introduction and changes after real practice",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "first Kana lesson has one task, with advanced tools explicitly available",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "Learn is a branch directory without a duplicated resume dashboard",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "Word Bank teaches, saves and retrieves a reading with an independent schedule",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "a completely fresh visitor reaches the first lesson without automatic tours or update popups",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-experience.spec.js",
+    "title": "Kana navigation leaves a daily session and avoids reloading the same practice page",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-experience.spec.js",
+    "title": "reading: inactive Speed Run stays paused, preserves time and resumes once",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-experience.spec.js",
+    "title": "reading: interruption during feedback keeps the scored answer and advances only after Resume",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-experience.spec.js",
+    "title": "writing: inactive Speed Run stays paused, preserves time and resumes once",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-experience.spec.js",
+    "title": "writing: interruption during feedback keeps the scored answer and advances only after Resume",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-experience.spec.js",
+    "title": "developer native export only records completion after the Share Sheet succeeds",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-experience.spec.js",
+    "title": "native fonts load locally with all external requests blocked",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-experience.spec.js",
+    "title": "widget words and activity reflect a successful save and survive page reloads",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-experience.spec.js",
+    "title": "system text changes reflow Atlas, settings and practice without horizontal clipping",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-home.spec.js",
+    "title": "iOS dark: returning suggestions and completed goals scroll behind a fixed dock",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-home.spec.js",
+    "title": "iOS light: returning suggestions and completed goals scroll behind a fixed dock",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-home.spec.js",
+    "title": "iOS dark: cold launch, safe-area change and return to Atlas keep natural scrolling",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-home.spec.js",
+    "title": "iOS light: cold launch, safe-area change and return to Atlas keep natural scrolling",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-home.spec.js",
+    "title": "iOS Atlas keeps the final actions reachable with larger text and a short viewport",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-home.spec.js",
+    "title": "web home shows the full owned character, shared study data and a direct Shop link, then clears identity",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "Atlas home shares one responsive composition with native chrome",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "iOS home can reach its last action above the dock on portrait phones",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "native account chooser uses enabled methods and Settings owns account deletion",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "bundled iOS runtime uses native lifecycle without web update or PWA ownership",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "native launch links reach shared practice setup and ignore foreign callbacks",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "iOS study tabs navigate while the website keeps its original navigation",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "native Reading uses a compact answer keyboard while the website keeps text entry",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "native trainer page background follows the app theme after the splash",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "native safe-area insets survive phone trainer styles and clear the dock after home scrolling",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "compact native reminders keep notification testing in the authorised dev menu",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "account alerts are independent, opt-in and remain editable with large text",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "ios-shell.spec.js",
+    "title": "browser Settings do not render native engagement controls",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "native path winds across the available width and keeps every row reachable",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "combined practice alternates and saves each skill independently web",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "combined practice alternates and saves each skill independently iOS",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "fresh entry offers placement or beginner, with one path and independently locked rows",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "placement resumes after reload, stops each direction at a gap, and saves no XP",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "reading shared setup preserves feedback choices and counts real practice toward the row",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "writing shared setup preserves feedback choices and counts real practice toward the row",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "one mastery view keeps earned Read progress visible while Recall is new",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "Kana layout and lesson fit iOS light without horizontal scrolling",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "Kana layout and lesson fit iOS dark without horizontal scrolling",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "Kana layout and lesson fit web light without horizontal scrolling",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "Kana layout and lesson fit web dark without horizontal scrolling",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "handwriting awards a clean independent completion, while watching strokes awards nothing",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "reading accuracy uses the requested unlocked set before and during practice",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "writing accuracy uses the requested unlocked set before and during practice",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "accuracy recomputes account eligibility and clears pending targets on account change",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "practice starts simple and the optional sheet retains row, feedback and timing choices",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "study selection uses two columns and script-wide unlocked toggles on web",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "study selection uses two columns and script-wide unlocked toggles on iOS",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "mastery displays exact next targets with accessible pass and missing states in light",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "mastery displays exact next targets with accessible pass and missing states in dark",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "native placement keeps the shared app keyboard ready between answers and disposes it on exit",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "reading returns to the saved practice pace and selected rows",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "writing returns to the saved practice pace and selected rows",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "combined kana stay together and practice actions fit on a 320px iPhone",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "combined kana stay together and practice actions fit on a 393px iPhone",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "Your path includes every row and reopens old lessons without changing unlocks",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "Confident, Mastered and Mastered+ have distinct colours in the legend and details",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kana-learning.spec.js",
+    "title": "practice presents four equal skill choices and handwriting remains usable",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "guided Kanji teaching checks meaning and pronunciation, then resumes the same small set",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "typed recall, IME composition, hints, wrong answers and matching keep independent evidence accurate",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "formal Kanji tests persist separately and share Results navigation with Kana",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "level gates and the Kanji mastery map use the same completion evidence",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "Kanji layout iOS 320 light",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "Kanji layout iOS 393 dark",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "Kanji layout iOS 768 light",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "Kanji layout web 1280 dark",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "Meaning Match tests save results while keeping mastery evidence assisted",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "Kanji due reviews appear in Progress and open the correct skill session",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "shared Results switch is readable, reachable and keeps the chosen theme on web and iOS",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "phone lessons fit above the dock, explain readings and route Japanese audio through iOS",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "handwriting guides stroke direction and supports mouse, touch, undo, reset and kana selection",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "Learn shows three sibling learning branches and shared results outside them",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "Kanji recap celebrates a level gain and lists only the ranks earned in this session",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "kanji.spec.js",
+    "title": "Kanji starting-point check grants access without XP or fabricated mastery",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "normal backups preview, restore and reject foreign owners without importing private account state",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "optional funnel collects nothing before consent, bounds counts and erases on withdrawal",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "optional interfaces load only on demand and remain keyboard reachable",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /learn/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /kana/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /kanji/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /kana/handwriting/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /reading/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /writing/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /results/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /results/kanji/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /progress/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /wordbank/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /friends/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /shop/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /privacy/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /terms/",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "a large local answer uses a compact recovery journal and survives interruption",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "security-monitoring.spec.js",
+    "title": "the shipped policy blocks injected scripts and inline handlers while normal app code runs",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "security-monitoring.spec.js",
+    "title": "guest reports need explicit opt-in, contain limited summaries and withdraw on account change",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-fixes-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "web reading navigation stays visible and setup clears the desktop dock",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "web writing navigation stays visible and setup clears the desktop dock",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "Web reading: finite set teaches a mistake, saves once and focuses the follow-up",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "iOS reading: finite set teaches a mistake, saves once and focuses the follow-up",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "Web writing: finite set teaches a mistake, saves once and focuses the follow-up",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "iOS writing: finite set teaches a mistake, saves once and focuses the follow-up",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "guided skip is taught once; stopping feedback cannot advance a later session",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "longer sets finish at their own goal; free practice also teaches mistakes",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "guided settings cannot take over Daily Challenge and Test Mode",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "iOS light: recommendation reflects saved difficulties and guides the selected activity",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "iOS dark: recommendation reflects saved difficulties and guides the selected activity",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "study-flow.spec.js",
+    "title": "phone Reading keeps input focus through correct feedback and reflows teaching at larger text sizes",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "resizing preserves completed handwriting strokes and cancels only the unfinished stroke",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-final-3.0.2.json"
+  },
+  {
+    "file": "duo-learning.spec.js",
+    "title": "Home grows from one attempt to an established learner without exposing empty statistics",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "browser-final-3.0.2.json"
+  },
+  {
+    "file": "save-performance.spec.js",
+    "title": "mature Kanji save reports median/p95 and preserves untouched history",
+    "project": "desktop-chromium",
+    "status": "expected",
+    "source": "save-final-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "consented first-time Home remains an introduction and changes after real practice",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "first Kana lesson has one task, with advanced tools explicitly available",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "Learn is a branch directory without a duplicated resume dashboard",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "Word Bank teaches, saves and retrieves a reading with an independent schedule",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "first-use-3.spec.js",
+    "title": "a completely fresh visitor reaches the first lesson without automatic tours or update popups",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "normal backups preview, restore and reject foreign owners without importing private account state",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "optional funnel collects nothing before consent, bounds counts and erases on withdrawal",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "optional interfaces load only on demand and remain keyboard reachable",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /learn/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /kana/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /kanji/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /kana/handwriting/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /reading/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /writing/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /results/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /results/kanji/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /progress/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /wordbank/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /friends/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /shop/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /privacy/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "page coverage /terms/",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  },
+  {
+    "file": "release-3.spec.js",
+    "title": "a large local answer uses a compact recovery journal and survives interruption",
+    "project": "mobile-chromium",
+    "status": "expected",
+    "source": "browser-mobile-3.0.2.json"
+  }
+]

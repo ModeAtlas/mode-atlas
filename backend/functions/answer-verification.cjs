@@ -1,5 +1,6 @@
 'use strict';
 const {HttpsError}=require('firebase-functions/v2/https');
+const prompts=require('./shared/mode-atlas-study-prompts.js');
 const policy=require('./shared/mode-atlas-weekly-rules.js');
 const kana=require('./shared/mode-atlas-kana-data.js');
 const kanji=require('./kanji-verification.cjs');
@@ -16,6 +17,7 @@ function scoreAnswers(run,answers,at){
     fields(item,['index','kana','answer','elapsed']);
     if(!Number.isInteger(item.index)||item.index<1||typeof item.kana!=='string'||item.kana.length>20||typeof item.answer!=='string'||item.answer.length>40||!Number.isInteger(item.elapsed))fail('invalid-argument','Invalid study answer.');
     if(item.index<=run.index)continue; // Retry after a lost response: no second credit.
+    if(!run.seed||item.kana!==prompts.question(run,item.index))fail('failed-precondition','Answer the issued question in this session.');
     if(item.index!==index+1||item.elapsed<elapsed+200||item.elapsed>at-run.startedAt+60000)fail('failed-precondition','Weekly answers must arrive in order during live practice.');
     const units=kana.splitKana(item.kana);
     if(!units.length||units.length>5||units.some(char=>!pool.has(char)))fail('invalid-argument','That kana is outside this session.');
@@ -29,6 +31,7 @@ function scoreAnswers(run,answers,at){
     // The declared pool cannot inflate scores from repeating only a few kana.
     if(correct)score+=units.length*rewards.kanaRate(Math.min(run.pool.length,seen.size),run.hints);
     verified.push({index:item.index,char:item.kana,correct,elapsed:item.elapsed,poolSize:Math.min(run.pool.length,seen.size),units:units.length,direction});
+    prompts.advance(run,item.index,item.kana,correct);
     index=item.index;elapsed=item.elapsed;
   }
   return {index,elapsed,seen:[...seen],score,verified};

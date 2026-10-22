@@ -278,18 +278,19 @@ def main() -> int:
                 fail(errors, f"normal HTML navigation contains transport params {bad}: {html_path.relative_to(ROOT)} -> {raw}")
 
     # The profile/settings drawer is a shared module instantiated once per HTML document.
-    # Every app page must load the same active-revision markup/binding owners, and no page
+    # Every app page must expose the same revision-aware account entry point; no page
     # may carry its own inline Settings/update implementation.
     main_pages = [
         ROOT / 'index.html', ROOT / 'kana/index.html', ROOT / 'reading/index.html',
         ROOT / 'writing/index.html', ROOT / 'results/index.html', ROOT / 'wordbank/index.html',
     ]
     shared_drawer_assets = [
-        f'mode-atlas-profile-menu.{revision}.js',
-        f'mode-atlas-settings-menu.{revision}.js',
+        f'mode-atlas-feature-loader.{revision}.js',
         f'mode-atlas-account-navigation.{revision}.js',
-        f'mode-atlas-account-bindings.{revision}.js',
     ]
+    for name in ['profile-menu', 'settings-menu', 'native-settings', 'account-bindings', 'shop-ui']:
+        if not (ROOT / f'assets/ui/mode-atlas-{name}.{revision}.js').exists():
+            fail(errors, f'on-demand account asset missing: {name}')
     for page_path in main_pages:
         page_html = text(page_path)
         storage_pos = page_html.find(f'mode-atlas-storage.{revision}.js')
@@ -339,7 +340,7 @@ def main() -> int:
     for lazy_asset in ('assets/app/mode-atlas-dev-console.js', 'assets/app/mode-atlas-dev-backups.js', 'assets/css/mode-atlas-dev-console.css'):
         if lazy_asset not in revision_builder:
             fail(errors, f'revision builder does not own lazy developer asset: {lazy_asset}')
-    for marker in ('document.currentScript', 'kanaCloudSyncStatusChanged', 'loadIfEligible', 'admin@mode-atlas.com'):
+    for marker in ('document.currentScript', 'kanaCloudSyncStatusChanged', 'loadIfEligible', 'modeAtlasAdmin'):
         if marker not in dev_loader:
             fail(errors, f'developer-console loader missing eligibility/revision marker: {marker}')
 

@@ -409,7 +409,7 @@
   }
   function confirmAction(title,message,label,action,data,cancel,done=load){
     screen();body.append(el('h3','',title),el('p','ma-social-note',message));const actions=el('div','ma-social-tools');
-    actions.append(button('Cancel',cancel),button(label,()=>run(()=>root.ModeAtlasSocial.call(action,data),done),'ma-button ma-button--danger'));body.append(actions);focusTitle();
+    actions.append(button('Cancel',cancel),button(label,()=>run(async()=>{if(action==='assignModerator')await root.KanaCloudSync.confirmCurrentSignIn();return root.ModeAtlasSocial.call(action,data);},done),'ma-button ma-button--danger'));body.append(actions);focusTitle();
   }
   function mount(parent){
     if(!root.ModeAtlasSocial.isEnabled())return;

@@ -2,6 +2,7 @@
 // Weekly competition verifies Kanji against the same immutable learning data.
 // Personal/offline progress remains in the account save, never a score receipt.
 const {HttpsError}=require('firebase-functions/v2/https');
+const prompts=require('./shared/mode-atlas-study-prompts.js');
 const curriculum=require('./shared/mode-atlas-kanji-curriculum.js');
 const content=require('./shared/mode-atlas-kanji-content.js')({ModeAtlasKanjiData:require('./shared/mode-atlas-kanji-data.js'),ModeAtlasKanaData:require('./shared/mode-atlas-kana-data.js')});
 const state=require('./shared/mode-atlas-kanji-state.js')({ModeAtlasKanjiCurriculum:curriculum});
@@ -20,11 +21,13 @@ function score(run,answers,at){
   for(const item of answers){
     if(!item||Object.keys(item).some(k=>!['index','kana','answer','elapsed'].includes(k))||!Number.isInteger(item.index)||item.index<1||typeof item.kana!=='string'||!pool.has(item.kana)||typeof item.answer!=='string'||item.answer.length>160||!Number.isInteger(item.elapsed))fail('invalid-argument','Invalid Kanji answer.');
     if(item.index<=run.index)continue;
+    if(!run.seed||item.kana!==prompts.question(run,item.index))fail('failed-precondition','Answer the issued question in this session.');
     if(item.index!==index+1||item.elapsed<elapsed+200||item.elapsed>at-run.startedAt+60000)fail('failed-precondition','Weekly answers must arrive in order during live practice.');
     seen.add(item.kana);
-    const correct=content.grade(item.kana,run.direction,item.answer)||(run.direction==='pronunciation'&&(content.get(item.kana).legacyReadings||[]).some(expected=>content.kana(item.answer)===content.hira(expected)));
+    const correct=content.grade(item.kana,run.direction,item.answer);
     verified.push({index:item.index,char:item.kana,correct,elapsed:item.elapsed,poolSize:Math.min(run.pool.length,seen.size),units:1,direction:run.direction});
     if(correct)total+=rewards.kanaRate(Math.min(run.pool.length,seen.size),run.hints||run.direction==='match');
+    prompts.advance(run,item.index,item.kana,correct);
     index=item.index;elapsed=item.elapsed;
   }
   return {index,elapsed,seen:[...seen],score:total,verified};

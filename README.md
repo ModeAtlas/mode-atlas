@@ -6,7 +6,11 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 2.121.0
+Version: 3.0.2
+
+3.0.2 implementation, PDF status, iPhone Duo preparation and update commands: [development notes](docs/development-3.0.2.md).
+3.0.1 interface cleanup and update commands: [development notes](docs/development-3.0.1.md).
+3.0.0 handover and administrator migration: [development notes](docs/development-3.0.0.md).
 
 Account recovery, repeating goals, navigation performance and logo consistency: [2.115.0](docs/development-2.115.0.md).
 Achievement collection and artwork, account-wide profiles, and session celebrations: [2.114.0](docs/development-2.114.0.md).

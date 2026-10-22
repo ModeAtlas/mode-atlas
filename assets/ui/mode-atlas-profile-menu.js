@@ -26,6 +26,7 @@
             </div>
           </section>
 
+          <a class="ma-profile-welcome" data-ma-profile-new href="/learn/">Start learning →</a>
           <section class="ma-profile-card ma-progression-card" aria-label="Atlas Level and learning activity">
             <div class="ma-profile-card-head">
               <div>
@@ -44,6 +45,9 @@
             <div class="ma-level-activity" aria-label="Learning activity">
               <div><span>Read</span><strong id="profileReadingCorrect">0</strong><small>correct kana</small></div>
               <div><span>Recall</span><strong id="profileWritingCorrect">0</strong><small>correct kana</small></div>
+              <div><span>Kanji</span><strong id="profileKanjiCorrect">0</strong><small>correct answers</small></div>
+              <div><span>Word Bank</span><strong id="profileWordsReviewed">0</strong><small>words reviewed</small></div>
+              <div><span>Handwriting</span><strong id="profileHandwriting">0</strong><small>recent completed writes</small></div>
             </div>
             <div class="ma-progression-footer">
               <div class="ma-achievement-summary"><strong id="profileAchievementCount">0</strong><span>achievements</span></div>

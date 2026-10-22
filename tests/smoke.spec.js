@@ -101,6 +101,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await gotoApp(page, '/kana/');
       await expect(page.locator('#mainContent.ma-kana-journey')).toBeVisible();
       await expect(page.getByRole('button',{name:'Continue learning',exact:true})).toBeVisible();
+      await page.getByRole('button',{name:'Explore all Kana tools',exact:true}).click();
       await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Mastery',exact:true}).click();
       await expect(page.locator('.ma-kana-mastery-map')).toBeVisible();
 
@@ -135,7 +136,6 @@ test.describe('Mode Atlas core smoke tests', () => {
 
       const settingsButton = page.locator('[data-settings-open]:visible').first();
       const settingsDrawer = page.locator('#maAccount-settings');
-      await expect(settingsDrawer).toBeAttached({ timeout: 5000 });
       await expect(settingsButton).toBeVisible();
       await expect(settingsButton).toHaveAttribute('aria-controls', 'maAccountSheet');
       await settingsButton.click();
@@ -238,8 +238,6 @@ test.describe('Mode Atlas core smoke tests', () => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/kana/');
       await page.locator('[data-settings-open]:visible').first().click();
-      await page.getByRole('button',{name:'Themes & rewards',exact:true}).click();
-      await page.locator('[data-reward-category=themes] summary').click();
       await page.locator('[data-ma-theme-choice="light"]').click();
       await expect(page.locator('html')).toHaveAttribute('data-ma-theme', 'light');
 

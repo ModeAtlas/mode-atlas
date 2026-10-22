@@ -87,7 +87,7 @@ test('Meaning Match tests save results while keeping mastery evidence assisted',
   }
   expect(await page.evaluate(()=>ModeAtlasKanjiResults.read()[0].mode)).toBe('match');
   expect(await page.evaluate(()=>Object.values(ModeAtlasKanjiState.read().sources).flatMap(s=>Object.values(s)).every(row=>row.meaning[2]===0))).toBe(true);
-  await page.getByRole('link',{name:'View results',exact:true}).click();await expect(page.getByRole('heading',{name:'N5 · Meaning Match'})).toBeVisible();
+  await page.getByRole('link',{name:'View results',exact:true}).click();await expect(page.getByRole('heading',{name:'Meaning Match · N5 content band'})).toBeVisible();
 });
 
 test('Kanji due reviews appear in Progress and open the correct skill session',async({page})=>{

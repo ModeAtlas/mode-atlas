@@ -1,0 +1,21 @@
+{
+  "before": {
+    "scriptRequests": 93,
+    "rawBytes": 813455,
+    "gzipBytes": 265725
+  },
+  "after": {
+    "scriptRequests": 92,
+    "rawBytes": 772658,
+    "gzipBytes": 254472
+  },
+  "measurement": "Home HTML script dependencies only. Excludes on-demand modules, fonts, network latency and device CPU.",
+  "journalFixture": {
+    "saveCharacters": 2340917,
+    "journalCharacters": 219,
+    "interruptedWriteAndRecoveryMs": {
+      "desktopChromium": 154.3,
+      "mobileEmulation": 191.4
+    }
+  }
+}

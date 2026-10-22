@@ -79,6 +79,15 @@ CRITICAL = {
     'mode-atlas-early-loader.js',
 }
 LAZY_ASSETS = (
+    'assets/ui/mode-atlas-profile-menu.js',
+    'assets/ui/mode-atlas-settings-menu.js',
+    'assets/ui/mode-atlas-native-settings.js',
+    'assets/ui/mode-atlas-account-bindings.js',
+    'assets/ui/mode-atlas-shop-ui.js',
+    'assets/ui/mode-atlas-avatar-ui.js',
+    'assets/ui/mode-atlas-social-ui.js',
+    'assets/ui/mode-atlas-kana-mastery.js',
+    'assets/ui/mode-atlas-kanji-mastery.js',
     *(f'assets/data/mode-atlas-strokes-{group}.js' for group in ('kana','n5','n4','n3','n2','n1')),
     'assets/data/mode-atlas-kanji-data.js',
     'assets/css/mode-atlas-fonts-web.css',

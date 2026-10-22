@@ -127,54 +127,10 @@ const STORAGE_COMPAT_KEYS = STORAGE.COMPAT_KEYS || {};
 const keyOr = (name, fallback) => STORAGE_KEYS[name] || fallback;
 const compatList = (name, fallback) => Array.isArray(STORAGE_COMPAT_KEYS[name]) ? STORAGE_COMPAT_KEYS[name] : fallback;
 
-const SECTION_DEFS = {
-  reading: {
-    updatedAtKey: 'cloudReadingUpdatedAt',
-    scalar: { highScore: keyOr('readingHighScore', 'highScore') },
-    json: {
-      settings: keyOr('readingSettings', 'settings'),
-      stats: keyOr('readingCharStats', 'charStats'),
-      evidence:'modeAtlasKanaEvidence:reading',
-      times: keyOr('readingCharTimes', 'charTimes'),
-      srs: keyOr('readingSrs', 'charSrs'),
-      scoreHistory: keyOr('readingScoreHistory', 'scoreHistory'),
-      dailyChallengeHistory: keyOr('readingDailyHistory', 'dailyChallengeHistory')
-    }
-  },
-  writing: {
-    updatedAtKey: 'cloudWritingUpdatedAt',
-    scalar: { highScore: keyOr('writingHighScore', 'reverseHighScore') },
-    json: {
-      settings: keyOr('writingSettings', 'reverseSettings'),
-      stats: keyOr('writingCharStats', 'reverseCharStats'),
-      evidence:'modeAtlasKanaEvidence:writing',
-      times: keyOr('writingCharTimes', 'reverseCharTimes'),
-      srs: keyOr('writingSrs', 'reverseCharSrs'),
-      scoreHistory: keyOr('writingScoreHistory', 'reverseScoreHistory'),
-      dailyChallengeHistory: keyOr('writingDailyHistory', 'reverseDailyChallengeHistory')
-    }
-  },
-  readingTests: {updatedAtKey:'testModeResultsUpdatedAt',scalar:{},json:{primary:'testModeResults',deleted:'modeAtlasResultsDeleted:reading'}},
-  writingTests: {updatedAtKey:'writingTestModeResultsUpdatedAt',scalar:{},json:{primary:'writingTestModeResults',deleted:'modeAtlasResultsDeleted:writing'}},
-  wordBank: {
-    updatedAtKey: 'kanaWordBankUpdatedAt',
-    scalar: {},
-    json: {
-      items: keyOr('wordBank', 'kanaWordBank'),
-      deleted:'modeAtlasWordBankDeleted'
-    }
-  },
-  kanaLearning: {updatedAtKey:'modeAtlasKanaLearningUpdatedAt',scalar:{},json:{state:'modeAtlasKanaLearning'}},
-  kanji: {updatedAtKey:'modeAtlasKanjiUpdatedAt',scalar:{},json:{state:'modeAtlasKanji'}},
-  kanjiTests: {updatedAtKey:'modeAtlasKanjiTestsUpdatedAt',scalar:{},json:{items:'modeAtlasKanjiTests',deleted:'modeAtlasResultsDeleted:kanji'}},
-  progress: {
-    updatedAtKey: keyOr('progressUpdatedAt', 'modeAtlasProgressUpdatedAt'),
-    scalar: {},
-    json: {
-      state: keyOr('progress', 'modeAtlasProgress')
-    }
-  }
-};
+const SAVE_SECTIONS = window.ModeAtlasSaveSections;
+const SECTION_DEFS = SAVE_SECTIONS.definitions;
+const SECTION_TIMESTAMP_KEYS = SAVE_SECTIONS.timestamps;
+const SECTION_EXTRA_TIMESTAMP_KEYS = SAVE_SECTIONS.extraTimestamps;
 
 const READING_TEST_IMPORT_KEYS = compatList('readingTests', [
   keyOr('readingTestResults', 'testModeResults'),
@@ -182,32 +138,12 @@ const READING_TEST_IMPORT_KEYS = compatList('readingTests', [
   'kanaTrainerTestModeResults',
   'kanaTrainerReadingTestModeResults'
 ]);
-const arraySections=new Set(['readingTests','writingTests','wordBank','kanjiTests']);
 const WRITING_TEST_IMPORT_KEYS = compatList('writingTests', [
   keyOr('writingTestResults', 'writingTestModeResults'),
   keyOr('writingTestResultsBackup', 'reverseTestModeResults'),
   'kanaTrainerWritingTestModeResults'
 ]);
 
-const SECTION_TIMESTAMP_KEYS = {
-  reading: 'settingsUpdatedAt',
-  writing: 'settingsUpdatedAt',
-  readingTests: 'resultsUpdatedAt',
-  writingTests: 'resultsUpdatedAt',
-  wordBank: 'profileUpdatedAt',
-  kanaLearning: 'modeAtlasKanaLearningUpdatedAt',
-  kanji: 'modeAtlasKanjiUpdatedAt', kanjiTests: 'modeAtlasKanjiTestsUpdatedAt',
-  progress: keyOr('progressUpdatedAt', 'modeAtlasProgressUpdatedAt')
-};
-const SECTION_EXTRA_TIMESTAMP_KEYS = {
-  reading: ['srsUpdatedAt', 'dailyUpdatedAt'],
-  writing: ['srsUpdatedAt', 'dailyUpdatedAt'],
-  readingTests: [],
-  writingTests: [],
-  wordBank: [],
-  kanaLearning: [], kanji: [], kanjiTests: [],
-  progress: []
-};
 
 function storeGet(key, fallback = '') {
   try {
@@ -350,14 +286,7 @@ function normalizeTestSectionPayload(sectionName,payload){
 function snapshotSectionFixed(sectionName) {
   const def = SECTION_DEFS[sectionName];
   if(sectionName==='readingTests'||sectionName==='writingTests')window.ModeAtlasResultsStorage.read(sectionName==='writingTests'?'writing':'reading');
-  const data = {};
-  Object.entries(def.scalar).forEach(([field, key]) => {
-    data[field] = storeGet(key, '0') || '0';
-  });
-  Object.entries(def.json).forEach(([field, key]) => {
-    const fallback = field==='deleted'||field==='evidence' ? {} : arraySections.has(sectionName) ? [] : {};
-    data[field] = readJSON(key, fallback);
-  });
+  const data = SAVE_SECTIONS.project(sectionName,{scalar:(key,fallback)=>storeGet(key,fallback)||fallback,json:readJSON});
   return {
     updatedAt: normalizeTimestamp(storeGet(def.updatedAtKey, '0')) || normalizeTimestamp(storeGet(SECTION_TIMESTAMP_KEYS[sectionName], '0')),
     data: ensureResultIdsInSectionData(sectionName, data)
@@ -418,14 +347,7 @@ function snapshotFromStorageMap(rawMap, fallbackTimestamp = 0) {
   const fallbackTs = normalizeTimestamp(fallbackTimestamp) || Date.now();
   const sections = {};
   Object.entries(SECTION_DEFS).forEach(([sectionName, def]) => {
-    const data = {};
-    Object.entries(def.scalar).forEach(([field, key]) => {
-      data[field] = readStringFromMap(map, key, '0');
-    });
-    Object.entries(def.json).forEach(([field, key]) => {
-      const fallback = field==='deleted'||field==='evidence' ? {} : arraySections.has(sectionName) ? [] : {};
-      data[field] = readJSONFromMap(map, key, fallback);
-    });
+    const data = SAVE_SECTIONS.project(sectionName,{scalar:(key,fallback)=>readStringFromMap(map,key,fallback),json:(key,fallback)=>readJSONFromMap(map,key,fallback)});
     sections[sectionName] = {
       updatedAt: normalizeTimestamp(map[def.updatedAtKey]) || fallbackTs,
       data: normalizeTestSectionPayload(sectionName, data)
@@ -647,7 +569,7 @@ function writeSectionToLocal(sectionName, payload, updatedAt) {
     if(!storeSet(key, String(data[field] ?? '0')))throw Error('Your device could not finish saving.');
   });
   Object.entries(def.json).forEach(([field, key]) => {
-    const fallback = field==='deleted'||field==='evidence' ? {} : arraySections.has(sectionName) ? [] : {};
+    const fallback = SAVE_SECTIONS.empty(sectionName,field);
     if(!storeSetJSON(key, data[field] ?? fallback))throw Error('Your device could not finish saving.');
   });
   storeSet(def.updatedAtKey, String(normalizeTimestamp(updatedAt)));
@@ -690,7 +612,7 @@ function clearLocalImportGuard() {
 
 function sectionHasMeaningfulData(sectionName, data = {}) {
   if (!data || typeof data !== 'object') return false;
-  if (sectionName === 'wordBank') return arrayHasItems(data.items);
+  if (sectionName === 'wordBank') return arrayHasItems(data.items) || Object.keys(data.lessons || {}).length > 0;
   if (sectionName === 'progress') return ['sources','events','adjustments','credits','claims','activity','achievements'].some(key=>deepHasProgress(data.state?.[key]));
   if (sectionName === 'readingTests' || sectionName === 'writingTests') {
     return arrayHasItems(data.primary) || arrayHasItems(data.backup) || arrayHasItems(data.altPrimary) || arrayHasItems(data.altBackup);
@@ -1599,7 +1521,7 @@ function scheduleSync(delay = 800) {
 }
 
 function retryConnection(){
-  // Browsers retain failed ES-module imports for the life of a document. A
+  // Failed ES-module imports can remain cached for the life of a document. A
   // deliberate retry restarts that document, preserving its saved account data
   // and avoiding a second Firebase app/auth registry under cache-busted URLs.
   if(CONFIG_READY&&!authResolved&&authStartupFailed){location.reload();return Promise.resolve(false);}
@@ -1651,6 +1573,31 @@ function createBackup() {
     data: collectExportStorage()
   };
 }
+
+// Consumer portability includes learning data only. Auth, commerce ledgers,
+// receipt outboxes, staff access and public rankings never enter this envelope.
+const PERSONAL_BACKUP = Symbol('personal-learning-backup');
+const LEARNING_SECTIONS = ['reading','writing','readingTests','writingTests','wordBank','kanaLearning','kanji','kanjiTests','progress'];
+function createLearningBackup(){
+  const snapshot=buildLocalSnapshot();
+  return {app:'Mode Atlas',kind:'learning-backup',version:1,appVersion:window.ModeAtlasVersion,
+    exportedAt:new Date().toISOString(),owner:currentUser?.uid||storeGet('modeAtlasLastUserId','')||null,
+    snapshot:{...snapshot,sections:Object.fromEntries(LEARNING_SECTIONS.filter(name=>snapshot.sections[name]).map(name=>[name,snapshot.sections[name]]))}};
+}
+function validateLearningBackup(input){
+  if(!input||input.app!=='Mode Atlas'||input.kind!=='learning-backup'||input.version!==1||!input.snapshot?.sections)throw Error('Choose a Mode Atlas learning backup exported from Settings.');
+  const owner=currentUser?.uid||storeGet('modeAtlasLastUserId','')||null;
+  if(input.owner&&input.owner!=='guest'&&input.owner!==owner)throw Error('This backup belongs to another account. Sign in to the account that exported it first.');
+  const snapshot={...input.snapshot,sections:Object.fromEntries(LEARNING_SECTIONS.filter(name=>input.snapshot.sections[name]).map(name=>[name,input.snapshot.sections[name]]))};
+  window.ModeAtlasSaveLimits.parse(JSON.stringify(snapshot));
+  for(const section of Object.values(snapshot.sections)){
+    if(section.storage)throw Error('This backup is incomplete. Export a new learning backup from the original device.');
+    window.ModeAtlasSaveLimits.parse(JSON.stringify(section.data));
+  }
+  return {app:'Mode Atlas',snapshot,exportedAt:input.exportedAt};
+}
+function previewLearningBackup(input){return previewBackup(validateLearningBackup(input));}
+function importLearningBackup(input){validateLearningBackup(input);return importLocalBackup(input,PERSONAL_BACKUP);}
 
 function getImportMapAndSnapshot(obj) {
   if (!obj || typeof obj !== 'object') throw new Error('Invalid save file');
@@ -1730,6 +1677,9 @@ function prepareManualImport(obj) {
 
 function previewLocalBackup(obj) {
   requireDeveloperBackupAccess();
+  return previewBackup(obj);
+}
+function previewBackup(obj){
   const prepared = prepareManualImport(obj);
   const local = buildLocalSnapshot();
   const sections = Object.keys(SECTION_DEFS).map((name) => {
@@ -1759,12 +1709,13 @@ function previewLocalBackup(obj) {
   };
 }
 
-async function importLocalBackup(obj) {
+async function importLocalBackup(obj,scope) {
   const importUid = currentUser?.uid || null;
-  requireDeveloperBackupAccess(importUid);
+  const access=()=>{if(scope!==PERSONAL_BACKUP)requireDeveloperBackupAccess(importUid);else{if(importUid!==(currentUser?.uid||null))throw Error('The account changed. Start the restore again.');validateLearningBackup(obj);}};
+  access();
   await waitWithTimeout(setupFirebase(), 1400, 'cloud setup');
   await waitWithTimeout(authReady, 1400, 'auth check');
-  requireDeveloperBackupAccess(importUid);
+  access();
 
   const restoreCloudActivity = !isSessionCloudPaused();
   if (restoreCloudActivity) setSessionCloudPause(true);
@@ -1775,8 +1726,8 @@ async function importLocalBackup(obj) {
   }
 
   try {
-    requireDeveloperBackupAccess(importUid);
-    const prepared = prepareManualImport(obj);
+    access();
+    const prepared = prepareManualImport(scope===PERSONAL_BACKUP?validateLearningBackup(obj):obj);
     const snapshot = prepared.snapshot;
     const result = {
       updated: [],
@@ -1794,11 +1745,11 @@ async function importLocalBackup(obj) {
     if (cloudHydrationPromise) {
       try { await cloudHydrationPromise; } catch {}
     }
-    requireDeveloperBackupAccess(importUid);
+    access();
 
     // Manual import should restore the file the user selected. Empty imported
     // sections are skipped so they do not wipe useful current data.
-    Object.keys(SECTION_DEFS).forEach((name) => {
+    STORAGE.transaction(()=>Object.keys(SECTION_DEFS).forEach((name) => {
       const incoming = snapshot.sections?.[name];
       if (!incoming) return;
       const incomingHasData = sectionHasMeaningfulData(name, incoming.data || {});
@@ -1808,12 +1759,12 @@ async function importLocalBackup(obj) {
       } else {
         result.keptLocal.push(name);
       }
-    });
+    }));
 
     let cloudStatusEmitted = false;
     const importedSnapshot = buildLocalSnapshot();
     const firestoreReady = importUid ? await ensureFirestore() : false;
-    requireDeveloperBackupAccess(importUid);
+    access();
     if (CONFIG_READY && importUid && firestoreReady && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
       try {
         await writeAccountDocument(importUid, importedSnapshot);
@@ -1833,7 +1784,7 @@ async function importLocalBackup(obj) {
       }
     }
 
-    requireDeveloperBackupAccess(importUid);
+    access();
     emitCloudDataChanged('import', result.updated);
     if (!cloudStatusEmitted) emitStatus();
     return result;
@@ -1928,6 +1879,7 @@ window.KanaCloudSync = {
   getSyncStatus,
   retryConnection,
   createBackup,
+  createLearningBackup, previewLearningBackup, importLearningBackup,
   importLocalBackup,
   previewLocalBackup,
   debugLocalSnapshot: buildLocalSnapshot,

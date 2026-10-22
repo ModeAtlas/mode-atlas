@@ -1,0 +1,66 @@
+{
+  "version": "3.0.0",
+  "iosBuild": 2080046,
+  "javascript": {
+    "passed": 267
+  },
+  "backendService": {
+    "passed": 83
+  },
+  "expandedBackendSecurity": {
+    "passed": 5
+  },
+  "browserRuns": {
+    "browser-3-final": {
+      "startTime": "2026-10-22T08:39:39.212Z",
+      "duration": 805119.209,
+      "expected": 717,
+      "skipped": 0,
+      "unexpected": 5,
+      "flaky": 0
+    },
+    "browser-3-final-fixes": {
+      "startTime": "2026-10-22T08:59:27.396Z",
+      "duration": 12824.638,
+      "expected": 5,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "browser-3-acceptance": {
+      "startTime": "2026-10-22T09:00:17.504Z",
+      "duration": 64344.984000000004,
+      "expected": 84,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "browser-3-backup-final": {
+      "startTime": "2026-10-22T09:03:15.230Z",
+      "duration": 9155.846,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "browser-3-visual-final": {
+      "startTime": "2026-10-22T09:07:42.321Z",
+      "duration": 9616.088,
+      "expected": 10,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "notExecuted": [
+    "Physical iOS devices",
+    "Xcode native compile and archive",
+    "Independent educator and learner studies",
+    "Production Firebase settings inspection"
+  ],
+  "blocked": [
+    "Local Functions emulator Firestore Eventarc trigger registration"
+  ],
+  "distinctBackendCasesVerifiedAcrossRuns": 85,
+  "distinctBrowserCasesVerifiedAcrossRuns": 724
+}
