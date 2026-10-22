@@ -4,7 +4,7 @@
   if (!root.ModeAtlasEnv?.isNativeApp || root.ModeAtlasEnv.nativePlatform !== 'ios') return;
 
   // Primary destinations stay stable inside every learning branch.
-  const tabs=[['atlas','Atlas','あア'],['learn','Learn','book'],['progress','Progress','chart'],['friends','Friends','people']];
+    const tabs=[['atlas','Atlas','あア'],['learn','Learn','nav-learn'],['progress','Progress','nav-progress'],['friends','Friends','nav-friends']];
   const route=location.pathname.replace(/\/index\.html$/i,'/');
   const current=tabs.find(tab=>root.AtlasPlatform.destinationPath(tab[0])===route)?.[0]
     || (/^\/(kana|kanji|reading|writing|results|wordbank)\//.test(route)?'learn':'');

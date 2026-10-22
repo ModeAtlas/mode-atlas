@@ -1185,9 +1185,9 @@ test('2.38 trainer sessions use one active-state owner and a focused shared stag
   assert.match(css, /data-effective-display-mode="tablet"\]\.trainer-session-active \.ma-trainer-side-panel/);
   assert.match(css, /body\.trainer-session-active\.ma-reading-page \.hiragana/);
   assert.match(css, /body\.trainer-session-active\.ma-writing-page \.prompt/);
-  assert.match(sessionControls, /const frameStart = \(nativeIOS && document\.querySelector\('\.ma-trainer-card'\)\)/,
-    'native keyboard reframing must include the whole trainer card');
-  assert.match(sessionControls, /\|\| document\.querySelector\('\.ma-session-hud'\)/,
+  // Native centring now belongs to CSS and is exercised with actual keyboard,
+  // prompt and action bounds in duo-practice.spec.js, including portrait.
+  assert.match(sessionControls, /const frameStart = document\.querySelector\('\.ma-session-hud'\)/,
     'web keyboard reframing must retain the session HUD anchor');
   assert.match(sessionControls, /ma-phone-keyboard-open/,
     'shared session controls must own real software-keyboard state for phone presentation');

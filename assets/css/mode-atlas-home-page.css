@@ -89,7 +89,7 @@ body[data-effective-display-mode="tablet"] .atlas-home{max-width:1000px;}
 
 /* Native Home responds to the space left after system chrome and the dock.
    A wider display should reveal the next action, not enlarge the illustration. */
-html[data-ma-runtime="ios"] .atlas-home{container:atlas-home / inline-size;}
+html[data-ma-runtime="ios"] .atlas-home{width:100%;max-width:1240px;container:atlas-home / inline-size;}
 html[data-ma-runtime="ios"] .atlas-home-learning{min-height:0;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);}
 html[data-ma-runtime="ios"] .atlas-home-learning__copy{padding:24px;}
 html[data-ma-runtime="ios"] .atlas-home-learning h2{font-size:2rem;margin:12px 0;}

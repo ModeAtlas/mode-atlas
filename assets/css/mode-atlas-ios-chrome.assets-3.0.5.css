@@ -120,7 +120,7 @@ html[data-ma-runtime="ios"] .ma-ios-practice-actions button:focus-visible{outlin
 
 /* Focus uses the same exit control; practice owns entry and session state. */
 html[data-ma-runtime="ios"] .ma-ios-tabs>.ma-nav-handle{display:none;}
-html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs{grid-template-columns:1fr;}
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs{text-align:center;}
 html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__links,
 html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-profile{display:none;}
 html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs #studyNavShowBtn{
@@ -181,7 +181,10 @@ html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-train
   display:block;width:100%;min-height:0;margin:0 auto;container:ma-trainer / inline-size;
 }
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-card{
-  width:min(1040px,100%);min-height:0;margin:0 auto 16px;padding:16px;
+  width:min(720px,100%);min-height:0;margin:0 auto 16px;padding:16px;
+}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-shell{
+  display:grid;grid-template-columns:minmax(0,1fr);align-content:center;min-height:max(0px,calc(var(--ma-ios-visible-height,100dvh) - var(--ma-page-inset-top) - var(--ma-page-inset-bottom)));
 }
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):not(.trainer-session-active) .ma-trainer-stage{display:none;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):not(.trainer-session-active) .ma-trainer-header h1{font-size:clamp(1.5rem,4vw,2rem);line-height:1.2;}
@@ -192,10 +195,11 @@ html[data-ma-runtime="ios"] .ma-trainer-card .start-wrap[hidden]{display:none;}
 html[data-ma-runtime="ios"] .ma-trainer-card .ma-study-setup{grid-column:1/-1;width:100%;max-width:none;padding:12px;}
 html[data-ma-runtime="ios"] .ma-trainer-card .start-wrap .ma-button{min-width:0;width:100%;min-height:48px;}
 html[data-ma-runtime="ios"] .ma-trainer-card :is(.hint,.combo-tier-notice):empty{display:none;}
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-card{padding:12px;margin-bottom:8px;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-card{padding:16px;margin-bottom:0;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-header{min-height:0;margin-bottom:4px;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-stage{gap:8px;padding:0;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-session-hud{margin:0;padding:0;border:0;}
+html[data-ma-runtime="ios"] body.trainer-session-active .ma-session-hud .scoreline{max-width:520px;margin-inline:auto;}
 /* Progress already states the question count. In scored sessions the live
    Correct/Incorrect pair takes priority over practice streaks and old records. */
 html[data-ma-runtime="ios"] body.trainer-session-active .daily-badge,
@@ -212,13 +216,18 @@ html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-s
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .session-actions .ma-trainer-skip{grid-column:auto;order:0;opacity:1;}
 html[data-ma-runtime="ios"] body.ma-writing-page.trainer-session-active .choice-grid{width:100%;gap:8px;}
 html[data-ma-runtime="ios"] body.ma-writing-page.trainer-session-active .choice-btn{min-height:52px;padding:8px 6px;}
-@container ma-trainer (min-width:40rem){
+/* A wide, short working area benefits from two columns. A tall window keeps
+   the prompt above the answer and centres the task in the usable height. */
+@media(min-aspect-ratio:1/1){
+ @container ma-trainer (min-width:40rem){
+  html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-card{width:min(1040px,100%);}
   html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-header{grid-template-columns:minmax(0,1fr) auto;text-align:left;justify-items:start;gap:8px;}
   html[data-ma-runtime="ios"] .ma-trainer-card .ma-study-progress{margin:0 0 4px;min-width:180px;}
   html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-stage{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 24px;align-items:center;}
   html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-session-hud{grid-column:1/-1;}
   html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-prompt-wrap{width:100%;min-height:clamp(120px,25dvh,210px);}
   html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-answer-wrap{min-width:0;}
+ }
 }
 /* The early head bootstrap opts the native app into cross-document transitions. */
 /* Keep the previous canvas fully opaque until the new document covers it. */

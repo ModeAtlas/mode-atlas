@@ -442,7 +442,10 @@ for(const mode of ['reading','writing'])test(`iOS ${mode}: interrupted guided se
   for(let i=0;i<4;i++)await correct(page,mode);
   await expect.poll(()=>page.evaluate(()=>!locked)).toBe(true);
   const before=await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),id:sessionStats.study.runId}));
-  await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  // An explicit new-start link must still offer the existing checkpoint.
+  await page.goto(`/${mode}/?start=1`);await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await expect(page.locator('body')).not.toHaveClass(/trainer-session-active/);
+  await expect(page).toHaveURL(new RegExp('/'+mode+'/$'));
   await expect(page.locator('#practiceRecovery')).toContainText('4 answered');
   await page.getByRole('button',{name:'Resume set',exact:true}).click();
   expect(await page.evaluate(()=>({xp:ModeAtlasProgress.getXP(),id:sessionStats.study.runId,answered:sessionStats.answered}))).toEqual({...before,answered:4});

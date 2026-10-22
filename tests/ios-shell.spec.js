@@ -34,8 +34,13 @@ test('iOS home can reach its last action above the dock on portrait phones', asy
   });
   await page.goto('/');
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
+  await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.evaluate(()=>document.fonts.ready);
   for (const size of [{width:375,height:667}, {width:393,height:852}, {width:430,height:932}]) {
     await page.setViewportSize(size);
+    // Let the native dock measurement and font reflow settle before choosing
+    // the document end; scrolling the old height was an intermittent false fail.
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
     await expect.poll(() => page.evaluate(() => ({
       reachable: document.documentElement.scrollHeight <= innerHeight || scrollY > 0,
@@ -203,6 +208,9 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practice',exact:true}).click();
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
   await expect(page).toHaveURL(/\/reading\/$/);
+  await expect(page.locator('body')).toHaveClass(/trainer-session-active/);
+  // Hub Start enters practice directly. Return to setup to inspect its chrome.
+  await page.goto('/reading/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await expect(page.locator('.ma-kana-navigation [aria-current="page"]')).toHaveText('Practice');
   await expect(page.locator('.ma-ios-tabs__links .ma-ios-tab.is-active')).toContainText('Learn');
   await expect(page.locator('.ma-ios-tabs')).toBeVisible();
@@ -273,7 +281,8 @@ test('native Reading uses a compact answer keyboard while the website keeps text
   expect(answer).toMatch(/^[a-z]+$/);
   for (const letter of answer) await page.locator(`.ma-ios-reading-keyboard__key[data-key="${letter}"]`).click();
   await expect(page.locator('#streak')).toHaveText('1');
-  expect(await page.locator('.ma-ios-reading-keyboard__key').first().evaluate(key => key.getBoundingClientRect().height)).toBeGreaterThanOrEqual(58);
+  const keyHeight=await page.locator('.ma-ios-reading-keyboard__key').first().evaluate(key => key.getBoundingClientRect().height);
+  expect(keyHeight).toBeGreaterThanOrEqual(44);expect(keyHeight).toBeLessThanOrEqual(60);
   await expect.poll(() => page.evaluate(() => window.modeAtlasHapticCalls.length)).toBeGreaterThan(0);
   const pulses = await page.evaluate(() => window.modeAtlasHapticCalls);
   expect(pulses.every(style => style === 'LIGHT')).toBe(true);

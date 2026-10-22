@@ -231,7 +231,7 @@ jobs:
 
       - name: Select a Duo-capable release SDK
         run: |
-          mode_atlas_developer="$(python3 select_ios_toolchain.py)"
+          mode_atlas_developer="$(python3 select_ios_toolchain.py --ci)"
           echo "DEVELOPER_DIR=$mode_atlas_developer" >> "$GITHUB_ENV"
 
       - name: Verify selected Xcode and SDK

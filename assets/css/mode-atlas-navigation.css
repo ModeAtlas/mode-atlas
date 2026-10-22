@@ -371,6 +371,12 @@ body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation{width:min(540px,1
 body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation a{min-height:44px;padding:8px 4px;font-size:.75rem;justify-content:center;}
 body:is(.ma-reading-page,.ma-writing-page)>.ma-kana-navigation a::before{display:none;}
 body.trainer-session-active .ma-kana-navigation,body.study-nav-hidden .ma-kana-navigation{display:none;}
+/* Native short windows need room for the branch task beneath navigation. */
+@media(max-height:740px){
+ html[data-ma-runtime="ios"] .ma-kana-navigation{width:100%;margin:8px auto 12px;gap:6px;}
+ html[data-ma-runtime="ios"] .ma-kana-navigation a{min-height:44px;padding:6px 10px;font-size:.85rem;}
+ html[data-ma-runtime="ios"] .ma-kana-navigation a::before{font-size:1.15rem;}
+}
 @media(max-width:600px){.ma-kana-navigation{width:100%;grid-template-columns:repeat(4,minmax(0,1fr));margin:8px auto 16px;gap:4px;padding:3px;border-radius:12px;background:var(--ma-surface-inset);box-sizing:border-box;}.ma-kana-navigation a,.ma-kana-navigation a[data-kana-section="kana"],.ma-kana-navigation a[data-kana-section="practice"]{min-height:44px;padding:8px 3px;font-size:.75rem;justify-content:center;border:0;border-radius:9px;background:transparent;}.ma-kana-navigation a::before{display:none;}.ma-kana-navigation a[aria-current="page"]{background:var(--ma-primary);}}
 html[data-ma-large-text] .ma-kana-navigation{grid-template-columns:repeat(2,minmax(0,1fr));}
 /* Desktop has a persistent destination rail; compact web and iOS keep their

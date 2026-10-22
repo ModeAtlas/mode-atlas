@@ -168,6 +168,7 @@
   }
   function bootFromHub(){
     const params=new URLSearchParams(location.search);
+    const start=params.get('start')==='1';
     const confusable=params.get('confusable')==='1'||storeGet('modeAtlasConfusableMode')==='1';
     const daily=params.get('mode')==='daily';
     const formal=params.get('mode')==='test';
@@ -179,13 +180,17 @@
     const practice=Number(params.get('practice'));
     const guided=!daily&&!formal&&window.ModeAtlasStudyPlan.lengths.includes(practice);
     // Consume navigation intent before a synchronous UI refresh can re-enter.
-    const keys=['confusable','mode','focusWeak','practice','due','kana','hints','script'];
+    const keys=['start','confusable','mode','focusWeak','practice','due','kana','hints','script'];
     if(keys.some(key=>params.has(key))){
       keys.forEach(key=>params.delete(key));
       history.replaceState(null,'',location.pathname+(params.size?'?'+params.toString():'')+location.hash);
     }
     if(confusable) storeRemove('modeAtlasConfusableMode');
-    if(!confusable&&!daily&&!formal&&!review&&!guided&&!due&&!target.length) return;
+    // Kana has already saved the user's full configuration, including mixed
+    // practice. Start it once, through the existing controller. A recoverable
+    // session still presents Resume/Discard instead of overwriting progress.
+    const startRequested=()=>{if(start&&!window.ModeAtlasSessionRecovery.read(isWriting?'writing':'reading'))document.getElementById('startBtn')?.click();};
+    if(!confusable&&!daily&&!formal&&!review&&!guided&&!due&&!target.length){startRequested();return;}
     const s=getSettings();
     // A lesson/review link explicitly chooses its skill, even after a mixed set.
     s.kanaDirection=isWriting?'writing':'reading';
@@ -213,6 +218,7 @@
     setSettings(s);
     if(confusable||daily||formal||review||due||target.length||noHints) setActivePreset('');
     saveAndRefresh();
+    startRequested();
   }
 
 

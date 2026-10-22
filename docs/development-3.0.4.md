@@ -27,42 +27,12 @@ Browser fixtures simulate UIKit geometry at 480×680 and 960×680, plus resize a
 
 The implementation follows [Apple's current-window sizing guidance](https://developer.apple.com/iphone-duo/prepare/). No device-name detection, physical-orientation assumptions or hardcoded list of Duo display sizes was added.
 
-## Mac update commands
+## Mac update commands — superseded
 
-Run this from your current Mode Atlas project directory. It creates a separate checkout, preserving the current project and copying its local signing configuration. Install release Xcode 27.1 or later first.
-
-```bash
-bash <<'MODE_ATLAS_UPDATE'
-set -euo pipefail
-
-mode_atlas_source=$(git rev-parse --show-toplevel)
-mode_atlas_stamp=$(date +%Y%m%d-%H%M%S)
-mode_atlas_checkout="$HOME/mode-atlas-3.0.4-$mode_atlas_stamp"
-
-git -C "$mode_atlas_source" fetch origin \
-  refs/heads/agent/mode-atlas-2.68.0-ios-theme:refs/remotes/origin/agent/mode-atlas-2.68.0-ios-theme
-git -C "$mode_atlas_source" worktree add \
-  -b "update/mode-atlas-3.0.4-$mode_atlas_stamp" \
-  "$mode_atlas_checkout" \
-  refs/remotes/origin/agent/mode-atlas-2.68.0-ios-theme
-
-for mode_atlas_config in signing.local.xcconfig widget-sharing.local.xcconfig; do
-  if test -f "$mode_atlas_source/ios/$mode_atlas_config"; then
-    cp "$mode_atlas_source/ios/$mode_atlas_config" \
-      "$mode_atlas_checkout/ios/$mode_atlas_config"
-  fi
-done
-
-cd "$mode_atlas_checkout"
-mode_atlas_developer=$(python3 select_ios_toolchain.py)
-export DEVELOPER_DIR="$mode_atlas_developer"
-npm ci
-npm run ios:sync
-open -a "${mode_atlas_developer%/Contents/Developer}" \
-  ios/App/App.xcodeproj
-printf '\nUpdated project: %s\n' "$mode_atlas_checkout"
-MODE_ATLAS_UPDATE
-```
+The fresh-worktree handover changed the project path and forced another Xcode app.
+Use the [3.0.5 handover](development-3.0.5.md#mac-handover-code), which updates the
+original folder and preserves the user’s workspace state and Xcode selection.
+The old commands have been removed to prevent repeating that regression.
 
 Select the **App** scheme and Duo simulator/device in Xcode, then press **⌘R**. Check build **2080050**. Open and close the display during an answer, then test Daily, Test, eight-choice Recall, Read + Recall, and a four-kana sequence. Check Pause/Resume and the setup dialog at both sizes.
 

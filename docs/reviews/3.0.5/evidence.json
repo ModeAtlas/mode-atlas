@@ -1,0 +1,108 @@
+{
+  "release": "3.0.5",
+  "ios_build": 2080051,
+  "date": "2026-10-23",
+  "release_check": {
+    "result": "passed",
+    "javascript_tests": 280,
+    "python_tests": 23,
+    "project_security_content_audits": "passed",
+    "native_web_bundle": "passed"
+  },
+  "browser_release_run": {
+    "stats": {
+      "startTime": "2026-10-22T23:28:22.263Z",
+      "duration": 325605.001,
+      "expected": 331,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "files": {
+      "backup-3.spec.js": {
+        "passed": 2,
+        "failed": 0
+      },
+      "duo-practice.spec.js": {
+        "passed": 114,
+        "failed": 0
+      },
+      "first-use-3.spec.js": {
+        "passed": 12,
+        "failed": 0
+      },
+      "ios-shell.spec.js": {
+        "passed": 23,
+        "failed": 1
+      },
+      "progression.spec.js": {
+        "passed": 142,
+        "failed": 0
+      },
+      "release-3.spec.js": {
+        "passed": 38,
+        "failed": 0
+      }
+    },
+    "initial_failures": [
+      {
+        "file": "ios-shell.spec.js",
+        "title": "iOS home can reach its last action above the dock on portrait phones",
+        "project": "desktop-chromium"
+      }
+    ],
+    "resolution": "Home scroll test waited for font loading and native resize layout before choosing the document end. Corrected case passed six repeats, three per Chromium project. No source change was needed for this test timing issue."
+  },
+  "browser_broad_run": {
+    "cases": 292,
+    "passed": 291,
+    "initial_failures": 1,
+    "resolution": "Existing iOS shell test expected a 58px key despite the 3.0.4 responsive 44\u201360px range. Corrected assertion passed both projects in the release run."
+  },
+  "home_scroll_recheck": {
+    "passed": 6,
+    "failed": 0
+  },
+  "handover_flow": {
+    "cases": [
+      {
+        "case": "fast forward",
+        "result": "passed",
+        "same_project_directory": true,
+        "local_edits_and_index_preserved": true,
+        "ignored_user_state_and_themes_preserved": true,
+        "project_backup_created": true
+      },
+      {
+        "case": "divergent branch",
+        "result": "passed",
+        "same_project_directory": true,
+        "local_edits_and_index_preserved": true,
+        "ignored_user_state_and_themes_preserved": true,
+        "project_backup_created": true
+      }
+    ],
+    "limitations": "Git and file preservation exercised on Linux; npm install/sync and macOS toolchain validation stubbed in these isolated fixtures. Real release build separately validated."
+  },
+  "native_validation": "GitHub CI is the native compile/archive gate; no local Xcode or physical Duo validation claimed.",
+  "limitations": [
+    "Viewport fixtures simulate native geometry, not physical device specifications.",
+    "The user\u2019s Mac window/theme preferences cannot be inspected from this workspace.",
+    "Production signed-in social behavior and the original PDF external acceptance items were not closed by this layout review."
+  ],
+  "screenshots": [
+    "screens/home-wide.png",
+    "screens/kana-setup-outer.png",
+    "screens/kana-setup-wide.png",
+    "screens/reading-outer-dark.png",
+    "screens/reading-tall-dark.png",
+    "screens/reading-wide-dark.png",
+    "screens/reading-wide-light.png",
+    "screens/writing-tall.png"
+  ],
+  "focus_dock_recheck": {
+    "passed": 6,
+    "failed": 0,
+    "scope": "Final Exit focus alignment on outer, inner landscape and inner portrait, both Chromium projects."
+  }
+}

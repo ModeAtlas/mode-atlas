@@ -4,6 +4,8 @@ const {test,expect}=require('@playwright/test');
 // screenshots, not device specifications. UIKit geometry is simulated here.
 const outer={width:480,height:680,safeArea:{top:12,right:84,bottom:20,left:0},occlusions:[{x:406,y:24,width:60,height:130}]};
 const inner={width:960,height:680,safeArea:{top:12,right:84,bottom:20,left:0},occlusions:[{x:890,y:24,width:52,height:84}]};
+const portrait={width:740,height:1020,safeArea:{top:84,right:0,bottom:24,left:0},occlusions:[]};
+const views=[['outer',outer],['inner',inner],['portrait',portrait]];
 async function prepare(page,geometry=inner,theme='dark'){
   await require('./helpers/kana-fixture')(page);
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,r=>r.abort());
@@ -22,7 +24,7 @@ async function prepare(page,geometry=inner,theme='dark'){
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
     localStorage.setItem('modeAtlasThemePreference',theme);
     localStorage.setItem('modeAtlasSound','off');
-    for(const key of ['settings','reverseSettings'])localStorage.setItem(key,JSON.stringify({hiraganaRows:['h_a','h_ka','h_sa'],katakanaRows:[],hint:false,srs:false,keyboardMode:false,choiceCount:8}));
+    for(const key of ['settings','reverseSettings'])if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify({hiraganaRows:['h_a','h_ka','h_sa'],katakanaRows:[],hint:false,srs:false,keyboardMode:false,choiceCount:8}));
   },{geometry,theme});
 }
 async function settle(page){
@@ -46,13 +48,14 @@ async function sessionFits(page){
   await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
 
-for(const theme of ['dark','light'])for(const [label,geometry]of [['outer',outer],['inner',inner]]){
+for(const theme of ['dark','light'])for(const [label,geometry]of views){
   test(`${label} ${theme}: setup and reading actions fit without scrolling`,async({page},info)=>{
     await prepare(page,geometry,theme);await page.goto('/reading/');await settle(page);
     for(const id of ['startBtn','kanaHintsQuick','modifiersTab','profileOpenBtn'])await reachable(page.locator('#'+id));
     const links=page.locator('.ma-ios-tabs__links'),nav=await page.locator('.ma-ios-tabs').boundingBox(),group=await links.boundingBox();
-    expect(Math.abs((group.y+group.height/2)-(nav.y+nav.height/2))).toBeLessThan(2);
-    for(const link of await page.locator('.ma-ios-tab').all()){const r=await link.boundingBox();expect(r.height).toBeGreaterThanOrEqual(64);await reachable(link);}
+    if(label!=='portrait')expect(Math.abs((group.y+group.height/2)-(nav.y+nav.height/2))).toBeLessThan(2);
+    for(const link of await page.locator('.ma-ios-tab').all()){const r=await link.boundingBox();expect(r.height).toBeGreaterThanOrEqual(label==='portrait'?49:64);await reachable(link);}
+    for(const name of ['learn','progress','friends'])await expect(page.locator(`.ma-ios-tab[href="/${name}/"] use`)).toHaveAttribute('href',`/assets/mode-atlas-icons.svg#icon-nav-${name}`);
     await page.screenshot({path:info.outputPath(`setup-${label}-${theme}.png`)});
     await page.locator('#startBtn').click();await sessionFits(page);
     await reachable(page.locator('#input'),{bottom:(await page.locator('.ma-ios-reading-keyboard').boundingBox()).y});
@@ -60,6 +63,15 @@ for(const theme of ['dark','light'])for(const [label,geometry]of [['outer',outer
       const p=await page.locator('.ma-trainer-prompt-wrap').boundingBox(),answer=await page.locator('.ma-trainer-answer-wrap').boundingBox();
       expect(answer.x).toBeGreaterThan(p.x+p.width);
       expect((await page.locator('.ma-trainer-card').boundingBox()).width).toBeGreaterThan(800);
+    }
+    if(label==='portrait'){
+      const prompt=await page.locator('.ma-trainer-prompt-wrap').boundingBox(),answer=await page.locator('.ma-trainer-answer-wrap').boundingBox();
+      expect(answer.y).toBeGreaterThanOrEqual(prompt.y+prompt.height);
+      await expect.poll(()=>page.evaluate(()=>{
+        const card=document.querySelector('.ma-trainer-card').getBoundingClientRect();
+        const top=parseFloat(getComputedStyle(document.body).paddingTop),bottom=document.querySelector('.ma-ios-reading-keyboard').getBoundingClientRect().top-12;
+        return Math.abs(card.top+card.height/2-(top+bottom)/2);
+      })).toBeLessThan(8);
     }
     await page.screenshot({path:info.outputPath(`reading-${label}-${theme}.png`)});
     await page.locator('#pauseSessionBtn').click();await expect(page.locator('.ma-ios-reading-keyboard')).toBeHidden();
@@ -69,11 +81,13 @@ for(const theme of ['dark','light'])for(const [label,geometry]of [['outer',outer
     await page.locator('#endSessionBtn').click();await expect(page.locator('.ma-study-summary')).toBeVisible();
   });
 }
-for(const [label,geometry]of [['outer',outer],['inner',inner]]){
+for(const [label,geometry]of views){
   test(`${label}: eight writing answers and all session actions remain visible`,async({page},info)=>{
     await prepare(page,geometry);await page.goto('/writing/');await settle(page);await reachable(page.locator('#startBtn'));await page.locator('#startBtn').click();
     await expect(page.locator('.choice-btn')).toHaveCount(8);
     for(const choice of await page.locator('.choice-btn').all())await reachable(choice);
+    const dock=await page.locator('.ma-ios-tabs').boundingBox(),exit=await page.locator('.ma-ios-tabs #studyNavShowBtn').boundingBox();
+    expect(Math.abs(exit.x+exit.width/2-(dock.x+dock.width/2))).toBeLessThan(2);
     await sessionFits(page);await page.screenshot({path:info.outputPath(`writing-${label}.png`)});
     await page.locator('#pauseSessionBtn').click();await reachable(page.locator('#pauseSessionBtn'));await page.locator('#pauseSessionBtn').click();await sessionFits(page);
   });
@@ -95,7 +109,7 @@ test('folding mid-answer preserves the question and keeps the complete frame abo
   await prepare(page,inner);await page.goto('/reading/');await settle(page);await page.locator('#startBtn').click();
   const question=await page.locator('#hiragana').textContent();
   await page.locator('#input').evaluate(el=>{el.value='s';el.setSelectionRange(1,1);});
-  for(const geometry of [outer,inner,outer]){
+  for(const geometry of [outer,portrait,inner,outer]){
     await page.setViewportSize({width:geometry.width,height:geometry.height});await page.evaluate(next=>applyDuoGeometry(next),geometry);
     await expect(page.locator('#input')).toHaveValue('s');await expect(page.locator('#hiragana')).toHaveText(question);await sessionFits(page);
   }
@@ -142,13 +156,37 @@ test('mixed practice releases the keyboard space for Recall answers',async({page
 const routes=['/','/learn/','/kana/','/kana/?view=path','/kana/?view=practice','/kana/?view=mastery','/kana/?view=tests','/kana/handwriting/','/reading/','/writing/','/kanji/','/results/','/results/kanji/','/progress/','/wordbank/','/friends/','/shop/','/kanji/sources/','/privacy/','/terms/'];
 for(const route of routes)test('Duo content fits its columns: '+route,async({page},info)=>{
   await prepare(page,outer);await page.goto(route);await settle(page);
-  for(const [label,geometry]of [['outer',outer],['inner',inner]]){
+  for(const [label,geometry]of views){
     await page.setViewportSize({width:geometry.width,height:geometry.height});await page.evaluate(next=>applyDuoGeometry(next),geometry);
     await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+    if(route==='/'&&label==='inner'){
+      const hero=await page.locator('.atlas-home-learning').boundingBox(),personal=await page.locator('.atlas-home-personal').boundingBox();
+      expect(personal.x).toBeGreaterThanOrEqual(hero.x+hero.width);
+      for(const card of await page.locator('.ma-branch-tile').all())await expect(card).toBeInViewport({ratio:1});
+    }
     const clipped=await page.locator('main').evaluateAll(mains=>mains.flatMap(main=>[...main.querySelectorAll('h1,h2,h3,p,label,button,select')]).filter(el=>{
       const c=getComputedStyle(el);return el.getClientRects().length&&el.clientWidth>0&&c.overflowX==='visible'&&el.scrollWidth>el.clientWidth+2;
     }).map(el=>({tag:el.tagName,id:el.id,class:el.className,text:el.textContent.slice(0,60),width:el.clientWidth,content:el.scrollWidth})));
     expect(clipped,label+' '+route).toEqual([]);
     await page.screenshot({path:info.outputPath(`${label}.png`)});
   }
+});
+
+for(const [view,geometry]of views)for(const [skill,label,route]of [['reading','Read','reading'],['writing','Recall','writing'],['both','Read + Recall','reading']])test(`${view}: Kana starts the chosen ${label} session once`,async({page})=>{
+  await prepare(page,geometry);await page.goto('/kana/?view=practice');await settle(page);
+  await page.getByRole('button',{name:label,exact:true}).click();
+  await reachable(page.getByRole('button',{name:'Adjust this session',exact:true}));
+  await reachable(page.getByRole('button',{name:'Start practice',exact:true}));
+  await page.getByRole('button',{name:'Start practice',exact:true}).click();
+  await expect(page).toHaveURL(new RegExp('/'+route+'/$'));await expect(page.locator('body')).toHaveClass(/trainer-session-active/);
+  expect(await page.evaluate(()=>settings.kanaDirection)).toBe(skill);await sessionFits(page);
+  const before=await page.evaluate(()=>({char:currentChar,run:sessionStats.study.runId}));
+  await page.evaluate(()=>document.dispatchEvent(new Event('ma:trainer-ready')));
+  expect(await page.evaluate(()=>({char:currentChar,run:sessionStats.study.runId}))).toEqual(before);
+});
+
+test('web navigation retains the approved destination illustrations',async({page})=>{
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,r=>r.abort());
+  await page.goto('/learn/');await settle(page);
+  for(const name of ['learn','progress','friends','shop'])await expect(page.locator(`.ma-nav__link[href="/${name}/"] use`)).toHaveAttribute('href',`/assets/mode-atlas-icons.svg#icon-nav-${name}`);
 });

@@ -200,7 +200,7 @@
     if(!Object.keys(pool).length)throw new Error('Choose at least one available row.');
     const owner=skill==='both'?'reading':skill;
     if(!Store.writeModeJSON(owner,'settings',settings))throw new Error('Your session settings could not be saved. Please try again.');
-    root.KanaCloudSync?.markSectionUpdated?.(owner);navigate('/'+(skill==='writing'?'writing':'reading')+'/');
+    root.KanaCloudSync?.markSectionUpdated?.(owner);navigate('/'+(skill==='writing'?'writing':'reading')+'/?start=1');
   }
   function customize(){
     const content=el('div','ma-kana-customize');customizing=true;
