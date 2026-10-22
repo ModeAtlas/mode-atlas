@@ -258,12 +258,15 @@ for(const native of [false,true])test(`mixed collection surfaces keep readable p
       await page.keyboard.press('Escape');await expect(page.locator('.ma-dialog-layer')).toBeHidden();
     }
     await page.locator('#profileOpenBtn').click();
+    await page.waitForFunction(()=>[...uiBindings].some(binding=>binding.authBtn?.id==='profileAuthBtn'));
     for(const banner of ['hunny','sakura','midnight','skyline','evergreen']){
       await page.evaluate(banner=>ModeAtlasProgress.selectBanner(banner),banner);
       const card=page.locator('.ma-account-card');await expect(card.locator('[data-ma-selected-banner]')).toHaveAttribute('data-ma-banner',banner);
       for(const signedIn of [false,true]){
-        await page.evaluate(signedIn=>{authResolved=true;currentUser=signedIn?{uid:'contrast-test',displayName:'Test learner'}:null;updateUiBinding({authBtn:document.querySelector('#profileAuthBtn')});},signedIn);
-        const action=page.locator('#profileAuthBtn');await expect(action).toHaveText(signedIn?'Sign out':'Sign in with Google');
+        // Exercise the installed binding, including the native multi-provider
+        // label, so asynchronous account refreshes render the same state.
+        await page.evaluate(signedIn=>{authResolved=true;currentUser=signedIn?{uid:'contrast-test',displayName:'Test learner'}:null;uiBindings.forEach(updateUiBinding);},signedIn);
+        const action=page.locator('#profileAuthBtn');await expect(action).toHaveText(signedIn?'Sign out':native?'Sign in':'Sign in with Google');
         await action.evaluate(async node=>{await Promise.all(node.getAnimations({subtree:true}).map(animation=>animation.finished.catch(()=>{})));});
         await readable(action.locator('[data-profile-auth-label]'),await action.evaluate(node=>getComputedStyle(node).backgroundColor));
         if(theme==='dark'&&banner==='hunny'&&signedIn)await page.screenshot({path:testInfo.outputPath(`${native?'ios':'web'}-hunny-profile.png`),animations:'disabled'});
