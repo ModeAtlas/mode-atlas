@@ -59,15 +59,16 @@
     const continueButton = document.getElementById('studyFeedbackContinue');
     if (continueButton) continueButton.disabled = paused;
   }
-  function isPhoneTrainerSession(){
-    return document.body?.dataset?.effectiveDisplayMode === 'phone'
+  function needsTrainerFrameAlignment(){
+    return (document.body?.dataset?.effectiveDisplayMode === 'phone' ||
+      (window.ModeAtlasEnv?.isNativeApp && window.ModeAtlasEnv.nativePlatform === 'ios'))
       && document.body.classList.contains('trainer-session-active');
   }
   function syncPhoneKeyboardState(){
     const viewport = window.visualViewport;
     const layoutHeight = Number(window.innerHeight || 0);
     const visibleHeight = Number(viewport?.height || layoutHeight);
-    const keyboardOpen = isPhoneTrainerSession()
+    const keyboardOpen = needsTrainerFrameAlignment()
       && document.activeElement?.id === 'input'
       && layoutHeight > 0
       && visibleHeight > 0
@@ -76,7 +77,7 @@
   }
 
   function alignPhoneTrainerFrame(){
-    if (!isPhoneTrainerSession()) {
+    if (!needsTrainerFrameAlignment()) {
       document.body.classList.remove('ma-phone-keyboard-open');
       return;
     }
@@ -99,12 +100,20 @@
     let viewportBottom = viewportTop + viewportHeight - 12;
     if (nativeIOS) {
       for (const selector of ['.ma-ios-tabs', '.ma-ios-reading-keyboard']) {
+        if (selector === '.ma-ios-tabs' && document.documentElement.dataset.maNavigation === 'rail') continue;
         const element = document.querySelector(selector);
         if (element && element.getClientRects().length) viewportBottom = Math.min(viewportBottom, element.getBoundingClientRect().top - 12);
       }
     }
     const available = Math.max(0, viewportBottom - viewportTop - inset);
-    const regionHeight = Math.max(0, inputRect.bottom - frameRect.top);
+    const controls = nativeIOS ? document.getElementById('sessionActions') : null;
+    const controlsBottom = controls?.getClientRects().length ? controls.getBoundingClientRect().bottom : 0;
+    // The complete question includes Skip, Pause and End. Aligning just to the
+    // input left those controls underneath the custom keyboard on short views.
+    const regionHeight = Math.max(0, Math.max(inputRect.bottom, controlsBottom) - frameRect.top);
+    // At larger text sizes the frame may need document scrolling. A delayed
+    // alignment must not pull the user's chosen action back under the keyboard.
+    if (nativeIOS && regionHeight >= available) return;
     let targetTop = viewportTop + inset;
 
     if (regionHeight < available) {
@@ -118,7 +127,7 @@
   }
   function schedulePhoneTrainerFrame(){
     window.clearTimeout(phoneFrameTimer);
-    if (!isPhoneTrainerSession()) return;
+    if (!needsTrainerFrameAlignment()) return;
     window.requestAnimationFrame(() => window.requestAnimationFrame(alignPhoneTrainerFrame));
     phoneFrameTimer = window.setTimeout(alignPhoneTrainerFrame, 220);
   }

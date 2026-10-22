@@ -535,7 +535,7 @@ function showIdleState() {
     currentPrompt = "";
     currentChoices = [];
     currentBaseChar = "";
-    promptEl.textContent = "—";
+    setTrainerPrompt(promptEl, "—");
     promptEl.classList.remove("flash-correct", "flash-wrong", "prompt-small");
     choiceGridEl.replaceChildren();
     inputEl.value = "";
@@ -660,7 +660,7 @@ function renderChoiceGrid() {
 }
 
 function showCurrentPrompt() {
-    promptEl.textContent = currentPrompt || "—";
+    setTrainerPrompt(promptEl, currentPrompt || "—");
     promptEl.classList.toggle("prompt-small", currentPrompt.length > 3);
 }
 
@@ -1044,7 +1044,7 @@ function showSessionModal(autoEnded = false) { return trainerController.showSess
 function endDailyChallenge() { endSession(true); }
 
 function endSession(autoEnded = false) {
-    finishTrainerSession(autoEnded, () => { promptEl.textContent = "—"; currentChar = ""; currentPrompt = ""; currentChoices = []; currentBaseChar = ""; choiceGridEl.replaceChildren(); });
+    finishTrainerSession(autoEnded, () => { setTrainerPrompt(promptEl, "—"); currentChar = ""; currentPrompt = ""; currentChoices = []; currentBaseChar = ""; choiceGridEl.replaceChildren(); });
 }
 
 

@@ -51,7 +51,11 @@
         bar.append(back,profile);if(resultsNav)resultsNav.before(bar);else document.querySelector('.shell,.wrap,main')?.prepend(bar);
       }
     }
-    if(exit)dock.append(exit);
+    if(exit){
+      exit.setAttribute('aria-label','Exit focus mode');
+      exit.querySelector('span').textContent='Exit focus';
+      dock.append(exit);
+    }
     document.body.append(dock);
 
     var dockHeight = -1, visibleHeight = -1, nativeLayout = null;
@@ -67,8 +71,8 @@
       const geometry=nativeLayout&&Math.abs(nativeLayout.width-width)<2&&Math.abs(nativeLayout.height-height)<2?nativeLayout:null;
       const safe=Object.fromEntries(['top','right','bottom','left'].map(side=>[side,
         Math.max(0,geometry?.safeArea?.[side]??(parseFloat(style.getPropertyValue('--ma-safe-'+side))||0))]));
-      const font=parseFloat(style.fontSize)||16,railSize=Math.max(72,font*4.5);
-      const neededHeight=4*Math.max(56,font*3.5)+3*8+16;
+      const font=parseFloat(style.fontSize)||16,railSize=Math.max(76,font*4.75);
+      const neededHeight=4*Math.max(64,font*4)+3*12+24;
       const safeWidth=width-safe.left-safe.right,safeHeight=height-safe.top-safe.bottom;
       let side='right',shared=false,top=safe.top,bottom=safe.bottom,offset=safe.right;
       // Reuse the system side gutter only with native occlusion evidence. Do

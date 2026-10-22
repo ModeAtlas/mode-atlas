@@ -159,7 +159,7 @@ html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-step{height:auto;m
 .ma-kana-path-heading>:is(h1,.ma-kicker){grid-column:1;}
 .ma-kana-path-heading>.ma-button{grid-column:2;grid-row:1/span 2;}
 .ma-kana-path-options{display:grid;gap:0 12px;}
-html[data-ma-runtime="ios"] .ma-kana-journey{container:kana / inline-size;padding-inline:6px;}
+html[data-ma-runtime="ios"] .ma-kana-journey{width:100%;max-width:1120px;container:kana / inline-size;padding-inline:6px;}
 @container kana (min-width:740px){
  html[data-ma-runtime="ios"] .ma-kana-path-layout{grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:28px;}
  html[data-ma-runtime="ios"] .ma-kana-path-options{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}

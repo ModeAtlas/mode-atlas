@@ -16,8 +16,9 @@
 .ma-kanji-course-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0 20px;font-size:.8rem;}
 .ma-kanji-course-summary strong{font-size:.85rem;}.ma-kanji-course-summary p{margin:4px 0 0;color:var(--ma-muted);font-size:.75rem;}
 .ma-kanji-path-help{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid var(--ma-border);border-radius:50%;color:var(--ma-muted);background:transparent;cursor:pointer;}
-.ma-kanji-course-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:start;margin-bottom:32px;}
-.ma-kanji-teaching{display:grid;gap:24px;min-width:0;}
+.ma-kanji-course-layout{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:24px;align-items:start;margin-bottom:32px;}
+.ma-kanji-teaching{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;min-width:0;}
+.ma-kanji-practice{min-width:0;overflow-wrap:anywhere;}
 .ma-kanji-intro{display:grid;grid-template-columns:minmax(0,1fr) 100px;align-items:center;gap:16px;background:var(--ma-card);border:1px solid var(--ma-border);border-radius:18px;padding:20px;}
 .ma-kanji-intro__copy{min-width:0;}.ma-kanji-intro__copy h2{margin:0 0 8px;font-size:1.2rem;}.ma-kanji-intro__copy p{margin:0;color:var(--ma-text-soft);font-size:.8rem;line-height:1.5;}
 .ma-kanji-intro__art{display:block;width:100%;height:100px;object-fit:contain;margin:0;}
@@ -68,7 +69,7 @@
 .ma-kanji-first-ten{margin:0;padding:0 4px;}.ma-kanji-first-ten h2{font-size:1.05rem;}
 .ma-kanji-first-ten h2{margin:0 0 6px;}
 .ma-kanji-first-ten>p{font-size:.85rem;color:var(--ma-muted);margin:6px 0;}
-.ma-kanji-first-ten ol{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;padding:0;list-style:none;}
+.ma-kanji-first-ten ol{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:0;list-style:none;}
 .ma-kanji-first-ten li{font:500 1.5rem/1.5 var(--ma-font-jp);text-align:center;border:1px solid var(--ma-border);border-radius:9px;background:var(--ma-card);padding:4px;}
 .ma-kanji-first-ten li[data-learned="true"]{border-color:var(--ma-reading);}
 .ma-kanji-mode:disabled{opacity:.5;cursor:default;}
