@@ -561,6 +561,14 @@ function closeDebugPanel() {
     DEBUG_PANEL = null;
 }
 
+// Prompt renderers publish content length alongside the text. Native layout
+// can fit a four-kana sequence without measuring/replacing the question later.
+function setTrainerPrompt(element, value) {
+    const text = String(value ?? '—');
+    element.textContent = text;
+    element.style.setProperty('--ma-prompt-length', String(Math.max(1, Array.from(text).length)));
+}
+
 function clearHint() {
     clearTimeout(hintTimeout);
     hintEl.textContent = "";

@@ -16,7 +16,7 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
         "publishWidgetSnapshot", "getNotificationStatus", "requestNotifications",
         "configureStudyReminder", "getEngagementState", "deletePushToken",
         "resetEngagement", "testNotification", "openNotificationSettings", "consumeDestination", "setAppearance",
-        "exportBackup", "getAccessibilityPreferences", "getAppIcon", "setAppIcon", "playSound", "stopSounds", "speakJapanese", "stopSpeech", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion", "revokeAppleAuthorization"
+        "exportBackup", "getAccessibilityPreferences", "getViewportLayout", "getAppIcon", "setAppIcon", "playSound", "stopSounds", "speakJapanese", "stopSpeech", "openExternalLink", "composeFeedback", "shareFriendCode", "getAppVersion", "revokeAppleAuthorization"
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
     static let reminderID = "mode-atlas.daily-study"
     static let testID = "mode-atlas.notification-test"
@@ -35,6 +35,17 @@ public final class ModeAtlasNativePlugin: CAPPlugin, CAPBridgedPlugin, Notificat
     @objc func getAppVersion(_ call: CAPPluginCall) {
         call.resolve(["version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
                       "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "", "platform": "ios"])
+    }
+
+    @objc func getViewportLayout(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let view = self.bridge?.webView as? ModeAtlasWebView else {
+                call.resolve([:]); return
+            }
+            view.setNeedsUpdateConstraints()
+            view.updateConstraintsIfNeeded()
+            call.resolve(view.viewportLayout())
+        }
     }
 
     @objc func deletePushToken(_ call: CAPPluginCall) {

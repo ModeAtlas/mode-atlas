@@ -436,7 +436,7 @@ function showIdleState() {
     hideComboTierNotice();
     stopTrialTimer();
     currentChar = "";
-    hiraganaEl.textContent = "—";
+    setTrainerPrompt(hiraganaEl, "—");
     hiraganaEl.classList.remove("flash-correct", "flash-wrong");
     inputEl.value = "";
     inputEl.disabled = true;
@@ -465,7 +465,7 @@ function nextCharacter() {
         }
 
         currentChar = trainerController.study.issued() || dailySequence[dailyIndex] || "あ";
-        hiraganaEl.textContent = currentChar;
+        setTrainerPrompt(hiraganaEl, currentChar);
         hiraganaEl.classList.remove("flash-correct", "flash-wrong");
         charStartTime = Date.now();
         gameOverTitleEl.textContent = "Wrong";
@@ -485,7 +485,7 @@ function nextCharacter() {
         }
 
         currentChar = trainerController.study.issued() || testSequence[testIndex] || "あ";
-        hiraganaEl.textContent = currentChar;
+        setTrainerPrompt(hiraganaEl, currentChar);
         hiraganaEl.classList.remove("flash-correct", "flash-wrong");
         charStartTime = Date.now();
         gameOverTitleEl.textContent = "Wrong";
@@ -510,7 +510,7 @@ function nextCharacter() {
     }
 
     currentChar = trainerController.study.issued() || displayValue;
-    hiraganaEl.textContent = currentChar;
+    setTrainerPrompt(hiraganaEl, currentChar);
     hiraganaEl.classList.remove("flash-correct", "flash-wrong");
     charStartTime = Date.now();
     gameOverTitleEl.textContent = "Wrong";
@@ -535,7 +535,7 @@ function presentPracticeDirection(){
     if(!choices){choices=document.createElement('div');choices.id='mixedRecallChoices';choices.className='ma-kana-placement-choices';choices.setAttribute('role','group');choices.setAttribute('aria-label','Recall answers');inputEl.insertAdjacentElement('afterend',choices);}
     choices.replaceChildren();choices.hidden=!recall;inputEl.hidden=recall;inputEl.disabled=recall;
     if(!recall)return;
-    hiraganaEl.textContent=charMap[currentChar];
+    setTrainerPrompt(hiraganaEl, charMap[currentChar]);
     const others=activeChars.filter(char=>charMap[char]!==charMap[currentChar]);
     for(let i=others.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
     const values=[currentChar,...others.slice(0,5)];
@@ -823,7 +823,7 @@ function updateBestScores(completed = false) { return trainerController.updateBe
 function showSessionModal(autoEnded = false) { return trainerController.showSessionModal(autoEnded); }
 
 function endSession(autoEnded = false) {
-    finishTrainerSession(autoEnded, () => { hiraganaEl.textContent = "—"; currentChar = ""; });
+    finishTrainerSession(autoEnded, () => { setTrainerPrompt(hiraganaEl, "—"); currentChar = ""; });
     selectAnswerMode('reading');document.body.classList.remove('ma-mixed-recall');inputEl.hidden=false;
     const choices=document.getElementById('mixedRecallChoices');if(choices)choices.hidden=true;
 }

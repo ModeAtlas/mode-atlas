@@ -82,21 +82,23 @@
       else {root.ModeAtlasLearningEvents?.emit('lessonCompleted','kana');navigate(L.practiceUrl(skill,lesson.row.chars,{hints:'off'}));}
     },true));panel.append(actions);host.append(panel,button('Back to Kana',()=>{root.ModeAtlasLearningEvents?.emit('lessonExited','kana');lesson=null;render();}));
   }
-  function controls(includeHand=true){
-    host.append(segmented('Kana script',[['hiragana','Hiragana'],['katakana','Katakana']],script,value=>{script=value;practiceSettings=null;url();render();}));
-    host.append(segmented('Kana skill',(includeHand?L.skills:['reading','writing']).map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();}));
+  function controls(includeHand=true,target=host){
+    target.append(segmented('Kana script',[['hiragana','Hiragana'],['katakana','Katakana']],script,value=>{script=value;practiceSettings=null;url();render();}));
+    target.append(segmented('Kana skill',(includeHand?L.skills:['reading','writing']).map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();}));
   }
   function learningPath(){
-    host.append(button('Back to Kana',()=>chooseView('learn')));
-    title('Kana','Your learning path','Read, recall and write, one row at a time.');controls();
+    title('Kana','Your learning path');
+    const heading=host.lastElementChild;heading.classList.add('ma-kana-path-heading');heading.append(button('Back to Kana',()=>chooseView('learn')));
+    const options=el('div','ma-kana-path-options');controls(true,options);host.append(options);
     const state=L.read(),evidence=L.snapshot(),rows=L.path(script,skill,state,evidence),next=rows.find(r=>r.unlocked&&!r.complete)||rows.at(-1);
     const current=el('section','ma-kana-next');current.append(el('span','ma-kicker',next.groupName),el('h2','',`${next.name} · ${L.names[skill]}`),el('p','ma-kana-next-chars',next.chars.join(' ')),el('p','ma-kana-muted',skill==='handwriting'?'Write each character without a guide.':`${next.ready} / ${next.chars.length} familiar`));
     const actions=el('div','ma-kana-actions');
     if(skill!=='handwriting')actions.append(button('Learn this row',()=>{root.ModeAtlasLearningEvents?.emit('lessonStarted','kana');lesson={row:next,index:0};render();},true));
-    actions.append(link(skill==='handwriting'?'Practise handwriting':'Practise '+L.names[skill],L.practiceUrl(skill,next.chars),skill==='handwriting'));current.append(actions);host.append(current);
+    actions.append(link(skill==='handwriting'?'Practise handwriting':'Practise '+L.names[skill],L.practiceUrl(skill,next.chars),skill==='handwriting'));current.append(actions);
+    const layout=el('div','ma-kana-path-layout'),stage=el('div','ma-kana-path-current');stage.append(current);
     const due=skill==='handwriting'?[]:root.ModeAtlasReview.due(evidence[skill+'Review']).filter(c=>L.available(skill,state,evidence).has(c));
-    if(due.length)host.append(link(`Review ${due.length} ready kana`,L.practiceUrl(skill,due,{hints:'off'})));
-    host.append(pathPreview(false));
+    if(due.length)stage.append(link(`Review ${due.length} ready kana`,L.practiceUrl(skill,due,{hints:'off'})));
+    layout.append(stage,pathPreview(false));host.append(layout);
     host.append(button('Check my starting point',openPlacement));
   }
   function nextRow(direction=skill,alphabet=script,state=L.read(),evidence=L.snapshot()){

@@ -80,7 +80,6 @@
     options.append(select('Focus',[['all','All kanji'],['new','New lessons'],['due','Due reviews']],focus,v=>focus=v));intro.append(options);
     const known=state.studyPool(level,current).filter(c=>state.access(current,c)||current.lessons[c]||state.introduced(current,c)||state.skills.some(skill=>state.metrics(current,c,skill).attempts));
     const practice=el('section','ma-kanji-practice'),tools=el('div','ma-kanji-tools');practice.append(heading('Put it into practice'));
-    if(!known.length)practice.append(el('p','ma-kanji-caption','Start with a lesson. Recall will use the characters you have met.'));
     for(const [id,title,copy]of [['pronunciation','Recall · Pronunciation','Type the word in kana. Romaji input converts to kana.'],['meaning','Recall · Meaning','Type an English meaning for the character.'],['match','Meaning Match','Choose the English meaning that fits.']]){
       if(!known.length)continue;
       const row=button('',()=>start(id,false),'ma-kanji-mode');row.disabled=!known.length;row.append(el('span','ma-kanji-mode__mark',id==='pronunciation'?'あ':id==='meaning'?'Aa':'✓'));
@@ -89,7 +88,10 @@
     practice.append(tools);
     const testPanel=el('div','ma-kanji-tests');testPanel.append(el('h3','','Take a test'),el('p','',known.length?`${Math.min(20,known.length)} questions from familiar characters. Your results are saved.`:'Tests open after your first lesson.'));
     const actions=el('div','ma-kanji-actions');actions.append(button('Pronunciation',()=>start('pronunciation',true)),button('Meaning',()=>start('meaning',true)),button('Meaning Match',()=>start('match',true)));for(const b of actions.children)b.disabled=!known.length;testPanel.append(actions);if(known.length>=5)practice.append(testPanel);
-    const teaching=el('div','ma-kanji-teaching');teaching.append(intro);if(firstTen)teaching.append(firstTen);layout.append(teaching,practice);host.append(layout);
+    const teaching=el('div','ma-kanji-teaching');teaching.append(intro);layout.append(teaching);
+    if(known.length){if(firstTen)teaching.append(firstTen);layout.append(practice);}
+    else if(firstTen)layout.append(firstTen);
+    host.append(layout);
     const actionsBottom=el('div','ma-kanji-actions');actionsBottom.append(button('Mastery Map',()=>root.ModeAtlasFeatures.openMasteryMap('kanji')),link('View results','/results/kanji/'));host.append(actionsBottom);
     host.append(button('Check my starting point',()=>{assessment=placement.begin();showAssessment();},'ma-kanji-text-button'));
     const credits=el('a','ma-kanji-sources','Learning sources');credits.href='/kanji/sources/';host.append(credits);

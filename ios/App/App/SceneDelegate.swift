@@ -30,6 +30,59 @@ enum ModeAtlasAppearance {
     }
 }
 
+// The web dock is custom, so UIKit cannot move it into Duo's shared bar region
+// automatically. Read system occlusions in the view that owns the coordinates.
+final class ModeAtlasWebView: WKWebView {
+    var onLayoutChange: (([String: Any]) -> Void)?
+    private var occlusions: [CGRect] = []
+    private var lastLayout: NSDictionary?
+
+    override func updateConstraints() {
+        if #available(iOS 27.1, *) {
+            // UIKit tracks these reads and invalidates constraints when a camera
+            // or Live Activity changes, even without a window resize.
+            occlusions = reservedRegions(kind: .occlusion).map(\.frame)
+        }
+        super.updateConstraints()
+        publishLayout()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        publishLayout()
+    }
+
+    override func safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        setNeedsUpdateConstraints()
+        publishLayout()
+    }
+
+    func viewportLayout() -> [String: Any] {
+        var blocked = occlusions
+        if let window, let scene = window.windowScene, let status = scene.statusBarManager,
+           !status.isStatusBarHidden {
+            let frame = window.convert(status.statusBarFrame, from: scene.coordinateSpace)
+            blocked.append(convert(frame, from: window))
+        }
+        let insets = safeAreaInsets
+        return ["width": bounds.width, "height": bounds.height,
+                "safeArea": ["top": insets.top, "right": insets.right,
+                             "bottom": insets.bottom, "left": insets.left],
+                "occlusions": blocked.filter { !$0.isEmpty && $0.intersects(bounds) }.map {
+                    ["x": $0.minX, "y": $0.minY, "width": $0.width, "height": $0.height]
+                }]
+    }
+
+    private func publishLayout() {
+        guard bounds.width > 0, bounds.height > 0 else { return }
+        let layout = viewportLayout()
+        guard !(lastLayout?.isEqual(to: layout) ?? false) else { return }
+        lastLayout = layout as NSDictionary
+        onLayoutChange?(layout)
+    }
+}
+
 final class ModeAtlasBridgeViewController: CAPBridgeViewController {
     override var preferredStatusBarStyle: UIStatusBarStyle {
         traitCollection.userInterfaceStyle == .dark ? .lightContent : .darkContent
@@ -49,13 +102,17 @@ final class ModeAtlasBridgeViewController: CAPBridgeViewController {
     }
 
     override func capacitorDidLoad() {
-        bridge?.registerPluginInstance(ModeAtlasNativePlugin())
+        let native = ModeAtlasNativePlugin()
+        bridge?.registerPluginInstance(native)
+        (webView as? ModeAtlasWebView)?.onLayoutChange = { [weak native] layout in
+            native?.notifyListeners("viewportLayoutChanged", data: layout)
+        }
     }
 
     override func router() -> Router { ModeAtlasRouter() }
 
     override func webView(with frame: CGRect, configuration: WKWebViewConfiguration) -> WKWebView {
-        let webView = super.webView(with: frame, configuration: configuration)
+        let webView = ModeAtlasWebView(frame: frame, configuration: configuration)
         webView.isOpaque = false
         webView.backgroundColor = ModeAtlasAppearance.canvas
         webView.scrollView.backgroundColor = webView.backgroundColor

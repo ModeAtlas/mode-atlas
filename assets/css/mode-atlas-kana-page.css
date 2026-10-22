@@ -150,3 +150,22 @@ html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-step{height:auto;m
 
 .ma-kana-practice-skills{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));}
 @media(max-width:600px){.ma-kana-practice-skills{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* The full path is an explicit destination; a wide view can show the current
+   row beside it without adding more controls to the beginner welcome. */
+.ma-kana-path-layout{display:grid;gap:24px;margin:20px 0;align-items:start;}
+.ma-kana-path-current{min-width:0;}
+.ma-kana-path-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 16px;align-items:center;}
+.ma-kana-path-heading>:is(h1,.ma-kicker){grid-column:1;}
+.ma-kana-path-heading>.ma-button{grid-column:2;grid-row:1/span 2;}
+.ma-kana-path-options{display:grid;gap:0 12px;}
+html[data-ma-runtime="ios"] .ma-kana-journey{width:100%;max-width:1120px;container:kana / inline-size;padding-inline:6px;}
+@container kana (min-width:740px){
+ html[data-ma-runtime="ios"] .ma-kana-path-layout{grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:28px;}
+ html[data-ma-runtime="ios"] .ma-kana-path-options{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}
+ html[data-ma-runtime="ios"] .ma-kana-path-heading h1{font-size:1.8rem;}
+}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-layout{grid-template-columns:1fr;}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-options{grid-template-columns:1fr;}
+html[data-ma-large-text] .ma-kana-path-heading{grid-template-columns:1fr;}
+html[data-ma-large-text] .ma-kana-path-heading>.ma-button{grid-column:1;grid-row:auto;justify-self:start;}

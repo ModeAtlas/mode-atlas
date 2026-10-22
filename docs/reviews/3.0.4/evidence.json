@@ -1,0 +1,75 @@
+{
+  "version": "3.0.4",
+  "iosBuild": 2080050,
+  "date": "2026-10-23",
+  "environment": "Linux Chromium, simulated Capacitor runtime; not a Duo simulator",
+  "checks": {
+    "initialBroadRegression": {
+      "passed": 385,
+      "failed": 1,
+      "resolution": "Large-text scroll alignment fixed; final regression and six repeat cases passed."
+    },
+    "finalDuoKeyboardAndResponsiveRegression": {
+      "passed": 134,
+      "failed": 0,
+      "flaky": 0,
+      "files": [
+        "duo-practice.spec.js",
+        "ios-theme.spec.js",
+        "ios-experience.spec.js",
+        "phone-tablet-ux.spec.js"
+      ]
+    },
+    "largeTextRepeat": {
+      "passed": 6,
+      "failed": 0
+    },
+    "javascript": {
+      "passed": 280
+    },
+    "python": {
+      "passed": 20
+    },
+    "releaseCheck": "passed",
+    "handoverShellSyntax": "passed"
+  },
+  "nativeDeviceAcceptance": "not performed here; GitHub native compilation is separate from simulator/device UI acceptance",
+  "geometry": {
+    "expanded": {
+      "width": 960,
+      "height": 680,
+      "safeArea": {
+        "top": 12,
+        "right": 84,
+        "bottom": 20,
+        "left": 0
+      }
+    },
+    "outer": {
+      "width": 480,
+      "height": 680,
+      "safeArea": {
+        "top": 12,
+        "right": 84,
+        "bottom": 20,
+        "left": 0
+      }
+    },
+    "largeTextShortWindow": {
+      "width": 480,
+      "height": 580,
+      "textScale": 1.5
+    }
+  },
+  "screenshots": [
+    "screens/kanji-inner.png",
+    "screens/kanji-outer.png",
+    "screens/reading-inner-dark.png",
+    "screens/reading-inner-light.png",
+    "screens/reading-outer-dark.png",
+    "screens/setup-inner-dark.png",
+    "screens/setup-outer-dark.png",
+    "screens/writing-inner.png",
+    "screens/writing-outer.png"
+  ]
+}

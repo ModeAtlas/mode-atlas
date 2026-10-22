@@ -18,6 +18,14 @@
 .ma-handwriting :is(button,a):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
 .ma-handwriting [aria-pressed="true"]{background:var(--ma-text-strong);color:var(--ma-app-bg);}
 .ma-handwriting-stage{width:min(280px,100%,42dvh);aspect-ratio:1;display:grid;place-items:center;}
+html[data-ma-runtime="ios"] .ma-handwriting{container:handwriting / inline-size;width:min(820px,calc(var(--ma-overlay-width,100vw) - var(--hand-left) - var(--hand-right) - 24px));}
+@container handwriting (min-width:660px){
+ html[data-ma-runtime="ios"] .ma-handwriting-body{grid-template-columns:minmax(0,1fr) minmax(0,.9fr);column-gap:24px;align-items:start;}
+ html[data-ma-runtime="ios"] .ma-handwriting-body>*{grid-column:2;min-width:0;}
+ html[data-ma-runtime="ios"] .ma-handwriting-body>.ma-handwriting-stage{grid-column:1;grid-row:1/span 8;align-self:center;width:min(100%,380px);}
+}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-handwriting-body{grid-template-columns:1fr;}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-handwriting-body>*{grid-column:auto;grid-row:auto;}
 .ma-handwriting-board{display:block;width:100%;height:100%;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-surface-inset);touch-action:none;user-select:none;cursor:crosshair;}
 .ma-handwriting-grid{stroke:var(--ma-border);stroke-width:.5;stroke-dasharray:2 2;fill:none;}
 .ma-handwriting-guide{fill:none;stroke:var(--ma-muted);stroke-opacity:.22;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
