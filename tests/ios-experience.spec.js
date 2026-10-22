@@ -103,7 +103,7 @@ for(const mode of ['reading','writing']){
 test('developer native export only records completion after the Share Sheet succeeds',async({page})=>{
   await prepare(page);await open(page,'/');
   await page.evaluate(async()=>{
-    window.KanaCloudSync.getUser=()=>({uid:'developer',email:'admin@mode-atlas.com'});
+    window.KanaCloudSync.getUser=()=>({uid:'developer',email:'renamed-admin@example.test',getIdTokenResult:async()=>({claims:{modeAtlasAdmin:true}})});
     await window.ModeAtlasDevConsoleLoader.loadIfEligible();
     window.ModeAtlasDevConsole.open();
   });

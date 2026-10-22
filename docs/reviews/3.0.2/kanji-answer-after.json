@@ -1,0 +1,173 @@
+{
+  "samples": [
+    {
+      "answer": 89.69999999552965,
+      "next": 0.7000000029802322
+    },
+    {
+      "answer": 62.20000000298023,
+      "next": 0.19999999552965164
+    },
+    {
+      "answer": 55.70000000298023,
+      "next": 0.3999999985098839
+    },
+    {
+      "answer": 57,
+      "next": 0.10000000149011612
+    },
+    {
+      "answer": 49.399999998509884,
+      "next": 0.10000000149011612
+    },
+    {
+      "answer": 53.899999998509884,
+      "next": 0.3999999985098839
+    },
+    {
+      "answer": 47.399999998509884,
+      "next": 0.30000000447034836
+    },
+    {
+      "answer": 57.900000005960464,
+      "next": 0.19999999552965164
+    },
+    {
+      "answer": 56,
+      "next": 0.30000000447034836
+    },
+    {
+      "answer": 58.80000000447035,
+      "next": 0.19999999552965164
+    },
+    {
+      "answer": 53.600000001490116,
+      "next": 0.20000000298023224
+    },
+    {
+      "answer": 75,
+      "next": 0.19999999552965164
+    },
+    {
+      "answer": 53.399999998509884,
+      "next": 0.3999999985098839
+    },
+    {
+      "answer": 60.600000001490116,
+      "next": 0.30000000447034836
+    },
+    {
+      "answer": 56.899999998509884,
+      "next": 0.19999999552965164
+    },
+    {
+      "answer": 47,
+      "next": 0.20000000298023224
+    },
+    {
+      "answer": 42.899999998509884,
+      "next": 0.3999999985098839
+    },
+    {
+      "answer": 50.600000001490116,
+      "next": 0.6000000014901161
+    },
+    {
+      "answer": 44.79999999701977,
+      "next": 0.4000000059604645
+    },
+    {
+      "answer": 51,
+      "next": 1.8999999985098839
+    }
+  ],
+  "bytes": 3295952,
+  "answers": 20,
+  "pending": null,
+  "hotspots": [
+    [
+      "setJSON mode-atlas-storage.assets-3.0.2.js:381",
+      240
+    ],
+    [
+      "journalValue mode-atlas-storage.assets-3.0.2.js:298",
+      212
+    ],
+    [
+      "digest mode-atlas-storage.assets-3.0.2.js:284",
+      152
+    ],
+    [
+      "setItem :0",
+      152
+    ],
+    [
+      "diff mode-atlas-storage.assets-3.0.2.js:309",
+      104
+    ],
+    [
+      "copy mode-atlas-kanji-state.assets-3.0.2.js:89",
+      33
+    ],
+    [
+      "(garbage collector) :0",
+      30
+    ],
+    [
+      "equal mode-atlas-storage.assets-3.0.2.js:303",
+      25
+    ],
+    [
+      "commitTransaction mode-atlas-storage.assets-3.0.2.js:345",
+      21
+    ],
+    [
+      "snapshot mode-atlas-kanji-state.assets-3.0.2.js:92",
+      19
+    ],
+    [
+      "metrics mode-atlas-kanji-state.assets-3.0.2.js:110",
+      13
+    ],
+    [
+      " mode-atlas-storage.assets-3.0.2.js:305",
+      13
+    ],
+    [
+      " mode-atlas-kanji-state.assets-3.0.2.js:112",
+      12
+    ],
+    [
+      "ensureAudio mode-atlas-sounds.assets-3.0.2.js:26",
+      12
+    ],
+    [
+      " mode-atlas-storage.assets-3.0.2.js:314",
+      9
+    ],
+    [
+      "(program) :0",
+      6
+    ],
+    [
+      "getItem :0",
+      5
+    ],
+    [
+      "mergeRecent mode-atlas-kanji-state.assets-3.0.2.js:22",
+      4
+    ],
+    [
+      "dispatchEvent :0",
+      4
+    ],
+    [
+      "goalAwards mode-atlas-progress.assets-3.0.2.js:346",
+      4
+    ]
+  ],
+  "runtime": "Local Chromium, full session answer and next calls; no UI render or physical-device result",
+  "medianMs": 53.5,
+  "p95Ms": 75,
+  "warmupAnswers": 4
+}

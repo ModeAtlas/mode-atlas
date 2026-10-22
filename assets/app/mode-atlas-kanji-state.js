@@ -12,25 +12,30 @@
   // correct, wrong, independent correct, consecutive independent correct,
   // active response milliseconds, last attempt, next review, spaced successes,
   // last four independent study dates (comma-separated, Firestore-safe).
-  const C=0,W=1,I=2,S=3,T=4,AT=5,DUE=6,R=7,DAYS=8;
+  const C=0,W=1,I=2,S=3,T=4,AT=5,DUE=6,R=7,DAYS=8,RECENT=9;
   const number=v=>typeof v==='number'&&Number.isFinite(v)?Math.max(0,Math.min(Number.MAX_SAFE_INTEGER,Math.floor(v))):0;
   const object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
   const safe=id=>/^[a-zA-Z0-9-]{1,100}$/.test(id)&&!['constructor','prototype','__proto__'].includes(id);
   const date=at=>root.ModeAtlasDates.localDateKey(new Date(at));
+  const hash=value=>{let n=2166136261;for(const c of value)n=Math.imul(n^c.charCodeAt(0),16777619);return(n>>>0).toString(36);};
+  function recent(value){return String(value||'').split(',').filter(v=>/^[0-9a-z]{1,12}:[012]:[0-9a-z]{1,8}$/.test(v)).map(v=>{const [at,q,id]=v.split(':');return {at:parseInt(at,36),q:Number(q),id,encoded:v};});}
+  function mergeRecent(a,b){return [...new Map([...recent(a),...recent(b)].sort((a,b)=>a.encoded.localeCompare(b.encoded)).map(event=>[event.id,event])).values()].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(-16).map(event=>event.encoded).join(',');}
   function row(input){
     const values=Array.isArray(input)?input:[];
     const out=Array.from({length:8},(_,i)=>number(values[i]));
     out[I]=Math.min(out[I],out[C]);out[S]=Math.min(out[S],out[I]);out[R]=Math.min(out[R],8);
     out[DAYS]=[...new Set(String(values[DAYS]||'').split(',').filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)))].sort().slice(-4).join(',');
+    out[RECENT]=mergeRecent(values[RECENT],'');
     return out;
   }
   function normalize(input){
-    const value=object(input),sources={},lessons={},introductions={},completions={};
+    const value=object(input),sources={},lessons={},introductions={},completions={},recentEvidence={};
+    for(const [char,item]of Object.entries(object(value.recent)))if(levels.has(char))recentEvidence[char]=Object.fromEntries(skills.map(skill=>[skill,mergeRecent(item?.[skill],'')]));
     for(const [id,items]of Object.entries(object(value.sources))){
       if(!safe(id))continue;const chars={};
       for(const [char,evidence]of Object.entries(object(items))){
         if(!levels.has(char))continue;const item={};
-        for(const skill of skills)if(Array.isArray(evidence?.[skill]))item[skill]=row(evidence[skill]);
+        for(const skill of skills)if(Array.isArray(evidence?.[skill])){item[skill]=row(evidence[skill]);if(item[skill][RECENT]){recentEvidence[char]||={};recentEvidence[char][skill]=mergeRecent(recentEvidence[char][skill],item[skill][RECENT]);item[skill][RECENT]='';}}
         if(Object.keys(item).length)chars[char]=item;
       }if(Object.keys(chars).length)sources[id]=chars;
     }
@@ -39,7 +44,16 @@
     for(const [char,at]of Object.entries(object(value.completions)))if(levels.has(char)&&number(at))completions[char]=number(at);
     const runs=Object.fromEntries(Object.entries(object(value.runs)).filter(([id,r])=>safe(id)&&number(r?.at)).sort((a,b)=>b[1].at-a[1].at||a[0].localeCompare(b[0])).slice(0,32).map(([id,r])=>[id,{index:number(r.index),at:number(r.at)}]));
     const settings=object(value.settings);
-    return {version:1,sources,lessons,introductions,completions,runs,entry:{mode:['beginner','placement','confident'].includes(value.entry?.mode)?value.entry.mode:'',bands:[...new Set((Array.isArray(value.entry?.bands)?value.entry.bands:[]).filter(n=>[1,2,3,4,5].includes(n)))],at:number(value.entry?.at)},settings:{level:[1,2,3,4,5].includes(settings.level)?settings.level:5,romaji:settings.romaji===true,at:number(settings.at)},updatedAt:number(value.updatedAt)};
+    const earned={};for(const [char,item]of Object.entries(object(value.earned)))if(levels.has(char))earned[char]=Object.fromEntries(skills.map(skill=>[skill,Math.min(3,number(item?.[skill]))]));
+    const out={version:2,sources,recent:recentEvidence,lessons,introductions,completions,earned,runs,entry:{mode:['beginner','placement','confident'].includes(value.entry?.mode)?value.entry.mode:'',bands:[...new Set((Array.isArray(value.entry?.bands)?value.entry.bands:[]).filter(n=>[1,2,3,4,5].includes(n)))],at:number(value.entry?.at)},settings:{level:[1,2,3,4,5].includes(settings.level)?settings.level:5,romaji:settings.romaji===true,at:number(settings.at)},updatedAt:number(value.updatedAt)};
+    if(!value.version||value.version<2){
+      for(const char of new Set(Object.values(sources).flatMap(source=>Object.keys(source)))){
+        const evidence=skills.map(skill=>metrics(out,char,skill));
+        for(const [index,skill]of skills.entries()){const m=evidence[index],stage=legacyStage(m);if(stage>1){out.earned[char]||={};out.earned[char][skill]=Math.max(out.earned[char][skill]||0,stage);}}
+        if(evidence.every(m=>m.independent>=3&&m.accuracy>=.8))out.completions[char]||=Math.max(...evidence.map(m=>m.last),1);
+      }
+    }
+    return out;
   }
   function merge(left,right){
     const a=normalize(left),b=normalize(right);
@@ -53,44 +67,71 @@
           const latest=value[AT]>old[AT]||(value[AT]===old[AT]&&JSON.stringify(value)>JSON.stringify(old))?value:old;
           const merged=[...latest];for(const i of [C,W,I,T])merged[i]=Math.max(old[i],value[i]);
           merged[DAYS]=[...new Set([...old[DAYS].split(','),...value[DAYS].split(',')].filter(Boolean))].sort().slice(-4).join(',');
+          merged[RECENT]=mergeRecent(old[RECENT],value[RECENT]);
           a.sources[id][char][skill]=merged;
         }
       }
     }
+    for(const [char,item]of Object.entries(b.recent)){a.recent[char]||={};for(const skill of skills)a.recent[char][skill]=mergeRecent(a.recent[char][skill],item[skill]);}
     for(const [char,at]of Object.entries(b.lessons))a.lessons[char]=Math.min(a.lessons[char]||at,at);
     for(const [char,at]of Object.entries(b.introductions))a.introductions[char]=Math.min(a.introductions[char]||at,at);
     for(const [char,at]of Object.entries(b.completions))a.completions[char]=Math.min(a.completions[char]||at,at);
+    for(const [char,item]of Object.entries(b.earned)){a.earned[char]||={};for(const skill of skills)a.earned[char][skill]=Math.max(a.earned[char][skill]||0,item[skill]||0);}
     for(const [id,r]of Object.entries(b.runs)){const old=a.runs[id];a.runs[id]={index:Math.max(old?.index||0,r.index),at:Math.max(old?.at||0,r.at)};}
     if(b.settings.at>a.settings.at||(b.settings.at===a.settings.at&&JSON.stringify(b.settings)>JSON.stringify(a.settings)))a.settings=b.settings;
     if(b.entry.at>a.entry.at||(b.entry.at===a.entry.at&&JSON.stringify(b.entry)>JSON.stringify(a.entry)))a.entry=b.entry;
     a.updatedAt=Math.max(a.updatedAt,b.updatedAt);return normalize(a);
   }
-  function read(){return normalize(root.ModeAtlasStorage?.json(KEY,{}));}
-  function save(state){
+  // Cache only a normalized, privately owned snapshot. The serialized storage
+  // value is the cache key, including staged transaction writes. A failed commit,
+  // import, sync or account switch therefore cannot leave a stale cached save.
+  let cachedText=null,cachedState=null;
+  const copy=value=>typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value));
+  function clearCache(){cachedText=null;cachedState=null;}
+  for(const event of ['modeAtlasAccountWillChange','modeAtlasDataCleared'])root.addEventListener?.(event,clearCache);
+  function snapshot(){
+    const text=root.ModeAtlasStorage?.get?.(KEY,null);
+    if(typeof text!=='string')return normalize(root.ModeAtlasStorage?.json(KEY,{}));
+    if(text!==cachedText||!cachedState){
+      let value;try{value=JSON.parse(text||'{}');}catch{value={};}
+      cachedState=normalize(value);cachedText=text;
+    }
+    return cachedState;
+  }
+  function read(){return copy(snapshot());}
+  function commit(state){
     state.updatedAt=Date.now();
-    if(!root.ModeAtlasStorage.setJSON(KEY,normalize(state)))throw new Error('Your device could not save this answer. Free some storage and try again.');
+    if(!root.ModeAtlasStorage.setJSON(KEY,state))throw new Error('Your device could not save this answer. Free some storage and try again.');
+    cachedText=root.ModeAtlasStorage.get?.(KEY,'')??null;cachedState=state;
     root.ModeAtlasStorage.set(UPDATED,String(state.updatedAt));
     root.KanaCloudSync?.scheduleSync?.(900);
   }
+  function save(state){commit(normalize(state));}
   function metrics(state,char,skill){
     const rows=Object.values(state.sources).map(source=>source[char]?.[skill]).filter(Boolean);
     const latest=[...rows].sort((a,b)=>b[AT]-a[AT]||JSON.stringify(b).localeCompare(JSON.stringify(a)))[0]||row();
     const sum=i=>rows.reduce((n,r)=>n+r[i],0),correct=sum(C),wrong=sum(W),attempts=correct+wrong;
-    return {correct,wrong,attempts,independent:sum(I),streak:latest[S],average:attempts?sum(T)/attempts:0,last:latest[AT],due:latest[DUE],reviews:latest[R],days:[...new Set(rows.flatMap(r=>r[DAYS].split(',')).filter(Boolean))].sort(),accuracy:attempts?correct/attempts:0};
+    const events=recent(rows.reduce((all,r)=>mergeRecent(all,r[RECENT]),state.recent?.[char]?.[skill]||'')).filter(event=>event.q!==1).sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(-12),recentCorrect=events.filter(event=>event.q===2).length;
+    return {correct,wrong,attempts,independent:sum(I),streak:latest[S],average:attempts?sum(T)/attempts:0,last:latest[AT],due:latest[DUE],reviews:latest[R],days:[...new Set(rows.flatMap(r=>r[DAYS].split(',')).filter(Boolean))].sort(),accuracy:attempts?correct/attempts:0,recentCorrect,recentAttempts:events.length,recentAccuracy:recentCorrect/Math.max(1,events.length)};
   }
-  function completed(state,char){return !!state.completions[char]||skills.every(skill=>{const m=metrics(state,char,skill);return m.independent>=3&&m.accuracy>=.8;});}
-  function stageFromMetrics(m,lesson){
+  function completed(state,char){return !!state.completions[char]||skills.every(skill=>{const m=metrics(state,char,skill);return m.recentCorrect>=3&&m.recentAccuracy>=.8;});}
+  function legacyStage(m){
     if(m.independent>=30&&m.accuracy>=.95&&m.days.length>=4&&m.reviews>=4&&m.streak>=3)return 3;
     if(m.independent>=10&&m.accuracy>=.85&&m.days.length>=2&&m.reviews>=2)return 2;
+    return 0;
+  }
+  function stageFromMetrics(m,lesson){
+    if(m.independent>=30&&m.recentCorrect>=10&&m.recentAccuracy>=.9&&m.days.length>=4&&m.reviews>=4&&m.streak>=3)return 3;
+    if(m.independent>=10&&m.recentCorrect>=5&&m.recentAccuracy>=.8&&m.days.length>=2&&m.reviews>=2)return 2;
     return m.attempts||lesson?1:0;
   }
   function assessment(state,char){
     const evidence=Object.fromEntries(skills.map(skill=>[skill,metrics(state,char,skill)]));
-    const stages=skills.map(skill=>stageFromMetrics(evidence[skill],state.lessons[char]));
-    const complete=!!state.completions[char]||skills.every(skill=>evidence[skill].independent>=3&&evidence[skill].accuracy>=.8);
-    return {metrics:evidence,stage:Math.max(...stages)?Math.max(1,Math.min(...stages)):0,introduced:!!state.introductions[char]||complete};
+    const current=skills.map(skill=>stageFromMetrics(evidence[skill],state.lessons[char])),stages=skills.map((skill,index)=>Math.max(current[index],state.earned?.[char]?.[skill]||0));
+    return {metrics:evidence,stage:Math.max(...stages)?Math.max(1,Math.min(...stages)):0,current:Math.max(...current)?Math.max(1,Math.min(...current)):0,introduced:!!state.introductions[char]||completed(state,char)};
   }
-  function stage(state,char,skill){return skill?stageFromMetrics(metrics(state,char,skill),state.lessons[char]):assessment(state,char).stage;}
+  function readiness(state,char,skill){return skill?stageFromMetrics(metrics(state,char,skill),state.lessons[char]):assessment(state,char).current;}
+  function stage(state,char,skill){return skill?Math.max(readiness(state,char,skill),state.earned?.[char]?.[skill]||0):assessment(state,char).stage;}
   function summary(state=read()){
     let unlocked=true;
     return bands.map(band=>{
@@ -118,11 +159,17 @@
   function lesson(char){const state=read();if(!allowed(levels.get(char),state))return false;state.lessons[char]||=Date.now();save(state);return true;}
   function introduction(char){const state=read();if(!allowed(levels.get(char),state))return false;state.lessons[char]||=Date.now();state.introductions[char]||=Date.now();save(state);return true;}
   function record(input){
-    const state=read(),{char,skill,runId,index}=input;
-    if(!levels.has(char)||!skills.includes(skill)||!safe(runId)||!Number.isInteger(index)||index<1||!allowed(levels.get(char),state))throw new Error('Choose an unlocked Kanji lesson.');
-    if(index<=(state.runs[runId]?.index||0))return false;
-    const id=root.ModeAtlasProgress.getDeviceId(),at=number(input.at)||Date.now(),before=metrics(state,char,skill);
-    state.sources[id]||={};state.sources[id][char]||={};
+    const previous=snapshot(),{char,skill,runId,index}=input;
+    if(!levels.has(char)||!skills.includes(skill)||!safe(runId)||!Number.isInteger(index)||index<1||!allowed(levels.get(char),previous))throw new Error('Choose an unlocked Kanji lesson.');
+    if(index<=(previous.runs[runId]?.index||0))return false;
+    const id=root.ModeAtlasProgress.getDeviceId(),at=number(input.at)||Date.now();
+    // Copy only branches this answer can change. Unchanged evidence remains
+    // private and immutable; rollback can still read the old stored snapshot.
+    const state={...previous,sources:{...previous.sources,[id]:{...previous.sources[id],[char]:{...previous.sources[id]?.[char]}}},
+      earned:{...previous.earned,[char]:{...Object.fromEntries(skills.map(name=>[name,0])),...previous.earned[char]}},
+      recent:{...previous.recent,[char]:{...Object.fromEntries(skills.map(name=>[name,''])),...previous.recent[char]}},
+      completions:{...previous.completions},runs:{...previous.runs}};
+    const before=metrics(state,char,skill);
     const r=row(state.sources[id][char][skill]),independent=input.correct&&!input.assisted;
     r[input.correct?C:W]++;r[T]+=Math.min(300000,number(input.elapsed));
     if(independent){r[I]++;r[S]=before.streak+1;r[DAYS]=[...new Set([...r[DAYS].split(',').filter(Boolean),date(at)])].sort().slice(-4).join(',');}
@@ -130,13 +177,23 @@
     const due=before.last&&at>=before.due;
     r[R]=input.correct?Math.min(8,before.reviews+(independent&&due?1:0)):0;
     r[AT]=at;r[DUE]=input.correct&&before.last&&!due?before.due:at+(input.correct?[60000,10*60000,DAY,3*DAY,7*DAY,14*DAY,30*DAY,60*DAY,90*DAY][r[R]]:60000);
-    state.sources[id][char][skill]=r;state.runs[runId]={index,at};
+    r[RECENT]=mergeRecent(r[RECENT],`${at.toString(36)}:${input.assisted?1:input.correct?2:0}:${hash(runId+':'+index)}`);
+    // Only this row and the bounded run receipts changed. Re-normalizing every
+    // character here repeats work already done by read() and blocks input.
+    state.sources[id][char][skill]=row(r);state.runs[runId]={index,at};
+    state.runs=Object.fromEntries(Object.entries(state.runs).sort((a,b)=>b[1].at-a[1].at||a[0].localeCompare(b[0])).slice(0,32));
+    state.earned[char]||=Object.fromEntries(skills.map(name=>[name,0]));state.earned[char][skill]=Math.max(state.earned[char][skill]||0,readiness(state,char,skill));
+    state.recent[char]||=Object.fromEntries(skills.map(name=>[name,'']));state.recent[char][skill]=mergeRecent(state.recent[char][skill],r[RECENT]);state.sources[id][char][skill][RECENT]='';
     if(completed(state,char))state.completions[char]||=at;
-    save(state);return true;
+    commit(state);return true;
   }
   function entered(state=read()){return !!state.entry?.mode||Object.keys(state.lessons).length>0||Object.keys(state.sources).length>0;}
+  function overview(state=read()){
+    const chars=new Set(Object.values(state.sources).flatMap(source=>Object.keys(source)));
+    return {started:entered(state),studied:chars.size,attempts:[...chars].reduce((n,char)=>n+skills.reduce((total,skill)=>total+metrics(state,char,skill).attempts,0),0)};
+  }
   function access(state,char){return state.entry?.mode==='confident'||state.entry?.mode==='placement'&&state.entry.bands.includes(levels.get(char));}
   function enter(mode,bands=[5]){const value=read();value.entry={mode,bands:mode==='beginner'?[]:bands,at:Math.max(Date.now(),value.entry.at+1)};save(value);return value;}
   function settings(patch){const state=read();state.settings={...state.settings,...patch,at:Date.now()};save(state);return state.settings;}
-  return Object.freeze({KEY,UPDATED,skills,levels,normalize,merge,read,save,metrics,completed,stage,assessment,summary,allowed,introductory,introduced,introReady,studyPool,reviewSets,lesson,introduction,record,settings,entered,enter,access});
+  return Object.freeze({KEY,UPDATED,skills,levels,normalize,merge,read,save,metrics,completed,stage,readiness,assessment,summary,overview,allowed,introductory,introduced,introReady,studyPool,reviewSets,lesson,introduction,record,settings,entered,enter,access});
 });

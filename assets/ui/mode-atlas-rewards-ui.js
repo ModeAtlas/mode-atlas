@@ -175,7 +175,7 @@
     host.append(el('h3','','Your weekly recap'),controls,el('p','ma-atlas-rewards__note',`${data.start} – ${data.end} · Your local study week`));
     const grid=el('div','ma-recap-grid');
     for(const [label,value]of [['Study days',`${data.studyDays} / 7`],['Read correct',data.reading],['Recall correct',data.writing],['Kanji correct',data.kanji||0],['Sessions',data.sessions],['Different kana',data.variety],['Daily goals completed',data.dailyGoals],['Weekly goals completed',data.weeklyGoals]]){const card=el('div');card.append(el('strong','',Number.isFinite(value)?value.toLocaleString():value),el('span','',label));grid.append(card);}
-    host.append(grid,el('p','ma-atlas-rewards__note',data.reading+data.writing+(data.kanji||0)?'Each study day needs five correct answers across your practice. These totals use saved, dated activity; older undated practice is not estimated.':'No dated practice is recorded for this week yet. A short session is a good place to start.'));
+    host.append(grid,el('p','ma-atlas-rewards__note',data.reading+data.writing+(data.kanji||0)?'Five attempts make a study day, including mistakes.':'No practice recorded this week.'));
     host.append(pageActions([{label:'Start a short session',short:'Practise',icon:'play',href:'/reading/?practice=10'},{label:'View weekly ranking',short:'Rankings',icon:'chart',href:root.AtlasPlatform.destinationPath('weekly')} ]));
   }
   function renderReviews(reviewActions){
@@ -270,6 +270,11 @@
     return panel;
   }
   function mount(host){
+    if(!root.ModeAtlasLearningExperience?.snapshot().hasLearning&&!new URLSearchParams(location.search).has('tab')){
+      const panel=el('section','ma-atlas-rewards');panel.append(el('h2','','No practice yet'),el('p','','Complete a practice session to see your progress.'));
+      const start=el('a','ma-button ma-button--primary','Choose a lesson');start.href='/learn/';const explore=button('Explore goals & rewards');explore.addEventListener('click',()=>{history.replaceState(null,'','?tab=goals');mount(host);});panel.append(start,explore);host.replaceChildren(panel);return ()=>panel.remove();
+    }
+
     const summary=root.ModeAtlasProgress.getSummary(),selected=appearance();
     const content=el('div','ma-atlas-rewards'),identity=el('div','ma-atlas-identity ma-profile-banner');identity.dataset.maSelectedBanner='';
     const preview=avatar(selected);preview.dataset.maSelectedAvatar='';
@@ -307,8 +312,8 @@
     return ()=>content.remove();
   }
   function open(section='goals'){
-    if(location.pathname==='/progress/'){root.ModeAtlasAccountNavigation?.close();const tab=document.getElementById(section==='rewards'?'atlasTab1':'atlasTab0');tab?.click();tab?.focus();return;}
-    root.ModeAtlasVersionFile.navigate('/progress/'+(section==='rewards'?'?tab=rewards':''));
+    if(location.pathname==='/progress/'){root.ModeAtlasAccountNavigation?.close();const tab=document.getElementById(section==='rewards'?'atlasTab1':'atlasTab0');if(tab){tab.click();tab.focus();return;}}
+    root.ModeAtlasVersionFile.navigate('/progress/?tab='+(section==='rewards'?'rewards':'goals'));
   }
   document.addEventListener('click',event=>{const control=event.target.closest('[data-ma-rewards-open]');if(control)open(control.dataset.maRewardsOpen||'goals');});
   for(const event of ['modeAtlasDayChanged','modeAtlasAvatarChanged','modeAtlasShopChanged','modeAtlasRewardAccessChanged','modeAtlasProgressChanged','modeAtlasCloudDataChanged','modeAtlasProfileMenuReady','modeAtlasSelfProfileChanged','modeAtlasAccountSignedOut'])root.addEventListener(event,refresh);

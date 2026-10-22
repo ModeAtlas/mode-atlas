@@ -130,7 +130,7 @@ PRIMARY_LINKS = (
     ('shop', 'Shop', '/shop/'),
 )
 
-DESTINATION_ICONS = dict(atlas='star', learn='nav-learn', progress='nav-progress', friends='nav-friends', shop='nav-shop')
+DESTINATION_ICONS = dict(atlas='star', learn='book', progress='chart', friends='people', shop='shop')
 
 KANA_LINKS = (
     ('kana', 'Learn', '/kana/'),
@@ -314,6 +314,7 @@ INTERACTIVE_SCRIPTS_BEFORE_STORAGE = (
     'assets/app/mode-atlas-storage.js',
 )
 INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
+    'assets/app/mode-atlas-learning-events.js',
     'assets/app/mode-atlas-shop-catalogue.js',
     'assets/app/mode-atlas-date.js',
     'assets/app/mode-atlas-progress.js',
@@ -332,6 +333,7 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/data/mode-atlas-kana-data.js',
     'assets/app/mode-atlas-japanese.js',
     'assets/app/mode-atlas-wordbank.js',
+    'assets/app/mode-atlas-word-lesson-state.js',
     'assets/app/mode-atlas-kana-learning.js',
     'assets/app/mode-atlas-kana-evidence.js',
     'assets/data/mode-atlas-kanji-curriculum.js',
@@ -339,18 +341,18 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-kanji-codec.js',
     'assets/app/mode-atlas-kanji-content.js',
     'assets/app/mode-atlas-kanji-results.js',
+    'assets/app/mode-atlas-save-sections.js',
     'assets/app/mode-atlas-save-merge.js',
     'assets/results/mode-atlas-results-storage.js',
-    'assets/ui/mode-atlas-kanji-mastery.js',
     'assets/app/mode-atlas-kana-metrics.js',
     'assets/achievements/mode-atlas-achievements.js',
     'assets/achievements/mode-atlas-achievement-art.js',
-    'assets/ui/mode-atlas-kana-mastery.js',
     'assets/ui/mode-atlas-kana-practice.js',
     'assets/app/mode-atlas-study-plan.js',
+    'assets/app/mode-atlas-learning-experience.js',
     'assets/app/mode-atlas-avatar-rules.js',
     'assets/ui/mode-atlas-rewards-ui.js',
-    'assets/ui/mode-atlas-shop-ui.js',
+    'assets/ui/mode-atlas-session-outcome.js',
     'assets/platform/mode-atlas-native-engagement.js',
     'assets/achievements/mode-atlas-achievements-ui.js',
 )
@@ -369,20 +371,16 @@ ACCOUNT_SCRIPTS = (
     'assets/app/mode-atlas-avatar.js',
     'assets/platform/mode-atlas-widget-avatar.js',
     'assets/ui/mode-atlas-portrait.js',
-    'assets/ui/mode-atlas-avatar-ui.js',
     'assets/app/mode-atlas-weekly-rules.js',
+    'assets/app/mode-atlas-study-prompts.js',
     'assets/app/mode-atlas-study-earnings.js',
     'assets/app/mode-atlas-weekly.js',
     'assets/app/mode-atlas-notification-rules.js',
     'assets/platform/mode-atlas-notifications.js',
     'assets/app/mode-atlas-shop.js',
-    'assets/ui/mode-atlas-social-ui.js',
     'assets/app/mode-atlas-account-notices.js',
-    'assets/ui/mode-atlas-profile-menu.js',
-    'assets/ui/mode-atlas-settings-menu.js',
-    'assets/ui/mode-atlas-native-settings.js',
+    'assets/app/mode-atlas-feature-loader.js',
     'assets/ui/mode-atlas-account-navigation.js',
-    'assets/ui/mode-atlas-account-bindings.js',
 )
 LEGAL_BODY_SCRIPTS = (
     'assets/app/mode-atlas-toast.js',
@@ -507,7 +505,7 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
     'wordbank/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-wordbank-page.css',),
         body_scripts=_interactive_scripts(
-            page_scripts=('assets/ui/mode-atlas-word-review.js','assets/pages/mode-atlas-wordbank-page.js',),
+            page_scripts=('assets/ui/mode-atlas-pronunciation.js','assets/data/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-review.js','assets/pages/mode-atlas-wordbank-page.js',),
         ),
     ),
     'privacy/index.html': FrontendAssetConfig(styles=LEGAL_STYLES, body_scripts=LEGAL_BODY_SCRIPTS),

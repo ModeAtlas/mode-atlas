@@ -20,7 +20,9 @@
   if(isNativeApp && nativePlatform === 'ios'){
     var nativeTransitions=document.createElement('style');
     nativeTransitions.textContent='@view-transition{navigation:auto}';
-    document.head.appendChild(nativeTransitions);
+    // Legacy section links immediately redirect. Animating that intermediate
+    // document can race its reveal and the next navigation.
+    if(!/[?&]section=/.test(location.search||''))document.head.appendChild(nativeTransitions);
     // A fast second navigation can skip an animation; routing still succeeds.
     for(const eventName of ['pageswap','pagereveal'])window.addEventListener(eventName,event=>{
       event.viewTransition?.ready.catch(()=>{});

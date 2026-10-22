@@ -9,8 +9,8 @@
     hub:[
       {path:'/',title:'Your daily starting point',text:'Atlas brings together your next learning step, due reviews and goals. Your avatar opens Profile, Shop and Settings.',selector:'.atlas-home-continue'},
       {path:'/learn/',title:'Choose a branch',text:'Kana connects shapes and sounds. Kanji builds readings and meanings. Word Bank collects words you meet. Each branch has its own learning tools and tour.',selector:'.ma-branch-library'},
-      {path:'/progress/',title:'See your goals grow',text:'Daily and weekly goals rotate. Add one personal goal for each period, choose a target, and turn on Repeat if you want it to return next period.',selector:'.ma-routine-goal'},
-      {path:'/progress/',title:'Make your Atlas your own',text:'Rewards is where you equip your banners, themes, frames, avatar and pet. Your unlocked appearance follows you across the app.',rewards:true,selector:'[data-reward-category="banners"] > summary'},
+      {path:'/progress/?tab=goals',title:'See your goals grow',text:'Daily and weekly goals rotate. Add one personal goal for each period, choose a target, and turn on Repeat if you want it to return next period.',selector:'.ma-routine-goal'},
+      {path:'/progress/?tab=rewards',title:'Make your Atlas your own',text:'Rewards is where you equip your banners, themes, frames, avatar and pet. Your unlocked appearance follows you across the app.',rewards:true,selector:'[data-reward-category="banners"] > summary'},
       {path:'/friends/',title:'Learn alongside friends',text:'Share a friend code or meet people in the weekly ladder. Friends can see each other’s learning progress. You can report or block a profile at any time.',selector:'.ma-social'},
       {path:'/shop/',title:'Find your next look',text:'Explore wardrobe items, pets, themes and streak items. Open an item for a closer look and its price before choosing to buy.',selector:'.ma-shop'},
       {path:'/',title:'Your preferences, together',text:'Settings keeps sound, appearance and help together. Open Learning tours here whenever you want another look around.',section:'settings',selector:'.ma-theme-panel'}

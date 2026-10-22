@@ -4,8 +4,9 @@
   const sessions=new Map();
   const user=()=>root.KanaCloudSync?.getUser?.()?.uid;
   function changed(current){root.dispatchEvent(new CustomEvent('modeAtlasWeeklyChanged',{detail:{runId:current.runId,...current.weekly}}));}
-  function start(current,options){
-    root.ModeAtlasEarnings?.start(current,options);
+  async function start(current,options){
+    const authority=await root.ModeAtlasEarnings?.start(current,options);
+    if(!authority)return;
     if(!user()||root.navigator?.onLine===false)return;
     if(sessions.has(current.runId))return;
     current.weeklyConfig=options;
@@ -13,7 +14,7 @@
     const state=previous?.owner===user()?previous:{owner:user(),status:'connecting',index:0,pending:[],earned:0,startedAt:Date.now()};
     current.weekly=state;
     const job={current,state,busy:false,timer:null,ready:null};sessions.set(current.runId,job);
-    job.ready=root.ModeAtlasSocial.call('weeklyStart',{id:current.runId,...options},state.owner).then(result=>{
+    job.ready=root.ModeAtlasSocial.call('weeklyStart',{id:current.runId,...options,studyToken:authority.token},state.owner).then(result=>{
       if(user()!==state.owner)return;
       if(!result.enabled){state.status='disabled';state.pending=[];return;}
       if(state.token&&state.token!==result.token){state.pending=[];state.index=0;state.startedAt=Date.now();}

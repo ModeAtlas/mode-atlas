@@ -46,7 +46,7 @@
       }
       document.body.classList.toggle('ma-guided-practice',!!(active&&count));
     }
-    function begin(sessionStats){
+    async function begin(sessionStats){
       const state=snapshot(), mode=root.ModeAtlasPracticeModes.describe(state.settings);
       const weak=state.settings.focusWeak&&!root.ModeAtlasPracticeModes.fixedPool(state.settings)?root.ModeAtlasStudyPlan.evidence(state.stats,state.activeChars).weak.map(row=>row.kana):[];
       sessionStats.study={mode:mode.id,feedback:mode.feedback,count:root.ModeAtlasStudyPlan.practiceCount(state.settings),items:{},lastAnswer:null,
@@ -55,13 +55,14 @@
       current.runId=root.crypto?.randomUUID?.()||`set-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       current.owner=root.ModeAtlasSessionRecovery.accountId();
       current.startedAt=Date.now();
+      current.dueReview=current.focusChars.some(char=>root.ModeAtlasReview.due(state.srs).includes(char));
       current.startLevel=root.ModeAtlasProgress.getSummary().level;
       current.achievementStart=root.ModeAtlasFeatures.achievementSnapshot();
       rewardContext(current);current.independentStreak=0;
       current.xpParts={};current.milestones=[];current.retryQueue=[];current.assisted=0;current.questionAnswered=false;
       root.ModeAtlasProgress.startRun(current.runId);
       const rankingPool=current.focusChars.length?current.focusChars:root.ModeAtlasPracticeModes.fixedPool(state.settings)?Object.keys(root.getAnswerMapForCurrentMode()):state.activeChars;
-      root.ModeAtlasWeekly?.start(current,{pool:[...new Set(rankingPool.flatMap(kana=>root.ModeAtlasKanaData.splitKana(kana)))],direction:state.settings.kanaDirection==='both'?'both':config.mode,mode:current.mode,hints:current.hintsEnabled});
+      await root.ModeAtlasWeekly?.start(current,{pool:[...new Set(rankingPool.flatMap(kana=>root.ModeAtlasKanaData.splitKana(kana)))],direction:state.settings.kanaDirection==='both'?'both':config.mode,mode:current.mode,hints:current.hintsEnabled});
       pendingReview=[];clearFeedback();
     }
     function pool(chars){
@@ -91,7 +92,9 @@
       const current=study();for(const [key,value]of Object.entries(result.parts||{}))current.xpParts[key]=(current.xpParts[key]||0)+value;
     }
     function finish(completed){
+      if(completed)root.ModeAtlasLearningEvents?.emit('practiceCompleted','kana');
       const state=snapshot(),current=study();if(!current)return;
+      if(completed&&current.dueReview)root.ModeAtlasLearningEvents?.emit('reviewCompleted','kana');
       root.ModeAtlasWeekly?.finish(current,completed);
       rewardContext(current);
       addXp(root.ModeAtlasProgress.finishRun({runId:current.runId,direction:config.mode,day:current.mode==='dailyChallenge'?current.dateKey:root.getTodayKey(),mode:current.mode,count:current.count,
@@ -115,7 +118,7 @@
       const current=study();if(!current)return;
       rewardContext(current);
       current.lastAnswer={kana:String(answer.kana).slice(0,20),answer:String(answer.answer||'').slice(0,40),direction:answerMode(),correct:!!answer.correct,skipped:!!answer.skipped};
-      root.ModeAtlasWeekly?.answer(current,current.lastAnswer);
+      root.ModeAtlasWeekly?.answer(current,current.hintShown?{...current.lastAnswer,answer:'',correct:false}:current.lastAnswer);
       for(const kana of root.ModeAtlasKanaData.splitKana(answer.kana)){
         const row=current.items[kana]||(current.items[kana]={kana,correct:0,wrong:0});
         row[answer.correct?'correct':'wrong']+=1;
@@ -185,8 +188,7 @@
       const answered=sessionStats.answered,complete=!!options.completed||(!!current.count&&answered>=current.count);
       const goal=current.count||(current.mode==='dailyChallenge'?20:current.mode==='testMode'?state.testSequence.length:0);
       let title=current.count?(complete?'Set complete':'Practice saved'):complete?`${mode.label} complete`:'Practice saved';
-      let intro=answered?'Your progress counts, even in a shorter session.':'Ready whenever you are. No answers were recorded.';
-      if(complete)intro='A little practice, a stronger foundation.';
+      let intro=answered?'Progress saved.':'No answers recorded.';
       if(current.mode==='dailyChallenge'){
         const record=state.dailyChallengeHistory[current.dateKey];
         intro=complete?`Official score: ${record?.officialScore??0} / ${record?.total??20}. ${record?.attempts>1?'This replay keeps your first completed score.':'Today’s score is saved.'}`:'Finish all 20 questions to record today’s official score. Your individual answers are saved.';
@@ -198,9 +200,8 @@
       for(const [label,value]of[['Answered',goal?`${answered} / ${goal}`:answered],['Correct',sessionStats.correct],['Accuracy',answered?`${Math.round(sessionStats.correct/answered*100)}%`:'—']]){
         const card=el('div','');card.append(el('strong','',value),el('span','',label));grid.appendChild(card);
       }
-      const scope=current.poolSize||5,rate=root.ModeAtlasRewardRules.kanaRate(scope,current.hintsEnabled);
-      content.append(grid,el('p','ma-study-summary__meta',`${rows.length} different kana practised · ${scope} in this pool`),
-        el('p','ma-study-summary__meta',`${rate} XP per correct kana · ${current.hintsEnabled?'Hints enabled':'Hints off'}`));
+      content.append(grid,el('p','ma-study-summary__meta',`${rows.length} kana practised · ${config.mode==='writing'?'Recall':'Read'}`));
+      content.append(root.ModeAtlasSessionOutcome.render({skill:config.mode==='writing'?'Kana Recall':'Kana Read',missed:mistakes.map(row=>row.kana),due:Object.keys(current.items).map(char=>state.srs[char]?.due)}));
       root.ModeAtlasProgressUI.renderSessionReward(content,{...current,xpGain});
       const weekly=el('p','ma-study-summary__meta');weekly.setAttribute('role','status');
       const weeklyStatus=()=>{
@@ -225,8 +226,8 @@
         for(const row of mistakes.slice(0,12)){
           const item=el('span',''),kana=el('strong','',row.kana);kana.lang='ja';item.append(kana,el('span','',root.ModeAtlasKanaCoaching.reading(row.kana)));list.appendChild(item);
         }
-        content.append(list,el('p','ma-study-summary__note',mistakes.length>12?`${mistakes.length-12} more kana to revisit. A guided set can draw from all your missed kana.`:'A short guided set can help these kana stick.'));
-      }else if(answered)content.appendChild(el('p','ma-study-summary__note','No mistakes this time. Keep going when you are ready.'));
+        content.append(list);if(mistakes.length>12)content.append(el('p','ma-study-summary__note',`${mistakes.length-12} more to revisit`));
+      }else if(answered)content.appendChild(el('p','ma-study-summary__note','No mistakes this time.'));
       const actions=el('div','ma-study-summary__actions');let reviewing=false;
       const done=el('button','ma-button ma-button--primary','Done');done.type='button';done.addEventListener('click',()=>root.ModeAtlasDialog.close());actions.appendChild(done);
       if(mistakes.length){
@@ -248,7 +249,7 @@
       pendingReview=root.ModeAtlasStudyPlan.targetChars(chars).filter(char=>allowed.has(char));
     }
     root.addEventListener('modeAtlasAccountWillChange',()=>{pendingReview=[];});
-    return Object.freeze({sync,begin,pool,focusChars,beforeQuestion,nextPick,retryDue,requestDue(){requestKana(root.ModeAtlasReview.due(snapshot().srs));},requestKana,clearFocus(){pendingReview=[];},prepareAnswer,recordAnswer,finish,showFeedback,clearFeedback,showSummary,hasPendingReview:()=>focusChars().length>0});
+    return Object.freeze({sync,begin,issued:()=>root.ModeAtlasEarnings?.question(study(),snapshot().sessionStats.answered+1)||'',pool,focusChars,beforeQuestion,nextPick,retryDue,requestDue(){requestKana(root.ModeAtlasReview.due(snapshot().srs));},requestKana,clearFocus(){pendingReview=[];},prepareAnswer,recordAnswer,finish,showFeedback,clearFeedback,showSummary,hasPendingReview:()=>focusChars().length>0});
   }
   root.ModeAtlasStudySession=Object.freeze({create});
 })(window);

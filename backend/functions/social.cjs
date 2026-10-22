@@ -378,7 +378,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     fields(request.data,['action','data','expectedUid']);
     if(request.data.expectedUid!==uid)fail('unauthenticated','The signed-in account changed. Try again.');
     const {action,data={}}=request.data;
-    const actions=['adminUsers','adminInspect','adminSecurity','adminUsage','adminAccess','earnStudy','avatarState','avatarUpdate','shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
+    const actions=['adminUsers','adminInspect','adminSecurity','adminUsage','adminAccess','startStudy','earnStudy','avatarState','avatarUpdate','shopPurchase','shopUse','shopDeveloper','shop','rewards','state','list','profile','weeklyState','weeklyList','weeklyPreference','weeklyStart','weeklySubmit','notificationState','configureNotifications','unregisterNotifications','updateProfile','rotateCode','lookup','sendRequest','accept','decline','cancel','remove','block','unblock','leave','reportProfile','listReports','reviewReport','listRestrictions','restoreProfile','staffProfile','assignModerator','listModerators','listWarnings','warnProfile','clearWarnings','accountNotices','acknowledgeWarnings'];
     if(!actions.includes(action))fail('invalid-argument','Unknown friends action.');
     if(['rewards','weeklyState','notificationState','rotateCode','leave'].includes(action))fields(data,[]);
     if(action==='state'){
@@ -393,6 +393,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(action==='adminAccess')return administration.access(user,data,request.auth.token);
     if(action==='adminUsage')return administration.usage(user,data);
     if(['avatarState','avatarUpdate','updateProfile','shop','shopPurchase','shopDeveloper','state'].includes(action))await rewards.retainEquipped(user);
+    if(action==='startStudy')return earnings.start(uid,data);
     if(action==='earnStudy'){const result=await earnings.submit(uid,data);await commerce.awardLevels(uid,user);return result;}
     if(action==='rewards')return rewards.read(user);
     if(action==='avatarState'||action==='avatarUpdate'){
@@ -409,7 +410,7 @@ function createSocial({db,auth,messaging,now=Date.now}){
     if(action==='staffProfile')return moderation.details(user,data);
     if(action==='listModerators')return staff.list(user,data);
     if(action==='listWarnings')return moderation.warningAccounts(user,data);
-    if(action==='assignModerator')return staff.assign(user,data);
+    if(action==='assignModerator')return staff.assign(user,data,request.auth.token);
     if(action==='warnProfile')return moderation.warn(user,data);
     if(action==='clearWarnings')return moderation.clearWarnings(user,data);
     if(action!=='leave')await identities.ensureReady();

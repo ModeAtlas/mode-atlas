@@ -281,6 +281,10 @@
     const bar = document.getElementById('profileAtlasXpBar');
     const reading = document.getElementById('profileReadingCorrect');
     const writing = document.getElementById('profileWritingCorrect');
+    const experience=window.ModeAtlasLearningExperience?.snapshot();
+    document.querySelectorAll('.ma-progression-card').forEach(node=>{node.hidden=experience?!experience.hasLearning:false;});
+    document.querySelectorAll('[data-ma-profile-new]').forEach(node=>{node.hidden=!!experience?.hasLearning;});
+    for(const [id,value]of [['profileKanjiCorrect',summary.kanjiCorrect],['profileWordsReviewed',experience?.words.reviewed],['profileHandwriting',experience?.kana.handwritten]]){const node=document.getElementById(id);if(node)node.textContent=String(value||0);}
     const percent = Math.max(0, Math.min(100, Math.round(Number(summary.progress || 0) * 100)));
     if (level) level.textContent = String(atlasLevel);
     if (xp) xp.textContent = `${summary.xp || 0} XP`;
@@ -291,9 +295,9 @@
     if (writing) writing.textContent = String(summary.writingCorrect || 0);
     document.querySelectorAll('.ma-nav__profile').forEach((button) => {
       button.dataset.maAtlasRank = atlasRank;
-      button.setAttribute('aria-label', `Open profile, Atlas Level ${atlasLevel}`);
+      button.setAttribute('aria-label', experience&&!experience.hasLearning?'Open profile':`Open profile, Atlas Level ${atlasLevel}`);
       const label = button.querySelector('.ma-nav__action-label');
-      if (label) label.textContent = `Lv ${atlasLevel}`;
+      if (label) label.textContent = experience&&!experience.hasLearning?'Profile':`Lv ${atlasLevel}`;
     });
   }
 

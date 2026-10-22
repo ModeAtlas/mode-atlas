@@ -122,7 +122,7 @@ function createBaseContext({ configured = false } = {}) {
   Object.assign(window,{Blob,CompressionStream,DecompressionStream,btoa,atob});
   vm.createContext(context);
   vm.runInContext(STORAGE_SOURCE,context);
-  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-review','app/mode-atlas-kana-learning','data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-results','app/mode-atlas-japanese','app/mode-atlas-kana-evidence','app/mode-atlas-wordbank','app/mode-atlas-save-merge','results/mode-atlas-results-storage','app/mode-atlas-save-limits','app/mode-atlas-account-transport'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
+  for(const file of ['data/mode-atlas-kana-data','app/mode-atlas-review','app/mode-atlas-kana-learning','data/mode-atlas-kanji-curriculum','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-results','app/mode-atlas-japanese','app/mode-atlas-kana-evidence','app/mode-atlas-wordbank','app/mode-atlas-word-lesson-state','app/mode-atlas-save-sections','app/mode-atlas-save-merge','results/mode-atlas-results-storage','app/mode-atlas-save-limits','app/mode-atlas-account-transport'])vm.runInContext(fs.readFileSync(path.join(ROOT,'assets',file+'.js'),'utf8'),context);
   return { context, window, localStorage, sessionStorage };
 }
 

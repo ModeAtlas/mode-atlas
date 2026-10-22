@@ -464,7 +464,7 @@ function nextCharacter() {
             return;
         }
 
-        currentChar = dailySequence[dailyIndex] || "あ";
+        currentChar = trainerController.study.issued() || dailySequence[dailyIndex] || "あ";
         hiraganaEl.textContent = currentChar;
         hiraganaEl.classList.remove("flash-correct", "flash-wrong");
         charStartTime = Date.now();
@@ -484,7 +484,7 @@ function nextCharacter() {
             return;
         }
 
-        currentChar = testSequence[testIndex] || "あ";
+        currentChar = trainerController.study.issued() || testSequence[testIndex] || "あ";
         hiraganaEl.textContent = currentChar;
         hiraganaEl.classList.remove("flash-correct", "flash-wrong");
         charStartTime = Date.now();
@@ -509,7 +509,7 @@ function nextCharacter() {
         displayValue = buildComboCharacters(pool, firstPick).join("");
     }
 
-    currentChar = displayValue;
+    currentChar = trainerController.study.issued() || displayValue;
     hiraganaEl.textContent = currentChar;
     hiraganaEl.classList.remove("flash-correct", "flash-wrong");
     charStartTime = Date.now();
@@ -543,7 +543,7 @@ function presentPracticeDirection(){
     for(const char of values){const choice=document.createElement('button');choice.type='button';choice.className='ma-button ma-button--ghost';choice.textContent=char;choice.lang='ja';choice.addEventListener('click',()=>{if(locked||!sessionStarted)return;char===currentChar?handleCorrect(char):handleWrong(char);});choices.append(choice);}
 }
 
-function startSession(recovery = null) {
+async function startSession(recovery = null) {
     if (sessionStarted || !canStartKanaSession()) return;
     selectAnswerMode('reading');
     recovery=window.ModeAtlasSessionRecovery.validate(recovery,'reading');
@@ -554,7 +554,8 @@ function startSession(recovery = null) {
     }
     sessionStarted = true;
 
-    const prepared = prepareTrainerSessionStart({
+    const preparingOwner=window.ModeAtlasSessionRecovery.accountId();
+    const prepared = await prepareTrainerSessionStart({
         recovery,
         study: trainerController.study,
         isDailyChallengeSession,
@@ -564,6 +565,7 @@ function startSession(recovery = null) {
         getComboLength
     });
 
+    if(preparingOwner!==window.ModeAtlasSessionRecovery.accountId()){sessionStarted=false;window.KanaCloudSync?.setSessionCloudPause?.(false);return;}
     sessionStats = prepared.sessionStats;
     streak = prepared.streak;
     endlessRunTotal = prepared.endlessRunTotal;

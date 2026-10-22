@@ -76,6 +76,12 @@
       catch(error){status.textContent=error.message;const retry=makeButton('Save practice',()=>{retry.remove();complete();});status.append(retry);}
     }
     function cancel(event){if(event.pointerId!==pointer)return;pointer=null;points=[];ink?.remove();}
+    function resize(){
+      if(pointer===null)return;
+      const id=pointer;cancel({pointerId:id});
+      if(board?.hasPointerCapture(id))board.releasePointerCapture(id);
+    }
+    root.addEventListener('resize',resize);
     function showStep(){
       stopAnimation();assisted=true;completions.delete(which);accepted=[];drawn=[];render();const guides=[...board.querySelectorAll('.ma-handwriting-guide')];
       guides.forEach((p,i)=>p.classList.toggle('is-hidden',i>watchIndex));guides[watchIndex].classList.add('is-demonstrated');
@@ -99,7 +105,7 @@
       catch(error){if(token!==loadToken||!dialog.open)return;stage.replaceChildren(el('p','',error.message),makeButton('Retry',()=>choose(index)));}
     }
     for(const [i,char]of chars.entries())selector.append(makeButton(char,()=>choose(i)));
-    dialog.addEventListener('close',()=>{loadToken++;stopAnimation();root.ModeAtlasOverlay.unlock(dialog);dialog.remove();if(current===dialog)current=null;previous?.focus?.({preventScroll:true});},{once:true});
+    dialog.addEventListener('close',()=>{loadToken++;stopAnimation();root.removeEventListener('resize',resize);root.ModeAtlasOverlay.unlock(dialog);dialog.remove();if(current===dialog)current=null;previous?.focus?.({preventScroll:true});},{once:true});
     dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
     current=dialog;root.ModeAtlasOverlay.lock(dialog);dialog.showModal();closeButton.focus({preventScroll:true});choose(0);
   }

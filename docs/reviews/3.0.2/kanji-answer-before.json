@@ -1,0 +1,173 @@
+{
+  "samples": [
+    {
+      "answer": 225.79999999701977,
+      "next": 0.7000000029802322
+    },
+    {
+      "answer": 175.60000000149012,
+      "next": 0.3999999985098839
+    },
+    {
+      "answer": 147.39999999850988,
+      "next": 0.3999999985098839
+    },
+    {
+      "answer": 127.20000000298023,
+      "next": 0.20000000298023224
+    },
+    {
+      "answer": 150.10000000149012,
+      "next": 2
+    },
+    {
+      "answer": 160.60000000149012,
+      "next": 0.20000000298023224
+    },
+    {
+      "answer": 135,
+      "next": 0.09999999403953552
+    },
+    {
+      "answer": 148.60000000149012,
+      "next": 0.29999999701976776
+    },
+    {
+      "answer": 143.40000000596046,
+      "next": 0.29999999701976776
+    },
+    {
+      "answer": 125,
+      "next": 0.3999999985098839
+    },
+    {
+      "answer": 139.5,
+      "next": 0.30000000447034836
+    },
+    {
+      "answer": 170.09999999403954,
+      "next": 0.20000000298023224
+    },
+    {
+      "answer": 139.5,
+      "next": 0.20000000298023224
+    },
+    {
+      "answer": 140.79999999701977,
+      "next": 0.20000000298023224
+    },
+    {
+      "answer": 154.09999999403954,
+      "next": 0.5
+    },
+    {
+      "answer": 183.80000000447035,
+      "next": 0.29999999701976776
+    },
+    {
+      "answer": 154.5,
+      "next": 0.3999999985098839
+    },
+    {
+      "answer": 166.30000000447035,
+      "next": 0.5
+    },
+    {
+      "answer": 130,
+      "next": 0.29999999701976776
+    },
+    {
+      "answer": 160.10000000149012,
+      "next": 3.100000001490116
+    }
+  ],
+  "bytes": 3295948,
+  "answers": 20,
+  "pending": null,
+  "hotspots": [
+    [
+      "row mode-atlas-kanji-state.assets-3.0.2.js:23",
+      846
+    ],
+    [
+      "setJSON mode-atlas-storage.assets-3.0.2.js:378",
+      295
+    ],
+    [
+      "journalValue mode-atlas-storage.assets-3.0.2.js:298",
+      211
+    ],
+    [
+      "normalize mode-atlas-kanji-state.assets-3.0.2.js:31",
+      194
+    ],
+    [
+      "setItem :0",
+      166
+    ],
+    [
+      "safeParse mode-atlas-storage.assets-3.0.2.js:269",
+      147
+    ],
+    [
+      "digest mode-atlas-storage.assets-3.0.2.js:284",
+      139
+    ],
+    [
+      "(garbage collector) :0",
+      138
+    ],
+    [
+      " mode-atlas-kanji-state.assets-3.0.2.js:27",
+      129
+    ],
+    [
+      "diff mode-atlas-storage.assets-3.0.2.js:309",
+      105
+    ],
+    [
+      "mergeRecent mode-atlas-kanji-state.assets-3.0.2.js:22",
+      80
+    ],
+    [
+      " mode-atlas-kanji-state.assets-3.0.2.js:25",
+      66
+    ],
+    [
+      "recent mode-atlas-kanji-state.assets-3.0.2.js:21",
+      46
+    ],
+    [
+      "equal mode-atlas-storage.assets-3.0.2.js:303",
+      34
+    ],
+    [
+      "number mode-atlas-kanji-state.assets-3.0.2.js:16",
+      29
+    ],
+    [
+      " mode-atlas-kanji-state.assets-3.0.2.js:21",
+      26
+    ],
+    [
+      "commitTransaction mode-atlas-storage.assets-3.0.2.js:342",
+      22
+    ],
+    [
+      "metrics mode-atlas-kanji-state.assets-3.0.2.js:92",
+      19
+    ],
+    [
+      "read mode-atlas-kanji-state.assets-3.0.2.js:85",
+      16
+    ],
+    [
+      " mode-atlas-kanji-state.assets-3.0.2.js:94",
+      13
+    ]
+  ],
+  "runtime": "Local Chromium, full session answer and next calls; no UI render or physical-device result",
+  "medianMs": 149.35000000149012,
+  "p95Ms": 183.80000000447035,
+  "warmupAnswers": 4
+}

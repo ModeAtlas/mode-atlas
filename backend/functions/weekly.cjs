@@ -38,19 +38,21 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
     });return {enabled:data.enabled};
   }
   async function start(uid,data){
-    fields(data,['id','pool','direction','mode','hints','branch']);
+    fields(data,['id','pool','direction','mode','hints','branch','studyToken']);
     const branch=data.branch||'kana';
     const kanaValid=['reading','writing','both'].includes(data.direction)&&['guided','free','endless','dailyChallenge','testMode','speedRun','timeTrial','comboKana'].includes(data.mode)&&!(data.direction==='both'&&['dailyChallenge','testMode','comboKana'].includes(data.mode))&&typeof data.hints==='boolean'&&Array.isArray(data.pool)&&data.pool.length>0&&data.pool.length<=512&&data.pool.every(char=>typeof char==='string'&&Object.hasOwn(map,char));
     if(typeof data.id!=='string'||!/^[a-zA-Z0-9-]{8,100}$/.test(data.id)||!['kana','kanji'].includes(branch)||(branch==='kanji'?!kanji.valid(data):!kanaValid))fail('invalid-argument','Choose a valid practice session.');
     const period=policy.period(now());
     return db.runTransaction(async tx=>{
-      const ref=runs.doc(uid),[self,old,week,save]=await tx.getAll(account(uid),ref,weeks.doc(period.id),...(branch==='kanji'?[db.doc('users/'+uid+'/appData/kanaTrainer')]:[]));
+      const ref=runs.doc(uid),[self,old,week,issued,save]=await tx.getAll(account(uid),ref,weeks.doc(period.id),db.doc('studyEarnings/'+uid+'/runs/'+data.id),...(branch==='kanji'?[db.doc('users/'+uid+'/appData/kanaTrainer')]:[]));
       if(!active(self.data()))return {enabled:false};
       if(branch==='kanji')kanji.unlocked(data,await readSave(tx,save));
+      const authority=issued.data();
+      if(!authority?.seed||authority.token!==data.studyToken||authority.expiresAt.toMillis()<=now()||JSON.stringify(authority.pool)!==JSON.stringify([...new Set(data.pool)].sort())||authority.direction!==data.direction||authority.mode!==data.mode||authority.hints!==data.hints||authority.branch!==branch)fail('failed-precondition','Start a server-issued practice session first.');
       const previous=old.data();
       if(previous?.id===data.id&&previous.week===period.id&&previous.expiresAt.toMillis()>now())return {enabled:true,token:previous.token,week:period.id,expiresAt:previous.expiresAt.toMillis(),index:previous.index,earned:previous.earned||0};
       const expiresAt=Math.min(now()+policy.runLifetime,period.endAt),token=randomUUID();
-      tx.set(ref,{id:data.id,branch,token,week:period.id,pool:[...new Set(data.pool)].sort(),direction:data.direction,mode:data.mode,hints:data.hints,index:0,elapsed:0,seen:[],startedAt:now(),expiresAt:new Date(expiresAt)});
+      tx.set(ref,{id:data.id,branch,token,week:period.id,pool:[...new Set(data.pool)].sort(),direction:data.direction,mode:data.mode,hints:data.hints,index:0,elapsed:0,seen:[],startedAt:authority.startedAt,seed:authority.seed,retries:[],authorityStreak:0,expiresAt:new Date(expiresAt)});
       if(!week.exists)tx.create(weeks.doc(period.id),{...period,settled:false});
       return {enabled:true,token,week:period.id,expiresAt,index:0,earned:0};
     });
@@ -70,7 +72,7 @@ function createWeekly({db,now=Date.now,commerce=createCommerce({db,now})}){
       if(integrity.answers>=500&&integrity.nearMinimum/integrity.answers>.98)integrity.reviewRequired=true;
       const earned=Math.min(result.score,Math.max(0,policy.dailyCap-(old.days[day]||0)));
       const runEarned=(run.earned||0)+earned;
-      tx.update(ref,{index:result.index,elapsed:result.elapsed,seen:result.seen,earned:runEarned});
+      tx.update(ref,{index:result.index,elapsed:result.elapsed,seen:result.seen,retries:run.retries,authorityStreak:run.authorityStreak,earned:runEarned});
       if(result.index!==run.index)tx.set(entry,{uid,week:period.id,active:true,score:old.score+earned,attempts,integrity,days:{...old.days,[day]:(old.days[day]||0)+earned},updatedAt:at,expiresAt:new Date(period.endAt+90*86400000)});
       return {index:result.index,earned,runEarned,score:old.score+earned,week:period.id};
     });

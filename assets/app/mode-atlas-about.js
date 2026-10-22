@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'Goals for your stage. Smoother practice.';
+  const WHATS_NEW_COPY = 'A clearer beginning. Deeper learning.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Daily and weekly goals now fit your unlocked learning tools, with smaller goals when you begin Kanji.',
-    'Change an unfinished goal from Progress to choose what you want to practise.',
-    'Smoother Kana practice, with fewer background updates while you answer.'
+    'A different Home and a focused first Kana lesson for new learners. Advanced tools are available when you want them.',
+    'Useful vocabulary lessons, reading and listening reviews, and Kanji readiness based on recent recall.',
+    'Word reviews and handwriting count toward study habits. Export and restore learning backups from Settings.'
 
   ];
 
@@ -184,7 +184,7 @@
     if (pending && onboardingOpen()) return;
     if (sessionStorage.getItem('modeAtlasTourPending') === '1'||window.ModeAtlasTour?.isOpen()) { markWhatsNewSeen(); return; }
 
-    if (shouldAutoShowWhatsNew() && onboardingComplete() && !onboardingOpen() && ['index.html','kana.html'].includes(PAGE)) {
+    if (window.ModeAtlasLearningExperience?.snapshot().hasLearning && shouldAutoShowWhatsNew() && onboardingComplete() && !onboardingOpen() && ['index.html','kana.html'].includes(PAGE)) {
       showWhatsNew();
     }
   }
@@ -244,7 +244,8 @@
     const created=document.createElement('p'); created.append(aboutEl('strong','',`Created by ${DEVELOPER}`));
     const support=document.createElement('p'); support.append(document.createTextNode('Support: '),aboutLink(SUPPORT_EMAIL,`mailto:${SUPPORT_EMAIL}`),document.createTextNode(' · '),aboutLink(OFFICIAL_SITE,`https://${OFFICIAL_SITE}/`,{target:'_blank',rel:'noopener'}));
     credit.append(aboutEl('h3','','Developer'),created,aboutEl('p','','Made for focused, everyday Japanese study.'),support,aboutEl('p','ma-about-muted',`© 2026 ${DEVELOPER}. All rights reserved.`));
-    overview.append(grid,saveSection,credit);
+    const availability=aboutEl('div','ma-about-section');availability.append(aboutEl('h3','','Offline study & pronunciation'),aboutEl('p','','The installed iOS app bundles its lessons and character guidance. A browser needs a connection to load pages; an already-open practice session saves locally. Keep a learning backup before clearing browser storage.'),aboutEl('p','','Pronunciation uses your device’s Japanese voice. Availability and quality depend on the installed voice. Listening practice requires successful playback; other practice remains available without audio.'),aboutEl('p','','Personal learning and verified rewards are separate. Start a connected, signed-in session to receive verified rewards. Offline or expired sessions still save personal learning.'));
+    overview.append(grid,saveSection,availability,credit);
 
     const whatsNew=aboutEl('div','ma-about-panel'); whatsNew.dataset.maAboutPanel='whatsnew';
     const whatsSection=aboutEl('div','ma-about-section'); const whatsList=aboutEl('ul','ma-about-list');

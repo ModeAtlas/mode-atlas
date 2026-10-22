@@ -72,7 +72,7 @@
       ['Read, Recall & Both','Each direction keeps its own evidence. Both needs both directions. Earned mastery stays earned; due reviews show what to revisit. Handwriting is the extra step toward Mastered+.']];
   }
   function dueHelp(){
-    return '“Due” counts characters ready to revisit, using spaced practice to help you remember them. Kana Read, Kana Recall and each Kanji skill have separate schedules. A short session can repeat characters, so this isn’t a question count. Reviews are suggestions, not deadlines. Five correct answers each day keep your study streak going—you don’t need to clear every due review.';
+    return 'Due items are ready for spaced recall. Each skill has its own schedule. Five practice items make a study day, including mistakes; you do not need to clear every review.';
   }
   function answer(input,event,stats={},time=0){
     const row=normalize(input,stats,time), at=number(event.at), id=String(event.id||'');

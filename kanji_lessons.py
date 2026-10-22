@@ -1,4 +1,7 @@
-"""Apply reviewed teaching choices without changing stable character IDs."""
+"""Apply editorial teaching choices without changing stable character IDs.
+
+Dictionary validation is automated; independent educator approval is separate.
+"""
 from pathlib import Path
 import json
 

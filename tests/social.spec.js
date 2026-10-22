@@ -156,7 +156,7 @@ test('leaving Friends discards a delayed response without changing the next acco
   await page.getByRole('tab',{name:'Rankings',exact:true}).click();
   await page.getByRole('button',{name:'All time',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>typeof finishSocialList)).toBe('function');
-  await page.goto('/progress/');
+  await page.goto('/progress/?tab=goals');
   await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   await expect(page.locator('.ma-social')).toHaveCount(0);
   await expect(page.getByRole('tabpanel',{name:'Goals',exact:true})).toBeVisible();
@@ -231,6 +231,7 @@ test('staff controls show role badges, warning history and an explicit warning c
   await prepare(page);
   await page.evaluate(()=>{
     const call=ModeAtlasSocial.call;
+    KanaCloudSync.confirmCurrentSignIn=async()=>{window.roleReauthenticated=true;};
     ModeAtlasSocial.call=async(action,input)=>{
       if(action==='state')return {...await call(action,input),canModerate:true,role:'admin'};
       if(action==='profile')return {profile:{...socialFixture.friend,role:'moderator'}};
@@ -254,7 +255,8 @@ test('staff controls show role badges, warning history and an explicit warning c
   await page.getByRole('button',{name:'Remove role',exact:true}).click();
   expect(await page.evaluate(()=>socialCalls.some(row=>row.action==='assignModerator'))).toBe(false);
   await page.getByRole('button',{name:'Remove role',exact:true}).click();
-  expect(await page.evaluate(()=>socialCalls.find(row=>row.action==='assignModerator').input)).toEqual({uid:'friend',moderator:false});
+  await expect.poll(()=>page.evaluate(()=>socialCalls.find(row=>row.action==='assignModerator')?.input)).toEqual({uid:'friend',moderator:false});
+  expect(await page.evaluate(()=>roleReauthenticated)).toBe(true);
 });
 
 
@@ -354,7 +356,7 @@ for(const layout of [{native:false,width:1280,theme:'dark',role:'admin'},{native
     await page.evaluate(()=>{window.delayWarnings=true;});
     await page.getByRole('tab',{name:'Warnings',exact:true}).click();
     await expect.poll(()=>page.evaluate(()=>typeof finishWarnings)).toBe('function');
-    await page.goto('/progress/');
+    await page.goto('/progress/?tab=goals');
     await expect(page.locator('#maModerationPanel')).toHaveCount(0);await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
   });
 }
@@ -369,7 +371,7 @@ test('a friend’s server-approved exclusive banner displays without granting it
     return caption.top>=art.bottom&&caption.right<=row.closest('.ma-social-person').getBoundingClientRect().right;
   })).toBe(true);
   await page.screenshot({path:info.outputPath('friend-exclusive-banner.png'),animations:'disabled'});
-  await page.goto('/progress/');await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.goto('/progress/?tab=goals');await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await expect(page.getByRole('button',{name:/Hunny banner/})).toHaveCount(0);
 });
 
@@ -454,6 +456,7 @@ test('weekly deep links open the ladder and delayed weekly rows cannot replace F
   await page.evaluate(()=>{
     socialFixture.weeklyEnabled=true;
     const call=ModeAtlasSocial.call;
+    KanaCloudSync.confirmCurrentSignIn=async()=>{window.roleReauthenticated=true;};
     ModeAtlasSocial.call=async(action,input)=>{
       const result=await call(action,input);
       if(action==='weeklyState')return {...result,results:[{week:'2026-09-21',rank:4,score:840,xp:0}]};

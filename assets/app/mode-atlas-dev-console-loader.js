@@ -2,7 +2,8 @@
   'use strict';
   if (root.ModeAtlasDevConsoleLoader) return;
 
-  const DEV_EMAIL = 'admin@mode-atlas.com';
+  let developerUid='';
+  async function refreshEligibility(){const user=root.KanaCloudSync?.getUser?.();if(!user){developerUid='';return;}try{const result=await user.getIdTokenResult?.();if(root.KanaCloudSync?.getUser?.()?.uid===user.uid)developerUid=result?.claims?.modeAtlasAdmin===true?user.uid:'';}catch{developerUid='';}}
   const loaderScript = document.currentScript;
   const loaderUrl = loaderScript?.src || new URL('/assets/app/mode-atlas-dev-console-loader.js', location.href).href;
   const versionMatch = loaderUrl.match(/mode-atlas-dev-console-loader(\.assets-\d+\.\d+\.\d+)?\.js(?:[?#].*)?$/i);
@@ -29,7 +30,7 @@
   }
 
   function isEligible(){
-    return isLocalDevHost() || currentUserEmail() === DEV_EMAIL;
+    return isLocalDevHost() || !!developerUid&&developerUid===root.KanaCloudSync?.getUser?.()?.uid;
   }
 
   function ensureStyle(){
@@ -55,7 +56,8 @@
     });
   }
 
-  function loadIfEligible(){
+  async function loadIfEligible(){
+    if(!isLocalDevHost())await refreshEligibility();
     if (!isEligible()) return Promise.resolve(false);
     if (root.ModeAtlasDevConsole && root.ModeAtlasDevBackups) return Promise.resolve(true);
     if (loadPromise) return loadPromise;
@@ -79,5 +81,5 @@
   root.ModeAtlasDevConsoleLoader = Object.freeze({ isEligible, isLocalDevHost, currentUserEmail, loadIfEligible });
 
   if (isLocalDevHost()) void loadIfEligible();
-  root.addEventListener('kanaCloudSyncStatusChanged', () => { if (isEligible()) void loadIfEligible(); });
+  root.addEventListener('kanaCloudSyncStatusChanged', () => { void loadIfEligible(); });
 })(window);

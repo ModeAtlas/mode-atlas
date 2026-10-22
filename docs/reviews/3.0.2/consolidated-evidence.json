@@ -1,0 +1,78 @@
+{
+  "scope": "Consolidated unpublished continuation of the full independent review",
+  "javascriptTests": 280,
+  "pythonTests": 20,
+  "backendServiceAndRulesTests": 86,
+  "nativeWebSync": "passed; not a native compile",
+  "browser": {
+    "runs": [
+      {
+        "name": "consolidated-browser",
+        "startTime": "2026-10-22T12:32:23.277Z",
+        "duration": 1442676.466,
+        "expected": 750,
+        "skipped": 0,
+        "unexpected": 18,
+        "flaky": 0
+      },
+      {
+        "name": "consolidated-final-browser",
+        "startTime": "2026-10-22T13:05:34.160Z",
+        "duration": 370519.859,
+        "expected": 301,
+        "skipped": 0,
+        "unexpected": 5,
+        "flaky": 0
+      },
+      {
+        "name": "consolidated-final-fixes",
+        "startTime": "2026-10-22T13:15:02.133Z",
+        "duration": 58605.739,
+        "expected": 18,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      {
+        "name": "consolidated-consent",
+        "startTime": "2026-10-22T13:21:37.528Z",
+        "duration": 58259.846,
+        "expected": 54,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    ],
+    "distinctCases": 770,
+    "unresolved": [],
+    "note": "Full run plus targeted reruns; not one green invocation on the final tree."
+  },
+  "kanjiAnswerPath": {
+    "runtime": "Local Chromium, full session answer and next calls; no UI render or physical-device result",
+    "before": {
+      "bytes": 3295948,
+      "medianMs": 149.35000000149012,
+      "p95Ms": 183.80000000447035,
+      "answers": 20,
+      "pending": null
+    },
+    "after": {
+      "bytes": 3295952,
+      "medianMs": 53.5,
+      "p95Ms": 75,
+      "answers": 20,
+      "pending": null
+    },
+    "answers": 20,
+    "warmupAnswers": 4,
+    "targetP95Ms": 50,
+    "targetMet": false
+  },
+  "homeEagerScripts": {
+    "scripts": 91,
+    "rawBytes": 726364,
+    "gzipBytes": 242274
+  },
+  "productionInspection": "Firebase authentication failed",
+  "githubPublication": "Automatic approval review blocked; no branch updated"
+}

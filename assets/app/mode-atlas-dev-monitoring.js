@@ -20,7 +20,7 @@
           body.append(el('p','','Opt-in guest summaries, not total visitors or verified study receipts. Clearing browser data or using another device creates a separate participant.'));
           if(!root.ModeAtlasAppCheck?.ready())body.append(el('p','ma-status','Collection is inactive on this build. Complete the App Check setup in docs/security-2.120.0.md before enabling guest reporting.'));
           for(const row of data.rows){
-            const card=el('article','ma-dev-monitoring-card');card.append(el('h4','',`Device ${row.id} · ${row.platform} ${row.version}`),el('p','',`Level ${row.level} · ${row.xp} XP · ${row.correct}/${row.attempts} Kana answers`),el('p','',`Last branch: ${row.branch} · ${date(row.lastSeen)}`),el('p','',`Introduced: ${(row.introduced||[]).join(' ')||'—'}`),el('p','',`Practised: ${row.kana.join(' ')||'—'}`));body.append(card);
+            const card=el('article','ma-dev-monitoring-card');card.append(el('h4','',`Device ${row.id} · ${row.platform} ${row.version}`),el('p','',`Level ${row.level} · ${row.xp} XP · ${row.correct}/${row.attempts} Kana answers`),el('p','',`Last branch: ${row.branch} · ${date(row.lastSeen)}`),el('p','',`Introduced: ${(row.introduced||[]).join(' ')||'—'}`),el('p','',`Practised: ${row.kana.join(' ')||'—'}`));if(row.funnel)card.append(el('p','',Object.entries(row.funnel).map(([key,value])=>key+': '+value).join(' · ')));body.append(card);
           }
           if(!data.rows.length)body.append(el('p','','No participating guest devices in this period.'));
           if(data.nextCursor)controls.append(button('Next 25',()=>void load(data.nextCursor)));
@@ -31,6 +31,7 @@
           body.append(el('h4','','Recent access changes · 90-day retention'));
           for(const row of data.audit){const card=el('article','ma-dev-monitoring-card');card.append(el('strong','',`${row.operation} · ${row.status}`),el('p','',row.reason),el('small','',`${row.target} · ${date(row.at)}`));body.append(card);}
           if(!data.audit.length)body.append(el('p','','No recorded access changes.'));
+          if(data.studyReviews?.length){body.append(el('h4','','Study rewards held for review'));for(const row of data.studyReviews)body.append(el('p','',`${row.uid} · ${row.reason} · ${date(row.at)}`));}
           if(data.rewardReviews?.length){
             body.append(el('h4','','Weekly rewards held for review'));
             for(const row of data.rewardReviews)body.append(el('p','',`${row.uid} · ${row.week} · #${row.rank} · ${row.reason} · ${date(row.at)}`));

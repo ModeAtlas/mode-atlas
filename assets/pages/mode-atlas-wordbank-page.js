@@ -229,10 +229,13 @@ function refreshProfileShell() {
       const populated = total > 0;
       document.body?.classList?.toggle?.('ma-wordbank-populated', populated);
       if (document.body?.dataset) document.body.dataset.maWordBankExperience = populated ? 'collection' : 'empty';
+      document.querySelectorAll('.wordbank-overview,.wordbank-library,#wordBankReviewBtn,#wordBankActionsBtn').forEach(node=>{node.hidden=!populated;});
+      const lessons=document.querySelector('[data-ma-word-lessons]');
+      if(lessons&&lessons.dataset.populated!==String(populated)){lessons.dataset.populated=String(populated);window.ModeAtlasWordLessons.render(lessons,{populated});}
       if (elements.introLead) {
         elements.introLead.textContent = populated
           ? `${total} saved word${total === 1 ? '' : 's'}${favorites ? ` · ${favorites} favourite${favorites === 1 ? '' : 's'}` : ''}${missingEnglish ? ` · ${missingEnglish} still need${missingEnglish === 1 ? 's' : ''} a meaning` : ''}.`
-          : 'Keep useful Japanese words close, then add meaning and notes as your vocabulary grows.';
+          : 'Learn useful words or add your own.';
       }
       if (elements.libraryCount) {
         elements.libraryCount.textContent = populated
@@ -438,7 +441,7 @@ function refreshProfileShell() {
         const title = createEl("h3", "", wordBank.length ? 'No words match this view.' : 'Start your Word Bank.');
         const copy = createEl("p", "", wordBank.length
           ? 'Try a different search or remove the current filter.'
-          : 'Add a Japanese word now. Romaji is generated automatically, and you can add its meaning or notes whenever you are ready.');
+          : 'Try a short lesson above, or add a word you have encountered. Include its reading, meaning and an example to make later review useful.');
         const actions = createEl('div','wordbank-empty-actions ma-action-row');
         if (wordBank.length && (queryActive || filterActive)) {
           const clearView = createEl('button','ma-button ma-button--ghost','Clear search and filters');
@@ -496,7 +499,6 @@ function refreshProfileShell() {
     elements.addJumpBtn?.addEventListener('click', openAddWordDialog);
     elements.actionsBtn?.addEventListener('click', openCollectionActionsDialog);
 
-    document.getElementById('wordBankReviewBtn').addEventListener('click',()=>window.ModeAtlasWordReview.open());
     elements.addWordBtn.addEventListener('click', addWord);
     elements.kanaInput.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' || event.isComposing || event.keyCode === 229) return;
@@ -575,6 +577,18 @@ function refreshProfileShell() {
     elements.clearAllBtn.addEventListener('click', clearAllWords);
 
     renderEntries();
+    const requestedLesson=new URLSearchParams(location.search).get('lesson');
+    const lesson=!requestedLesson?null:requestedLesson==='next'?window.ModeAtlasWordLessonState.next(window.ModeAtlasWordLessonsData):window.ModeAtlasWordLessonsData.find(unit=>unit.id===requestedLesson);
+    const application=new URLSearchParams(location.search).get('application');
+    const reviewUnit=application?window.ModeAtlasWordLessonsData.find(unit=>unit.id===application):null;
+    // Setup resumes this same URL after consent. Do not open a second modal
+    // beneath the first-visit agreement when following a lesson deep link.
+    if(window.ModeAtlasVisitFlows?.ready?.()!==false){
+      if(reviewUnit)window.ModeAtlasWordLessons.review(reviewUnit);
+      else if(lesson)window.ModeAtlasWordLessons.open(lesson);
+      else if(new URLSearchParams(location.search).get('review')==='1'&&wordBank.length)window.ModeAtlasWordReview.open();
+    }
+    window.addEventListener('modeAtlasWordLessonsChanged',()=>window.ModeAtlasWordLessons.render(document.querySelector('[data-ma-word-lessons]')));
 
     const refreshWordBankFromStorage = () => {
       wordBank = loadWordBank();

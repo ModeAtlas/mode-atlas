@@ -327,6 +327,7 @@ test.describe('Phone and Tablet study UX', () => {
     await expect(page.locator('[data-ma-dialog-layer]')).toBeVisible();
     await expect(page.locator('[data-ma-dialog-message]')).toBeHidden();
     await expect(page.locator('[data-ma-feature-back]')).toHaveCount(0);
+    await expect(page.locator('.ma-kana-mastery-map')).toBeVisible();
     const geometry = await page.evaluate(() => {
       const panel = document.querySelector('[data-ma-dialog-panel]').getBoundingClientRect();
       const firstGroup = document.querySelector('.ma-mastery-group').getBoundingClientRect();

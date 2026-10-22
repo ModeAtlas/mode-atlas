@@ -48,7 +48,7 @@ test('shared navigation is generated consistently across all public pages', () =
     assert.ok(html.indexOf('mode-atlas-date.') < html.indexOf('mode-atlas-progress.'), `${rel} restores saved goal dates only after the date owner loads`);
     const nav = html.slice(html.indexOf('<!-- MODE_ATLAS_NAV_START -->'),html.indexOf('<!-- MODE_ATLAS_NAV_END -->'));
     assert.equal(count(nav, /data-profile-open/g), 1, `${rel} shared profile action`);
-    assert.equal(count(html, /data-settings-open/g), 1, `${rel} shared settings action`);
+    assert.equal(count(nav, /data-settings-open/g), 1, `${rel} shared settings action`);
   }
   for (const rel of LEGAL_PAGES) {
     const html = read(rel);
@@ -270,7 +270,7 @@ test('sound mode owner persists On/Loud/Off without relying on an out-of-scope s
     constructor(type, init = {}) { this.type = type; this.detail = init.detail; }
   }
   const context = {
-    window, self: window, document, localStorage, CustomEvent: CustomEventMock,
+    window, self: window, document, localStorage, URLSearchParams, location:{search:''}, CustomEvent: CustomEventMock,
     URL, setTimeout() { return 1; }, clearTimeout() {}, console,
   };
   vm.createContext(context);
@@ -533,7 +533,7 @@ function runWordBankAddHarness({ saveSucceeds = true } = {}) {
     setItem(key, value) { values.set(String(key), String(value)); },
   };
   const context = {
-    window, self: window, document, localStorage,
+    window, self: window, document, localStorage, URLSearchParams, location:{search:''},
     Date, Math, JSON, Object, Array, Set, Number, String, Promise, console,CustomEvent:class{constructor(type){this.type=type;}},
     Blob: class {},
     URL: { createObjectURL() { return 'blob:test'; }, revokeObjectURL() {} },
@@ -1081,7 +1081,7 @@ test('2.33 experience restructure keeps Atlas clean and onboarding destination-a
   assert.match(home, /data-ma-home-avatar/);
   assert.match(home, /href="\/kana\/"/);
   assert.doesNotMatch(home, /homeVisitStreak|homeReadingDaily|homeWritingDaily|Study status/);
-  assert.match(homeJs, /dataset\.maHomeState\s*=\s*isUser\s*\?\s*'returning'\s*:\s*'visitor'/);
+  assert.match(homeJs, /dataset\.maHomeState\s*=\s*experience\.stage/);
   assert.doesNotMatch(homeJs, /dailyDone\(|homeVisitStreak|homeReadingDaily|homeWritingDaily/);
   assert.match(visit, /BRANCH_PATHS=new Set/);
   assert.match(visit, /waitForInitialHydration/);
@@ -1104,7 +1104,7 @@ test('general consent is separate from the Kana starting-point choice',()=>{
 test('Kana curriculum saves and local placement checkpoints use the shared persistence owners',()=>{
   const storage=read('assets/app/mode-atlas-storage.js'),cloud=read('cloud-sync.js');
   assert.match(storage,/kanaLearning: 'modeAtlasKanaLearning'/);assert.match(storage,/'modeAtlasKanaPlacementCheckpoint'/);
-  assert.match(cloud,/kanaLearning: \{updatedAtKey:'modeAtlasKanaLearningUpdatedAt'/);
+  assert.match(read('assets/app/mode-atlas-save-sections.js'),/kanaLearning: \{updatedAtKey:'modeAtlasKanaLearningUpdatedAt'/);
   assert.match(cloud,/ModeAtlasKanaLearning/);
 });
 
@@ -1301,7 +1301,7 @@ test('2.41 Atlas Level uses one mergeable semantic progression owner and Profile
   assert.match(progress, /legacy-baseline/);
   assert.match(progress, /function getLifetimeCorrect/);
 
-  assert.match(cloud, /progress: \{\s*updatedAtKey:/);
+  assert.match(read('assets/app/mode-atlas-save-sections.js'), /progress: \{\s*updatedAtKey:/);
   assert.match(read('assets/app/mode-atlas-save-merge.js'), /owner.mergeStates/);
   assert.match(read('assets/app/mode-atlas-save-merge.js'), /progress:root.ModeAtlasProgress/);
   assert.match(cloud, /progress: 'Atlas Level'/);
@@ -1343,7 +1343,7 @@ test('2.42 contextual install and progression feedback stay under shared owners'
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress.js'") < frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'"));
   assert.ok(frontend.indexOf("'assets/app/mode-atlas-progress-ui.js'") < frontend.indexOf("'assets/app/mode-atlas-pwa.js'"));
 
-  assert.match(progress, /const STATE_VERSION = 7/);
+  assert.match(progress, /const STATE_VERSION = 8/);
   assert.match(progress, /adjustments/);
   assert.match(progress, /function debugAdjustXP/);
   assert.match(progress, /source: 'dev\.xpAdjust'/);
@@ -1452,7 +1452,7 @@ test('2.44 app-wide UX vocabulary keeps product destinations and actions semanti
   assert.match(frontend, />View Test Results<\/span>/);
   assert.doesNotMatch(frontend, /View full Results|Try Again|>Wrong</);
 
-  assert.match(read('assets/pages/mode-atlas-hub-page.js'), /\/results\//);
+  assert.match(read('assets/pages/mode-atlas-hub-page.js'), /ModeAtlasBranchLibrary/);
   assert.match(kanaJs, /View test results/);
   assert.match(kana, /view=tests/);
 
@@ -1548,7 +1548,7 @@ test('2.46 production boot keeps developer diagnostics lazy and revision-build o
   assert.match(builder, /assets\/css\/mode-atlas-dev-console\.css/);
   assert.match(loader, /document\.currentScript/);
   assert.match(loader, /kanaCloudSyncStatusChanged/);
-  assert.match(loader, /admin@mode-atlas\.com/);
+  assert.match(loader, /modeAtlasAdmin/);
   assert.match(loader, /loadIfEligible/);
 
   for (const page of ['index.html','kana/index.html','reading/index.html','writing/index.html','results/index.html','wordbank/index.html']) {

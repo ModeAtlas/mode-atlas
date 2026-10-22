@@ -1,0 +1,40 @@
+{
+  "source": "JMdict / EDRDG",
+  "sha256": "7db87554cc1fa46727f5e85ac9342255c8f74cac41ad964aecc4c8fcb4b6513f",
+  "license": "CC BY-SA 4.0",
+  "method": "Every selected spelling, reading and English sense checked against JMdict restrictions; not independent educator review",
+  "validatedSelections": 1826,
+  "reselected": [
+    {
+      "char": "何",
+      "from": "何",
+      "to": "何"
+    },
+    {
+      "char": "管",
+      "from": "管",
+      "to": "管"
+    },
+    {
+      "char": "津",
+      "from": "天津",
+      "to": "津波"
+    },
+    {
+      "char": "溝",
+      "from": "溝",
+      "to": "溝"
+    }
+  ],
+  "supplemented": 545,
+  "withoutContext": [
+    "赳",
+    "舜",
+    "彪",
+    "侑",
+    "崚",
+    "晏",
+    "晟",
+    "洵"
+  ]
+}

@@ -418,7 +418,7 @@ function getWeakKana(result, limit = 5) {
             const avgMs = Number(record?.avgMs || 0);
             return { kana, attempts, accuracy, avgMs };
         })
-        .filter(item => item.attempts > 0)
+        .filter(item => item.attempts > 0 && item.accuracy < 100)
         .sort((a, b) => (a.accuracy - b.accuracy) || (b.avgMs - a.avgMs) || (a.attempts - b.attempts))
         .slice(0, limit);
 }
@@ -449,24 +449,27 @@ function renderGuidance(result) {
     const mode = result.mode === "writing" ? "writing" : "reading";
     const weakKana = getWeakKana(result, 5);
     const weakRow = getWeakestRow(result);
-    const scope = result.type === "average" ? `${mode} Test Mode history` : `this ${mode} Test Mode assessment`;
+    const scope = `${mode === 'reading' ? 'Kana Read · sound recall' : 'Kana Recall · character selection'}`;
     RESULTS_GUIDANCE_CARD?.classList.toggle("reading", mode === "reading");
     RESULTS_GUIDANCE_CARD?.classList.toggle("writing", mode === "writing");
 
     if (weakKana.length) {
-        RESULTS_GUIDANCE_TITLE.textContent = weakRow ? `Focus on the ${weakRow.key} row` : `Review your weakest ${mode} test kana`;
-        RESULTS_GUIDANCE_TEXT.textContent = weakRow
-            ? `${weakRow.key} is the clearest focus area from ${scope}: ${weakRow.accuracy}% accuracy${weakRow.avgMs ? ` with ${formatDuration(weakRow.avgMs)} average response time` : ""}. Practise it before the next formal test.`
-            : `These kana have the weakest combination of accuracy and response speed across ${scope}.`;
+        RESULTS_GUIDANCE_TITLE.textContent = weakRow ? `Revisit the ${weakRow.key} row` : 'Revisit these kana';
+        RESULTS_GUIDANCE_TEXT.textContent = scope;
         weakKana.forEach(item => {
             const chip = createResultEl("span", "results-focus-kana__item ma-pill", item.kana);
             chip.title = `${item.accuracy}% accuracy${item.avgMs ? ` · ${formatDuration(item.avgMs)}` : ""}`;
             RESULTS_GUIDANCE_KANA.append(chip);
         });
     } else {
-        RESULTS_GUIDANCE_TITLE.textContent = `Build more ${mode} test history`;
-        RESULTS_GUIDANCE_TEXT.textContent = "There is not enough kana-level formal assessment data to rank a focused review yet.";
+        RESULTS_GUIDANCE_TITLE.textContent = 'Keep your recall fresh';
+        RESULTS_GUIDANCE_TEXT.textContent = scope + ' · No missed kana';
     }
+
+    let timing=RESULTS_GUIDANCE_CARD.querySelector('[data-ma-result-timing]');
+    if(!timing){timing=createResultEl('p','ma-muted');timing.dataset.maResultTiming='';RESULTS_GUIDANCE_TEXT.after(timing);}
+    const schedule=window.ModeAtlasStorage.readModeJSON(mode,'srs',{});
+    timing.textContent=window.ModeAtlasSessionOutcome.when(Object.keys(result.kana||{}).map(char=>schedule[char]?.due));
 
     RESULTS_PRACTICE_ACTION.href = `/${mode}/?focusWeak=1`;
     RESULTS_PRACTICE_ACTION.querySelector("span").textContent = `Practise recommended ${mode === "reading" ? "Read" : "Recall"} kana`;

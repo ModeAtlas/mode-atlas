@@ -4,7 +4,7 @@ const {FieldPath}=require('firebase-admin/firestore');
 const {HttpsError}=require('firebase-functions/v2/https');
 const policy=require('./shared/mode-atlas-social-identity.js');
 const hash=value=>createHash('sha256').update(value).digest('hex');
-const isAdmin=user=>user?.emailVerified===true&&user.disabled!==true&&user.email?.toLowerCase()==='admin@mode-atlas.com';
+const isAdmin=user=>user?.emailVerified===true&&user.disabled!==true&&user.customClaims?.modeAtlasAdmin===true;
 const mayUseName=(name,user)=>policy.validName(name)&&!policy.objectionableName(name)&&(!policy.reservedName(name)||(policy.cleanName(name).toLowerCase()==='admin'&&isAdmin(user)));
 function accountPhoto(user){return policy.photoURL(user?.providerData?.find(provider=>provider.providerId==='google.com')?.photoURL);}
 

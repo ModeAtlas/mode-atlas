@@ -4,7 +4,7 @@
   if (!root.ModeAtlasEnv?.isNativeApp || root.ModeAtlasEnv.nativePlatform !== 'ios') return;
 
   // Primary destinations stay stable inside every learning branch.
-  const tabs=[['atlas','Atlas','あア'],['learn','Learn','nav-learn'],['progress','Progress','nav-progress'],['friends','Friends','nav-friends']];
+  const tabs=[['atlas','Atlas','あア'],['learn','Learn','book'],['progress','Progress','chart'],['friends','Friends','people']];
   const route=location.pathname.replace(/\/index\.html$/i,'/');
   const current=tabs.find(tab=>root.AtlasPlatform.destinationPath(tab[0])===route)?.[0]
     || (/^\/(kana|kanji|reading|writing|results|wordbank)\//.test(route)?'learn':'');
@@ -56,7 +56,11 @@
 
     var dockHeight = -1, visibleHeight = -1;
     function measure(){
-      var nextDockHeight = dock.getBoundingClientRect().height;
+      const style=getComputedStyle(document.documentElement);
+      const safeWidth=root.innerWidth-(parseFloat(style.getPropertyValue('--ma-safe-left'))||0)-(parseFloat(style.getPropertyValue('--ma-safe-right'))||0);
+      const rail=safeWidth>=900&&root.innerHeight>=500;
+      document.documentElement.dataset.maNavigation=rail?'rail':'bottom';
+      var nextDockHeight = rail?0:dock.getBoundingClientRect().height;
       var nextVisibleHeight = root.visualViewport?.height || root.innerHeight;
       if (nextDockHeight !== dockHeight) {
         dockHeight = nextDockHeight;

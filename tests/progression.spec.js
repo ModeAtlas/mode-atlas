@@ -4,7 +4,7 @@ test.beforeEach(async({page})=>require('./helpers/kana-fixture')(page));
 test.describe.configure({mode:'parallel'});
 
 for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'light',width:320},{native:false,theme:'dark',width:1280}])test(`character creator saves one portrait across profile and progress ${layout.native?'iOS':'web'} ${layout.theme}`,async({page},info)=>{
-  const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,layout);await page.setViewportSize({width:layout.width,height:900});await open(page,'/progress/');
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,layout);await page.setViewportSize({width:layout.width,height:900});await open(page,'/progress/?tab=goals');
   await page.evaluate(async()=>{
     window.avatarFixture={version:1,revision:0,avatar:'kana',character:{...ModeAtlasAvatarRules.defaults},level:1,accountPhoto:'https://lh3.googleusercontent.com/a/fixture'};
     window.avatarUser={uid:'character-owner'};window.avatarSaves=[];KanaCloudSync.getUser=()=>avatarUser;KanaCloudSync.syncNow=()=>new Promise(()=>{});
@@ -28,7 +28,8 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
   await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();
   await expect(dialog.getByRole('button',{name:'Grove cardigan',exact:true})).toHaveCount(0);
   await expect(dialog.getByRole('button',{name:'Moonlight hoodie',exact:true})).toHaveCount(0);
-  await dialog.getByRole('button',{name:'Blossom jacket',exact:true}).click();await dialog.getByRole('button',{name:'Blossom clip',exact:true}).click();
+  await dialog.getByRole('button',{name:'Blossom jacket',exact:true}).click();await dialog.getByLabel('Clothing category',{exact:true}).selectOption('headwear');await dialog.getByRole('button',{name:'Blossom clip',exact:true}).click();
+  await dialog.getByLabel('Clothing category',{exact:true}).selectOption('pants');
   await expect(dialog.getByRole('button',{name:'Trail trousers',exact:true})).toHaveCount(0);
   await expect(dialog.getByRole('button',{name:'Tailored pinstripes',exact:true})).toHaveCount(0);
   await dialog.getByRole('button',{name:'Blossom pleats',exact:true}).click();
@@ -48,7 +49,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
 });
 
 test('expanded wardrobe stays exclusive and a failed save keeps the draft for retry',async({page},info)=>{
-  await prepare(page,{native:true,theme:'light'});await open(page,'/progress/');
+  await prepare(page,{native:true,theme:'light'});await open(page,'/progress/?tab=goals');
   await page.evaluate(()=>{
     const value={version:1,revision:0,avatar:'character',character:ModeAtlasAvatarRules.defaults,level:1};
     window.wardrobeGrants=[];window.avatarAttempts=0;KanaCloudSync.getUser=()=>({uid:'wardrobe'});
@@ -66,8 +67,9 @@ test('expanded wardrobe stays exclusive and a failed save keeps the draft for re
   await page.evaluate(()=>{wardrobeGrants=['hunny-tester','shop-hunny-jumper','shop-hunny-pendant','shop-rose-gold','shop-pinstripe'];});
   await dialog.getByRole('button',{name:'Appearance',exact:true}).click();await dialog.getByRole('button',{name:'Rose gold',exact:true}).click();
   await expect(dialog.locator('.ma-avatar-studio svg linearGradient')).toHaveCount(1);
-  await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();await dialog.getByRole('button',{name:'Tailored pinstripes',exact:true}).click();
-  for(const name of ['Hunny jumper','Hunny bear ears','Hunny pendant'])await dialog.getByRole('button',{name,exact:true}).click();
+  await dialog.getByRole('button',{name:'Wardrobe',exact:true}).click();await dialog.getByLabel('Clothing category',{exact:true}).selectOption('pants');await dialog.getByRole('button',{name:'Tailored pinstripes',exact:true}).click();
+  for(const [category,name] of [['outfit','Hunny jumper'],['headwear','Hunny bear ears'],['accessory','Hunny pendant']]){await dialog.getByLabel('Clothing category',{exact:true}).selectOption(category);await dialog.getByRole('button',{name,exact:true}).click();}
+  await dialog.getByLabel('Clothing category',{exact:true}).selectOption('outfit');
   await dialog.getByRole('button',{name:'Save changes',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('could not be saved');
   await expect(dialog.getByRole('button',{name:'Hunny jumper',exact:true})).toHaveAttribute('aria-pressed','true');
   await expect(dialog.getByRole('button',{name:'Save changes',exact:true})).toBeEnabled();
@@ -80,7 +82,7 @@ test('expanded wardrobe stays exclusive and a failed save keeps the draft for re
 });
 
 test('guest character preview offers sign-in and account changes discard an open editor',async({page})=>{
-  await prepare(page);await open(page,'/progress/');await page.evaluate(()=>ModeAtlasAvatarUI.open());
+  await prepare(page);await open(page,'/progress/?tab=goals');await page.evaluate(()=>ModeAtlasAvatarUI.open());
   const dialog=page.getByRole('dialog',{name:'Your avatar & pet'});await expect(dialog.getByRole('button',{name:'Sign in to save',exact:true})).toBeVisible();
   await dialog.getByRole('button',{name:'Sign in to save',exact:true}).click();await expect(page.locator('#maAccount-profile')).toHaveAttribute('aria-hidden','false');
   await page.locator('#maAccount-profile [data-ma-avatar-open]').click();await expect(dialog).toBeVisible();
@@ -126,6 +128,7 @@ for(const native of [false,true])test(`home restores the saved avatar before aut
     if(localStorage.getItem('avatar-return-seeded'))return;
     localStorage.setItem('avatar-return-seeded','true');localStorage.setItem('modeAtlasLastUserId','returning');
     // Exercise an existing account's valid pre-companion cache during upgrade.
+    localStorage.setItem('charStats',JSON.stringify({'あ':{correct:1,wrong:0}}));
     localStorage.setItem('modeAtlasAvatarProfile',JSON.stringify({uid:'returning',checkedAt:Date.now(),value:{version:1,revision:4,avatar:'character',level:1,character:{version:2,skin:'cocoa',hair:'bob',hairColor:'chestnut',eyes:'brown',outfit:'everyday',outfitColor:'teal',headwear:'none',accessory:'none',pants:'denim'}}}));
   });
   await page.route('**/cloud-sync.assets-*.js',route=>route.fulfill({contentType:'text/javascript',body:`
@@ -174,7 +177,7 @@ for(const native of [false,true])test(`collection trainer colours and compact pr
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
     }
   }
-  await open(page,'/progress/');
+  await open(page,'/progress/?tab=goals');
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.dataset.maLargeText='true';});
   for(const [tab,count]of [['Goals',2],['Recap',3],['Rewards',1]]){
     await page.getByRole('tab',{name:tab,exact:true}).click();const actions=page.getByRole('tabpanel',{name:tab,exact:true}).locator('.ma-action-grid');
@@ -188,7 +191,7 @@ for(const native of [false,true])test(`collection trainer colours and compact pr
 });
 
 test('Progress avatar refreshes after auth, follows the selected identity and clears on sign-out',async({page})=>{
-  await prepare(page);await open(page,'/progress/');
+  await prepare(page);await open(page,'/progress/?tab=goals');
   await page.route('https://lh3.googleusercontent.com/a/selected',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#ad5d80"/></svg>'}));
   await page.evaluate(()=>{
     window.avatarUser={uid:'avatar-owner',providerData:[{providerId:'google.com',photoURL:'https://lh3.googleusercontent.com/a/selected'}]};window.avatarProfile=null;
@@ -276,7 +279,7 @@ async function correct(page,mode){
 }
 for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'light',width:320},{native:false,theme:'dark',width:1280},{native:false,theme:'light',width:1280}]){
   test(`shop preview and review help ${view.native?'iOS':'web'} ${view.width} ${view.theme}`,async({page},testInfo)=>{
-    await prepare(page,view);await page.setViewportSize({width:view.width,height:852});await open(page,'/progress/');
+    await prepare(page,view);await page.setViewportSize({width:view.width,height:852});await open(page,'/progress/?tab=goals');
     await expect(page.getByRole('tablist',{name:'Progress',exact:true}).getByRole('tab')).toHaveText(['Goals','Rewards','Recap']);
     await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
     const shop=page.getByRole('tabpanel',{name:'Shop',exact:true});await expect(shop).toBeVisible();
@@ -336,8 +339,8 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
       await expect(page.getByRole('link',{name:'Review Recall · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
       await expect(page.locator('.ma-toast')).toHaveCount(0);
       const help=page.getByRole('button',{name:'About due reviews'});await help.click();
-      await expect(page.locator('.ma-dialog__message')).toContainText('Kana Read, Kana Recall and each Kanji skill have separate schedules');
-      await expect(page.locator('.ma-dialog__message')).toContainText('not deadlines');await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');await page.screenshot({path:testInfo.outputPath('review-help.png'),animations:'disabled'});
+      await expect(page.locator('.ma-dialog__message')).toContainText('Each skill has its own schedule');
+      await expect(page.locator('.ma-dialog__message')).toContainText('you do not need to clear every review');await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');await page.screenshot({path:testInfo.outputPath('review-help.png'),animations:'disabled'});
       await page.keyboard.press('Escape');await expect(help).toBeFocused();
       await page.evaluate(()=>{ModeAtlasStorage.writeModeJSON('reading','srs',{});dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));});
       await expect(page.getByRole('link',{name:'Review Read · 7 due',exact:true})).toHaveCount(0);
@@ -388,7 +391,7 @@ for(const mode of ['reading','writing'])test(`${mode}: session XP follows its po
       expect(await page.evaluate(()=>({answers:sessionStats.study.xpParts.answers,pool:sessionStats.study.poolSize,hints:sessionStats.study.hintsEnabled}))).toEqual({answers:2,pool:5,hints:true});
     }
     await page.locator('#endSessionBtn').click();
-    await expect(page.locator('.ma-study-summary')).toContainText(`${rate} XP per correct kana`);
+    await expect(page.locator('.ma-session-rewards__parts > span').filter({hasText:'Correct answers'})).toContainText(`+${rate*(hint?2:1)}`);
     await page.getByRole('button',{name:'Done',exact:true}).click();
   }
 });
@@ -506,6 +509,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: collection, title, frame
   await page.screenshot({animations:'disabled',path:testInfo.outputPath(`ios-${theme}-collection.png`)});
   await page.reload();await expect(page.locator('#maLoadingScreen')).toBeHidden();
   expect(await page.evaluate(()=>ModeAtlasRewardsUI.appearance().id)).toBe('grove');
+  await page.locator('#profileOpenBtn').click();
   await expect(page.locator('#profileAvatar')).toHaveAttribute('data-ma-frame','grove');
 });
 
@@ -623,7 +627,7 @@ for(const theme of ['dark','light'])test(`iOS ${theme}: home goals, profile orde
   const order=await page.evaluate(()=>document.querySelector('.ma-progression-card').getBoundingClientRect().bottom<document.querySelector('.ma-sync-card').getBoundingClientRect().top);
   expect(order).toBe(true);
   await page.screenshot({animations:'disabled',path:info.outputPath(`profile-${theme}.png`)});
-  await page.evaluate(()=>ModeAtlasAccountNavigation.close());await open(page,'/progress/');await page.getByRole('tab',{name:'Rewards',exact:true}).click();
+  await page.evaluate(()=>ModeAtlasAccountNavigation.close());await open(page,'/progress/?tab=goals');await page.getByRole('tab',{name:'Rewards',exact:true}).click();
   await page.locator('[data-reward-category="frames"] > summary').click();
   await page.locator('[data-landmark="grove"]').click();
   await expect(page.locator('#topProfileDot')).toHaveAttribute('data-ma-frame','grove');
@@ -755,13 +759,13 @@ test('goal shortcuts and weekly recap expose recorded activity without inventing
   await expect(page.locator('.ma-routine-goal[href]').first()).toHaveAttribute('href',/\/(reading|writing)\/\?/);
   await page.getByRole('tab',{name:'Recap',exact:true}).click();
   await expect(page.locator('.ma-recap-grid')).toContainText('Read correct');await expect(page.locator('.ma-recap-grid')).toContainText('0 / 7');
-  await page.getByRole('button',{name:'Last week',exact:true}).click();await expect(page.locator('.ma-atlas-recap')).toContainText('No dated practice');
+  await page.getByRole('button',{name:'Last week',exact:true}).click();await expect(page.locator('.ma-atlas-recap')).toContainText('No practice recorded this week.');
   await expect(page.getByRole('link',{name:'View weekly ranking',exact:true})).toHaveAttribute('href','/friends/?ranking=weekly');
   await page.getByRole('tab',{name:'Recap',exact:true}).focus();await page.keyboard.press('ArrowRight');await expect(page.getByRole('tab',{name:'Goals',exact:true})).toHaveAttribute('aria-selected','true');
 });
 
 for(const native of [true,false])test(`coin purchase, owned themes and rotation ${native?'iOS':'web'}`,async({page},testInfo)=>{
-  await prepare(page,{native,theme:'light'});await open(page,'/progress/');
+  await prepare(page,{native,theme:'light'});await open(page,'/progress/?tab=goals');
   await page.evaluate(async()=>{
     const state={balance:2000,owned:[],inventory:{'streak-freeze':0,'streak-repair':0},hidden:[],protection:[],repairDay:null};
     window.shopFixture=state;window.shopPurchases=[];
@@ -789,7 +793,7 @@ for(const native of [true,false])test(`coin purchase, owned themes and rotation 
   await expect(page.locator('body')).toHaveCSS('background-color','rgb(233, 191, 209)');
   await page.screenshot({path:testInfo.outputPath('sakura-rewards.png'),fullPage:true,animations:'disabled'});
   await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Settings',exact:true}).click();
-  await expect(page.locator('#maAccount-settings [data-ma-theme-choice]')).toHaveCount(0);await expect(page.getByRole('button',{name:'Themes & rewards',exact:true})).toBeVisible();
+  await expect(page.locator('#maAccount-settings [data-ma-theme-choice]')).toHaveCount(3);
   await page.screenshot({path:testInfo.outputPath('sakura-settings.png'),fullPage:true,animations:'disabled'});
   await page.getByRole('tab',{name:'Shop',exact:true}).click();
   await shop.locator('[data-ma-shop-product="streak-freeze"]').click();await page.getByRole('button',{name:'Buy for 150 Atlas Coins',exact:true}).click();
@@ -812,10 +816,10 @@ for(const native of [true,false])test(`coin purchase, owned themes and rotation 
 });
 
 test('developer shop reset clears paid selections and uses the signed-in account',async({page})=>{
-  await prepare(page,{native:false});await open(page,'/progress/');
+  await prepare(page,{native:false});await open(page,'/progress/?tab=goals');
   await page.evaluate(async()=>{
     window.devShopOperations=[];let balance=0,owned=['sakura'];
-    KanaCloudSync.getUser=()=>({uid:'developer-test',email:'admin@mode-atlas.com',emailVerified:true});KanaCloudSync.syncNow=async()=>true;
+    KanaCloudSync.getUser=()=>({uid:'developer-test',email:'renamed-admin@example.test',getIdTokenResult:async()=>({claims:{modeAtlasAdmin:true}}),emailVerified:true});KanaCloudSync.syncNow=async()=>true;
     ModeAtlasSocial={...ModeAtlasSocial,call:async(action,data)=>{
       if(action==='rewards')return {allCustom:true,grants:['hunny-tester',...owned.map(id=>'shop-'+id)],validUntil:Date.now()+86400000};
       if(action==='shopDeveloper'){devShopOperations.push(data);if(data.operation==='credit')balance+=data.amount;else owned=[];}
@@ -834,7 +838,7 @@ test('developer shop reset clears paid selections and uses the signed-in account
 });
 
 for(const layout of [{native:true,theme:'light',width:320},{native:true,theme:'dark',width:393},{native:false,theme:'light',width:1280}])test(`wardrobe colours, named pets and identity share one editor ${layout.native?'iOS':'web'} ${layout.theme}`,async({page},info)=>{
-  await prepare(page,layout);await page.setViewportSize({width:layout.width,height:900});await open(page,'/progress/');
+  await prepare(page,layout);await page.setViewportSize({width:layout.width,height:900});await open(page,'/progress/?tab=goals');
   await page.evaluate(()=>{
     KanaCloudSync.getUser=()=>({uid:'companion-owner'});
     window.companionState={version:1,revision:1,avatar:'character',displayName:'Atlas Learner',greeting:'Learning with Shiro',character:{...ModeAtlasAvatarRules.defaults,pet:'japanese-spitz',petName:'Shiro'},petNames:{'japanese-spitz':'Shiro'},level:15};
@@ -844,8 +848,8 @@ for(const layout of [{native:true,theme:'light',width:320},{native:true,theme:'d
   await page.getByRole('tab',{name:'Rewards',exact:true}).click();await page.locator('.ma-atlas-panel [data-ma-avatar-open]').click();
   const editor=page.getByRole('dialog',{name:'Your avatar & pet'});
   await editor.getByRole('button',{name:'Edit avatar message',exact:true}).click();await editor.getByLabel('Your avatar’s message',{exact:true}).fill('A new chapter with my companion.');await editor.getByLabel('Display name',{exact:true}).fill('Atlas Explorer');
-  await editor.getByRole('button',{name:'Wardrobe',exact:true}).click();await editor.getByRole('button',{name:'A-line skirt',exact:true}).click();await editor.locator('[data-avatar-slot=pantsColor][data-avatar-choice=coral]').click();
-  await editor.getByRole('button',{name:'Everyday dress',exact:true}).click();await expect(editor.locator('[data-avatar-slot=pants]')).toHaveCount(0);
+  await editor.getByRole('button',{name:'Wardrobe',exact:true}).click();await editor.getByLabel('Clothing category',{exact:true}).selectOption('pants');await editor.getByRole('button',{name:'A-line skirt',exact:true}).click();await editor.locator('[data-avatar-slot=pantsColor][data-avatar-choice=coral]').click();
+  await editor.getByLabel('Clothing category',{exact:true}).selectOption('outfit');await editor.getByRole('button',{name:'Everyday dress',exact:true}).click();await expect(editor.locator('[data-avatar-slot=pants]')).toHaveCount(0);
   await editor.getByRole('button',{name:'Ocean waves kimono',exact:true}).click();await expect(editor.locator('[data-avatar-slot=outfitColor]')).toHaveCount(4);await expect(editor.locator('[data-avatar-slot=outfitColor][data-avatar-choice=coral]')).toHaveCount(0);
   await editor.locator('[data-avatar-slot=outfitColor][data-avatar-choice=navy]').click();
   await editor.getByRole('button',{name:'Pet',exact:true}).click();await expect(editor.getByRole('button',{name:'Rabbit',exact:true})).toHaveCount(0);await expect(editor.getByRole('button',{name:'Moon fox',exact:true})).toHaveCount(0);
@@ -862,7 +866,7 @@ test('full goals group each period while preserving live progress and practice d
   await page.setViewportSize({width:393,height:852});
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
   await page.addInitScript(()=>{window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');});
-  await page.goto('/progress/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.goto('/progress/?tab=goals');await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await expect(page.locator('.ma-goal-group')).toHaveCount(2);await expect(page.locator('.ma-goal-group').first().getByRole('heading',{name:'Today',exact:true})).toBeVisible();
   expect(await page.locator('.ma-goal-group').evaluateAll(groups=>groups.map(group=>group.querySelectorAll('.ma-routine-goal').length))).toEqual([3,2]);
   const goals=await page.evaluate(()=>ModeAtlasProgress.routine().goals);
@@ -874,7 +878,7 @@ test('full goals group each period while preserving live progress and practice d
 test('personal daily and weekly goals create, repeat, edit and remove in the shared dialog',async({page})=>{
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
   await page.addInitScript(()=>{for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');localStorage.setItem('maWhatsNewSeen','personal-goals');});
-  await page.goto('/progress/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.goto('/progress/?tab=goals');await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.getByRole('button',{name:'+ Set daily goal',exact:true}).click();
   await page.getByLabel('Goal',{exact:true}).selectOption('kana-correct');await page.getByLabel('Target',{exact:true}).selectOption('50');await page.getByLabel('Repeat each day',{exact:true}).check();await page.getByRole('button',{name:'Create goal',exact:true}).click();
   await expect(page.locator('[data-goal="personal-daily"]')).toContainText('Recall 50 kana correctly');await expect(page.locator('[data-goal="personal-daily"]')).toContainText('Repeats');
@@ -908,10 +912,16 @@ test('every achievement illustration is valid XML and keeps a distinct visible s
 });
 
 test('goals can be changed to reachable starter Kanji work without changing completed goals',async({page},info)=>{
-  await prepare(page);await open(page,'/progress/');
+  await prepare(page);await open(page,'/progress/?tab=goals');
   await page.evaluate(()=>{
     const saved=ModeAtlasKanjiState.normalize({entry:{mode:'beginner',at:1}});for(const char of ModeAtlasKanjiState.introductory.slice(0,3))saved.introductions[char]=1;ModeAtlasKanjiState.save(saved);
-    ModeAtlasProgress.persistState({...ModeAtlasProgress.readState(),goalPlans:{}});ModeAtlasProgress.routine();dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));
+    ModeAtlasProgress.persistState({...ModeAtlasProgress.readState(),goalPlans:{}});
+    const first=ModeAtlasProgress.routine().goals.find(goal=>goal.period==='daily'&&goal.slot===0);
+    if(first.id==='kanji-recall-5'){
+      const replacement=ModeAtlasProgress.goalChoices('daily',0).find(goal=>goal.branch==='kana');
+      ModeAtlasProgress.replaceGoal('daily',0,replacement.id);
+    }
+    dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));
   });
   const change=page.getByRole('button',{name:/^Change goal:/}).first();await expect(change).toBeVisible();await change.click();
   const dialog=page.getByRole('dialog',{name:'Choose a goal'});await expect(dialog).toBeVisible();await expect(dialog).not.toContainText('Complete a Kanji set');

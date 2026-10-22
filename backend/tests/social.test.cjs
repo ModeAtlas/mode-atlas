@@ -12,7 +12,7 @@ const {createSocial}=require('../functions/social.cjs');
 
 test('combined weekly sessions verify alternating directions on the server',()=>{
   const {scoreAnswers}=require('../functions/weekly.cjs');
-  const run={direction:'both',mode:'guided',pool:['あ'],index:0,elapsed:0,seen:[],startedAt:0,hints:false};
+  const run={seed:'fixture-seed',direction:'both',mode:'guided',pool:['あ'],index:0,elapsed:0,seen:[],startedAt:0,hints:false};
   const read={index:1,kana:'あ',answer:'a',elapsed:300},recall={index:2,kana:'あ',answer:'あ',elapsed:600};
   const right=scoreAnswers(run,[read,recall],1000),wrong=scoreAnswers(run,[read,{...recall,answer:'a'}],1000);
   assert.equal(right.index,2);assert.ok(right.score>wrong.score);
@@ -133,6 +133,7 @@ test('identity migration claims legacy names, resolves collisions and protects t
   const records=[['legacy-a','Legacy Name'],['legacy-b','Légacy.Name'],['legacy-c','Staff'],['legacy-admin','admin']];
   for(const [uid,name]of records){
     await auth.createUser({uid,email:uid==='legacy-admin'?'admin@mode-atlas.com':uid+'@example.test',emailVerified:true});
+    if(uid==='legacy-admin')await auth.setCustomUserClaims(uid,{modeAtlasAdmin:true});
     await db.doc(`socialAccounts/${uid}`).set({active:true,profile:{displayName:name,avatar:'kana',timeZone:'UTC'},friends:{'old-friend':1},incoming:{},outgoing:{},blockedCount:0,code:'keep-code'});
   }
   const store=createIdentityStore({db,auth});await store.ensureReady();await store.ensureReady();
@@ -400,7 +401,7 @@ test('reporting is scoped, deduplicated and private; only the verified admin can
 test('Admin and Moderator permissions, official badges, warning privacy, acknowledgement and cleanup',async()=>{
   const adminUid='legacy-admin';
   const adminCall=async(action,data={})=>{
-    if(directService)return service.call({auth:{uid:adminUid},data:{action,data,expectedUid:adminUid}});
+    if(directService)return service.call({auth:{uid:adminUid,token:{auth_time:Math.floor(Date.now()/1000)}},data:{action,data,expectedUid:adminUid}});
     const token=await auth.createCustomToken(adminUid);
     const login=await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,returnSecureToken:true})}).then(r=>r.json());
     const result=await fetch(`http://127.0.0.1:5001/${projectId}/${config.region}/modeAtlasSocial`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${login.idToken}`},body:JSON.stringify({data:{action,data,expectedUid:adminUid}})}).then(r=>r.json());
@@ -488,12 +489,12 @@ test('reward policy verifies the audience, admin role, event windows and revocat
   const other={...account,email:'other@example.test'};
   for(const row of [{startsAt:at+1},{expiresAt:at},{revoked:true},{expiresAt:'later'}])assert.deepEqual(entitlement(other,{grants:{'hunny-tester':row}},at).grants,[]);
   assert.deepEqual(entitlement(other,{grants:{'hunny-tester':{startsAt:at,expiresAt:at+100}}},at),{allCustom:false,grants:['hunny-tester'],validUntil:at+100});
-  assert.equal(entitlement({...account,email:'admin@mode-atlas.com'}, {},at).allCustom,true);
-  assert.equal(entitlement({...account,email:'admin@mode-atlas.com',emailVerified:false}, {},at).allCustom,false);
+  assert.equal(entitlement({...account,email:'admin@mode-atlas.com',customClaims:{modeAtlasAdmin:true}}, {},at).allCustom,true);
+  assert.equal(entitlement({...account,email:'admin@mode-atlas.com',emailVerified:false,customClaims:{modeAtlasAdmin:true}}, {},at).allCustom,false);
   const characters=require('../functions/shared/mode-atlas-avatar-rules.js'),look={...characters.defaults,outfit:'hunny',headwear:'hunny',accessory:'hunny'};
   const bought={grants:{'shop-hunny-jumper':{},'shop-hunny-pendant':{}}};
   assert.equal(characters.allowed(look,1,entitlement(account,{},at,audience)),false);
-  for(const [user,allowed]of [[account,true],[{...account,email:'ordinary@example.test'},false],[{...account,emailVerified:false},false],[{...account,disabled:true},false],[{...account,email:'admin@mode-atlas.com'},true]])assert.equal(characters.allowed(look,1,entitlement(user,bought,at,audience)),allowed);
+  for(const [user,allowed]of [[account,true],[{...account,email:'ordinary@example.test'},false],[{...account,emailVerified:false},false],[{...account,disabled:true},false],[{...account,email:'admin@mode-atlas.com',customClaims:{modeAtlasAdmin:true}},true]])assert.equal(characters.allowed(look,1,entitlement(user,bought,at,audience)),allowed);
 });
 
 test('custom rewards need no Friends enrolment and never trust forged tokens or save grants',async()=>{
@@ -645,31 +646,43 @@ test('weekly callables require explicit participation and never accept client sc
   await a.call('weeklyPreference',{enabled:true});
   assert.equal((await a.call('weeklyState')).score,0);
   await assert.rejects(a.call('weeklyStart',{id:'transport-run',pool:['あ'],direction:'reading',mode:'guided',hints:false,score:9999}),{code:'INVALID_ARGUMENT'});
-  assert.equal((await a.call('weeklyStart',{id:'transport-run',pool:['あ'],direction:'reading',mode:'guided',hints:false})).enabled,true);
+  const options={pool:['あ'],direction:'reading',mode:'guided',hints:false},issued=await a.call('startStudy',{id:'transport-run',config:options});
+  assert.equal((await a.call('weeklyStart',{id:'transport-run',...options,studyToken:issued.token})).enabled,true);
   await a.call('weeklyPreference',{enabled:false});
   assert.equal((await a.call('weeklyState')).enabled,false);
 });
 
+
+function verifiedWeekly(options){
+  const weekly=require('../functions/weekly.cjs').createWeekly(options),earnings=require('../functions/study-earnings.cjs').createEarnings(options);
+  return {...weekly,start:async(uid,data)=>{const {id,...config}=data;const authority=await earnings.start(uid,{id,config});return {...await weekly.start(uid,{...data,studyToken:authority.token}),authority};}};
+}
+function issuedAnswers(authority,count,wrong=0,direction='reading'){
+  const prompts=require('../functions/shared/mode-atlas-study-prompts.js'),run=structuredClone(authority),map=Object.assign({},...Object.values(require('../functions/shared/mode-atlas-kana-data.js').maps));
+  const content=require('../functions/shared/mode-atlas-kanji-content.js')({ModeAtlasKanjiData:require('../functions/shared/mode-atlas-kanji-data.js'),ModeAtlasKanaData:require('../functions/shared/mode-atlas-kana-data.js')});
+  return Array.from({length:count},(_,i)=>{const index=i+1,kana=prompts.question(run,index),correct=index!==wrong;const answer=!correct?'not the answer':run.branch==='kanji'?(direction==='pronunciation'?content.pronunciation(content.get(kana)).answers[0]:content.get(kana).meanings[0]):map[kana];prompts.advance(run,index,kana,correct);return {index,kana,answer,elapsed:index*500};});
+}
+
 test('weekly study receipts check answers, sequences, account tokens, retries and the UTC boundary',async()=>{
   const {createWeekly}=require('../functions/weekly.cjs');
   const policy=require('../functions/shared/mode-atlas-weekly-rules.js');
-  let at=Date.parse('2099-09-30T12:00:00Z');const weekly=createWeekly({db,now:()=>at});
+  let at=Date.parse('2099-09-30T12:00:00Z');const weekly=verifiedWeekly({db,now:()=>at});
   const a=await learner('Weekly Receipts',7003),b=await learner('Weekly Other',0);
   const config={id:'receipt-run',pool:['あ','い','う','え','お'],direction:'reading',mode:'guided',hints:false};
   assert.equal((await weekly.start(a.uid,config)).enabled,false);
   await weekly.preference(a.uid,{enabled:true});await weekly.preference(b.uid,{enabled:true});
   const first=await weekly.start(a.uid,config),other=await weekly.start(b.uid,config);
   assert.equal((await weekly.start(a.uid,config)).token,first.token);
-  at+=5000;const answers=[{index:1,kana:'あ',answer:'a',elapsed:500},{index:2,kana:'い',answer:'u',elapsed:1000},{index:3,kana:'う',answer:'u',elapsed:1500}];
+  at+=5000;const answers=issuedAnswers(first.authority,3,2);
   const result=await weekly.submit(a.uid,{token:first.token,answers});assert.equal(result.earned,4);
   const replay=await weekly.submit(a.uid,{token:first.token,answers});assert.equal(replay.earned,0);assert.equal(replay.runEarned,4);
   await assert.rejects(weekly.submit(a.uid,{token:other.token,answers}),{code:'failed-precondition'});
   await assert.rejects(weekly.submit(a.uid,{token:first.token,answers:[{index:5,kana:'あ',answer:'a',elapsed:2000}]}),{code:'failed-precondition'});
-  await assert.rejects(weekly.submit(a.uid,{token:first.token,answers:[{index:4,kana:'カ',answer:'ka',elapsed:2000}]}),{code:'invalid-argument'});
+  await assert.rejects(weekly.submit(a.uid,{token:first.token,answers:[{index:4,kana:'カ',answer:'ka',elapsed:2000}]}),{code:'failed-precondition'});
   await assert.rejects(weekly.submit(a.uid,{token:first.token,answers:[{index:4,kana:'あ',answer:'a',elapsed:2000,correct:true}]}),{code:'invalid-argument'});
   assert.equal((await weekly.state(a.uid)).score,4);
   const hinted=await weekly.start(b.uid,{...config,id:'hinted-run',hints:true});at+=1000;
-  assert.equal((await weekly.submit(b.uid,{token:hinted.token,answers:[answers[0]]})).earned,1);
+  assert.equal((await weekly.submit(b.uid,{token:hinted.token,answers:issuedAnswers(hinted.authority,1)})).earned,1);
   at=policy.period(at).endAt;
   await assert.rejects(weekly.submit(a.uid,{token:first.token,answers}),{code:'failed-precondition'});
   assert.equal((await weekly.state(a.uid)).score,0);
@@ -1195,7 +1208,7 @@ test('owned profile themes are public while learning stats stay private and revo
 });
 
 test('Kanji weekly receipts enforce level gates, dictionary answers and idempotent rewards',async()=>{
-  const {createWeekly}=require('../functions/weekly.cjs');let at=Date.parse('2097-10-15T12:00:00Z');const weekly=createWeekly({db,now:()=>at}),a=await learner('Kanji Receipts',0);
+  const {createWeekly}=require('../functions/weekly.cjs');let at=Date.parse('2097-10-15T12:00:00Z');const weekly=verifiedWeekly({db,now:()=>at}),a=await learner('Kanji Receipts',0);
   await weekly.preference(a.uid,{enabled:true});
   const config={id:'kanji-meaning-run',branch:'kanji',pool:['水','火','木','土','日'],direction:'meaning',mode:'guided',hints:false};
   const band=require('../functions/shared/mode-atlas-kanji-curriculum.js');
@@ -1203,14 +1216,14 @@ test('Kanji weekly receipts enforce level gates, dictionary answers and idempote
   await assert.rejects(weekly.start(a.uid,{...config,branch:'unknown'}),{code:'invalid-argument'});
   await assert.rejects(weekly.start(a.uid,{...config,pool:['あ']}),{code:'invalid-argument'});
   const run=await weekly.start(a.uid,config);at+=5000;
-  const answers=[{index:1,kana:'水',answer:'water',elapsed:500},{index:2,kana:'火',answer:'water',elapsed:1000},{index:3,kana:'木',answer:'tree',elapsed:1500}];
+  const answers=issuedAnswers(run.authority,3,2,'meaning');
   assert.equal((await weekly.submit(a.uid,{token:run.token,answers})).earned,4);
   assert.equal((await weekly.submit(a.uid,{token:run.token,answers})).earned,0);
   await assert.rejects(weekly.submit(a.uid,{token:run.token,answers:[{index:4,kana:'水',answer:'water',elapsed:2000,correct:true}]}),{code:'invalid-argument'});
   const pronunciation=await weekly.start(a.uid,{...config,id:'kanji-reading-run',direction:'pronunciation'});at+=1000;
-  assert.equal((await weekly.submit(a.uid,{token:pronunciation.token,answers:[{index:1,kana:'水',answer:'mizu',elapsed:500}]})).earned,2);
+  assert.equal((await weekly.submit(a.uid,{token:pronunciation.token,answers:issuedAnswers(pronunciation.authority,1,0,'pronunciation')})).earned,2);
   const match=await weekly.start(a.uid,{...config,id:'kanji-matching-run',direction:'match',hints:true});at+=1000;
-  assert.equal((await weekly.submit(a.uid,{token:match.token,answers:[answers[0]]})).earned,1);
+  assert.equal((await weekly.submit(a.uid,{token:match.token,answers:issuedAnswers(match.authority,1,0,'match')})).earned,1);
   const completions=Object.fromEntries([...band[0].chars].map(char=>[char,at]));await db.doc(`users/${a.uid}/appData/kanaTrainer`).set({sections:{kanji:{data:{state:{version:1,completions,sources:{},evidence:{encoding:'gzip-base64-v1',data:'unused-by-competition'}}}}}},{merge:true});
   assert.equal((await weekly.start(a.uid,{...config,id:'kanji-unlocked-run',pool:[[...band[1].chars][0]]})).enabled,true);
 });
@@ -1244,6 +1257,8 @@ test('a 100-friend list fetches one display page rather than every private or pu
 test('verified study receipts credit once and editable progress cannot forge the next wallet award',async()=>{
   const a=await learner('VerifiedReceipt',0),at=Date.now();
   const receipt={id:'verified-receipt-first',startedAt:at-10000,config:{pool:['あ','い'],direction:'reading',mode:'guided',hints:false},answers:[{index:1,kana:'あ',answer:'a',elapsed:1000},{index:2,kana:'い',answer:'i',elapsed:2000}],complete:true};
+  await assert.rejects(a.call('earnStudy',receipt),{code:'FAILED_PRECONDITION'});
+  const issued=await a.call('startStudy',{id:receipt.id,config:receipt.config});receipt.token=issued.token;receipt.startedAt=issued.startedAt;receipt.answers=issuedAnswers(issued,2);
   assert.equal((await a.call('earnStudy',receipt)).index,2);
   const before=(await db.doc('studyEarnings/'+a.uid).get()).data();await a.call('earnStudy',receipt);assert.deepEqual((await db.doc('studyEarnings/'+a.uid).get()).data(),before);
   const first=await a.call('shop',{version:3,timeZone:'UTC'});await db.doc(`users/${a.uid}/appData/kanaTrainer`).set(save(999999));const next=await a.call('shop',{version:3,timeZone:'UTC'});
@@ -1298,7 +1313,7 @@ test('administrator access actions require real authority, recent login, reason 
 
 test('a large partition batch remains atomic under ownership and access rules',async()=>{
   const uid='large-rules-batch',client=verifiedContext(uid).firestore(),path='users/'+uid+'/appData/kanaTrainer';
-  const parts=Array.from({length:40},(_,i)=>'section-reading-'+i),batch=require('firebase/firestore').writeBatch(client);
+  const parts=Array.from({length:32},(_,i)=>'section-reading-'+i),batch=require('firebase/firestore').writeBatch(client);
   batch.set(doc(client,path),{storageVersion:2,revision:1,generation:0,sections:{reading:{data:{},storage:{format:'json-parts-v1',parts}}}});
   for(const id of parts)batch.set(doc(client,path+'/parts/'+id),{text:'{}'});
   await assertSucceeds(batch.commit());

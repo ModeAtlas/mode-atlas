@@ -53,7 +53,7 @@ test('all accounts use the current earned-XP curve and discard threshold credit'
     const p=load({modeAtlasProgress:{version,legacySeeded:true,curveCredit:999999,sources:{old:{'kana.reading.correct':7003}}}}).progress;
     assert.equal(p.getXP(),7003);assert.equal(p.getSummary().level,12);
     assert.equal(p.getSummary().levelXp,1203);assert.equal(p.getSummary().nextLevelAt,7230);
-    assert.equal(p.readState().version,7);assert.equal('curveCredit' in p.readState(),false);
+    assert.equal(p.readState().version,8);assert.equal('curveCredit' in p.readState(),false);
     assert.deepEqual(plain(load({modeAtlasProgress:p.readState()}).progress.getSummary()),plain(p.getSummary()));
   }
   const p=load().progress;
@@ -489,4 +489,17 @@ test('changing an unfinished goal preserves earned XP, converges offline and can
   assert.equal(p.mergeStates(before,after).goalPlans['daily:2026-09-30'].ids[0],choices[0].id);
   after.claims['v4:daily:2026-09-30:goal:'+first.id]=first.xp;p.persistState(after);
   const xp=p.getXP();assert.equal(p.goalChoices('daily',0).length,0);assert.throws(()=>p.replaceGoal('daily',0,first.id));assert.equal(p.getXP(),xp);
+});
+
+test('study habits count attempts and bounded cross-branch practice without answer XP',()=>{
+  const e=load(),p=e.progress;p.startRun('effort');
+  for(let index=1;index<=3;index++)answer(e,'effort',index,{correct:false});
+  p.recordHabit({branch:'wordbank',id:'word-one',at:e.now()});
+  p.recordHabit({branch:'wordbank',id:'word-one',at:e.now()});
+  assert.equal(p.studyDays().length,0);const xp=p.getXP();
+  p.recordHabit({branch:'handwriting',id:'write-one',at:e.now()});
+  assert.equal(p.studyDays().length,1);assert.equal(p.getXP(),xp);
+  for(let i=0;i<100;i++)p.recordHabit({branch:'wordbank',id:'word-'+i,at:e.now()});
+  const state=p.readState(),day=Object.keys(state.activity)[0];assert.equal(state.activity[day].practice.wordbank.length,5);
+  const merged=p.mergeStates(state,state);assert.equal(p.studyDays(merged).length,1);assert.equal(p.getXP(merged),p.getXP(state));
 });

@@ -55,15 +55,23 @@
       return content.hash(runId+a)-content.hash(runId+b);
     });
     const sequence=pool.slice(0,Math.min(pool.length,[5,10,20,40].includes(count)?count:10));
-    active={version:1,startLevel:root.ModeAtlasProgress.getSummary().level,achievementStart:root.ModeAtlasFeatures?.achievementSnapshot?.()||[],owner:owner(),runId,mode,level,test:!!test&&mode!=='learn',sequence,pool:sequence,index:0,answers:[],feedback:null,questionElapsed:0,paused:false,hinted:false,everAssisted:mode==='match',xp:0,bestStreak:0,streak:0,at:Date.now(),finished:false,lessonPhase:'teach',lessonFeedback:null};
+    active={version:1,startLevel:root.ModeAtlasProgress.getSummary().level,achievementStart:root.ModeAtlasFeatures?.achievementSnapshot?.()||[],owner:owner(),runId,mode,level,focus,test:!!test&&mode!=='learn',sequence,pool:sequence,index:0,answers:[],feedback:null,questionElapsed:0,paused:false,hinted:false,everAssisted:mode==='match',xp:0,bestStreak:0,streak:0,at:Date.now(),finished:false,lessonPhase:'teach',lessonFeedback:null};
     storage.transaction(()=>{if(mode!=='learn')root.ModeAtlasProgress.startRun(runId);write();});
-    if(mode!=='learn')root.ModeAtlasWeekly.start(active,{branch:'kanji',pool:sequence,direction:mode,mode:test?'testMode':'guided',hints:mode==='match'});
+
+    if(mode==='learn')root.ModeAtlasLearningEvents?.emit('lessonStarted','kanji');
     questionStarted=Date.now();return active;
   }
   function resume(){
     active=saved();if(!active)return null;active.paused=false;questionStarted=Date.now();
-    if(active.mode!=='learn')root.ModeAtlasWeekly.start(active,{branch:'kanji',pool:active.pool,direction:active.mode,mode:active.test?'testMode':'guided',hints:active.mode==='match'});
+    if(active.mode==='learn'&&!active.finished)root.ModeAtlasLearningEvents?.emit('lessonStarted','kanji');
     write();return active;
+  }
+  async function authorize(){
+    const current=active;if(!current||current.mode==='learn')return;
+    await root.ModeAtlasWeekly.start(current,{branch:'kanji',pool:current.pool,direction:current.mode,mode:current.test?'testMode':'guided',hints:current.mode==='match'});
+    if(active!==current||current.owner!==owner())return;
+    if(current.authority)current.sequence=current.sequence.map((char,index)=>root.ModeAtlasEarnings.question(current,index+1)||char);
+    questionStarted=Date.now();write();
   }
   function ensure(){
     if(!active||active.finished||active.owner!==owner())throw new Error('This session has ended. Start a new one.');
@@ -90,7 +98,7 @@
     questionStarted=0;
     // Hinted answers are submitted as empty so the server cannot award an
     // unassisted rate while preserving the live receipt sequence.
-    root.ModeAtlasWeekly.answer(active,{kana:char,answer:active.hinted?'':item.answer});
+    root.ModeAtlasWeekly.answer(active,{kana:char,answer:active.hinted?'':item.answer,correct:correct&&!active.hinted});
     // Keep pending live receipts with the already-committed answer. A storage
     // error here must not invite the learner to earn that answer again.
     storage.setJSON(KEY,active);
@@ -140,5 +148,5 @@
   for(const event of ['modeAtlasAccountWillChange','modeAtlasAccountSignedOut','modeAtlasDataCleared'])root.addEventListener(event,()=>{active=null;questionStarted=0;});
   root.addEventListener('pagehide',checkpoint);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){pause();root.dispatchEvent(new CustomEvent('modeAtlasKanjiPaused'));}});
-  root.ModeAtlasKanjiSession=Object.freeze({start,resume,saved,current:()=>active,hint,answer,lessonStep,lessonAnswer,reviewLesson,next,pause,play,discard,checkpoint});
+  root.ModeAtlasKanjiSession=Object.freeze({start,resume,authorize,saved,current:()=>active,hint,answer,lessonStep,lessonAnswer,reviewLesson,next,pause,play,discard,checkpoint});
 })(window);

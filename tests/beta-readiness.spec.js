@@ -26,7 +26,7 @@ test('first-use tour hands off to the beginner-or-placement choice without a sig
   await page.screenshot({path:test.info().outputPath('first-set-handoff.png')});
   await tour.getByRole('button',{name:'Choose my starting point'}).click();
   await expect(page).toHaveURL(/\/kana\/$/);
-  await expect(page.getByRole('button',{name:/Start as a beginner/})).toBeVisible();
+  await expect(page.getByRole('button',{name:/Start lesson/})).toBeVisible();
   expect(await page.evaluate(()=>ModeAtlasKanaLearning.read().startedAt)).toBe(0);
   expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);
 });

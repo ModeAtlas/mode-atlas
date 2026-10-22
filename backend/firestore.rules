@@ -22,7 +22,7 @@ service cloud.firestore {
         && partCount(data, 'reading') + partCount(data, 'writing')
           + partCount(data, 'readingTests') + partCount(data, 'writingTests')
           + partCount(data, 'wordBank') + partCount(data, 'kanaLearning')
-          + partCount(data, 'kanji') + partCount(data, 'kanjiTests') + partCount(data, 'progress') <= 350;
+          + partCount(data, 'kanji') + partCount(data, 'kanjiTests') + partCount(data, 'progress') <= 32;
     }
     function referencedPart(uid, id) {
       let path = /databases/$(database)/documents/users/$(uid)/appData/kanaTrainer;
@@ -58,11 +58,11 @@ service cloud.firestore {
       allow read: if ownsActiveAccount(uid);
       allow delete: if ownsActiveAccount(uid) && removedPart(uid, partId);
       allow create, update: if ownsActiveAccount(uid)
-        && partId.matches('section-(reading|writing|readingTests|writingTests|wordBank|kanaLearning|kanji|kanjiTests|progress)-([0-9]|[1-9][0-9]|[12][0-9][0-9]|3[0-4][0-9])')
+        && partId.matches('section-(reading|writing|readingTests|writingTests|wordBank|kanaLearning|kanji|kanjiTests|progress)-([0-9]|[12][0-9]|3[01])')
         && referencedPart(uid, partId)
         && request.resource.data.keys().hasOnly(['text'])
         && request.resource.data.text is string
-        && request.resource.data.text.size() <= 480000;
+        && request.resource.data.text.size() <= 120000;
     }
     // Social collections are accessed only through authenticated callables.
     // Admin SDK operations enforce their own ownership and relationship checks.

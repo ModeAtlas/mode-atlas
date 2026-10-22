@@ -126,7 +126,7 @@ for(const width of [320,393])test(`compact branch, wallet and About layout stays
   const levels=await page.locator('.ma-kanji-level').evaluateAll(nodes=>nodes.map(node=>({width:node.clientWidth,scroll:node.scrollWidth,top:node.getBoundingClientRect().top})));
   expect(levels.every(box=>box.scroll<=box.width+1)).toBe(true);expect(new Set(levels.map(box=>box.top)).size).toBe(1);
   await expect(page.locator('.ma-kanji-course-summary')).toContainText('N5 · Foundations');
-  await page.getByRole('button',{name:'How levels unlock',exact:true}).click();await expect(page.locator('.ma-dialog__message')).toContainText('3 correct answers');await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'How levels unlock',exact:true}).click();await expect(page.locator('.ma-dialog__message')).toContainText('reading and meaning without hints');await page.keyboard.press('Escape');
   await page.goto('/progress/?tab=rewards');const summary=page.locator('[data-reward-category=icons]>summary');await expect(summary.locator('img')).toBeVisible();
   const image=await summary.locator('img').boundingBox(),box=await summary.boundingBox();expect(image.y+image.height).toBeLessThanOrEqual(box.y+box.height);await summary.click();await expect(page.locator('.ma-atlas-icon-choice img').first()).toHaveAttribute('src','/assets/mode-atlas-icon.svg');
   await page.goto('/shop/');await expect(page.locator('.ma-shop-full')).toBeVisible();
@@ -156,7 +156,7 @@ test('unopened shops stay unmounted and catalogue refresh projects progress once
   expect(await page.evaluate(()=>{summaryReads=0;ModeAtlasShopUI.refresh();return summaryReads;})).toBe(1);
   await page.locator('#maAccountClose').click();
   expect(await page.evaluate(()=>{summaryReads=0;ModeAtlasShopUI.refresh();return summaryReads;})).toBe(0);
-  await page.goto('/progress/');
+  await page.goto('/progress/?tab=goals');
   await expect(page.locator('[data-reward-category]')).toHaveCount(0);
   await page.getByRole('tab',{name:'Rewards',exact:true}).click();await expect(page.locator('[data-reward-category=themes]')).toBeVisible();
   await expect(page.locator('[data-reward-category=themes] .ma-reward-category__meta')).toContainText('3 available');

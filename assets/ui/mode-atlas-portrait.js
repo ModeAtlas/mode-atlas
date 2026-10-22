@@ -21,4 +21,7 @@
     if(view.url){const image=document.createElement('img');image.src=view.url;image.alt='';image.referrerPolicy='no-referrer';image.addEventListener('error',()=>{if(node.dataset.portrait===signature)node.textContent=view.symbol;},{once:true});node.replaceChildren(image);}
   }
   root.ModeAtlasPortrait=Object.freeze({render,self});
+  const header=()=>document.querySelectorAll('#topProfileDot').forEach(node=>render(node));
+  for(const event of ['modeAtlasAvatarChanged','modeAtlasSelfProfileChanged','kanaCloudSyncStatusChanged','modeAtlasCloudDataChanged'])root.addEventListener(event,header);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',header,{once:true});else header();
 })(window);

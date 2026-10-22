@@ -63,6 +63,7 @@
       const normalize = value => field === 'primary' ? testRecords(value, name === 'writingTests' ? 'writing' : 'reading') : name==='wordBank'?root.ModeAtlasWordBank.normalize(value):value;
       const items=records(normalize(entries(a)),normalize(entries(b)),deleted);
       data = {[field]:name==='wordBank'?root.ModeAtlasWordBank.normalize(items):items, deleted};
+      if(name==='wordBank')data.lessons=root.ModeAtlasWordLessonState.merge(a.lessons,b.lessons);
     } else {
       const owners = {progress:root.ModeAtlasProgress, kanaLearning:root.ModeAtlasKanaLearning, kanji:root.ModeAtlasKanjiState};
       const owner = owners[name];

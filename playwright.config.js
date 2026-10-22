@@ -11,6 +11,7 @@ if (process.env.MODE_ATLAS_TEST_REPORT) reporters.push(['json', { outputFile: pr
 
 module.exports = defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.js',
   timeout: 30_000,
   expect: { timeout: 7_500 },
   fullyParallel: false,

@@ -28,10 +28,11 @@
     syncVisibility();
     if(focus)tabs.get(name).focus({preventScroll:true});
   }
-  function open(name='profile',trigger){
+  async function open(name='profile',trigger){
     const destination={atlas:'progress',friends:'friends'}[name];
     if(destination){root.ModeAtlasVersionFile.navigate(root.AtlasPlatform.destinationPath(destination));return;}
-    if(!layer||!panels.has(name))return;
+    if(!layer){try{await root.ModeAtlasFeatureLoader.account();}catch(error){root.ModeAtlasToast?.show?.(error.message);return;}}
+    if(!panels.has(name))return;
     if(!current){
       returnFocus=trigger instanceof Element?trigger:document.activeElement;
       if(profileButton)document.getElementById('maAccountClose').before(profileButton);
@@ -104,12 +105,23 @@
     });
     root.addEventListener('modeAtlasDialogStateChanged',syncVisibility);
     root.addEventListener('pagehide',close);
-    const requested=new URLSearchParams(location.search).get('section');
-    if(['atlas','friends'].includes(requested)){
-      const target=new URL(root.AtlasPlatform.destinationPath(requested==='atlas'?'progress':'friends'),location.origin);
-      if(requested==='friends'&&new URLSearchParams(location.search).get('ranking')==='weekly')target.searchParams.set('ranking','weekly');
-      root.ModeAtlasVersionFile.navigate(target.pathname+target.search);
-    }
+  }
+  // Old links route without loading account presentation. Keeping this in
+  // install() would strand bookmarks now that the account sheet loads on demand.
+  const requested=new URLSearchParams(location.search).get('section');
+  if(['atlas','friends'].includes(requested)){
+    const target=new URL(root.AtlasPlatform.destinationPath(requested==='atlas'?'progress':'friends'),location.origin);
+    if(requested==='friends'&&new URLSearchParams(location.search).get('ranking')==='weekly')target.searchParams.set('ranking','weekly');
+    root.ModeAtlasVersionFile.navigate(target.pathname+target.search);
   }
   root.ModeAtlasAccountNavigation=Object.freeze({install,open,close,isOpen:()=>!!current,current:()=>current});
+  // Only the first activation loads account presentation. Auth/saving remains
+  // independent and starts normally in cloud-sync.js.
+  document.addEventListener('click',event=>{
+    if(layer)return;
+    const trigger=event.target.closest('[data-profile-open],[data-settings-open]');
+    if(trigger){event.preventDefault();void open(trigger.hasAttribute('data-settings-open')?'settings':'profile',trigger);}
+  });
+  root.ModeAtlasProfile={open:trigger=>open('profile',trigger),close,refresh:()=>{}};
+  root.ModeAtlasSettings={open:trigger=>open('settings',trigger),close};
 })(window);

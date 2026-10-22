@@ -70,7 +70,7 @@
       for(const item of earned){const row=el('li');row.append(root.ModeAtlasAchievementArt.badge(item.trackId,item.rankIndex,{earned:true}));const copy=el('div');copy.append(el('strong','',item.name),el('span','',item.ranked?`Rank ${item.tier}`:'Earned'));row.append(copy);list.append(row);}section.append(list);card.append(section);
     }
     const rewards=el('button','ma-button ma-button--ghost ma-button--small','Progress');rewards.type='button';rewards.addEventListener('click',()=>{root.ModeAtlasDialog.close();setTimeout(()=>root.ModeAtlasRewardsUI.open(),0);});card.append(rewards);
-    host.append(card);root.ModeAtlasFeedback?.haptic?.('complete');
+    if(root.ModeAtlasLearningExperience?.snapshot().stage!=='returning'){const details=el('details','ma-study-summary__details');details.append(el('summary','','Rewards from this practice'),card);host.append(details);}else host.append(card);root.ModeAtlasFeedback?.haptic?.('complete');
   }
   root.addEventListener('modeAtlasProgressChanged',event=>queueLevelUp(event.detail||{}));
   for(const name of ['modeAtlasAccountWillChange','modeAtlasAccountSignedOut','modeAtlasDataCleared'])root.addEventListener(name,()=>{accountGeneration++;pendingLevelUp=null;presented.clear();if(activePresentation){root.ModeAtlasDialog.close();activePresentation=null;}});

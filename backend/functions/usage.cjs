@@ -24,8 +24,19 @@ function createUsage({db,now=Date.now}){
       });return {deleted:true};
     }
     if(request.auth)fail('failed-precondition','Guest reports cannot contain signed-in learning.');
-    const s=data.snapshot,allowed=['platform','version','level','xp','kana','introduced','correct','attempts','branch'];
-    if(!s||Object.keys(s).length!==allowed.length||Object.keys(s).some(key=>!allowed.includes(key))||!['web','ios'].includes(s.platform)||!/^\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(s.version)||!['atlas','kana','kanji','wordbank','progress','friends','shop','other'].includes(s.branch))fail('invalid-argument','Invalid usage summary.');
+    const s=data.snapshot,allowed=['platform','version','level','xp','kana','introduced','correct','attempts','branch','funnel','funnelBranches','funnelStartDay'];
+    if(!s||![9,10,11,12].includes(Object.keys(s).length)||Object.keys(s).some(key=>!allowed.includes(key))||!['web','ios'].includes(s.platform)||!/^\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(s.version)||!['atlas','learn','kana','kanji','wordbank','progress','friends','shop','other'].includes(s.branch))fail('invalid-argument','Invalid usage summary.');
+    if(s.funnel!==undefined){const keys=['lessonStarted','lessonCompleted','practiceCompleted','reviewCompleted','lessonExited','saveFailed','saveRecovered','day2Return','day7Return'];if(!s.funnel||Array.isArray(s.funnel)||Object.keys(s.funnel).length!==keys.length||keys.some(key=>!Number.isSafeInteger(s.funnel[key])||s.funnel[key]<0||s.funnel[key]>100000)||s.funnel.day2Return>1||s.funnel.day7Return>1)fail('invalid-argument','Invalid learning funnel.');}
+    if(s.funnelStartDay!==undefined&&(!Number.isSafeInteger(s.funnelStartDay)||s.funnelStartDay<18000||s.funnelStartDay>Math.floor(at/86400000)))fail('invalid-argument','Invalid cohort day.');
+    if(s.funnelBranches!==undefined){
+      const branches=['kana','kanji','wordbank','other'],values=s.funnelBranches;
+      if(!s.funnel||!values||Array.isArray(values)||Object.keys(values).length!==branches.length)fail('invalid-argument','Invalid branch funnel.');
+      for(const branch of branches){
+        const counts=values[branch],keys=Object.keys(s.funnel);
+        if(!counts||Array.isArray(counts)||Object.keys(counts).length!==keys.length||keys.some(key=>!Number.isSafeInteger(counts[key])||counts[key]<0||counts[key]>s.funnel[key]))fail('invalid-argument','Invalid branch funnel.');
+      }
+      for(const key of Object.keys(s.funnel))if(branches.reduce((sum,branch)=>sum+values[branch][key],0)>s.funnel[key])fail('invalid-argument','Invalid branch totals.');
+    }
     for(const key of ['level','xp','correct','attempts'])if(!Number.isSafeInteger(s[key])||s[key]<0||s[key]>(key==='level'?999:1000000000))fail('invalid-argument','Invalid usage totals.');
     for(const key of ['kana','introduced'])if(!Array.isArray(s[key])||s[key].length>kana.size||new Set(s[key]).size!==s[key].length||s[key].some(char=>!kana.has(char)))fail('invalid-argument','Invalid Kana summary.');
     if(s.correct>s.attempts||s.level<1)fail('invalid-argument','Invalid usage totals.');

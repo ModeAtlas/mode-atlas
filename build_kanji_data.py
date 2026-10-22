@@ -16,7 +16,7 @@ import subprocess
 ROOT = Path(__file__).resolve().parent
 
 
-def build(source: Path):
+def build(source: Path, jmdict: Path | None = None):
     base = source / 'data/json'
     bands = {str(n): json.loads((base / f'kanji/n{n}.json').read_text()) for n in range(5, 0, -1)}
     vocabulary = [w for n in range(5, 0, -1) for w in json.loads((base / f'vocab/n{n}.json').read_text())]
@@ -34,15 +34,18 @@ def build(source: Path):
             # Familiar, short words first; do not introduce a harder kanji just
             # to demonstrate an easier one. Single-character words are clearest.
             candidates = [w for w in words.get(char, []) if len(w['word']) <= 5 and all(levels.get(c, 5) >= int(level) for c in w['word'])]
-            candidates.sort(key=lambda w: (w['word'] != char, -int(w['level'][1]), len(w['word']), len(w['reading']), w['word']))
+            candidates.sort(key=lambda w: (-int(w['level'][1]), w['word'] != char, len(w['word']), len(w['reading']), w['word']))
             example = None
             if candidates:
                 w = candidates[0]
                 readings = sorted({x['reading'] for x in candidates if x['word'] == w['word']})
-                example = {'word': w['word'], 'kana': w['reading'], 'readings': readings, 'meanings': w['meanings']}
+                example = {'word': w['word'], 'kana': w['reading'], 'readings': readings, 'meanings': w['meanings'], 'dictionaryId': w['jmdict_id']}
             meanings = [m for m in row['meanings'] if not re.search(r'radical \(no\.|Kangxi radical', m, re.I)] or row['meanings']
             records.append({'char': char, 'level': int(level), 'strokes': row['strokes'], 'on': row.get('onyomi', []), 'kun': row.get('kunyomi', []), 'meanings': meanings, 'example': example})
     records = curate(records)
+    if jmdict:
+        from kanji_examples import supplement
+        records = supplement(records, jmdict)
     prefix = '/* Derived from OpenJLPT / EDRDG / Jonathan Waller. CC BY-SA 4.0. See /assets/data/kanji-NOTICE.txt. */\n'
     def module(name, payload):
         return prefix + f"(function(root,factory){{if(typeof module==='object'&&module.exports)module.exports=factory();else root.{name}=factory();}})(typeof window==='undefined'?globalThis:window,function(){{'use strict';return " + json.dumps(payload, ensure_ascii=False, separators=(',', ':')) + ';});\n'
@@ -83,6 +86,9 @@ Maintainers: review upstream data monthly; regenerate using build_kanji_data.py.
 Source updates are reviewed with content and curriculum regression checks before
 release. Existing character identifiers retain their learning history.
 '''
+    if jmdict:
+        import hashlib
+        notice += '\nSupplemental JMdict examples: EDRDG JMdict_e, CC BY-SA 4.0.\nXML SHA-256: ' + hashlib.sha256(jmdict.read_bytes()).hexdigest() + '\nArchive: https://github.com/Jitendex/edrdg-archive\nPinned commit: 8f795e324a097815b128814414f0b460ec209ba1\nSelection: respect reading/sense restrictions; omit rare, obsolete and name senses.\n'
     (data / 'kanji-NOTICE.txt').write_text(notice)
     shutil.copyfile(source / 'LICENSE', data / 'kanji-LICENSE.txt')
     print(f'Built {len(records)} kanji; {sum(bool(r["example"]) for r in records)} contextual word examples.')
@@ -92,4 +98,6 @@ release. Existing character identifiers retain their learning history.
 if __name__ == '__main__':
     parser = ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True)
-    build(parser.parse_args().source)
+    parser.add_argument('--jmdict', type=Path, help='Pinned JMdict_e XML for examples absent from the graded vocabulary')
+    args = parser.parse_args()
+    build(args.source, args.jmdict)

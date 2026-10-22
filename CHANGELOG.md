@@ -1,3 +1,39 @@
+## 3.0.2 — Gradual learning, saved lessons and adaptive layouts
+
+- Keep Home gradual after the first few answers, introduce one early practice commitment and preserve the separate Home/Learn/Kana roles.
+- Save and sync vocabulary lesson position, add a typed contextual task to each of the six units, recommend the next unfinished unit and connect completion to reviews and Kanji.
+- Align Kana Read/Recall labels and compact session/formal results around the skill practised, what to revisit and actual review timing.
+- Validate selected Kanji examples against dictionary spelling, reading and sense restrictions; add 45 further cues, 53 character comparison notes and 22 original context examples. Independent educator review remains outstanding.
+- Load Account/Settings/Shop interfaces on activation; reduce common scripts; avoid redundant large-save serialization while retaining the synchronous recovery journal.
+- Record consented branch-specific lesson, exit and review events and provide a read-only aggregate reporting tool.
+- Adapt native web layouts to usable width, independent safe-area insets and a wide-screen navigation rail. Preserve lesson input and completed handwriting during resizing. Require an iOS 27.1+ SDK for the Duo build pipeline.
+- Keep coin-purchase placeholders. Version 3.0.2 / iOS build 2080048. This source release is not a production deployment or physical iPhone Duo certification; see `docs/development-3.0.2.md`.
+
+## 3.0.1 — Less to read, clearer actions
+
+- Remove the repeated Home explanation cards and Learn's introductory/disclaimer panels. Branch cards use one clear description and show progress only when present.
+- Lead first-use Kana with the five characters and a Start lesson action; shorten placement and row guidance.
+- Remove repeated proficiency and scoring explanations from session summaries and Profile. Keep actual results, corrections, next actions and save status.
+- Simplify Word Bank entry and review instructions. Preserve Japanese examples and teaching feedback; optional usage tips and detailed Kanji metrics remain available on request.
+- Frontend update for web and iOS; no backend, account, save or learning-policy migration. Version 3.0.1 / iOS build 2080047.
+
+## 3.0.0 — A clearer beginning, deeper learning
+
+- Different first-time and returning Home; focused Kana first lessons; Learn remains the branch directory. Advanced tools are explicit and manual tours remain available.
+- Six practical vocabulary units, 30 contextual words, independent meaning/reading/listening review, recent-evidence Kanji readiness and 545 additional dictionary-backed Kanji examples.
+- Shared study-day participation across Kana, Kanji, word retrieval and handwriting, with personal practice separated from verified competitive rewards.
+- Ordinary learning backup export and confirmed restore, direct appearance controls, category-based wardrobe, and retained coin-purchase placeholders.
+- Lazy optional interfaces, compact interrupted-save journals, bounded recent evidence and aligned cloud-save limits.
+- Server-issued reward sessions, idempotent receipt handling, timing-review holds, administrator Auth claims, reauthenticated staff changes and audited moderation.
+- Consented guest learning/recovery counters, precise offline/audio/assessment scope, and the shared streak-flame correction.
+- Version 3.0.0 / iOS build 2080046. Migration, verification boundaries and update instructions: `docs/development-3.0.0.md`.
+
+## 2.122.0 - 22 October 2026
+
+- Redraw the shared study-streak flame with a clear outer silhouette and inner flame that stay legible at the homepage icon size.
+- Preserve the shared icon's current colour, sizing and existing accessibility labels.
+
+
 ## 2.115.0 — Account recovery and responsive pages
 
 - Distinguish Firebase restoration from a confirmed guest; preserve device saves on startup failure and provide a working connection retry.

@@ -8,7 +8,6 @@
   const set = (selector, value) => { const node = find(selector); if (node) node.textContent = String(value); };
   const setAll = (selector, value) => document.querySelectorAll(selector).forEach(node => { node.textContent = String(value); });
   const count = value => Math.max(0, Number(value) || 0);
-  const onboarded = () => store.get('modeAtlasOnboardingComplete','') === 'true' || store.get('modeAtlasStarterSeen','') === 'true';
 
   function recommendation(){
     const last = store.json('modeAtlasLastMode', null);
@@ -23,20 +22,29 @@
     }));
   }
   function render(){
-    const isUser = onboarded(), next = recommendation();
-    document.body.dataset.maHomeState = isUser ? 'returning' : 'visitor';
+    const experience=window.ModeAtlasLearningExperience.snapshot(),isUser=experience.started,next=recommendation();
+    document.body.dataset.maHomeState = experience.stage;
+    document.querySelectorAll('[data-ma-home-established]').forEach(node=>{node.hidden=!experience.established;});
+    find('.atlas-home-personal').hidden=!experience.showPersonal;
+    find('.atlas-home-routine').hidden=!isUser;
+    find('#homeGoalsMore').hidden=!experience.established;
+    find('#homeDaily').hidden=!experience.established;
+    set('#homeGoalsTitle',experience.established?'Today’s goals':'A little practice today');
+    set('#homeOverviewKicker',isUser?'YOUR ATLAS':'WELCOME');
     const action = find('#homeContinueAction');
-    if (action) { action.href = isUser ? next.href : '/kana/'; action.textContent = isUser ? 'Continue learning →' : 'Get started →'; }
-    set('#homeContinueTitle', isUser ? next.title : 'Make your first connection.');
+    if (action) { action.href = isUser ? next.href : '/kana/'; action.textContent = isUser || experience.stage==='starting' ? 'Continue learning →' : 'Start learning →'; }
+    set('#homeContinueTitle', isUser ? next.title : 'Your first five kana');
     set('#homeContinueKicker', isUser ? 'CONTINUE LEARNING' : 'START WITH KANA');
-    set('#homeContinueMeta', isUser ? next.reason : 'Connect Japanese shapes and sounds, one row at a time.');
-    set('#homeContinueLength', next.meta);
+    set('#homeContinueMeta', isUser ? next.reason : 'あ い う え お · Hiragana');
+    set('#homeContinueLength', isUser?next.meta:'About 3 minutes');
     const progress = window.ModeAtlasProgress.getSummary(), routine = window.ModeAtlasProgress.routine();
-    renderPersonal(progress, routine);
+    renderPersonal(progress, routine, experience);
+    window.ModeAtlasBranchLibrary.render(find('[data-ma-branch-library]'), {compact:true,experience});
   }
-  function renderPersonal(progress, routine){
+  function renderPersonal(progress, routine, experience){
     const {name,character} = window.ModeAtlasPortrait.self();
-    set('#atlasReturningTitle', onboarded() ? (name ? `Good to see you, ${name}.` : 'Good to see you.') : 'Let’s learn Japanese.');
+    set('#atlasReturningTitle', experience.hasLearning ? (name ? `Good to see you, ${name}.` : 'Good to see you.') : 'Let’s learn Japanese.');
+    if(!experience.started)return;
     const signature = JSON.stringify(character);
     document.querySelectorAll('[data-ma-home-avatar]').forEach(node => {
       if (node.dataset.character === signature) return;
@@ -50,7 +58,14 @@
     set('#homeLevelMeta', `${count(progress.levelXp)} / ${progress.levelRequirement} XP to level ${progress.level + 1}`);
     const bar = find('#homeLevelProgress');
     if(bar) bar.value = count(progress.progress) * 100;
-    window.ModeAtlasRewardsUI.renderGoals(find('#homeGoals'), {compact:true});
+    if(experience.established)window.ModeAtlasRewardsUI.renderGoals(find('#homeGoals'), {compact:true});
+    else{
+      const host=find('#homeGoals'),label=document.createElement('p'),bar=document.createElement('progress');
+      const units=Math.min(5,routine.todayUnits||0);
+      label.textContent=units===5?'Today’s practice complete':`${units} of 5 items practised`;
+      bar.max=5;bar.value=units;bar.setAttribute('aria-label','Today’s five practice items');
+      host.replaceChildren(label,bar);
+    }
     const daily = window.ModeAtlasKanaMetrics.kanaStats().dailyDone;
     set('#homeDaily', daily ? '✓ Daily challenge complete' : 'Try today’s daily challenge →');
     find('#homeDaily').href = daily ? window.AtlasPlatform.destinationPath('progress') : '/reading/?mode=daily';
@@ -58,7 +73,9 @@
     setAll('[data-ma-home-week-days]', `${week.studyDays} / 7`);
     setAll('[data-ma-home-week-goals]', week.dailyGoals + week.weeklyGoals);
     setAll('[data-ma-home-week-sessions]', week.sessions);
-    const reviews = [...['reading','writing'].map(mode => ({label:mode==='reading'?'Read':'Recall',href:`/${mode}/?practice=10&due=1`,due:window.ModeAtlasReview.due(store.readModeJSON(mode,'srs',{})).length})),...window.ModeAtlasStudyPlan.kanjiReviews()];
+    const situations=window.ModeAtlasWordLessonState.due();
+    const reviews = [...['reading','writing'].map(mode => ({label:mode==='reading'?'Kana · Read':'Kana · Recall',href:`/${mode}/?practice=10&due=1`,due:window.ModeAtlasReview.due(store.readModeJSON(mode,'srs',{})).length})),...window.ModeAtlasStudyPlan.kanjiReviews(),{label:'Word Bank',href:'/wordbank/?review=1',due:experience.words.due},{label:'Useful Japanese',href:'/wordbank/?application='+encodeURIComponent(situations[0]||''),due:situations.length}];
+    find('.atlas-home-reviews').hidden=!experience.established&&!reviews.some(item=>item.due);
     document.querySelectorAll('[data-ma-home-reviews]').forEach(host => {
       if(host.dataset.reviews === JSON.stringify(reviews)) return;
       host.dataset.reviews = JSON.stringify(reviews);host.replaceChildren();
@@ -77,13 +94,13 @@
   document.querySelectorAll('[data-ma-home-review-help]').forEach(button => button.addEventListener('click', () => {
     window.ModeAtlasDialog.alert({title:'What does “due” mean?',message:window.ModeAtlasReview.dueHelp(),confirmLabel:'Got it'});
   }));
-  window.ModeAtlasBranchLibrary.render(find('[data-ma-branch-library]'), {compact:true});
   render();
   document.addEventListener('ma:ui-refresh', render);
   document.addEventListener('ma:onboarding-complete', render);
   window.addEventListener('modeAtlasCloudDataChanged', render);
   window.addEventListener('modeAtlasDayChanged', render);
   window.addEventListener('modeAtlasProgressChanged', render);
+  for(const event of ['modeAtlasKanaLearningChanged','modeAtlasWordsChanged','modeAtlasWordLessonsChanged','modeAtlasActivityChanged'])window.addEventListener(event,render);
   for(const event of ['modeAtlasAvatarChanged','modeAtlasSelfProfileChanged','kanaCloudSyncStatusChanged','modeAtlasRewardAccessChanged','modeAtlasShopChanged','modeAtlasAccountSignedOut']) window.addEventListener(event, render);
   window.addEventListener('pageshow', event => { if (event.persisted) render(); });
 })();

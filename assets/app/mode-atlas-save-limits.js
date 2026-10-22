@@ -4,7 +4,9 @@
   else root.ModeAtlasSaveLimits=factory();
 })(typeof window==='undefined'?globalThis:window,function(){
   'use strict';
-  const MAX_BYTES=16*1024*1024,MAX_PARTS=350,PART_BYTES=480000;
+  // A manifest is at most 1 MB. Even worst-case four-byte UTF-8 characters in
+  // all 32 parts remain below the 16 MiB decode budget (32×480000+1000000).
+  const MAX_BYTES=16*1024*1024,MAX_PARTS=32,PART_BYTES=480000;
   const invalid=message=>Object.assign(new Error(message),{code:'invalid-account-save'});
   const size=text=>new TextEncoder().encode(text).length;
   function parse(text){

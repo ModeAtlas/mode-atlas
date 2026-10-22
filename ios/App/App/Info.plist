@@ -49,7 +49,7 @@
 			<key>UIApplicationShortcutItemType</key>
 			<string>app.modeatlas.reading</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Reading practice</string>
+			<string>Kana Read</string>
 			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>textformat.abc</string>
 		</dict>
@@ -57,7 +57,7 @@
 			<key>UIApplicationShortcutItemType</key>
 			<string>app.modeatlas.writing</string>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>Writing practice</string>
+			<string>Kana Recall</string>
 			<key>UIApplicationShortcutItemIconSymbolName</key>
 			<string>pencil.tip</string>
 		</dict>

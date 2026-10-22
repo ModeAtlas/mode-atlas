@@ -147,11 +147,11 @@ const trainerController = window.ModeAtlasTrainerController.create({
     showOfficialWhenRecorded: true,
     clearLastWrongOnCorrect: true,
     labels: {
-        dailyTitle: 'Writing Daily Challenge',
+        dailyTitle: 'Kana Recall · Daily Challenge',
         dailySubline: '20 questions · Match the romaji prompt to kana',
-        testTitle: 'Writing Test Mode',
+        testTitle: 'Kana Recall · Test',
         testSubline: 'One full shuffled pass through all enabled test kana',
-        practiceTitle: 'Writing Practice',
+        practiceTitle: 'Kana Recall',
         practiceSubline: 'Match the romaji prompt to the correct kana'
     },
     getSnapshot: () => ({
@@ -678,7 +678,7 @@ function nextCharacter() {
             return;
         }
 
-        currentChar = dailySequence[dailyIndex] || "あ";
+        currentChar = trainerController.study.issued() || dailySequence[dailyIndex] || "あ";
         currentBaseChar = currentChar[0] || "";
         recordShownBaseChar(currentBaseChar);
         currentPrompt = getPromptForCurrentChar(currentChar);
@@ -703,7 +703,7 @@ function nextCharacter() {
             return;
         }
 
-        currentChar = testSequence[testIndex] || "あ";
+        currentChar = trainerController.study.issued() || testSequence[testIndex] || "あ";
         currentBaseChar = currentChar[0] || "";
         recordShownBaseChar(currentBaseChar);
         currentPrompt = getPromptForCurrentChar(currentChar);
@@ -733,8 +733,8 @@ function nextCharacter() {
         displayValue = buildComboCharacters(pool, firstPick).join("");
     }
 
-    currentChar = displayValue;
-    currentBaseChar = firstPick;
+    currentChar = trainerController.study.issued() || displayValue;
+    currentBaseChar = window.ModeAtlasKanaData.splitKana(currentChar)[0];
     recordShownBaseChar(currentBaseChar);
     currentPrompt = getPromptForCurrentChar(currentChar);
     currentChoices = settings.keyboardMode ? [] : buildChoiceOptionStrings(currentChar);
@@ -922,7 +922,7 @@ function evaluateKanaKeyboardAnswer(event) {
 }
 inputEl.addEventListener("input", evaluateKanaKeyboardAnswer);
 
-function startSession(recovery = null) {
+async function startSession(recovery = null) {
     if (sessionStarted || !canStartKanaSession()) return;
     recovery=window.ModeAtlasSessionRecovery.validate(recovery,'writing');
     if(recovery){settings={...settings,...recovery.settings};rebuildCharMap();}
@@ -934,7 +934,8 @@ function startSession(recovery = null) {
 
     sessionStarted = true;
 
-    const prepared = prepareTrainerSessionStart({
+    const preparingOwner=window.ModeAtlasSessionRecovery.accountId();
+    const prepared = await prepareTrainerSessionStart({
         recovery,
         study: trainerController.study,
         isDailyChallengeSession,
@@ -944,6 +945,7 @@ function startSession(recovery = null) {
         getComboLength
     });
 
+    if(preparingOwner!==window.ModeAtlasSessionRecovery.accountId()){sessionStarted=false;window.KanaCloudSync?.setSessionCloudPause?.(false);return;}
     sessionStats = prepared.sessionStats;
     streak = prepared.streak;
     endlessRunTotal = prepared.endlessRunTotal;
@@ -1167,7 +1169,7 @@ function init() {
     if (!activeChars.length && !trainerController.study.hasPendingReview()) {
         hintEl.textContent = "Select at least one row to begin.";
     } else {
-        hintEl.textContent = "Press Start to begin Writing Practice.";
+        hintEl.textContent = "Press Start to begin Kana Recall.";
     }
 }
 

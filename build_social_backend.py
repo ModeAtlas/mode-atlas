@@ -22,6 +22,7 @@ SOURCES = (
     "assets/app/mode-atlas-reward-rules.js",
     "assets/app/mode-atlas-shop-catalogue.js",
     "assets/app/mode-atlas-weekly-rules.js",
+    "assets/app/mode-atlas-study-prompts.js",
     "assets/app/mode-atlas-notification-rules.js",
     "assets/data/mode-atlas-kana-data.js",
 )
