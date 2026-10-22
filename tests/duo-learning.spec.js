@@ -14,6 +14,75 @@ async function insets(page,left,right){
   dispatchEvent(new Event('resize'));
  },{left,right});
 }
+async function nativeGeometry(page,initial){
+ await page.addInitScript(initial=>{
+  let listener=()=>{};
+  window.Capacitor.Plugins.ModeAtlasNative={
+   getViewportLayout:async()=>initial,
+   addListener:(name,callback)=>{if(name==='viewportLayoutChanged')listener=callback;return Promise.resolve({remove(){}});}
+  };
+  window.updateViewportFixture=layout=>{
+   for(const [side,value]of Object.entries(layout.safeArea))document.documentElement.style.setProperty('--ma-safe-'+side,value+'px');
+   listener(layout);
+  };
+ },initial);
+}
+const wideGeometry={width:960,height:680,safeArea:{top:12,right:84,bottom:20,left:0},occlusions:[{x:890,y:24,width:52,height:84}]};
+test('expanded Kana keeps its next action visible and handwriting gives the board more space',async({page})=>{
+ await setup(page);await page.setViewportSize({width:960,height:680});await nativeGeometry(page,wideGeometry);
+ await page.goto('/kana/');await page.getByRole('button',{name:/Start lesson/}).click();await page.goto('/kana/?view=path');
+ await page.evaluate(layout=>updateViewportFixture(layout),wideGeometry);
+ const next=page.getByRole('button',{name:'Learn this row',exact:true});await expect(next).toBeVisible();
+ const action=await next.boundingBox();expect(action.y+action.height).toBeLessThan(660);
+ const current=await page.locator('.ma-kana-path-current').boundingBox(),path=await page.locator('.ma-kana-path-preview').boundingBox();expect(path.x).toBeGreaterThan(current.x+current.width);
+ await next.click();await page.getByRole('button',{name:'See the strokes',exact:true}).click();
+ const board=await page.locator('.ma-handwriting-board').boundingBox();expect(board.width).toBeGreaterThanOrEqual(340);
+ const close=page.getByRole('button',{name:'Close',exact:true});await expect(close).toBeInViewport();await close.click();
+ await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');
+});
+test('native dock shares the system side region, follows occlusions and moves back in portrait',async({page})=>{
+ await setup(page);await page.setViewportSize({width:960,height:680});await nativeGeometry(page,wideGeometry);await page.goto('/');
+ await page.evaluate(layout=>updateViewportFixture(layout),wideGeometry);
+ await expect(page.locator('html')).toHaveAttribute('data-ma-shared-bar','');
+ const bounds=()=>page.locator('.ma-ios-tabs').boundingBox();
+ let dock=await bounds();expect(dock.x).toBeGreaterThanOrEqual(876);expect(dock.y).toBeGreaterThanOrEqual(108);
+ let main=await page.locator('main').boundingBox();expect(main.x+main.width).toBeLessThanOrEqual(dock.x);
+ // A Live Activity can grow without a viewport resize. No nav control may be
+ // placed over its region, and the buttons must still have touch-size targets.
+ await page.evaluate(layout=>updateViewportFixture({...layout,occlusions:[{x:878,y:10,width:80,height:250}]}),wideGeometry);
+ await expect.poll(async()=>(await bounds()).y).toBeGreaterThanOrEqual(260);
+ for(const link of await page.locator('.ma-ios-tab').all()){const r=await link.boundingBox();expect(r.width).toBeGreaterThanOrEqual(44);expect(r.height).toBeGreaterThanOrEqual(44);expect(r.y+r.height).toBeLessThanOrEqual(660);}
+ // Reclaim the bottom on the narrow outer display too, without deducting a
+ // second rail from the already narrow content area.
+ const outer={width:480,height:680,safeArea:{top:12,right:84,bottom:20,left:0},occlusions:[{x:406,y:24,width:60,height:130}]};
+ await page.setViewportSize({width:480,height:680});await page.evaluate(layout=>updateViewportFixture(layout),outer);
+ await expect(page.locator('html')).toHaveAttribute('data-ma-navigation','rail');
+ main=await page.locator('main').boundingBox();expect(main.width).toBeGreaterThan(340);expect((await bounds()).x).toBeGreaterThanOrEqual(396);
+ const portrait={width:680,height:960,safeArea:{top:48,right:0,bottom:24,left:0},occlusions:[]};
+ await page.setViewportSize({width:680,height:960});await page.evaluate(layout=>updateViewportFixture(layout),portrait);
+ await expect(page.locator('html')).toHaveAttribute('data-ma-navigation','bottom');
+ expect((await bounds()).width).toBe(680);await expect(page.locator('html')).not.toHaveAttribute('data-ma-shared-bar','');
+ // Split View can put the system region on the other edge.
+ const left={...wideGeometry,safeArea:{...wideGeometry.safeArea,left:84,right:0},occlusions:[{x:12,y:24,width:52,height:84}]};
+ await page.setViewportSize({width:960,height:680});await page.evaluate(layout=>updateViewportFixture(layout),left);
+ await expect(page.locator('html')).toHaveAttribute('data-ma-rail-side','left');dock=await bounds();expect(dock.x+dock.width).toBeLessThanOrEqual(84);
+ await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Settings',exact:true}).click();
+ await page.getByRole('button',{name:'Close account menu',exact:true}).click();await expect(page.locator('#maAccountSheet')).toBeHidden();
+});
+test('expanded Home shows all branch cards without scrolling and Learn adapts to its content width',async({page},info)=>{
+ await setup(page);await page.setViewportSize({width:960,height:680});await nativeGeometry(page,wideGeometry);await page.goto('/');
+ await page.evaluate(layout=>updateViewportFixture(layout),wideGeometry);
+ await expect(page.locator('#maLoadingScreen')).toBeHidden();
+ const hero=await page.locator('.atlas-home-learning').boundingBox();expect(hero.height).toBeLessThan(310);
+ const cards=page.locator('.ma-branch-tile');await expect(cards).toHaveCount(3);
+ for(const card of await cards.all()){const r=await card.boundingBox();expect(r.y+r.height).toBeLessThanOrEqual(660);}
+ await page.screenshot({path:info.outputPath('home-wide.png')});
+ await page.locator('.ma-ios-tab').filter({hasText:'Learn'}).click();await page.evaluate(layout=>updateViewportFixture(layout),wideGeometry);
+ await expect(page.getByRole('heading',{name:'Learn',exact:true})).toBeVisible();
+ await page.setViewportSize({width:720,height:680});await insets(page,0,84);
+ await expect.poll(()=>page.locator('.ma-branch-library').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(2);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(720);
+});
 for(const route of ['/','/learn/','/kana/','/kanji/','/kana/handwriting/','/reading/','/writing/','/results/','/results/kanji/','/progress/','/wordbank/','/friends/','/shop/']){
  test('resizable native surface '+route,async({page},info)=>{
   await setup(page);const errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto(route);await expect(page.locator('#maLoadingScreen')).toBeHidden();

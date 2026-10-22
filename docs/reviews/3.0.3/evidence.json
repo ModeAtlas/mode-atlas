@@ -1,0 +1,52 @@
+{
+  "version": "3.0.3",
+  "iosBuild": 2080049,
+  "date": "2026-10-23",
+  "environment": "Linux Chromium, simulated Capacitor runtime; not a Duo simulator",
+  "checks": {
+    "browserRegression": {
+      "passed": 148
+    },
+    "finalDuoAndKana": {
+      "passed": 106
+    },
+    "javascript": {
+      "passed": 280
+    },
+    "python": {
+      "passed": 20
+    },
+    "releaseCheck": "passed"
+  },
+  "nativeDeviceAcceptance": "not performed here",
+  "geometry": {
+    "expanded": {
+      "width": 960,
+      "height": 680,
+      "safeArea": {
+        "top": 12,
+        "right": 84,
+        "bottom": 20,
+        "left": 0
+      }
+    },
+    "outer": {
+      "width": 480,
+      "height": 680,
+      "safeArea": {
+        "top": 12,
+        "right": 84,
+        "bottom": 20,
+        "left": 0
+      }
+    }
+  },
+  "screenshots": [
+    "screens/handwriting-expanded.png",
+    "screens/home-expanded.png",
+    "screens/home-outer.png",
+    "screens/home-starting-expanded.png",
+    "screens/kana-path-expanded.png",
+    "screens/learn-expanded.png"
+  ]
+}

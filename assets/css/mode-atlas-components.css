@@ -678,3 +678,25 @@ body[data-effective-display-mode="phone"] .ma-setting-row__control{justify-self:
 }
 html[data-ma-large-text] .ma-branch-library{grid-template-columns:1fr;}
 html[data-ma-large-text] .ma-branch-tile__title{overflow-wrap:anywhere;}
+
+/* Use the content width, including Duo's asymmetric system region, rather
+   than the full viewport to decide how many branch cards remain readable. */
+html[data-ma-runtime="ios"] .atlas-home-lower,
+html[data-ma-runtime="ios"] body[data-ma-hub="learn"] #maHubContent{container:branches / inline-size;}
+html[data-ma-runtime="ios"] .ma-branch-library{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}
+html[data-ma-runtime="ios"] .ma-branch-tile>img{height:140px;object-fit:contain;}
+html[data-ma-runtime="ios"] .ma-branch-library--compact .ma-branch-tile>img{height:100px;}
+html[data-ma-runtime="ios"] .ma-branch-tile__copy{padding:18px;}
+@container branches (max-width:680px){
+ html[data-ma-runtime="ios"] .ma-branch-library{grid-template-columns:repeat(2,minmax(0,1fr));}
+ html[data-ma-runtime="ios"] .ma-branch-tile{display:flex;flex-direction:column;}
+}
+@container branches (max-width:460px){
+ html[data-ma-runtime="ios"] .ma-branch-library{grid-template-columns:1fr;}
+ html[data-ma-runtime="ios"] .ma-branch-tile{display:grid;grid-template-columns:28% minmax(0,1fr);align-items:center;}
+ html[data-ma-runtime="ios"] .ma-branch-tile>img,html[data-ma-runtime="ios"] .ma-branch-library--compact .ma-branch-tile>img{height:100%;min-height:110px;object-fit:contain;}
+ html[data-ma-runtime="ios"] .ma-branch-tile__copy{padding:16px;}
+}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-branch-library{grid-template-columns:1fr;}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-branch-tile{display:grid;grid-template-columns:80px minmax(0,1fr);align-items:center;}
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-branch-tile>img{width:80px;height:100px;}

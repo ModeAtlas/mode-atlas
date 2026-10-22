@@ -9,4 +9,5 @@
 #maHubContent{display:grid;gap:20px;min-width:0;}
 .ma-hub-note{color:var(--ma-muted);font-size:.85rem;line-height:1.6;}
 html[data-ma-runtime="ios"] .ma-hub-main{margin-top:8px;}
+html[data-ma-runtime="ios"] .ma-hub-page>.shell{padding:0 6px;}
 @media(max-width:760px){.ma-hub-page>.shell{padding:0 6px;}.ma-hub-main{margin-top:16px;}}
