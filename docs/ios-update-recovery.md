@@ -32,14 +32,17 @@ git merge --ff-only "origin/$mode_atlas_branch"
 python3 select_ios_toolchain.py
 npm ci
 npm run ios:sync
+xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj -scheme App
+npm run ios:open
 printf '\nRecovered and synchronized Mode Atlas in %s\n' "$PWD"
 MODE_ATLAS_RECOVERY
 ```
 
 The temporary helper is read from the fetched repository without trying to check
 out a branch over unresolved files. The second dependency install follows the
-fast-forward so it uses the final lockfile. Return to the original project in the
-same Xcode app, select **App** and the device/simulator, and press **⌘R**.
+fast-forward so it uses the final lockfile. The final two steps resolve Swift
+packages and open the original project through the normal macOS file association.
+Select **App** and the device/simulator, and press **⌘R**.
 
 ## What the recovery preserves
 
@@ -59,9 +62,11 @@ same Xcode app, select **App** and the device/simulator, and press **⌘R**.
   protected from JavaScript number conversion, and the serialized result is
   parsed again to check that no settings or references changed.
 
-The helper does not launch/select Xcode or write its preferences. It cannot inspect
-the user's exact local edits from a screenshot; if an unknown setting conflict is
-reported, both original versions remain available for an explicit resolution.
+The recovery helper itself does not launch/select Xcode or write its preferences;
+the full handover opens the existing project after synchronization. The helper
+cannot inspect the user's exact local edits from a screenshot; if an unknown
+setting conflict is reported, both original versions remain available for an
+explicit resolution.
 
 ## Validation
 
