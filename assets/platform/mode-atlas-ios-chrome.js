@@ -180,15 +180,15 @@
     // viewport. Observe the actual dock, including when editing/focus hides it.
     new ResizeObserver(schedule).observe(dock, {box:'border-box'});
     new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open']});
-    root.visualViewport?.addEventListener('resize', schedule);
+    root.visualViewport?.addEventListener('resize', measure);
     root.visualViewport?.addEventListener('scroll', schedule);
-    root.addEventListener('resize', schedule);
+    root.addEventListener('resize', measure);
     root.addEventListener('scroll',schedule,{passive:true});
     root.addEventListener('pageshow', measure);
     root.addEventListener('modeAtlasTextSizeChanged',measure);
     const native=root.Capacitor?.Plugins?.ModeAtlasNative;
     if(native?.getViewportLayout){
-      const accept=layout=>{nativeLayout=layout;measure();};
+      const accept=layout=>{nativeLayout=layout;measure();root.dispatchEvent(new CustomEvent('modeAtlasViewportLayoutChanged'));};
       // Subscribe first so an opening/closing transition cannot be missed while
       // the initial request is in flight. A newer event wins over that request.
       let received=false;

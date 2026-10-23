@@ -16,10 +16,11 @@ async function prepare(page,geometry=inner,theme='dark',seedKana=true){
       getViewportLayout:async()=>geometry,
       addListener:(name,cb)=>{if(name==='viewportLayoutChanged')listener=cb;return Promise.resolve({remove(){}});}
     }}};
-    window.applyDuoGeometry=next=>{
+    window.applyDuoNativeGeometry=next=>{
       for(const [side,value]of Object.entries(next.safeArea))document.documentElement.style.setProperty('--ma-safe-'+side,value+'px');
-      listener(next);dispatchEvent(new Event('resize'));
+      listener(next);
     };
+    window.applyDuoGeometry=next=>{applyDuoNativeGeometry(next);dispatchEvent(new Event('resize'));};
     document.addEventListener('DOMContentLoaded',()=>applyDuoGeometry(geometry),{once:true});
     for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
     localStorage.setItem('modeAtlasThemePreference',theme);

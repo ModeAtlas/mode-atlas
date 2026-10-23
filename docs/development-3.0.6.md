@@ -18,7 +18,8 @@ unchanged.
 - Shared popups, practice setup and handwriting use the clear rectangle below
   system UI. If a short window or software keyboard leaves too little height,
   shared popups retain the ordinary safe rectangle. Handwriting places its board
-  and supporting controls beside each other where they fit.
+  and supporting controls beside each other where they fit. Completed strokes
+  survive region changes; only an unfinished stroke is cancelled.
 - Word lessons pair the word/audio with its example in wider native dialogs.
   Wide Kanji teaching pairs the character with its reading/context. Narrow
   layouts retain the same learning sequence and actions.
@@ -34,7 +35,7 @@ listed separately from the status UI.
 
 ## Validation
 
-Local checks passed: **292 JavaScript tests, 23 Python tests, 124 targeted browser
+Local checks passed: **292 JavaScript tests, 23 Python tests, 125 targeted browser
 cases and 12 mobile iOS-shell checks**. Results and rendered evidence are recorded in
 [the review](reviews/3.0.6/duo-space-review.md).
 

@@ -109,3 +109,18 @@ test('large text and a shorter window keep expanded overlays scrollable and unob
   await page.locator('#maAccountClose').click();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+test('a system-region change without window resizing preserves handwriting and cancels only the unfinished stroke',async({page})=>{
+  await prepare(page,outer);await page.goto('/kana/handwriting/?kana=あ');
+  const board=page.locator('.ma-handwriting-board');await expect(board).toBeVisible();
+  const points=await board.evaluate(board=>{const p=board.querySelector('.ma-handwriting-guide.is-next'),r=board.getBoundingClientRect(),length=p.getTotalLength();return Array.from({length:24},(_,i)=>{const at=p.getPointAtLength(length*i/23);return {x:r.x+at.x*r.width/109,y:r.y+at.y*r.height/109};});});
+  await page.mouse.move(points[0].x,points[0].y);await page.mouse.down();for(const p of points.slice(1))await page.mouse.move(p.x,p.y);await page.mouse.up();
+  await expect(page.locator('.ma-handwriting-guide.is-done')).toHaveCount(1);
+  for(const height of [160,440]){
+    const before=await board.boundingBox();await page.mouse.move(before.x+40,before.y+40);await page.mouse.down();await page.mouse.move(before.x+50,before.y+50);
+    await expect(page.locator('.ma-handwriting-ink')).toHaveCount(2);
+    await page.evaluate(next=>applyDuoNativeGeometry(next),{...outer,occlusions:outer.occlusions.map(r=>({...r,height}))});
+    const dimension=height===160?'y':'width';await expect.poll(async()=>(await board.boundingBox())[dimension]).not.toBe(before[dimension]);
+    await expect(page.locator('.ma-handwriting-ink')).toHaveCount(1);await page.mouse.up();
+    await expect(page.locator('.ma-handwriting-guide.is-done')).toHaveCount(1);
+  }
+});

@@ -36,10 +36,9 @@ Apple guidance reviewed:
 
 - Release gate: **292 JavaScript tests and 23 Python tests passed**, plus source,
   security, learning-content and native-bundle audits.
-- **124 distinct browser cases passed** across the targeted suites: 98 unaffected
-  cases in the broad run, then all 26 account/space cases on the final revision.
-  The broad run caught four account checks where the sheet overlapped the bottom
-  dock; the existing clearance was restored and all seven account tests passed.
+- **125 targeted browser cases passed in the final complete run.** Earlier
+  checks exposed bottom-dock overlap and a delayed fallback-inset update; both
+  were fixed in the layout owner without weakening their assertions.
 - **12 mobile iOS-shell checks passed**.
 - The release bump exposed a hard-coded 3.0.5 string in the Xcode recovery test
   fixture. The fixture now derives the release version and continues to create
@@ -51,7 +50,9 @@ Coverage includes all existing route layouts, Light/Dark, first-use/established
 Home, old-shell/stale-geometry fallbacks, left/right system strips, changing
 occlusions, keyboard bounds, mixed/practice/test modes, checkpoint resume,
 folding during an answer, profile/settings focus, handwriting stroke retention,
-and larger text. The screenshots below use simulated native geometry, not
+and larger text. A native-event-only handwriting test reproduces both movement
+and resizing without a window resize: completed strokes remain, while the
+unfinished stroke is cancelled. The screenshots below use simulated native geometry, not
 physical-device results. Labelled black system regions are test annotations.
 Network requests are isolated, so account screens show the offline fallback;
 this is not a production authentication test. Actual Device Hub/device camera,
