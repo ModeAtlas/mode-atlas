@@ -1,0 +1,64 @@
+{
+  "release": "3.0.6",
+  "iosBuild": 2080052,
+  "javascript": {
+    "passed": 297,
+    "failed": 0
+  },
+  "python": {
+    "passed": 23,
+    "failed": 0
+  },
+  "browser": {
+    "passed": 148,
+    "failed": 0,
+    "broadRegressionRun": {
+      "startTime": "2026-10-23T01:25:51.278Z",
+      "duration": 147907.934,
+      "expected": 125,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0,
+      "commit": "75f9dc0b4e5f2bd8fb4c574e351c4ee7435dc517"
+    },
+    "finalPopupRegressionRun": {
+      "startTime": "2026-10-23T01:40:09.880Z",
+      "duration": 64136.13,
+      "expected": 49,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "note": "148 distinct cases across the 125-case broad run and final 49-case popup run; 26 overlap. No skipped, flaky or failed cases in these runs."
+  },
+  "mobileIosShell": {
+    "passed": 12,
+    "failed": 0
+  },
+  "screenshots": [
+    "handwriting-outer.png",
+    "home-portrait.png",
+    "kanji-wide.png",
+    "profile-outer.png",
+    "reading-outer.png",
+    "reading-portrait.png",
+    "reading-wide.png",
+    "recall-outer.png",
+    "resume.png",
+    "word-wide.png",
+    "welcome-outer.png",
+    "tour-left.png"
+  ],
+  "nativeCompilation": {
+    "status": "passed",
+    "commit": "75f9dc0b4e5f2bd8fb4c574e351c4ee7435dc517",
+    "workflow": "https://github.com/ModeAtlas/mode-atlas/actions/runs/39884345833",
+    "note": "Native Swift sources are unchanged. Current native build and recovery-test checks are linked from PR 67."
+  },
+  "physicalDeviceTested": false,
+  "macUpdateRecovery": {
+    "passed": 17,
+    "failed": 0,
+    "coverage": "Actual index-only stash failure, normal native conflicts, retained signing/user data/stash, post-failure edit protection and documented recovery command through its Xcode launch invocation. Mac commands are stubbed in the local shell-flow test; macOS CI separately validates the recovered metadata with plutil."
+  }
+}

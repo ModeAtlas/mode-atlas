@@ -687,7 +687,7 @@ html[data-ma-runtime="ios"] .ma-branch-library{grid-template-columns:repeat(3,mi
 html[data-ma-runtime="ios"] .ma-branch-tile>img{height:140px;object-fit:contain;}
 html[data-ma-runtime="ios"] .ma-branch-library--compact .ma-branch-tile>img{height:100px;}
 html[data-ma-runtime="ios"] .ma-branch-tile__copy{padding:18px;}
-@container branches (max-width:680px){
+@container branches (max-width:41rem){
  html[data-ma-runtime="ios"] .ma-branch-library{grid-template-columns:repeat(2,minmax(0,1fr));}
  html[data-ma-runtime="ios"] .ma-branch-tile{display:flex;flex-direction:column;}
 }

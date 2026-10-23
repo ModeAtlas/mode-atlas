@@ -40,6 +40,17 @@
 .ma-kanji-main[data-session] .ma-kanji-header h1{font-size:1.35rem;}
 .ma-kanji-main[data-session] .ma-kanji-header .ma-kanji-eyebrow{display:none;}
 .ma-kanji-lesson{display:grid;gap:12px;max-width:620px;margin:auto;}
+html[data-ma-runtime="ios"] #maKanjiContent{container:kanji-session / inline-size;}
+html[data-ma-runtime="ios"] .ma-kanji-lesson{max-width:none;}
+@container kanji-session (min-width:40rem){
+  html[data-ma-runtime="ios"] .ma-kanji-lesson[data-phase="teach"]{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 28px;}
+  html[data-ma-runtime="ios"] .ma-kanji-lesson[data-phase="teach"]>*{grid-column:1/-1;min-width:0;}
+  html[data-ma-runtime="ios"] .ma-kanji-lesson[data-phase="teach"]>.ma-kanji-lesson-hero{grid-column:1;grid-row:2;}
+  html[data-ma-runtime="ios"] .ma-kanji-lesson[data-phase="teach"]>.ma-kanji-spoken-word{grid-column:2;grid-row:2;align-self:center;}
+  html[data-ma-runtime="ios"] .ma-kanji-lesson[data-phase="teach"]>.ma-kanji-memory-cue{grid-column:1;grid-row:3;}
+  html[data-ma-runtime="ios"] .ma-kanji-lesson[data-phase="teach"]>.ma-kanji-context{grid-column:2;grid-row:3/span 2;}
+  html[data-ma-runtime="ios"] .ma-kanji-lesson[data-phase="teach"]>.ma-kanji-reading-family{grid-column:1;grid-row:4;}
+}
 .ma-kanji-lesson h2{margin:0;font-size:1.45rem;}
 .ma-kanji-lesson p{margin:0;line-height:1.45;}
 .ma-kanji-lesson-steps{list-style:none;display:flex;gap:16px;padding:0;margin:0;color:var(--ma-muted);font-size:.75rem;}

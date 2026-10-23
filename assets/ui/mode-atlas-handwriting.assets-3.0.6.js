@@ -23,7 +23,7 @@
     const closeButton=makeButton('Close',()=>dialog.close());header.append(closeButton);
     const body=el('div','ma-handwriting-body'),selector=el('div','ma-handwriting-characters');selector.setAttribute('role','group');selector.setAttribute('aria-label','Characters to write');
     const stage=el('div','ma-handwriting-stage'),status=el('p','ma-handwriting-status');status.setAttribute('role','status');
-    const tools=el('div','ma-handwriting-tools'),actions=el('div','ma-handwriting-tools');
+    const tools=el('div','ma-handwriting-tools ma-handwriting-modes'),actions=el('div','ma-handwriting-tools ma-handwriting-edit');
     const watch=makeButton('Watch strokes',()=>animate()),step=makeButton('Next stroke',()=>showStep()),trace=makeButton('Trace',()=>setMode('trace')),write=makeButton('Write',()=>setMode('write'));
     const undo=makeButton('Undo',()=>{stopAnimation();accepted.pop();drawn.pop();completions.delete(which);render();}),clear=makeButton('Clear',()=>{stopAnimation();accepted=[];drawn=[];completions.delete(which);errors=0;render();});
     tools.append(watch,step,trace,write);actions.append(undo,clear);
@@ -81,7 +81,11 @@
       const id=pointer;cancel({pointerId:id});
       if(board?.hasPointerCapture(id))board.releasePointerCapture(id);
     }
+    // Reserved regions can resize the board without a window resize. Keep
+    // completed SVG strokes, but never join points from two board geometries.
+    const boardSize=new ResizeObserver(resize);boardSize.observe(stage);
     root.addEventListener('resize',resize);
+    root.addEventListener('modeAtlasViewportLayoutChanged',resize);
     function showStep(){
       stopAnimation();assisted=true;completions.delete(which);accepted=[];drawn=[];render();const guides=[...board.querySelectorAll('.ma-handwriting-guide')];
       guides.forEach((p,i)=>p.classList.toggle('is-hidden',i>watchIndex));guides[watchIndex].classList.add('is-demonstrated');
@@ -105,7 +109,7 @@
       catch(error){if(token!==loadToken||!dialog.open)return;stage.replaceChildren(el('p','',error.message),makeButton('Retry',()=>choose(index)));}
     }
     for(const [i,char]of chars.entries())selector.append(makeButton(char,()=>choose(i)));
-    dialog.addEventListener('close',()=>{loadToken++;stopAnimation();root.removeEventListener('resize',resize);root.ModeAtlasOverlay.unlock(dialog);dialog.remove();if(current===dialog)current=null;previous?.focus?.({preventScroll:true});},{once:true});
+    dialog.addEventListener('close',()=>{loadToken++;stopAnimation();boardSize.disconnect();root.removeEventListener('resize',resize);root.removeEventListener('modeAtlasViewportLayoutChanged',resize);root.ModeAtlasOverlay.unlock(dialog);dialog.remove();if(current===dialog)current=null;previous?.focus?.({preventScroll:true});},{once:true});
     dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
     current=dialog;root.ModeAtlasOverlay.lock(dialog);dialog.showModal();closeButton.focus({preventScroll:true});choose(0);
   }

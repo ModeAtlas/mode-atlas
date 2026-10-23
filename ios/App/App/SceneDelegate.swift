@@ -35,6 +35,7 @@ enum ModeAtlasAppearance {
 final class ModeAtlasWebView: WKWebView {
     var onLayoutChange: (([String: Any]) -> Void)?
     private var occlusions: [CGRect] = []
+    private var reservedRegionsAvailable = false
     private var lastLayout: NSDictionary?
 
     override func updateConstraints() {
@@ -42,6 +43,7 @@ final class ModeAtlasWebView: WKWebView {
             // UIKit tracks these reads and invalidates constraints when a camera
             // or Live Activity changes, even without a window resize.
             occlusions = reservedRegions(kind: .occlusion).map(\.frame)
+            reservedRegionsAvailable = true
         }
         super.updateConstraints()
         publishLayout()
@@ -67,6 +69,7 @@ final class ModeAtlasWebView: WKWebView {
         }
         let insets = safeAreaInsets
         return ["width": bounds.width, "height": bounds.height,
+                "reservedRegionsAvailable": reservedRegionsAvailable,
                 "safeArea": ["top": insets.top, "right": insets.right,
                              "bottom": insets.bottom, "left": insets.left],
                 "occlusions": blocked.filter { !$0.isEmpty && $0.intersects(bounds) }.map {

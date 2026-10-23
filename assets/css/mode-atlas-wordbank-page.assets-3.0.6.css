@@ -242,6 +242,9 @@ html[data-ma-large-text] .wordbank-intro{grid-template-columns:1fr;}html[data-ma
 .ma-word-lesson-card .ma-button{align-self:flex-start;margin-top:auto;}
 .ma-word-lessons-more>summary{cursor:pointer;min-height:44px;padding:12px 0;font-weight:650;}
 .ma-word-lesson,.ma-word-review{display:grid;gap:14px;min-width:0;}
+.ma-word-lesson-meet,.ma-word-lesson-intro,.ma-word-lesson-context{display:grid;gap:14px;min-width:0;align-content:start;}
+.ma-word-lesson-meet :is(h2,p){margin:0;}
+html[data-ma-runtime="ios"] .ma-word-lesson-meet{grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:24px;}
 .ma-word-lesson h2,.ma-word-review h2{overflow-wrap:anywhere;}
 .ma-word-lesson blockquote{margin:8px 0;padding:12px 16px;border-left:3px solid var(--ma-atlas);line-height:1.8;}
 .ma-word-reading-form{display:grid;gap:12px;}

@@ -33,7 +33,7 @@
   function read(){try{const value=JSON.parse(sessionStorage.getItem(key));const scope=value?.scope||'hub';return value&&tours[scope]&&Number.isInteger(value.step)&&value.step>=0&&value.step<tours[scope].length&&Date.now()-value.at<1800000?{...value,scope}:null;}catch{return null;}}
   let state=read(),layer=null,target=null,observer=null,frame=0,previousFocus=null;
   function save(){try{sessionStorage.setItem(key,JSON.stringify(state));}catch{}}
-  function destroy(){cancelAnimationFrame(frame);observer?.disconnect();observer=null;root.removeEventListener('resize',layout);root.visualViewport?.removeEventListener('resize',layout);root.visualViewport?.removeEventListener('scroll',layout);document.removeEventListener('scroll',layout,true);document.removeEventListener('keydown',onKey,true);layer?.remove();layer=null;target=null;}
+  function destroy(){cancelAnimationFrame(frame);observer?.disconnect();observer=null;root.removeEventListener('resize',layout);root.removeEventListener('modeAtlasViewportLayoutChanged',layout);root.visualViewport?.removeEventListener('resize',layout);root.visualViewport?.removeEventListener('scroll',layout);document.removeEventListener('scroll',layout,true);document.removeEventListener('keydown',onKey,true);layer?.remove();layer=null;target=null;}
   function finish(practice=false){
     const returnPath=practice===true
       ?(!root.ModeAtlasKanaLearning.read().startedAt?'/kana/':root.ModeAtlasVersionFile.appUrl(/^\/reading\/\?practice=10(?:&starter=starter)?$/.test(state?.practiceHref)?state.practiceHref:'/reading/?practice=10'))
@@ -61,11 +61,16 @@
       const rect=target.getBoundingClientRect(),card=layer.querySelector('.ma-tour-card'),spot=layer.querySelector('.ma-tour-spot');
       const x=Math.max(vx+6,rect.left-5),y=Math.max(vy+6,rect.top-5),right=Math.min(vx+w-6,rect.right+5),bottom=Math.min(vy+h-6,rect.bottom+5);
       Object.assign(spot.style,{left:x+'px',top:y+'px',width:Math.max(0,right-x)+'px',height:Math.max(0,bottom-y)+'px'});
-      card.style.width=Math.min(370,w-24)+'px';card.style.maxHeight=Math.max(180,h-32)+'px';
+      // The spotlight stays on its target; the card uses the same clear native
+      // rectangle as dialogs, including when only the system region moves.
+      const style=native?getComputedStyle(document.documentElement):null;
+      const inset=name=>Math.max(0,parseFloat(style?.getPropertyValue(name))||0);
+      const left=vx+inset('--ma-ios-overlay-left'),edge=vx+w-inset('--ma-ios-overlay-right'),ceiling=vy+inset('--ma-ios-overlay-top'),floor=vy+h-inset('--ma-safe-bottom');
+      card.style.width=Math.max(0,Math.min(370,edge-left-24))+'px';card.style.maxHeight=(native?Math.max(0,floor-ceiling-32):Math.max(180,h-32))+'px';
       const ch=card.getBoundingClientRect().height;
       const below=bottom+12,above=y-ch-12;
-      const top=below+ch<=vy+h-12?below:above>=vy+12?above:vy+h-ch-12;
-      Object.assign(card.style,{top:Math.max(vy+12,top)+'px',left:Math.max(vx+12,Math.min(x,vx+w-card.offsetWidth-12))+'px'});
+      const top=below+ch<=floor-12?below:above>=ceiling+12?above:floor-ch-12;
+      Object.assign(card.style,{top:Math.max(ceiling+12,top)+'px',left:Math.max(left+12,Math.min(x,edge-card.offsetWidth-12))+'px'});
     });
   }
   async function show(){
@@ -98,7 +103,7 @@
     actions.append(back,next);card.append(count,title,copy,actions,skip);layer.append(shade,spot,card);
     (step.setup?document.getElementById('practiceSetupDialog'):document.body).append(layer);
     layer.showPopover?.();observer=new ResizeObserver(layout);observer.observe(target);observer.observe(card);
-    root.addEventListener('resize',layout);root.visualViewport?.addEventListener('resize',layout);root.visualViewport?.addEventListener('scroll',layout);document.addEventListener('scroll',layout,true);document.addEventListener('keydown',onKey,true);
+    root.addEventListener('resize',layout);root.addEventListener('modeAtlasViewportLayoutChanged',layout);root.visualViewport?.addEventListener('resize',layout);root.visualViewport?.addEventListener('scroll',layout);document.addEventListener('scroll',layout,true);document.addEventListener('keydown',onKey,true);
     layout();title.focus({preventScroll:true});
   }
   function advance(amount){if(!state)return;state.step+=amount;save();void show();}

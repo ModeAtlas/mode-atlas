@@ -2,6 +2,8 @@
 
 Prepared 23 October 2026. iOS build **2080051**.
 
+For the current update and Xcode commands, use the [3.0.6 handover](development-3.0.6.md).
+
 ## Why the regressions happened
 
 1. **Unapproved artwork substitution in 3.0.2.** Commit `b925f31` changed the native
@@ -44,7 +46,8 @@ owners, retained changes, corrected visual roles and validation.
   returning-user personal overview. Existing first-use disclosure is retained.
 - Local toolchain validation respects `DEVELOPER_DIR` or the user's `xcode-select`
   choice. Automatic discovery is explicit `--ci` only. The handover updates the
-  original project directory and does not launch another Xcode or write IDE preferences.
+  original project directory and opens it through the normal macOS file association,
+  without selecting a different toolchain or writing IDE preferences.
 
 No backend deployment, data reset or save migration is required by this update.
 Coin-purchase placeholders remain. This release addresses the reported regressions;
@@ -52,6 +55,11 @@ it does not claim completion of the separate outstanding educator, learner,
 production and physical-device acceptance items in the PDF ledger.
 
 ## Mac handover code
+
+If the previous command stopped with conflicts in `project.pbxproj` and
+`Info.plist`, use the [recovery command](ios-update-recovery.md) first. The original
+handover covered unrelated local edits but missed simultaneous native metadata
+changes. This command now invokes the tested recovery when those files conflict.
 
 Use the **original project folder that had your preferred Xcode layout/theme**.
 The usual path is `~/mode-atlas`; change only that `cd` line if your original
@@ -87,26 +95,31 @@ else
   git switch -c "update/mode-atlas-3.0.5-$mode_atlas_stamp" "origin/$mode_atlas_branch"
 fi
 if test -n "$mode_atlas_stash"; then
-  git stash apply --index "$mode_atlas_stash"
+  npm ci
+  node recover_ios_update.cjs --apply "--stash=$mode_atlas_stash"
 fi
 
 python3 select_ios_toolchain.py
 npm ci
 npm run ios:sync
+xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj -scheme App
+npm run ios:open
 printf '\nUpdated existing project: %s\nBackup: %s\n' "$PWD" "$mode_atlas_backup"
 MODE_ATLAS_UPDATE
 ```
 
-The stash is retained as a backup. If local edits conflict, Git stops with both
-versions available; do not replace the whole project with an older backup or run
+The stash is retained as a backup. Native metadata conflicts are merged by field,
+with current release versions and Duo configuration retained. An ambiguous custom
+setting or a conflict outside those two files stops before writing either file;
+do not replace the whole project with an older backup or run
 a destructive reset. Ignored signing/widget configuration and `xcuserdata` stay
-in the original directory. The commands neither open/resize Xcode nor change its
-selected app, theme or global settings.
+in the original directory. The final two steps resolve Swift packages and open
+the existing project with the normal `ios:open` command. They do not select a
+different toolchain or write Xcode theme/window preferences.
 
-Return to the original project in your existing Xcode app. If it currently shows
-a timestamped checkout from the previous handover, open
-`~/mode-atlas/ios/App/App.xcodeproj` in that same app. Select **App**, then your
-simulator/device, and press **⌘R**. Confirm **3.0.5 / 2080051**.
+The original `~/mode-atlas/ios/App/App.xcodeproj` opens automatically. If an older
+timestamped checkout is also open, use the original project's window. Select
+**App**, then your simulator/device, and press **⌘R**. Confirm **3.0.5 / 2080051**.
 
 If a theme was already changed in Xcode itself, use **Settings → Appearance →
 Theme → Choose** to select your saved theme for the original workspace. Apple's

@@ -90,9 +90,9 @@ html[data-ma-large-text] .ma-about-table>div{grid-template-columns:1fr;gap:4px;}
 
 /* Shared visit-flow presentation. Behaviour lives in mode-atlas-visit-flows.js;
    visual ownership lives in CSS rather than injected runtime styles. */
-.ma-visit-backdrop{position:fixed;inset:0;z-index:240;display:none;align-items:center;justify-content:center;padding:18px;background:var(--ma-backdrop);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.ma-visit-backdrop{--ma-visit-top:max(18px,calc(var(--ma-ios-overlay-top,0px) + 12px));--ma-visit-bottom:max(18px,calc(var(--ma-safe-bottom,0px) + 12px));position:fixed;inset:0;z-index:240;display:none;align-items:center;justify-content:center;padding:var(--ma-visit-top) max(18px,calc(var(--ma-ios-overlay-right,0px) + 12px)) var(--ma-visit-bottom) max(18px,calc(var(--ma-ios-overlay-left,0px) + 12px));background:var(--ma-backdrop);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .ma-visit-backdrop.open{display:flex}
-.ma-visit-card{width:min(640px,100%);max-height:min(calc(var(--ma-overlay-height,100dvh) - 36px),820px);overflow:auto;border-radius:var(--ma-radius-card);padding:22px;color:var(--ma-text)}
+.ma-visit-card{width:min(640px,100%);max-height:min(calc(var(--ma-overlay-height,100dvh) - var(--ma-visit-top) - var(--ma-visit-bottom)),820px);overflow:auto;border-radius:var(--ma-radius-card);padding:22px;color:var(--ma-text)}
 .ma-visit-kicker{font-size:11px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:var(--ma-muted);margin-bottom:10px}
 .ma-visit-title{font-size:30px;line-height:1.04;font-weight:950;letter-spacing:-.04em;margin:0 0 10px}
 .ma-visit-copy{color:var(--ma-muted);line-height:1.55;margin:0 0 18px;font-size:15px}
