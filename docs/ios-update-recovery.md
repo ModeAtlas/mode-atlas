@@ -1,22 +1,27 @@
-# Recover a stopped 3.0.5 Mac update
+# Recover a stopped Mac update
 
-The reported update fetched 3.0.5 successfully, then stopped at `git stash apply
---index` with conflicts in `ios/App/App.xcodeproj/project.pbxproj` and
-`ios/App/App/Info.plist`. The stash remains. `Index was not unstashed` means Git
-could not restore the previous staging state; it does not mean the stash was lost.
-The cleanly restored `Package.resolved` change should be retained.
+The 3.0.6 screenshot shows `patch does not apply` and `conflicts in index. Try
+without --index.` for `project.pbxproj`. Git stopped before restoring the working
+files, so there were no unmerged files for the previous recovery condition to
+detect. The update was fetched; the saved local files remain in the stash.
 
-The original handover tested unrelated local changes but missed local Xcode edits
-touching the same native metadata. This correction adds a field-by-field recovery
-and makes the normal handover invoke it when needed. The helper preserves the
-fetched release's version/build. The command below fetches the current branch;
-see the [3.0.6 handover](development-3.0.6.md) for its changes and build number.
+The earlier 3.0.5 failure created actual conflicts in the project and plist. Both
+cases are now handled by the same helper. The normal handover invokes it with the
+saved stash hash. It first attempts indexed restoration; if that exact index
+failure leaves a clean checkout, it restores the saved files without reinstating
+the incompatible old index, then resolves known native fields. It does not retry
+a partial restoration or overwrite edits made after the failure.
 
-## Resume from the reported conflict
+The app remains **3.0.6 / build 2080052**. This correction changes the Mac update
+tooling, tests and handover. See the [3.0.6 handover](development-3.0.6.md) for the
+app changes. Git documents the distinction between restoring file changes and
+restoring the index in [git-stash](https://git-scm.com/docs/git-stash#Documentation/git-stash.txt---index).
+
+## Resume from either reported failure
 
 Quit Xcode while the files are being recovered. Use the same original checkout;
-change only the `cd` line if its path differs. Do not run the old stash command
-again, discard local changes, or copy an entire older project over this release.
+change only the `cd` line if its path differs. Use this recovery command instead
+of rerunning the old full handover.
 
 ```bash
 bash <<'MODE_ATLAS_RECOVERY'
@@ -28,7 +33,16 @@ git fetch origin "refs/heads/$mode_atlas_branch:refs/remotes/origin/$mode_atlas_
 mode_atlas_recovery_dir=$(mktemp -d "${TMPDIR:-/tmp}/mode-atlas-recovery.XXXXXX")
 git show "origin/$mode_atlas_branch:recover_ios_update.cjs" > "$mode_atlas_recovery_dir/recover_ios_update.cjs"
 npm ci
-node "$mode_atlas_recovery_dir/recover_ios_update.cjs" --apply
+if test -n "$(git diff --name-only --diff-filter=U)"; then
+  node "$mode_atlas_recovery_dir/recover_ios_update.cjs" --apply
+else
+  mode_atlas_stash=$(git stash list --format='%H %gs' | awk 'index($0, ": Before Mode Atlas 3.0.6 ") && !found {print $1; found=1}')
+  if test -z "$mode_atlas_stash"; then
+    printf 'The saved 3.0.6 update stash was not found. No stash was applied.\n' >&2
+    exit 1
+  fi
+  node "$mode_atlas_recovery_dir/recover_ios_update.cjs" --apply "--stash=$mode_atlas_stash"
+fi
 git merge --ff-only "origin/$mode_atlas_branch"
 python3 select_ios_toolchain.py
 npm ci
@@ -52,9 +66,11 @@ Select **App** and the device/simulator, and press **⌘R**.
   keys. Keeps the current release version/build and supported device/window setup.
 - Backs up all three versions, the conflicted working copies and the Git index
   under `.build/ios-update-recovery/` before applying a validated recovery.
-- Resolves only the two known native metadata files. Other staged changes,
+- Resolves only the two known native metadata files. Saved file contents,
   untracked files, signing/widget configuration, `xcuserdata`, theme files, the
-  current project directory and the stash remain intact.
+  current project directory and the stash are retained. When the index cannot be
+  reinstated, tracked edits may become unstaged; their original staging layout
+  remains in the retained stash. Ordinary indexed restoration keeps its staging.
 - Refuses unknown conflicting settings, unrelated conflicts, ordinary merges or
   rebases, and files manually edited after the stash conflict. It plans both
   native files before writing either. An ambiguity is reported by setting name;
@@ -71,9 +87,11 @@ explicit resolution.
 
 ## Validation
 
-Twelve automated checks cover release/signing preservation, numeric object
+Seventeen automated checks cover release/signing preservation, numeric object
 references, custom plist fields, unchanged-byte preservation, actual stash
 conflicts in all three Git conflict styles, untouched user data and package
-staging, refusal of ambiguous/manual edits and concurrent Git writes, and running the helper from a temporary
-directory before a fast-forward. The macOS CI job runs the same tests and checks
-the recovered project and plist with Apple's `plutil`.
+staging, refusal of ambiguous/manual edits and concurrent Git writes, and running
+the helper from a temporary directory before a fast-forward. The added cases
+reproduce the staged-project failure with no unmerged files, restore all saved
+contents, retain unknown conflicts and reject post-failure edits. The macOS CI job
+runs the same tests and checks the recovered project and plist with Apple's `plutil`.

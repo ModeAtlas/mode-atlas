@@ -2,7 +2,7 @@
   "release": "3.0.6",
   "iosBuild": 2080052,
   "javascript": {
-    "passed": 292,
+    "passed": 297,
     "failed": 0
   },
   "python": {
@@ -53,7 +53,12 @@
     "status": "passed",
     "commit": "75f9dc0b4e5f2bd8fb4c574e351c4ee7435dc517",
     "workflow": "https://github.com/ModeAtlas/mode-atlas/actions/runs/39884345833",
-    "note": "Native sources are unchanged by the final popup CSS/JavaScript corrections; current checks are linked from PR 67."
+    "note": "Native Swift sources are unchanged. Current native build and recovery-test checks are linked from PR 67."
   },
-  "physicalDeviceTested": false
+  "physicalDeviceTested": false,
+  "macUpdateRecovery": {
+    "passed": 17,
+    "failed": 0,
+    "coverage": "Actual index-only stash failure, normal native conflicts, retained signing/user data/stash, post-failure edit protection and documented recovery command through its Xcode launch invocation. Mac commands are stubbed in the local shell-flow test; macOS CI separately validates the recovered metadata with plutil."
+  }
 }

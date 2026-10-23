@@ -95,14 +95,8 @@ else
   git switch -c "update/mode-atlas-3.0.5-$mode_atlas_stamp" "origin/$mode_atlas_branch"
 fi
 if test -n "$mode_atlas_stash"; then
-  if ! git stash apply --index "$mode_atlas_stash"; then
-    if test -z "$(git diff --name-only --diff-filter=U)"; then
-      printf 'Stash restoration stopped without a native merge conflict. Your stash is retained.\n' >&2
-      exit 1
-    fi
-    npm ci
-    node recover_ios_update.cjs --apply
-  fi
+  npm ci
+  node recover_ios_update.cjs --apply "--stash=$mode_atlas_stash"
 fi
 
 python3 select_ios_toolchain.py

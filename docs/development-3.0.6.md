@@ -37,7 +37,7 @@ listed separately from the status UI.
 
 ## Validation
 
-Local checks passed: **292 JavaScript tests, 23 Python tests, 148 distinct browser
+Local checks passed: **297 JavaScript tests, 23 Python tests, 148 distinct browser
 cases across the regression runs, and 12 mobile iOS-shell checks**. The final
 49-case run covers the popup changes and their existing user flows. Results and rendered evidence are recorded in
 [the review](reviews/3.0.6/duo-space-review.md).
@@ -52,6 +52,8 @@ check. No backend deployment, save migration or Xcode preference change is neede
 Use your original `~/mode-atlas` folder. If an earlier update is still stopped at
 a native-file conflict, use [the recovery command](ios-update-recovery.md) first.
 This updates in place, preserves local settings and finishes by opening Xcode.
+The recovery helper also handles an indexed stash patch failing before Git
+creates conflicts; it retains the stash and reports any staging-state fallback.
 
 ```bash
 bash <<'MODE_ATLAS_UPDATE'
@@ -81,14 +83,8 @@ else
   git switch -c "update/mode-atlas-3.0.6-$mode_atlas_stamp" "origin/$mode_atlas_branch"
 fi
 if test -n "$mode_atlas_stash"; then
-  if ! git stash apply --index "$mode_atlas_stash"; then
-    if test -z "$(git diff --name-only --diff-filter=U)"; then
-      printf 'Stash restoration stopped without a native merge conflict. Your stash is retained.\n' >&2
-      exit 1
-    fi
-    npm ci
-    node recover_ios_update.cjs --apply
-  fi
+  npm ci
+  node recover_ios_update.cjs --apply "--stash=$mode_atlas_stash"
 fi
 
 test "$(node -p "require('./package.json').version")" = '3.0.6'

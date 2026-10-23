@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// Resolve the two native metadata files after a failed handover stash apply.
+// Restore a handover stash and resolve conflicts in the two native metadata files.
 // Reuse Capacitor CLI's installed parsers; never replace a whole file with one side.
 const fs = require('node:fs');
 const path = require('node:path');
@@ -88,6 +88,46 @@ function git(root, args, options = {}) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...options });
 }
 
+function requireNoMerge(root) {
+  for (const marker of ['MERGE_HEAD', 'rebase-merge', 'rebase-apply']) {
+    if (fs.existsSync(path.resolve(root, git(root, ['rev-parse', '--git-path', marker]).trim()))) {
+      throw new Error('This is a merge or rebase, not the handover stash conflict. No files changed.');
+    }
+  }
+}
+
+function restoreStash(root, stash) {
+  root = git(root, ['rev-parse', '--show-toplevel']).trim();
+  requireNoMerge(root);
+  if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(stash)
+    || !git(root, ['stash', 'list', '--format=%H']).trim().split('\n').includes(stash)) {
+    throw new Error('Expected the full hash of a retained local stash. No files changed.');
+  }
+  const clean = () => !git(root, ['status', '--porcelain', '--untracked-files=normal']).trim();
+  if (!clean()) throw new Error('The checkout has local changes or unresolved conflicts. No stash applied; existing edits and the stash are retained.');
+  const unmerged = () => !!git(root, ['ls-files', '--unmerged']).trim();
+  const apply = indexed => git(root, ['-c', 'stash.index=false', 'stash', 'apply', ...(indexed ? ['--index'] : []), stash], {
+    env: { ...process.env, LC_ALL: 'C' }
+  });
+  let indexRestored = true;
+  try {
+    apply(true);
+  } catch (error) {
+    if (!unmerged()) {
+      // An indexed patch can fail before Git restores any working files. Only
+      // retry this exact failure on a still-clean checkout; never apply twice
+      // after a partial restoration, an untracked-file collision or manual edit.
+      const detail = String(error.stderr || '');
+      if (!/conflicts in index\. Try without --index\./.test(detail) || !clean()) throw error;
+      indexRestored = false;
+      try { apply(false); } catch (retryError) { if (!unmerged()) throw retryError; }
+    }
+  }
+  const result = recover(root, true);
+  return { ...result, stash, indexRestored,
+    message: result.changed.length ? result.message : 'Restored saved files. The stash is retained.' };
+}
+
 function unchangedConflict(root, versions, working) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'mode-atlas-conflict-'));
   const normalize = text => text.replace(/^(<{7}|\|{7}|={7}|>{7})[^\n]*$/gm, '$1');
@@ -117,11 +157,7 @@ function recover(root = process.cwd(), apply = false) {
   root = git(root, ['rev-parse', '--show-toplevel']).trim();
   const records = git(root, ['ls-files', '--unmerged', '-z']).split('\0').filter(Boolean);
   if (!records.length) return { changed: [], message: 'No unresolved iOS update conflicts.' };
-  for (const marker of ['MERGE_HEAD', 'rebase-merge', 'rebase-apply']) {
-    if (fs.existsSync(path.resolve(root, git(root, ['rev-parse', '--git-path', marker]).trim()))) {
-      throw new Error('This is a merge or rebase, not the handover stash conflict. No files changed.');
-    }
-  }
+  requireNoMerge(root);
   const files = new Map();
   for (const record of records) {
     const [metadata, file] = record.split('\t');
@@ -190,12 +226,16 @@ function recover(root = process.cwd(), apply = false) {
     message: 'Recovered native metadata. Local settings, other staged files, ignored Xcode user data and the stash are retained.' };
 }
 
-module.exports = { parseProject, planFile, recover, PROJECT, INFO };
+module.exports = { parseProject, planFile, recover, restoreStash, PROJECT, INFO };
 if (require.main === module) {
   try {
-    if (process.argv.slice(2).some(arg => arg !== '--apply')) throw new Error('Usage: node recover_ios_update.cjs [--apply]');
-    const result = recover(process.cwd(), process.argv.includes('--apply'));
+    const args = process.argv.slice(2), stashes = args.filter(arg => arg.startsWith('--stash='));
+    if (args.some(arg => arg !== '--apply' && !arg.startsWith('--stash=')) || stashes.length > 1 || stashes.length && !args.includes('--apply')) {
+      throw new Error('Usage: node recover_ios_update.cjs [--apply [--stash=<full-stash-hash>]]');
+    }
+    const result = stashes.length ? restoreStash(process.cwd(), stashes[0].slice('--stash='.length)) : recover(process.cwd(), args.includes('--apply'));
     console.log(result.message);
+    if (result.indexRestored === false) console.log('The old staging layout could not be restored. Saved file contents were restored; tracked edits may now be unstaged. The original staging layout remains in the retained stash.');
     if (result.backup) console.log(`Backup: ${result.backup}`);
     if (result.changed.length) console.log(`Resolved: ${result.changed.join(', ')}`);
     if (result.retainedRelease?.length) console.log('Kept current release values for:\n  ' + result.retainedRelease.join('\n  '));

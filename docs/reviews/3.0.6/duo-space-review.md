@@ -35,7 +35,7 @@ Apple guidance reviewed:
 
 ## Validation and limits
 
-- Release gate: **292 JavaScript tests and 23 Python tests passed**, plus source,
+- Release gate: **297 JavaScript tests and 23 Python tests passed**, plus source,
   security, learning-content and native-bundle audits.
 - **148 distinct browser cases passed across two regression runs:** 125 in the
   broad layout run, then 49 covering the final popup changes and existing
@@ -45,7 +45,10 @@ Apple guidance reviewed:
 - **12 mobile iOS-shell checks passed**.
 - The release bump exposed a hard-coded 3.0.5 string in the Xcode recovery test
   fixture. The fixture now derives the release version and continues to create
-  real conflicts; all 12 recovery tests pass. Recovery behavior did not change.
+  real conflicts. The subsequent staged-project screenshot exposed an index-only
+  failure before conflict creation. The recovery helper now handles that path;
+  all 17 recovery tests pass, including the documented resume command through
+  its Xcode launch invocation.
 - Handover/recovery shell syntax and `git diff --check` passed.
 - Native Swift compilation/archive is covered by the PR's GitHub macOS job.
 
