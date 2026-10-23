@@ -16,7 +16,7 @@
   function link(label,href,primary=false){const a=el('a','ma-button '+(primary?'ma-button--primary':'ma-button--ghost'),label);a.href=href;return a;}
   function navigate(href){root.ModeAtlasVersionFile?.navigate?root.ModeAtlasVersionFile.navigate(href):location.assign(href);}
   function segmented(label,items,value,onChange){const group=el('div','ma-kana-segments');group.setAttribute('role','group');group.setAttribute('aria-label',label);for(const [id,text]of items){const b=button(text,()=>onChange(id));b.setAttribute('aria-pressed',String(id===value));group.append(b);}return group;}
-  function title(kicker,heading,copy){const h=el('header','ma-kana-page-heading');h.append(el('span','ma-kicker',kicker),el('h1','',heading));if(copy)h.append(el('p','ma-kana-muted',copy));host.append(h);}
+  function title(kicker,heading,copy){const h=el('header','ma-kana-page-heading');h.append(el('span','ma-kicker',kicker),el('h1','',heading));if(copy)h.append(el('p','ma-kana-muted',copy));host.append(h);return h;}
   function url(){const q=new URLSearchParams({view,script,skill});history.replaceState(null,'','/kana/?'+q);}
   function chooseView(next){if(lesson)root.ModeAtlasLearningEvents?.emit('lessonExited','kana');view=next;lesson=null;placement=null;placementSetup=false;practiceSettings=null;url();render();root.scrollTo({top:0,behavior:'instant'});}
   function openPlacement(){placement=P.read();if(placement&&!placement.finished){render();return;}placement=null;placementSetup=true;render();}
@@ -149,7 +149,7 @@
     if(includeExplore){const all=button('Explore your path →',()=>chooseView('path'));all.className='ma-kana-text-action';all.setAttribute('aria-label','Explore your path');aside.append(all);}
     return aside;
   }
-  function workspace(stage){const frame=el('div','ma-kana-workspace');frame.append(stage);host.append(frame);if(!guided())host.append(link('Explore the full learning path','/kana/?view=path'));}
+  function workspace(stage,intro){const frame=el('div','ma-kana-workspace');frame.append(stage);if(intro){const layout=el('div','ma-kana-practice-layout');layout.append(intro,frame);host.append(layout);}else host.append(frame);if(!guided())host.append(link('Explore the full learning path','/kana/?view=path'));}
   function learn(){
     title('Kana · Learn','Your next row');if(!guided())controls();
     const state=L.read(),evidence=L.snapshot(),next=nextRow(skill,script,state,evidence);
@@ -215,16 +215,16 @@
     draw();root.ModeAtlasDialog.feature({title:'Make it your session',contentNode:content}).then(()=>{customizing=false;render();});
   }
   function practise(){
-    title('Kana · Practice','Build the reflex.');
+    const intro=el('div','ma-kana-practice-intro');intro.append(title('Kana · Practice','Build the reflex.'));
     const choices=segmented('Kana skill',['reading','writing','both','handwriting'].map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();});
-    choices.classList.add('ma-kana-practice-skills');host.append(choices);
+    choices.classList.add('ma-kana-practice-skills');intro.append(choices);
     const explanation={reading:'See あ, type “a”. Connect each shape with its sound.',writing:'See “a”, choose or type あ. Bring the shape to mind.',both:'あ → a, then a → あ. Alternate Read and Recall in one session.',handwriting:'Trace the strokes, then try writing from memory.'};
-    host.append(el('p','ma-kana-skill-explanation',explanation[skill]));
+    intro.append(el('p','ma-kana-skill-explanation',explanation[skill]));
     const stage=el('div','ma-kana-practice-stage');
     const card=el('section','ma-kana-next ma-kana-session');card.dataset.skill=skill;
     if(skill==='handwriting'){
       const row=nextRow();card.append(el('span','ma-kicker',script==='hiragana'?'Hiragana':'Katakana'),el('h2','','Make the shapes your own'),el('p','ma-kana-next-chars',row.chars.join(' ')),el('p','ma-kana-muted','Take your time. Handwriting is an optional part of your journey.'));
-      card.append(link('Open handwriting',L.practiceUrl(skill,row.chars),true));stage.append(card,button('Choose a different row',()=>chooseView('path')));workspace(stage);return;
+      card.append(link('Open handwriting',L.practiceUrl(skill,row.chars),true));stage.append(card,button('Choose a different row',()=>chooseView('path')));workspace(stage,intro);return;
     }
     const settings=settingsForPractice(),family=root.ModeAtlasKanaPractice.family(settings),pool=settings.testMode?L.testPool(settings,skill):L.selection(settings,skill),chars=Object.keys(pool);
     const selected=L.rows.filter(row=>row.chars.some(char=>Object.hasOwn(pool,char)));
@@ -247,7 +247,7 @@
     for(const [id,label,copy,mark]of [['practice','At your pace','Short sets or keep going.','あ'],['daily','Daily session','Twenty questions for today.','20'],['timed','Timed challenge','Build speed in one minute.','60'],['sequence','Character sequences','Practise reading kana together.','あい']]){
       if(skill==='both'&&['daily','sequence'].includes(id))continue;
       const tool=activity(label,copy,mark,()=>{practiceSettings=root.ModeAtlasKanaPractice.forFamily(settings,id,skill);render();root.scrollTo({top:0,behavior:'instant'});});tool.setAttribute('aria-pressed',String(id===family));activities.append(tool);
-    }stage.append(activities);workspace(stage);
+    }stage.append(activities);workspace(stage,intro);
   }
   function tests(){
     if(skill==='handwriting')skill='reading';title('Kana','Put your skills to the test','Complete a full script assessment, then explore its results.');

@@ -12,7 +12,7 @@ The approved design identity is retained across responsive and first-use changes
 | Avatar, themes and earned artwork | Collectible appearance; retained within the wardrobe/rewards context. Coin-purchase placeholders remain by the user's instruction. |
 | Lesson presentation | One active teaching/recall task. Optional pattern notes, comparisons and other units use disclosures. The interface carries the next action rather than an introductory essay. |
 | Results | Shared compact rows: Practised, Revisit, When. Existing answer history remains available below the result. Review time comes from the relevant saved schedule. |
-| Responsive native navigation | Four bottom destinations; a side rail when measured usable space fits the controls. Reuse a system side region only with native occlusion evidence. Rail targets are at least 64 CSS pixels high; independent safe insets bound content and overlays. No device-name or fixed device-size catalogue. |
+| Responsive native navigation | Four bottom destinations; a side rail when measured usable space fits the controls. Reuse a system side region only with native occlusion evidence. Rail targets are at least 64 CSS pixels high normally, or 52 in short windows, retaining the same 30-pixel illustrations and labels. Independent safe insets bound content and overlays. No device-name or fixed device-size catalogue. |
 
 Home remains the personal app hub. Learn remains the branch directory, including future branches. Kana owns only Kana. A new or just-starting learner does not receive the established personal dashboard after one answer. Established learners retain direct access to their existing work.
 

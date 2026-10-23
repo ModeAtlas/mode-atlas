@@ -29,11 +29,16 @@ async function prepare(page,{native=true,width=393,height=852,theme='dark',auth=
   await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
 }
 for(const layout of [{native:true,width:320,theme:'light'},{native:true,width:393,theme:'dark'},{native:true,width:820,height:1180,theme:'light'},{native:false,width:1280,theme:'dark'}]){
-  test(`shop categories and pinned preview ${layout.native?'iOS':'web'} ${layout.width}`,async({page},info)=>{
+  test(`shop categories and scrolling preview ${layout.native?'iOS':'web'} ${layout.width}`,async({page},info)=>{
     const errors=[];page.on('pageerror',error=>errors.push(error.message));await prepare(page,layout);
     await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
     const preview=page.locator('#maAccount-shop'),fullLink=preview.getByRole('link',{name:'See full shop'});
-    await preview.evaluate(node=>{node.scrollTop=node.scrollHeight;});await expect(fullLink).toBeInViewport();
+    await expect(fullLink).toBeVisible();
+    const header=preview.locator('.ma-shop-header'),before=(await header.boundingBox()).y;
+    await preview.evaluate(node=>{node.scrollTop=node.scrollHeight;});
+    const scrolled=await preview.evaluate(node=>node.scrollTop);
+    expect(before-(await header.boundingBox()).y).toBeCloseTo(scrolled,0);
+    await preview.evaluate(node=>{node.scrollTop=0;});await expect(fullLink).toBeInViewport();
     await fullLink.click();await expect(page).toHaveURL(/\/shop\/$/);
     const full=page.locator('.ma-shop-full');await expect(full).toBeVisible();
     await expect(full.getByRole('tab')).toHaveText(['Featured','Wardrobe','Pets','Theme packs','Streak items','Atlas Coins']);
