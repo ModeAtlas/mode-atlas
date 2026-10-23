@@ -20,6 +20,8 @@ unchanged.
   shared popups retain the ordinary safe rectangle. Handwriting places its board
   and supporting controls beside each other where they fit. Completed strokes
   survive region changes; only an unfinished stroke is cancelled.
+- First-use consent, guided tours and the developer console also respect that
+  clear rectangle. Tour cards reposition when native system regions move.
 - Word lessons pair the word/audio with its example in wider native dialogs.
   Wide Kanji teaching pairs the character with its reading/context. Narrow
   layouts retain the same learning sequence and actions.
@@ -35,8 +37,9 @@ listed separately from the status UI.
 
 ## Validation
 
-Local checks passed: **292 JavaScript tests, 23 Python tests, 125 targeted browser
-cases and 12 mobile iOS-shell checks**. Results and rendered evidence are recorded in
+Local checks passed: **292 JavaScript tests, 23 Python tests, 148 distinct browser
+cases across the regression runs, and 12 mobile iOS-shell checks**. The final
+49-case run covers the popup changes and their existing user flows. Results and rendered evidence are recorded in
 [the review](reviews/3.0.6/duo-space-review.md).
 
 Browser fixtures simulate native geometry; their labelled system areas are test

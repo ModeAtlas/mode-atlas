@@ -124,3 +124,44 @@ test('a system-region change without window resizing preserves handwriting and c
     await expect(page.locator('.ma-handwriting-guide.is-done')).toHaveCount(1);
   }
 });
+
+for(const [name,layout]of [['right',outer],['left',left]]){
+  test(`${name}: first-use consent uses clear width and reaches the first lesson`,async({page},info)=>{
+    await prepare(page,layout,'light',false,false);await page.goto('/');await settle(page);
+    await page.getByRole('link',{name:'Start learning →'}).click();
+    const card=page.locator('.ma-visit-card');await clearOfSystem(card,layout);
+    expect((await card.boundingBox()).width).toBeGreaterThan(430);
+    await page.getByRole('checkbox',{name:'I agree to the Privacy Policy and Terms of Use.'}).check();
+    await systemIllustration(page,layout);await page.screenshot({path:info.outputPath('welcome.png')});
+    await page.getByRole('button',{name:'Continue to Kana',exact:true}).click();
+    await page.getByRole('button',{name:/Start lesson/}).click();
+    await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');
+  });
+  test(`${name}: tour stays below moving system UI and keeps its controls reachable`,async({page},info)=>{
+    await prepare(page,layout);await page.goto('/');await settle(page);
+    await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Settings',exact:true}).click();
+    await page.getByRole('button',{name:'Learning tours',exact:true}).click();await page.getByRole('button',{name:'Around Mode Atlas',exact:true}).click();
+    const card=page.locator('.ma-tour-card');await clearOfSystem(card,layout);
+    const changed={...layout,occlusions:layout.occlusions.map(r=>({...r,height:320}))};
+    await page.evaluate(next=>applyDuoNativeGeometry(next),changed);
+    await clearOfSystem(card,changed);
+    await expect.poll(async()=>(await card.boundingBox()).y).toBeGreaterThanOrEqual(344);
+    await expect(card.getByRole('button',{name:'Skip tour',exact:true})).toBeInViewport({ratio:1});
+    await systemIllustration(page,changed);await page.screenshot({path:info.outputPath('tour.png')});
+    await card.getByRole('button',{name:'Next',exact:true}).click();
+    await expect(card.getByRole('heading',{name:'Choose a branch'})).toBeVisible();
+    await page.keyboard.press('Escape');await expect(card).toBeHidden();
+  });
+  test(`${name}: developer console uses clear width without covering the system area`,async({page})=>{
+    await prepare(page,layout);await page.goto('/');await settle(page);
+    await page.waitForFunction(()=>!!window.KanaCloudSync);
+    await page.evaluate(async()=>{
+      KanaCloudSync.getUser=()=>({uid:'developer',getIdTokenResult:async()=>({claims:{modeAtlasAdmin:true}})});
+      await ModeAtlasDevConsoleLoader.loadIfEligible();ModeAtlasDevConsole.open();
+    });
+    const card=page.locator('.ma-dev-modal');await clearOfSystem(card,layout);
+    expect((await card.boundingBox()).width).toBeGreaterThan(430);
+    await expect(page.locator('[data-ma-dev-close]')).toBeInViewport({ratio:1});
+    await page.getByRole('button',{name:'Storage',exact:true}).click();await page.locator('[data-ma-dev-close]').click();await expect(card).toBeHidden();
+  });
+}

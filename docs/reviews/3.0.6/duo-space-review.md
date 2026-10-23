@@ -12,6 +12,7 @@ covers the remaining space/layout issues, not the separate full-product PDF audi
 | Resume setup | A full-width checkpoint was placed in one track of a two-column grid. | It spans both tracks; Resume/Discard share one row. |
 | Tall Home | A shared first-use breakpoint hid artwork while the native grid retained two columns. | Restore the existing illustration where two columns fit; adjust branch-card capacity by content width. |
 | Other activities | Narrow dialog/lesson limits and stacked handwriting tools left usable width unused. | Wider native word lessons pair word/audio with context. Wide Kanji teaching pairs character/reading/context. Handwriting arranges board and tools together. Shared popup placement uses the clear rectangle. |
+| Older popups | First-use consent, tours and the developer console retained independent viewport rules. | Reuse the clear native rectangle; tour cards respond to native-only system-region changes while the spotlight stays attached to its target. |
 
 The existing native chrome is the layout owner; no second router, CSS override
 file, device-name detection, icon replacement, theme rewrite or grading/save
@@ -36,7 +37,9 @@ Apple guidance reviewed:
 
 - Release gate: **292 JavaScript tests and 23 Python tests passed**, plus source,
   security, learning-content and native-bundle audits.
-- **125 targeted browser cases passed in the final complete run.** Earlier
+- **148 distinct browser cases passed across two regression runs:** 125 in the
+  broad layout run, then 49 covering the final popup changes and existing
+  first-use, tour and developer flows (26 overlap). Earlier
   checks exposed bottom-dock overlap and a delayed fallback-inset update; both
   were fixed in the layout owner without weakening their assertions.
 - **12 mobile iOS-shell checks passed**.
@@ -50,7 +53,8 @@ Coverage includes all existing route layouts, Light/Dark, first-use/established
 Home, old-shell/stale-geometry fallbacks, left/right system strips, changing
 occlusions, keyboard bounds, mixed/practice/test modes, checkpoint resume,
 folding during an answer, profile/settings focus, handwriting stroke retention,
-and larger text. A native-event-only handwriting test reproduces both movement
+and larger text. First-use consent reaches the first lesson, and tour navigation
+and dismissal remain functional with system UI on either side. A native-event-only handwriting test reproduces both movement
 and resizing without a window resize: completed strokes remain, while the
 unfinished stroke is cancelled. The screenshots below use simulated native geometry, not
 physical-device results. Labelled black system regions are test annotations.
@@ -66,6 +70,7 @@ Live Activity and fold behavior still need acceptance on the user's Mac.
 | Recall and checkpoint | [Recall](screenshots/recall-outer.png), [Resume](screenshots/resume.png) |
 | Account and Home | [Profile](screenshots/profile-outer.png), [Home](screenshots/home-portrait.png) |
 | Branch activities | [Words](screenshots/word-wide.png), [Kanji](screenshots/kanji-wide.png), [handwriting](screenshots/handwriting-outer.png) |
+| First use and guided help | [Welcome](screenshots/welcome-outer.png), [tour with moved system region](screenshots/tour-left.png) |
 
 ![Reading fills the clear region](screenshots/reading-outer.png)
 

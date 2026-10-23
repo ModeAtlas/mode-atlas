@@ -6,11 +6,11 @@ const outer={width:480,height:680,reservedRegionsAvailable:true,safeArea:{top:12
 const inner={width:960,height:680,reservedRegionsAvailable:true,safeArea:{top:12,right:84,bottom:20,left:0},occlusions:[{x:890,y:24,width:52,height:84}]};
 const portrait={width:740,height:1020,reservedRegionsAvailable:true,safeArea:{top:84,right:0,bottom:24,left:0},occlusions:[]};
 const views=[['outer',outer],['inner',inner],['portrait',portrait]];
-async function prepare(page,geometry=inner,theme='dark',seedKana=true){
+async function prepare(page,geometry=inner,theme='dark',seedKana=true,onboarded=true){
   if(seedKana)await require('./kana-fixture')(page);
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,r=>r.abort());
   await page.setViewportSize({width:geometry.width,height:geometry.height});
-  await page.addInitScript(({geometry,theme})=>{
+  await page.addInitScript(({geometry,theme,onboarded})=>{
     let listener=()=>{};
     window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{ModeAtlasNative:{
       getViewportLayout:async()=>geometry,
@@ -22,11 +22,11 @@ async function prepare(page,geometry=inner,theme='dark',seedKana=true){
     };
     window.applyDuoGeometry=next=>{applyDuoNativeGeometry(next);dispatchEvent(new Event('resize'));};
     document.addEventListener('DOMContentLoaded',()=>applyDuoGeometry(geometry),{once:true});
-    for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
+    if(onboarded)for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
     localStorage.setItem('modeAtlasThemePreference',theme);
     localStorage.setItem('modeAtlasSound','off');
     for(const key of ['settings','reverseSettings'])if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify({hiraganaRows:['h_a','h_ka','h_sa'],katakanaRows:[],hint:false,srs:false,keyboardMode:false,choiceCount:8}));
-  },{geometry,theme});
+  },{geometry,theme,onboarded});
 }
 async function settle(page){
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
