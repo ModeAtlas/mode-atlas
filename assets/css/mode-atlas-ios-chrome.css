@@ -25,8 +25,8 @@ html[data-ma-runtime="ios"] .ma-page-frame{width:100%;min-width:0;}
 /* All four insets are independent. Dialogs use the safe viewport even when
    the keyboard or a fold changes its height without navigation. */
 html[data-ma-runtime="ios"] .ma-dialog-layer{
-  --ma-dialog-top:max(var(--ma-page-inset-top),calc(var(--ma-safe-top) + 12px));
-  padding:var(--ma-dialog-top) calc(var(--ma-safe-right) + 12px) calc(var(--ma-safe-bottom) + 12px) calc(var(--ma-safe-left) + 12px);
+  --ma-dialog-top:calc(var(--ma-ios-overlay-top,var(--ma-safe-top)) + 12px);
+  padding:var(--ma-dialog-top) calc(var(--ma-ios-overlay-right,var(--ma-safe-right)) + 12px) calc(var(--ma-safe-bottom) + 12px) calc(var(--ma-ios-overlay-left,var(--ma-safe-left)) + 12px);
 }
 html[data-ma-runtime="ios"] .ma-dialog{
   max-height:min(760px,calc(var(--ma-overlay-height,100dvh) - var(--ma-dialog-top) - var(--ma-safe-bottom) - 12px));
@@ -129,6 +129,10 @@ html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs #studyNavShowBtn{
 }
 html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-ios-tabs{display:none;}
 html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing){--ma-ios-dock-height:0px;}
+html[data-ma-runtime="ios"][data-ma-expanded-practice] body{
+  --ma-page-inset-left:calc(var(--ma-ios-clear-left,var(--ma-safe-left)) + var(--ma-page-pad,16px));
+  --ma-page-inset-right:calc(var(--ma-ios-clear-right,var(--ma-safe-right)) + var(--ma-page-pad,16px));
+}
 html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open):not(.ma-mixed-recall){
   --ma-ios-dock-height:0px;
   --ma-page-inset-bottom:calc(var(--ma-ios-custom-kb-height,210px) + 12px);
@@ -139,7 +143,7 @@ html[data-ma-runtime="ios"] .ma-ios-reading-keyboard{display:none;}
 html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open):not(.ma-mixed-recall) .ma-ios-reading-keyboard,
 html[data-ma-runtime="ios"] .ma-ios-reading-keyboard--inline{
   position:fixed;z-index:101;left:0;right:0;bottom:0;
-  display:grid;gap:7px;padding:11px max(4px,var(--ma-safe-right)) calc(10px + var(--ma-safe-bottom)) max(4px,var(--ma-safe-left));
+  display:grid;gap:7px;padding:11px max(8px,var(--ma-ios-keyboard-right,var(--ma-safe-right))) calc(10px + var(--ma-safe-bottom)) max(8px,var(--ma-ios-keyboard-left,var(--ma-safe-left)));
   border-top:1px solid var(--ma-border);background:var(--ma-surface-strong);
   box-shadow:var(--ma-native-chrome-shadow);
 }
@@ -167,7 +171,9 @@ html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:focus-visible{outline:
 /* The dock trigger opens the same accessible dialog as the web trainer. */
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only{display:none;}
 html[data-ma-runtime="ios"] .ma-practice-sheet{
-  width:min(760px,100%);margin:auto auto 0;max-height:calc(100dvh - var(--ma-safe-top) - 12px);
+  width:min(760px,calc(100% - var(--ma-ios-overlay-left,var(--ma-safe-left)) - var(--ma-ios-overlay-right,var(--ma-safe-right)) - 24px));
+  left:var(--ma-ios-overlay-left,var(--ma-safe-left));right:var(--ma-ios-overlay-right,var(--ma-safe-right));
+  margin:auto auto 0;max-height:calc(100dvh - var(--ma-ios-overlay-top,var(--ma-safe-top)) - 12px);
   border-radius:28px 28px 0 0;border-bottom:0;padding-bottom:var(--ma-safe-bottom);
 }
 html[data-ma-runtime="ios"] .ma-practice-sheet__handle{display:grid;place-items:center;flex:none;height:24px;touch-action:none;}
@@ -193,22 +199,25 @@ html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-train
 html[data-ma-runtime="ios"] .ma-trainer-card .start-wrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:min(560px,100%);gap:10px;margin-top:8px;}
 html[data-ma-runtime="ios"] .ma-trainer-card .start-wrap[hidden]{display:none;}
 html[data-ma-runtime="ios"] .ma-trainer-card .ma-study-setup{grid-column:1/-1;width:100%;max-width:none;padding:12px;}
+html[data-ma-runtime="ios"] .ma-trainer-card .ma-practice-recovery{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px;}
+html[data-ma-runtime="ios"] .ma-trainer-card .ma-practice-recovery p{grid-column:1/-1;margin:0;}
 html[data-ma-runtime="ios"] .ma-trainer-card .start-wrap .ma-button{min-width:0;width:100%;min-height:48px;}
 html[data-ma-runtime="ios"] .ma-trainer-card :is(.hint,.combo-tier-notice):empty{display:none;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-card{padding:16px;margin-bottom:0;}
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-header{min-height:0;margin-bottom:4px;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-header{min-height:0;margin-bottom:4px;padding-left:var(--ma-ios-section-left,0px);padding-right:var(--ma-ios-section-right,0px);}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-stage{gap:8px;padding:0;}
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-session-hud{margin:0;padding:0;border:0;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-session-hud{margin:0;padding:0 var(--ma-ios-section-right,0px) 0 var(--ma-ios-section-left,0px);border:0;}
 html[data-ma-runtime="ios"] body.trainer-session-active .ma-session-hud .scoreline{max-width:520px;margin-inline:auto;}
 /* Progress already states the question count. In scored sessions the live
    Correct/Incorrect pair takes priority over practice streaks and old records. */
 html[data-ma-runtime="ios"] body.trainer-session-active .daily-badge,
 html[data-ma-runtime="ios"] body.trainer-session-active :is(#dailyProgressPill,#testQuestionPill,#dailyOfficialPill),
 html[data-ma-runtime="ios"] body:is(.daily-challenge-active,.test-mode-active).trainer-session-active .score-pill:has(> #streak,> #highScore){display:none;}
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-prompt-wrap{width:100%;min-width:0;container:ma-prompt / inline-size;min-height:clamp(90px,17dvh,140px);padding:4px 0;margin:0;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-prompt-wrap{width:100%;min-width:0;container:ma-prompt / inline-size;min-height:clamp(90px,17dvh,140px);padding:4px var(--ma-ios-section-right,0px) 4px var(--ma-ios-section-left,0px);margin:0;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-answer-wrap{padding-left:var(--ma-ios-section-left,0px);padding-right:var(--ma-ios-section-right,0px);}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active :is(.hiragana,.prompt){font-size:clamp(1.8rem,min(15dvh,calc(92cqw / var(--ma-prompt-length,1))),7rem);line-height:1.2;}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-input{min-height:48px;font-size:1.15rem;padding:10px 12px;}
-html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-session-controls{margin-top:6px;padding-top:8px;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-session-controls{margin-top:6px;padding:8px var(--ma-ios-section-right,0px) 0 var(--ma-ios-section-left,0px);}
 html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .session-actions{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,6.25rem),1fr));gap:6px;max-width:680px;
 }

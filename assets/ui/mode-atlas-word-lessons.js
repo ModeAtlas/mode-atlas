@@ -35,7 +35,9 @@
       const word=unit.words[index];
       host.append(el('p','ma-kicker',`${index+1} of ${unit.words.length} · ${phase==='meet'?'Meet the word':'Recall the reading'}`));
       if(phase==='meet'){
-        host.append(jp('h2',word.written),jp('p',word.reading),el('p','',word.english),root.ModeAtlasPronunciation.controls(word.reading),jp('blockquote',word.example),el('p','ma-muted',word.exampleTranslation));
+        const meet=el('div','ma-word-lesson-meet'),intro=el('div','ma-word-lesson-intro'),context=el('div','ma-word-lesson-context');
+        intro.append(jp('h2',word.written),jp('p',word.reading),el('p','',word.english),root.ModeAtlasPronunciation.controls(word.reading));
+        context.append(jp('blockquote',word.example),el('p','ma-muted',word.exampleTranslation));meet.append(intro,context);host.append(meet);
         host.append(button('Try remembering it',()=>{
           checkpoint({phase:'recall'},()=>root.ModeAtlasWordBank.add(word));show();
         }));
@@ -102,7 +104,7 @@
     const close=()=>{active=false;root.ModeAtlasPronunciation.stop();root.ModeAtlasDialog.close(false);};
     checkpoint({index,phase,application});root.ModeAtlasLearningEvents?.emit('lessonStarted','words');
     root.addEventListener('modeAtlasAccountWillChange',close);
-    root.ModeAtlasDialog.feature({kicker:'Useful Japanese',title:unit.title,contentNode:host}).finally(()=>{
+    root.ModeAtlasDialog.feature({kicker:'Useful Japanese',title:unit.title,contentNode:host,size:root.ModeAtlasEnv?.isNativeApp?'wide':'default'}).finally(()=>{
       if(!completed)root.ModeAtlasLearningEvents?.emit('lessonExited','words');
       active=false;root.ModeAtlasPronunciation.stop();root.removeEventListener('modeAtlasAccountWillChange',close);
       document.querySelectorAll('[data-ma-word-lessons]').forEach(render);
@@ -143,7 +145,7 @@
     }
     const close=()=>{active=false;root.ModeAtlasDialog.close(false);};
     root.addEventListener('modeAtlasAccountWillChange',close);root.ModeAtlasLearningEvents?.emit('lessonStarted','words');
-    root.ModeAtlasDialog.feature({kicker:'Useful Japanese',title:unit.title,contentNode:host}).finally(()=>{
+    root.ModeAtlasDialog.feature({kicker:'Useful Japanese',title:unit.title,contentNode:host,size:root.ModeAtlasEnv?.isNativeApp?'wide':'default'}).finally(()=>{
       if(!completed)root.ModeAtlasLearningEvents?.emit('lessonExited','words');active=false;
       root.removeEventListener('modeAtlasAccountWillChange',close);document.querySelectorAll('[data-ma-word-lessons]').forEach(render);
     });question();

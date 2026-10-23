@@ -60,9 +60,41 @@
 
     var dockHeight = -1, visibleHeight = -1, nativeLayout = null;
     const html=document.documentElement;
-    function setPixels(name,value){
+    function setPixels(name,value,element=html){
       const next=Math.round(value*100)/100+'px';
-      if(html.style.getPropertyValue(name)!==next)html.style.setProperty(name,next);
+      if(element.style.getPropertyValue(name)!==next)element.style.setProperty(name,next);
+    }
+    let frame=0;
+    function schedule(){if(!frame)frame=requestAnimationFrame(()=>{frame=0;measure();});}
+    const watched=new Set(),regions=new ResizeObserver(schedule);
+    function watch(element){if(element&&!watched.has(element)){watched.add(element);regions.observe(element);}}
+    // A surface can borrow the side strip only after UIKit has described its
+    // occlusions. Old shells and transient/stale geometry keep the safe area.
+    function clearSpace(geometry,safe,width,height){
+      const clear={...safe},blocks=geometry?.occlusions||[];
+      if(!geometry?.reservedRegionsAvailable)return clear;
+      for(const edge of ['left','right']){
+        if(!safe[edge])continue;
+        const inStrip=blocks.filter(r=>r.width>0&&r.height>0&&(edge==='right'?r.x>=width-safe.right:r.x+r.width<=safe.left));
+        if(!inStrip.length)continue;
+        const top=Math.max(safe.top,...inStrip.map(r=>r.y+r.height+12));
+        if(height-top-safe.bottom<200)continue;
+        clear[edge]=0;clear.top=Math.max(clear.top,top);
+      }
+      return clear;
+    }
+    function protectSection(element,blocks,enabled){
+      watch(element);
+      let left=0,right=0;
+      if(enabled&&element.getClientRects().length){
+        const r=element.getBoundingClientRect();
+        for(const b of blocks){
+          if(r.bottom<=b.y-8||r.top>=b.y+b.height+8||r.right<=b.x-8||r.left>=b.x+b.width+8)continue;
+          if(b.x+b.width/2>innerWidth/2)right=Math.max(right,r.right-b.x+8);
+          else left=Math.max(left,b.x+b.width+8-r.left);
+        }
+      }
+      setPixels('--ma-ios-section-left',left,element);setPixels('--ma-ios-section-right',right,element);
     }
     function measure(){
       const style=getComputedStyle(html),width=root.innerWidth,height=root.innerHeight;
@@ -97,8 +129,42 @@
       setPixels('--ma-ios-rail-offset',offset);
       setPixels('--ma-ios-rail-top',top);
       setPixels('--ma-ios-rail-bottom',bottom);
-      setPixels('--ma-ios-rail-left',rail&&!shared&&side==='left'?railSize:0);
-      setPixels('--ma-ios-rail-right',rail&&!shared&&side==='right'?railSize:0);
+      const dockVisible=getComputedStyle(dock).display!=='none';
+      setPixels('--ma-ios-rail-left',dockVisible&&rail&&!shared&&side==='left'?railSize:0);
+      setPixels('--ma-ios-rail-right',dockVisible&&rail&&!shared&&side==='right'?railSize:0);
+      const clear=clearSpace(geometry,safe,width,height);
+      setPixels('--ma-ios-clear-left',clear.left);setPixels('--ma-ios-clear-right',clear.right);
+      const view=root.visualViewport,viewTop=view?.offsetTop||0,viewHeight=view?.height||height;
+      const overlayClear=viewHeight-Math.max(0,clear.top-viewTop)-safe.bottom>=240;
+      setPixels('--ma-ios-overlay-top',Math.max(0,(overlayClear?clear.top:safe.top)-viewTop));
+      setPixels('--ma-ios-overlay-left',overlayClear?clear.left:safe.left);
+      setPixels('--ma-ios-overlay-right',overlayClear?clear.right:safe.right);
+      const expanded=document.body.classList.contains('trainer-session-active')&&(!dockVisible||document.body.classList.contains('study-nav-hidden'));
+      html.toggleAttribute('data-ma-expanded-practice',expanded);
+      const blocks=geometry?.occlusions?[...geometry.occlusions]:[];
+      // Keep the entire upper gutter protected: hardware corners/camera need
+      // not be separate reserved-region entries above the reported status UI.
+      for(const edge of ['left','right'])if(clear[edge]<safe[edge])blocks.push({x:edge==='right'?width-safe.right:0,y:0,width:safe[edge],height:clear.top-8});
+      if(dockVisible&&exit?.getClientRects().length){const r=exit.getBoundingClientRect();blocks.push({x:r.x,y:r.y,width:r.width,height:r.height});}
+      for(const element of document.querySelectorAll('.ma-trainer-header,.ma-session-hud,.ma-trainer-prompt-wrap,.ma-trainer-answer-wrap,.ma-trainer-session-controls'))protectSection(element,blocks,expanded);
+      const keyboard=document.querySelector('.ma-ios-reading-keyboard:not(.ma-ios-reading-keyboard--inline)');
+      if(keyboard){
+        watch(keyboard);const below=keyboard.getBoundingClientRect().top>=clear.top;
+        setPixels('--ma-ios-keyboard-left',below?clear.left:safe.left);
+        setPixels('--ma-ios-keyboard-right',below?clear.right:safe.right);
+      }
+      const sheet=document.querySelector('.ma-account-sheet');
+      if(sheet?.getClientRects().length){
+        watch(sheet);const r=sheet.getBoundingClientRect();
+        setPixels('--ma-ios-account-left',Math.max(0,safe.left-r.left),sheet);
+        setPixels('--ma-ios-account-right',Math.max(0,r.right-(width-safe.right)),sheet);
+        const content=sheet.querySelector('.ma-account-view:not([hidden])');
+        if(content){
+          const margin=parseFloat(getComputedStyle(content).marginTop)||0;
+          setPixels('--ma-ios-account-gap',Math.max(0,clear.top-content.getBoundingClientRect().top+margin),sheet);
+        }
+      }
+      for(const element of watched)if(!element.isConnected){regions.unobserve(element);watched.delete(element);}
       var nextDockHeight = rail?0:dock.getBoundingClientRect().height;
       var nextVisibleHeight = root.visualViewport?.height || root.innerHeight;
       if (nextDockHeight !== dockHeight) {
@@ -112,9 +178,12 @@
     }
     // Safe-area and font/layout changes need not mutate the body or resize the
     // viewport. Observe the actual dock, including when editing/focus hides it.
-    new ResizeObserver(measure).observe(dock, {box:'border-box'});
-    root.visualViewport?.addEventListener('resize', measure);
-    root.addEventListener('resize', measure);
+    new ResizeObserver(schedule).observe(dock, {box:'border-box'});
+    new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','open']});
+    root.visualViewport?.addEventListener('resize', schedule);
+    root.visualViewport?.addEventListener('scroll', schedule);
+    root.addEventListener('resize', schedule);
+    root.addEventListener('scroll',schedule,{passive:true});
     root.addEventListener('pageshow', measure);
     root.addEventListener('modeAtlasTextSizeChanged',measure);
     const native=root.Capacitor?.Plugins?.ModeAtlasNative;

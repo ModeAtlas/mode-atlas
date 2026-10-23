@@ -8,8 +8,9 @@ The cleanly restored `Package.resolved` change should be retained.
 
 The original handover tested unrelated local changes but missed local Xcode edits
 touching the same native metadata. This correction adds a field-by-field recovery
-and makes the normal handover invoke it when needed. App version/build remain
-**3.0.5 / 2080051**; no application UI or learning behavior changes in this repair.
+and makes the normal handover invoke it when needed. The helper preserves the
+fetched release's version/build. The command below fetches the current branch;
+see the [3.0.6 handover](development-3.0.6.md) for its changes and build number.
 
 ## Resume from the reported conflict
 

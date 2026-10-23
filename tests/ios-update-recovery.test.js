@@ -11,10 +11,12 @@ const { PROJECT, INFO, parseProject, planFile, recover } = recovery;
 const ROOT = path.resolve(__dirname, '..');
 const project = fs.readFileSync(path.join(ROOT, PROJECT), 'utf8');
 const info = fs.readFileSync(path.join(ROOT, INFO), 'utf8');
+const releaseVersion = require('../package.json').version;
+const versionSetting = `MARKETING_VERSION = ${releaseVersion};`;
 const native = ['504EC3171FED79650016851F', '504EC3181FED79650016851F', 'B38642B646D48B23282596E8', '455E08ACD953DDD9D26784DF'];
 
 function localProject(source) {
-  return source.replaceAll('MARKETING_VERSION = 3.0.5;', 'DEVELOPMENT_TEAM = LOCAL12345;\n                MARKETING_VERSION = 2.121.0;')
+  return source.replaceAll(versionSetting, 'DEVELOPMENT_TEAM = LOCAL12345;\n                MARKETING_VERSION = 2.121.0;')
     .replaceAll('TARGETED_DEVICE_FAMILY = "1,2";', 'TARGETED_DEVICE_FAMILY = 1;');
 }
 function xml(values) { return plist.build(values) + '\n'; }
@@ -22,13 +24,13 @@ function git(root, ...args) { return execFileSync('git', args, { cwd: root, enco
 function write(root, file, value) { fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); fs.writeFileSync(path.join(root, file), value); }
 
 test('project recovery preserves signing, all UUID references and current release metadata', () => {
-  const base = project.replaceAll('MARKETING_VERSION = 3.0.5;', 'MARKETING_VERSION = 3.0.3;');
+  const base = project.replaceAll(versionSetting, 'MARKETING_VERSION = 3.0.3;');
   const local = localProject(project);
   const result = parseProject(planFile(PROJECT, [base, project, local]).output);
   for (const id of native) {
     const settings = result.project.objects.XCBuildConfiguration[id].buildSettings;
     assert.equal(settings.DEVELOPMENT_TEAM, 'LOCAL12345');
-    assert.equal(settings.MARKETING_VERSION, '3.0.5');
+    assert.equal(settings.MARKETING_VERSION, releaseVersion);
     assert.equal(settings.TARGETED_DEVICE_FAMILY, '"1,2"');
   }
   const expected = parseProject(project);
@@ -40,7 +42,7 @@ test('project recovery preserves signing, all UUID references and current releas
 
 test('release-owned nested values remain current even when only the local side changed', () => {
   const result = planFile(PROJECT, [project, project, localProject(project)]);
-  for (const id of native) assert.equal(parseProject(result.output).project.objects.XCBuildConfiguration[id].buildSettings.MARKETING_VERSION, '3.0.5');
+  for (const id of native) assert.equal(parseProject(result.output).project.objects.XCBuildConfiguration[id].buildSettings.MARKETING_VERSION, releaseVersion);
 });
 
 test('plist merge preserves custom local fields and canonical Duo scenes and orientations', () => {
@@ -71,7 +73,7 @@ function fixture(t, { unknown = false, style = 'merge' } = {}) {
   git(root, 'init', '-q'); git(root, 'config', 'user.name', 'Recovery Test'); git(root, 'config', 'user.email', 'test@example.invalid');
   git(root, 'config', 'merge.conflictStyle', style);
   write(root, '.gitignore', '.build/\nnode_modules/\n*.local.xcconfig\nxcuserdata/\n');
-  write(root, PROJECT, project.replaceAll('MARKETING_VERSION = 3.0.5;', 'MARKETING_VERSION = 3.0.3;'));
+  write(root, PROJECT, project.replaceAll(versionSetting, 'MARKETING_VERSION = 3.0.3;'));
   const baseInfo = { ...plist.parse(info), CFBundleVersion: '1', LocalLabel: 'base' };
   write(root, INFO, xml(baseInfo));
   const lock = 'ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved';
@@ -90,7 +92,7 @@ function fixture(t, { unknown = false, style = 'merge' } = {}) {
   const userState = 'ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/user.xcuserdatad/UserInterfaceState.xcuserstate';
   write(root, userState, 'saved window and theme state\n');
   write(root, 'ios/signing.local.xcconfig', 'DEVELOPMENT_TEAM = LOCAL12345\n');
-  git(root, 'stash', 'push', '--include-untracked', '-m', 'Before Mode Atlas 3.0.5');
+  git(root, 'stash', 'push', '--include-untracked', '-m', 'Before Mode Atlas update');
   const stash = git(root, 'rev-parse', 'refs/stash').trim();
   git(root, 'checkout', '-qb', 'update', release);
   const apply = spawnSync('git', ['stash', 'apply', '--index', stash], { cwd: root, encoding: 'utf8' });

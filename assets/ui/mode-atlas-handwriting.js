@@ -23,7 +23,7 @@
     const closeButton=makeButton('Close',()=>dialog.close());header.append(closeButton);
     const body=el('div','ma-handwriting-body'),selector=el('div','ma-handwriting-characters');selector.setAttribute('role','group');selector.setAttribute('aria-label','Characters to write');
     const stage=el('div','ma-handwriting-stage'),status=el('p','ma-handwriting-status');status.setAttribute('role','status');
-    const tools=el('div','ma-handwriting-tools'),actions=el('div','ma-handwriting-tools');
+    const tools=el('div','ma-handwriting-tools ma-handwriting-modes'),actions=el('div','ma-handwriting-tools ma-handwriting-edit');
     const watch=makeButton('Watch strokes',()=>animate()),step=makeButton('Next stroke',()=>showStep()),trace=makeButton('Trace',()=>setMode('trace')),write=makeButton('Write',()=>setMode('write'));
     const undo=makeButton('Undo',()=>{stopAnimation();accepted.pop();drawn.pop();completions.delete(which);render();}),clear=makeButton('Clear',()=>{stopAnimation();accepted=[];drawn=[];completions.delete(which);errors=0;render();});
     tools.append(watch,step,trace,write);actions.append(undo,clear);

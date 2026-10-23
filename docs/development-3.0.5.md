@@ -2,6 +2,8 @@
 
 Prepared 23 October 2026. iOS build **2080051**.
 
+For the current update and Xcode commands, use the [3.0.6 handover](development-3.0.6.md).
+
 ## Why the regressions happened
 
 1. **Unapproved artwork substitution in 3.0.2.** Commit `b925f31` changed the native

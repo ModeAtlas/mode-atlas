@@ -127,11 +127,14 @@ html[data-ma-signed-in="false"] [data-ma-sign-in]{visibility:visible;pointer-eve
 body[data-effective-display-mode="tablet"] .ma-account-sheet{left:auto;right:16px;width:min(600px,calc(100vw - 32px));}
 body[data-effective-display-mode="phone"] .ma-account-sheet{left:8px;right:8px;width:auto;}
 html[data-ma-runtime="ios"] .ma-account-sheet{
-  left:auto;right:calc(var(--ma-safe-right) + 8px);
-  width:min(600px,calc(100% - var(--ma-safe-left) - var(--ma-safe-right) - 16px));
+  left:auto;right:calc(var(--ma-ios-clear-right,var(--ma-safe-right)) + 8px);
+  width:min(720px,calc(100% - var(--ma-ios-clear-left,var(--ma-safe-left)) - var(--ma-ios-clear-right,var(--ma-safe-right)) - 16px));
   top:calc(var(--ma-safe-top) + 8px);
   height:calc(var(--ma-overlay-height,100dvh) - var(--ma-safe-top) - max(var(--ma-ios-dock-height,0px),var(--ma-safe-bottom)) - 16px);
 }
+html[data-ma-runtime="ios"] .ma-account-header{padding-left:calc(20px + var(--ma-ios-account-left,0px));padding-right:calc(20px + var(--ma-ios-account-right,0px));}
+html[data-ma-runtime="ios"] .ma-account-tabs{margin-left:calc(20px + var(--ma-ios-account-left,0px));margin-right:calc(20px + var(--ma-ios-account-right,0px));}
+html[data-ma-runtime="ios"] .ma-account-view{margin-top:var(--ma-ios-account-gap,0px);}
 @media(max-width:560px){
   .ma-account-settings .ma-button{font-size:.82rem;}
   .ma-settings-inline-actions{grid-template-columns:1fr;}
