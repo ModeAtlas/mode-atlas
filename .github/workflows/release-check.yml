@@ -248,6 +248,9 @@ jobs:
       - name: Install Node dependencies
         run: npm ci --ignore-scripts --registry=https://registry.npmjs.org/
 
+      - name: Test iOS handover conflict recovery on macOS
+        run: node --test tests/ios-update-recovery.test.js
+
       - name: Synchronize native shell
         run: npm run ios:sync
 

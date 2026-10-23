@@ -53,6 +53,11 @@ production and physical-device acceptance items in the PDF ledger.
 
 ## Mac handover code
 
+If the previous command stopped with conflicts in `project.pbxproj` and
+`Info.plist`, use the [recovery command](ios-update-recovery.md) first. The original
+handover covered unrelated local edits but missed simultaneous native metadata
+changes. This command now invokes the tested recovery when those files conflict.
+
 Use the **original project folder that had your preferred Xcode layout/theme**.
 The usual path is `~/mode-atlas`; change only that `cd` line if your original
 project is elsewhere. This updates that folder, backs up its Xcode project/user
@@ -87,7 +92,14 @@ else
   git switch -c "update/mode-atlas-3.0.5-$mode_atlas_stamp" "origin/$mode_atlas_branch"
 fi
 if test -n "$mode_atlas_stash"; then
-  git stash apply --index "$mode_atlas_stash"
+  if ! git stash apply --index "$mode_atlas_stash"; then
+    if test -z "$(git diff --name-only --diff-filter=U)"; then
+      printf 'Stash restoration stopped without a native merge conflict. Your stash is retained.\n' >&2
+      exit 1
+    fi
+    npm ci
+    node recover_ios_update.cjs --apply
+  fi
 fi
 
 python3 select_ios_toolchain.py
@@ -97,8 +109,10 @@ printf '\nUpdated existing project: %s\nBackup: %s\n' "$PWD" "$mode_atlas_backup
 MODE_ATLAS_UPDATE
 ```
 
-The stash is retained as a backup. If local edits conflict, Git stops with both
-versions available; do not replace the whole project with an older backup or run
+The stash is retained as a backup. Native metadata conflicts are merged by field,
+with current release versions and Duo configuration retained. An ambiguous custom
+setting or a conflict outside those two files stops before writing either file;
+do not replace the whole project with an older backup or run
 a destructive reset. Ignored signing/widget configuration and `xcuserdata` stay
 in the original directory. The commands neither open/resize Xcode nor change its
 selected app, theme or global settings.
