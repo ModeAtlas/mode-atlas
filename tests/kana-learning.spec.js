@@ -28,7 +28,7 @@ for(const native of [false,true])test(`combined practice alternates and saves ea
   await open(page,'/kana/?view=practice');await page.getByRole('button',{name:'Read + Recall',exact:true}).click();
   await expect(page.locator('.ma-kana-skill-explanation')).toContainText('Alternate Read and Recall');
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
-  await expect(page).toHaveURL(/\/reading\//);await page.locator('#startBtn').click();await page.clock.install();
+  await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('body')).toHaveClass(/trainer-session-active/);await page.clock.install();
   expect(errors).toEqual([]);
   const first=await page.evaluate(()=>({char:currentChar,answer:getAnswerForCurrentChar()}));
   if(native){for(const char of first.answer)await page.locator(`.ma-ios-reading-keyboard [data-key="${char}"]`).click();}
@@ -154,7 +154,7 @@ test('practice starts simple and the optional sheet retains row, feedback and ti
   await page.getByRole('button',{name:'Adjust this session',exact:true}).click();
   await dialog.getByLabel('Timed goal',{exact:true}).selectOption('target');await dialog.getByLabel('Minutes',{exact:true}).fill('2');await dialog.getByLabel('Minutes',{exact:true}).press('Tab');await dialog.getByLabel('Correct-answer target',{exact:true}).fill('30');await dialog.getByLabel('Correct-answer target',{exact:true}).press('Tab');
   await dialog.getByRole('button',{name:'Done',exact:true}).click();await expect(page.locator('.ma-kana-session')).toContainText('30 correct answers in 2 minutes');
-  await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('#trialConfig')).toBeVisible();expect(await page.evaluate(()=>ModeAtlasTrainerControls.getSettings().timeTrial)).toBe(true);expect(errors).toEqual([]);
+  await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('body')).toHaveClass(/trainer-session-active/);await expect(page.locator('#trialTimerPill')).toBeVisible();expect(await page.evaluate(()=>ModeAtlasTrainerControls.getSettings().timeTrial)).toBe(true);expect(errors).toEqual([]);
 });
 
 for(const native of [false,true])test(`study selection uses two columns and script-wide unlocked toggles on ${native?'iOS':'web'}`,async({page},info)=>{
@@ -239,7 +239,7 @@ for(const width of [320,393])test(`combined kana stay together and practice acti
   expect(await page.locator('.ma-kana-session').evaluate(node=>node.getBoundingClientRect().height)).toBeLessThan(330);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
-  await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('#startBtn')).toBeVisible();await page.waitForFunction(()=>window.ModeAtlasKanaLearning&&window.ModeAtlasStorage);expect(await page.evaluate(()=>Object.keys(ModeAtlasKanaLearning.selection(ModeAtlasStorage.readModeJSON('reading','settings',{}),'reading')))).toEqual(['きゃ','きゅ','きょ']);
+  await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('body')).toHaveClass(/trainer-session-active/);await page.waitForFunction(()=>window.ModeAtlasKanaLearning&&window.ModeAtlasStorage);expect(await page.evaluate(()=>Object.keys(ModeAtlasKanaLearning.selection(ModeAtlasStorage.readModeJSON('reading','settings',{}),'reading')))).toEqual(['きゃ','きゅ','きょ']);
 });
 
 test('Your path includes every row and reopens old lessons without changing unlocks',async({page})=>{

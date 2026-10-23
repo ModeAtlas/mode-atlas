@@ -160,6 +160,16 @@ html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-step{height:auto;m
 .ma-kana-path-heading>.ma-button{grid-column:2;grid-row:1/span 2;}
 .ma-kana-path-options{display:grid;gap:0 12px;}
 html[data-ma-runtime="ios"] .ma-kana-journey{width:100%;max-width:1120px;container:kana / inline-size;padding-inline:6px;}
+@media(max-height:740px){
+ html[data-ma-runtime="ios"] .ma-kana-journey{margin-top:12px;}
+ html[data-ma-runtime="ios"] .ma-kana-page-heading{margin-bottom:12px;}
+ html[data-ma-runtime="ios"] .ma-kana-page-heading h1{font-size:1.6rem;margin:6px 0;}
+ html[data-ma-runtime="ios"] .ma-kana-skill-explanation{margin-bottom:10px;}
+ html[data-ma-runtime="ios"] .ma-kana-workspace{margin-top:12px;}
+ html[data-ma-runtime="ios"] .ma-kana-session{padding:16px;}
+ html[data-ma-runtime="ios"] .ma-kana-session h2{font-size:1.45rem;}
+ html[data-ma-runtime="ios"] .ma-kana-instrument{height:124px;}
+}
 @container kana (min-width:740px){
  html[data-ma-runtime="ios"] .ma-kana-path-layout{grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:28px;}
  html[data-ma-runtime="ios"] .ma-kana-path-options{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}

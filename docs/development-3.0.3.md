@@ -22,6 +22,8 @@ The supplied Duo screenshots showed two concrete problems: the bottom dock consu
 
 ## Verification and handover
 
+**Mac workflow correction:** use the [3.0.5 handover](development-3.0.5.md#mac-handover-code) in the original project folder. The later fresh-checkout workflow lost workspace continuity.
+
 Browser fixtures simulate native geometry; their sizes are stress cases, not claimed Duo specifications. They cover changing occlusions without resizing, outer/inner changes, a left system strip, Account overlays, touch targets, branch visibility and thirteen route layouts. The 148-case browser regression run passed across desktop/mobile Chromium projects. After refining the full Kana path, all 106 Duo/Kana follow-up cases passed against 3.0.3, including the new visible-action and larger-board checks. These runs include lesson, handwriting, keyboard and larger-text regressions. The release check passed: 280 JavaScript tests, 20 Python tests, project/security/content audits and native web-bundle validation.
 
 Screens in `reviews/3.0.3/screens/` are browser renders with simulated native insets. They do not include the system status bar or camera. Native compilation and Device Hub/physical-device results must be recorded separately; a browser screenshot is not device acceptance.

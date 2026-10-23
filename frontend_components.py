@@ -130,7 +130,7 @@ PRIMARY_LINKS = (
     ('shop', 'Shop', '/shop/'),
 )
 
-DESTINATION_ICONS = dict(atlas='star', learn='book', progress='chart', friends='people', shop='shop')
+DESTINATION_ICONS = dict(atlas='star', learn='nav-learn', progress='nav-progress', friends='nav-friends', shop='nav-shop')
 
 KANA_LINKS = (
     ('kana', 'Learn', '/kana/'),

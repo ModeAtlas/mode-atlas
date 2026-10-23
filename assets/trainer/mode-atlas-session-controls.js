@@ -83,11 +83,12 @@
     }
     const activeInput = document.getElementById('input');
     const nativeIOS = window.ModeAtlasEnv?.isNativeApp && window.ModeAtlasEnv.nativePlatform === 'ios';
-    const frameStart = (nativeIOS && document.querySelector('.ma-trainer-card'))
-      || document.querySelector('.ma-session-hud') || document.querySelector('.ma-trainer-header');
-    if (!activeInput || !frameStart || document.activeElement !== activeInput) return;
-
     syncPhoneKeyboardState();
+    // Native composition uses the measured viewport and keyboard in CSS. A
+    // delayed scroll adjustment would fight that layout and manual scrolling.
+    if (nativeIOS) return;
+    const frameStart = document.querySelector('.ma-session-hud') || document.querySelector('.ma-trainer-header');
+    if (!activeInput || !frameStart || document.activeElement !== activeInput) return;
 
     const frameRect = frameStart.getBoundingClientRect();
     const inputRect = activeInput.getBoundingClientRect();
@@ -96,30 +97,16 @@
     const viewportHeight = Number(viewport?.height || window.innerHeight || 0);
     if (!viewportHeight) return;
 
-    const inset = nativeIOS ? Math.max(12, parseFloat(getComputedStyle(document.body).paddingTop) || 0) : 12;
-    let viewportBottom = viewportTop + viewportHeight - 12;
-    if (nativeIOS) {
-      for (const selector of ['.ma-ios-tabs', '.ma-ios-reading-keyboard']) {
-        if (selector === '.ma-ios-tabs' && document.documentElement.dataset.maNavigation === 'rail') continue;
-        const element = document.querySelector(selector);
-        if (element && element.getClientRects().length) viewportBottom = Math.min(viewportBottom, element.getBoundingClientRect().top - 12);
-      }
-    }
+    const inset = 12;
+    const viewportBottom = viewportTop + viewportHeight - 12;
     const available = Math.max(0, viewportBottom - viewportTop - inset);
-    const controls = nativeIOS ? document.getElementById('sessionActions') : null;
-    const controlsBottom = controls?.getClientRects().length ? controls.getBoundingClientRect().bottom : 0;
-    // The complete question includes Skip, Pause and End. Aligning just to the
-    // input left those controls underneath the custom keyboard on short views.
-    const regionHeight = Math.max(0, Math.max(inputRect.bottom, controlsBottom) - frameRect.top);
-    // At larger text sizes the frame may need document scrolling. A delayed
-    // alignment must not pull the user's chosen action back under the keyboard.
-    if (nativeIOS && regionHeight >= available) return;
+    const regionHeight = Math.max(0, inputRect.bottom - frameRect.top);
     let targetTop = viewportTop + inset;
 
     if (regionHeight < available) {
-      targetTop += nativeIOS ? Math.max(0, (available - regionHeight) / 2) : Math.max(0, Math.min(36, (available - regionHeight) * 0.35));
+      targetTop += Math.max(0, Math.min(36, (available - regionHeight) * 0.35));
     } else {
-      targetTop = nativeIOS ? viewportTop + inset : Math.max(viewportTop + 6, viewportTop + viewportHeight - inset - regionHeight);
+      targetTop = Math.max(viewportTop + 6, viewportTop + viewportHeight - inset - regionHeight);
     }
 
     const delta = frameRect.top - targetTop;

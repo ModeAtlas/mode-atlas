@@ -1,0 +1,210 @@
+{
+  "baseline": "a1c0c238600fc3d68307c9358dfcd8fad327f9e1",
+  "reviewed_release": "3.0.4",
+  "correction_release": "3.0.5",
+  "identity_assets": [
+    {
+      "path": "assets/brand/mode-atlas-app.c520ab8c3372.png",
+      "unchanged": true,
+      "sha256": "c520ab8c3372fde53b612b4720f42d642d02af5b9fa4af72c569faac49815e49"
+    },
+    {
+      "path": "assets/brand/mode-atlas-lockup-dark.svg",
+      "unchanged": true,
+      "sha256": "394251fb8b9f8b9453296916db9db78abdac77de48c322109113d167d61c46dc"
+    },
+    {
+      "path": "assets/brand/mode-atlas-lockup-light.svg",
+      "unchanged": true,
+      "sha256": "1e31e930562cc7c019529c1fe12dac9021408c522d8e136b349d221856cf67c9"
+    },
+    {
+      "path": "assets/brand/mode-atlas-lockup-mono.svg",
+      "unchanged": true,
+      "sha256": "31361dbe2e2dfe9625acc39d895c17f7ea1871e8b5efc2d89d17c082f48d8af5"
+    },
+    {
+      "path": "assets/brand/mode-atlas-mark.svg",
+      "unchanged": true,
+      "sha256": "681d5e0962bbcf1c1e7167f40f4b9a8e91e7bf605dff32af87f3d4c037df960d"
+    },
+    {
+      "path": "assets/brand/mode-atlas-micro.svg",
+      "unchanged": true,
+      "sha256": "76f2764ab1f1e4851f7daff980cd48b16b97852115a732c623f544a358eb7298"
+    },
+    {
+      "path": "assets/brand/mode-atlas-stacked-dark.svg",
+      "unchanged": true,
+      "sha256": "297b3bc2a6dc87cb78999fa7a8c323d0bd00215134f75b63e42d055dfe980f4c"
+    },
+    {
+      "path": "assets/brand/mode-atlas-stacked-light.svg",
+      "unchanged": true,
+      "sha256": "30d70cfb92bf130393d3877ffc29a08657d725d0d79d3b24bf0402a6b12d06ad"
+    },
+    {
+      "path": "assets/brand/mode-atlas-symbol.svg",
+      "unchanged": true,
+      "sha256": "4f054c7f5b81f66b8a00fc811acf415863c5b87874eac3219f2f605914f484ce"
+    },
+    {
+      "path": "assets/brand/mode-atlas-tab-png.bf0727071c2e.png",
+      "unchanged": true,
+      "sha256": "bf0727071c2ea73cce397bc399afac327abd2aa19b1214c1e3dee12040234714"
+    },
+    {
+      "path": "assets/brand/mode-atlas-tab.76f2764ab1f1.svg",
+      "unchanged": true,
+      "sha256": "76f2764ab1f1e4851f7daff980cd48b16b97852115a732c623f544a358eb7298"
+    },
+    {
+      "path": "assets/brand/mode-atlas-touch.54148e9c603d.png",
+      "unchanged": true,
+      "sha256": "54148e9c603dd5ec4ee6389ddd4f5e93a85766e3e3c83f0c9a19e5b1a12313c6"
+    },
+    {
+      "path": "assets/brand/mode-atlas-wordmark.svg",
+      "unchanged": true,
+      "sha256": "ffc138b76267063a7ea639beeea5e3a06d6ae12d7d0787c85940efbb9cbdb325"
+    },
+    {
+      "path": "assets/css/mode-atlas-fonts-native.css",
+      "unchanged": true,
+      "sha256": "e2c375b10258f0863acabffa52dfbdf8e0253ed56ec13145b70b53620f959bba"
+    },
+    {
+      "path": "assets/css/mode-atlas-fonts-web.css",
+      "unchanged": true,
+      "sha256": "43a54048caa39ce3bce8a35c4a6f8cb2bf5ceabef5756e6e6dd2c769fd6eb396"
+    },
+    {
+      "path": "assets/css/mode-atlas-ios-theme.css",
+      "unchanged": true,
+      "sha256": "3fc1810995fcce510b624d0fc6ca5d9830afbdb7ce69ca40d6dfdc080bf7318e"
+    },
+    {
+      "path": "assets/css/mode-atlas-theme.css",
+      "unchanged": true,
+      "sha256": "119f9f705ca4bfd766583b37459d6a7014383af279ac9402c3aa5a83db89dfcc"
+    },
+    {
+      "path": "assets/illustrations/achievement-scene.svg",
+      "unchanged": true,
+      "sha256": "3206b1deaf32564989dd57fc8a9938ea28355fc825dc0b4a6a8c9ae8d020cfd2"
+    },
+    {
+      "path": "assets/illustrations/kana-scene.svg",
+      "unchanged": true,
+      "sha256": "4b7def4b010a5899a3d5e5498ecdc1e1de74cf2fd3f3ccb1438cc77570011f69"
+    },
+    {
+      "path": "assets/illustrations/kanji-scene.svg",
+      "unchanged": true,
+      "sha256": "0bcf140f20483e930f54d30a0efd133d67c547a63d8806cea3f052988b356a72"
+    },
+    {
+      "path": "assets/illustrations/mastery-scene.svg",
+      "unchanged": true,
+      "sha256": "f6c1f5d7c84ee8fe0e8ce5f191a8ead7c0e970606b438b3ee1300c635bf2217d"
+    },
+    {
+      "path": "assets/illustrations/progress-scene.svg",
+      "unchanged": true,
+      "sha256": "a4efe3e2808bc07c7e62cc8245d9221d028531b5e99b691c3c552f1df1fb91f8"
+    },
+    {
+      "path": "assets/illustrations/words-scene.svg",
+      "unchanged": true,
+      "sha256": "c1c6465b6fde98c8ea7b93a63b3d0774e0cabd7a5b917a2fa55ff69b9c80f02a"
+    },
+    {
+      "path": "assets/ui/mode-atlas-avatar-art.js",
+      "unchanged": true,
+      "sha256": "df24a704149191fd0cc21ebc1c9cf07586203d3d1fa93c556dc0857d42e7bb92"
+    }
+  ],
+  "destination_symbols": {
+    "icon-nav-learn": {
+      "unchanged": true,
+      "sha256": "8f20efd68272d690f762816a5e8e1049c77d07ef2263067d4e7ff08063df1a87"
+    },
+    "icon-nav-progress": {
+      "unchanged": true,
+      "sha256": "580aba3e57997a9300a6c1b236149c2d8479b8ae6c30b26ffb3f270b1c958ad0"
+    },
+    "icon-nav-friends": {
+      "unchanged": true,
+      "sha256": "b3a9ab7e1b75eec460167d2e48f4196cf4ba1bd7a92d77e6f256eaa751be942f"
+    },
+    "icon-nav-shop": {
+      "unchanged": true,
+      "sha256": "88210b5eb3aea79d93eb8ba9f4fc36327ac2fb9ccbb1978daace37431c16acf9"
+    }
+  },
+  "changed_symbols_since_baseline": [
+    "icon-flame"
+  ],
+  "presentation_source_owners_changed_before_this_update": [
+    "assets/css/mode-atlas-components.css",
+    "assets/css/mode-atlas-default-page.css",
+    "assets/css/mode-atlas-handwriting.css",
+    "assets/css/mode-atlas-home-page.css",
+    "assets/css/mode-atlas-hub-page.css",
+    "assets/css/mode-atlas-ios-chrome.css",
+    "assets/css/mode-atlas-kana-page.css",
+    "assets/css/mode-atlas-kanji.css",
+    "assets/css/mode-atlas-profile-settings.css",
+    "assets/css/mode-atlas-study-shared.css",
+    "assets/css/mode-atlas-wordbank-page.css",
+    "assets/pages/mode-atlas-default-page.js",
+    "assets/pages/mode-atlas-home-page.js",
+    "assets/pages/mode-atlas-hub-page.js",
+    "assets/pages/mode-atlas-kana-page.js",
+    "assets/pages/mode-atlas-kanji-page.js",
+    "assets/pages/mode-atlas-kanji-results-page.js",
+    "assets/pages/mode-atlas-reverse-page.js",
+    "assets/pages/mode-atlas-test-page.js",
+    "assets/pages/mode-atlas-wordbank-page.js",
+    "assets/platform/mode-atlas-ios-chrome.js",
+    "assets/ui/mode-atlas-account-bindings.js",
+    "assets/ui/mode-atlas-account-navigation.js",
+    "assets/ui/mode-atlas-avatar-ui.js",
+    "assets/ui/mode-atlas-branch-library.js",
+    "assets/ui/mode-atlas-handwriting.js",
+    "assets/ui/mode-atlas-kanji-lesson.js",
+    "assets/ui/mode-atlas-kanji-mastery.js",
+    "assets/ui/mode-atlas-portrait.js",
+    "assets/ui/mode-atlas-profile-menu.js",
+    "assets/ui/mode-atlas-pronunciation.js",
+    "assets/ui/mode-atlas-rewards-ui.js",
+    "assets/ui/mode-atlas-session-outcome.js",
+    "assets/ui/mode-atlas-settings-menu.js",
+    "assets/ui/mode-atlas-shop-ui.js",
+    "assets/ui/mode-atlas-social-ui.js",
+    "assets/ui/mode-atlas-word-lessons.js",
+    "assets/ui/mode-atlas-word-review.js"
+  ],
+  "generator_owner": "frontend_components.py",
+  "notes": "Hash equality confirms retained assets, not user approval of layout. Source changes are classified in regression-review.md.",
+  "identity_trees": [
+    {
+      "path": "assets/brand",
+      "baseline_tree": "479f8ccd8c47b18d999dd291e26a3ae5e8783d05",
+      "reviewed_tree": "479f8ccd8c47b18d999dd291e26a3ae5e8783d05",
+      "unchanged": true
+    },
+    {
+      "path": "assets/illustrations",
+      "baseline_tree": "9a9f5ec47ca012efd4a23e22e458df74545950db",
+      "reviewed_tree": "9a9f5ec47ca012efd4a23e22e458df74545950db",
+      "unchanged": true
+    },
+    {
+      "path": "assets/rewards",
+      "baseline_tree": "da1a6bc13a1046ef4446139bec31ebfc40945a3c",
+      "reviewed_tree": "da1a6bc13a1046ef4446139bec31ebfc40945a3c",
+      "unchanged": true
+    }
+  ]
+}

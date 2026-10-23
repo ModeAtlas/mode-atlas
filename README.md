@@ -6,7 +6,9 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 3.0.4
+Version: 3.0.5
+
+3.0.5 design restoration, Duo corrections and Mac update code: [handover](docs/development-3.0.5.md).
 
 3.0.3 adaptive iPhone layout and update notes: [development notes](docs/development-3.0.3.md).
 
