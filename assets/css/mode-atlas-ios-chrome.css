@@ -26,7 +26,16 @@ html[data-ma-runtime="ios"] .ma-page-frame{width:100%;min-width:0;}
    the keyboard or a fold changes its height without navigation. */
 html[data-ma-runtime="ios"] .ma-dialog-layer{
   --ma-dialog-top:calc(var(--ma-ios-overlay-top,var(--ma-safe-top)) + 12px);
-  padding:var(--ma-dialog-top) calc(var(--ma-ios-overlay-right,var(--ma-safe-right)) + 12px) calc(var(--ma-safe-bottom) + 12px) calc(var(--ma-ios-overlay-left,var(--ma-safe-left)) + 12px);
+  --ma-dialog-left:var(--ma-ios-overlay-left,var(--ma-safe-left));
+  --ma-dialog-right:var(--ma-ios-overlay-right,var(--ma-safe-right));
+  padding:var(--ma-dialog-top) calc(var(--ma-dialog-right) + 12px) calc(var(--ma-safe-bottom) + 12px) calc(var(--ma-dialog-left) + 12px);
+}
+/* Results need vertical room: use the full-height safe rectangle beside
+   system UI instead of forcing every result below the system region. */
+html[data-ma-runtime="ios"] .ma-dialog-layer[data-presentation="outcome"],
+html[data-ma-runtime="ios"] .ma-dialog-layer:has([data-ma-session-complete]){
+  --ma-dialog-top:calc(var(--ma-ios-protected-overlay-top,var(--ma-safe-top)) + 12px);
+  --ma-dialog-left:var(--ma-safe-left);--ma-dialog-right:var(--ma-safe-right);
 }
 html[data-ma-runtime="ios"] .ma-dialog{
   max-height:min(760px,calc(var(--ma-overlay-height,100dvh) - var(--ma-dialog-top) - var(--ma-safe-bottom) - 12px));
@@ -36,11 +45,11 @@ html[data-ma-runtime="ios"][data-ma-navigation="rail"]{--ma-page-inset-bottom:ca
 html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tabs{
   left:auto;right:var(--ma-ios-rail-offset);top:var(--ma-ios-rail-top);bottom:var(--ma-ios-rail-bottom);width:var(--ma-ios-rail-size);
   display:flex;flex-direction:column;justify-content:center;overflow-y:auto;
-  padding:12px 4px;border:0;box-shadow:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
+  padding:var(--ma-ios-rail-padding) 4px;border:0;box-shadow:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
 }
 html[data-ma-runtime="ios"][data-ma-navigation="rail"][data-ma-rail-side="left"] .ma-ios-tabs{left:var(--ma-ios-rail-offset);right:auto;}
-html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tabs__links{grid-template-columns:1fr;gap:12px;}
-html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tab{flex:none;min-height:max(64px,4rem);font-size:.75rem;gap:6px;}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tabs__links{grid-template-columns:1fr;gap:var(--ma-ios-rail-gap);}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tab{flex:none;min-height:var(--ma-ios-rail-item);font-size:.75rem;gap:var(--ma-ios-rail-icon-gap);}
 html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tab__icon>.ma-icon{width:30px;height:30px;}
 html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tab__icon>img{display:block;width:28px;height:28px;}
 html[data-ma-runtime="ios"][data-ma-navigation="rail"] body.study-nav-hidden .ma-ios-tabs #studyNavShowBtn{width:100%;min-height:76px;padding:8px 4px;white-space:normal;flex-direction:column;align-items:center;gap:6px;border-radius:14px;font-size:.75rem;}

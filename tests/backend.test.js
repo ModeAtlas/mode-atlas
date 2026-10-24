@@ -976,6 +976,7 @@ test('backup entry points reject normal users and recheck access after asynchron
   vm.runInContext(CLOUD_SYNC_SOURCE,context);
   localStorage.setItem('charStats',JSON.stringify({'あ':{correct:3,wrong:0}}));
   const snapshot=localStorage.getItem('charStats');
+  for(const name of ['createLearningBackup','previewLearningBackup','importLearningBackup'])assert.equal(window.KanaCloudSync[name],undefined,'No public manual-save bypass');
   assert.throws(()=>window.KanaCloudSync.createBackup(),/Developer access/);
   assert.throws(()=>window.KanaCloudSync.previewLocalBackup({}),/Developer access/);
   await assert.rejects(window.KanaCloudSync.importLocalBackup({}),/Developer access/);

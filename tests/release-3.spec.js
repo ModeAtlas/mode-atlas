@@ -6,20 +6,6 @@ async function setup(page){
  await page.addInitScript(()=>{for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');localStorage.setItem('modeAtlasSound','off');});
  await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
 }
-test('normal backups preview, restore and reject foreign owners without importing private account state',async({page})=>{
- await setup(page);const value=await page.evaluate(async()=>{
-  ModeAtlasStorage.writeModeJSON('reading','charStats',{'あ':{correct:4,wrong:2}});
-  localStorage.setItem('modeAtlasEarningsOutbox',JSON.stringify({privateReceipt:true}));
-  const backup=KanaCloudSync.createLearningBackup(),preview=KanaCloudSync.previewLearningBackup(backup);
-  ModeAtlasStorage.writeModeJSON('reading','charStats',{'あ':{correct:8,wrong:2}});
-  const restored=await KanaCloudSync.importLearningBackup(backup);let error='';try{await KanaCloudSync.importLearningBackup({...backup,owner:'another-account'});}catch(e){error=e.message;}
-  const previousOwner=localStorage.getItem('modeAtlasLastUserId');localStorage.setItem('modeAtlasLastUserId','account-after-guest');
-  const guestPreview=KanaCloudSync.previewLearningBackup({...backup,owner:'guest'});if(previousOwner===null)localStorage.removeItem('modeAtlasLastUserId');else localStorage.setItem('modeAtlasLastUserId',previousOwner);
-  return {backup,preview,guestPreview,restored,error,reading:ModeAtlasStorage.readModeJSON('reading','charStats',{}),outbox:localStorage.getItem('modeAtlasEarningsOutbox')};
- });
- expect(value.guestPreview.summary.willImport).toBeGreaterThan(0);expect(value.preview.summary.willImport).toBeGreaterThan(0);expect(value.reading['あ'].correct).toBe(4);expect(value.error).toContain('another account');expect(JSON.stringify(value.backup)).not.toContain('privateReceipt');expect(value.outbox).toContain('privateReceipt');
- await page.evaluate(()=>ModeAtlasSettings.open());await expect(page.locator('[data-ma-export-learning]')).toBeVisible();await expect(page.locator('[data-ma-restore-learning]')).toBeVisible();
-});
 test('optional funnel collects nothing before consent, bounds counts and erases on withdrawal',async({page})=>{
  await setup(page);const result=await page.evaluate(()=>{
   ModeAtlasUsage.event('lessonStarted');const before=localStorage.getItem('modeAtlasUsageFunnel');

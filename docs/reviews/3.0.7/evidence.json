@@ -1,0 +1,73 @@
+{
+  "release": "3.0.7",
+  "iosBuild": 2080053,
+  "date": "2026-10-24",
+  "environment": "Chromium, simulated native window geometry; not a physical Duo run",
+  "releaseChecks": {
+    "javascript": 297,
+    "python": 23,
+    "status": "passed"
+  },
+  "browser": {
+    "startTime": "2026-10-23T14:47:22.318Z",
+    "duration": 184197.581,
+    "expected": 184,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "screenshots": [
+    {
+      "file": "shop-closed-dark.png",
+      "source": "test-results/duo-compact-shop-closed-da-8eceb--and-products-own-the-panel-desktop-chromium/shop-top.png"
+    },
+    {
+      "file": "shop-closed-light.png",
+      "source": "test-results/duo-compact-shop-closed-li-b0904--and-products-own-the-panel-desktop-chromium/shop-top.png"
+    },
+    {
+      "file": "shop-closed-scrolled.png",
+      "source": "test-results/duo-compact-shop-closed-da-8eceb--and-products-own-the-panel-desktop-chromium/shop-scrolled.png"
+    },
+    {
+      "file": "shop-landscape-dark.png",
+      "source": "test-results/duo-compact-shop-landscape-24ebc--and-products-own-the-panel-desktop-chromium/shop-top.png"
+    },
+    {
+      "file": "shop-landscape-scrolled-light.png",
+      "source": "test-results/duo-compact-shop-landscape-1e7fe--and-products-own-the-panel-desktop-chromium/shop-scrolled.png"
+    },
+    {
+      "file": "kana-landscape.png",
+      "source": "test-results/duo-compact-rotation-prese-d8130-l-and-narrow-layouts-reflow-desktop-chromium/kana-640x432.png"
+    },
+    {
+      "file": "kana-wide.png",
+      "source": "test-results/duo-compact-rotation-prese-d8130-l-and-narrow-layouts-reflow-desktop-chromium/kana-960x680.png"
+    },
+    {
+      "file": "kana-tall.png",
+      "source": "test-results/duo-compact-rotation-prese-d8130-l-and-narrow-layouts-reflow-desktop-chromium/kana-740x1020.png"
+    },
+    {
+      "file": "kana-closed.png",
+      "source": "test-results/duo-compact-rotation-prese-d8130-l-and-narrow-layouts-reflow-desktop-chromium/kana-432x640.png"
+    },
+    {
+      "file": "shop-large-text-landscape.png",
+      "source": "test-results/duo-compact-large-text-lan-cd8b3-shop-content-stay-reachable-desktop-chromium/shop-large-text.png"
+    },
+    {
+      "file": "shop-large-text-narrow.png",
+      "source": "test-results/duo-compact-large-text-nar-8edb8-shop-content-stay-reachable-desktop-chromium/shop-large-text.png"
+    }
+  ],
+  "mobileShell": {
+    "startTime": "2026-10-23T14:51:35.909Z",
+    "duration": 24686.957,
+    "expected": 12,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

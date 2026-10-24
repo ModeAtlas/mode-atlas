@@ -43,7 +43,7 @@ for(const native of [false,true])test(`${native?'iOS localhost':'production web'
     window.currentUser={email:'admin@mode-atlas.com'};
     window.ModeAtlasSettings.open();
   });
-  await expect(page.locator('[data-ma-unified-export],[data-ma-unified-copy],[data-ma-unified-import],[data-ma-unified-file]')).toHaveCount(0);
+  await expect(page.locator('[data-ma-unified-export],[data-ma-unified-copy],[data-ma-unified-import],[data-ma-unified-file],[data-ma-export-learning],[data-ma-restore-learning]')).toHaveCount(0);
   expect(await page.evaluate(async()=>({eligible:ModeAtlasDevConsoleLoader.isEligible(),loaded:await ModeAtlasDevConsoleLoader.loadIfEligible(),backups:!!window.ModeAtlasDevBackups})))
     .toEqual({eligible:false,loaded:false,backups:false});
   const blocked=await page.evaluate(async()=>{

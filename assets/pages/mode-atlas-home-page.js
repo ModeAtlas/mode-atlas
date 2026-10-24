@@ -91,9 +91,6 @@
       }
     });
   }
-  document.querySelectorAll('[data-ma-home-review-help]').forEach(button => button.addEventListener('click', () => {
-    window.ModeAtlasDialog.alert({title:'What does “due” mean?',message:window.ModeAtlasReview.dueHelp(),confirmLabel:'Got it'});
-  }));
   render();
   document.addEventListener('ma:ui-refresh', render);
   document.addEventListener('ma:onboarding-complete', render);

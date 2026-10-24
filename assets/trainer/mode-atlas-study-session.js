@@ -195,14 +195,14 @@
       }else if(current.mode==='testMode')intro=complete?'Your formal result is saved. Review your missed kana or explore the full breakdown in Results.':'Your individual answers are saved. Finish the full test to save a formal result.';
       else if(current.mode==='timeTrial')intro=complete?`${sessionStats.correct>=state.trialTarget?'Target reached':'Keep building your speed'} · ${sessionStats.correct} / ${state.trialTarget} correct.`:'Your practice is saved. Finish the timer to enter the records.';
       else if(current.mode==='speedRun'&&!complete)intro='Your practice is saved. Finish the full minute to enter the records.';
-      const content=el('div','ma-study-summary');content.appendChild(el('p','ma-study-summary__intro',intro));
+      const content=el('div','ma-study-summary'),learning=el('div','ma-study-summary__learning'),rewards=el('div','ma-study-summary__reward');content.append(learning,rewards);learning.appendChild(el('p','ma-study-summary__intro',intro));
       const grid=el('div','ma-study-summary__stats');
       for(const [label,value]of[['Answered',goal?`${answered} / ${goal}`:answered],['Correct',sessionStats.correct],['Accuracy',answered?`${Math.round(sessionStats.correct/answered*100)}%`:'—']]){
         const card=el('div','');card.append(el('strong','',value),el('span','',label));grid.appendChild(card);
       }
-      content.append(grid,el('p','ma-study-summary__meta',`${rows.length} kana practised · ${config.mode==='writing'?'Recall':'Read'}`));
-      content.append(root.ModeAtlasSessionOutcome.render({skill:config.mode==='writing'?'Kana Recall':'Kana Read',missed:mistakes.map(row=>row.kana),due:Object.keys(current.items).map(char=>state.srs[char]?.due)}));
-      root.ModeAtlasProgressUI.renderSessionReward(content,{...current,xpGain});
+      learning.append(grid,el('p','ma-study-summary__meta',`${rows.length} kana practised · ${config.mode==='writing'?'Recall':'Read'}`));
+      learning.append(root.ModeAtlasSessionOutcome.render({skill:config.mode==='writing'?'Kana Recall':'Kana Read',missed:mistakes.map(row=>row.kana),due:Object.keys(current.items).map(char=>state.srs[char]?.due)}));
+      root.ModeAtlasProgressUI.renderSessionReward(rewards,{...current,xpGain});
       const weekly=el('p','ma-study-summary__meta');weekly.setAttribute('role','status');
       const weeklyStatus=()=>{
         const value=current.weekly;weekly.hidden=!value||value.status==='disabled'||(!value.token&&value.status==='unavailable');
@@ -213,21 +213,21 @@
           value.pending.length?`${earned} weekly XP confirmed · ${value.pending.length} answers waiting to upload.`:`+${earned} weekly XP confirmed`;
       };
       const onWeekly=event=>{if(event.detail?.runId===current.runId)weeklyStatus();};
-      weeklyStatus();content.appendChild(weekly);root.addEventListener('modeAtlasWeeklyChanged',onWeekly);
+      weeklyStatus();learning.appendChild(weekly);root.addEventListener('modeAtlasWeeklyChanged',onWeekly);
       const details=el('details','ma-study-summary__details');details.appendChild(el('summary','','Session details'));
       const times=sessionStats.timings||[];
       const info=[['Best streak',sessionStats.bestStreak],['Average answer',times.length?root.formatDuration(root.average(times)):'—'],['Active time',root.formatDuration((sessionStats.endTime||Date.now())-sessionStats.startTime)]];
       if(current.mode==='speedRun'&&complete)info.unshift(['Speed score',root.ModeAtlasTrainerCore.speedScore(sessionStats)]);
       for(const [label,value]of info){const line=el('p','');line.append(el('span','',label),el('strong','',value));details.append(line);}
-      content.append(details);
+      learning.append(details);
       if(mistakes.length){
-        content.appendChild(el('h3','','Worth another look'));
+        learning.appendChild(el('h3','','Worth another look'));
         const list=el('div','ma-study-summary__kana');
         for(const row of mistakes.slice(0,12)){
           const item=el('span',''),kana=el('strong','',row.kana);kana.lang='ja';item.append(kana,el('span','',root.ModeAtlasKanaCoaching.reading(row.kana)));list.appendChild(item);
         }
-        content.append(list);if(mistakes.length>12)content.append(el('p','ma-study-summary__note',`${mistakes.length-12} more to revisit`));
-      }else if(answered)content.appendChild(el('p','ma-study-summary__note','No mistakes this time.'));
+        learning.append(list);if(mistakes.length>12)learning.append(el('p','ma-study-summary__note',`${mistakes.length-12} more to revisit`));
+      }else if(answered)learning.appendChild(el('p','ma-study-summary__note','No mistakes this time.'));
       const actions=el('div','ma-study-summary__actions');let reviewing=false;
       const done=el('button','ma-button ma-button--primary','Done');done.type='button';done.addEventListener('click',()=>root.ModeAtlasDialog.close());actions.appendChild(done);
       if(mistakes.length){
@@ -236,7 +236,7 @@
       }
       if(current.mode==='testMode'&&complete){const results=el('a','ma-button ma-button--ghost','View Results');results.href='/results/';actions.appendChild(results);}
       content.append(actions);
-      root.ModeAtlasProgressUI.presentSession(current,()=>root.ModeAtlasDialog.feature({kicker:`${state.settings.kanaDirection==='both'?'Read + Recall':config.mode==='writing'?'Recall':'Read'} · ${mode.label}`,title,contentNode:content})).then(()=>{
+      root.ModeAtlasProgressUI.presentSession(current,()=>root.ModeAtlasDialog.feature({kicker:`${state.settings.kanaDirection==='both'?'Read + Recall':config.mode==='writing'?'Recall':'Read'} · ${mode.label}`,title,contentNode:content,size:'wide',presentation:'outcome'})).then(()=>{
         root.removeEventListener('modeAtlasWeeklyChanged',onWeekly);
         if(reviewing){root.ModeAtlasTrainerControls.setPracticeCount(10);config.start();}else config.naturalBreak();
       });

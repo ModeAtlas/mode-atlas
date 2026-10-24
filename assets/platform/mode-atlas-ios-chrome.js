@@ -104,37 +104,53 @@
       const safe=Object.fromEntries(['top','right','bottom','left'].map(side=>[side,
         Math.max(0,geometry?.safeArea?.[side]??(parseFloat(style.getPropertyValue('--ma-safe-'+side))||0))]));
       const font=parseFloat(style.fontSize)||16,railSize=Math.max(76,font*4.75);
-      const neededHeight=4*Math.max(64,font*4)+3*12+24;
+      const regular={item:Math.max(64,font*4),gap:12,padding:12,iconGap:6};
+      const compact={item:Math.max(52,32+font*.9),gap:4,padding:4,iconGap:2};
+      const fits=(metrics,available)=>available>=4*metrics.item+3*metrics.gap+2*metrics.padding;
+      const density=available=>fits(regular,available)?regular:fits(compact,available)?compact:null;
       const safeWidth=width-safe.left-safe.right,safeHeight=height-safe.top-safe.bottom;
-      let side='right',shared=false,top=safe.top,bottom=safe.bottom,offset=safe.right;
+      let side='right',shared=false,top=safe.top,bottom=safe.bottom,offset=safe.right,metrics=null;
       // Reuse the system side gutter only with native occlusion evidence. Do
       // not infer a camera or a Duo model from a viewport size or a user agent.
       for(const edge of ['right','left']){
         if(safe[edge]<railSize+8)continue;
         const x=edge==='right'?width-safe.right:0;
         const blocked=(geometry?.occlusions||[]).filter(r=>r.x+r.width>x&&r.x<x+safe[edge]&&r.width>0&&r.height>0);
-        if(!blocked.length)continue;
+        // A current reserved-region snapshot can also explicitly report an
+        // empty gutter (for example when the landscape status UI is hidden).
+        if(!blocked.length&&!geometry?.reservedRegionsAvailable)continue;
         const start=Math.max(safe.top,...blocked.map(r=>r.y+r.height))+8;
-        if(height-start-safe.bottom<neededHeight)continue;
-        side=edge;shared=true;top=start;offset=(safe[edge]-railSize)/2;break;
+        const candidate=density(height-start-safe.bottom);
+        if(!candidate)continue;
+        metrics=candidate;side=edge;shared=true;top=start;offset=(safe[edge]-railSize)/2;break;
       }
       // A wide, short window benefits from a rail even on older native shells.
       // Tall inner-display layouts keep a bottom dock unless the OS supplies a
       // usable side region. The threshold is content capacity, not device size.
-      const rail=shared||(safeWidth-railSize>=600&&safeWidth>safeHeight&&safeHeight>=neededHeight);
+      // A closed landscape window still has room for a phone-width task. The
+      // former 600px content floor unnecessarily kept its dock at the bottom.
+      if(!shared&&safeWidth-railSize>=Math.max(320,font*20)&&safeWidth>safeHeight)metrics=density(safeHeight);
+      const rail=!!metrics;
+      metrics ||= regular;
       html.dataset.maNavigation=rail?'rail':'bottom';
+      html.toggleAttribute('data-ma-compact-rail',rail&&metrics===compact);
       html.dataset.maRailSide=side;
       html.toggleAttribute('data-ma-shared-bar',rail&&shared);
       setPixels('--ma-ios-rail-size',railSize);
       setPixels('--ma-ios-rail-offset',offset);
       setPixels('--ma-ios-rail-top',top);
       setPixels('--ma-ios-rail-bottom',bottom);
+      setPixels('--ma-ios-rail-item',metrics.item);
+      setPixels('--ma-ios-rail-gap',metrics.gap);
+      setPixels('--ma-ios-rail-padding',metrics.padding);
+      setPixels('--ma-ios-rail-icon-gap',metrics.iconGap);
       const dockVisible=getComputedStyle(dock).display!=='none';
       setPixels('--ma-ios-rail-left',dockVisible&&rail&&!shared&&side==='left'?railSize:0);
       setPixels('--ma-ios-rail-right',dockVisible&&rail&&!shared&&side==='right'?railSize:0);
       const clear=clearSpace(geometry,safe,width,height);
       setPixels('--ma-ios-clear-left',clear.left);setPixels('--ma-ios-clear-right',clear.right);
       const view=root.visualViewport,viewTop=view?.offsetTop||0,viewHeight=view?.height||height;
+      setPixels('--ma-ios-protected-overlay-top',Math.max(0,safe.top-viewTop));
       const overlayClear=viewHeight-Math.max(0,clear.top-viewTop)-safe.bottom>=240;
       setPixels('--ma-ios-overlay-top',Math.max(0,(overlayClear?clear.top:safe.top)-viewTop));
       setPixels('--ma-ios-overlay-left',overlayClear?clear.left:safe.left);

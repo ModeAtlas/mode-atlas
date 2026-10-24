@@ -185,7 +185,7 @@ for(const theme of ['light','dark'])test(`mastery displays exact next targets wi
   await expect(read.locator('details')).toHaveCount(0);await page.screenshot({path:info.outputPath(`mastery-targets-${theme}.png`),fullPage:true});
   await page.getByRole('button',{name:'Recall · Familiar',exact:true}).click();await expect(read).toBeHidden();await expect(page.locator('.ma-kana-skill-evidence').nth(1)).toBeVisible();
   await page.getByRole('button',{name:'Handwrite · New',exact:true}).click();await expect(page.locator('.ma-kana-skill-evidence').nth(2)).toContainText('Clean writes without a guide');
-  await page.getByRole('button',{name:'Back to mastery map',exact:true}).click();await page.locator('.ma-kana-mastery-help summary').click();await expect(page.locator('.ma-kana-stage-guide')).toContainText('50 correct');
+  await page.getByRole('button',{name:'Back to mastery map',exact:true}).click();await expect(page.locator('.ma-kana-mastery-help')).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 

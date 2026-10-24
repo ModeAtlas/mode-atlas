@@ -22,6 +22,7 @@
       <section class="ma-settings-section" aria-labelledby="maApplicationTitle">
         ${heading('maApplicationTitle','Explore & support','compass')}
         <div class="ma-settings-action-grid">
+          ${action('Help','info','data-ma-help-open')}
           ${action('Learning tours','compass','data-ma-tour')}
           ${action('Send feedback','message','data-ma-support')}
           ${action('About','info','data-ma-about-open')}
@@ -34,8 +35,6 @@
       <section class="ma-settings-section ma-save-section" aria-labelledby="maDataTitle">
         ${heading('maDataTitle','Data & account','shield')}
         <div class="ma-settings-action-grid">
-          ${action('Export learning backup','download','data-ma-export-learning')}
-          ${action('Restore learning backup','upload','data-ma-restore-learning')}
           ${action('Repair save','refresh','data-ma-repair-data')}
           ${action('Share guest learning','shield','data-ma-usage-settings hidden')}
           ${action('Reset data','delete','data-ma-unified-reset','ma-settings-action--danger')}
