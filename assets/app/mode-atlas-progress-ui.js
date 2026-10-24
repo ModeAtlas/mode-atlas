@@ -13,22 +13,22 @@
     return true;
   }
   function levelUpContent(summary){
-    const wrap=el('div','ma-level-up-card'),emblem=el('div','ma-level-up-emblem');
+    const wrap=el('div','ma-level-up-card'),copy=el('div','ma-level-up-copy'),emblem=el('div','ma-level-up-emblem');
     emblem.append(root.ModeAtlasAchievementArt.badge('atlas-level',Math.min(4,Math.floor(summary.level/10)),{earned:true,showRank:false}));
     const number=el('strong','ma-level-up-number',String(summary.level));number.setAttribute('aria-label',`Atlas Level ${summary.level}`);emblem.append(number);
     const remaining=Math.max(0,summary.levelRequirement-summary.levelXp);
-    wrap.append(el('p','ma-level-up-label',`Level ${summary.previousLevel} → ${summary.level}`),emblem,el('h3','','A new height.'),el('p','',summary.level-summary.previousLevel>1?`${summary.level-summary.previousLevel} levels gained. Your practice is adding up.`:'Your practice is adding up. Keep building on it.'));
+    wrap.append(emblem,copy);copy.append(el('p','ma-level-up-label',`Level ${summary.previousLevel} → ${summary.level}`),el('h3','','A new height.'),el('p','',summary.level-summary.previousLevel>1?`${summary.level-summary.previousLevel} levels gained. Your practice is adding up.`:'Your practice is adding up. Keep building on it.'));
     const unlocks=root.ModeAtlasRewardRules.landmarks.filter(item=>item.level>summary.previousLevel&&item.level<=summary.level);
-    if(unlocks.length)wrap.append(el('p','ma-level-up-unlocks',`Unlocked: ${unlocks.map(item=>item.title).join(', ')}`));
-    wrap.append(el('p','ma-level-up-next',`${remaining.toLocaleString()} XP to Level ${summary.level+1}`));
-    const next=el('button','ma-button ma-button--primary','Continue');next.type='button';next.addEventListener('click',()=>root.ModeAtlasDialog.close());wrap.append(next);return wrap;
+    if(unlocks.length)copy.append(el('p','ma-level-up-unlocks',`Unlocked: ${unlocks.map(item=>item.title).join(', ')}`));
+    copy.append(el('p','ma-level-up-next',`${remaining.toLocaleString()} XP to Level ${summary.level+1}`));
+    const next=el('button','ma-button ma-button--primary','Continue');next.type='button';next.addEventListener('click',()=>root.ModeAtlasDialog.close());copy.append(next);return wrap;
   }
   function naturalBreak(){
     if(activePresentation)return activePresentation;
     if(!pendingLevelUp||!root.ModeAtlasDialog?.feature||root.ModeAtlasDialog.isOpen())return Promise.resolve(false);
     const summary=pendingLevelUp;pendingLevelUp=null;
     root.ModeAtlasFeedback?.haptic?.('milestone');
-    const presentation=root.ModeAtlasDialog.feature({kicker:'Atlas Level',title:'Level up!',tone:'success',contentNode:levelUpContent(summary)});
+    const presentation=root.ModeAtlasDialog.feature({kicker:'Atlas Level',title:'Level up!',tone:'success',contentNode:levelUpContent(summary),presentation:'outcome',size:'wide'});
     activePresentation=presentation;
     presentation.finally(()=>{if(activePresentation===presentation)activePresentation=null;});
     return presentation;

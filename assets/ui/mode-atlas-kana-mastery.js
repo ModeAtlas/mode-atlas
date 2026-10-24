@@ -58,28 +58,12 @@
     }
     return body;
   }
-  function masteryHelp(){
-    const help=el('details','ma-kana-mastery-help');help.append(el('summary','','How mastery works'));
-    const familiar=L.requirements.familiar,hand=L.requirements.handwriting[5];
-    const recallRule=stage=>{const r=R.requirements[stage];return `${r.correct} correct; ${r.attempts} recent unassisted attempts at ${r.accuracy*100}% accuracy, recall on ${r.days} days and ${r.level} spaced steps. Overall accuracy and speed are shown for reference.`;};
-    const explanations=[
-      'No lesson or practice recorded yet.',
-      'Met in a lesson. Answer in Read or Recall to start practising.',
-      'Practice has started. Work toward the Familiar targets below.',
-      `Read or Recall: ${familiar.correct} correct unassisted answers at ${familiar.accuracy*100}% accuracy in recent practice. Every character in a row must be Familiar in that skill to open its next row.`,
-      'Both Read and Recall are at least Familiar; one also meets: '+recallRule(2),
-      'Both Read and Recall meet: '+recallRule(3),
-      `Mastered, plus ${hand.correct} clean writes without a guide across ${hand.days} days. Handwriting is optional and has its own row progression.`
-    ];
-    const list=el('dl','ma-kana-stage-guide');L.labels.forEach((label,i)=>list.append(el('dt','',label),el('dd','',explanations[i])));help.append(list);
-    help.append(el('p','','Recent means the last 24 answers; correct answers with hints are excluded. Spaced steps advance on correct unassisted answers when a review is due, not by repeating quickly. Earned milestones and unlocked rows stay earned. Earlier practice without review history uses accuracy and speed until new answers add that history.'));return help;
-  }
   function render(onOpen){
     const state=L.read(),evidence=M.createSnapshot(),wrap=el('div','ma-kana-mastery-map'),counts=Object.fromEntries(L.labels.map(label=>[label,0]));
     for(const char of M.ALL)counts[L.labels[L.stage(char,state,evidence)]]++;
     wrap.append(el('p','ma-kana-muted','Two marks: Read, then Recall. Tap a kana for its targets and next practice.'));
     const summary=el('div','ma-kana-mastery-legend');
-    L.labels.forEach((label,i)=>{const item=el('span','');item.dataset.stage=String(i);item.append(el('b','',counts[label]),document.createTextNode(' '+label));summary.append(item);});wrap.append(summary,masteryHelp());
+    L.labels.forEach((label,i)=>{const item=el('span','');item.dataset.stage=String(i);item.append(el('b','',counts[label]),document.createTextNode(' '+label));summary.append(item);});wrap.append(summary);
     for(const [title,chars]of [['Hiragana',M.HIRA],['Katakana',M.KATA],['Voiced sounds',M.DAK],['Joined sounds',M.YOON],['Extended Katakana',M.EXT]]){
       const section=el('section','ma-mastery-group'),grid=el('div','ma-mastery-grid');section.append(el('h3','',title));
       for(const char of chars){

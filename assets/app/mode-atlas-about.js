@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'A clearer beginning. Deeper learning.';
+  const WHATS_NEW_COPY = 'More room to practise.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'A different Home and a focused first Kana lesson for new learners. Advanced tools are available when you want them.',
-    'Useful vocabulary lessons, reading and listening reviews, and Kanji readiness based on recent recall.',
-    'Word reviews and handwriting count toward study habits. Export and restore learning backups from Settings.'
+    'Results and level-ups use the taller safe area on Duo. Wide results place learning and rewards side by side.',
+    'Rewards keep a consistent text size as you open and close categories.',
+    'Find explanations in Settings → Help. Save-file tools are restricted to the developer console.'
 
   ];
 
@@ -244,7 +244,7 @@
     const created=document.createElement('p'); created.append(aboutEl('strong','',`Created by ${DEVELOPER}`));
     const support=document.createElement('p'); support.append(document.createTextNode('Support: '),aboutLink(SUPPORT_EMAIL,`mailto:${SUPPORT_EMAIL}`),document.createTextNode(' · '),aboutLink(OFFICIAL_SITE,`https://${OFFICIAL_SITE}/`,{target:'_blank',rel:'noopener'}));
     credit.append(aboutEl('h3','','Developer'),created,aboutEl('p','','Made for focused, everyday Japanese study.'),support,aboutEl('p','ma-about-muted',`© 2026 ${DEVELOPER}. All rights reserved.`));
-    const availability=aboutEl('div','ma-about-section');availability.append(aboutEl('h3','','Offline study & pronunciation'),aboutEl('p','','The installed iOS app bundles its lessons and character guidance. A browser needs a connection to load pages; an already-open practice session saves locally. Keep a learning backup before clearing browser storage.'),aboutEl('p','','Pronunciation uses your device’s Japanese voice. Availability and quality depend on the installed voice. Listening practice requires successful playback; other practice remains available without audio.'),aboutEl('p','','Personal learning and verified rewards are separate. Start a connected, signed-in session to receive verified rewards. Offline or expired sessions still save personal learning.'));
+    const availability=aboutEl('div','ma-about-section');availability.append(aboutEl('h3','','Offline study & pronunciation'),aboutEl('p','','The installed iOS app bundles its lessons and character guidance. A browser needs a connection to load pages; an already-open practice session saves locally. Check that your account has synced before clearing browser storage.'),aboutEl('p','','Pronunciation uses your device’s Japanese voice. Availability and quality depend on the installed voice. Listening practice requires successful playback; other practice remains available without audio.'),aboutEl('p','','Personal learning and verified rewards are separate. Start a connected, signed-in session to receive verified rewards. Offline or expired sessions still save personal learning.'));
     overview.append(grid,saveSection,availability,credit);
 
     const whatsNew=aboutEl('div','ma-about-panel'); whatsNew.dataset.maAboutPanel='whatsnew';

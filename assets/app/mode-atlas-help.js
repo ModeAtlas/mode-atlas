@@ -1,4 +1,4 @@
-/* In-app support and the bundled legal reader. Policy HTML stays in its one
+/* Searchable reference help, in-app support and the bundled legal reader. Policy HTML stays in its one
    canonical document; reading it never navigates away from unfinished practice. */
 (function ModeAtlasHelp(root){
   'use strict';
@@ -6,6 +6,77 @@
   const el=(tag,cls,text)=>{const node=document.createElement(tag);node.className=cls||'';if(text!=null)node.textContent=text;return node;};
   const button=(label,action)=>{const node=el('button','ma-button',label);node.type='button';node.addEventListener('click',action);return node;};
   function field(label,node){const holder=el('label','ma-help-field',label);holder.append(node);return holder;}
+  const topics=[
+    {id:'reviews',title:'Reviews & study days',keywords:'due spaced schedule streak goals',read:()=>[
+      ['When to review',root.ModeAtlasReview.dueHelp()],
+      ['Study goals','Daily goals reset at local midnight; weekly goals run Monday to Sunday. Personal goals can repeat. Editing a goal does not award its XP a second time.']
+    ]},
+    {id:'kana',title:'Kana progress & mastery',keywords:'read recall handwriting familiar confident mastered rows unlock hints speed accuracy',read:()=>{
+      const learning=root.ModeAtlasKanaLearning,familiar=learning.requirements.familiar,hand=learning.requirements.handwriting[5];
+      const recallRule=stage=>{const r=root.ModeAtlasReview.requirements[stage];return `${r.correct} correct; ${r.attempts} recent unassisted attempts at ${r.accuracy*100}% accuracy, recall on ${r.days} days and ${r.level} spaced steps.`;};
+      return [
+        ['New','No lesson or practice recorded yet.'],['Introduced','Met in a lesson. Answer in Read or Recall to start practising.'],
+        ['Learning','Practice has started. Work toward the Familiar targets.'],
+        ['Familiar',`Read or Recall: ${familiar.correct} correct unassisted answers at ${familiar.accuracy*100}% recent accuracy. Every character in a row must be Familiar in that skill to open its next row.`],
+        ['Confident','Both Read and Recall are at least Familiar; one also meets: '+recallRule(2)],
+        ['Mastered','Both Read and Recall meet: '+recallRule(3)],
+        ['Mastered+',`Mastered, plus ${hand.correct} clean writes without a guide across ${hand.days} days. Handwriting is optional and has its own row progression.`],
+        ['Recent practice','The last 24 answers; correct answers with hints are excluded. Spaced steps advance on correct unassisted answers when a review is due. Repeating quickly does not advance those steps.'],
+        ['Earned progress','Milestones and unlocked rows stay earned. Overall accuracy and speed are reference measures. Earlier practice without review history uses accuracy and speed until new answers add that history.']
+      ];
+    }},
+    {id:'kanji',title:'Kanji levels & mastery',keywords:'N5 N4 N3 N2 N1 band pronunciation meaning unlocked recent',read:()=>[
+      ['Opening the next band','Recall each character’s reading and meaning without hints to complete it. Completing a band opens the next one. N5–N1 group content by approximate difficulty.'],
+      ['Building mastery','Practise readings and meanings without hints across several days. Your last 12 answers show what to revisit. Tap a character in the Mastery Map for its exact targets. Earned milestones stay saved.']
+    ]},
+    {id:'milestones',title:'Achievements & profile percentages',keywords:'count milestones ranks completion friends mastered locked',read:()=>[
+      ['Achievements','Each rank is a milestone. Completion counts current study milestones across Atlas, Kana, Kanji and Words. Special rewards and retired milestones stay in your collection without affecting the percentage. Earned ranks stay earned.'],
+      ['Mastery percentages','Only characters at Mastered or Mastered+ count toward the percentage. Confident and Building show progress on the way there. Each branch uses its full current curriculum, including locked characters.']
+    ]},
+    {id:'weekly',title:'Weekly competition',keywords:'leaderboard ladder rankings prizes rules XP coins reset ties',read:()=>[
+      ['Reset & prizes','Everyone resets on Monday at 00:00 UTC. At least two learners must earn 100 weekly XP. First, second and third receive 500, 300 and 150 personal XP. First place also earns 100 Atlas Coins. Ties share the same place and prize.'],
+      ['What counts','Online Kana Read and Recall answers are checked by the server. Broader practice earns more; hints reduce the rate. Completion and goal bonuses, old saves and prizes count only toward personal XP.'],
+      ['Connection & limits','Submit before the reset. Interrupted connections can retry within the same one-hour session. The daily safety limit is 20,000 weekly XP.'],
+      ['Leaving','Use Leave weekly competition on the weekly board. Rejoining that week restores your existing weekly score. Your personal XP and Friends remain available.']
+    ]},
+    {id:'rewards',title:'Coins, tokens & rewards',keywords:'shop currency earn purchases themes banners wardrobe icons frames',read:()=>[
+      ['Study Tokens','Earn tokens through correct answers, level-ups and consistent study days. Wider kana practice earns more, and hints reduce the rate. Sign in and connect before starting a session to earn verified rewards. Offline practice still saves personal learning progress.'],
+      ['Your collection','Choose collected themes, banners, titles and frames in Progress → Rewards. Edit avatar & pet opens your wardrobe. Available app icons change this device’s Home Screen icon.'],
+      ['Atlas Coins','Shop items show their price before purchase. Coin-purchase buttons are placeholders; coin purchases are not available yet.']
+    ]},
+    {id:'saving',title:'Saving & offline study',keywords:'account sync cloud data device restore backup internet pronunciation',read:()=>[
+      ['Your learning','Practice saves on this device. Sign in to sync learning between devices; check your account’s sync status before clearing storage or changing devices.'],
+      ['Offline','The installed iOS app bundles its lessons and character guidance. A browser needs a connection to load pages; an already-open practice session saves locally. Verified rewards require a connected, signed-in session.'],
+      ['Pronunciation','Pronunciation uses your device’s Japanese voice. Listening practice requires successful playback; other practice remains available without audio.']
+    ]}
+  ];
+  let helpOpen=false;
+  function open(topicId){
+    if(helpOpen)return;helpOpen=true;
+    const host=el('div','ma-help-browser'),search=el('input'),index=el('div','ma-help-index'),article=el('article','ma-help-article');
+    search.type='search';search.placeholder='Search help';search.setAttribute('aria-label','Search help');
+    const searchField=field('Find a topic',search),status=el('p','ma-help-note');status.setAttribute('role','status');
+    host.append(searchField,status,index,article);article.hidden=true;
+    function top(){const panel=host.closest('.ma-dialog');if(panel)panel.scrollTop=0;}
+    function showIndex(focusId){
+      searchField.hidden=false;index.hidden=false;article.hidden=true;status.hidden=false;
+      const words=search.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+      const matches=topics.filter(topic=>words.every(word=>(topic.title+' '+topic.keywords).toLocaleLowerCase().includes(word)));
+      status.textContent=matches.length?'':'No matching topics. Try another word.';
+      index.replaceChildren(...matches.map(topic=>{const control=button(topic.title,()=>showTopic(topic));control.dataset.helpTopic=topic.id;return control;}));
+      top();if(focusId)index.querySelector(`[data-help-topic="${focusId}"]`)?.focus({preventScroll:true});
+    }
+    function showTopic(topic){
+      searchField.hidden=true;index.hidden=true;status.hidden=true;article.hidden=false;
+      const back=button('All help topics',()=>showIndex(topic.id)),title=el('h3','',topic.title);title.tabIndex=-1;
+      article.replaceChildren(back,title);
+      for(const [label,copy]of topic.read()){const section=el('section');section.append(el('h4','',label),el('p','',copy));article.append(section);}
+      top();title.focus({preventScroll:true});
+    }
+    search.addEventListener('input',()=>showIndex());showIndex();
+    root.ModeAtlasDialog.feature({title:'Help',kicker:'Mode Atlas',contentNode:host,size:'wide'}).finally(()=>{helpOpen=false;});
+    const initial=topics.find(topic=>topic.id===topicId);if(initial)showTopic(initial);
+  }
   function feedback(){
     if(feedbackOpen)return;feedbackOpen=true;
     const form=el('form','ma-help-form'),category=el('select'),message=el('textarea'),reply=el('input');
@@ -62,6 +133,7 @@
     await closed;if(legalOpen===ticket)legalOpen=0;
   }
   document.addEventListener('click',event=>{
+    if(event.target.closest?.('[data-ma-help-open]')){event.preventDefault();open();return;}
     if(event.target.closest?.('[data-ma-support]')){event.preventDefault();feedback();return;}
     if(!root.ModeAtlasEnv?.isNativeApp)return;
     const link=event.target.closest?.('a[href]');if(!link)return;
@@ -71,5 +143,5 @@
       event.preventDefault();void legal(path);
     }else if(['mailto:','https:'].includes(url.protocol)&&url.origin!==location.origin){event.preventDefault();void root.AtlasPlatform.openExternalLink(url.href).catch(()=>{});}
   });
-  root.ModeAtlasHelp=Object.freeze({feedback,legal});
+  root.ModeAtlasHelp=Object.freeze({open,feedback,legal});
 })(window);

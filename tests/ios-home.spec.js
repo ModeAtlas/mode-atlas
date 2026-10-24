@@ -169,7 +169,7 @@ test('web home shows the full owned character, shared study data and a direct Sh
   await expect(page.locator('.atlas-home-character svg')).toHaveAttribute('viewBox','0 0 240 340');
   await expect(page.locator('#homeGoals .ma-routine-goal')).toHaveCount(3);
   await expect(page.locator('.atlas-home .atlas-home-review-link')).toHaveText('Kana · Read1 due →');
-  await page.locator('.atlas-home [data-ma-home-review-help]').click();await expect(page.locator('.ma-dialog__title')).toContainText('due');await page.keyboard.press('Escape');
+  await expect(page.locator('.atlas-home [data-ma-home-review-help]')).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:info.outputPath('web-personal-home.png'),fullPage:true});
   await page.evaluate(()=>{homeUser=null;dispatchEvent(new Event('modeAtlasAccountSignedOut'));});

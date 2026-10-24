@@ -1,0 +1,103 @@
+{
+  "release": "3.0.8",
+  "iosBuild": 2080054,
+  "date": "2026-10-24",
+  "environment": "Chromium and Linux WebKit with simulated native geometry; not physical Duo/iOS WebKit",
+  "releaseChecks": {
+    "javascript": 297,
+    "python": 23,
+    "status": "passed"
+  },
+  "browserRuns": {
+    "regression": {
+      "startTime": "2026-10-24T00:14:59.106Z",
+      "duration": 255908.914,
+      "expected": 281,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "final": {
+      "startTime": "2026-10-24T00:20:01.552Z",
+      "duration": 77344.24900000001,
+      "expected": 81,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "mobile": {
+      "startTime": "2026-10-24T00:22:37.146Z",
+      "duration": 25192.589,
+      "expected": 12,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "webkit-ci": {
+      "startTime": "2026-10-24T00:22:37.161Z",
+      "duration": 66718.735,
+      "expected": 20,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "distinctDesktopChromiumLatest": {
+    "cases": 311,
+    "passed": 311
+  },
+  "limitations": [
+    "Linux WebKit has no iOS text inflation; persistent iOS font jump is inferred, not reproduced.",
+    "Native simulator/archive builds run in GitHub CI, not locally."
+  ],
+  "screenshots": [
+    {
+      "file": "screens/help-480-dark.png",
+      "sha256": "40d7dd00f63047bb2bdc875bb6bd0f3017382335deb937b5d20529967f538628"
+    },
+    {
+      "file": "screens/help-960-light.png",
+      "sha256": "11594577b1d1833ba32f6aca441807dafeda7fffb287d17584327489608e1a34"
+    },
+    {
+      "file": "screens/level-closed-light.png",
+      "sha256": "f5b276d3916e1bbeb468d22140f020711785176d5ab713eaa6d0b995edc2bb01"
+    },
+    {
+      "file": "screens/level-inner-dark.png",
+      "sha256": "49966fc6343b214af3b14f20654b244111c66ab302233321f3a8c63b7726633a"
+    },
+    {
+      "file": "screens/level-landscape-dark.png",
+      "sha256": "05014c6d3728d63cf28019c9bf59bc302cfedf5b224a3d482835d52714b550b9"
+    },
+    {
+      "file": "screens/results-text-1.5.png",
+      "sha256": "78ca850accaa2dd80199fe7ed65e7013a035cdb1ab1f0086672f5725e00cfc10"
+    },
+    {
+      "file": "screens/rewards-dark-1.png",
+      "sha256": "23590d5dc61473014901553ec821b24ac9e907bf88afca45b8baca2f12ce2faf"
+    },
+    {
+      "file": "screens/rewards-light-1.5.png",
+      "sha256": "a32f77ee3a4812461134b7e050be0cc2483d50e1b4bed83184dd4bcdffd378dc"
+    },
+    {
+      "file": "screens/summary-closed-dark.png",
+      "sha256": "efcbef509102b1e8e136c7384e6d230b22f1c588dc74339293165bb5f54b8d98"
+    },
+    {
+      "file": "screens/summary-closed-light.png",
+      "sha256": "9ac925cb610d48d10de6cdb52d5f18c1a423f0676fb9d71cb8ba5c9c11f0b039"
+    },
+    {
+      "file": "screens/summary-inner-dark.png",
+      "sha256": "df4aa300cfcf791c6bec4e4bb51532fd5d64551688054c89ee70ce8928869bcb"
+    },
+    {
+      "file": "screens/summary-landscape-light.png",
+      "sha256": "d5b7dc1ab323a48464b32bf5513175ec47182dd2a3dd8a70ab6e74e779f8c960"
+    }
+  ]
+}

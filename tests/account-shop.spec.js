@@ -131,14 +131,14 @@ for(const width of [320,393])test(`compact branch, wallet and About layout stays
   const levels=await page.locator('.ma-kanji-level').evaluateAll(nodes=>nodes.map(node=>({width:node.clientWidth,scroll:node.scrollWidth,top:node.getBoundingClientRect().top})));
   expect(levels.every(box=>box.scroll<=box.width+1)).toBe(true);expect(new Set(levels.map(box=>box.top)).size).toBe(1);
   await expect(page.locator('.ma-kanji-course-summary')).toContainText('N5 · Foundations');
-  await page.getByRole('button',{name:'How levels unlock',exact:true}).click();await expect(page.locator('.ma-dialog__message')).toContainText('reading and meaning without hints');await page.keyboard.press('Escape');
+  await expect(page.getByRole('button',{name:'How levels unlock',exact:true})).toHaveCount(0);
   await page.goto('/progress/?tab=rewards');const summary=page.locator('[data-reward-category=icons]>summary');await expect(summary.locator('img')).toBeVisible();
   const image=await summary.locator('img').boundingBox(),box=await summary.boundingBox();expect(image.y+image.height).toBeLessThanOrEqual(box.y+box.height);await summary.click();await expect(page.locator('.ma-atlas-icon-choice img').first()).toHaveAttribute('src','/assets/mode-atlas-icon.svg');
   await page.goto('/shop/');await expect(page.locator('.ma-shop-full')).toBeVisible();
   await page.evaluate(()=>{ModeAtlasShop={...ModeAtlasShop,current:()=>({status:'ready',balance:450,tokenBalance:3043,offers:null,owned:[],inventory:{}})};ModeAtlasShopUI.refresh();});
   const coins=await page.locator('.ma-shop-full [data-ma-coin-balance]').boundingBox(),tokens=await page.locator('.ma-shop-full [data-ma-token-balance]').boundingBox();expect(Math.abs(coins.y-tokens.y)).toBeLessThan(2);
   const first=await page.locator('.ma-shop-product:visible').first().boundingBox();expect(first.y+first.height).toBeLessThan(760);
-  await page.getByRole('button',{name:'How to earn Study Tokens',exact:true}).click();await expect(page.locator('.ma-dialog__message')).toContainText('correct answers');await page.keyboard.press('Escape');
+  await expect(page.getByRole('button',{name:'How to earn Study Tokens',exact:true})).toHaveCount(0);
   await page.addStyleTag({content:'html[data-ma-runtime="ios"]{--ma-page-inset-top:59px;}'});await page.evaluate(()=>ModeAtlas.openAbout());await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');
   await expect(page.locator('.ma-about-mark')).toHaveAttribute('src','/assets/brand/mode-atlas-symbol.svg');
   const cards=await page.locator('.ma-about-card').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().top));expect(cards[0]).toBe(cards[1]);

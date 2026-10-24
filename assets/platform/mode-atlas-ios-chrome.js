@@ -150,6 +150,7 @@
       const clear=clearSpace(geometry,safe,width,height);
       setPixels('--ma-ios-clear-left',clear.left);setPixels('--ma-ios-clear-right',clear.right);
       const view=root.visualViewport,viewTop=view?.offsetTop||0,viewHeight=view?.height||height;
+      setPixels('--ma-ios-protected-overlay-top',Math.max(0,safe.top-viewTop));
       const overlayClear=viewHeight-Math.max(0,clear.top-viewTop)-safe.bottom>=240;
       setPixels('--ma-ios-overlay-top',Math.max(0,(overlayClear?clear.top:safe.top)-viewTop));
       setPixels('--ma-ios-overlay-left',overlayClear?clear.left:safe.left);

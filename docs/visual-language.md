@@ -11,7 +11,8 @@ The approved design identity is retained across responsive and first-use changes
 | Streak flame | One shared vector silhouette, already corrected in 2.122.0. No second Home-only asset. |
 | Avatar, themes and earned artwork | Collectible appearance; retained within the wardrobe/rewards context. Coin-purchase placeholders remain by the user's instruction. |
 | Lesson presentation | One active teaching/recall task. Optional pattern notes, comparisons and other units use disclosures. The interface carries the next action rather than an introductory essay. |
-| Results | Shared compact rows: Practised, Revisit, When. Existing answer history remains available below the result. Review time comes from the relevant saved schedule. |
+| Reference help | Settings → Help owns general explanations. Keep task-specific lesson hints, evidence and actionable settings beside the task. Never reintroduce public save-file controls; they belong to developer diagnostics. |
+| Results | Centre completion and level-up dialogs in the tall native safe rectangle; use two columns for results when content width permits. Shared compact rows: Practised, Revisit, When. Existing answer history remains available below the result. Review time comes from the relevant saved schedule. |
 | Responsive native navigation | Four bottom destinations; a side rail when measured usable space fits the controls. Reuse a system side region only with native occlusion evidence. Rail targets are at least 64 CSS pixels high normally, or 52 in short windows, retaining the same 30-pixel illustrations and labels. Independent safe insets bound content and overlays. No device-name or fixed device-size catalogue. |
 
 Home remains the personal app hub. Learn remains the branch directory, including future branches. Kana owns only Kana. A new or just-starting learner does not receive the established personal dashboard after one answer. Established learners retain direct access to their existing work.

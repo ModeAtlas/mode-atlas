@@ -285,7 +285,7 @@
   function applyPatch(text,patch){
     const checksum=digest(text);
     if(checksum===patch.after)return text;
-    if(checksum!==patch.before)throw Error('A pending save no longer matches this device. Keep the recovery data and restore a backup.');
+    if(checksum!==patch.before)throw Error('A pending save no longer matches this device. Keep the recovery data and contact support.');
     const value=JSON.parse(text);
     if(!Array.isArray(patch.ops)||patch.ops.length>10000)throw Error('Invalid save recovery.');
     for(const op of patch.ops){

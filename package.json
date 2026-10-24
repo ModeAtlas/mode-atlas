@@ -1,6 +1,6 @@
 {
   "name": "mode-atlas",
-  "version": "3.0.7",
+  "version": "3.0.8",
   "private": true,
   "description": "Mode Atlas static web app smoke tests",
   "scripts": {
@@ -11,6 +11,7 @@
     "build:revision": "python3 build_revision_assets.py",
     "audit": "python3 audit_project.py",
     "release:check": "python3 build_revision_assets.py && python3 build_social_backend.py && python3 sync_ios_project.py && python3 validate_ios_firebase_config.py --require && python3 audit_project.py && python3 audit_security.py && node audit_learning_content.cjs && python3 -m unittest discover -s tests -p 'test_*.py' -v && python3 build_ios_web.py --check && node --test tests/backend.test.js tests/frontend.test.js tests/ios-foundation.test.js tests/ios-theme.test.js tests/study-flow.test.js tests/progression.test.js tests/social.test.js tests/weekly.test.js tests/notifications.test.js tests/beta-readiness.test.js tests/shop.test.js tests/kanji.test.js tests/kana-learning.test.js tests/achievements.test.js tests/release-integrity.test.js tests/learning-experience.test.js tests/study-prompts.test.js tests/ios-update-recovery.test.js",
+    "test:webkit": "playwright test --config=playwright.webkit.config.js tests/duo-outcomes.spec.js tests/help.spec.js",
     "test:backend": "node --test tests/backend.test.js",
     "test:frontend": "node --test tests/frontend.test.js",
     "build:ios-web": "python3 build_ios_web.py",
@@ -21,7 +22,7 @@
     "ios:open": "npx cap open ios",
     "ios:check-version": "python3 sync_ios_project.py",
     "ios:check-firebase": "python3 validate_ios_firebase_config.py",
-    "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js tests/ios-experience.spec.js tests/study-flow.spec.js tests/trainer-modes.spec.js tests/progression.spec.js tests/dev-backups.spec.js tests/social.spec.js tests/account-navigation.spec.js tests/hub-navigation.spec.js tests/sounds.spec.js tests/release-readiness.spec.js tests/beta-readiness.spec.js tests/security-logic.spec.js tests/security-monitoring.spec.js tests/account-shop.spec.js tests/kanji.spec.js tests/kana-learning.spec.js tests/stability.spec.js tests/widgets.spec.js tests/first-use-3.spec.js tests/release-3.spec.js tests/backup-3.spec.js tests/duo-learning.spec.js tests/duo-practice.spec.js tests/duo-space.spec.js tests/duo-compact.spec.js",
+    "test:polish": "playwright test tests/polish.spec.js tests/ios-theme.spec.js tests/ios-home.spec.js tests/ios-experience.spec.js tests/study-flow.spec.js tests/trainer-modes.spec.js tests/progression.spec.js tests/dev-backups.spec.js tests/social.spec.js tests/account-navigation.spec.js tests/hub-navigation.spec.js tests/sounds.spec.js tests/release-readiness.spec.js tests/beta-readiness.spec.js tests/security-logic.spec.js tests/security-monitoring.spec.js tests/account-shop.spec.js tests/kanji.spec.js tests/kana-learning.spec.js tests/stability.spec.js tests/widgets.spec.js tests/first-use-3.spec.js tests/release-3.spec.js tests/backup-3.spec.js tests/duo-learning.spec.js tests/duo-practice.spec.js tests/duo-space.spec.js tests/duo-compact.spec.js tests/duo-outcomes.spec.js tests/help.spec.js",
     "build:social": "python3 build_social_backend.py",
     "test:social": "npm run build:social && npm --prefix backend test",
     "social:install": "npm --prefix backend ci && npm --prefix backend/functions ci",

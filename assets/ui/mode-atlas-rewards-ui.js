@@ -195,9 +195,7 @@
     const goals=el('div','ma-routine-goals');renderGoals(goals);panel.append(goals);
     const reviews=el('section','ma-due-reviews'),heading=el('div','ma-due-reviews__heading');
     const title=el('h3','','Spaced reviews');title.id='maDueReviewsTitle';reviews.setAttribute('aria-labelledby',title.id);
-    const help=button('i','ma-info-button');help.setAttribute('aria-label','About due reviews');help.setAttribute('aria-haspopup','dialog');
-    help.addEventListener('click',()=>root.ModeAtlasDialog.alert({title:'What does “due” mean?',message:root.ModeAtlasReview.dueHelp(),confirmLabel:'Got it'}));
-    heading.append(title,help);
+    heading.append(title);
     const reviewActions=el('div','ma-atlas-rewards__actions');reviewActions.dataset.maDueReviews='';renderReviews(reviewActions);
     reviews.append(heading,reviewActions);panel.append(reviews);
     panel.append(pageActions([{label:'Open Mastery Map',short:'Mastery Map',icon:'book',action:()=>root.ModeAtlasFeatures.openMasteryMap()}]));

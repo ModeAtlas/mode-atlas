@@ -1574,31 +1574,6 @@ function createBackup() {
   };
 }
 
-// Consumer portability includes learning data only. Auth, commerce ledgers,
-// receipt outboxes, staff access and public rankings never enter this envelope.
-const PERSONAL_BACKUP = Symbol('personal-learning-backup');
-const LEARNING_SECTIONS = ['reading','writing','readingTests','writingTests','wordBank','kanaLearning','kanji','kanjiTests','progress'];
-function createLearningBackup(){
-  const snapshot=buildLocalSnapshot();
-  return {app:'Mode Atlas',kind:'learning-backup',version:1,appVersion:window.ModeAtlasVersion,
-    exportedAt:new Date().toISOString(),owner:currentUser?.uid||storeGet('modeAtlasLastUserId','')||null,
-    snapshot:{...snapshot,sections:Object.fromEntries(LEARNING_SECTIONS.filter(name=>snapshot.sections[name]).map(name=>[name,snapshot.sections[name]]))}};
-}
-function validateLearningBackup(input){
-  if(!input||input.app!=='Mode Atlas'||input.kind!=='learning-backup'||input.version!==1||!input.snapshot?.sections)throw Error('Choose a Mode Atlas learning backup exported from Settings.');
-  const owner=currentUser?.uid||storeGet('modeAtlasLastUserId','')||null;
-  if(input.owner&&input.owner!=='guest'&&input.owner!==owner)throw Error('This backup belongs to another account. Sign in to the account that exported it first.');
-  const snapshot={...input.snapshot,sections:Object.fromEntries(LEARNING_SECTIONS.filter(name=>input.snapshot.sections[name]).map(name=>[name,input.snapshot.sections[name]]))};
-  window.ModeAtlasSaveLimits.parse(JSON.stringify(snapshot));
-  for(const section of Object.values(snapshot.sections)){
-    if(section.storage)throw Error('This backup is incomplete. Export a new learning backup from the original device.');
-    window.ModeAtlasSaveLimits.parse(JSON.stringify(section.data));
-  }
-  return {app:'Mode Atlas',snapshot,exportedAt:input.exportedAt};
-}
-function previewLearningBackup(input){return previewBackup(validateLearningBackup(input));}
-function importLearningBackup(input){validateLearningBackup(input);return importLocalBackup(input,PERSONAL_BACKUP);}
-
 function getImportMapAndSnapshot(obj) {
   if (!obj || typeof obj !== 'object') throw new Error('Invalid save file');
   const exportedAt = Date.parse(obj.exportedAt || '') || Date.now();
@@ -1677,9 +1652,7 @@ function prepareManualImport(obj) {
 
 function previewLocalBackup(obj) {
   requireDeveloperBackupAccess();
-  return previewBackup(obj);
-}
-function previewBackup(obj){
+
   const prepared = prepareManualImport(obj);
   const local = buildLocalSnapshot();
   const sections = Object.keys(SECTION_DEFS).map((name) => {
@@ -1709,9 +1682,9 @@ function previewBackup(obj){
   };
 }
 
-async function importLocalBackup(obj,scope) {
+async function importLocalBackup(obj) {
   const importUid = currentUser?.uid || null;
-  const access=()=>{if(scope!==PERSONAL_BACKUP)requireDeveloperBackupAccess(importUid);else{if(importUid!==(currentUser?.uid||null))throw Error('The account changed. Start the restore again.');validateLearningBackup(obj);}};
+  const access=()=>requireDeveloperBackupAccess(importUid);
   access();
   await waitWithTimeout(setupFirebase(), 1400, 'cloud setup');
   await waitWithTimeout(authReady, 1400, 'auth check');
@@ -1727,7 +1700,7 @@ async function importLocalBackup(obj,scope) {
 
   try {
     access();
-    const prepared = prepareManualImport(scope===PERSONAL_BACKUP?validateLearningBackup(obj):obj);
+    const prepared = prepareManualImport(obj);
     const snapshot = prepared.snapshot;
     const result = {
       updated: [],
@@ -1879,7 +1852,6 @@ window.KanaCloudSync = {
   getSyncStatus,
   retryConnection,
   createBackup,
-  createLearningBackup, previewLearningBackup, importLearningBackup,
   importLocalBackup,
   previewLocalBackup,
   debugLocalSnapshot: buildLocalSnapshot,

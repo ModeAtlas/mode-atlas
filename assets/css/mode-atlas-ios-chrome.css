@@ -26,7 +26,16 @@ html[data-ma-runtime="ios"] .ma-page-frame{width:100%;min-width:0;}
    the keyboard or a fold changes its height without navigation. */
 html[data-ma-runtime="ios"] .ma-dialog-layer{
   --ma-dialog-top:calc(var(--ma-ios-overlay-top,var(--ma-safe-top)) + 12px);
-  padding:var(--ma-dialog-top) calc(var(--ma-ios-overlay-right,var(--ma-safe-right)) + 12px) calc(var(--ma-safe-bottom) + 12px) calc(var(--ma-ios-overlay-left,var(--ma-safe-left)) + 12px);
+  --ma-dialog-left:var(--ma-ios-overlay-left,var(--ma-safe-left));
+  --ma-dialog-right:var(--ma-ios-overlay-right,var(--ma-safe-right));
+  padding:var(--ma-dialog-top) calc(var(--ma-dialog-right) + 12px) calc(var(--ma-safe-bottom) + 12px) calc(var(--ma-dialog-left) + 12px);
+}
+/* Results need vertical room: use the full-height safe rectangle beside
+   system UI instead of forcing every result below the system region. */
+html[data-ma-runtime="ios"] .ma-dialog-layer[data-presentation="outcome"],
+html[data-ma-runtime="ios"] .ma-dialog-layer:has([data-ma-session-complete]){
+  --ma-dialog-top:calc(var(--ma-ios-protected-overlay-top,var(--ma-safe-top)) + 12px);
+  --ma-dialog-left:var(--ma-safe-left);--ma-dialog-right:var(--ma-safe-right);
 }
 html[data-ma-runtime="ios"] .ma-dialog{
   max-height:min(760px,calc(var(--ma-overlay-height,100dvh) - var(--ma-dialog-top) - var(--ma-safe-bottom) - 12px));

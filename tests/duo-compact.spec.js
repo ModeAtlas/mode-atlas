@@ -39,7 +39,7 @@ for(const theme of ['dark','light'])for(const [name,layout]of [['closed',closed]
     const panel=page.locator('#maAccount-shop'),header=panel.locator('.ma-shop-header');
     await expect(panel.locator('[data-ma-coin-balance]')).toHaveText('250');
     expect((await header.boundingBox()).height).toBeLessThan(125);
-    for(const control of [panel.locator('[data-ma-purchase-coins]'),panel.getByRole('link',{name:'See full shop'}),panel.getByRole('button',{name:'How to earn Study Tokens'})])await reachable(control,layout);
+    for(const control of [panel.locator('[data-ma-purchase-coins]'),panel.getByRole('link',{name:'See full shop'})])await reachable(control,layout);
     await panel.locator('[data-ma-purchase-coins]').click();await expect(page.locator('.ma-dialog__title')).toHaveText('500 Atlas Coins');await page.getByRole('button',{name:'Got it',exact:true}).click();
     await annotation(page,layout);await page.screenshot({path:info.outputPath('shop-top.png')});
     await panel.evaluate(el=>{el.scrollTop=el.scrollHeight;});
@@ -101,7 +101,7 @@ for(const [name,layout]of [['landscape',landscape],['narrow',{width:320,height:5
     const start=page.getByRole('button',{name:'Start practice',exact:true});await start.evaluate(el=>el.scrollIntoView({block:'center'}));await reachable(start,layout);
     await page.locator('#profileOpenBtn').scrollIntoViewIfNeeded();await shop(page);
     const panel=page.locator('#maAccount-shop');
-    for(const control of [panel.getByRole('button',{name:'How to earn Study Tokens'}),panel.locator('[data-ma-purchase-coins]'),panel.getByRole('link',{name:'See full shop'})]){await control.evaluate(el=>el.scrollIntoView({block:'center'}));await reachable(control,layout);}
+    for(const control of [panel.locator('[data-ma-purchase-coins]'),panel.getByRole('link',{name:'See full shop'})]){await control.evaluate(el=>el.scrollIntoView({block:'center'}));await reachable(control,layout);}
     await panel.evaluate(el=>{el.scrollTop=el.scrollHeight;});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
     await page.screenshot({path:info.outputPath('shop-large-text.png')});
