@@ -79,8 +79,11 @@ lessons and tours remain intact. Home, Learn and Kana keep their separate roles.
 - Chromium sweep: 283 cases; 281 passed initially. Two ordinary About-dialog
   checks caught an over-broad centering change. The rule was limited to outcomes.
   The final 81-case run passed, including both corrected cases and the affected
-  activities. Across those runs, **311 distinct cases have a passing latest
-  result**. The separate mobile iOS-shell run passed all 12 cases.
+  activities. GitHub's wider sweep then caught a Kanji Meaning Match test trying
+  to click through an earned-level dialog. It now acknowledges Continue through
+  the existing recap helper; application behavior was unchanged. All 16 Kanji
+  cases passed after correction. Across these runs, **327 distinct cases have a
+  passing latest result**. The separate mobile iOS-shell run passed all 12 cases.
 - All **20 WebKit cases passed**. The release workflow now includes a dedicated WebKit outcomes/rewards/Help job
   and requires it in the combined regression gate. Run locally with
   `npx playwright install --with-deps webkit`, then `npm run test:webkit`.

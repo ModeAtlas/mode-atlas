@@ -87,6 +87,8 @@ test('Meaning Match tests save results while keeping mastery evidence assisted',
   }
   expect(await page.evaluate(()=>ModeAtlasKanjiResults.read()[0].mode)).toBe('match');
   expect(await page.evaluate(()=>Object.values(ModeAtlasKanjiState.read().sources).flatMap(s=>Object.values(s)).every(row=>row.meaning[2]===0))).toBe(true);
+  // Earned levels must be acknowledged before interacting with the recap below.
+  await require('./helpers/session-recap')(page);
   await page.getByRole('link',{name:'View results',exact:true}).click();await expect(page.getByRole('heading',{name:'Meaning Match · N5 content band'})).toBeVisible();
 });
 

@@ -46,7 +46,7 @@ are unchanged. No broader security guarantee is claimed.
 
 - Release checks: **297 JavaScript tests and 23 Python tests passed**, plus project,
   security, learning-content and native-web packaging checks.
-- **311 distinct desktop Chromium regression cases passed across the sweep and
+- **327 distinct desktop Chromium regression cases passed across the sweep and
   final verification**, plus **12 mobile Chromium iOS-shell cases**.
 - **20 WebKit outcome, reward and Help cases passed** and are now in the release gate; engine
   results and rendered evidence are listed in [the review](reviews/3.0.8/duo-outcomes-review.md).

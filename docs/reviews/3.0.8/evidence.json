@@ -40,11 +40,19 @@
       "skipped": 0,
       "unexpected": 0,
       "flaky": 0
+    },
+    "kanji-final": {
+      "startTime": "2026-10-24T00:38:53.984Z",
+      "duration": 23670.148999999998,
+      "expected": 16,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
     }
   },
   "distinctDesktopChromiumLatest": {
-    "cases": 311,
-    "passed": 311
+    "cases": 327,
+    "passed": 327
   },
   "limitations": [
     "Linux WebKit has no iOS text inflation; persistent iOS font jump is inferred, not reproduced.",
@@ -99,5 +107,11 @@
       "file": "screens/summary-landscape-light.png",
       "sha256": "d5b7dc1ab323a48464b32bf5513175ec47182dd2a3dd8a70ab6e74e779f8c960"
     }
-  ]
+  ],
+  "ciCorrection": {
+    "run": "https://github.com/ModeAtlas/mode-atlas/actions/runs/40045259901",
+    "case": "Meaning Match tests save results while keeping mastery evidence assisted",
+    "finding": "The test attempted to click the recap through an earned-level dialog. It now acknowledges Continue through the existing session-recap helper. No application behavior was changed.",
+    "verification": "All 16 Kanji browser cases passed locally after correction."
+  }
 }
