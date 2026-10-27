@@ -74,7 +74,7 @@
     setAll('[data-ma-home-week-goals]', week.dailyGoals + week.weeklyGoals);
     setAll('[data-ma-home-week-sessions]', week.sessions);
     const situations=window.ModeAtlasWordLessonState.due();
-    const reviews = [...['reading','writing'].map(mode => ({label:mode==='reading'?'Kana · Read':'Kana · Recall',href:`/${mode}/?practice=10&due=1`,due:window.ModeAtlasReview.due(store.readModeJSON(mode,'srs',{})).length})),...window.ModeAtlasStudyPlan.kanjiReviews(),{label:'Word Bank',href:'/wordbank/?review=1',due:experience.words.due},{label:'Useful Japanese',href:'/wordbank/?application='+encodeURIComponent(situations[0]||''),due:situations.length}];
+    const reviews = [...['reading','writing'].map(mode => ({label:mode==='reading'?'Kana · Read':'Kana · Recall',href:`/${mode}/?practice=10&due=1`,due:window.ModeAtlasReview.due(store.readModeJSON(mode,'srs',{})).length})),...window.ModeAtlasStudyPlan.kanjiReviews(),{label:'Words · Vocabulary',href:'/wordbank/?vocabulary=review',due:experience.words.vocabularyDue},{label:'Words · Your bank',href:'/wordbank/?review=1',due:experience.words.due},{label:'Words · Phrases',href:'/wordbank/?application='+encodeURIComponent(situations[0]||''),due:situations.length}];
     find('.atlas-home-reviews').hidden=!experience.established&&!reviews.some(item=>item.due);
     document.querySelectorAll('[data-ma-home-reviews]').forEach(host => {
       if(host.dataset.reviews === JSON.stringify(reviews)) return;

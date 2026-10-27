@@ -21,6 +21,10 @@
   }
   function entry(){
     host.replaceChildren(heading('Where would you like to begin?'));
+    const readiness=root.ModeAtlasLearningExperience?.readiness?.().kanji;
+    if(readiness&&!readiness.recommended){
+      const guidance=el('aside','ma-kanji-entry-guidance');guidance.append(el('p','','Kanji feels easier once a few Hiragana rows are familiar.'),link('Build my Kana foundation','/kana/'));host.append(guidance);
+    }
     const actions=el('div','ma-kanji-actions');
     actions.append(button('Start as a beginner',()=>{state.enter('beginner');showCourse();},'ma-button ma-button--primary'),
       button('Check my starting point',()=>{assessment=placement.begin();showAssessment();}),
@@ -50,7 +54,7 @@
     if(assessment&&!assessment.done){showAssessment();return;}
     if(!state.entered()){entry();return;}
     if(!state.allowed(level))level=5;
-    const current=state.read(),bands=state.summary(current),band=bands.find(b=>b.level===level);
+    const current=state.read(),bands=state.summary(current),band=bands.find(b=>b.level===level),plan=state.learningPath(level,current);
     root.ModeAtlasPronunciation.stop();host.closest('main').removeAttribute('data-session');host.replaceChildren();
     const path=el('div','ma-kanji-path');path.setAttribute('role','group');path.setAttribute('aria-label','Kanji levels');
     for(const item of bands){
@@ -72,11 +76,16 @@
     if(old){const resume=el('div','ma-kanji-resume');resume.append(el('p','',`${old.test?'Test':names[old.mode]} · ${old.index} of ${old.sequence.length}`),button('Resume',()=>safely(()=>{session.resume();showSession();}),'ma-button ma-button--primary'),button('Discard',()=>{session.discard();showCourse();}));host.append(resume);}
     const layout=el('div','ma-kanji-course-layout'),intro=el('section','ma-kanji-intro');
     const symbol=el('img','ma-kanji-intro__art');symbol.src='/assets/illustrations/kanji-scene.svg';symbol.alt='';symbol.width=480;symbol.height=300;
-    const lessonCopy=el('div','ma-kanji-intro__copy');lessonCopy.append(heading('Learn your next kanji'),el('p','','Learn the shape, hear the word, then try it.'));intro.append(lessonCopy,symbol);
-    intro.append(button('Start learning',()=>start('learn',false),'ma-button ma-button--primary'));
+    const lessonCopy=el('div','ma-kanji-intro__copy');lessonCopy.append(el('p','ma-kicker','Your next step'),heading(plan.title),el('p','',plan.copy));intro.append(lessonCopy,symbol);
+    intro.append(button(plan.label,()=>startPlanned(plan),'ma-button ma-button--primary'));
+    const steps=el('ol','ma-kanji-learning-path');steps.setAttribute('aria-label','Kanji learning path');
+    for(const [id,label]of [['learn','Meet'],['recall','Recall'],['review','Review & test']]){const item=el('li','',label);if(id===plan.step||id==='review'&&plan.step==='complete')item.setAttribute('aria-current','step');steps.append(item);}intro.append(steps);
+    if(plan.mode!=='learn')intro.append(button('Start learning',()=>start('learn',false)));
+    if(plan.known)intro.append(el('p','ma-kanji-pool-summary',`${plan.known} characters in your practice pool · ${plan.recalled} recalled in both skills`));
     const options=el('div','ma-kanji-options');
     options.append(select('Set length',[[5,'5 characters'],[10,'10 characters'],[20,'20 characters'],[40,'40 characters']],count,v=>count=Number(v)));
-    options.append(select('Focus',[['all','All kanji'],['new','New lessons'],['due','Due reviews']],focus,v=>focus=v));intro.append(options);
+    options.append(select('Focus',[['all','All kanji'],['new','New lessons'],['due','Due reviews']],focus,v=>focus=v));
+    const customize=el('details','ma-kanji-customize');customize.append(el('summary','','Choose set options'),options);intro.append(customize);
     const known=state.studyPool(level,current).filter(c=>state.access(current,c)||current.lessons[c]||state.introduced(current,c)||state.skills.some(skill=>state.metrics(current,c,skill).attempts));
     const practice=el('section','ma-kanji-practice'),tools=el('div','ma-kanji-tools');practice.append(heading('Put it into practice'));
     for(const [id,title,copy]of [['pronunciation','Recall · Pronunciation','Type the word in kana. Romaji input converts to kana.'],['meaning','Recall · Meaning','Type an English meaning for the character.'],['match','Meaning Match','Choose the English meaning that fits.']]){
@@ -85,8 +94,8 @@
       const text=el('span');text.append(el('strong','',title),el('span','',copy));row.append(text,el('span','','›'));tools.append(row);
     }
     practice.append(tools);
-    const testPanel=el('div','ma-kanji-tests');testPanel.append(el('h3','','Take a test'),el('p','',known.length?`${Math.min(20,known.length)} questions from familiar characters. Your results are saved.`:'Tests open after your first lesson.'));
-    const actions=el('div','ma-kanji-actions');actions.append(button('Pronunciation',()=>start('pronunciation',true)),button('Meaning',()=>start('meaning',true)),button('Meaning Match',()=>start('match',true)));for(const b of actions.children)b.disabled=!known.length;testPanel.append(actions);if(known.length>=5)practice.append(testPanel);
+    const testPanel=el('div','ma-kanji-tests');testPanel.append(el('h3','','Take a test'),el('p','',plan.testReady?`${Math.min(20,known.length)} familiar characters. Check recall without hints.`:'First, recall meanings and readings for five characters.'));
+    const actions=el('div','ma-kanji-actions');actions.append(button('Pronunciation',()=>start('pronunciation',true)),button('Meaning',()=>start('meaning',true)),button('Meaning Match',()=>start('match',true)));for(const b of actions.children)b.disabled=!known.length;testPanel.append(actions);if(known.length>=5&&(plan.testReady||current.entry.mode!=='beginner'))practice.append(testPanel);
     const teaching=el('div','ma-kanji-teaching');teaching.append(intro);layout.append(teaching);
     if(known.length){if(firstTen)teaching.append(firstTen);layout.append(practice);}
     else if(firstTen)layout.append(firstTen);
@@ -94,6 +103,10 @@
     const actionsBottom=el('div','ma-kanji-actions');actionsBottom.append(button('Mastery Map',()=>root.ModeAtlasFeatures.openMasteryMap('kanji')),link('View results','/results/kanji/'));host.append(actionsBottom);
     host.append(button('Check my starting point',()=>{assessment=placement.begin();showAssessment();},'ma-kanji-text-button'));
     const credits=el('a','ma-kanji-sources','Learning sources');credits.href='/kanji/sources/';host.append(credits);
+  }
+  function startPlanned(plan){
+    if(plan.nextLevel){level=plan.nextLevel;state.settings({level});showCourse();return;}
+    safely(()=>{session.start({mode:plan.mode,level,count:plan.step==='review'?10:5,focus:plan.focus||'all',chars:plan.chars});showSession();});
   }
   function start(nextMode,formal){
     safely(()=>{mode=nextMode;test=formal;session.start({mode,level,count:formal?20:count,focus:formal?'all':focus,test:formal});showSession();});
@@ -166,13 +179,18 @@
     if(current.mode!=='learn')section.append(el('p','ma-kicker',names[current.mode]));
     root.ModeAtlasProgressUI.renderSessionReward(section,{...current,xpGain:current.xp});
     void root.ModeAtlasProgressUI.completeSession(current);
-    const actions=el('div','ma-kanji-actions');actions.append(button('Back to Kanji',()=>{session.discard();showCourse();},'ma-button ma-button--primary'));
+    const actions=el('div','ma-kanji-actions');
+    if(current.mode==='learn')section.append(el('p','ma-kanji-next-step','Next: remember these meanings without choices.'));
+    else if(current.mode==='meaning'&&!current.test)section.append(el('p','ma-kanji-next-step','Next: connect these characters with their spoken readings.'));
+    actions.append(button('Back to Kanji',()=>{session.discard();showCourse();}));
     if(current.mode==='learn'){
-      actions.append(button('Recall readings',()=>{session.start({mode:'pronunciation',level:current.level,count:current.sequence.length,chars:current.sequence});showSession();}),button('Recall meanings',()=>{session.start({mode:'meaning',level:current.level,count:current.sequence.length,chars:current.sequence});showSession();}));
+      actions.append(button('Recall readings',()=>{session.start({mode:'pronunciation',level:current.level,count:current.sequence.length,chars:current.sequence});showSession();}),button('Recall meanings',()=>{session.start({mode:'meaning',level:current.level,count:current.sequence.length,chars:current.sequence});showSession();},'ma-button ma-button--primary'));
     }
+    if(current.mode==='meaning'&&!current.test)actions.prepend(button('Recall these readings',()=>{session.start({mode:'pronunciation',level:current.level,count:current.sequence.length,chars:current.sequence});showSession();},'ma-button ma-button--primary'));
     if(current.test)actions.append(link('View results','/results/kanji/'));
     const missed=current.answers.filter(a=>!a.correct).map(a=>a.char);
     if(current.mode!=='learn')section.append(root.ModeAtlasSessionOutcome.render({skill:names[current.mode],missed,due:root.ModeAtlasSessionOutcome.kanjiDates(current.sequence,current.mode)}));
+    if(missed.length&&current.mode!=='learn')actions.prepend(button('Retry missed characters',()=>{session.start({mode:current.mode==='match'?'meaning':current.mode,level:current.level,count:missed.length,chars:missed});showSession();},'ma-button ma-button--primary'));
     if(missed.length)actions.append(button('Revisit mistakes',()=>{session.start({mode:'learn',level:current.level,count:missed.length,chars:missed});showSession();}));
     section.append(actions);host.append(section);
   }

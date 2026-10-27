@@ -135,6 +135,7 @@ test('native fonts load locally with all external requests blocked',async({page}
 
 test('widget words and activity reflect a successful save and survive page reloads',async({page})=>{
   await prepare(page);await open(page,'/wordbank/');
+  await page.getByRole('button',{name:'My word bank',exact:true}).click();
   const initial=await page.evaluate(()=>window.ModeAtlasNativeEngagement.snapshot());
   expect(initial.lastActivityAt).toBe(0);
   await page.locator('#wordBankAddJumpBtn').click();

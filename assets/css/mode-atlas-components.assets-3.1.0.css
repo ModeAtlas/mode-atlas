@@ -677,7 +677,6 @@ body[data-effective-display-mode="phone"] .ma-setting-row__control{justify-self:
  .ma-branch-tile__detail{margin-top:5px;padding-top:8px;font-size:.65rem;}
  .ma-branch-library--compact .ma-branch-tile__title{font-size:1.1rem;}.ma-branch-library--compact .ma-branch-tile__copy{padding:16px;}
 }
-html[data-ma-large-text] .ma-branch-library{grid-template-columns:1fr;}
 html[data-ma-large-text] .ma-branch-tile__title{overflow-wrap:anywhere;}
 
 /* Use the content width, including Duo's asymmetric system region, rather
@@ -698,6 +697,9 @@ html[data-ma-runtime="ios"] .ma-branch-tile__copy{padding:18px;}
  html[data-ma-runtime="ios"] .ma-branch-tile>img,html[data-ma-runtime="ios"] .ma-branch-library--compact .ma-branch-tile>img{height:100%;min-height:110px;object-fit:contain;}
  html[data-ma-runtime="ios"] .ma-branch-tile__copy{padding:16px;}
 }
+html[data-ma-large-text] .ma-branch-library,
 html[data-ma-runtime="ios"][data-ma-large-text] .ma-branch-library{grid-template-columns:1fr;}
+html[data-ma-large-text] .ma-branch-tile,
 html[data-ma-runtime="ios"][data-ma-large-text] .ma-branch-tile{display:grid;grid-template-columns:80px minmax(0,1fr);align-items:center;}
-html[data-ma-runtime="ios"][data-ma-large-text] .ma-branch-tile>img{width:80px;height:100px;}
+html[data-ma-large-text] .ma-branch-tile>img,
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-branch-tile>img{width:80px;height:100px;min-height:100px;object-fit:contain;}

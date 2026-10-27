@@ -6,7 +6,9 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 3.0.8
+Version: 3.1.0
+
+3.1.0 connected Kana, Kanji and Words foundations: [handover and Xcode update code](docs/development-3.1.0.md).
 
 3.0.8 Duo results, stable rewards text, Settings Help and developer-only save files: [handover and Xcode update code](docs/development-3.0.8.md).
 

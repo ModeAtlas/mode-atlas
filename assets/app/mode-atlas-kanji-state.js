@@ -156,6 +156,26 @@
     for(const char of known)for(const skill of skills){const m=metrics(state,char,skill);if(m.last&&m.due<=at){const key=levels.get(char)+':'+skill;counts.set(key,(counts.get(key)||0)+1);}}
     return bands.filter(band=>allowed(band.level,state)).flatMap(band=>skills.filter(skill=>counts.has(band.level+':'+skill)).map(skill=>({level:band.level,skill,count:counts.get(band.level+':'+skill)})));
   }
+  // A teaching recommendation derived from saved evidence, never a second
+  // progression store. Introductions and recognition are not independent recall.
+  function learningPath(level=5,state=read(),at=Date.now()){
+    const pool=studyPool(level,state),known=pool.filter(char=>introduced(state,char)||state.lessons[char]||skills.some(skill=>metrics(state,char,skill).attempts));
+    const recalled=known.filter(char=>completed(state,char)||skills.every(skill=>metrics(state,char,skill).independent>0));
+    const nextDue=known.flatMap(char=>skills.map(skill=>metrics(state,char,skill))).filter(m=>m.last&&m.due>at).reduce((first,m)=>Math.min(first,m.due),Infinity);
+    const base={known:known.length,recalled:recalled.length,testReady:recalled.length>=5,nextDue:Number.isFinite(nextDue)?nextDue:null};
+    for(const skill of ['meaning','pronunciation']){
+      const due=known.filter(char=>{const m=metrics(state,char,skill);return m.last&&m.due<=at;}).sort((a,b)=>metrics(state,a,skill).due-metrics(state,b,skill).due);
+      if(due.length)return {...base,step:'review',mode:skill,focus:'due',chars:due.slice(0,10),title:'Bring it back from memory',label:skill==='meaning'?'Review meanings':'Review readings',copy:`${due.length} ${skill==='meaning'?'meanings':'readings'} ready to revisit.`};
+    }
+    for(const skill of ['meaning','pronunciation']){
+      const missing=known.filter(char=>!completed(state,char)&&metrics(state,char,skill).independent===0);
+      if(missing.length)return {...base,step:'recall',mode:skill,chars:missing.slice(0,5),title:skill==='meaning'?'Remember what they mean':'Remember how they sound',label:skill==='meaning'?'Recall meanings':'Recall readings',copy:`Try ${Math.min(5,missing.length)} familiar characters without choices.`};
+    }
+    const band=bands.find(b=>b.level===level);
+    if(band&&[...band.chars].every(char=>completed(state,char)))return {...base,step:'complete',mode:'pronunciation',chars:known.slice(0,10),nextLevel:level>1?level-1:null,title:`N${level} foundation complete`,label:level>1?`Continue to N${level-1}`:'Keep practising',copy:'You have recalled every reading and meaning. Keep reviews in your routine.'};
+    if(known.length<pool.length)return {...base,step:'learn',mode:'learn',chars:[],title:'Learn your next kanji',label:'Start learning',copy:'Meet a small set, then recall its meanings and readings.'};
+    return {...base,step:'review',mode:'pronunciation',chars:known.slice(0,10),title:'Strengthen your recall',label:'Practise readings',copy:'Mix familiar characters, or take a test when you feel ready.'};
+  }
   function lesson(char){const state=read();if(!allowed(levels.get(char),state))return false;state.lessons[char]||=Date.now();save(state);return true;}
   function introduction(char){const state=read();if(!allowed(levels.get(char),state))return false;state.lessons[char]||=Date.now();state.introductions[char]||=Date.now();save(state);return true;}
   function record(input){
@@ -195,5 +215,5 @@
   function access(state,char){return state.entry?.mode==='confident'||state.entry?.mode==='placement'&&state.entry.bands.includes(levels.get(char));}
   function enter(mode,bands=[5]){const value=read();value.entry={mode,bands:mode==='beginner'?[]:bands,at:Math.max(Date.now(),value.entry.at+1)};save(value);return value;}
   function settings(patch){const state=read();state.settings={...state.settings,...patch,at:Date.now()};save(state);return state.settings;}
-  return Object.freeze({KEY,UPDATED,skills,levels,normalize,merge,read,save,metrics,completed,stage,readiness,assessment,summary,overview,allowed,introductory,introduced,introReady,studyPool,reviewSets,lesson,introduction,record,settings,entered,enter,access});
+  return Object.freeze({KEY,UPDATED,skills,levels,normalize,merge,read,save,metrics,completed,stage,readiness,assessment,summary,overview,allowed,introductory,introduced,introReady,studyPool,reviewSets,learningPath,lesson,introduction,record,settings,entered,enter,access});
 });

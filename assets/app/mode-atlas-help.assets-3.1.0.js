@@ -29,6 +29,12 @@
       ['Opening the next band','Recall each character’s reading and meaning without hints to complete it. Completing a band opens the next one. N5–N1 group content by approximate difficulty.'],
       ['Building mastery','Practise readings and meanings without hints across several days. Your last 12 answers show what to revisit. Tap a character in the Mastery Map for its exact targets. Earned milestones stay saved.']
     ]},
+    {id:'words',title:'Words & your personal bank',keywords:'vocabulary translation romaji English kana kanji course test',read:()=>[
+      ['Your course','Learn a few isolated words, practise them, then return when a review is due. The pool grows as you meet more characters. Kana + Kanji also checks that you have met the kanji in each word.'],
+      ['Different skills','Reading kana into romaji checks decoding. Recalling an English meaning and producing Japanese have separate records and schedules. New skills appear gradually; the course shows what opens them.'],
+      ['Your bank','Keep words you find yourself in My Word Bank. Its self-rated reviews stay separate from the course’s checked answers.'],
+      ['Tests','Tests check words you have learned in the selected skill. A result shows current performance; lasting knowledge comes from returning over time.']
+    ]},
     {id:'milestones',title:'Achievements & profile percentages',keywords:'count milestones ranks completion friends mastered locked',read:()=>[
       ['Achievements','Each rank is a milestone. Completion counts current study milestones across Atlas, Kana, Kanji and Words. Special rewards and retired milestones stay in your collection without affecting the percentage. Earned ranks stay earned.'],
       ['Mastery percentages','Only characters at Mastered or Mastered+ count toward the percentage. Confident and Building show progress on the way there. Each branch uses its full current curriculum, including locked characters.']

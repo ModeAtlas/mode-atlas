@@ -6,6 +6,27 @@
 })(typeof window==='undefined'?globalThis:window,function(root){
   'use strict';
   const count=value=>Math.max(0,Number(value)||0);
+  // An invitation, not a prerequisite or a claim of overall Japanese ability.
+  // Placement keeps access to tools; only actual Familiar evidence earns this nudge.
+  const requirements=Object.freeze({kanjiRows:3});
+  function readiness(){
+    const learning=root.ModeAtlasKanaLearning,state=learning?.read?.()||{},evidence=learning?.snapshot?.()||{};
+    const rows=(learning?.rows||[]).filter(row=>row.script==='hiragana'&&row.group==='base');
+    const familiarRows=rows.filter(row=>row.chars.every(char=>(learning.earned?.(char,'reading',state,evidence)||state.earned?.reading?.[char]||0)>=3)).length;
+    const seen=new Set(Object.keys(state.introduced||{}));
+    for(const skill of ['reading','writing'])for(const [char,stage]of Object.entries(state.earned?.[skill]||{}))if(stage>0)seen.add(char);
+    const kanjiStarted=!!root.ModeAtlasKanjiState?.overview?.().started;
+    const words=root.ModeAtlasWordLessonState?.vocabularyOverview?.()||{};
+    const eligibleWords=root.ModeAtlasVocabulary?.pool?.('kana').length;
+    const wordsReady=Number.isFinite(eligibleWords)?eligibleWords>0:seen.size>=5;
+    const recommended=familiarRows>=requirements.kanjiRows;
+    return {
+      kanji:{recommended,familiarRows,targetRows:requirements.kanjiRows,started:kanjiStarted,href:'/kanji/',
+        reason:recommended?'You can read three familiar hiragana rows. Try your first Kanji.':`Build ${requirements.kanjiRows} Familiar hiragana rows in Read before adding Kanji.`},
+      words:{recommended:wordsReady,seenKana:seen.size,eligible:count(eligibleWords),started:count(words.introduced)>0,href:'/wordbank/?view=course',
+        reason:wordsReady?'Try words made from kana you have met.':'Meet your first kana row, then use it in words.'}
+    };
+  }
   function snapshot(){
     const store=root.ModeAtlasStorage;
     const stats=['reading','writing'].map(skill=>store.readModeJSON(skill,'charStats',{}));
@@ -27,8 +48,9 @@
     const lifetimeCorrect=count(root.ModeAtlasProgress?.getSummary?.().lifetimeCorrect);
     const lessons=Object.values(root.ModeAtlasWordLessonState?.read?.()||{});
     const completedLessons=lessons.filter(row=>row.completedAt).length;
-    const units=attempts+handwritten+reviewed+kanjiAttempts;
-    const active=units+lifetimeCorrect+familiar>0||scheduled||words.length>0||completedLessons>0;
+    const vocabulary=root.ModeAtlasWordLessonState?.vocabularyOverview?.()||{};
+    const units=attempts+handwritten+reviewed+kanjiAttempts+count(vocabulary.attempts);
+    const active=units+lifetimeCorrect+familiar>0||scheduled||words.length>0||completedLessons>0||count(vocabulary.introduced)>0;
     const started=active||!!kana.startedAt||kanjiStarted||lessons.some(row=>row.startedAt);
     const studyDays=root.ModeAtlasProgress?.studyDays?.().length||0;
     const kanaExperienced=['existing','placement'].includes(kana.startKind)||familiar>=5||attempts>=60;
@@ -42,7 +64,8 @@
       established,started,showPersonal:building||established,
       kana:{started:!!kana.startedAt,attempts,handwritten,familiar,guided:!kanaExperienced},
       kanji:{started:kanjiStarted,attempts:kanjiAttempts,studied:kanjiSummary.studied||0},
-      words:{saved:words.length,reviewed,completedLessons,due:root.ModeAtlasWordBank?.due?.().length||0}};
+      words:{saved:words.length,reviewed,completedLessons,due:root.ModeAtlasWordBank?.due?.().length||0,
+        vocabulary:count(vocabulary.introduced),vocabularyAttempts:count(vocabulary.attempts),vocabularyDue:count(vocabulary.due)}};
   }
-  return Object.freeze({snapshot});
+  return Object.freeze({snapshot,readiness,requirements});
 });

@@ -68,6 +68,19 @@ test('recommendation starts gently, offers the other direction and respects mean
   assert.equal(plan.recommend({writingStats:{'カ':{correct:20,wrong:0}}}).href,'/reading/?practice=10');
 });
 
+test('guided Home follows lessons into recall, prioritises due reviews and preserves experienced practice',()=>{
+ const root=load(),row={name:'A row',id:'hiragana:base:a',script:'hiragana',chars:['あ','い','う','え','お']};
+ let phase='learn',kind='beginner';
+ root.ModeAtlasKanaLearning={initialize:()=>({startedAt:1}),read:()=>({startKind:kind}),
+  journey:()=>({row,phase}),practiceUrl:(skill,chars,extra)=>'/'+skill+'/?'+new URLSearchParams({kana:chars.join(','),...extra})};
+ assert.equal(root.ModeAtlasStudyPlan.recommend({}).href,'/kana/?view=learn&script=hiragana');
+ phase='writing';assert.equal(root.ModeAtlasStudyPlan.recommend({}).title,'Recall the A row');
+ assert.match(root.ModeAtlasStudyPlan.recommend({}).href,/kana=/);
+ root.ModeAtlasReview={due:items=>Object.keys(items)};
+ assert.match(root.ModeAtlasStudyPlan.recommend({readingReview:{あ:{}}}).href,/due=1/);
+ kind='existing';assert.equal(root.ModeAtlasStudyPlan.recommend({}).title,'Start small');
+});
+
 test('summary keeps unique kana distinct from questions and retains corrected mistakes for follow-up',()=>{
   const {ModeAtlasStudyPlan:plan} = load();
   assert.deepEqual(plain(plan.summarise([])),{unique:0,mistakes:[]});

@@ -31,6 +31,10 @@ function refreshProfileShell() {
       resultsMeta: document.getElementById('wordBankResultsMeta')
     };
 
+    let activeSection=new URLSearchParams(location.search).get('view')||'course';
+    if(new URLSearchParams(location.search).has('lesson')||new URLSearchParams(location.search).has('application'))activeSection='phrases';
+    if(new URLSearchParams(location.search).get('review')==='1')activeSection='bank';
+    function showSection(section){activeSection=['course','bank','phrases'].includes(section)?section:'course';updateStats();document.querySelector('[data-ma-vocabulary]').hidden=activeSection!=='course';document.querySelector('[data-ma-word-lessons]').hidden=activeSection!=='phrases';document.querySelectorAll('[data-word-section]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.wordSection===activeSection)));}
     let wordBank = loadWordBank();
     let accountRevision = 0;
     const expandedEntries = new Set();
@@ -107,7 +111,7 @@ function refreshProfileShell() {
       document.getElementById('wordReadingInput').value='';
       clearStatus();
       showStatus(`Added ${kana} to your Word Bank.`, 'success');
-      renderEntries(entry.id);
+      renderEntries(entry.id);showSection('bank');
       window.ModeAtlasDialog?.close?.(true);
     }
 
@@ -229,11 +233,11 @@ function refreshProfileShell() {
       const populated = total > 0;
       document.body?.classList?.toggle?.('ma-wordbank-populated', populated);
       if (document.body?.dataset) document.body.dataset.maWordBankExperience = populated ? 'collection' : 'empty';
-      document.querySelectorAll('.wordbank-overview,.wordbank-library,#wordBankReviewBtn,#wordBankActionsBtn').forEach(node=>{node.hidden=!populated;});
+      document.querySelector('.wordbank-overview').hidden=activeSection!=='bank'||!populated;document.querySelector('.wordbank-library').hidden=activeSection!=='bank';document.querySelectorAll('#wordBankReviewBtn,#wordBankActionsBtn').forEach(node=>{node.hidden=activeSection!=='bank'||!populated;});
       const lessons=document.querySelector('[data-ma-word-lessons]');
       if(lessons&&lessons.dataset.populated!==String(populated)){lessons.dataset.populated=String(populated);window.ModeAtlasWordLessons.render(lessons,{populated});}
       if (elements.introLead) {
-        elements.introLead.textContent = populated
+        elements.introLead.textContent = activeSection!=='bank'?'Learn words with characters you have met.':populated
           ? `${total} saved word${total === 1 ? '' : 's'}${favorites ? ` · ${favorites} favourite${favorites === 1 ? '' : 's'}` : ''}${missingEnglish ? ` · ${missingEnglish} still need${missingEnglish === 1 ? 's' : ''} a meaning` : ''}.`
           : 'Learn useful words or add your own.';
       }
@@ -576,7 +580,9 @@ function refreshProfileShell() {
 
     elements.clearAllBtn.addEventListener('click', clearAllWords);
 
-    renderEntries();
+    renderEntries();showSection(activeSection);window.ModeAtlasVocabularyUI.render(document.querySelector('[data-ma-vocabulary]'));
+    document.querySelectorAll('[data-word-section]').forEach(button=>button.addEventListener('click',()=>showSection(button.dataset.wordSection)));
+    if(new URLSearchParams(location.search).get('vocabulary')==='review'&&window.ModeAtlasVisitFlows?.ready?.()!==false)window.ModeAtlasVocabularyUI.open({kind:'review'});
     const requestedLesson=new URLSearchParams(location.search).get('lesson');
     const lesson=!requestedLesson?null:requestedLesson==='next'?window.ModeAtlasWordLessonState.next(window.ModeAtlasWordLessonsData):window.ModeAtlasWordLessonsData.find(unit=>unit.id===requestedLesson);
     const application=new URLSearchParams(location.search).get('application');
@@ -592,7 +598,7 @@ function refreshProfileShell() {
 
     const refreshWordBankFromStorage = () => {
       wordBank = loadWordBank();
-      renderEntries();
+      renderEntries();window.ModeAtlasVocabularyUI.render();
       refreshProfileShell();
     };
 
@@ -606,6 +612,7 @@ function refreshProfileShell() {
     window.addEventListener('modeAtlasCloudDataChanged', (event) => {
       const sections = Array.isArray(event.detail?.sections) ? event.detail.sections : [];
       if (!sections.length || sections.includes('wordBank')) refreshWordBankFromStorage();
+      else if(sections.some(section=>['reading','writing','kanaLearning','kanji'].includes(section)))window.ModeAtlasVocabularyUI.render();
     });
     window.addEventListener('pageshow', (event) => {
       if (event.persisted === true) refreshWordBankFromStorage();

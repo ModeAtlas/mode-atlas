@@ -250,3 +250,31 @@ html[data-ma-runtime="ios"] .ma-word-lesson-meet{grid-template-columns:repeat(au
 .ma-word-reading-form{display:grid;gap:12px;}
 .ma-word-explanation{display:grid;gap:10px;}
 .ma-word-explanation p{margin:0;line-height:1.7;}
+
+/* Curated words share the branch surfaces, type scale and adaptive dialog. */
+.ma-words-sections,.ma-vocabulary-toolbar,.ma-vocabulary-switch{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.ma-words-sections{padding-block:12px;border-bottom:1px solid var(--ma-border);}
+.ma-words-sections [aria-pressed="true"],.ma-vocabulary-switch [aria-pressed="true"]{background:var(--ma-text-strong);color:var(--ma-card);}
+.ma-vocabulary{display:grid;gap:22px;}
+.ma-vocabulary-toolbar{justify-content:space-between;}
+.ma-vocabulary-toolbar select{width:auto;max-width:100%;}
+.ma-vocabulary-next{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;padding-block:20px;border-bottom:1px solid var(--ma-border);}
+.ma-vocabulary-next :is(h2,p){margin:0 0 8px;}
+.ma-vocabulary-next .ma-action-row{flex-wrap:wrap;max-width:360px;}
+.ma-vocabulary-next-skill,.ma-vocabulary-cue{color:var(--ma-muted);font-size:.9rem;line-height:1.5;}
+.ma-vocabulary-skill-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:18px;}
+.ma-vocabulary-skill-grid>div{display:grid;gap:6px;}
+.ma-vocabulary-skill-grid strong{font-size:1.4rem;}
+.ma-vocabulary-list>summary{cursor:pointer;min-height:44px;padding-block:12px;font-weight:650;}
+.ma-vocabulary-word-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;}
+.ma-vocabulary-word-grid .ma-button{text-align:left;white-space:normal;}
+.ma-vocabulary-session{display:grid;gap:16px;min-width:0;}
+.ma-vocabulary-session :is(h2,h3,p){margin:0;}
+.ma-vocabulary-glyph{font-size:clamp(2rem,6vw,3.5rem);overflow-wrap:anywhere;line-height:1.4;}
+.ma-vocabulary-reading{font-size:1.2rem;}
+.ma-vocabulary-meet{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr));gap:22px;}
+.ma-vocabulary-meet>div{display:grid;gap:14px;align-content:start;}
+.ma-vocabulary-score{font-size:1.25rem;font-weight:700;}
+.ma-vocabulary-corrections,.ma-vocabulary-history{padding-inline-start:24px;line-height:1.8;overflow-wrap:anywhere;}
+@media(max-width:650px){.ma-vocabulary-next{grid-template-columns:1fr;}.ma-vocabulary-toolbar{align-items:stretch;}.ma-vocabulary-toolbar select{width:100%;}}
+@container dialog (min-width:420px){.ma-vocabulary-meet{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}}

@@ -209,3 +209,31 @@ test('recent Kanji recall can recover after early mistakes and mastered mileston
   assert.equal(s.stage(s.read(),'水'),3);assert.ok(s.readiness(s.read(),'水')<3);
   assert.ok(s.read().recent['水'].meaning.split(',').length<=16);
 });
+
+test('Kanji learning path connects introductions to independent meaning and reading before new lessons',()=>{
+  const e=load({experienced:false}),s=e.state;
+  s.enter('beginner');assert.equal(s.learningPath().step,'learn');
+  const chars=[...s.introductory].slice(0,5);for(const char of chars)s.introduction(char);
+  assert.equal(s.learningPath().mode,'meaning');assert.equal(s.learningPath().known,5);assert.equal(s.learningPath().testReady,false);
+  for(const [i,char]of chars.entries())s.record({char,skill:'meaning',runId:'recognition-'+i,index:1,correct:true,assisted:true,elapsed:500,at:e.now()});
+  assert.equal(s.learningPath().mode,'meaning','recognition is not independent recall');
+  for(const [i,char]of chars.entries())s.record({char,skill:'meaning',runId:'meaning-'+i,index:1,correct:true,assisted:false,elapsed:500,at:e.now()});
+  assert.equal(s.learningPath().mode,'pronunciation');assert.equal(s.learningPath().testReady,false);
+  for(const [i,char]of chars.entries())s.record({char,skill:'pronunciation',runId:'reading-'+i,index:1,correct:true,assisted:false,elapsed:500,at:e.now()});
+  assert.equal(s.learningPath().testReady,true);assert.equal(s.learningPath().recalled,5);assert.equal(s.learningPath().step,'learn');
+  assert.ok(s.learningPath().nextDue>e.now());
+  e.advance(60000);const due=s.learningPath();assert.equal(due.step,'review');assert.deepEqual(plain(due.chars),chars);assert.equal(due.mode,'meaning');
+});
+
+test('Kanji path never mistakes placement access for characters already encountered',()=>{
+  const e=load({experienced:false}),s=e.state;s.enter('confident',[5,4,3,2,1]);
+  assert.equal(s.learningPath().known,0);assert.equal(s.learningPath().recalled,0);assert.equal(s.learningPath().testReady,false);
+  assert.equal(s.learningPath().step,'learn');assert.equal(s.allowed(1),true,'recommendations preserve experienced access');
+});
+
+test('Kanji path celebrates a completed foundation without claiming spaced mastery',()=>{
+  const e=load({experienced:false}),s=e.state,current=s.read();
+  for(const char of e.root.ModeAtlasKanjiCurriculum[0].chars)current.completions[char]=e.now();
+  s.save(current);const path=s.learningPath();assert.equal(path.step,'complete');assert.equal(path.known,84);assert.equal(path.recalled,84);assert.equal(s.stage(s.read(),'一'),0);
+  assert.equal(s.allowed(4),true);assert.equal(path.title,'N5 foundation complete');assert.equal(path.nextLevel,4);assert.equal(path.label,'Continue to N4');
+});

@@ -17,6 +17,6 @@
       const experience=root.ModeAtlasLearningExperience.snapshot();
       root.ModeAtlasBranchLibrary.render(library,{experience});
     }
-    refresh();for(const event of ['modeAtlasCloudDataChanged','modeAtlasProgressChanged','modeAtlasWordsChanged','modeAtlasKanaLearningChanged'])root.addEventListener(event,refresh);
+    refresh();for(const event of ['modeAtlasCloudDataChanged','modeAtlasProgressChanged','modeAtlasWordsChanged','modeAtlasWordLessonsChanged','modeAtlasKanaLearningChanged'])root.addEventListener(event,refresh);
   }
 })(window);

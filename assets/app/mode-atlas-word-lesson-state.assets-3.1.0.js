@@ -8,6 +8,11 @@
   const KEY='modeAtlasWordLessons';
   const phases=['meet','recall','apply','complete'];
   const DAY=86400000,INTERVALS=Object.freeze([DAY,7*DAY,14*DAY,30*DAY]);
+  const vocabularySkills=Object.freeze(['decode','meaning','produceRoman','produceKana']);
+  const eventPattern=/^[0-9a-z]+:[012]:[pt]:[0-9a-z-]{1,60}$/;
+  function events(value){return String(value||'').split(',').filter(v=>eventPattern.test(v)).map(v=>{const [at,q,kind,id]=v.split(':');return {at:parseInt(at,36),quality:Number(q),kind,id,encoded:v};});}
+  function mergeEvents(a,b){return [...new Map([...events(a),...events(b)].sort((a,b)=>a.encoded.localeCompare(b.encoded)).map(e=>[e.id,e])).values()].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(-16).map(e=>e.encoded).join(',');}
+  function vocabulary(value){if(!value||typeof value!=='object')return null;return {learnedAt:count(value.learnedAt),...Object.fromEntries(vocabularySkills.map(k=>[k,mergeEvents(value[k],'')])),achieved:Object.fromEntries(vocabularySkills.map(k=>[k,count(value.achieved?.[k])])),schedules:Object.fromEntries(vocabularySkills.filter(k=>value.schedules?.[k]).map(k=>[k,{level:Math.min(5,count(value.schedules[k].level)),due:count(value.schedules[k].due),last:count(value.schedules[k].last)}]))};}
   const count=value=>Number.isFinite(Number(value))?Math.max(0,Math.floor(Number(value))):0;
   function normalizeReview(row,completedAt=0){
     if(!completedAt)return null;
@@ -18,11 +23,12 @@
   function normalize(input){
     return Object.fromEntries(Object.entries(input||{}).filter(([id,row])=>
       /^[a-z][a-z0-9-]{0,39}$/.test(id)&&!['constructor','prototype'].includes(id)&&row&&typeof row==='object'
-    ).slice(0,50).map(([id,row])=>[id,{
+    ).slice(0,512).map(([id,row])=>[id,{
       index:Math.min(50,count(row.index)),phase:phases.includes(row.phase)?row.phase:'meet',
       application:Math.min(20,count(row.application)),startedAt:count(row.startedAt),
       updatedAt:count(row.updatedAt),completedAt:count(row.completedAt),
-      review:normalizeReview(row.review,count(row.completedAt))
+      review:normalizeReview(row.review,count(row.completedAt)),
+      ...(vocabulary(row.vocabulary)?{vocabulary:vocabulary(row.vocabulary)}:{})
     }]));
   }
   function read(){return normalize(root.ModeAtlasStorage.json(KEY,{}));}
@@ -33,6 +39,7 @@
       const newer=!old||row.updatedAt>old.updatedAt||(row.updatedAt===old.updatedAt&&JSON.stringify(row)>JSON.stringify(old));
       const reviews=[old?.review,row.review].filter(Boolean).sort((a,b)=>b.updatedAt-a.updatedAt||JSON.stringify(b).localeCompare(JSON.stringify(a)));
       out[id]={...(newer?row:old),completedAt:Math.max(old?.completedAt||0,row.completedAt),review:reviews[0]||null};
+      if(old?.vocabulary||row.vocabulary){const av=old?.vocabulary||{},bv=row.vocabulary||{};out[id].vocabulary={learnedAt:Math.min(av.learnedAt||bv.learnedAt||0,bv.learnedAt||av.learnedAt||0),...Object.fromEntries(vocabularySkills.map(k=>[k,mergeEvents(av[k],bv[k])])),achieved:Object.fromEntries(vocabularySkills.map(k=>[k,Math.max(av.achieved?.[k]||0,bv.achieved?.[k]||0)])),schedules:Object.fromEntries(vocabularySkills.map(k=>{const choices=[av.schedules?.[k],bv.schedules?.[k]].filter(Boolean).sort((a,b)=>b.last-a.last||JSON.stringify(b).localeCompare(JSON.stringify(a)));return [k,choices[0]];}).filter(([,v])=>v))};}
     }
     return normalize(out);
   }
@@ -74,5 +81,7 @@
       return saved.review;
     });
   }
-  return Object.freeze({KEY,INTERVALS,normalize,read,merge,checkpoint,next,due,review});
+  function vocabularyOverview(now=Date.now()){const rows=Object.values(read()).filter(row=>row.vocabulary?.learnedAt);return {introduced:rows.length,attempts:rows.reduce((n,row)=>n+vocabularySkills.reduce((s,k)=>s+events(row.vocabulary[k]).length,0),0),due:rows.filter(row=>vocabularySkills.some(k=>{const list=events(row.vocabulary[k]);return list.length&&(row.vocabulary.schedules?.[k]||vocabularySchedule(list)).due<=now;})).length};}
+  function vocabularySchedule(list){let level=0,due=0;for(const event of list){if(event.quality!==2){level=0;due=event.at+600000;}else if(!due||event.at>=due){level=Math.min(5,level+1);due=event.at+[0,86400000,259200000,604800000,1209600000,2592000000][level];}}return {level,due};}
+  return Object.freeze({KEY,INTERVALS,normalize,read,merge,checkpoint,next,due,review,vocabularySkills,events,mergeEvents,vocabularySchedule,vocabularyOverview});
 });

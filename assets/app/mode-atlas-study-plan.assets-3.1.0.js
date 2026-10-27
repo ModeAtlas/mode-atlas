@@ -91,6 +91,19 @@
       mode=writingDue.length>readingDue.length?'writing':'reading';const count=(mode==='writing'?writingDue:readingDue).length;
       return Object.freeze({mode,title:'Time to revisit',reason:`${count} kana ${count===1?'is':'are'} ready for a spaced review.`,focus:true,count:10,meta:'10 questions · Spaced recall',href:`/${mode}/?practice=10&due=1`});
     }
+    // A guided learner returns to the actual lesson/recall stage, not a generic
+    // trainer using default selections. Experienced learners keep their chosen practice.
+    if(learning?.read?.().startKind==='beginner'&&learning.journey){
+      const journeys=['hiragana','katakana'].map(script=>learning.journey(script));
+      const journey=journeys.find(item=>item.row&&item.phase!=='complete')||journeys[0];
+      if(journey.row&&journey.phase!=='complete'){
+        const row=journey.row,learn=journey.phase==='learn',skill=journey.phase==='writing'?'writing':'reading';
+        return Object.freeze({mode:skill,title:learn?`Learn the ${row.name}`:`${skill==='writing'?'Recall':'Read'} the ${row.name}`,
+          reason:learn?'Meet each character, hear its sound and check what you remember.':skill==='writing'?'Find each character from its sound.':'Practise the characters you have just learned.',
+          focus:false,count:learn?0:10,meta:learn?'Kana · Character lessons':'Kana · Build your row',
+          href:learn?'/kana/?view=learn&script='+row.script:learning.practiceUrl(skill,row.chars,{practice:'10'})});
+      }
+    }
     const params = new URLSearchParams({practice: '10'});
     const newLearner = !input.readingSettings && !input.writingSettings
       && !Object.keys(input.readingStats || {}).length && !Object.keys(input.writingStats || {}).length;

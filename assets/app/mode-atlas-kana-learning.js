@@ -28,8 +28,10 @@
   }));
   const rowById=new Map(rows.map(row=>[row.id,row]));
   function normalize(input){
-    const value=object(input),out={version:1,startedAt:number(value.startedAt),startKind:['beginner','placement','existing'].includes(value.startKind)?value.startKind:'',introduced:{},earned:{},placed:{},handwriting:{},handwritingDays:{},updatedAt:number(value.updatedAt)};
+    const value=object(input),out={version:1,startedAt:number(value.startedAt),startKind:['beginner','placement','existing'].includes(value.startKind)?value.startKind:'',introduced:{},lessonChecks:{},listeningChecks:{},sounds:{},earned:{},placed:{},handwriting:{},handwritingDays:{},updatedAt:number(value.updatedAt)};
     for(const [char,at]of Object.entries(object(value.introduced)).sort())if(known.has(char)&&number(at))out.introduced[char]=number(at);
+    for(const field of ['lessonChecks','listeningChecks'])for(const [char,at]of Object.entries(object(value[field])).sort())if(known.has(char)&&number(at))out[field][char]=number(at);
+    for(const key of ['sokuon','longVowels'])if(number(value.sounds?.[key]))out.sounds[key]=number(value.sounds[key]);
     for(const skill of skills){
       out.earned[skill]={};out.placed[skill]={};
       for(const [char,stage]of Object.entries(object(value.earned?.[skill])).sort())if(known.has(char)&&number(stage))out.earned[skill][char]=Math.min(5,number(stage));
@@ -46,6 +48,7 @@
     const a=normalize(left),b=normalize(right);
     if(b.startedAt&&(!a.startedAt||b.startedAt<a.startedAt||b.startedAt===a.startedAt&&b.startKind<a.startKind)){a.startedAt=b.startedAt;a.startKind=b.startKind;}
     for(const [char,at]of Object.entries(b.introduced))a.introduced[char]=Math.min(a.introduced[char]||at,at);
+    for(const field of ['lessonChecks','listeningChecks','sounds'])for(const [key,at]of Object.entries(b[field]))a[field][key]=Math.min(a[field][key]||at,at);
     for(const skill of skills){
       for(const [char,stage]of Object.entries(b.earned[skill]))a.earned[skill][char]=Math.max(a.earned[skill][char]||0,stage);
       for(const [id,at]of Object.entries(b.placed[skill]))a.placed[skill][id]=Math.min(a.placed[skill][id]||at,at);
@@ -140,7 +143,7 @@
     return new Set(scripts.flatMap(script=>path(script,skill,state,evidence).filter(row=>row.unlocked).flatMap(row=>row.chars)));
   }
   function testScripts(skill,state=read(),evidence=snapshot()){
-    return scripts.filter(script=>path(script,skill,state,evidence).filter(row=>row.group==='base').every(row=>row.unlocked));
+    return scripts.filter(script=>path(script,skill,state,evidence).filter(row=>row.group==='base').every(row=>row.complete));
   }
   function selection(settings,skill,state=read(),evidence=snapshot()){
     const allowed=available(settings.kanaDirection==='both'?'both':skill,state,evidence),ids=Array.isArray(settings.kanaRows)?settings.kanaRows:[];
@@ -151,6 +154,27 @@
     const eligible=testScripts(skill,state,evidence),requested=settings.kanaTestScript;
     const chosen=eligible.includes(requested)?[requested]:requested==='both'?eligible:eligible.slice(0,1);
     return Object.fromEntries(chosen.flatMap(script=>path(script,skill,state,evidence).filter(row=>row.group==='base'||settings.kanaTestExtended&&row.unlocked).flatMap(row=>row.chars)).map(char=>[char,map[char]]));
+  }
+  function seen(char,state=read(),evidence=snapshot()){
+    return !!state.introduced[char]||!!state.lessonChecks[char]||['reading','writing'].some(skill=>earned(char,skill,state,evidence)>0||rows.some(row=>row.chars.includes(char)&&state.placed[skill][row.id]));
+  }
+  function learnedPool(skill='reading',state=read(),evidence=snapshot()){
+    return [...available(skill,state,evidence)].filter(char=>seen(char,state,evidence));
+  }
+  function journey(script='hiragana',state=read(),evidence=snapshot()){
+    const readPath=path(script,'reading',state,evidence),recallPath=path(script,'writing',state,evidence);
+    const index=readPath.findIndex((row,i)=>!row.complete||!recallPath[i].complete),row=readPath[index<0?readPath.length-1:index];
+    const introduced=row.chars.filter(char=>seen(char,state,evidence)).length;
+    const phase=index<0?'complete':introduced<row.chars.length?'learn':!row.complete?'reading':'writing';
+    return {row,phase,introduced,total:row.chars.length,readReady:row.ready,recallReady:recallPath[index<0?readPath.length-1:index].ready,pool:learnedPool('reading',state,evidence)};
+  }
+  function completeLessonCharacter(char,{listened=false}={}){
+    if(!known.has(char))return false;const state=start(),at=Date.now();
+    state.introduced[char] ||= at;state.lessonChecks[char] ||= at;if(listened)state.listeningChecks[char] ||= at;
+    save(state);return true;
+  }
+  function introduceSound(id){
+    if(!['sokuon','longVowels'].includes(id))return false;const state=start();state.sounds[id] ||= Date.now();save(state);return true;
   }
   function recordRecall(skill,char,evidence,track=true){
     if(!['reading','writing'].includes(skill)||!known.has(char))return;
@@ -199,5 +223,5 @@
     if(skill==='handwriting')return '/kana/handwriting/'+(target.length?'?kana='+encodeURIComponent(target[0]):'');
     return '/'+(skill==='writing'?'writing':'reading')+'/?'+new URLSearchParams({practice:'20',...(target.length?{kana:target.join(',')}:{}),...extra});
   }
-  return Object.freeze({KEY,UPDATED,skills,names,labels,requirements,scripts,confusable,rows,rowById,map,normalize,merge,read,save,snapshot,currentStage,earned,stage,capture,initialize,start,path,available,testScripts,selection,testPool,recordRecall,introduce,place,recordHandwriting,details,guidance,practiceUrl});
+  return Object.freeze({KEY,UPDATED,skills,names,labels,requirements,scripts,confusable,rows,rowById,map,normalize,merge,read,save,snapshot,currentStage,earned,stage,capture,initialize,start,path,available,testScripts,selection,testPool,seen,learnedPool,journey,completeLessonCharacter,introduceSound,recordRecall,introduce,place,recordHandwriting,details,guidance,practiceUrl});
 });

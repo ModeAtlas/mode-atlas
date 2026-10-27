@@ -150,7 +150,7 @@ test('handwriting guides stroke direction and supports mouse, touch, undo, reset
 
 test('Learn shows three sibling learning branches and shared results outside them',async({page})=>{
   await setup(page);await page.goto('/learn/');const library=page.locator('.ma-branch-library');
-  await expect(library.locator(':scope > a[data-branch]')).toHaveCount(3);await expect(library.locator(':scope > a[data-branch] .ma-branch-tile__title')).toHaveText(['Kana','Kanji','Word Bank']);
+  await expect(library.locator(':scope > a[data-branch]')).toHaveCount(3);await expect(library.locator(':scope > a[data-branch] .ma-branch-tile__title')).toHaveText(['Kana','Kanji','Words']);
   await expect(page.getByRole('link',{name:'Kana learning path',exact:true})).toHaveAttribute('href','/kana/');await expect(library.locator('a[data-branch][href="/results/"]')).toHaveCount(0);
 });
 
@@ -173,4 +173,49 @@ test('Kanji starting-point check grants access without XP or fabricated mastery'
   }
   await expect(page.locator('#maKanjiContent .ma-kicker')).toContainText('N4');await page.getByRole('button',{name:'Finish here',exact:true}).click();
   await expect(page.getByRole('button',{name:'N4 Everyday',exact:true})).toBeEnabled();expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);expect(await page.evaluate(()=>ModeAtlasKanjiState.summary().every(b=>b.mastered===0))).toBe(true);
+});
+
+test('beginner Kanji connects the first lesson to both recall skills before offering tests',async({page})=>{
+  await setup(page,false,1280,'light',false);await ready(page);
+  await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();
+  await expect(page.locator('.ma-kanji-learning-path [aria-current]')).toHaveText('Meet');
+  await page.getByRole('button',{name:'Start learning',exact:true}).click();for(let i=0;i<5;i++)await finishLesson(page);
+  await expect(page.locator('.ma-kanji-next-step')).toHaveText('Next: remember these meanings without choices.');
+  await page.getByRole('button',{name:'Recall meanings',exact:true}).click();
+  for(let i=0;i<5;i++){await answer(page);await page.getByRole('button',{name:i===4?'Finish set':'Continue',exact:true}).click();}
+  await require('./helpers/session-recap')(page);
+  await page.getByRole('button',{name:'Recall these readings',exact:true}).click();
+  for(let i=0;i<5;i++){await answer(page);await page.getByRole('button',{name:i===4?'Finish set':'Continue',exact:true}).click();}
+  await require('./helpers/session-recap')(page);await page.getByRole('button',{name:'Back to Kanji',exact:true}).click();
+  await expect(page.locator('.ma-kanji-pool-summary')).toHaveText('5 characters in your practice pool · 5 recalled in both skills');
+  await expect(page.locator('.ma-kanji-tests')).toBeVisible();
+  expect(await page.evaluate(()=>ModeAtlasKanjiState.learningPath().known)).toBe(5);
+  expect(await page.evaluate(()=>ModeAtlasKanjiState.learningPath().testReady)).toBe(true);
+});
+
+test('Kanji mistakes can be retried as retrieval without introducing unseen characters',async({page})=>{
+  await setup(page);await ready(page,'/kanji/?char=水&mode=meaning');await answer(page,false);await page.getByRole('button',{name:'Finish set',exact:true}).click();
+  await require('./helpers/session-recap')(page);await page.getByRole('button',{name:'Retry missed characters',exact:true}).click();
+  expect(await page.evaluate(()=>({mode:ModeAtlasKanjiSession.current().mode,chars:ModeAtlasKanjiSession.current().sequence}))).toEqual({mode:'meaning',chars:['水']});
+  await answer(page);await page.getByRole('button',{name:'Finish set',exact:true}).click();
+  expect(await page.evaluate(()=>ModeAtlasKanjiState.metrics(ModeAtlasKanjiState.read(),'水','meaning').independent)).toBe(1);
+});
+
+for(const [width,height,theme] of [[393,852,'light'],[960,440,'dark']])test(`Kanji next-step path stays reachable at ${width}×${height}`,async({page},info)=>{
+  await setup(page,true,width,theme);await page.setViewportSize({width,height});await ready(page);
+  await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
+  const next=page.locator('.ma-kanji-intro > .ma-button--primary');await next.scrollIntoViewIfNeeded();await expect(next).toBeInViewport();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  expect(await page.locator('.ma-kanji-learning-path').evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
+  await page.screenshot({path:info.outputPath(`kanji-path-${width}.png`),animations:'disabled'});
+  await next.click();await expect(page.getByRole('button',{name:'Check answer',exact:true})).toBeVisible();
+});
+
+test('completed Kanji foundation offers the next band while retaining earned evidence',async({page})=>{
+  await setup(page,false,1280,'light',false);await ready(page);await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();
+  await page.evaluate(()=>{const s=ModeAtlasKanjiState.read();for(const char of ModeAtlasKanjiCurriculum[0].chars)s.completions[char]=Date.now();ModeAtlasKanjiState.save(s);dispatchEvent(new Event('modeAtlasCloudDataChanged'));});
+  await expect(page.getByRole('heading',{name:'N5 foundation complete',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Continue to N4',exact:true}).click();
+  await expect(page.getByRole('button',{name:'N4 Everyday',exact:true})).toHaveAttribute('aria-pressed','true');
+  expect(await page.evaluate(()=>Object.keys(ModeAtlasKanjiState.read().completions).length)).toBe(84);
 });

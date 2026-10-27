@@ -6,7 +6,7 @@ function load(){
   const localStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>{if(failed&&k==='modeAtlasKanaLearning'){failed=false;throw Error('Quota');}values.set(k,String(v));},removeItem:k=>values.delete(k),get length(){return values.size;},key:i=>[...values.keys()][i]??null};
   const root={setTimeout:()=>0,clearTimeout(){},Date:Clock,URLSearchParams,console,structuredClone,localStorage,sessionStorage:localStorage,crypto:{randomUUID:()=>String(++serial)},CustomEvent:class{},dispatchEvent(){},addEventListener(){},document:{addEventListener(){}},KanaCloudSync:{getUser:()=>uid==='guest'?null:{uid},scheduleSync(){},markSectionUpdated(){}}};root.window=root;
   const context=vm.createContext(root);
-  for(const file of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-review','data/mode-atlas-kana-data','app/mode-atlas-kana-learning','app/mode-atlas-kana-placement'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',file+'.js'),'utf8'),context);
+  for(const file of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-review','data/mode-atlas-kana-data','app/mode-atlas-kana-learning','app/mode-atlas-kana-placement','app/mode-atlas-japanese','data/mode-atlas-kana-coaching'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',file+'.js'),'utf8'),context);
   return {L:root.ModeAtlasKanaLearning,P:root.ModeAtlasKanaPlacement,root,values,advance:ms=>now+=ms,fail:()=>failed=true,owner:value=>uid=value};
 }
 test('fresh accounts choose an entry and each script/skill starts at its own A-row',()=>{
@@ -110,4 +110,35 @@ test('legacy and optional evidence is labelled honestly until new practice adds 
   let guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,5);assert.equal(guide.legacy,true);assert.equal(guide.checks.find(c=>c.id==='days').met,null);
   e.readingStats['あ'].correct=3;e.readingReview['あ']={reviewVersion:1,recent:[{id:'x',at:1,quality:2}]};
   guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,4);assert.equal(guide.legacy,false);assert.equal(guide.checks.find(c=>c.id==='days').met,false);assert.equal(guide.checks.find(c=>c.id==='time').met,null);assert.equal(guide.checks.find(c=>c.id==='time').optional,true);
+});
+
+test('lesson checkpoints introduce characters without inventing recall or listening mastery',()=>{
+  const {L,values}=load();L.start();L.completeLessonCharacter('あ');L.completeLessonCharacter('い',{listened:true});
+  const state=L.read();assert.ok(state.lessonChecks['あ']);assert.ok(state.introduced['あ']);assert.equal(state.listeningChecks['あ'],undefined);assert.ok(state.listeningChecks['い']);
+  assert.equal(L.stage('あ'),1);assert.equal(L.path('hiragana','reading')[1].unlocked,false);assert.equal(values.has('charStats'),false);assert.equal(values.has('modeAtlasProgress'),false);
+  assert.equal(L.completeLessonCharacter('invalid'),false);assert.equal(L.introduceSound('invalid'),false);
+});
+test('guided journey balances each row before advancing and mixed practice excludes merely unlocked kana',()=>{
+  const {L}=load();let s=L.start();assert.equal(L.journey().phase,'learn');assert.deepEqual(plain(L.learnedPool()),[]);
+  for(const c of 'あいうえお')L.completeLessonCharacter(c);assert.equal(L.journey().phase,'reading');assert.equal(L.learnedPool().join(''),'あいうえお');
+  s=L.read();for(const c of 'あいうえお')s.earned.reading[c]=3;L.save(s);
+  assert.equal(L.path('hiragana','reading')[1].unlocked,true);assert.equal(L.learnedPool().includes('か'),false);assert.equal(L.journey().phase,'writing');assert.equal(L.journey().row.id,'hiragana:base:a');
+  for(const c of 'あいうえお')s.earned.writing[c]=3;L.save(s);assert.equal(L.journey().phase,'learn');assert.equal(L.journey().row.id,'hiragana:base:ka');
+});
+test('full-script assessments require familiar rows, while placed experience keeps its access',()=>{
+  const {L}=load(),s=L.start(),base=L.rows.filter(r=>r.script==='hiragana'&&r.group==='base');
+  for(const row of base.slice(0,-1))for(const c of row.chars)s.earned.reading[c]=3;L.save(s);
+  assert.ok(L.path('hiragana','reading').filter(r=>r.group==='base').every(r=>r.unlocked));assert.equal(L.testScripts('reading').includes('hiragana'),false);
+  L.place('reading',base.at(-1).id);assert.equal(L.testScripts('reading').includes('hiragana'),true);
+});
+test('lesson and sound introductions merge across devices without duplicate or foreign evidence',()=>{
+  const {L}=load(),a=L.normalize({lessonChecks:{'あ':8},listeningChecks:{'あ':9},sounds:{longVowels:10}}),b=L.normalize({lessonChecks:{'あ':7,'い':12},sounds:{sokuon:11,longVowels:15}});
+  const result=L.merge(a,b);assert.equal(result.lessonChecks['あ'],7);assert.equal(result.sounds.longVowels,10);assert.deepEqual(plain(result),plain(L.merge(b,a)));assert.deepEqual(plain(L.merge(result,result)),plain(result));
+  assert.deepEqual(plain(L.normalize({lessonChecks:{bad:1,'あ':{}},sounds:{unknown:3,sokuon:{}}}).sounds),{});
+});
+
+test('lesson sound checks accept chart aliases and spoken o for wo, without accepting copied kana',()=>{
+  const {root}=load(),grade=root.ModeAtlasKanaCoaching.matches;
+  for(const [char,answer]of [['を','o'],['ヲ','wo'],['し','si'],['ち','ti'],['ん','nn']])assert.equal(grade(char,answer),true);
+  assert.equal(grade('あ','あ'),false);assert.equal(grade('お','wo'),false);assert.equal(grade('し','chi'),false);
 });

@@ -98,7 +98,7 @@ for(const route of ['/','/learn/','/kana/','/kanji/','/kana/handwriting/','/read
  });
 }
 test('fold, close, reload and cloud snapshot preserve a lesson and its independent review',async({page})=>{
- await setup(page);await page.goto('/wordbank/');await page.getByRole('button',{name:'Start lesson: Make a polite connection',exact:true}).click();
+ await setup(page);await page.goto('/wordbank/?view=phrases');await page.getByRole('button',{name:'Start lesson: Make a polite connection',exact:true}).click();
  await page.getByRole('button',{name:'Try remembering it'}).click();await page.getByLabel('Reading (kana or romaji)',{exact:true}).fill('sumimasen');
  for(const size of [{width:1040,height:780},{width:400,height:680}]){await page.setViewportSize(size);await expect(page.getByLabel('Reading (kana or romaji)',{exact:true})).toHaveValue('sumimasen');}
  await page.getByRole('button',{name:'Check answer',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
@@ -140,7 +140,7 @@ test('a production task requires a phrase and advances the recommended sequence'
  await expect(page.getByRole('heading',{name:'Lesson complete',exact:true})).toBeVisible();expect(await page.evaluate(()=>ModeAtlasWordLessonState.read().drinks.completedAt)).toBeGreaterThan(0);
 });
 test('a due situation survives resize, backs up its schedule and advances after independent recall',async({page})=>{
- await setup(page);await page.goto('/wordbank/');
+ await setup(page);await page.goto('/wordbank/?view=phrases');
  await page.evaluate(()=>ModeAtlasWordLessonState.checkpoint('drinks',{phase:'complete',completedAt:Date.now()-2*86400000}));
  await page.getByRole('button',{name:'Use it again',exact:true}).click();
  await expect(page.getByRole('heading',{name:'You are at a café. Ask for coffee politely.'})).toBeVisible();

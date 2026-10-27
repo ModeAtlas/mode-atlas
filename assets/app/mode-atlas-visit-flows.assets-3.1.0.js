@@ -32,7 +32,7 @@
   const BRANCH_PATHS=new Set(['/kana/','/reading/','/writing/','/results/','/wordbank/','/kanji/']);
   const onboardingComplete=()=>storeGet(K.complete)==='true'||storeGet(K.first)==='true';
   function branchDestination(raw){try{const u=new URL(raw||location.href,location.origin);return u.origin===location.origin&&BRANCH_PATHS.has(u.pathname)?u.pathname+u.search+u.hash:''}catch{return''}}
-  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/kanji/'))return'Kanji';if(p.startsWith('/writing/'))return'Kana Recall';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Read';return'Kana'}
+  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Words';if(p.startsWith('/kanji/'))return'Kanji';if(p.startsWith('/writing/'))return'Kana Recall';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Read';return'Kana'}
   function needsSetup(raw){return !onboardingComplete()}
   function vEl(tag, className='', text=''){const el=document.createElement(tag);if(className)el.className=className;if(className==='ma-visit-title')el.id='maVisitTitle';if(text!=='')el.textContent=String(text);return el}
   function vBtn(className='', text=''){const btn=vEl('button',className,text);btn.type='button';return btn}
@@ -47,7 +47,7 @@
   function recordActivity(kind){
     if(!['reading','writing','handwriting','wordBank','kanji'].includes(kind))return;
     const obj=kind==='handwriting'?{branchId:'kana',branch:'Kana',page:'Handwriting',href:'/kana/handwriting/',mode:'Handwriting'}:kind==='kanji'?{branchId:'kanji',branch:'Kanji',page:'Kanji',href:'/kanji/',mode:'Learn and recall'}:kind==='wordBank'
-      ? {branchId:'words',branch:'Word Bank',page:'Word Bank',href:'/wordbank/',mode:'Vocabulary Review'}
+      ? {branchId:'words',branch:'Words',page:'Words',href:location.pathname==='/wordbank/'?(branchDestination(location.href)||'/wordbank/'):'/wordbank/?view=bank',mode:'Vocabulary Review'}
       : {branchId:'kana',branch:'Kana Trainer',page:kind==='writing'?'Recall':'Read',href:kind==='writing'?'reverse.html':'default.html',mode:mode(kind)};
     storeSet(K.lastStudied,String(Date.now()));
     storeSetJSON(K.lastMode,obj);

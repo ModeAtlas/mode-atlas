@@ -16,23 +16,23 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   const destinations=native?['Atlas','Learn','Progress','Friends']:['Atlas','Learn','Progress','Friends','Shop'];
   await page.goto('/learn/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(destinations);
-  await expect(page.getByRole('link',{name:'Open Word Bank',exact:true})).toBeVisible();
-  for(const [name,href] of [['Kana learning path','/kana/'],['Open Kanji','/kanji/'],['Open Word Bank','/wordbank/']]){
+  await expect(page.getByRole('link',{name:'Open Words',exact:true})).toBeVisible();
+  for(const [name,href] of [['Kana learning path','/kana/'],['Open Kanji','/kanji/'],['Open Words','/wordbank/']]){
     const link=page.getByRole('link',{name,exact:true});await expect(link).toHaveAttribute('href',href);
     expect((await link.boundingBox()).height).toBeGreaterThanOrEqual(44);
   }
   await expect(page.locator('.ma-learn-next,.ma-learn-results')).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   if(native&&width===393){
-    await page.getByRole('link',{name:'Open Word Bank',exact:true}).scrollIntoViewIfNeeded();
-    const words=await page.getByRole('link',{name:'Open Word Bank',exact:true}).boundingBox(),dock=await nav().boundingBox();
+    await page.getByRole('link',{name:'Open Words',exact:true}).scrollIntoViewIfNeeded();
+    const words=await page.getByRole('link',{name:'Open Words',exact:true}).boundingBox(),dock=await nav().boundingBox();
     expect(words.y+words.height).toBeLessThanOrEqual(dock.y-8);
   }
   await page.screenshot({path:info.outputPath('learn.png'),animations:'disabled'});
   await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  await page.getByRole('link',{name:'Open Word Bank',exact:true}).scrollIntoViewIfNeeded();
-  await expect(page.getByRole('link',{name:'Open Word Bank',exact:true})).toBeInViewport();
+  await page.getByRole('link',{name:'Open Words',exact:true}).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('link',{name:'Open Words',exact:true})).toBeInViewport();
   expect(await page.locator('.ma-branch-tile__copy,.ma-learn-next>div').evaluateAll(nodes=>nodes.every(node=>node.scrollWidth<=node.clientWidth+1))).toBe(true);
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:info.outputPath('learn-large-text.png'),animations:'disabled'});
@@ -61,4 +61,50 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   if(native)expect(await nav().evaluate(dock=>[...dock.querySelectorAll('.ma-ios-tab__label')].every(node=>{const range=document.createRange();range.selectNodeContents(node);return range.getClientRects().length===1&&node.scrollWidth<=node.clientWidth+1;}))).toBe(true);
   await page.screenshot({path:info.outputPath('progress-large-text.png'),animations:'disabled'});
   expect(errors).toEqual([]);
+});
+
+for(const [width,height,theme] of [[960,400,'light'],[1280,900,'dark']])test(`branch invitations grow from learning evidence ${width} ${theme}`,async({page},info)=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.setViewportSize({width,height});
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
+  await require('./helpers/firebase-guest')(page);
+  await page.addInitScript(theme=>{
+    for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
+    localStorage.setItem('maWhatsNewSeen','journey');localStorage.setItem('modeAtlasThemePreference',theme);
+  },theme);
+  await page.goto('/learn/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  const kana=page.locator('.ma-branch-tile[data-branch="kana"]'),kanji=page.locator('.ma-branch-tile[data-branch="kanji"]'),words=page.locator('.ma-branch-tile[data-branch="words"]');
+  await expect(kana).toContainText('Start here');await expect(kanji).toContainText('Suggested after 3 familiar hiragana rows');
+  await expect(kanji).toHaveAttribute('href','/kanji/');await kanji.click();await expect(page).toHaveURL(/\/kanji\/$/);
+  await page.goto('/learn/');
+  await page.evaluate(()=>{
+    const state=ModeAtlasKanaLearning.read();state.startedAt=1;state.startKind='beginner';
+    for(const char of 'あいうえおかきくけこさしすせ')state.earned.reading[char]=3;
+    ModeAtlasKanaLearning.save(state);
+  });
+  await expect(kanji).not.toContainText('Ready to try');
+  await page.evaluate(()=>{const state=ModeAtlasKanaLearning.read();state.earned.reading.そ=3;ModeAtlasKanaLearning.save(state);});
+  await expect(kanji).toContainText('Ready to try');await expect(words).toContainText('Try words with your kana');
+  await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  expect(await page.locator('.ma-branch-tile__copy').evaluateAll(nodes=>nodes.every(node=>node.scrollWidth<=node.clientWidth+1))).toBe(true);
+  expect(await words.locator('img').evaluate(node=>node.getBoundingClientRect().height)).toBeLessThanOrEqual(110);
+  await words.scrollIntoViewIfNeeded();await expect(words).toBeInViewport();
+  await page.screenshot({path:info.outputPath('branch-invitations.png'),animations:'disabled'});
+  expect(errors).toEqual([]);
+});
+
+test('Home continues a beginner lesson and the Words course without redirecting into unrelated tools',async({page})=>{
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());await require('./helpers/firebase-guest')(page);
+  await page.addInitScript(()=>{
+    for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
+    localStorage.setItem('maWhatsNewSeen','journey');
+    if(!localStorage.getItem('modeAtlasKanaLearning'))localStorage.setItem('modeAtlasKanaLearning',JSON.stringify({startedAt:1,startKind:'beginner'}));
+  });
+  await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await expect(page.locator('#homeContinueTitle')).toHaveText('Learn the A row');
+  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href','/kana/?view=learn&script=hiragana');
+  await page.evaluate(()=>ModeAtlasStorage.setJSON('modeAtlasLastMode',{branchId:'words',href:'/wordbank/'}));
+  await page.reload();await expect(page.locator('#homeContinueTitle')).toHaveText('Your first words');
+  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href','/wordbank/?view=course');
 });

@@ -52,7 +52,7 @@ test('fresh entry offers placement or beginner, with one path and independently 
   await expect(page.locator('.ma-kana-path-step:enabled')).toHaveCount(1);
   await page.getByRole('button',{name:'Katakana',exact:true}).click();await expect(page.locator('.ma-kana-next-chars')).toHaveText('ア イ ウ エ オ');
   await page.getByRole('button',{name:'Recall',exact:true}).click();await expect(page.locator('.ma-kana-path-step:enabled')).toHaveCount(1);
-  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Tests',exact:true}).click();await expect(page.getByText(/Unlock every basic row/)).toHaveCount(2);
+  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Tests',exact:true}).click();await expect(page.getByText(/Make every basic row Familiar/)).toHaveCount(2);
   expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);expect(errors).toEqual([]);
   await page.screenshot({path:info.outputPath('kana-course.png')});
 });
@@ -83,10 +83,10 @@ test('one mastery view keeps earned Read progress visible while Recall is new',a
 });
 for(const [native,theme] of [[true,'light'],[true,'dark'],[false,'light'],[false,'dark']])test(`Kana layout and lesson fit ${native?'iOS':'web'} ${theme} without horizontal scrolling`,async({page},info)=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page,{native,theme});await page.setViewportSize({width:native?320:1280,height:native?740:900});await open(page);await page.getByRole('button',{name:/Start lesson/}).click();
-  await expect(page.getByRole('button',{name:'Next character',exact:true})).toBeInViewport();
+  await page.getByRole('button',{name:'Check this character',exact:true}).scrollIntoViewIfNeeded();await expect(page.getByRole('button',{name:'Check this character',exact:true})).toBeInViewport();
   expect(await page.locator('.ma-kana-navigation a').evaluateAll(links=>links.every(link=>link.scrollWidth<=link.clientWidth+1))).toBe(true);
   await page.screenshot({path:info.outputPath(`kana-path-${native}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');await page.getByRole('button',{name:'Next character',exact:true}).click();await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('い');
+  await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');await require('./helpers/kana-lesson')(page,'あ','a');await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('い');
   await page.screenshot({path:info.outputPath(`kana-lesson-${native}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
   await page.getByRole('button',{name:'Back to Kana',exact:true}).click();
   await expect(page.getByRole('button',{name:'Continue learning',exact:true})).toBeVisible();
@@ -227,7 +227,7 @@ for(const skill of ['reading','writing'])test(`${skill} returns to the saved pra
 for(const width of [320,393])test(`combined kana stay together and practice actions fit on a ${width}px iPhone`,async({page})=>{
   await setup(page,{native:true});await page.setViewportSize({width,height:852});await open(page);
   await page.evaluate(()=>{
-    const L=ModeAtlasKanaLearning,state=L.start('beginner'),rows=L.rows.filter(row=>row.script==='hiragana'),index=rows.findIndex(row=>row.group==='yoon');
+    const L=ModeAtlasKanaLearning,state=L.start('placement'),rows=L.rows.filter(row=>row.script==='hiragana'),index=rows.findIndex(row=>row.group==='yoon');
     for(const row of rows.slice(0,index))state.placed.reading[row.id]=Date.now();L.save(state);
   });
   await open(page);

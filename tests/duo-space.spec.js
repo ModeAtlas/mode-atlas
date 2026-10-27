@@ -50,6 +50,7 @@ for(const [name,layout] of [['right',outer],['left',left],['wide',inner]])for(co
 }
 test('word lessons use a wider dialog and preserve an answer across folding',async({page},info)=>{
   await prepare(page,outer);await page.goto('/wordbank/');await settle(page);
+  await page.locator('[data-word-section=phrases]').click();
   await page.getByRole('button',{name:'Start lesson: Make a polite connection',exact:true}).click();
   const dialog=page.locator('.ma-dialog');expect((await dialog.boundingBox()).width).toBeGreaterThan(430);
   await clearOfSystem(dialog,outer);await systemIllustration(page,outer);await page.screenshot({path:info.outputPath('word-outer.png')});

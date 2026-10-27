@@ -3,7 +3,7 @@ test('a first-visit word lesson deep link waits for setup and resumes without st
  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());
  await page.goto('/wordbank/?lesson=drinks');
  await expect(page.locator('#maVisitModal.open')).toBeVisible();await expect(page.locator('.ma-word-lesson')).toHaveCount(0);
- await page.locator('[data-legal-agree]').check();await page.getByRole('button',{name:'Continue to Word Bank',exact:true}).click();
+ await page.locator('[data-legal-agree]').check();await page.getByRole('button',{name:'Continue to Words',exact:true}).click();
  await expect(page.locator('#maVisitModal.open')).toHaveCount(0);
  await expect(page.locator('.ma-word-lesson h2')).toHaveText('水');await expect(page.locator('.ma-dialog-layer')).toHaveCount(1);
 });
@@ -48,6 +48,7 @@ test('Word Bank teaches, saves and retrieves a reading with an independent sched
   await setup(page);const errors=[];page.on('pageerror',error=>errors.push(error.message));await ready(page,'/wordbank/');
   await expect(page.locator('.wordbank-overview')).toBeHidden();await expect(page.locator('.wordbank-library .toolbar')).toBeHidden();
   await page.screenshot({path:info.outputPath('new-wordbank.png'),fullPage:true});
+  await page.locator('[data-word-section=phrases]').click();
   await page.getByRole('button',{name:'Start lesson: Make a polite connection',exact:true}).click();
   await page.getByRole('button',{name:'Try remembering it',exact:true}).click();await page.getByLabel('Reading (kana or romaji)',{exact:true}).fill('sumimasen');await page.getByRole('button',{name:'Check answer',exact:true}).click();
   await page.getByRole('button',{name:'Continue',exact:true}).click();

@@ -8,7 +8,7 @@
   const tours={
     hub:[
       {path:'/',title:'Your daily starting point',text:'Atlas brings together your next learning step, due reviews and goals. Your avatar opens Profile, Shop and Settings.',selector:'.atlas-home-continue'},
-      {path:'/learn/',title:'Choose a branch',text:'Kana connects shapes and sounds. Kanji builds readings and meanings. Word Bank collects words you meet. Each branch has its own learning tools and tour.',selector:'.ma-branch-library'},
+      {path:'/learn/',title:'Choose a branch',text:'Kana builds sounds and characters. Kanji adds readings and meanings. Words puts familiar characters into vocabulary. Follow the suggested next step or explore a branch.',selector:'.ma-branch-library'},
       {path:'/progress/?tab=goals',title:'See your goals grow',text:'Daily and weekly goals rotate. Add one personal goal for each period, choose a target, and turn on Repeat if you want it to return next period.',selector:'.ma-routine-goal'},
       {path:'/progress/?tab=rewards',title:'Make your Atlas your own',text:'Rewards is where you equip your banners, themes, frames, avatar and pet. Your unlocked appearance follows you across the app.',rewards:true,selector:'[data-reward-category="banners"] > summary'},
       {path:'/friends/',title:'Learn alongside friends',text:'Share a friend code or meet people in the weekly ladder. Friends can see each other’s learning progress. You can report or block a profile at any time.',selector:'.ma-social'},
@@ -26,8 +26,9 @@
       {path:'/kanji/',title:'Build lasting recognition',text:'Practise pronunciation, meaning or meaning matches. Due reviews revisit older learning without postponing it when you practise early. Handwriting is optional. Save lesson words to your Word Bank.',selector:'#maKanjiContent'}
     ],
     words:[
-      {path:'/wordbank/',title:'Keep words you meet',text:'Save a word’s written form, its kana reading and an English meaning. Add an example or note from the place you found it.',selector:'#entries'},
-      {path:'/wordbank/',title:'Recall your own collection',text:'Review words shows the written form first. Recall the meaning, reveal it, then choose Again or Remembered. Your honest self-check sets the next review; it does not award test marks.',selector:'#wordBankReviewBtn'}
+      {path:'/wordbank/',title:'Build a vocabulary',text:'Learn a few words made from characters you have met. Start with their readings, then unlock meaning and production practice.',selector:'[data-ma-vocabulary]'},
+      {path:'/wordbank/?view=bank',title:'Keep words you meet',text:'Save a word’s written form, its kana reading and an English meaning. Add an example or note from the place you found it.',selector:'#entries'},
+      {path:'/wordbank/?view=bank',title:'Recall your own collection',text:'Review words shows the written form first. Recall the meaning, reveal it, then choose Again or Remembered. Your honest self-check sets the next review; it does not award test marks.',selector:'#wordBankReviewBtn'}
     ]
   };
   function read(){try{const value=JSON.parse(sessionStorage.getItem(key));const scope=value?.scope||'hub';return value&&tours[scope]&&Number.isInteger(value.step)&&value.step>=0&&value.step<tours[scope].length&&Date.now()-value.at<1800000?{...value,scope}:null;}catch{return null;}}
@@ -115,7 +116,7 @@
   }
   function choose(){
     const content=el('div','ma-action-row');
-    for(const [scope,title]of [['hub','Around Mode Atlas'],['kana','Kana'],['kanji','Kanji'],['words','Word Bank']]){
+    for(const [scope,title]of [['hub','Around Mode Atlas'],['kana','Kana'],['kanji','Kanji'],['words','Words']]){
       const button=el('button','ma-button',title);button.type='button';button.addEventListener('click',()=>{root.ModeAtlasDialog.close();start(scope);});content.append(button);
     }
     root.ModeAtlasDialog.feature({title:'Learning tours',contentNode:content});

@@ -64,10 +64,22 @@
 .ma-kana-check:has(.ma-kana-placement-form){margin:12px auto;}.ma-kana-placement-form~*{margin-top:8px;}
 .ma-kana-check .ma-kana-placement-form{display:flex;flex-direction:column;gap:12px;margin:12px 0;}.ma-kana-placement-keyboard{min-width:0;}.ma-kana-check-actions{display:flex;flex-wrap:wrap;gap:8px;}.ma-kana-check-actions>.ma-button{flex:1 1 140px;min-height:44px;white-space:normal;}
 .ma-kana-placement-form .ma-kana-check-feedback{margin:0;font-size:.85rem;}.ma-kana-placement-finish{display:flex;margin:8px auto;}.ma-kana-assessment-heading+.ma-kana-check .ma-kana-check-prompt{font-size:clamp(3.5rem,12vw,5rem);margin:4px;}
-.ma-kana-lesson{text-align:center;max-width:600px;margin:auto;}
+.ma-kana-lesson{text-align:center;max-width:960px;margin:auto;}
 .ma-kana-lesson-reading{font-size:1.5rem;}
 .ma-kana-lesson .ma-pronunciation{justify-content:center;margin:12px;}
 .ma-kana-lesson>p{color:var(--ma-muted);line-height:1.6;}
+.ma-kana-lesson-steps,.ma-kana-row-itinerary{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 18px;list-style:none;margin:14px 0;padding:0;color:var(--ma-muted);font-size:.76rem;}
+.ma-kana-lesson-steps [aria-current],.ma-kana-row-itinerary [aria-current]{color:var(--ma-text-strong);font-weight:750;border-bottom:2px solid var(--ma-reading);}
+.ma-kana-lesson-task{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:center;margin:16px 0;}
+.ma-kana-lesson-copy{min-width:0;text-align:left;line-height:1.5;}.ma-kana-lesson-copy h2{font-size:.95rem;margin:12px 0 5px;}.ma-kana-lesson-copy p{font-size:.88rem;color:var(--ma-muted);margin:5px 0 14px;}
+.ma-kana-lesson-question{max-width:540px;margin:16px auto;}.ma-kana-lesson-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.ma-kana-lesson-choices .ma-button{min-width:0;font:500 1.8rem/1.4 var(--ma-font-jp);min-height:56px;}
+.ma-kana-lesson-answer{display:grid;gap:10px;min-width:0;}.ma-kana-lesson-answer label{font-size:.85rem;}.ma-kana-lesson-answer input{width:100%;min-width:0;box-sizing:border-box;min-height:48px;padding:10px;font:inherit;border:1px solid var(--ma-border);border-radius:10px;background:var(--ma-card);color:var(--ma-text-strong);}
+.ma-kana-lesson-feedback:empty{display:none;}.ma-kana-lesson-feedback{font-size:.85rem;}.ma-kana-lesson>.ma-button{min-height:48px;}
+.ma-kana-row-itinerary{justify-content:flex-start;}.ma-kana-branch-invite{margin-top:18px;padding-top:18px;border-top:1px solid var(--ma-border);}.ma-kana-branch-invite h2{font-size:1.15rem;}
+.ma-kana-sound-workshop>section{padding:12px 0;border-bottom:1px solid var(--ma-border);}.ma-kana-sound-workshop>.ma-button{margin:8px 10px 8px 0;}
+@media(min-width:660px){.ma-kana-lesson-task:not(.ma-kana-lesson-question){grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}}
+@media(max-height:540px) and (min-width:600px){.ma-kana-lesson-task{margin:8px 0;}.ma-kana-lesson-shape{font-size:4rem;margin:4px;}.ma-kana-lesson-steps{margin:8px 0;}.ma-kana-lesson-copy p{margin-bottom:8px;}}
+html[data-ma-large-text] .ma-kana-lesson-task{grid-template-columns:1fr;}
 .ma-kana-test-row{padding:20px 0;border-bottom:1px solid var(--ma-border);}
 .ma-kana-test-row h2{font-size:1.3rem;}
 .ma-kana-journey .ma-kana-practice-form{margin:24px 0;}
@@ -85,6 +97,14 @@
   .ma-kana-feature-actions>.ma-button{flex-basis:150px;}
   .ma-kana-progress-summary{gap:22px;}
   .ma-kana-check form{grid-template-columns:1fr;}
+  .ma-kana-lesson-visual{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);align-items:center;column-gap:8px;}
+  .ma-kana-lesson-visual .ma-kana-lesson-shape{grid-row:1/3;font-size:4rem;margin:4px;}
+  .ma-kana-lesson-visual .ma-pronunciation{margin:8px 0;gap:6px;}
+  .ma-kana-lesson-visual .ma-pronunciation .ma-button{padding:8px 10px;}
+  .ma-kana-lesson-task{gap:8px;margin:10px 0;}
+  .ma-kana-lesson-copy h2{margin-top:8px;}
+  .ma-kana-lesson-copy p{margin-bottom:10px;}
+
 }
 
 body[data-effective-display-mode="phone"] .ma-kana-journey{max-width:560px;}

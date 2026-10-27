@@ -7,12 +7,12 @@
   const params=new URLSearchParams(location.search);
   let view=['learn','path','practice','mastery','tests'].includes(params.get('view'))?params.get('view'):'learn';
   let script=L.scripts.includes(params.get('script'))?params.get('script'):'hiragana',skill=[...L.skills,'both'].includes(params.get('skill'))?params.get('skill'):'reading';
-  let lesson=null,placement=null,placementSetup=false,practiceSettings=null,customizing=false,placementKeyboard=null;
-  let allTools=params.get('tools')==='all'||view!=='learn';
+  let lesson=null,placement=null,placementSetup=false,practiceSettings=null,customizing=false,placementKeyboard=null,accountGeneration=0;
+  let allTools=params.get('tools')==='all'||view!=='learn',followJourney=!params.has('skill');
   const guided=()=>!allTools&&root.ModeAtlasLearningExperience.snapshot().kana.guided;
   const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
   function run(action){try{action();}catch(error){root.ModeAtlasToast?.show?.(error.message);const status=host.querySelector('[role=status]')||el('p','ma-status ma-status--error');status.setAttribute('role','status');status.textContent=error.message;if(!status.parentNode)host.append(status);}}
-  function button(label,action,primary=false){const b=el('button','ma-button '+(primary?'ma-button--primary':'ma-button--ghost'),label);b.type='button';b.addEventListener('click',()=>run(action));return b;}
+  function button(label,action,primary=false){const generation=accountGeneration,b=el('button','ma-button '+(primary?'ma-button--primary':'ma-button--ghost'),label);b.type='button';b.addEventListener('click',()=>{if(generation===accountGeneration)run(action);});return b;}
   function link(label,href,primary=false){const a=el('a','ma-button '+(primary?'ma-button--primary':'ma-button--ghost'),label);a.href=href;return a;}
   function navigate(href){root.ModeAtlasVersionFile?.navigate?root.ModeAtlasVersionFile.navigate(href):location.assign(href);}
   function segmented(label,items,value,onChange){const group=el('div','ma-kana-segments');group.setAttribute('role','group');group.setAttribute('aria-label',label);for(const [id,text]of items){const b=button(text,()=>onChange(id));b.setAttribute('aria-pressed',String(id===value));group.append(b);}return group;}
@@ -20,14 +20,14 @@
   function url(){const q=new URLSearchParams({view,script,skill});history.replaceState(null,'','/kana/?'+q);}
   function chooseView(next){if(lesson)root.ModeAtlasLearningEvents?.emit('lessonExited','kana');view=next;lesson=null;placement=null;placementSetup=false;practiceSettings=null;url();render();root.scrollTo({top:0,behavior:'instant'});}
   function openPlacement(){placement=P.read();if(placement&&!placement.finished){render();return;}placement=null;placementSetup=true;render();}
-  function startBeginner(){L.start('beginner');root.ModeAtlasLearningEvents?.emit('lessonStarted','kana');placement=null;placementSetup=false;view='learn';script='hiragana';skill='reading';lesson={row:nextRow(),index:0};url();render();}
+  function startBeginner(){followJourney=true;L.start('beginner');root.ModeAtlasLearningEvents?.emit('lessonStarted','kana');placement=null;placementSetup=false;view='learn';script='hiragana';skill='reading';lesson={row:nextRow(),index:0};url();render();}
   function exploreTools(){allTools=true;if(!L.read().startedAt)L.start('beginner');render();}
   function toolsLink(){const b=button('Explore all Kana tools',exploreTools);b.className='ma-kana-text-action';return b;}
   function welcome(){
     title('Hiragana','Your first five kana');
     const preview=el('p','ma-kana-next-chars','あ い う え お');preview.lang='ja';host.append(preview);
     const options=el('div','ma-kana-start-options');
-    const beginner=button('Start lesson',startBeginner,true);beginner.append(el('small','','About 3 minutes'));
+    const beginner=button('Start lesson',startBeginner,true);beginner.append(el('small','','Shape, sound and a short check'));
     options.append(beginner);host.append(options);
     const experienced=el('details','ma-kana-disclosure'),summary=el('summary','','Already know some Kana?');
     experienced.append(summary,button('Take a starting-point test',openPlacement),toolsLink());host.append(experienced);
@@ -38,6 +38,7 @@
     host.append(switcher,button('Begin check',()=>{placement=Store.transaction(()=>P.begin(selected==='both'?L.scripts:[selected]));placementSetup=false;render();},true),button('Start as a beginner',startBeginner));
   }
   function renderPlacement(){
+    const generation=accountGeneration;
     if(placement.finished){
       title('Starting point','Your learning path is ready',`${placement.answered} questions answered`);
       const list=el('div','ma-kana-placement-summary');const state=L.read(),evidence=L.snapshot();
@@ -58,7 +59,7 @@
       if(root.ModeAtlasIOSKeyboard){const keys=el('div','ma-kana-placement-keyboard');form.append(keys);placementKeyboard=root.ModeAtlasIOSKeyboard.mount({input,container:keys,onSubmit:()=>form.requestSubmit()});}
       const actions=el('div','ma-kana-check-actions'),submit=el('button','ma-button ma-button--primary',placement.feedback?'Continue':'Check answer');submit.type='submit';actions.append(submit);
       if(!placement.feedback)actions.append(button('I don’t know yet',()=>{placement=Store.transaction(()=>P.answer(placement,''));render();}));form.append(actions);
-      form.addEventListener('submit',event=>{event.preventDefault();if(event.isComposing)return;if(placement.feedback||input.value.trim())run(()=>{placement=Store.transaction(()=>placement.feedback?P.advance(placement):P.answer(placement,input.value));render();});});stage.append(form);
+      form.addEventListener('submit',event=>{event.preventDefault();if(generation!==accountGeneration||event.isComposing)return;if(placement.feedback||input.value.trim())run(()=>{placement=Store.transaction(()=>placement.feedback?P.advance(placement):P.answer(placement,input.value));render();});});stage.append(form);
       focusTarget=placement.feedback?submit:input;
     }else if(placement.feedback){
       stage.append(el('p','ma-kana-check-feedback',placement.feedback.correct?'Correct':`${q.char} is ${q.roman}. Let’s check another character from this row.`));
@@ -71,20 +72,78 @@
     const finish=button('Finish with my progress so far',()=>{placement=Store.transaction(()=>P.finish(placement));render();});finish.className='ma-kana-text-action ma-kana-placement-finish';host.append(stage,finish);focusTarget?.focus({preventScroll:true});
   }
   function renderLesson(){
-    const char=lesson.row.chars[lesson.index],roman=L.map[char];title(`${lesson.row.name} · ${lesson.index+1} of ${lesson.row.chars.length}`,'Meet the character');
-    const panel=el('section','ma-kana-lesson'),shape=el('div','ma-kana-lesson-shape',char);shape.lang='ja';
-    const progress=el('progress');progress.max=lesson.row.chars.length;progress.value=lesson.index;progress.setAttribute('aria-label','Characters introduced in this lesson');
-    panel.append(progress,shape,el('strong','ma-kana-lesson-reading',roman),root.ModeAtlasPronunciation.controls(char));
-    panel.append(el('p','',root.ModeAtlasKanaCoaching.explain(char).note));
-    const actions=el('div','ma-kana-actions');actions.append(button('See the strokes',()=>root.ModeAtlasHandwriting.open(char,{pronunciation:char})));
-    actions.append(button(lesson.index+1===lesson.row.chars.length?'Practise this row':'Next character',()=>{
-      L.introduce(char);if(lesson.index+1<lesson.row.chars.length){lesson.index++;render();}
-      else {root.ModeAtlasLearningEvents?.emit('lessonCompleted','kana');navigate(L.practiceUrl(skill,lesson.row.chars,{hints:'off'}));}
-    },true));panel.append(actions);host.append(panel,button('Back to Kana',()=>{root.ModeAtlasLearningEvents?.emit('lessonExited','kana');lesson=null;render();}));
+    const generation=accountGeneration;
+    if(lesson.complete){
+      title('Kana · Row lesson','Your row is ready for practice');
+      const card=el('section','ma-kana-next');card.append(el('h2','',lesson.row.name),el('p','ma-kana-next-chars',lesson.row.chars.join(' ')),el('p','ma-kana-muted','Next, read these characters without hints. Familiar characters join your growing practice pool.'));
+      const actions=el('div','ma-kana-actions');actions.append(link('Practise this row',L.practiceUrl('reading',lesson.row.chars,{hints:'off',practice:'10'}),true),link('Try the strokes',L.practiceUrl('handwriting',lesson.row.chars)));
+      card.append(actions);host.append(card,button('Back to Kana',()=>{lesson=null;render();}));return;
+    }
+    const char=lesson.row.chars[lesson.index],roman=L.map[char],step=lesson.step||'meet';
+    title(`${lesson.row.name} · ${lesson.index+1} of ${lesson.row.chars.length}`,{meet:'Meet the character',recognise:'Find the shape',listen:'Connect sound and shape',recall:'Remember the reading'}[step]);
+    const panel=el('section','ma-kana-lesson');panel.dataset.step=step;
+    const progress=el('progress');progress.max=lesson.row.chars.length;progress.value=lesson.index;progress.setAttribute('aria-label','Characters introduced in this lesson');panel.append(progress);
+    const steps=el('ol','ma-kana-lesson-steps');for(const [id,label]of [['meet','Meet'],['recognise','Recognise'],['listen','Listen'],['recall','Recall']]){const item=el('li','',label);if(id===step)item.setAttribute('aria-current','step');steps.append(item);}panel.append(steps);
+    const task=el('div','ma-kana-lesson-task');panel.append(task);
+    const status=el('p','ma-kana-lesson-feedback');status.setAttribute('role','status');
+    const setStep=next=>{lesson.step=next;lesson.audioReady=false;render();};
+    const finish=()=>{
+      if(generation!==accountGeneration||!lesson)return;
+      L.completeLessonCharacter(char,{listened:lesson.listened===true});
+      if(lesson.index+1<lesson.row.chars.length){lesson.index++;lesson.step='meet';lesson.listened=false;render();}
+      else{root.ModeAtlasLearningEvents?.emit('lessonCompleted','kana');lesson.complete=true;render();}
+    };
+    if(step==='meet'){
+      const teaching=root.ModeAtlasKanaCoaching.teach(char),visual=el('div','ma-kana-lesson-visual'),shape=el('div','ma-kana-lesson-shape',char);shape.lang='ja';visual.append(shape,el('strong','ma-kana-lesson-reading',roman),root.ModeAtlasPronunciation.controls(char));
+      const copy=el('div','ma-kana-lesson-copy');copy.append(el('h2','','Say the sound'),el('p','',teaching.sound),el('h2','','Notice the shape'),el('p','',teaching.shape),button('See the strokes',()=>root.ModeAtlasHandwriting.open(char,{pronunciation:char})));
+      task.append(visual,copy);panel.append(button('Check this character',()=>setStep('recognise'),true));
+    }else if(step==='recognise'||step==='listen'){
+      const listening=step==='listen';task.classList.add('ma-kana-lesson-question');
+      task.append(el('p','ma-kana-skill-explanation',listening?'Play the sound, then choose its character.':'Which character makes this sound?'));
+      if(!listening)task.append(el('strong','ma-kana-lesson-reading',roman));
+      const options=el('div','ma-kana-lesson-choices'),choices=[...lesson.row.chars].sort((a,b)=>((L.map[a].charCodeAt(0)+lesson.index)%7)-((L.map[b].charCodeAt(0)+lesson.index)%7));
+      let answered=false;
+      const choose=answer=>{
+        if(answered||listening&&!lesson.audioReady)return;
+        if(answer!==char){status.textContent='Not quite. '+(listening?'Listen again and try another shape.':`${char} makes the sound ${roman}. Try finding it again.`);return;}
+        answered=true;if(listening)lesson.listened=true;
+        for(const b of options.children)b.disabled=true;
+        status.textContent='Correct.';const next=button('Continue',()=>setStep(listening?'recall':'listen'),true);panel.append(next);next.focus({preventScroll:true});
+      };
+      for(const item of choices){const choice=button(item,()=>choose(item));choice.lang='ja';choice.disabled=listening;options.append(choice);}
+      if(listening){
+        const audio=root.ModeAtlasPronunciation.controls(char,{onPlayback:played=>{if(generation!==accountGeneration||!lesson||lesson.step!=='listen'||answered)return;lesson.audioReady=played;if(played){for(const b of options.children)b.disabled=false;status.textContent='Choose the character you heard.';}else status.textContent='Audio is unavailable. You can continue with visual practice.';}});
+        for(const b of audio.children)b.setAttribute('aria-label',b.textContent==='Listen'?'Play sound':'Play sound slowly');
+        task.append(audio);
+      }
+      task.append(options);panel.append(status);
+      if(listening)panel.append(button('Continue without audio',()=>{lesson.listened=false;setStep('recall');}));
+    }else{
+      task.classList.add('ma-kana-lesson-question');const shape=el('div','ma-kana-lesson-shape',char);shape.lang='ja';task.append(shape);
+      const form=el('form','ma-kana-lesson-answer'),input=el('input','ma-input'),label=el('label','','Type the sound in romaji');input.id='kanaLessonAnswer';label.htmlFor=input.id;input.autocomplete='off';input.autocapitalize='none';input.spellcheck=false;input.maxLength=20;input.enterKeyHint='go';form.append(label,input);
+      const submit=el('button','ma-button ma-button--primary','Check answer');submit.type='submit';form.append(submit);
+      form.addEventListener('submit',event=>{event.preventDefault();if(generation!==accountGeneration||!lesson||event.isComposing||input.disabled)return;const answer=input.value.trim();if(!answer)return;
+        if(!root.ModeAtlasKanaCoaching.matches(char,answer)){status.textContent=`${char} is ${roman}. Say it once, then try again.`;input.select();return;}
+        status.textContent='Correct. You have met this character.';input.disabled=true;submit.disabled=true;
+        const next=button(lesson.index+1===lesson.row.chars.length?'Finish row lesson':'Next character',finish,true);panel.append(next);next.focus({preventScroll:true});
+      });task.append(form);panel.append(status);
+    }
+    host.append(panel,button('Back to Kana',()=>{root.ModeAtlasPronunciation.stop();root.ModeAtlasLearningEvents?.emit('lessonExited','kana');lesson=null;render();}));
+  }
+  function soundWorkshop(){
+    const state=L.read(),content=el('div','ma-kana-sound-workshop');
+    const lessons=[{id:'longVowels',title:'Long vowels',example:'あ → ああ',copy:'A long vowel lasts two beats. Keep the sound steady for twice as long. おう often sounds like a long o, and えい like a long e; listen to each word. In katakana, ー extends the vowel before it.',question:'How many beats does ああ have?',answer:'Two beats',other:'One beat',ready:L.seen('あ'),audio:'ああ'},
+      {id:'sokuon',title:'Small っ',example:'かこ → かっこ',copy:'Small っ adds a one-beat pause before the next consonant. Hold that consonant; do not say “tsu”.',question:'What does the small っ add?',answer:'A one-beat pause',other:'The sound tsu',ready:L.seen('か')&&L.seen('こ'),audio:'かっこ'}];
+    function list(){content.replaceChildren();for(const item of lessons){const row=el('section');row.append(el('h3','',item.title),el('p','ma-kana-muted',state.sounds[item.id]?'Introduced · Revisit any time':item.ready?'Ready to learn':item.id==='sokuon'?'Learn か and こ first.':'Learn あ first.'));const start=button(state.sounds[item.id]?'Revisit '+item.title:'Learn '+item.title,()=>show(item),true);start.disabled=!item.ready;row.append(start);content.append(row);}}
+    function show(item){content.replaceChildren(el('h3','',item.title),el('p','ma-kana-next-chars',item.example),el('p','',item.copy),root.ModeAtlasPronunciation.controls(item.audio));
+      const reveal=button('Check this pattern',()=>{content.replaceChildren(el('h3','',item.question));const status=el('p');status.setAttribute('role','status');for(const answer of [item.other,item.answer])content.append(button(answer,()=>{if(answer!==item.answer){status.textContent='Try again. '+item.copy;return;}L.introduceSound(item.id);state.sounds[item.id]=Date.now();content.replaceChildren(el('h3','','Pattern introduced'),el('p','','Look out for this pattern in Words.'),button('Back to sound workshop',list,true));}));content.append(status);},true);content.append(reveal,button('Back to sound workshop',list));}
+    const cancel=()=>{root.ModeAtlasPronunciation.stop();root.ModeAtlasDialog.close();};
+    root.addEventListener('modeAtlasAccountWillChange',cancel);
+    list();root.ModeAtlasDialog.feature({title:'Sound workshop',contentNode:content,size:'wide'}).finally(()=>root.removeEventListener('modeAtlasAccountWillChange',cancel));
   }
   function controls(includeHand=true,target=host){
     target.append(segmented('Kana script',[['hiragana','Hiragana'],['katakana','Katakana']],script,value=>{script=value;practiceSettings=null;url();render();}));
-    target.append(segmented('Kana skill',(includeHand?L.skills:['reading','writing']).map(id=>[id,L.names[id]]),skill,value=>{skill=value;practiceSettings=null;url();render();}));
+    target.append(segmented('Kana skill',(includeHand?L.skills:['reading','writing']).map(id=>[id,L.names[id]]),skill,value=>{skill=value;followJourney=false;practiceSettings=null;url();render();}));
   }
   function learningPath(){
     title('Kana','Your learning path');
@@ -151,29 +210,42 @@
   }
   function workspace(stage,intro){const frame=el('div','ma-kana-workspace');frame.append(stage);if(intro){const layout=el('div','ma-kana-practice-layout');layout.append(intro,frame);host.append(layout);}else host.append(frame);if(!guided())host.append(link('Explore the full learning path','/kana/?view=path'));}
   function learn(){
-    title('Kana · Learn','Your next row');if(!guided())controls();
-    const state=L.read(),evidence=L.snapshot(),next=nextRow(skill,script,state,evidence);
+    title('Kana · Learn','Your next step');
+    const state=L.read(),evidence=L.snapshot(),following=followJourney&&state.startKind==='beginner',journey=L.journey(script,state,evidence),next=following?journey.row:nextRow(skill,script,state,evidence);
+    if(following&&['reading','writing'].includes(journey.phase))skill=journey.phase;
+    if(!guided())controls();
+    const ready=skill==='writing'?L.path(script,'writing',state,evidence).find(row=>row.id===next.id).ready:next.ready;
     const stages=L.rows.flatMap(row=>row.chars).map(char=>L.stage(char,state,evidence));
     const familiar=stages.filter(stage=>stage>=3).length,mastered=stages.filter(stage=>stage>=5).length;
     const stage=el('div','ma-kana-learning-stage'),current=el('section','ma-kana-next');current.dataset.skill=skill;
     current.append(el('span','ma-kicker',`${script==='hiragana'?'Hiragana':'Katakana'} · ${L.names[skill]}`));
-    const introduced=next.chars.every(char=>state.introduced[char]),hasPractice=next.ready>0;
+    const introduced=next.chars.every(char=>L.seen(char,state,evidence));
     current.append(el('h2','',next.name));
     const chars=el('div','ma-kana-lesson-tiles');chars.setAttribute('aria-label','Explore this row');chars.style.setProperty('--kana-tile-count',String(Math.min(5,next.chars.length)));
     next.chars.forEach((char,index)=>{
       const tile=button('',()=>{if(skill==='handwriting')navigate(L.practiceUrl(skill,[char]));else{lesson={row:next,index};render();}});tile.className='ma-kana-lesson-tile';
       tile.setAttribute('aria-label',`Learn ${char}, ${L.map[char]}`);const glyph=el('strong','',char);glyph.lang='ja';tile.append(glyph,el('span','',L.map[char]));chars.append(tile);
     });current.append(chars);
-    const progress=el('progress','ma-kana-row-progress');progress.max=next.chars.length;progress.value=next.ready;progress.setAttribute('aria-label',next.name+' familiarity');
-    current.append(progress,el('span','ma-kana-progress-caption',`${next.ready} / ${next.chars.length} familiar`));
+    const progress=el('progress','ma-kana-row-progress');progress.max=next.chars.length;progress.value=ready;progress.setAttribute('aria-label',next.name+' familiarity');
+    current.append(progress,el('span','ma-kana-progress-caption',`${ready} / ${next.chars.length} familiar`));
     const actions=el('div','ma-kana-feature-actions');
     actions.append(button('Continue learning',()=>{
-      if(skill==='handwriting'||introduced||hasPractice)navigate(L.practiceUrl(skill,next.chars));
-      else{lesson={row:next,index:Math.max(0,next.chars.findIndex(char=>!state.introduced[char]))};render();}
-    },true));current.insertBefore(actions,chars.nextSibling);stage.append(current);
+      if(skill==='handwriting'||introduced)navigate(L.practiceUrl(skill,next.chars,{hints:'off',practice:'10'}));
+      else{lesson={row:next,index:Math.max(0,next.chars.findIndex(char=>!L.seen(char,state,evidence)))};render();}
+    },true));
+    if(following&&journey.phase==='complete'){actions.replaceChildren(link('Take a '+(script==='hiragana'?'Hiragana':'Katakana')+' test','/reading/?mode=test&script='+script,true));if(script==='hiragana')actions.append(link('Start Katakana','/kana/?script=katakana'));}
+    current.insertBefore(actions,chars.nextSibling);
+    const itinerary=el('ol','ma-kana-row-itinerary'),readPath=L.path(script,'reading',state,evidence).find(row=>row.id===next.id),recallPath=L.path(script,'writing',state,evidence).find(row=>row.id===next.id);
+    for(const [label,done,currentStep]of [['Meet the row',introduced,!introduced],['Read it',readPath.complete,introduced&&!readPath.complete],['Recall it',recallPath.complete,readPath.complete&&!recallPath.complete]]){const item=el('li','',`${done?'✓ ':''}${label}`);if(currentStep)item.setAttribute('aria-current','step');itinerary.append(item);}current.append(itinerary);
+    current.append(el('p','ma-kana-muted',!introduced?'Meet each shape and sound, then check what you remember.':skill==='writing'?'Bring the characters to mind from their sounds. Familiar Read and Recall skills open your next guided row.':'Read each character without hints until this row becomes Familiar.'));
+    stage.append(current);
+    const pool=L.learnedPool('reading',state,evidence);if(pool.length)stage.append(link(`Mix my ${pool.length} learned kana`,L.practiceUrl('reading',pool,{hints:'off',practice:'20'})));
+    if(introduced||pool.length){const sounds=button('Sound workshop',soundWorkshop);sounds.className='ma-kana-text-action';stage.append(sounds);}
+    const kanji=root.ModeAtlasLearningExperience.readiness?.()?.kanji;
+    if(kanji?.recommended&&!kanji.started){const invite=el('section','ma-kana-branch-invite');invite.append(el('h2','','Ready to try Kanji'),el('p','ma-kana-muted','Your familiar kana give you a starting point for reading Kanji. Try a small first set.'),link('Meet your first Kanji','/kanji/',true));stage.append(invite);}
     if(guided()){
       reviewLink(stage);
-      workspace(stage);host.append(toolsLink());return;
+      workspace(stage);host.append(link('See my learning path','/kana/?view=path'),toolsLink());return;
     }
     const summary=el('div','ma-kana-progress-summary');
     for(const [value,label]of [[familiar,'Familiar'],[mastered,'Mastered']]){const item=el('div');item.append(el('strong','',value),el('span','',label));summary.append(item);}
@@ -255,9 +327,10 @@
     const eligible=L.testScripts(skill);
     for(const id of L.scripts){const name=id==='hiragana'?'Hiragana':'Katakana',row=el('section','ma-kana-test-row');row.append(el('h2','',name));
       if(eligible.includes(id))row.append(el('p','','One pass through all basic characters.'),link('Start '+name+' test','/'+(skill==='writing'?'writing':'reading')+'/?mode=test&script='+id,true));
-      else row.append(el('p','ma-kana-muted','Unlock every basic row in '+L.names[skill]+' to open this test.'),button('Open learning path',()=>{script=id;chooseView('learn');}));host.append(row);
+      else row.append(el('p','ma-kana-muted','Make every basic row Familiar in '+L.names[skill]+' to open this test.'),button('Open learning path',()=>{script=id;chooseView('learn');}));host.append(row);
     }
     host.append(link('View test results','/results/'));
+    const pool=L.learnedPool(skill);if(pool.length)host.append(link('Practise my learned pool first',L.practiceUrl(skill,pool,{hints:'off',practice:'20'})));
   }
   function mastery(){title('Kana','Your mastery map');host.append(root.ModeAtlasKanaMastery.render((char,detail)=>{
     const scroll=root.scrollY;host.replaceChildren(button('Back to mastery map',()=>{render();requestAnimationFrame(()=>{root.scrollTo({top:scroll,behavior:'instant'});host.querySelector(`[data-ma-mastery-kana="${char}"]`)?.focus({preventScroll:true});});}),detail);root.scrollTo({top:0,behavior:'instant'});
@@ -295,9 +368,9 @@
     // must leave that state even when the address is already identical.
     event.preventDefault();chooseView(next);
   });
-  function refresh(){if(lesson||placement||placementSetup||customizing||refreshQueued)return;refreshQueued=true;requestAnimationFrame(()=>{refreshQueued=false;run(()=>{L.initialize();render();});});}
+  function refresh(){if(lesson||placement||placementSetup||customizing||refreshQueued)return;refreshQueued=true;requestAnimationFrame(()=>{refreshQueued=false;if(lesson||placement||placementSetup||customizing)return;run(()=>{L.initialize();render();});});}
   root.addEventListener('modeAtlasCloudDataChanged',refresh);root.addEventListener('modeAtlasKanaLearningChanged',refresh);
-  root.addEventListener('modeAtlasAccountWillChange',()=>{placementKeyboard?.destroy();placementKeyboard=null;lesson=null;placement=null;placementSetup=false;practiceSettings=null;});
+  root.addEventListener('modeAtlasAccountWillChange',()=>{accountGeneration++;root.ModeAtlasPronunciation.stop();placementKeyboard?.destroy();placementKeyboard=null;lesson=null;placement=null;placementSetup=false;practiceSettings=null;host.replaceChildren(el('p','','Updating your learning space…'));});
   document.addEventListener('ma:ui-refresh',refresh);
   run(()=>{L.initialize();render();});
 })(window);

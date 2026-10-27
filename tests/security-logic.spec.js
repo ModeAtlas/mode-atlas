@@ -9,7 +9,7 @@ async function words(page,native,entries=[]){
     localStorage.setItem('modeAtlasSound','off');localStorage.setItem('maWhatsNewSeen','review');
     if(!sessionStorage.getItem('reviewSeeded')){localStorage.setItem('kanaWordBank',JSON.stringify(entries));sessionStorage.setItem('reviewSeeded','1');}
   },{native,entries});
-  await page.goto('/wordbank/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.goto('/wordbank/?view=bank');await expect(page.locator('#maLoadingScreen')).toBeHidden();
 }
 async function add(page,value){
   await page.locator('#wordBankAddJumpBtn').click();await page.locator('#kanaInput').fill(value);await page.locator('#addWordBtn').click();

@@ -509,6 +509,9 @@ function runWordBankAddHarness({ saveSucceeds = true } = {}) {
   };
   window.ModeAtlasStorage = storage;
   window.ModeAtlasProfile = { refresh() {} };
+  window.ModeAtlasWordLessons = { render() {} };
+  window.ModeAtlasVocabularyUI = { render() {}, open() {} };
+  const sections=Object.fromEntries(['.wordbank-overview','.wordbank-library','[data-ma-word-lessons]','[data-ma-vocabulary]'].map(selector=>[selector,new WordBankElementMock('section')]));
   window.ModeAtlasFeedback = {
     status(el, message, tone) { el.textContent = String(message); el.dataset.tone = tone; return true; },
     clearStatus(el) { el.textContent = ''; return true; },
@@ -524,7 +527,7 @@ function runWordBankAddHarness({ saveSucceeds = true } = {}) {
     createElement(tag) { return new WordBankElementMock(tag); },
     createElementNS(_namespace, tag) { return new WordBankElementMock(tag); },
     createDocumentFragment() { return new WordBankElementMock('fragment'); },
-    querySelector() { return null; },
+    querySelector(selector) { return sections[selector] || null; },
     querySelectorAll() { return []; },
     body: new WordBankElementMock('body'),
   };

@@ -338,6 +338,8 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-kana-evidence.js',
     'assets/data/mode-atlas-kanji-curriculum.js',
     'assets/app/mode-atlas-kanji-state.js',
+    'assets/data/mode-atlas-vocabulary.js',
+    'assets/app/mode-atlas-vocabulary.js',
     'assets/app/mode-atlas-kanji-codec.js',
     'assets/app/mode-atlas-kanji-content.js',
     'assets/app/mode-atlas-kanji-results.js',
@@ -505,7 +507,7 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
     'wordbank/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-wordbank-page.css',),
         body_scripts=_interactive_scripts(
-            page_scripts=('assets/ui/mode-atlas-pronunciation.js','assets/data/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-review.js','assets/pages/mode-atlas-wordbank-page.js',),
+            page_scripts=('assets/ui/mode-atlas-vocabulary.js','assets/ui/mode-atlas-pronunciation.js','assets/data/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-review.js','assets/pages/mode-atlas-wordbank-page.js',),
         ),
     ),
     'privacy/index.html': FrontendAssetConfig(styles=LEGAL_STYLES, body_scripts=LEGAL_BODY_SCRIPTS),

@@ -20,7 +20,7 @@ test('technical reports omit sensitive error text, stack, URL parameters and unk
 });
 test('feedback labels use the same friendly names for web routes and native filenames',()=>{
   const {api,window}=load();
-  for(const [label,aliases] of Object.entries({'Atlas':['atlas','index.html'],'Kana':['kana','kana.html'],'Kana Read':['reading','default.html'],'Kana Recall':['writing','reverse.html'],'Results':['results','test.html'],'Word Bank':['wordbank','wordbank.html'],'Privacy Policy':['privacy','privacy.html'],'Terms of Use':['terms','terms.html'],'Achievements':['achievements','achievements.html']})){
+  for(const [label,aliases] of Object.entries({'Atlas':['atlas','index.html'],'Kana':['kana','kana.html'],'Kana Read':['reading','default.html'],'Kana Recall':['writing','reverse.html'],'Results':['results','test.html'],'Words':['wordbank','wordbank.html'],'Privacy Policy':['privacy','privacy.html'],'Terms of Use':['terms','terms.html'],'Achievements':['achievements','achievements.html']})){
     for(const alias of aliases){window.ModeAtlasPageName=()=>alias;assert.equal(api.screenLabel(),label,alias);}
   }
   window.ModeAtlasPageName=()=>'/private-file.html';assert.equal(api.screenLabel(),'Mode Atlas');

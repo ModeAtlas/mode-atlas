@@ -220,6 +220,9 @@ test.describe('Mode Atlas core smoke tests', () => {
   test('Word Bank Add stays on the page and persists a new kana entry', async ({ page }) => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/wordbank/');
+      await expect(page.locator('[data-word-section=course]')).toHaveAttribute('aria-pressed', 'true');
+      await page.getByRole('button', { name: 'My word bank', exact: true }).click();
+      await expect(page.locator('[data-word-section=bank]')).toHaveAttribute('aria-pressed', 'true');
       await page.locator('#wordBankAddJumpBtn').click();
       const input = page.locator('#kanaInput');
       const add = page.locator('#addWordBtn');
