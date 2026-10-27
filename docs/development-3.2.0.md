@@ -75,6 +75,16 @@ GitHub validates the native simulator build, unsigned Release archive, backend
 access rules and browser gates on the published commit. Its final status is
 linked in the pull request and is separate from the local results above.
 
+Final CI review also found a queued Kana overview refresh that could replace the
+new lesson's controls immediately after entry. The callback now rechecks its
+destination before rendering. A deterministic regression reproduces the old
+focus loss and verifies that the task, controls, focus and saved position survive.
+The original browser assertions remain unchanged.
+After this correction, the release checks passed again (380 JavaScript and 23
+Python tests), the full Kana Chromium suite passed 30/30, the new regression
+passed five repeated executions, and five focused WebKit cases passed. These
+follow-up executions overlap the broader evidence counts above.
+
 ## Honest limits
 
 The new authored Kanji course covers the 84-character foundation. The broader

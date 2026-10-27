@@ -35,6 +35,7 @@ Computed colour checks support the solid-colour button states covered here; they
 - Personal Word Bank listening initially exposed the answer through pronunciation button accessible names. Listening assessment now uses neutral names; teaching retains descriptive pronunciation labels.
 - A late full regression exposed an early Profile click lost during warm navigation. Instrumented pointer events showed both account navigation and its feature loader were still undefined while the visible button accepted clicks. Canonical Profile/Settings triggers now remain disabled until the delegated account handler is installed. A held-script regression verifies that the first enabled click opens the account sheet.
 - WebKit exposed a shared-dialog focus race: deferred initial focus could steal focus from an already-used Help search field. The shared dialog now preserves focus inside its current panel; a deterministic pre-frame typing regression verifies this.
+- Final CI log review exposed a queued Kana overview refresh running after lesson entry and replacing its controls. The canonical callback now rechecks whether it may refresh when the frame executes. A deterministic test failed on the original code with detached task/control nodes and lost focus, and checks those identities as well as saved session position; the existing layout assertion was not weakened.
 - Central Settings Help was updated to describe guided first-answer checks, the Kanji invitation, later-day review and the separate Words course/collection. Removed references to the superseded mode dashboard and Kanji Mastery Map.
 - Older regression tests still expected removed tabs, a Home branch dashboard, always-open bank filters and modal personal review. Migrations preserve the original functional assertions while navigating the replacement UI explicitly.
 
@@ -64,6 +65,14 @@ The report is `.build/reports/3.2.0-independent.json`; full-window screenshots a
 **Early-account interaction: 10/10 executions passed** under three workers: five repetitions of the original large-text landscape shop case and five of the deterministic held-script case. No delays or retrying clicks were added. Report: `.build/reports/3.2.0-shop-race-fixed.json`.
 
 Cross-branch reports: `.build/reports/3.2.0-crossbranch.json`, `3.2.0-crossbranch-retry.json`, `3.2.0-late-migrations.json` and `3.2.0-late-migrations-retry.json`. Initial reports retain the genuine failures or stale selectors for review; the retry reports record the corrected cases. Release-wide and WebKit totals must be reported separately.
+
+Final Kana refresh regression: **30/30 Chromium cases passed**, the new case
+passed **5/5 repeated executions**, and **5/5 focused WebKit cases passed**.
+Reports are `.build/reports/3.2.0-kana-refresh-regression.json`,
+`.build/reports/3.2.0-kana-refresh-repeat.json` and
+`.build/reports/3.2.0-final-kana-webkit.json`. The WebKit launch used the existing
+unpacked runtime libraries; no browser assertions were skipped. These runs
+overlap the release-wide case totals rather than adding 40 unique cases.
 
 ## What these checks cannot establish
 

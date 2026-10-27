@@ -39,6 +39,26 @@ test('fresh entry offers placement or beginner, with one course and locked futur
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);await open(page);await expect(page.getByRole('button',{name:'Find my starting point',exact:true})).toBeVisible();await page.getByRole('button',{name:'Start lesson',exact:true}).click();await expect(page.locator('.ma-kana-task-glyph')).toHaveText('あ');await expect(page.locator('#maKanaLearning select')).toHaveCount(0);
  await open(page,'/kana/?view=path');await expect(page.getByRole('heading',{name:'Your learning path'})).toBeVisible();await expect(page.locator('.ma-kana-course-unit:enabled')).toHaveCount(1);await page.getByRole('button',{name:'Katakana',exact:true}).click();await expect(page.locator('[data-row="katakana:base:a"]')).toContainText('ア イ ウ エ オ');await page.getByRole('button',{name:'Full script tests',exact:true}).click();await expect(page.getByText(/Check every basic row/)).toHaveCount(2);expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);expect(errors).toEqual([]);await page.screenshot({path:info.outputPath('kana-course.png')});
 });
+test('entering a lesson keeps its controls and focus when an overview refresh is queued',async({page})=>{
+  await setup(page);await open(page);
+  const result=await page.evaluate(async()=>{
+    // Queue an overview update, then enter the task before the next paint.
+    // The old overview callback must not replace the new lesson's controls.
+    dispatchEvent(new CustomEvent('modeAtlasKanaLearningChanged'));
+    [...document.querySelectorAll('button')].find(button=>button.textContent==='Start lesson').click();
+    const task=document.querySelector('.ma-course-view[data-task]');
+    const control=[...task.querySelectorAll('button')].find(button=>button.textContent==='Continue');
+    control.focus();
+    const session=ModeAtlasKanaLearning.courseSession();
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const current=ModeAtlasKanaLearning.courseSession();
+    return {taskRetained:task.isConnected,controlRetained:control.isConnected,focusRetained:document.activeElement===control,
+      sessionRetained:current.id===session.id,index:current.index};
+  });
+  expect(result).toEqual({taskRetained:true,controlRetained:true,focusRetained:true,sessionRetained:true,index:0});
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await expect(page.locator('.ma-kana-task-glyph')).toHaveText('い');
+});
 test('placement resumes after reload, stops each direction at a gap, and saves no XP',async({page})=>{
   await setup(page);await open(page);await page.getByRole('button',{name:'Find my starting point',exact:true}).click();await page.getByRole('button',{name:'Begin check',exact:true}).click();
   for(let i=0;i<2;i++){const answer=await page.evaluate(()=>ModeAtlasKanaPlacement.question(ModeAtlasKanaPlacement.read()).roman);await page.getByLabel('Reading answer').fill(answer);await page.getByRole('button',{name:'Check answer',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}

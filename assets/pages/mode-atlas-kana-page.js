@@ -191,7 +191,17 @@
   }
   host.addEventListener('click',event=>{const a=event.target.closest('.ma-kana-picker-path');if(!a||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();go('path');});
   let refreshQueued=false;
-  function refresh(){if(view==='course'||placement||placementSetup||refreshQueued||rendering)return;refreshQueued=true;requestAnimationFrame(()=>{refreshQueued=false;run(()=>{L.initialize();render();});});}
+  function canRefresh(){return view!=='course'&&!placement&&!placementSetup&&!rendering;}
+  function refresh(){
+    if(refreshQueued||!canRefresh())return;refreshQueued=true;
+    requestAnimationFrame(()=>{
+      refreshQueued=false;
+      // Starting a lesson can queue an overview refresh before entering the
+      // course. Recheck its destination so it cannot replace active controls.
+      if(!canRefresh())return;
+      run(()=>{L.initialize();render();});
+    });
+  }
   root.addEventListener('popstate',()=>{L.leaveCourse();placement=null;placementSetup=false;readRoute();render();requestAnimationFrame(()=>root.scrollTo({top:history.state?.scroll||0,behavior:'instant'}));});
   root.addEventListener('modeAtlasCloudDataChanged',()=>{if(view==='course')render();else refresh();});root.addEventListener('modeAtlasKanaLearningChanged',refresh);
   root.addEventListener('modeAtlasAccountWillChange',()=>{accountGeneration++;L.leaveCourse();placementKeyboard?.destroy();placementKeyboard=null;placement=null;placementSetup=false;host.replaceChildren(el('p','','Updating your learning space…'));});
