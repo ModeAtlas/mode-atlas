@@ -131,8 +131,9 @@
     content.append(status);root.ModeAtlasDialog.feature({title:'Choose a goal',kicker:goal.period==='daily'?'Today':'This week',contentNode:content});
   }
 
-  function renderGoals(host,{compact=false}={}){
+  function renderGoals(host,{compact=false,interactive=true}={}){
     if(!host)return;
+    host.classList.add('ma-routine-goals');host.classList.toggle('ma-routine-goals--compact',compact);
     const routine=root.ModeAtlasProgress.routine();host.replaceChildren();
     const groups=new Map();
     if(!compact){
@@ -143,8 +144,8 @@
       }
     }
     for(const goal of routine.goals.filter(goal=>!compact||goal.period==='daily')){
-      const complete=goal.value>=goal.target,action=root.ModeAtlasStudyPlan.goalAction(goal,routine.goals),card=el(goal.personal?'button':action?'a':'div','ma-routine-goal');card.classList.toggle('ma-routine-goal--full',!compact);card.dataset.goal=goal.id;card.dataset.complete=String(complete);card.dataset.period=goal.period;
-      if(goal.personal){card.type='button';card.dataset.personal='true';card.setAttribute('aria-label',`${goal.label} · ${Math.min(goal.value,goal.target)} of ${goal.target} · Edit ${goal.period} goal`);card.addEventListener('click',()=>editPersonalGoal(goal.period));}
+      const complete=goal.value>=goal.target,action=interactive&&root.ModeAtlasStudyPlan.goalAction(goal,routine.goals),card=el(interactive&&goal.personal?'button':action?'a':'div','ma-routine-goal');card.classList.toggle('ma-routine-goal--full',!compact);card.dataset.goal=goal.id;card.dataset.complete=String(complete);card.dataset.period=goal.period;
+      if(interactive&&goal.personal){card.type='button';card.dataset.personal='true';card.setAttribute('aria-label',`${goal.label} · ${Math.min(goal.value,goal.target)} of ${goal.target} · Edit ${goal.period} goal`);card.addEventListener('click',()=>editPersonalGoal(goal.period));}
       else if(action){card.href=action.href;card.setAttribute('aria-label',`${goal.label} · ${Math.min(goal.value,goal.target)} of ${goal.target} · ${action.label}`);}
       const meter=el('progress');meter.max=goal.target;meter.value=Math.min(goal.target,goal.value);meter.setAttribute('aria-label',goal.label);
       if(compact){

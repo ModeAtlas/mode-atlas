@@ -14,7 +14,7 @@
   justify-content:center;
   gap:var(--ma-space-2);
   min-height:var(--ma-button-min-height,var(--ma-control-height));
-  padding:var(--ma-button-padding,0 var(--ma-space-4));
+  padding:var(--ma-button-padding,10px var(--ma-space-4));
   border:1px solid var(--ma-button-border);
   border-radius:var(--ma-button-radius,var(--ma-radius-control));
   background:var(--ma-button-bg);
@@ -65,9 +65,12 @@
 .ma-action-grid .ma-icon{width:20px;height:20px;flex:none;}
 .ma-action-grid .ma-button span{overflow-wrap:anywhere;}
 .ma-action-grid>.ma-button:only-child{max-width:12rem;}
-.ma-button.is-active, .ma-button.active, .ma-button[data-active="true"]{
-  --ma-button-selected-hover:var(--ma-native-selected);
+.ma-button.is-active, .ma-button.active, .ma-button[data-active="true"], .ma-button[aria-pressed="true"]{
+  --ma-button-bg:var(--ma-control-active);
+  --ma-button-selected-hover:var(--ma-control-active);
+  --ma-button-color:var(--ma-native-selected-text,var(--ma-control-text));
   background:var(--ma-control-active);
+  color:var(--ma-button-color);
   border-color:var(--ma-control-active-border);
   box-shadow:0 0 0 3px var(--ma-focus-ring),inset 0 1px 0 color-mix(in srgb,var(--ma-text) 10%,transparent);
 }

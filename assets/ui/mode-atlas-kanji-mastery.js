@@ -9,9 +9,9 @@
     const host=el('section','ma-kanji-mastery-detail');host.append(button('‹ Back to map',back),el('h3','',char),el('p','','Loading character…'));
     void content.load().then(()=>{
       const entry=content.get(char),snapshot=state.read();host.replaceChildren(button('‹ Back to map',back),el('h3','',char),el('p','',entry.meanings.join(' · ')));
-      const completed=state.completed(snapshot,char);host.append(el('p','',completed?'✓ Band progress complete':'To complete: 3 recent correct per skill at 80% accuracy.'));
+      const completed=state.completed(snapshot,char);host.append(el('p','',completed?'✓ Band progress complete':'To complete: recall both skills accurately across at least two study days, including a scheduled review.'));
       for(const skill of state.skills){
-        const m=state.metrics(snapshot,char,skill),section=el('section','ma-mastery-next');section.append(el('h4','',`${skill==='pronunciation'?'Pronunciation':'Meaning'} · ${labels[state.stage(snapshot,char,skill)]}`));
+        const m=state.metrics(snapshot,char,skill),section=el('section','ma-mastery-next');section.append(el('h4','',`${skill==='pronunciation'?'Reading':'Meaning'} · ${labels[state.stage(snapshot,char,skill)]}`));
         section.append(el('p','',m.recentAttempts?`${m.recentCorrect} / ${m.recentAttempts} recent correct`:'No recent practice'));
         if(state.readiness(snapshot,char,skill)<state.stage(snapshot,char,skill))section.append(el('p','','Revisit this skill.'));
         const record=el('details');record.append(el('summary','','Progress details'),el('p','',`All time: ${m.correct} / ${m.attempts} correct · ${(m.accuracy*100).toFixed(2)}%`));

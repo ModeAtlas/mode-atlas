@@ -6,7 +6,9 @@ Official site: https://mode-atlas.app/
 Support: support@mode-atlas.com
 Admin: admin@mode-atlas.com
 General: hello@mode-atlas.com
-Version: 3.1.0
+Version: 3.2.0
+
+3.2.0 learning course redesign: [handover and Xcode update code](docs/development-3.2.0.md) · [review and acceptance](docs/reviews/3.2.0/acceptance.md).
 
 3.1.0 connected Kana, Kanji and Words foundations: [handover and Xcode update code](docs/development-3.1.0.md).
 

@@ -38,8 +38,10 @@
   }
   function grade(char,mode,answer){
     const entry=get(char);if(!entry||String(answer).length>160)return false;
+    if(mode==='wordMeaning')return wordMeanings(entry).some(value=>english(value)===english(answer));
     return mode==='pronunciation'?pronunciation(entry).answers.some(expected=>japanese.matchesReading(answer,expected)):['meaning','match'].includes(mode)&&meaningAnswers(entry).includes(english(answer));
   }
+  function wordMeanings(entry){return [root.ModeAtlasKanjiCourse?.senses[entry.char]||entry.example?.meanings[0]||entry.meanings[0],...(root.ModeAtlasKanjiCourse?.alternatives[entry.char]||[])];}
   function hash(s){let n=2166136261;for(const c of String(s))n=Math.imul(n^c.codePointAt(0),16777619);return n>>>0;}
   function choices(char,seed){
     const entry=get(char),correct=entry.meanings[0],answers=new Set(meaningAnswers(entry));
@@ -57,5 +59,5 @@
     if(entry.example)return {ja:`「${entry.example.kana}」という ことばに でてくる かんじです。よみかたは、ことばによって かわります。`,en:`In ${entry.example.word}, this character helps form “${entry.example.meanings[0]}”. Its pronunciation can change with the word.`};
     return {ja:'かんじには、いくつかの よみかたが あります。おんよみと くんよみを みくらべましょう。',en:`This character can mean “${entry.meanings[0]}”. Compare its on’yomi (used in many compounds) and kun’yomi (Japanese word readings).`};
   }
-  return Object.freeze({load,entries,get,hira,kana,romaji,english,pronunciation,meaningAnswers,grade,hash,choices,description});
+  return Object.freeze({load,entries,get,hira,kana,romaji,english,pronunciation,meaningAnswers,wordMeanings,grade,hash,choices,description});
 });

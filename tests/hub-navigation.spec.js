@@ -17,7 +17,9 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   await page.goto('/learn/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(destinations);
   await expect(page.getByRole('link',{name:'Open Words',exact:true})).toBeVisible();
-  for(const [name,href] of [['Kana learning path','/kana/'],['Open Kanji','/kanji/'],['Open Words','/wordbank/']]){
+  await expect(page.locator('.ma-branch-tile')).toHaveCount(3);
+  await expect(page.getByRole('link',{name:'Phrase lessons Everyday expressions'})).toHaveAttribute('href','/wordbank/?view=phrases');
+  for(const [name,href] of [['Open Kana','/kana/'],['Open Kanji','/kanji/'],['Open Words','/wordbank/']]){
     const link=page.getByRole('link',{name,exact:true});await expect(link).toHaveAttribute('href',href);
     expect((await link.boundingBox()).height).toBeGreaterThanOrEqual(44);
   }
@@ -37,7 +39,7 @@ for(const [native,width,theme]of [[true,320,'light'],[true,393,'dark'],[true,768
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:info.outputPath('learn-large-text.png'),animations:'disabled'});
   await page.evaluate(()=>{document.documentElement.style.fontSize='';document.documentElement.removeAttribute('data-ma-large-text');});
-  await page.getByRole('link',{name:'Kana learning path',exact:true}).click();
+  await page.getByRole('link',{name:'Open Kana',exact:true}).click();
   await expect(page).toHaveURL(/\/kana\/$/);await expect(nav().locator(native?'.ma-ios-tab__label':'a')).toHaveText(destinations);
   await nav().getByRole('link',{name:'Progress',exact:true}).click();
   await expect(page.locator('.ma-hub-header h1')).toHaveText('Progress');
@@ -74,7 +76,7 @@ for(const [width,height,theme] of [[960,400,'light'],[1280,900,'dark']])test(`br
   },theme);
   await page.goto('/learn/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
   const kana=page.locator('.ma-branch-tile[data-branch="kana"]'),kanji=page.locator('.ma-branch-tile[data-branch="kanji"]'),words=page.locator('.ma-branch-tile[data-branch="words"]');
-  await expect(kana).toContainText('Start here');await expect(kanji).toContainText('Suggested after 3 familiar hiragana rows');
+  await expect(kana).toContainText('Start here');await expect(kanji).toContainText('After your first Kana checkpoint');
   await expect(kanji).toHaveAttribute('href','/kanji/');await kanji.click();await expect(page).toHaveURL(/\/kanji\/$/);
   await page.goto('/learn/');
   await page.evaluate(()=>{
@@ -102,9 +104,83 @@ test('Home continues a beginner lesson and the Words course without redirecting 
     if(!localStorage.getItem('modeAtlasKanaLearning'))localStorage.setItem('modeAtlasKanaLearning',JSON.stringify({startedAt:1,startKind:'beginner'}));
   });
   await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
-  await expect(page.locator('#homeContinueTitle')).toHaveText('Learn the A row');
-  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href','/kana/?view=learn&script=hiragana');
-  await page.evaluate(()=>ModeAtlasStorage.setJSON('modeAtlasLastMode',{branchId:'words',href:'/wordbank/'}));
-  await page.reload();await expect(page.locator('#homeContinueTitle')).toHaveText('Your first words');
-  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href','/wordbank/?view=course');
+  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href','/kana/?view=course&script=hiragana');
+  await expect(page.locator('.atlas-home .ma-branch-tile')).toHaveCount(0);
+  await expect(page.locator('#homeDaily')).toHaveCount(0);
+  await expect(page.locator('.atlas-home-directory')).toHaveAttribute('href','/learn/');
+  await page.evaluate(()=>{
+    const state=ModeAtlasKanaLearning.read();for(const char of 'あいうえお')state.introduced[char]=Date.now();ModeAtlasKanaLearning.save(state);
+    ModeAtlasStorage.setJSON('modeAtlasLastMode',{branchId:'words',href:'/wordbank/'});
+  });
+  await page.reload();
+  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href','/wordbank/?view=course&session=course');
+});
+
+test('Home counts guided Kana effort as daily practice without fabricated XP',async({page})=>{
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());await require('./helpers/firebase-guest')(page);
+  await page.addInitScript(()=>{
+    for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasKanaSetupComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
+    localStorage.setItem('maWhatsNewSeen','journey');
+  });
+  await page.goto('/kana/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  const result=await page.evaluate(()=>{
+    ModeAtlasKanaLearning.start();let session=ModeAtlasKanaLearning.beginCourse(),guard=0;
+    while(ModeAtlasProgress.routine().todayUnits<5&&!session.complete&&guard++<80){
+      const task=session.queue[session.index],audio=['listen','patternListen'].includes(task.kind);
+      ModeAtlasKanaLearning.answerCourse('wrong',{skipAudio:audio});session=ModeAtlasKanaLearning.advanceCourse();
+    }
+    return {units:ModeAtlasProgress.routine().todayUnits,xp:ModeAtlasProgress.getXP()};
+  });
+  expect(result).toEqual({units:5,xp:0});
+  await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await expect(page.locator('#homeGoals')).toContainText('Today’s practice complete');
+  await expect(page.locator('#homeStreak')).toHaveText('1');
+  await expect(page.locator('#homeTotalXp')).toHaveText('0');
+  await expect(page.locator('[data-ma-home-week-days]')).toHaveText('1 / 7');
+});
+
+async function prepareResume(page){
+  await page.setViewportSize({width:430,height:932});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/,route=>route.abort());await require('./helpers/firebase-guest')(page);
+  await page.addInitScript(()=>{
+    window.Capacitor={isNativePlatform:()=>true,getPlatform:()=> 'ios',Plugins:{}};
+    for(const key of ['modeAtlasStarterSeen','modeAtlasOnboardingComplete','modeAtlasLegalAccepted'])localStorage.setItem(key,'true');
+    localStorage.setItem('maWhatsNewSeen','resume-journey');
+  });
+}
+test('Home resumes the actual Kanji task after teaching and exit',async({page},info)=>{
+  await prepareResume(page);await page.goto('/kanji/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();
+  await page.locator('.ma-kanji-current .ma-button--primary').click();
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  const body=await page.locator('.ma-course-body').innerText(),position=await page.locator('.ma-course-position span').innerText(),title=await page.locator('.ma-course-title').innerText();
+  await page.getByRole('button',{name:'Save & exit',exact:true}).click();
+  await page.locator('.ma-ios-tabs').getByRole('link',{name:'Atlas',exact:true}).click();
+  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href','/kanji/?continue=1');
+  await expect(page.locator('#homeContinueAction')).toHaveText('Resume');await expect(page.locator('#homeContinueTitle')).toHaveText(title);
+  await expect(page.locator('.atlas-home-learning__art img')).toHaveAttribute('src','/assets/illustrations/kanji-scene.svg');
+  await page.locator('#homeContinueAction').click();
+  await expect(page.locator('.ma-course-body')).toHaveText(body,{useInnerText:true});
+  await expect(page.locator('.ma-course-position span')).toHaveText(position);
+  await page.screenshot({path:info.outputPath('home-resumed-kanji.png'),animations:'disabled'});
+});
+test('Home resumes Words after meeting a word before any scored answer',async({page},info)=>{
+  await prepareResume(page);await page.goto('/learn/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  // A returning learner has met these kana; the test performs the Words lesson
+  // through visible controls and does not fabricate word attempts or completion.
+  await page.evaluate(()=>{const state=ModeAtlasKanaLearning.read();state.startedAt=1;state.startKind='existing';for(const char of 'あいうえおかきくけこ')state.introduced[char]=Date.now();ModeAtlasKanaLearning.save(state);});
+  await page.getByRole('link',{name:'Open Words',exact:true}).click();
+  await page.getByRole('link',{name:/Learn words/}).click();
+  await page.locator('.ma-vocabulary-next .ma-button--primary').click();
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  const body=await page.locator('.ma-course-body').innerText(),position=await page.locator('.ma-course-position span').innerText();
+  expect(await page.evaluate(()=>ModeAtlasWordLessonState.vocabularyOverview().attempts)).toBe(0);
+  await page.getByRole('button',{name:'Save & exit',exact:true}).click();
+  await page.locator('.ma-ios-tabs').getByRole('link',{name:'Atlas',exact:true}).click();
+  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href','/wordbank/?view=course&session=course');
+  await page.locator('#homeContinueAction').click();
+  await expect(page.locator('.ma-course-body')).toHaveText(body,{useInnerText:true});
+  await expect(page.locator('.ma-course-position span')).toHaveText(position);
+  await page.screenshot({path:info.outputPath('home-resumed-words.png'),animations:'disabled'});
 });

@@ -10,23 +10,16 @@ async function setup(page,{native=false,theme='dark'}={}){
 }
 async function open(page,url='/kana/') {await page.goto(url);await expect(page.locator('#maLoadingScreen')).toBeHidden();}
 
-test('native path winds across the available width and keeps every row reachable',async({page},info)=>{
-  await page.setViewportSize({width:393,height:852});await setup(page,{native:true});await open(page);
-  await page.getByRole('button',{name:/Start lesson/}).click();
-  await open(page,'/kana/?view=path');
-  const group=page.locator('.ma-kana-path-group[open]').first();await group.scrollIntoViewIfNeeded();
-  const first=await group.locator('.ma-kana-path-marker').nth(0).boundingBox(),second=await group.locator('.ma-kana-path-marker').nth(1).boundingBox();
-  expect(second.x-first.x).toBeGreaterThan(80);expect(second.y-first.y).toBe(128);
-  await expect(group.locator('.ma-kana-path-trail')).toBeVisible();
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-  await page.screenshot({path:info.outputPath('native-path.png'),animations:'disabled'});
+test('native path gives every row one reachable full-page entry',async({page},info)=>{
+ await page.setViewportSize({width:393,height:852});await setup(page,{native:true});await open(page);await page.getByRole('button',{name:'Start lesson',exact:true}).click();await open(page,'/kana/?view=path');
+ await expect(page.locator('.ma-kana-course-unit')).toHaveCount(24);await expect(page.locator('.ma-kana-course-unit:enabled')).toHaveCount(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:info.outputPath('native-path.png'),fullPage:true});
 });
 
 for(const native of [false,true])test(`combined practice alternates and saves each skill independently ${native?'iOS':'web'}`,async({page})=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await setup(page,{native});await open(page);await page.getByRole('button',{name:/Start lesson/}).click();
   await open(page,'/kana/?view=practice');await page.getByRole('button',{name:'Read + Recall',exact:true}).click();
-  await expect(page.locator('.ma-kana-skill-explanation')).toContainText('Alternate Read and Recall');
+  await expect(page.getByRole('button',{name:'Read + Recall',exact:true})).toHaveAttribute('aria-pressed','true');
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
   await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('body')).toHaveClass(/trainer-session-active/);await page.clock.install();
   expect(errors).toEqual([]);
@@ -42,24 +35,14 @@ for(const native of [false,true])test(`combined practice alternates and saves ea
   await expect(page.locator('#input')).toBeVisible();await expect(page.locator('#mixedRecallChoices')).toBeHidden();
   expect(errors).toEqual([]);
 });
-test('fresh entry offers placement or beginner, with one path and independently locked rows',async({page},info)=>{
-  const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);await open(page);
-  await page.getByText('Already know some Kana?',{exact:true}).click();await expect(page.getByRole('button',{name:/Take a starting-point test/})).toBeVisible();await page.getByRole('button',{name:/Start lesson/}).click();
-  await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');
-  await expect(page.locator('#maKanaLearning select')).toHaveCount(0);
-  await open(page,'/kana/?view=path');
-  await expect(page.getByRole('heading',{name:'Your learning path'})).toBeVisible();
-  await expect(page.locator('.ma-kana-path-step:enabled')).toHaveCount(1);
-  await page.getByRole('button',{name:'Katakana',exact:true}).click();await expect(page.locator('.ma-kana-next-chars')).toHaveText('ア イ ウ エ オ');
-  await page.getByRole('button',{name:'Recall',exact:true}).click();await expect(page.locator('.ma-kana-path-step:enabled')).toHaveCount(1);
-  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Tests',exact:true}).click();await expect(page.getByText(/Make every basic row Familiar/)).toHaveCount(2);
-  expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);expect(errors).toEqual([]);
-  await page.screenshot({path:info.outputPath('kana-course.png')});
+test('fresh entry offers placement or beginner, with one course and locked future rows',async({page},info)=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);await open(page);await expect(page.getByRole('button',{name:'Find my starting point',exact:true})).toBeVisible();await page.getByRole('button',{name:'Start lesson',exact:true}).click();await expect(page.locator('.ma-kana-task-glyph')).toHaveText('あ');await expect(page.locator('#maKanaLearning select')).toHaveCount(0);
+ await open(page,'/kana/?view=path');await expect(page.getByRole('heading',{name:'Your learning path'})).toBeVisible();await expect(page.locator('.ma-kana-course-unit:enabled')).toHaveCount(1);await page.getByRole('button',{name:'Katakana',exact:true}).click();await expect(page.locator('[data-row="katakana:base:a"]')).toContainText('ア イ ウ エ オ');await page.getByRole('button',{name:'Full script tests',exact:true}).click();await expect(page.getByText(/Check every basic row/)).toHaveCount(2);expect(await page.evaluate(()=>ModeAtlasProgress.getXP())).toBe(0);expect(errors).toEqual([]);await page.screenshot({path:info.outputPath('kana-course.png')});
 });
 test('placement resumes after reload, stops each direction at a gap, and saves no XP',async({page})=>{
-  await setup(page);await open(page);await page.getByText('Already know some Kana?',{exact:true}).click();await page.getByRole('button',{name:/Take a starting-point test/}).click();await page.getByRole('button',{name:'Begin check',exact:true}).click();
+  await setup(page);await open(page);await page.getByRole('button',{name:'Find my starting point',exact:true}).click();await page.getByRole('button',{name:'Begin check',exact:true}).click();
   for(let i=0;i<2;i++){const answer=await page.evaluate(()=>ModeAtlasKanaPlacement.question(ModeAtlasKanaPlacement.read()).roman);await page.getByLabel('Reading answer').fill(answer);await page.getByRole('button',{name:'Check answer',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}
-  await page.reload();await page.getByRole('button',{name:'Check my starting point',exact:true}).click();await expect(page.locator('.ma-kana-page-heading')).toContainText('Ka row');
+  await page.reload();await page.getByRole('button',{name:'Learning path',exact:true}).click();await page.getByRole('button',{name:'Check my starting point',exact:true}).click();await expect(page.locator('.ma-kana-page-heading')).toContainText('Ka row');
   for(let i=0;i<2;i++){await page.getByRole('button',{name:'I don’t know yet',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}await expect(page.locator('.ma-kana-page-heading')).toContainText('Recall');
   for(let i=0;i<2;i++){await page.getByRole('button',{name:'I don’t know yet',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();}
   await expect(page.getByRole('heading',{name:'Your learning path is ready'})).toBeVisible();
@@ -83,13 +66,13 @@ test('one mastery view keeps earned Read progress visible while Recall is new',a
 });
 for(const [native,theme] of [[true,'light'],[true,'dark'],[false,'light'],[false,'dark']])test(`Kana layout and lesson fit ${native?'iOS':'web'} ${theme} without horizontal scrolling`,async({page},info)=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page,{native,theme});await page.setViewportSize({width:native?320:1280,height:native?740:900});await open(page);await page.getByRole('button',{name:/Start lesson/}).click();
-  await page.getByRole('button',{name:'Check this character',exact:true}).scrollIntoViewIfNeeded();await expect(page.getByRole('button',{name:'Check this character',exact:true})).toBeInViewport();
+  await page.getByRole('button',{name:'Continue',exact:true}).scrollIntoViewIfNeeded();await expect(page.getByRole('button',{name:'Continue',exact:true})).toBeInViewport();
   expect(await page.locator('.ma-kana-navigation a').evaluateAll(links=>links.every(link=>link.scrollWidth<=link.clientWidth+1))).toBe(true);
   await page.screenshot({path:info.outputPath(`kana-path-${native}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');await require('./helpers/kana-lesson')(page,'あ','a');await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('い');
+  await expect(page.locator('.ma-kana-task-glyph')).toHaveText('あ');await require('./helpers/kana-course').task(page);await expect(page.locator('.ma-kana-task-glyph')).toHaveText('い');
   await page.screenshot({path:info.outputPath(`kana-lesson-${native}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
-  await page.getByRole('button',{name:'Back to Kana',exact:true}).click();
-  await expect(page.getByRole('button',{name:'Continue learning',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Save & exit',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Continue session',exact:true})).toBeVisible();
 });
 
 test('handwriting awards a clean independent completion, while watching strokes awards nothing',async({page})=>{
@@ -130,37 +113,17 @@ test('accuracy recomputes account eligibility and clears pending targets on acco
   expect(await page.evaluate(()=>trainerController.study.hasPendingReview())).toBe(false);
 });
 
-test('practice starts simple and the optional sheet retains row, feedback and timing choices',async({page},info)=>{
-  const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await setup(page,{native:true});await page.setViewportSize({width:393,height:852});await open(page);await page.getByRole('button',{name:/Start lesson/}).click();
-  await open(page,'/kana/?view=practice');
-  await expect(page.locator('#maKanaLearning select')).toHaveCount(0);
-  await expect(page.getByRole('button',{name:'Start practice',exact:true})).toBeInViewport();
-  await page.screenshot({path:info.outputPath('practice-ios-dark.png'),fullPage:true});
-  await page.getByRole('button',{name:'Recall',exact:true}).click();await expect(page.locator('.ma-kana-skill-explanation')).toContainText('choose or type あ');
-  await page.getByRole('button',{name:'Adjust this session',exact:true}).click();
-  const dialog=page.getByRole('dialog');await dialog.getByLabel('Session length',{exact:true}).selectOption('10');await dialog.getByLabel('Feedback',{exact:true}).selectOption('quick');
-  await dialog.locator('.ma-kana-row-picker summary').click();
-  await dialog.getByRole('checkbox',{name:'hiragana Basics A row',exact:true}).uncheck();
-  await dialog.getByRole('checkbox',{name:'katakana Basics A row',exact:true}).check();
-  await expect(dialog.getByRole('checkbox',{name:'hiragana Basics Ka row',exact:true})).toHaveCount(0);
-  await dialog.getByRole('button',{name:'Done',exact:true}).click();
-  await expect(page.locator('.ma-kana-session')).toContainText('10 questions');await expect(page.locator('.ma-kana-session')).toContainText('Katakana');
-  await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page).toHaveURL(/\/writing\//);
-  await expect(page.locator('#heatmap .cell')).toHaveText(['ア','イ','ウ','エ','オ']);
-  await page.waitForFunction(()=>typeof window.ModeAtlasTrainerControls?.getSettings==='function');
-  const settings=await page.evaluate(()=>ModeAtlasTrainerControls.getSettings());expect(settings.practiceCount).toBe(10);expect(settings.feedbackStyle).toBe('quick');
-  await open(page,'/kana/?view=practice');await page.getByRole('button',{name:/Timed challenge Build speed/}).click();
-  await page.getByRole('button',{name:'Adjust this session',exact:true}).click();
-  await dialog.getByLabel('Timed goal',{exact:true}).selectOption('target');await dialog.getByLabel('Minutes',{exact:true}).fill('2');await dialog.getByLabel('Minutes',{exact:true}).press('Tab');await dialog.getByLabel('Correct-answer target',{exact:true}).fill('30');await dialog.getByLabel('Correct-answer target',{exact:true}).press('Tab');
-  await dialog.getByRole('button',{name:'Done',exact:true}).click();await expect(page.locator('.ma-kana-session')).toContainText('30 correct answers in 2 minutes');
-  await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('body')).toHaveClass(/trainer-session-active/);await expect(page.locator('#trialTimerPill')).toBeVisible();expect(await page.evaluate(()=>ModeAtlasTrainerControls.getSettings().timeTrial)).toBe(true);expect(errors).toEqual([]);
+test('custom practice edits row, feedback and timing in one setup surface',async({page},info)=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page,{native:true});await page.setViewportSize({width:393,height:852});await open(page);await page.getByRole('button',{name:'Start lesson',exact:true}).click();await open(page,'/kana/?view=practice');await page.getByRole('button',{name:'Recall',exact:true}).click();
+ await page.getByLabel('Session length',{exact:true}).selectOption('10');await page.getByLabel('Feedback',{exact:true}).selectOption('quick');await page.locator('.ma-kana-row-picker summary').click();await page.getByRole('checkbox',{name:'hiragana Basics A row',exact:true}).uncheck();await page.getByRole('checkbox',{name:'katakana Basics A row',exact:true}).check();await expect(page.getByRole('checkbox',{name:'hiragana Basics Ka row',exact:true})).toHaveCount(0);await page.screenshot({path:info.outputPath('practice-ios-dark.png'),fullPage:true});
+ await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page).toHaveURL(/\/writing\//);await expect(page.locator('#heatmap .cell')).toHaveText(['ア','イ','ウ','エ','オ']);await page.waitForFunction(()=>typeof window.ModeAtlasTrainerControls?.getSettings==='function');const settings=await page.evaluate(()=>ModeAtlasTrainerControls.getSettings());expect(settings.practiceCount).toBe(10);expect(settings.feedbackStyle).toBe('quick');
+ await open(page,'/kana/?view=practice');await page.getByLabel('Session',{exact:true}).selectOption('timed');await page.getByLabel('Timed goal',{exact:true}).selectOption('target');await page.getByLabel('Minutes',{exact:true}).fill('2');await page.getByLabel('Minutes',{exact:true}).press('Tab');await page.getByLabel('Correct-answer target',{exact:true}).fill('30');await page.getByLabel('Correct-answer target',{exact:true}).press('Tab');await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('body')).toHaveClass(/trainer-session-active/);await expect(page.locator('#trialTimerPill')).toBeVisible();expect(await page.evaluate(()=>ModeAtlasTrainerControls.getSettings().timeTrial)).toBe(true);expect(errors).toEqual([]);
 });
 
 for(const native of [false,true])test(`study selection uses two columns and script-wide unlocked toggles on ${native?'iOS':'web'}`,async({page},info)=>{
   await setup(page,{native});await page.setViewportSize({width:393,height:852});await open(page);
   await page.evaluate(()=>{const s=ModeAtlasKanaLearning.start();s.placed.reading['hiragana:base:ka']=1;ModeAtlasKanaLearning.save(s);});await open(page,'/kana/?view=practice');
-  await page.getByRole('button',{name:'Adjust this session',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.locator('.ma-kana-row-picker summary').click();
+  const dialog=page.locator('.ma-course-body');await dialog.locator('.ma-kana-row-picker summary').click();
   const all=dialog.getByRole('checkbox',{name:'All unlocked Hiragana',exact:true});
   await expect(all).toHaveJSProperty('indeterminate',true);await all.check();
   await expect(dialog.getByRole('checkbox',{name:'hiragana Basics A row',exact:true})).toBeChecked();await expect(dialog.getByRole('checkbox',{name:'hiragana Basics Sa row',exact:true})).toBeChecked();await expect(dialog.getByRole('checkbox',{name:'hiragana Basics Ta row',exact:true})).toHaveCount(0);
@@ -170,7 +133,7 @@ for(const native of [false,true])test(`study selection uses two columns and scri
   const grid=dialog.locator('.ma-kana-row-picker-grid').first();expect(await grid.evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length)).toBe(2);
   await grid.locator('label').first().scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath(`row-selection-${native}.png`)});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  await dialog.getByRole('button',{name:'Done',exact:true}).click();await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('#heatmap .cell')).toHaveCount(15);await expect(page.locator('#heatmap')).not.toContainText('か');await expect(page.locator('#heatmap')).toContainText('ア');
+  await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('#maLoadingScreen')).toBeHidden();await expect(page.locator('#heatmap .cell')).toHaveCount(15);await expect(page.locator('#heatmap')).not.toContainText('か');await expect(page.locator('#heatmap')).toContainText('ア');
 });
 
 for(const theme of ['light','dark'])test(`mastery displays exact next targets with accessible pass and missing states in ${theme}`,async({page},info)=>{
@@ -190,7 +153,7 @@ for(const theme of ['light','dark'])test(`mastery displays exact next targets wi
 });
 
 test('native placement keeps the shared app keyboard ready between answers and disposes it on exit',async({page},info)=>{
-  const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page,{native:true});await page.setViewportSize({width:393,height:852});await open(page);await page.getByText('Already know some Kana?',{exact:true}).click();await page.getByRole('button',{name:/Take a starting-point test/}).click();await page.getByRole('button',{name:'Begin check',exact:true}).click();
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page,{native:true});await page.setViewportSize({width:393,height:852});await open(page);await page.getByRole('button',{name:'Find my starting point',exact:true}).click();await page.getByRole('button',{name:'Begin check',exact:true}).click();
   const input=page.getByLabel('Reading answer');await expect(input).toHaveJSProperty('readOnly',true);await expect(input).toHaveAttribute('inputmode','none');
   for(let i=0;i<3;i++){
     await expect(page.locator('.ma-ios-reading-keyboard')).toHaveCount(1);const answer=await page.evaluate(()=>ModeAtlasKanaPlacement.question(ModeAtlasKanaPlacement.read()).roman);
@@ -210,36 +173,20 @@ for(const skill of ['reading','writing'])test(`${skill} returns to the saved pra
     kanaSelection:true,kanaRows:['katakana:base:a'],practiceCount:0,endless:true,feedbackStyle:'quick',hint:false,srs:true
   }),skill);
   await open(page,`/kana/?view=practice&skill=${skill}`);
-  await expect(page.locator('.ma-kana-selection-summary')).toContainText('5 kana');
-  await expect(page.locator('.ma-kana-session .ma-kicker').first()).toHaveText('Katakana');
-  await page.getByRole('button',{name:'Adjust this session',exact:true}).click();
+  await expect(page.getByLabel('Session',{exact:true})).toHaveValue('practice');
   await expect(page.getByLabel('Session length',{exact:true})).toHaveValue('0');
   await expect(page.getByLabel('Feedback',{exact:true})).toHaveValue('quick');
-  await page.getByRole('button',{name:'Done',exact:true}).click();
+
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
   await expect(page).toHaveURL(new RegExp('/'+skill+'/$'));
   await expect(page.locator('#heatmap .cell')).toHaveText(['ア','イ','ウ','エ','オ']);
   await open(page,`/kana/?view=practice&skill=${skill}`);
-  await expect(page.locator('.ma-kana-session h2')).toHaveText('Stay a little longer');
+  await expect(page.getByLabel('Session length',{exact:true})).toHaveValue('0');
   expect(await page.evaluate(skill=>ModeAtlasStorage.readModeJSON(skill,'settings',{}).endless,skill)).toBe(true);
 });
 
-for(const width of [320,393])test(`combined kana stay together and practice actions fit on a ${width}px iPhone`,async({page})=>{
-  await setup(page,{native:true});await page.setViewportSize({width,height:852});await open(page);
-  await page.evaluate(()=>{
-    const L=ModeAtlasKanaLearning,state=L.start('placement'),rows=L.rows.filter(row=>row.script==='hiragana'),index=rows.findIndex(row=>row.group==='yoon');
-    for(const row of rows.slice(0,index))state.placed.reading[row.id]=Date.now();L.save(state);
-  });
-  await open(page);
-  await expect(page.locator('.ma-kana-lesson-tile strong').first()).toHaveText('きゃ');
-  const tiles=await page.locator('.ma-kana-lesson-tile strong').evaluateAll(nodes=>nodes.map(node=>{const box=node.getBoundingClientRect(),style=getComputedStyle(node);return {height:box.height,line:parseFloat(style.lineHeight),fits:node.scrollWidth<=node.parentElement.clientWidth};}));
-  expect(tiles.every(tile=>tile.height<=tile.line+1&&tile.fits)).toBe(true);
-  await expect(page.getByRole('button',{name:'Continue learning',exact:true})).toBeInViewport();
-  await open(page,'/kana/?view=practice');await expect(page.getByRole('button',{name:'Start practice',exact:true})).toBeInViewport();
-  expect(await page.locator('.ma-kana-session').evaluate(node=>node.getBoundingClientRect().height)).toBeLessThan(330);
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-  await page.getByRole('button',{name:'Start practice',exact:true}).click();
-  await expect(page).toHaveURL(/\/reading\//);await expect(page.locator('body')).toHaveClass(/trainer-session-active/);await page.waitForFunction(()=>window.ModeAtlasKanaLearning&&window.ModeAtlasStorage);expect(await page.evaluate(()=>Object.keys(ModeAtlasKanaLearning.selection(ModeAtlasStorage.readModeJSON('reading','settings',{}),'reading')))).toEqual(['きゃ','きゅ','きょ']);
+for(const width of [320,393])test(`combined kana remain readable in the ${width}px course path`,async({page})=>{
+ await setup(page,{native:true});await page.setViewportSize({width,height:852});await open(page);await page.evaluate(()=>{const L=ModeAtlasKanaLearning,s=L.start('placement'),rows=L.rows.filter(r=>r.script==='hiragana'),index=rows.findIndex(r=>r.group==='yoon');for(const row of rows.slice(0,index))s.placed.reading[row.id]=Date.now();L.save(s);});await open(page,'/kana/?view=path');const row=page.locator('[data-row="hiragana:yoon:ka"]');await row.scrollIntoViewIfNeeded();await expect(row).toContainText('きゃ きゅ きょ');expect(await row.locator('.ma-kana-course-unit-chars').evaluate(n=>n.scrollWidth<=n.clientWidth)).toBe(true);await row.click();await expect(page.locator('.ma-kana-next-chars')).toHaveText('きゃ きゅ きょ');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 
 test('Your path includes every row and reopens old lessons without changing unlocks',async({page})=>{
@@ -247,12 +194,9 @@ test('Your path includes every row and reopens old lessons without changing unlo
   await page.evaluate(()=>{const L=ModeAtlasKanaLearning,s=L.read();for(const row of L.rows.filter(r=>r.script==='hiragana'&&r.group==='base').slice(0,6))s.placed.reading[row.id]=Date.now();L.save(s);});
   await open(page,'/kana/?view=path');
   const expected=await page.evaluate(()=>ModeAtlasKanaLearning.rows.filter(r=>r.script==='hiragana').length);
-  await expect(page.locator('.ma-kana-path-step')).toHaveCount(expected);
+  await expect(page.locator('.ma-kana-course-unit')).toHaveCount(expected);
   await expect(page.locator('[data-row="hiragana:base:a"]')).toBeEnabled();
-  await page.locator('[data-row="hiragana:base:a"]').click();await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');
-  await page.getByRole('button',{name:'Back to Kana',exact:true}).click();
-  await page.locator('.ma-kana-path-group summary').filter({hasText:'Joined sounds'}).click();
-  await expect(page.locator('.ma-kana-path-group').filter({hasText:'Joined sounds'}).locator('.ma-kana-path-step').first()).toBeDisabled();
+  await page.locator('[data-row="hiragana:base:a"]').click();await expect(page.locator('.ma-kana-next-chars')).toHaveText('あ い う え お');await page.getByRole('button',{name:'Back',exact:true}).click();await expect(page.locator('[data-row="hiragana:yoon:ka"]')).toBeDisabled();
 });
 test('Confident, Mastered and Mastered+ have distinct colours in the legend and details',async({page})=>{
   await setup(page);await open(page,'/kana/?view=mastery');
@@ -266,7 +210,7 @@ test('practice presents four equal skill choices and handwriting remains usable'
  await page.setViewportSize({width:393,height:852});await setup(page,{native:true});await open(page);await page.getByRole('button',{name:/Start lesson/}).click();await open(page,'/kana/?view=practice');
  const choices=page.getByRole('group',{name:'Kana skill',exact:true});await expect(choices.getByRole('button')).toHaveText(['Read','Recall','Read + Recall','Handwrite']);
  const boxes=await choices.getByRole('button').evaluateAll(items=>items.map(x=>{const r=x.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width};}));
- expect(Math.abs(boxes[0].w-boxes[3].w)).toBeLessThan(1);expect(boxes[2].y).toBeGreaterThan(boxes[0].y);expect(boxes[2].x).toBe(boxes[0].x);
+ expect(boxes.every(b=>b.w>=44)).toBe(true);expect(await choices.evaluate(n=>n.scrollWidth<=n.clientWidth)).toBe(true);
  await page.screenshot({path:info.outputPath('practice-skills.png')});
  await choices.getByRole('button',{name:'Handwrite',exact:true}).click();await expect(page.getByRole('link',{name:'Open handwriting',exact:true})).toBeVisible();
  await page.getByRole('link',{name:'Open handwriting',exact:true}).click();await expect(page).toHaveURL(/kana\/handwriting/);

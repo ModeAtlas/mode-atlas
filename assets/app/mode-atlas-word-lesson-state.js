@@ -12,8 +12,21 @@
   const eventPattern=/^[0-9a-z]+:[012]:[pt]:[0-9a-z-]{1,60}$/;
   function events(value){return String(value||'').split(',').filter(v=>eventPattern.test(v)).map(v=>{const [at,q,kind,id]=v.split(':');return {at:parseInt(at,36),quality:Number(q),kind,id,encoded:v};});}
   function mergeEvents(a,b){return [...new Map([...events(a),...events(b)].sort((a,b)=>a.encoded.localeCompare(b.encoded)).map(e=>[e.id,e])).values()].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(-16).map(e=>e.encoded).join(',');}
-  function vocabulary(value){if(!value||typeof value!=='object')return null;return {learnedAt:count(value.learnedAt),...Object.fromEntries(vocabularySkills.map(k=>[k,mergeEvents(value[k],'')])),achieved:Object.fromEntries(vocabularySkills.map(k=>[k,count(value.achieved?.[k])])),schedules:Object.fromEntries(vocabularySkills.filter(k=>value.schedules?.[k]).map(k=>[k,{level:Math.min(5,count(value.schedules[k].level)),due:count(value.schedules[k].due),last:count(value.schedules[k].last)}]))};}
+  function vocabulary(value){if(!value||typeof value!=='object')return null;return {learnedAt:count(value.learnedAt),formIntroducedAt:count(value.formIntroducedAt),...Object.fromEntries(vocabularySkills.map(k=>[k,mergeEvents(value[k],'')])),achieved:Object.fromEntries(vocabularySkills.map(k=>[k,count(value.achieved?.[k])])),schedules:Object.fromEntries(vocabularySkills.filter(k=>value.schedules?.[k]).map(k=>[k,{level:Math.min(5,count(value.schedules[k].level)),due:count(value.schedules[k].due),last:count(value.schedules[k].last)}]))};}
   const count=value=>Number.isFinite(Number(value))?Math.max(0,Math.floor(Number(value))):0;
+  // Both word courses keep their resumable task cursor in this existing synced
+  // section. It is not word mastery and never contributes to phrase completion.
+  function course(value){
+    if(!value||typeof value!=='object'||typeof value.id!=='string')return null;
+    const text=v=>typeof v==='string'?v.slice(0,128):'';
+    const task=t=>({id:text(t?.id),mode:text(t?.mode),snapshot:text(t?.snapshot),retry:t?.retry===true,assisted:t?.assisted===true});
+    const taskModes=new Set(['meet','teach',...vocabularySkills,'reading','listening']);
+    const tasks=(Array.isArray(value.tasks)?value.tasks:[]).slice(0,100).map(task).filter(t=>t.id&&taskModes.has(t.mode));
+    return {id:text(value.id),kind:text(value.kind),script:['mixed','personal'].includes(value.script)?value.script:'kana',wordIds:(Array.isArray(value.wordIds)?value.wordIds:[]).map(text).filter(Boolean).slice(0,50),selectionIds:(Array.isArray(value.selectionIds)?value.selectionIds:[]).map(text).filter(Boolean).slice(0,500),milestoneIds:(Array.isArray(value.milestoneIds)?value.milestoneIds:[]).map(text).filter(Boolean).slice(0,6),tasks,
+      cursor:Math.min(tasks.length,count(value.cursor)),phase:['active','task','feedback','complete'].includes(value.phase)?value.phase:'task',
+      results:(Array.isArray(value.results)?value.results:[]).slice(0,100).map(t=>({...task(t),correct:t?.correct===true})),
+      milestone:Math.min(512,count(value.milestone)),finalCheckpoint:value.finalCheckpoint===true,startedAt:count(value.startedAt),completedAt:count(value.completedAt),updatedAt:count(value.updatedAt)};
+  }
   function normalizeReview(row,completedAt=0){
     if(!completedAt)return null;
     return {dueAt:count(row?.dueAt)||completedAt+DAY,
@@ -28,7 +41,9 @@
       application:Math.min(20,count(row.application)),startedAt:count(row.startedAt),
       updatedAt:count(row.updatedAt),completedAt:count(row.completedAt),
       review:normalizeReview(row.review,count(row.completedAt)),
-      ...(vocabulary(row.vocabulary)?{vocabulary:vocabulary(row.vocabulary)}:{})
+      ...(vocabulary(row.vocabulary)?{vocabulary:vocabulary(row.vocabulary)}:{}),
+      ...(course(row.course)?{course:course(row.course)}:{}),
+      ...(row.preferences?{preferences:{script:row.preferences.script==='mixed'?'mixed':'kana',checkpointWords:count(row.preferences.checkpointWords),checkpointed:[...new Set((Array.isArray(row.preferences.checkpointed)?row.preferences.checkpointed:[]).filter(id=>typeof id==='string'&&id.length<=128))].slice(0,512).sort()}}:{})
     }]));
   }
   function read(){return normalize(root.ModeAtlasStorage.json(KEY,{}));}
@@ -39,7 +54,8 @@
       const newer=!old||row.updatedAt>old.updatedAt||(row.updatedAt===old.updatedAt&&JSON.stringify(row)>JSON.stringify(old));
       const reviews=[old?.review,row.review].filter(Boolean).sort((a,b)=>b.updatedAt-a.updatedAt||JSON.stringify(b).localeCompare(JSON.stringify(a)));
       out[id]={...(newer?row:old),completedAt:Math.max(old?.completedAt||0,row.completedAt),review:reviews[0]||null};
-      if(old?.vocabulary||row.vocabulary){const av=old?.vocabulary||{},bv=row.vocabulary||{};out[id].vocabulary={learnedAt:Math.min(av.learnedAt||bv.learnedAt||0,bv.learnedAt||av.learnedAt||0),...Object.fromEntries(vocabularySkills.map(k=>[k,mergeEvents(av[k],bv[k])])),achieved:Object.fromEntries(vocabularySkills.map(k=>[k,Math.max(av.achieved?.[k]||0,bv.achieved?.[k]||0)])),schedules:Object.fromEntries(vocabularySkills.map(k=>{const choices=[av.schedules?.[k],bv.schedules?.[k]].filter(Boolean).sort((a,b)=>b.last-a.last||JSON.stringify(b).localeCompare(JSON.stringify(a)));return [k,choices[0]];}).filter(([,v])=>v))};}
+      if(old?.preferences||row.preferences){const checkpointed=[...new Set([...(old?.preferences?.checkpointed||[]),...(row.preferences?.checkpointed||[])])].sort();out[id].preferences={...(out[id].preferences||old?.preferences||row.preferences),checkpointed,checkpointWords:Math.max(checkpointed.length,old?.preferences?.checkpointWords||0,row.preferences?.checkpointWords||0)};}
+      if(old?.vocabulary||row.vocabulary){const av=old?.vocabulary||{},bv=row.vocabulary||{};out[id].vocabulary={learnedAt:Math.min(av.learnedAt||bv.learnedAt||0,bv.learnedAt||av.learnedAt||0),formIntroducedAt:Math.min(av.formIntroducedAt||bv.formIntroducedAt||0,bv.formIntroducedAt||av.formIntroducedAt||0),...Object.fromEntries(vocabularySkills.map(k=>[k,mergeEvents(av[k],bv[k])])),achieved:Object.fromEntries(vocabularySkills.map(k=>[k,Math.max(av.achieved?.[k]||0,bv.achieved?.[k]||0)])),schedules:Object.fromEntries(vocabularySkills.map(k=>{const choices=[av.schedules?.[k],bv.schedules?.[k]].filter(Boolean).sort((a,b)=>b.last-a.last||JSON.stringify(b).localeCompare(JSON.stringify(a)));return [k,choices[0]];}).filter(([,v])=>v))};}
     }
     return normalize(out);
   }

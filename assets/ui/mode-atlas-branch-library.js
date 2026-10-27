@@ -14,7 +14,7 @@
       const copy=document.createElement('span');copy.className='ma-branch-tile__copy';
       const state=experience[branch.id];
       const status=branch.id==='kana'?(state.attempts?`${state.familiar} familiar`:state.started?'Continue your first row':'Start here'):
-        branch.id==='kanji'?(state.started?`${state.studied} studied`:readiness.kanji.recommended?'Ready to try':`Suggested after ${readiness.kanji.targetRows} familiar hiragana rows`):
+        branch.id==='kanji'?(state.started?`${state.studied} studied`:readiness.kanji.recommended?'Ready to try':'After your first Kana checkpoint'):
         (state.vocabulary?`${state.vocabulary} words · ${state.vocabularyDue} due`:readiness.words.recommended?'Try words with your kana':'Grow your vocabulary as you learn kana');
       const lines=[['strong','title',branch.name],['span','description',branch.description]];
       if(status)lines.push(['span','detail',status]);

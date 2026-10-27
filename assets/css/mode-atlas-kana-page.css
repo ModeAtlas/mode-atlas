@@ -1,219 +1,109 @@
-/* The Kana hub owns its layout. Shared practice and mastery keep their own styles. */
+/* Kana course overview, in-place path and teaching content. Focused task chrome
+   and button states belong to the shared course/component owners. */
 .ma-kana-page{margin:0;background:var(--ma-app-bg);color:var(--ma-text-strong);}
-.ma-kana-journey{max-width:1120px;margin:20px auto 40px;padding:0 16px;box-sizing:border-box;}
-.ma-kana-page-heading{margin-bottom:16px;}
-.ma-kana-page-heading h1{font:800 clamp(1.7rem,4vw,2.5rem)/1.2 var(--ma-font-display);letter-spacing:-.04em;margin:10px 0;}
-.ma-kana-page-heading p{max-width:60ch;font-size:.92rem;margin:10px 0;}
-.ma-kana-start-options{display:grid;grid-template-columns:minmax(0,620px);gap:18px;margin:32px 0;}
-.ma-kana-disclosure{max-width:680px;border-top:1px solid var(--ma-border);padding:16px 0;}
-.ma-kana-disclosure summary{cursor:pointer;min-height:44px;display:list-item;align-content:center;font-weight:650;}
-.ma-kana-disclosure>.ma-button{margin:8px 12px 8px 0;}
-.ma-kana-navigation[hidden]{display:none!important;}
-.ma-kana-lesson>progress{display:block;width:100%;height:6px;accent-color:var(--ma-atlas);}
-.ma-kana-start-options>.ma-button{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;gap:10px;min-height:150px;padding:24px;white-space:normal;}
-.ma-kana-start-options small{font-weight:450;line-height:1.5;}
-.ma-kana-next{--kana-accent:var(--ma-reading);margin:0;padding:24px;border-radius:18px;background:var(--ma-card);border:1px solid var(--ma-border);}
-.ma-kana-next[data-skill="writing"]{--kana-accent:var(--ma-writing);}
-.ma-kana-next[data-skill="handwriting"]{--kana-accent:var(--ma-kana);}
-.ma-kana-next h2{font:750 clamp(1.5rem,3vw,2rem)/1.2 var(--ma-font-display);letter-spacing:-.025em;margin:10px 0;}
-.ma-kana-next-chars{font:500 clamp(1.7rem,6vw,3rem)/1.45 var(--ma-font-jp);letter-spacing:.04em;margin:20px 0;overflow-wrap:anywhere;}
-.ma-kana-next .ma-kana-muted{font-size:.88rem;max-width:48ch;margin:12px 0;}
-.ma-kana-row-progress{display:block;appearance:none;width:100%;height:5px;border:none;border-radius:8px;overflow:hidden;margin:22px 0 8px;background:var(--ma-border);color:var(--kana-accent);}
-.ma-kana-row-progress::-webkit-progress-bar{background:var(--ma-border);border-radius:8px;}
-.ma-kana-row-progress::-webkit-progress-value{background:var(--kana-accent);border-radius:8px;}
-.ma-kana-row-progress::-moz-progress-bar{background:var(--kana-accent);border-radius:8px;}
-.ma-kana-progress-caption{font-size:.75rem;color:var(--ma-muted);}
-.ma-kana-feature-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px 20px;margin-top:20px;}
-.ma-kana-feature-actions>.ma-button{flex:1 1 170px;min-height:48px;}
-.ma-kana-page .ma-kana-text-action{box-shadow:none;appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 0;background:none;border:0;color:var(--ma-text-strong);font:650 .82rem/1.4 var(--ma-font-ui);text-decoration:underline;text-decoration-color:var(--ma-border-strong);text-underline-offset:4px;cursor:pointer;}
-.ma-kana-page .ma-kana-text-action:hover{background:none;text-decoration-color:currentColor;}
-.ma-kana-feature-actions .ma-kana-text-action{flex:0 0 auto;}
-.ma-kana-progress-summary{display:flex;align-items:center;gap:28px;padding:22px 4px;border-bottom:1px solid var(--ma-border);}
-.ma-kana-progress-summary>div{display:grid;gap:5px;}
-.ma-kana-progress-summary strong{font:750 1.4rem/1 var(--ma-font-display);}
-.ma-kana-progress-summary span{font-size:.75rem;color:var(--ma-muted);}
-.ma-kana-progress-summary>a{margin-left:auto;}
-.ma-kana-section-title{font:700 1rem/1.4 var(--ma-font-display);letter-spacing:-.02em;margin:28px 0 4px;}
-.ma-kana-activities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px;}
-.ma-kana-page .ma-kana-activity{appearance:none;display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;align-items:center;min-width:0;min-height:110px;padding:18px;text-align:left;color:var(--ma-text);background:var(--ma-card);border:1px solid var(--ma-border);border-radius:14px;font:inherit;cursor:pointer;}
-.ma-kana-activity[aria-pressed="true"]{border-color:var(--ma-atlas);background:var(--ma-control-active);}
-.ma-kana-activity-mark{font:650 1.25rem/1.3 var(--ma-font-jp);color:var(--ma-atlas);display:grid;place-items:center;min-height:44px;}
-.ma-kana-activity-mark>.ma-icon{width:36px;height:36px;}
-.ma-kana-activity-copy{display:grid;gap:7px;min-width:0;}
-.ma-kana-activity-copy strong{font-size:.86rem;font-weight:700;}
-.ma-kana-activity-copy>span{font-size:.72rem;line-height:1.5;color:var(--ma-muted);}
-.ma-kana-activity-arrow{display:none;}
-.ma-kana-page .ma-kana-activity:hover{border-color:var(--ma-atlas);}
-.ma-kana-review-link{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:10px 14px;margin-top:10px;border-radius:12px;background:var(--ma-card);border:1px solid var(--ma-border);font-size:.8rem;font-weight:650;color:var(--ma-text-strong);text-decoration:none;}
-.ma-kana-review-link::after{content:"→";color:var(--ma-atlas);}
-.ma-kana-placement-link{margin-top:16px;color:var(--ma-muted);}
-.ma-kana-skill-explanation{font-size:.8rem;line-height:1.5;color:var(--ma-muted);margin:8px 0 16px;}
-.ma-kana-selection-summary{font-size:.78rem;font-weight:650;color:var(--ma-text-soft);}
-.ma-kana-adjust{display:flex;margin:4px 0 0 auto;}
-.ma-kana-customize .ma-kana-practice-form{margin:4px 0 20px;}
-.ma-kana-customize>.ma-button{width:100%;}
-.ma-kana-group-title{font:750 1.05rem var(--ma-font-display);margin:32px 0 8px;}
-.ma-kana-check{max-width:520px;margin:24px auto;text-align:center;}
-.ma-kana-check-prompt,.ma-kana-lesson-shape{font:500 clamp(4rem,10vw,7rem)/1.4 var(--ma-font-jp);margin:12px;}
-.ma-kana-check form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin:24px 0;}
-.ma-kana-check input{min-width:0;font-size:18px;border:1px solid var(--ma-border);border-radius:10px;background:var(--ma-surface-inset);color:var(--ma-text-strong);padding:12px;}
-.ma-kana-placement-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:24px 0;}
-.ma-kana-placement-choices button{font:500 2rem var(--ma-font-jp);min-height:70px;}
-.ma-kana-check-feedback{line-height:1.5;margin:24px 0;}
-.ma-kana-assessment-heading{margin-bottom:12px;}.ma-kana-assessment-heading h1{font-size:1.35rem;}.ma-kana-assessment-heading p{margin:4px 0;}
-.ma-kana-check:has(.ma-kana-placement-form){margin:12px auto;}.ma-kana-placement-form~*{margin-top:8px;}
-.ma-kana-check .ma-kana-placement-form{display:flex;flex-direction:column;gap:12px;margin:12px 0;}.ma-kana-placement-keyboard{min-width:0;}.ma-kana-check-actions{display:flex;flex-wrap:wrap;gap:8px;}.ma-kana-check-actions>.ma-button{flex:1 1 140px;min-height:44px;white-space:normal;}
-.ma-kana-placement-form .ma-kana-check-feedback{margin:0;font-size:.85rem;}.ma-kana-placement-finish{display:flex;margin:8px auto;}.ma-kana-assessment-heading+.ma-kana-check .ma-kana-check-prompt{font-size:clamp(3.5rem,12vw,5rem);margin:4px;}
-.ma-kana-lesson{text-align:center;max-width:960px;margin:auto;}
-.ma-kana-lesson-reading{font-size:1.5rem;}
-.ma-kana-lesson .ma-pronunciation{justify-content:center;margin:12px;}
-.ma-kana-lesson>p{color:var(--ma-muted);line-height:1.6;}
-.ma-kana-lesson-steps,.ma-kana-row-itinerary{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 18px;list-style:none;margin:14px 0;padding:0;color:var(--ma-muted);font-size:.76rem;}
-.ma-kana-lesson-steps [aria-current],.ma-kana-row-itinerary [aria-current]{color:var(--ma-text-strong);font-weight:750;border-bottom:2px solid var(--ma-reading);}
-.ma-kana-lesson-task{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:center;margin:16px 0;}
-.ma-kana-lesson-copy{min-width:0;text-align:left;line-height:1.5;}.ma-kana-lesson-copy h2{font-size:.95rem;margin:12px 0 5px;}.ma-kana-lesson-copy p{font-size:.88rem;color:var(--ma-muted);margin:5px 0 14px;}
-.ma-kana-lesson-question{max-width:540px;margin:16px auto;}.ma-kana-lesson-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}.ma-kana-lesson-choices .ma-button{min-width:0;font:500 1.8rem/1.4 var(--ma-font-jp);min-height:56px;}
-.ma-kana-lesson-answer{display:grid;gap:10px;min-width:0;}.ma-kana-lesson-answer label{font-size:.85rem;}.ma-kana-lesson-answer input{width:100%;min-width:0;box-sizing:border-box;min-height:48px;padding:10px;font:inherit;border:1px solid var(--ma-border);border-radius:10px;background:var(--ma-card);color:var(--ma-text-strong);}
-.ma-kana-lesson-feedback:empty{display:none;}.ma-kana-lesson-feedback{font-size:.85rem;}.ma-kana-lesson>.ma-button{min-height:48px;}
-.ma-kana-row-itinerary{justify-content:flex-start;}.ma-kana-branch-invite{margin-top:18px;padding-top:18px;border-top:1px solid var(--ma-border);}.ma-kana-branch-invite h2{font-size:1.15rem;}
-.ma-kana-sound-workshop>section{padding:12px 0;border-bottom:1px solid var(--ma-border);}.ma-kana-sound-workshop>.ma-button{margin:8px 10px 8px 0;}
-@media(min-width:660px){.ma-kana-lesson-task:not(.ma-kana-lesson-question){grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}}
-@media(max-height:540px) and (min-width:600px){.ma-kana-lesson-task{margin:8px 0;}.ma-kana-lesson-shape{font-size:4rem;margin:4px;}.ma-kana-lesson-steps{margin:8px 0;}.ma-kana-lesson-copy p{margin-bottom:8px;}}
-html[data-ma-large-text] .ma-kana-lesson-task{grid-template-columns:1fr;}
-.ma-kana-test-row{padding:20px 0;border-bottom:1px solid var(--ma-border);}
-.ma-kana-test-row h2{font-size:1.3rem;}
-.ma-kana-journey .ma-kana-practice-form{margin:24px 0;}
-.ma-kana-journey :is(button,a,input,select,summary):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
+.ma-kana-journey{max-width:1080px;margin:20px auto 40px;padding:0 16px;box-sizing:border-box;}
+.ma-kana-page-heading{margin:0 0 20px;}
+.ma-kana-page-heading h1{font:750 clamp(1.6rem,4vw,2.4rem)/1.2 var(--ma-font-display);letter-spacing:-.035em;margin:8px 0;}
+.ma-kana-page-heading p,.ma-kana-muted{color:var(--ma-muted);line-height:1.5;}
+.ma-kana-overview-heading{display:grid;grid-template-columns:minmax(0,1fr) 100px;column-gap:16px;align-items:center;max-width:740px;}
+.ma-kana-overview-heading>.ma-kicker,.ma-kana-overview-heading>h1{grid-column:1;}
+.ma-kana-course-art{grid-column:2;grid-row:1/3;display:block;width:100%;height:auto;max-height:84px;object-fit:contain;}
+.ma-kana-start-options,.ma-kana-course-links{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.ma-kana-start-options>.ma-button{min-height:48px;}
+.ma-kana-next-chars{font:500 clamp(1.8rem,6vw,3rem)/1.45 var(--ma-font-jp);letter-spacing:.04em;margin:16px 0;overflow-wrap:anywhere;}
+.ma-kana-course-next{display:grid;gap:16px;max-width:740px;padding:24px;border:1px solid var(--ma-border);border-radius:18px;background:var(--ma-card);}
+.ma-kana-course-next h2{font:750 clamp(1.35rem,3vw,1.8rem)/1.3 var(--ma-font-display);margin:0;letter-spacing:-.025em;}
+.ma-kana-course-next p{margin:0;}
+.ma-kana-course-next>.ma-button{justify-self:start;min-height:48px;min-width:180px;}
+.ma-kana-course-links{margin-top:18px;}
+.ma-kana-course-invite{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:20px;font-size:.88rem;}
+.ma-kana-segments{display:flex;gap:8px;flex-wrap:wrap;}
+.ma-kana-segments>.ma-button{min-height:44px;}
+.ma-kana-course-unit-group{display:grid;gap:0;margin:12px 0;}
+.ma-kana-course-unit-group>h2{margin:0 0 12px;}
+.ma-kana-course-unit{appearance:none;display:grid;grid-template-columns:minmax(95px,.7fr) minmax(100px,1fr) minmax(100px,.8fr);align-items:center;gap:14px;min-height:68px;text-align:left;padding:14px 16px;border:0;border-top:1px solid var(--ma-border);background:none;color:var(--ma-text-strong);font:inherit;cursor:pointer;}
+.ma-kana-course-unit:last-child{border-bottom:1px solid var(--ma-border);}
+.ma-kana-course-unit:hover{background:var(--ma-card);}
+.ma-kana-course-unit[aria-current]{background:var(--ma-control-active);box-shadow:inset 3px 0 var(--ma-atlas);}
+.ma-kana-course-unit:disabled{color:var(--ma-muted);cursor:default;}
+.ma-kana-course-unit strong{font-size:.95rem;}
+.ma-kana-course-unit-chars{font:500 1.1rem/1.6 var(--ma-font-jp);overflow-wrap:anywhere;}
+.ma-kana-course-unit small{font-size:.76rem;line-height:1.5;color:var(--ma-muted);}
+.ma-kana-pattern-unit{justify-self:start;min-height:44px;}
+.ma-kana-unit-progress{display:grid;gap:10px;padding-left:22px;margin:0;line-height:1.5;}
+.ma-kana-teaching{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:24px;align-items:center;}
+.ma-kana-teaching-visual{display:grid;justify-items:center;gap:10px;}
+.ma-kana-teaching-visual .ma-kana-task-glyph{font-size:clamp(64px,12vw,112px);}
+.ma-kana-task-glyph{font:500 clamp(4rem,12vw,7rem)/1.2 var(--ma-font-jp);text-align:center;margin:8px 0;overflow-wrap:anywhere;}
+.ma-kana-task-reading{display:block;text-align:center;font-size:1.55rem;line-height:1.3;}
+.ma-kana-teaching-copy{display:grid;gap:10px;line-height:1.5;}
+.ma-kana-teaching-copy>p{font-size:.94rem;color:var(--ma-muted);}
+.ma-kana-teaching-copy>p>strong{color:var(--ma-text-strong);}
+.ma-kana-teaching-copy>.ma-button{justify-self:start;margin-top:4px;min-height:44px;}
+.ma-kana-task-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px;width:100%;max-width:700px;margin:8px auto;}
+.ma-kana-task-choices>.ma-button{min-width:0;min-height:70px;font:500 2rem/1.3 var(--ma-font-jp);white-space:normal;overflow-wrap:anywhere;}
+.ma-kana-task-cue{font:500 1.2rem/1.5 var(--ma-font-jp);text-align:center;color:var(--ma-muted);padding:12px;background:var(--ma-card);border-radius:12px;}
+.ma-kana-task-prompt{font-size:1.1rem;}
+.ma-kana-task-form{display:grid;gap:12px;width:100%;max-width:520px;margin:auto;}
+.ma-kana-task-form label{font-weight:650;font-size:.88rem;}
+.ma-kana-task-form input{font-size:18px;min-height:48px;width:100%;padding:10px 12px;border:1px solid var(--ma-border);border-radius:10px;background:var(--ma-card);color:var(--ma-text-strong);}
+.ma-kana-task-form>.ma-button{min-height:48px;}
+.ma-kana-pattern-example{display:grid;gap:12px;padding:12px 0;border-bottom:1px solid var(--ma-border);}
+.ma-kana-pattern-spelling{font:500 1.5rem/1.5 var(--ma-font-jp);}
+.ma-kana-pattern-example .ma-pronunciation{justify-content:flex-start;}
+.ma-kana-page .ma-course-body>.ma-pronunciation{justify-content:center;}
+.ma-kana-test-row{display:grid;gap:12px;padding:18px 0;border-bottom:1px solid var(--ma-border);}
+/* The starting-point assessment remains a separate, optional entry flow. */
+.ma-kana-check{max-width:600px;margin:16px auto;text-align:center;}
+.ma-kana-check-prompt{font:500 clamp(3.5rem,12vw,5rem)/1.3 var(--ma-font-jp);margin:8px;}
+.ma-kana-placement-form{display:grid;gap:12px;}
+.ma-kana-placement-form input{width:100%;box-sizing:border-box;min-width:0;font-size:18px;min-height:48px;padding:12px;border:1px solid var(--ma-border);border-radius:10px;background:var(--ma-card);color:var(--ma-text-strong);}
+.ma-kana-check-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.ma-kana-check-actions>.ma-button{flex:1 1 160px;min-height:44px;}
+.ma-kana-placement-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0;}
+.ma-kana-placement-choices>.ma-button{min-height:64px;font:500 2rem/1.3 var(--ma-font-jp);}
+.ma-kana-check-feedback{line-height:1.5;}
+.ma-kana-placement-finish{display:block;margin:16px auto;min-height:44px;}
+.ma-kana-placement-keyboard{min-width:0;}
+.ma-kana-page :is(button,a,input,summary):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
 @media(max-width:600px){
-  .ma-kana-journey{padding:0 6px;margin-top:16px;}
-  .ma-kana-page-heading{margin-bottom:14px;}
-  .ma-kana-page-heading h1{font-size:1.4rem;margin:6px 0;}
-  .ma-kana-page-heading p{font-size:.85rem;}
-  .ma-kana-start-options{grid-template-columns:1fr;}
-  .ma-kana-start-options>.ma-button{min-height:115px;padding:20px;}
-  .ma-kana-next{padding:18px;margin-top:0;}
-  .ma-kana-next-chars{margin:16px 0;}
-  .ma-kana-feature-actions{gap:6px 12px;}
-  .ma-kana-feature-actions>.ma-button{flex-basis:150px;}
-  .ma-kana-progress-summary{gap:22px;}
-  .ma-kana-check form{grid-template-columns:1fr;}
-  .ma-kana-lesson-visual{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);align-items:center;column-gap:8px;}
-  .ma-kana-lesson-visual .ma-kana-lesson-shape{grid-row:1/3;font-size:4rem;margin:4px;}
-  .ma-kana-lesson-visual .ma-pronunciation{margin:8px 0;gap:6px;}
-  .ma-kana-lesson-visual .ma-pronunciation .ma-button{padding:8px 10px;}
-  .ma-kana-lesson-task{gap:8px;margin:10px 0;}
-  .ma-kana-lesson-copy h2{margin-top:8px;}
-  .ma-kana-lesson-copy p{margin-bottom:10px;}
-
+ .ma-kana-journey{padding:0 12px;margin-top:12px;}
+ .ma-kana-page-heading{margin-bottom:16px;}
+ .ma-kana-overview-heading{grid-template-columns:minmax(0,1fr) 72px;gap:0 12px;}
+ .ma-kana-course-next{padding:18px;gap:14px;}
+ .ma-kana-course-next>.ma-button{width:100%;}
+ .ma-kana-course-links>.ma-button{flex:1 1 130px;min-height:44px;}
+ .ma-kana-course-unit{grid-template-columns:minmax(80px,.7fr) minmax(0,1.3fr);gap:6px 10px;padding:12px;}
+ .ma-kana-course-unit small{grid-column:2;}
+ .ma-kana-teaching{grid-template-columns:1fr;gap:12px;}
+ .ma-kana-teaching-visual{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:6px;}
+ .ma-kana-teaching-visual .ma-kana-task-glyph{grid-row:1/3;font-size:72px;margin:0;}
+ .ma-kana-teaching-visual .ma-pronunciation{gap:6px;}
+ .ma-kana-teaching-visual .ma-pronunciation>.ma-button{padding:10px;}
+ .ma-kana-teaching-copy{gap:8px;}
+ .ma-kana-teaching-copy p{font-size:.88rem;}
+ .ma-kana-task-choices{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+ .ma-kana-task-choices>.ma-button{font-size:1.6rem;min-height:60px;padding:10px 8px;}
 }
-
-body[data-effective-display-mode="phone"] .ma-kana-journey{max-width:560px;}
-
-.ma-kana-journey>.ma-kana-segments,.ma-kana-practice-intro>.ma-kana-segments{max-width:540px;}
-.ma-kana-workspace{display:grid;grid-template-columns:minmax(0,1fr);max-width:860px;align-items:start;gap:24px;margin-top:18px;}
-.ma-kana-learning-stage,.ma-kana-practice-stage{min-width:0;}
-.ma-kana-practice-intro{min-width:0;}
-.ma-kana-lesson-tiles{display:grid;grid-template-columns:repeat(var(--kana-tile-count,5),minmax(0,1fr));gap:10px;margin:20px 0;}
-.ma-kana-lesson-tile{display:grid;place-items:center;gap:7px;min-width:0;min-height:92px;padding:12px 3px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-control-active);color:var(--ma-text);cursor:pointer;}
-.ma-kana-lesson-tile strong{font:550 2.2rem/1.2 var(--ma-font-jp);white-space:nowrap;overflow-wrap:normal;}.ma-kana-lesson-tile>span{font-size:.8rem;color:var(--ma-muted);}
-.ma-kana-path-preview{padding:4px 0;min-width:0;}
-.ma-kana-path-preview>.ma-kicker{font-size:.64rem;color:var(--ma-muted);}
-.ma-kana-path-preview h2{font-size:1.1rem;letter-spacing:-.025em;margin:8px 0;}
-.ma-kana-path-summary{font-size:.74rem;color:var(--ma-muted);margin:0 0 14px;}
-.ma-kana-path-group{border-top:1px solid var(--ma-border);}
-.ma-kana-path-group summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;cursor:pointer;font-size:.8rem;}
-.ma-kana-path-group summary::after{content:"+";font-size:1.2rem;}
-.ma-kana-path-group[open] summary::after{content:"−";}
-.ma-kana-path-group summary>span{margin-left:auto;color:var(--ma-muted);font-size:.72rem;}
-.ma-kana-path-steps{padding-bottom:12px;}
-.ma-kana-path-trail{display:none;}
-.ma-kana-path-step .ma-kana-path-characters{font-family:var(--ma-font-jp);line-height:1.5;}
-.ma-kana-path-step{display:flex;align-items:center;gap:14px;width:100%;padding:12px 0;min-height:72px;text-align:left;border:0;background:transparent;color:var(--ma-text);cursor:pointer;position:relative;}
-.ma-kana-path-step:not(:last-of-type)::after{content:'';position:absolute;left:22px;top:calc(50% + 23px);bottom:0;width:2px;background:var(--ma-border);}
-.ma-kana-path-marker{display:grid;place-items:center;flex:0 0 46px;height:46px;border:1px solid var(--ma-border);border-radius:50%;background:var(--ma-card);font:650 1rem var(--ma-font-jp);white-space:nowrap;}
-.ma-kana-path-step[data-current="true"] .ma-kana-path-marker{background:var(--ma-primary);border-color:var(--ma-primary);color:var(--ma-primary-text);}
-.ma-kana-path-step>span:last-child{display:grid;gap:5px;}.ma-kana-path-step strong{font-size:.8rem;}.ma-kana-path-step small{font-size:.7rem;color:var(--ma-muted);}
-.ma-kana-path-step:disabled{opacity:.6;cursor:default;}
-.ma-kana-session:has(.ma-kana-instrument){display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:16px 20px;align-items:start;}
-.ma-kana-session-copy{min-width:0;}
-.ma-kana-session-copy h2{margin:10px 0 12px;}
-.ma-kana-session .ma-kana-feature-actions{grid-column:1/-1;margin:0;gap:10px;}
-.ma-kana-session .ma-kana-feature-actions>.ma-button{flex:1;}
-.ma-kana-instrument{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--ma-control-active);border-radius:16px;min-width:0;height:174px;box-sizing:border-box;padding:14px 8px;align-self:center;}
-.ma-kana-instrument .ma-kicker{font-size:.55rem;text-align:center;letter-spacing:.06em;color:var(--ma-muted);}
-.ma-kana-instrument-glyph{font:500 3.5rem/1.2 var(--ma-font-jp);white-space:nowrap;color:var(--ma-atlas);}
-.ma-kana-instrument-glyph[data-combined="true"]{font-size:2rem;}
-.ma-kana-instrument-answer{font-size:1.25rem;border-top:1px solid var(--ma-border);padding-top:6px;width:70%;text-align:center;}
-@media(max-width:760px){
- .ma-kana-workspace{grid-template-columns:1fr;gap:28px;}
- .ma-kana-path-preview{padding-top:20px;border-top:1px solid var(--ma-border);}
- .ma-kana-lesson-tiles{gap:6px;margin:18px 0;}.ma-kana-lesson-tile{min-height:76px;}.ma-kana-lesson-tile strong{font-size:2rem;}
- .ma-kana-activities{gap:10px;}.ma-kana-page .ma-kana-activity{grid-template-columns:1fr;gap:5px;padding:14px;min-height:115px;}.ma-kana-activity-mark{justify-self:start;}
- .ma-kana-session:has(.ma-kana-instrument){grid-template-columns:minmax(0,1fr) 84px;gap:14px;}.ma-kana-session h2{font-size:1.35rem;}.ma-kana-instrument{height:140px;gap:8px;}.ma-kana-instrument-glyph{font-size:2.6rem;}.ma-kana-instrument .ma-kicker{font-size:.5rem;}
+@media(max-height:520px) and (min-width:600px){
+ .ma-kana-page-heading h1{font-size:1.5rem;}
+ .ma-kana-overview-heading{margin-bottom:12px;}
+ .ma-kana-course-next{grid-template-columns:minmax(0,1fr) auto;padding:18px;gap:10px 18px;}
+ .ma-kana-course-next>:not(.ma-button){grid-column:1;}
+ .ma-kana-course-next>.ma-button{grid-column:2;grid-row:1/4;align-self:center;}
+ .ma-kana-course-links{margin-top:12px;}
+ .ma-kana-teaching{gap:20px;}
+ .ma-kana-teaching-visual{gap:6px;}
+ .ma-kana-teaching-visual .ma-kana-task-glyph{font-size:72px;margin:0;}
+ .ma-kana-teaching-visual .ma-kana-task-reading{font-size:1.2rem;}
+ .ma-kana-task-glyph{font-size:4rem;}
+ .ma-kana-teaching-copy{gap:6px;}
+ .ma-kana-teaching-copy p{font-size:.85rem;}
+ .ma-kana-task-choices>.ma-button{min-height:56px;}
 }
-@media(max-width:360px){.ma-kana-journey{padding:0 6px;}.ma-kana-next{padding:16px;}.ma-kana-session h2{font-size:1.4rem;}.ma-kana-lesson-tile strong{font-size:1.8rem;}}
-html[data-ma-large-text] .ma-kana-workspace{grid-template-columns:1fr;}
-html[data-ma-large-text] .ma-kana-session:has(.ma-kana-instrument){display:block;}
-html[data-ma-large-text] .ma-kana-instrument{display:none;}
-
-body[data-effective-display-mode="tablet"] .ma-kana-journey{max-width:1000px;}
-
-/* The same curriculum renders as a winding route in the native app. */
-html[data-ma-runtime="ios"] .ma-kana-path-steps{position:relative;padding:0;}
-html[data-ma-runtime="ios"] .ma-kana-path-trail{display:block;position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--ma-border);stroke-width:3;stroke-dasharray:5 5;pointer-events:none;}
-html[data-ma-runtime="ios"] .ma-kana-path-step{width:56%;height:128px;min-height:128px;padding:4px 0 12px;flex-direction:column;gap:6px;text-align:center;}
-html[data-ma-runtime="ios"] .ma-kana-path-step:nth-of-type(even){margin-left:44%;}
-html[data-ma-runtime="ios"] .ma-kana-path-step::after{display:none;}
-html[data-ma-runtime="ios"] .ma-kana-path-step>span:last-child{gap:3px;background:var(--ma-bg);border-radius:10px;padding:2px 6px;}
-html[data-ma-runtime="ios"] .ma-kana-path-marker{flex:0 0 46px;width:46px;box-shadow:0 4px 0 var(--ma-border);}
-html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-trail{display:none;}
-html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-step{height:auto;min-height:128px;}
-
-.ma-kana-practice-skills{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));}
-@media(max-width:600px){.ma-kana-practice-skills{grid-template-columns:repeat(2,minmax(0,1fr));}}
-
-/* The full path is an explicit destination; a wide view can show the current
-   row beside it without adding more controls to the beginner welcome. */
-.ma-kana-path-layout{display:grid;gap:24px;margin:20px 0;align-items:start;}
-.ma-kana-path-current{min-width:0;}
-.ma-kana-path-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 16px;align-items:center;}
-.ma-kana-path-heading>:is(h1,.ma-kicker){grid-column:1;}
-.ma-kana-path-heading>.ma-button{grid-column:2;grid-row:1/span 2;}
-.ma-kana-path-options{display:grid;gap:0 12px;}
-html[data-ma-runtime="ios"] .ma-kana-journey{width:100%;max-width:1120px;container:kana / inline-size;padding-inline:6px;}
-@media(max-height:740px){
- html[data-ma-runtime="ios"] .ma-kana-journey{margin-top:12px;}
- html[data-ma-runtime="ios"] .ma-kana-page-heading{margin-bottom:12px;}
- html[data-ma-runtime="ios"] .ma-kana-page-heading h1{font-size:1.6rem;margin:6px 0;}
- html[data-ma-runtime="ios"] .ma-kana-skill-explanation{margin-bottom:10px;}
- html[data-ma-runtime="ios"] .ma-kana-workspace{margin-top:12px;}
- html[data-ma-runtime="ios"] .ma-kana-session{padding:16px;}
- html[data-ma-runtime="ios"] .ma-kana-session h2{font-size:1.45rem;}
- html[data-ma-runtime="ios"] .ma-kana-instrument{height:124px;}
-}
-/* Short windows place the choices beside the task, leaving Start in view.
-   Container rem units return to one column when larger text needs the width. */
-@media(max-height:540px){
- @container kana (min-width:28rem){
-  html[data-ma-runtime="ios"] .ma-kana-practice-layout{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:16px;align-items:start;}
-  html[data-ma-runtime="ios"] .ma-kana-practice-layout .ma-kana-workspace{margin-top:0;}
-  html[data-ma-runtime="ios"] .ma-kana-practice-skills{grid-template-columns:repeat(2,minmax(0,1fr));}
-  html[data-ma-runtime="ios"] .ma-kana-practice-skills .ma-button{min-width:0;white-space:normal;}
-  html[data-ma-runtime="ios"] .ma-kana-practice-layout .ma-kana-page-heading h1{font-size:1.35rem;}
-  html[data-ma-runtime="ios"] .ma-kana-session:has(.ma-kana-instrument){grid-template-columns:minmax(0,1fr) 52px;gap:8px;}
-  html[data-ma-runtime="ios"] .ma-kana-session h2{font-size:1.2rem;margin:6px 0;}
-  html[data-ma-runtime="ios"] .ma-kana-session .ma-kana-muted{margin:8px 0;}
-  html[data-ma-runtime="ios"] .ma-kana-instrument{height:100px;padding:8px 4px;gap:4px;}
-  html[data-ma-runtime="ios"] .ma-kana-instrument-glyph{font-size:2rem;}
-  html[data-ma-runtime="ios"] .ma-kana-instrument-answer{font-size:1rem;}
- }
-}
-@container kana (min-width:740px){
- html[data-ma-runtime="ios"] .ma-kana-path-layout{grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:28px;}
- html[data-ma-runtime="ios"] .ma-kana-path-options{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}
- html[data-ma-runtime="ios"] .ma-kana-path-heading h1{font-size:1.8rem;}
-}
-html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-layout{grid-template-columns:1fr;}
-html[data-ma-runtime="ios"][data-ma-large-text] .ma-kana-path-options{grid-template-columns:1fr;}
-html[data-ma-large-text] .ma-kana-path-heading{grid-template-columns:1fr;}
-html[data-ma-large-text] .ma-kana-path-heading>.ma-button{grid-column:1;grid-row:auto;justify-self:start;}
+html[data-ma-large-text] .ma-kana-course-unit{grid-template-columns:1fr;}
+html[data-ma-large-text] .ma-kana-course-unit small{grid-column:auto;}
+/* Explicit display preferences use the same course, at the chosen width. */
+body[data-effective-display-mode="phone"] .ma-kana-journey{max-width:640px;}
+body[data-effective-display-mode="tablet"] .ma-kana-journey{max-width:1080px;}
+body[data-effective-display-mode="phone"] .ma-kana-teaching{grid-template-columns:1fr;}

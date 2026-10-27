@@ -101,6 +101,8 @@ html[data-ma-runtime="ios"] .ma-ios-profile{display:flex;align-items:center;just
 html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__avatar{width:30px;height:30px;min-width:30px;font-size:1rem;}
 html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__action-label{display:none;}
 html[data-ma-runtime="ios"] .ma-ios-page-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;}
+/* Focused course views supply their own single exit and heading. */
+html[data-ma-runtime="ios"] body:has(.ma-course-view) .ma-ios-page-tools{display:none;}
 html[data-ma-runtime="ios"] .ma-ios-page-tools a{display:flex;align-items:center;min-height:44px;color:var(--ma-muted);text-decoration:none;font-weight:750;}
 html[data-ma-runtime="ios"] .ma-ios-practice-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;margin-bottom:10px;}
 html[data-ma-runtime="ios"] .ma-ios-practice-actions :is(#modifiersTab,#studyNavHideBtn){

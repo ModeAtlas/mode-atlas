@@ -167,7 +167,7 @@ jobs:
           retention-days: 7
 
   webkit-check:
-    name: WebKit results, rewards, and Help
+    name: WebKit learning journeys, results, and Help
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -181,7 +181,7 @@ jobs:
           npm ci --ignore-scripts --registry=https://registry.npmjs.org/
           npx playwright install --with-deps webkit
           python3 build_ios_fonts.py
-      - name: Check adaptive outcomes and reference help
+      - name: Check learning journeys, adaptive outcomes, and reference help
         env:
           MODE_ATLAS_TEST_REPORT: .build/test-reports/webkit.json
         run: npm run test:webkit -- --workers=2

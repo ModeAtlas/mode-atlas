@@ -4,13 +4,13 @@
   const host=document.getElementById('maKanjiResults');if(!host)return;
   const results=root.ModeAtlasKanjiResults,content=root.ModeAtlasKanjiContent;
   let selected='',filter='all';
-  const labels={pronunciation:'Pronunciation',meaning:'Meaning',match:'Meaning Match'};
+  const labels={pronunciation:'Reading',meaning:'Meaning',match:'Meaning Match'};
   const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
   const link=(label,href)=>{const a=el('a','ma-button ma-button--ghost',label);a.href=href;return a;};
   function render(){
     const all=results.read(),rows=all.filter(r=>filter==='all'||r.mode===filter);host.replaceChildren();
     const controls=el('div','ma-kanji-actions');
-    for(const [value,label]of [['all','All tests'],['pronunciation','Pronunciation'],['meaning','Meaning'],['match','Meaning Match']]){
+    for(const [value,label]of [['all','All tests'],['pronunciation','Reading'],['meaning','Meaning'],['match','Meaning Match']]){
       const b=el('button','ma-button ma-button--ghost',label);b.type='button';b.setAttribute('aria-pressed',String(value===filter));b.addEventListener('click',()=>{filter=value;render();});controls.append(b);
     }if(all.length)host.append(controls);
     if(!rows.length){

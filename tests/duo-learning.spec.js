@@ -32,13 +32,14 @@ test('expanded Kana keeps its next action visible and handwriting gives the boar
  await setup(page);await page.setViewportSize({width:960,height:680});await nativeGeometry(page,wideGeometry);
  await page.goto('/kana/');await page.getByRole('button',{name:/Start lesson/}).click();await page.goto('/kana/?view=path');
  await page.evaluate(layout=>updateViewportFixture(layout),wideGeometry);
+ await page.locator('.ma-kana-course-unit:enabled').first().click();
  const next=page.getByRole('button',{name:'Learn this row',exact:true});await expect(next).toBeVisible();
  const action=await next.boundingBox();expect(action.y+action.height).toBeLessThan(660);
- const current=await page.locator('.ma-kana-path-current').boundingBox(),path=await page.locator('.ma-kana-path-preview').boundingBox();expect(path.x).toBeGreaterThan(current.x+current.width);
- await next.click();await page.getByRole('button',{name:'See the strokes',exact:true}).click();
+ await expect(page.locator('.ma-course-view[data-kind=path]')).toHaveCount(1);await expect(page.getByRole('dialog')).toHaveCount(0);
+ await next.click();await page.getByRole('button',{name:'Try the strokes',exact:true}).click();
  const board=await page.locator('.ma-handwriting-board').boundingBox();expect(board.width).toBeGreaterThanOrEqual(340);
  const close=page.getByRole('button',{name:'Close',exact:true});await expect(close).toBeInViewport();await close.click();
- await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');
+ await expect(page.locator('.ma-kana-task-glyph')).toHaveText('あ');
 });
 test('native dock shares the system side region, follows occlusions and moves back in portrait',async({page})=>{
  await setup(page);await page.setViewportSize({width:960,height:680});await nativeGeometry(page,wideGeometry);await page.goto('/');
@@ -69,16 +70,18 @@ test('native dock shares the system side region, follows occlusions and moves ba
  await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Settings',exact:true}).click();
  await page.getByRole('button',{name:'Close account menu',exact:true}).click();await expect(page.locator('#maAccountSheet')).toBeHidden();
 });
-test('expanded Home shows all branch cards without scrolling and Learn adapts to its content width',async({page},info)=>{
+test('expanded Home continuation is visible and Learn owns the responsive branch directory',async({page},info)=>{
  await setup(page);await page.setViewportSize({width:960,height:680});await nativeGeometry(page,wideGeometry);await page.goto('/');
  await page.evaluate(layout=>updateViewportFixture(layout),wideGeometry);
  await expect(page.locator('#maLoadingScreen')).toBeHidden();
  const hero=await page.locator('.atlas-home-learning').boundingBox();expect(hero.height).toBeLessThan(310);
- const cards=page.locator('.ma-branch-tile');await expect(cards).toHaveCount(3);
- for(const card of await cards.all()){const r=await card.boundingBox();expect(r.y+r.height).toBeLessThanOrEqual(660);}
+ const next=page.locator('.atlas-home-learning .ma-button--primary');await expect(next).toBeInViewport({ratio:1});
+ await expect(page.locator('.ma-branch-tile')).toHaveCount(0);await expect(page.locator('.atlas-home-directory')).toBeInViewport({ratio:1});
  await page.screenshot({path:info.outputPath('home-wide.png')});
  await page.locator('.ma-ios-tab').filter({hasText:'Learn'}).click();await page.evaluate(layout=>updateViewportFixture(layout),wideGeometry);
  await expect(page.getByRole('heading',{name:'Learn',exact:true})).toBeVisible();
+ const cards=page.locator('.ma-branch-tile');await expect(cards).toHaveCount(3);
+ for(const card of await cards.all()){const r=await card.boundingBox();expect(r.y+r.height).toBeLessThanOrEqual(660);}
  await page.setViewportSize({width:720,height:680});await insets(page,0,84);
  await expect.poll(()=>page.locator('.ma-branch-library').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length)).toBe(2);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(720);

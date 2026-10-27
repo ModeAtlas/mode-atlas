@@ -58,5 +58,18 @@
       }
     }return view;
   }
-  root.ModeAtlasKanjiLesson=Object.freeze({mount});
+  function course(char,{onWriting,onRomaji}={}){
+    const entry=content.get(char),lesson=teaching.lesson(entry),data=root.ModeAtlasKanjiCourse,roman=state.read().settings.romaji;
+    const view=el('section','ma-kanji-course-teaching'),shape=el('div','ma-kanji-shape'),word=el('div','ma-kanji-word');
+    const glyph=el('div','ma-kanji-glyph',char);glyph.lang='ja';const shapeHeading=el('div','ma-kanji-shape-heading');shapeHeading.append(glyph,el('span','ma-kicker','Character'),el('h2','',lesson.meaning));shape.append(shapeHeading);
+    const component=data.components[char],contrast=data.contrasts[char];
+    if(component){const parts=el('div','ma-kanji-components');parts.setAttribute('aria-label','Shape components');for(const part of component.parts){const item=el('span','',part);item.lang='ja';parts.append(item);}shape.append(parts);}
+    shape.append(el('p','ma-kanji-memory-cue',component?.note||lesson.cue));
+    if(contrast){const pair=el('div','ma-kanji-contrast'),marks=el('div','',`${char}   ${contrast.other}`);marks.lang='ja';pair.append(marks,el('p','',contrast.note));shape.append(pair);}
+    word.append(el('span','ma-kicker','Word'),el('h2','ma-kanji-word-written',lesson.word),el('p','ma-kanji-focus-reading',roman?content.romaji(lesson.reading):lesson.reading),el('p','ma-kanji-word-meaning',lesson.gloss),root.ModeAtlasPronunciation.controls(lesson.reading));
+    const toggle=el('button','ma-kanji-text-button',roman?'Show kana':'Show romaji');toggle.type='button';toggle.addEventListener('click',()=>{state.settings({romaji:!roman});onRomaji?.();});word.append(toggle);
+    if(onWriting){const write=el('button','ma-button ma-button--ghost','Try writing');write.type='button';write.addEventListener('click',()=>root.ModeAtlasHandwriting.open(char,{pronunciation:lesson.reading,onComplete:event=>{state.recordWriting(char,event);onWriting(event);}}));shape.append(write);}
+    view.append(shape,word);return view;
+  }
+  root.ModeAtlasKanjiLesson=Object.freeze({mount,course});
 })(window);

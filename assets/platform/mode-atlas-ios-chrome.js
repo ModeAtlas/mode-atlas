@@ -47,8 +47,12 @@
       else if(header?.querySelector('.ma-ios-practice-actions'))header.querySelector('.ma-ios-practice-actions').append(profile);
       else {
         const bar=document.createElement('div');bar.className='ma-ios-page-tools';
-        const back=document.createElement('a');back.href=root.AtlasPlatform.destinationPath('learn');back.textContent='‹ Learn';
-        bar.append(back,profile);if(resultsNav)resultsNav.before(bar);else document.querySelector('.shell,.wrap,main')?.prepend(bar);
+        const localBack=document.querySelector('[data-ma-page-back]');
+        const localHeader=localBack?.closest('header');
+        const back=localBack||document.createElement('a');
+        if(!localBack){back.href=root.AtlasPlatform.destinationPath('learn');back.textContent='‹ Learn';}
+        bar.append(back,profile);
+        if(resultsNav)resultsNav.before(bar);else if(localHeader)localHeader.before(bar);else document.querySelector('.shell,.wrap,main')?.prepend(bar);
       }
     }
     if(exit){

@@ -40,13 +40,13 @@ test('Kana navigation leaves a daily session and avoids reloading the same pract
   await page.locator('.ma-kana-navigation a[href="/kana/?view=practice"]').click();
   await expect(page).toHaveURL(/\/kana\/\?view=practice$/);
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
-  await expect(page.getByRole('heading',{name:'Build the reflex.',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Custom practice',exact:true})).toBeVisible();
   // Re-selecting the exact screen scrolls to the top without reinitialising it.
   await page.evaluate(()=>{window.sameScreenMarker='preserved';});
-  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practice',exact:true}).click();
+  await page.getByRole('button',{name:'Recall',exact:true}).click();
   expect(await page.evaluate(()=>window.sameScreenMarker)).toBe('preserved');
   await page.getByRole('button',{name:'Recall',exact:true}).click();
-  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practice',exact:true}).click();
+  await page.getByRole('button',{name:'Recall',exact:true}).click();
   expect(await page.evaluate(()=>window.sameScreenMarker)).toBe('preserved');
   await expect(page.getByRole('button',{name:'Recall',exact:true})).toHaveAttribute('aria-pressed','true');
 });
@@ -135,7 +135,9 @@ test('native fonts load locally with all external requests blocked',async({page}
 
 test('widget words and activity reflect a successful save and survive page reloads',async({page})=>{
   await prepare(page);await open(page,'/wordbank/');
-  await page.getByRole('button',{name:'My word bank',exact:true}).click();
+  await page.locator('[data-words-hub]').getByRole('link',{name:/^Word Bank\b/}).click();
+  await expect(page.locator('body')).toHaveAttribute('data-words-view','bank');
+  await expect.poll(()=>page.evaluate(()=>Boolean(window.ModeAtlasNativeEngagement))).toBe(true);
   const initial=await page.evaluate(()=>window.ModeAtlasNativeEngagement.snapshot());
   expect(initial.lastActivityAt).toBe(0);
   await page.locator('#wordBankAddJumpBtn').click();

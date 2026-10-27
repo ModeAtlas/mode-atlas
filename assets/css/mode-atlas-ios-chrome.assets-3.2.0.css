@@ -1,0 +1,280 @@
+/* Native iOS composition. Every selector is gated by the Capacitor runtime. */
+html[data-ma-runtime="ios"]{
+  --ma-safe-top:env(safe-area-inset-top,0px);
+  --ma-safe-right:env(safe-area-inset-right,0px);
+  --ma-safe-bottom:env(safe-area-inset-bottom,0px);
+  --ma-safe-left:env(safe-area-inset-left,0px);
+  --ma-ios-rail-left:0px;
+  --ma-ios-rail-right:0px;
+  font-size:calc(16px * var(--ma-ios-text-scale,1));
+  /* Reserve the full dock before JavaScript measures it, including the home indicator. */
+  --ma-ios-dock-height:calc(60px + var(--ma-safe-bottom));
+  --ma-page-inset-top:max(12px,var(--ma-safe-top));
+  --ma-page-inset-left:calc(var(--ma-safe-left) + var(--ma-ios-rail-left) + var(--ma-page-pad,16px));
+  --ma-page-inset-right:calc(var(--ma-safe-right) + var(--ma-ios-rail-right) + var(--ma-page-pad,16px));
+  --ma-page-inset-bottom:calc(var(--ma-ios-dock-height) + 20px);
+  --ma-toast-inset-bottom:var(--ma-page-inset-bottom);
+}
+html[data-ma-runtime="ios"] body{
+  padding-top:var(--ma-page-inset-top);
+  padding-bottom:var(--ma-page-inset-bottom);
+  padding-left:var(--ma-page-inset-left);
+  padding-right:var(--ma-page-inset-right);
+}
+html[data-ma-runtime="ios"] .ma-page-frame{width:100%;min-width:0;}
+/* All four insets are independent. Dialogs use the safe viewport even when
+   the keyboard or a fold changes its height without navigation. */
+html[data-ma-runtime="ios"] .ma-dialog-layer{
+  --ma-dialog-top:calc(var(--ma-ios-overlay-top,var(--ma-safe-top)) + 12px);
+  --ma-dialog-left:var(--ma-ios-overlay-left,var(--ma-safe-left));
+  --ma-dialog-right:var(--ma-ios-overlay-right,var(--ma-safe-right));
+  padding:var(--ma-dialog-top) calc(var(--ma-dialog-right) + 12px) calc(var(--ma-safe-bottom) + 12px) calc(var(--ma-dialog-left) + 12px);
+}
+/* Results need vertical room: use the full-height safe rectangle beside
+   system UI instead of forcing every result below the system region. */
+html[data-ma-runtime="ios"] .ma-dialog-layer[data-presentation="outcome"],
+html[data-ma-runtime="ios"] .ma-dialog-layer:has([data-ma-session-complete]){
+  --ma-dialog-top:calc(var(--ma-ios-protected-overlay-top,var(--ma-safe-top)) + 12px);
+  --ma-dialog-left:var(--ma-safe-left);--ma-dialog-right:var(--ma-safe-right);
+}
+html[data-ma-runtime="ios"] .ma-dialog{
+  max-height:min(760px,calc(var(--ma-overlay-height,100dvh) - var(--ma-dialog-top) - var(--ma-safe-bottom) - 12px));
+}
+/* Chosen from usable space, not an iPhone/iPad or orientation assumption. */
+html[data-ma-runtime="ios"][data-ma-navigation="rail"]{--ma-page-inset-bottom:calc(var(--ma-safe-bottom) + 20px);}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tabs{
+  left:auto;right:var(--ma-ios-rail-offset);top:var(--ma-ios-rail-top);bottom:var(--ma-ios-rail-bottom);width:var(--ma-ios-rail-size);
+  display:flex;flex-direction:column;justify-content:center;overflow-y:auto;
+  padding:var(--ma-ios-rail-padding) 4px;border:0;box-shadow:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"][data-ma-rail-side="left"] .ma-ios-tabs{left:var(--ma-ios-rail-offset);right:auto;}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tabs__links{grid-template-columns:1fr;gap:var(--ma-ios-rail-gap);}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tab{flex:none;min-height:var(--ma-ios-rail-item);font-size:.75rem;gap:var(--ma-ios-rail-icon-gap);}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tab__icon>.ma-icon{width:30px;height:30px;}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] .ma-ios-tab__icon>img{display:block;width:28px;height:28px;}
+html[data-ma-runtime="ios"][data-ma-navigation="rail"] body.study-nav-hidden .ma-ios-tabs #studyNavShowBtn{width:100%;min-height:76px;padding:8px 4px;white-space:normal;flex-direction:column;align-items:center;gap:6px;border-radius:14px;font-size:.75rem;}
+html[data-ma-runtime="ios"] .ma-nav,
+html[data-ma-runtime="ios"] .ma-nav-spacer{display:none!important;}
+
+/* The system launch screen follows device appearance; the web launch frame
+   follows the saved in-app preference from the first HTML paint. */
+html[data-ma-runtime="ios"] .ma-loading-screen{background:var(--ma-native-page);backdrop-filter:none;-webkit-backdrop-filter:none;}
+html[data-ma-runtime="ios"] .ma-loading-card{
+  width:auto;padding:24px;border:0;background:transparent;box-shadow:none;color:var(--ma-text-strong);
+}
+html[data-ma-runtime="ios"] .ma-loading-head{flex-direction:column;text-align:center;gap:14px;margin:0;}
+html[data-ma-runtime="ios"] .ma-loading-mark{
+  width:116px;height:116px;border:0;border-radius:0;
+  background:transparent url('/assets/brand/mode-atlas-symbol.svg') center / contain no-repeat;
+  color:transparent;font-size:0;
+  box-shadow:var(--ma-native-shadow);
+}
+html[data-ma-runtime="ios"][data-ma-native-warm="false"] .ma-loading-screen.is-ready .ma-loading-mark{
+  animation:ma-ios-mark-spin .68s cubic-bezier(.28,.74,.25,1) both;
+}
+@keyframes ma-ios-mark-spin{
+  0%{transform:rotate(0) scale(1);}
+  65%{transform:rotate(270deg) scale(1.12);}
+  100%{transform:rotate(360deg) scale(1);}
+}
+html[data-ma-runtime="ios"] .ma-loading-title{font-family:var(--ma-font-display);font-size:23px;letter-spacing:-.035em;}
+html[data-ma-runtime="ios"] .ma-loading-sub{color:var(--ma-muted);font-size:12px;letter-spacing:.07em;text-transform:uppercase;}
+html[data-ma-runtime="ios"] .ma-loading-card .ma-skeleton{display:none;}
+html[data-ma-runtime="ios"][data-ma-native-warm="true"] .ma-loading-screen{display:none;}
+
+/* Stable primary destinations; account actions belong to the page header. */
+html[data-ma-runtime="ios"] .ma-ios-tabs{
+  --ma-ios-accent:var(--ma-atlas);
+  position:fixed;z-index:100;left:0;right:0;bottom:0;
+  display:block;
+  padding:5px max(10px,var(--ma-safe-right)) calc(5px + var(--ma-safe-bottom)) max(10px,var(--ma-safe-left));
+  border-top:1px solid var(--ma-border);
+  background:var(--ma-surface-strong);
+  box-shadow:var(--ma-native-chrome-shadow);
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+}
+html[data-ma-runtime="ios"] body.ma-reading-page .ma-ios-tabs{--ma-ios-accent:var(--ma-reading);}
+html[data-ma-runtime="ios"] body.ma-writing-page .ma-ios-tabs{--ma-ios-accent:var(--ma-writing);}
+html[data-ma-runtime="ios"] body.ma-wordbank-page .ma-ios-tabs{--ma-ios-accent:var(--ma-words);}
+html[data-ma-runtime="ios"] body:is(.ma-kana-page,.ma-results-page) .ma-ios-tabs{--ma-ios-accent:var(--ma-kana);}
+html[data-ma-runtime="ios"] .ma-ios-profile{display:flex;align-items:center;justify-content:center;flex-shrink:0;min-width:44px;min-height:44px;padding:6px;border:1px solid var(--ma-border);border-radius:50%;background:var(--ma-control);color:var(--ma-text-strong);}
+html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__avatar{width:30px;height:30px;min-width:30px;font-size:1rem;}
+html[data-ma-runtime="ios"] .ma-ios-profile .ma-nav__action-label{display:none;}
+html[data-ma-runtime="ios"] .ma-ios-page-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;}
+/* Focused course views supply their own single exit and heading. */
+html[data-ma-runtime="ios"] body:has(.ma-course-view) .ma-ios-page-tools{display:none;}
+html[data-ma-runtime="ios"] .ma-ios-page-tools a{display:flex;align-items:center;min-height:44px;color:var(--ma-muted);text-decoration:none;font-weight:750;}
+html[data-ma-runtime="ios"] .ma-ios-practice-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;margin-bottom:10px;}
+html[data-ma-runtime="ios"] .ma-ios-practice-actions :is(#modifiersTab,#studyNavHideBtn){
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:44px;padding:8px 12px;
+  border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-control);color:var(--ma-text-strong);font:750 .81rem/1.3 var(--ma-font-ui);
+}
+html[data-ma-runtime="ios"] .ma-ios-practice-actions #modifiersTab[aria-expanded="true"]{border-color:var(--ma-atlas);}
+html[data-ma-runtime="ios"] body.trainer-session-active .ma-ios-practice-actions,
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-practice-actions{display:none;}
+html[data-ma-runtime="ios"] .ma-ios-tabs__links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;}
+html[data-ma-runtime="ios"] .ma-ios-tab{
+  flex:1 1 0;min-width:0;min-height:49px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  border-radius:12px;color:var(--ma-muted);text-decoration:none;
+  font-size:.625rem;font-weight:750;line-height:1.2;text-align:center;touch-action:manipulation;overflow-wrap:normal;
+}
+html[data-ma-runtime="ios"] button.ma-ios-tab{
+  border:0;background:transparent;cursor:pointer;font-family:inherit;
+}
+html[data-ma-runtime="ios"] .ma-ios-tab__icon>.ma-icon{display:block;width:28px;height:28px;}
+html[data-ma-runtime="ios"] .ma-ios-tab__icon{font-family:var(--ma-font-jp);font-size:1.25rem;font-weight:800;line-height:1.2;}
+html[data-ma-runtime="ios"] .ma-ios-tab.is-active{color:var(--ma-text-strong);background:color-mix(in srgb,var(--ma-ios-accent) 17%,transparent);}
+html[data-ma-runtime="ios"] .ma-ios-tab:focus-visible,
+html[data-ma-runtime="ios"] .ma-ios-profile:focus-visible,
+html[data-ma-runtime="ios"] .ma-ios-practice-actions button:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
+
+/* Focus uses the same exit control; practice owns entry and session state. */
+html[data-ma-runtime="ios"] .ma-ios-tabs>.ma-nav-handle{display:none;}
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs{text-align:center;}
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs__links,
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-profile{display:none;}
+html[data-ma-runtime="ios"] body.study-nav-hidden .ma-ios-tabs #studyNavShowBtn{
+  display:inline-flex;position:static;justify-self:center;min-height:44px;width:auto;padding:0 20px;
+  border-radius:var(--ma-radius-pill);font-size:.86rem;
+}
+html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing) .ma-ios-tabs{display:none;}
+html[data-ma-runtime="ios"] body:is(.ma-phone-keyboard-open,.ma-ios-editing){--ma-ios-dock-height:0px;}
+html[data-ma-runtime="ios"][data-ma-expanded-practice] body{
+  --ma-page-inset-left:calc(var(--ma-ios-clear-left,var(--ma-safe-left)) + var(--ma-page-pad,16px));
+  --ma-page-inset-right:calc(var(--ma-ios-clear-right,var(--ma-safe-right)) + var(--ma-page-pad,16px));
+}
+html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open):not(.ma-mixed-recall){
+  --ma-ios-dock-height:0px;
+  --ma-page-inset-bottom:calc(var(--ma-ios-custom-kb-height,210px) + 12px);
+  --ma-toast-inset-bottom:calc(var(--ma-ios-custom-kb-height,210px) + 20px);
+}
+html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open):not(.ma-mixed-recall) .ma-ios-tabs{display:none;}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard{display:none;}
+html[data-ma-runtime="ios"] body.ma-ios-custom-input.trainer-session-active:not(.ma-session-paused):not(.trainer-session-result):not(.ma-study-feedback-open):not(.ma-mixed-recall) .ma-ios-reading-keyboard,
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard--inline{
+  position:fixed;z-index:101;left:0;right:0;bottom:0;
+  display:grid;gap:7px;padding:11px max(8px,var(--ma-ios-keyboard-right,var(--ma-safe-right))) calc(10px + var(--ma-safe-bottom)) max(8px,var(--ma-ios-keyboard-left,var(--ma-safe-left)));
+  border-top:1px solid var(--ma-border);background:var(--ma-surface-strong);
+  box-shadow:var(--ma-native-chrome-shadow);
+}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard--inline{position:static;padding:8px 0;background:transparent;border:0;box-shadow:none;}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__row{display:flex;gap:3px;justify-content:center;width:min(100%,680px);margin-inline:auto;}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key{
+  flex:1 1 0;min-width:0;height:clamp(44px,8dvh,60px);padding:0;
+  border:1px solid var(--ma-border);border-radius:10px;
+  background:var(--ma-control);color:var(--ma-text-strong);
+  font:700 clamp(20px,1.25rem,26px)/1 var(--ma-font-display);text-transform:uppercase;
+  touch-action:manipulation;cursor:pointer;
+  box-shadow:var(--ma-native-key-shadow);
+  transition:transform .07s ease-out,box-shadow .07s ease-out,background-color .07s ease-out;
+}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:is(:active,.is-pressed){
+  transform:translateY(3px) scale(.97);
+  box-shadow:var(--ma-native-key-pressed-shadow);
+  background:var(--ma-control-hover);
+}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key--delete{flex:1.25;background:var(--ma-control-hover);}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard--inline .ma-ios-reading-keyboard__key{height:clamp(44px,6dvh,56px);}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:disabled{opacity:.45;cursor:default;}
+html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:-3px;}
+
+/* The dock trigger opens the same accessible dialog as the web trainer. */
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .bottom-shell.ma-modifiers-only{display:none;}
+html[data-ma-runtime="ios"] .ma-practice-sheet{
+  width:min(760px,calc(100% - var(--ma-ios-overlay-left,var(--ma-safe-left)) - var(--ma-ios-overlay-right,var(--ma-safe-right)) - 24px));
+  left:var(--ma-ios-overlay-left,var(--ma-safe-left));right:var(--ma-ios-overlay-right,var(--ma-safe-right));
+  margin:auto auto 0;max-height:calc(100dvh - var(--ma-ios-overlay-top,var(--ma-safe-top)) - 12px);
+  border-radius:28px 28px 0 0;border-bottom:0;padding-bottom:var(--ma-safe-bottom);
+}
+html[data-ma-runtime="ios"] .ma-practice-sheet__handle{display:grid;place-items:center;flex:none;height:24px;touch-action:none;}
+html[data-ma-runtime="ios"] .ma-practice-sheet__handle span{height:5px;width:36px;border-radius:5px;background:var(--ma-border-strong,var(--ma-muted));opacity:.6;}
+html[data-ma-runtime="ios"] .ma-practice-sheet__header{padding-top:2px;}
+
+/* Native practice owns its available-space composition. Setup has no empty
+   question preview. A running session keeps its real prompt and all actions;
+   content can scroll at accessibility sizes instead of being clipped. */
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-shell{
+  display:block;width:100%;min-height:0;margin:0 auto;container:ma-trainer / inline-size;
+}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-card{
+  width:min(720px,100%);min-height:0;margin:0 auto 16px;padding:16px;
+}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-shell{
+  display:grid;grid-template-columns:minmax(0,1fr);align-content:center;min-height:max(0px,calc(var(--ma-ios-visible-height,100dvh) - var(--ma-page-inset-top) - var(--ma-page-inset-bottom)));
+}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):not(.trainer-session-active) .ma-trainer-stage{display:none;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page):not(.trainer-session-active) .ma-trainer-header h1{font-size:clamp(1.5rem,4vw,2rem);line-height:1.2;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-stage,
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-session-controls{width:100%;justify-items:center;}
+html[data-ma-runtime="ios"] .ma-trainer-card .start-wrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:min(560px,100%);gap:10px;margin-top:8px;}
+html[data-ma-runtime="ios"] .ma-trainer-card .start-wrap[hidden]{display:none;}
+html[data-ma-runtime="ios"] .ma-trainer-card .ma-study-setup{grid-column:1/-1;width:100%;max-width:none;padding:12px;}
+html[data-ma-runtime="ios"] .ma-trainer-card .ma-practice-recovery{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px;}
+html[data-ma-runtime="ios"] .ma-trainer-card .ma-practice-recovery p{grid-column:1/-1;margin:0;}
+html[data-ma-runtime="ios"] .ma-trainer-card .start-wrap .ma-button{min-width:0;width:100%;min-height:48px;}
+html[data-ma-runtime="ios"] .ma-trainer-card :is(.hint,.combo-tier-notice):empty{display:none;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-card{padding:16px;margin-bottom:0;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-header{min-height:0;margin-bottom:4px;padding-left:var(--ma-ios-section-left,0px);padding-right:var(--ma-ios-section-right,0px);}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-stage{gap:8px;padding:0;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-session-hud{margin:0;padding:0 var(--ma-ios-section-right,0px) 0 var(--ma-ios-section-left,0px);border:0;}
+html[data-ma-runtime="ios"] body.trainer-session-active .ma-session-hud .scoreline{max-width:520px;margin-inline:auto;}
+/* Progress already states the question count. In scored sessions the live
+   Correct/Incorrect pair takes priority over practice streaks and old records. */
+html[data-ma-runtime="ios"] body.trainer-session-active .daily-badge,
+html[data-ma-runtime="ios"] body.trainer-session-active :is(#dailyProgressPill,#testQuestionPill,#dailyOfficialPill),
+html[data-ma-runtime="ios"] body:is(.daily-challenge-active,.test-mode-active).trainer-session-active .score-pill:has(> #streak,> #highScore){display:none;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-prompt-wrap{width:100%;min-width:0;container:ma-prompt / inline-size;min-height:clamp(90px,17dvh,140px);padding:4px var(--ma-ios-section-right,0px) 4px var(--ma-ios-section-left,0px);margin:0;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-answer-wrap{padding-left:var(--ma-ios-section-left,0px);padding-right:var(--ma-ios-section-right,0px);}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active :is(.hiragana,.prompt){font-size:clamp(1.8rem,min(15dvh,calc(92cqw / var(--ma-prompt-length,1))),7rem);line-height:1.2;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-input{min-height:48px;font-size:1.15rem;padding:10px 12px;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-session-controls{margin-top:6px;padding:8px var(--ma-ios-section-right,0px) 0 var(--ma-ios-section-left,0px);}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .session-actions{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,6.25rem),1fr));gap:6px;max-width:680px;
+}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .session-actions .ma-button{min-width:0;min-height:48px;padding:6px 4px;font-size:.78rem;gap:4px;}
+html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .session-actions .ma-trainer-skip{grid-column:auto;order:0;opacity:1;}
+html[data-ma-runtime="ios"] body.ma-writing-page.trainer-session-active .choice-grid{width:100%;gap:8px;}
+html[data-ma-runtime="ios"] body.ma-writing-page.trainer-session-active .choice-btn{min-height:52px;padding:8px 6px;}
+/* A wide, short working area benefits from two columns. A tall window keeps
+   the prompt above the answer and centres the task in the usable height. */
+@media(min-aspect-ratio:1/1){
+ @container ma-trainer (min-width:40rem){
+  html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page) .ma-trainer-card{width:min(1040px,100%);}
+  html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-header{grid-template-columns:minmax(0,1fr) auto;text-align:left;justify-items:start;gap:8px;}
+  html[data-ma-runtime="ios"] .ma-trainer-card .ma-study-progress{margin:0 0 4px;min-width:180px;}
+  html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-stage{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 24px;align-items:center;}
+  html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-session-hud{grid-column:1/-1;}
+  html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-prompt-wrap{width:100%;min-height:clamp(120px,25dvh,210px);}
+  html[data-ma-runtime="ios"] body:is(.ma-reading-page,.ma-writing-page).trainer-session-active .ma-trainer-answer-wrap{min-width:0;}
+ }
+}
+/* The early head bootstrap opts the native app into cross-document transitions. */
+/* Keep the previous canvas fully opaque until the new document covers it. */
+@keyframes ma-ios-enter{from{opacity:0}to{opacity:1}}
+html[data-ma-runtime="ios"]::view-transition-old(root){animation:none;mix-blend-mode:normal;}
+html[data-ma-runtime="ios"]::view-transition-new(root){animation:120ms ease-out both ma-ios-enter;mix-blend-mode:normal;}
+/* At large system text sizes, reflow the existing surfaces instead of cropping. */
+html[data-ma-runtime="ios"][data-ma-large-text] .ma-ios-practice-actions{flex-wrap:wrap;}
+html[data-ma-runtime="ios"] .ma-ios-accessibility-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+@media (prefers-reduced-motion:reduce){
+  html[data-ma-runtime="ios"]::view-transition-old(root),html[data-ma-runtime="ios"]::view-transition-new(root){animation-duration:.01ms;}
+  html[data-ma-runtime="ios"] .ma-ios-tabs,
+  html[data-ma-runtime="ios"] .ma-ios-tabs__links,
+  html[data-ma-runtime="ios"] .ma-loading-screen{transition:none;}
+  html[data-ma-runtime="ios"] .ma-loading-mark,
+  html[data-ma-runtime="ios"] .ma-loading-title,
+  html[data-ma-runtime="ios"] .ma-loading-sub{animation:none!important;}
+  html[data-ma-runtime="ios"] .ma-ios-reading-keyboard__key{transition:none;}
+}
+/* Native preference controls live in the existing Settings drawer. */
+html[data-ma-runtime="ios"] .ma-native-preference{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;min-width:0;width:100%;font-weight:700;}
+html[data-ma-runtime="ios"] .ma-native-preference span{min-width:0;overflow-wrap:anywhere;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]{appearance:none;-webkit-appearance:none;position:relative;width:48px;height:28px;margin:8px 0;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-control);flex:0 0 auto;cursor:pointer;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]::before{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--ma-native-switch-thumb);box-shadow:var(--ma-native-shadow);}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:checked{background:var(--ma-atlas);}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:checked::before{transform:translateX(20px);background:var(--ma-native-switch-thumb);}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:focus-visible{outline:2px solid var(--ma-atlas);outline-offset:3px;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="checkbox"]:disabled{opacity:.45;cursor:default;}
+html[data-ma-runtime="ios"] .ma-native-preference input[type="time"]{color-scheme:dark;width:auto;min-height:44px;max-width:140px;padding:8px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-card);color:var(--ma-text);font:inherit;}
+html[data-ma-runtime="ios"][data-ma-theme="light"] .ma-native-preference input[type="time"]{color-scheme:light;}

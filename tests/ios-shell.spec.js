@@ -23,9 +23,9 @@ test('Atlas home shares one responsive composition with native chrome', async ({
   });
   await page.locator('#homeContinueAction').click();
   await expect(page).toHaveURL(/\/kana\/$/);
-  await expect(page.getByRole('button',{name:/Take a starting-point test/})).toBeHidden();
+  await expect(page.getByRole('button',{name:'Find my starting point',exact:true})).toBeVisible();
   await page.getByRole('button',{name:/Start lesson/}).click();
-  await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');
+  await expect(page.locator('.ma-kana-task-glyph')).toHaveText('あ');
 });
 
 test('iOS home can reach its last action above the dock on portrait phones', async ({ page }) => {
@@ -201,11 +201,10 @@ test('iOS study tabs navigate while the website keeps its original navigation', 
   await expect(page.locator('.ma-nav__links')).toBeHidden();
   await page.locator('.ma-ios-tab[href="/learn/"]').click();
   await expect(page).toHaveURL(/\/learn\/$/);
-  await page.getByRole('link',{name:'Kana learning path',exact:true}).click();
+  await page.getByRole('link',{name:'Open Kana',exact:true}).click();
   await page.getByRole('button',{name:/Start lesson/}).click();
-  await page.getByRole('button',{name:'Back to Kana',exact:true}).click();
-  await page.getByRole('button',{name:'Explore all Kana tools',exact:true}).click();
-  await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Practice',exact:true}).click();
+  await page.getByRole('button',{name:'Save & exit',exact:true}).click();
+  await page.getByRole('button',{name:'Custom practice',exact:true}).click();
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
   await expect(page).toHaveURL(/\/reading\/$/);
   await expect(page.locator('body')).toHaveClass(/trainer-session-active/);
@@ -337,8 +336,12 @@ test('native safe-area insets survive phone trainer styles and clear the dock af
   await expect.poll(()=>page.evaluate(()=>{
     const home=document.querySelector('.atlas-home').getBoundingClientRect();
     const dock=document.querySelector('.ma-ios-tabs').getBoundingClientRect();
-    return home.top>=59 && dock.bottom<=innerHeight && document.documentElement.scrollHeight>innerHeight;
+    return home.top>=59 && dock.bottom<=innerHeight;
   })).toBe(true);
+  // The redesigned first-use Home fits a tall phone. Exercise natural scroll
+  // clearance in a shorter usable window instead of requiring extra content.
+  await page.setViewportSize({width:393,height:568});
+  await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollHeight>innerHeight)).toBe(true);
   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
   await expect.poll(()=>page.evaluate(()=>{
     const home=document.querySelector('.atlas-home').getBoundingClientRect();

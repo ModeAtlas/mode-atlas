@@ -3,40 +3,33 @@
 (function(root){
   'use strict';
   const items=Object.freeze([
-    {id:'kana',name:'Kana',href:'/kana/',description:'Hiragana & katakana',action:'Kana learning path'},
+    {id:'kana',name:'Kana',href:'/kana/',description:'Hiragana & katakana',action:'Open Kana'},
     {id:'kanji',name:'Kanji',href:'/kanji/',description:'Characters & meanings',action:'Open Kanji'},
     {id:'words',name:'Words',href:'/wordbank/',description:'Vocabulary & your word bank',action:'Open Words'}
   ]);
   function current(path=location.pathname){
     return /^\/(kana|reading|writing)\//.test(path)?'kana':path.startsWith('/kanji/')?'kanji':path.startsWith('/wordbank/')?'words':'hub';
   }
-  function recommend(kana){
+  function nextAction(){
     const last=root.ModeAtlasStorage.json('modeAtlasLastMode',{});
+    const present=(branchId,action)=>{const destination=items.find(item=>item.id===(action.branchId||branchId))||items.find(item=>item.id===branchId);return {...action,branchId:destination.id,reason:action.detail||'',meta:destination.name};};
     if(last.branchId==='kanji'||/kanji/.test(last.href||'')){
-      const due=root.ModeAtlasStudyPlan.kanjiReviews()[0];
-      const state=root.ModeAtlasKanjiState;
-      const path=state?.learningPath?.(state.read().settings.level);
-      return due?{title:'Revisit your Kanji',reason:`${due.due} ${due.label} reviews are ready.`,meta:'Spaced recall',href:due.href}:
-        {title:path?.title||'Continue with Kanji',reason:path?.copy||'Return to your lessons, pronunciation and meanings.',meta:'Kanji · Your learning path',href:'/kanji/'};
+      return present('kanji',root.ModeAtlasKanjiState?.nextAction?.()||{kind:'start',title:'Continue with Kanji',label:'Open Kanji',detail:'',href:'/kanji/'});
     }
     if(last.branchId==='words'||/wordbank/i.test(last.href||'')){
-      const vocabulary=root.ModeAtlasWordLessonState.vocabularyOverview?.()||{};
-      if(vocabulary.due)return {title:'Revisit your words',reason:`${vocabulary.due} words are ready to recall.`,meta:'Words · Spaced practice',href:'/wordbank/?vocabulary=review'};
-      // A deliberate visit to the personal bank or a legacy phrase lesson keeps
-      // its continuation. General Words visits lead into the vocabulary course.
-      if(/(?:[?&]view=bank|[?&]review=)/.test(last.href||'')){
-        const due=root.ModeAtlasWordBank.due().length;
-        return {title:'Your word bank',reason:due?`${due} saved words are ready to recall.`:'Return to your saved words.',meta:'Words · Personal collection',href:due?'/wordbank/?review=1':'/wordbank/?view=bank'};
+      if(/(?:[?&]view=bank|[?&]review=|[?&]session=bank)/.test(last.href||'')){
+        return present('words',root.ModeAtlasWordBank?.nextAction?.()||{kind:'bank',title:'Your word bank',label:'Open your bank',detail:'Your saved words.',href:'/wordbank/?view=bank'});
       }
       if(/(?:[?&](?:lesson|application)=|[?&]view=phrases)/.test(last.href||'')){
+        const unfinished=Object.entries(root.ModeAtlasWordLessonState.read()).filter(([id,row])=>!row.vocabulary&&!row.course&&!/^(vocab-|vocabulary-course$|wordbank-course$)/.test(id)&&row.startedAt&&row.phase!=='complete').sort((a,b)=>b[1].updatedAt-a[1].updatedAt)[0];
+        if(unfinished)return present('words',{kind:'resume',title:'Continue your phrase lesson',label:'Resume lesson',detail:'',href:'/wordbank/?lesson='+encodeURIComponent(unfinished[0])});
         const situation=root.ModeAtlasWordLessonState.due()[0];
-        if(situation)return {title:'Revisit a phrase',reason:'Recall a phrase you have already learned.',meta:'Words · Phrase library',href:'/wordbank/?application='+encodeURIComponent(situation)};
-        const unfinished=Object.entries(root.ModeAtlasWordLessonState.read()).filter(([,row])=>!row.vocabulary&&row.startedAt&&row.phase!=='complete').sort((a,b)=>b[1].updatedAt-a[1].updatedAt)[0];
-        if(unfinished)return {title:'Continue your phrase lesson',reason:'Pick up where you left off.',meta:'Words · Phrase library',href:'/wordbank/?lesson='+encodeURIComponent(unfinished[0])};
+        if(situation)return present('words',{kind:'review',title:'Revisit a phrase',label:'Review phrase',detail:'',href:'/wordbank/?application='+encodeURIComponent(situation)});
+        return present('words',{kind:'phrases',title:'Phrase lessons',label:'Open phrase lessons',detail:'',href:'/wordbank/?view=phrases'});
       }
-      return {title:vocabulary.introduced?'Build your vocabulary':'Your first words',reason:'Learn words using characters you have already met.',meta:'Words · Learn and practise',href:'/wordbank/?view=course'};
+      return present('words',root.ModeAtlasVocabulary?.nextAction?.()||{kind:'start',title:'Your first words',label:'Learn words',detail:'',href:'/wordbank/?view=course'});
     }
-    return kana;
+    return present('kana',root.ModeAtlasStudyPlan.recommend());
   }
-  root.ModeAtlasBranches=Object.freeze({items,current,recommend});
+  root.ModeAtlasBranches=Object.freeze({items,current,nextAction,recommend:nextAction});
 })(window);

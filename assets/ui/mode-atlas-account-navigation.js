@@ -124,4 +124,9 @@
   });
   root.ModeAtlasProfile={open:trigger=>open('profile',trigger),close,refresh:()=>{}};
   root.ModeAtlasSettings={open:trigger=>open('settings',trigger),close};
+  // Native chrome can be visible before the deferred common scripts finish.
+  // Enable its triggers only after their first-activation handler exists.
+  document.querySelectorAll('[data-ma-account-loading]').forEach(button=>{
+    button.disabled=false;button.removeAttribute('data-ma-account-loading');
+  });
 })(window);

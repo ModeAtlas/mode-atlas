@@ -96,13 +96,14 @@ test.describe('Mode Atlas core smoke tests', () => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/');
       await expect(page.locator('#profileOpenBtn')).toBeVisible();
-      await expect(page.locator('#branches')).toBeVisible();
+      await expect(page.getByRole('link',{name:'Start lesson',exact:true})).toBeVisible();
+      await expect(page.getByRole('link',{name:/^Explore learning/})).toHaveAttribute('href','/learn/');
 
       await gotoApp(page, '/kana/');
       await expect(page.locator('#mainContent.ma-kana-journey')).toBeVisible();
-      await expect(page.getByRole('button',{name:'Continue learning',exact:true})).toBeVisible();
-      await page.getByRole('button',{name:'Explore all Kana tools',exact:true}).click();
-      await page.getByRole('navigation',{name:'Kana sections'}).getByRole('link',{name:'Mastery',exact:true}).click();
+      await expect(page.locator('.ma-kana-course-next .ma-button--primary')).toBeVisible();
+      await page.getByRole('button',{name:'Learning path',exact:true}).click();
+      await page.getByRole('button',{name:'Mastery map',exact:true}).click();
       await expect(page.locator('.ma-kana-mastery-map')).toBeVisible();
 
       await gotoApp(page, '/results/');
@@ -113,12 +114,12 @@ test.describe('Mode Atlas core smoke tests', () => {
     });
   });
 
-  test('Atlas to Kana uses the real navigation button and keeps a clean URL', async ({ page }) => {
+  test('Atlas to Kana follows the real next lesson without cache query parameters', async ({ page }) => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/');
       await Promise.all([
-        page.waitForURL(/\/kana\/$/, { timeout: 15000, waitUntil: 'domcontentloaded' }),
-        page.locator('a.ma-branch-tile[href="/kana/"]').click({ noWaitAfter: true }),
+        page.waitForURL(/\/kana\/\?view=course&script=hiragana$/, { timeout: 15000, waitUntil: 'domcontentloaded' }),
+        page.getByRole('link',{name:'Start lesson',exact:true}).click({ noWaitAfter: true }),
       ]);
       await expect(page.locator('#mainContent.ma-kana-journey')).toBeVisible({ timeout: 5000 });
       const url = new URL(page.url());
@@ -220,9 +221,9 @@ test.describe('Mode Atlas core smoke tests', () => {
   test('Word Bank Add stays on the page and persists a new kana entry', async ({ page }) => {
     await expectNoSevereConsoleErrors(page, async () => {
       await gotoApp(page, '/wordbank/');
-      await expect(page.locator('[data-word-section=course]')).toHaveAttribute('aria-pressed', 'true');
-      await page.getByRole('button', { name: 'My word bank', exact: true }).click();
-      await expect(page.locator('[data-word-section=bank]')).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('[data-words-hub] a')).toHaveCount(2);
+      await page.locator('[data-words-hub]').getByRole('link', { name: /^Word Bank\b/ }).click();
+      await expect(page.locator('body')).toHaveAttribute('data-words-view', 'bank');
       await page.locator('#wordBankAddJumpBtn').click();
       const input = page.locator('#kanaInput');
       const add = page.locator('#addWordBtn');
@@ -230,7 +231,7 @@ test.describe('Mode Atlas core smoke tests', () => {
       await expect(add).toBeEnabled();
       await input.fill('ねこ');
       await add.click();
-      await expect(page).toHaveURL(/\/wordbank\/$/);
+      await expect(page).toHaveURL(/\/wordbank\/\?view=bank$/);
       await expect(page.locator('details.wordbank-entry[data-id]').filter({ hasText: 'ねこ' }).first()).toBeVisible();
       const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('kanaWordBank') || '[]'));
       expect(stored.some(item => item && item.written === 'ねこ')).toBe(true);

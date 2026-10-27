@@ -13,6 +13,8 @@
     else host.append(el('p','ma-hub-note','Friends is not available yet. Your learning progress is still saved.'));
   }else if(kind==='learn'){
     const library=el('div');host.append(library);
+    const phrases=el('a','ma-learn-secondary','Phrase lessons');phrases.href='/wordbank/?view=phrases';
+    phrases.append(el('span','','Everyday expressions'));host.append(phrases);
     function refresh(){
       const experience=root.ModeAtlasLearningExperience.snapshot();
       root.ModeAtlasBranchLibrary.render(library,{experience});

@@ -11,13 +11,17 @@
       ['When to review',root.ModeAtlasReview.dueHelp()],
       ['Study goals','Daily goals reset at local midnight; weekly goals run Monday to Sunday. Personal goals can repeat. Editing a goal does not award its XP a second time.']
     ]},
-    {id:'kana',title:'Kana progress & mastery',keywords:'read recall handwriting familiar confident mastered rows unlock hints speed accuracy',read:()=>{
+    {id:'kana',title:'Kana progress & mastery',keywords:'course lesson check checkpoint first attempts corrections sound listening read recall handwriting familiar confident mastered rows unlock hints speed accuracy',read:()=>{
       const learning=root.ModeAtlasKanaLearning,familiar=learning.requirements.familiar,hand=learning.requirements.handwriting[5];
       const recallRule=stage=>{const r=root.ModeAtlasReview.requirements[stage];return `${r.correct} correct; ${r.attempts} recent unassisted attempts at ${r.accuracy*100}% accuracy, recall on ${r.days} days and ${r.level} spaced steps.`;};
       return [
+        ['Follow the course','Continue teaches a small group through shape, sound and practice, then recommends the next useful step. Learning path shows the rows and checkpoints. Custom practice is where you choose your own task and settings. Handwriting is optional.'],
+        ['Row checks & corrections','A row check needs a correct first answer without help for every character in both Read and Recall. Corrections return after other items; they do not erase the first miss or pass the check. Try a fresh check when ready.'],
+        ['Next rows & Kanji','Passing a row check opens the next course row. Passing the first three-row Hiragana checkpoint brings a Kanji invitation. You can still explore Kanji earlier. Previously earned access is preserved.'],
+        ['Listening','Play the sound before choosing its spelling. Listening has separate evidence. Study without audio continues without awarding listening success or a listening penalty.'],
         ['New','No lesson or practice recorded yet.'],['Introduced','Met in a lesson. Answer in Read or Recall to start practising.'],
         ['Learning','Practice has started. Work toward the Familiar targets.'],
-        ['Familiar',`Read or Recall: ${familiar.correct} correct unassisted answers at ${familiar.accuracy*100}% recent accuracy. Every character in a row must be Familiar in that skill to open its next row.`],
+        ['Familiar',`Read or Recall: ${familiar.correct} correct unassisted answers at ${familiar.accuracy*100}% recent accuracy. Custom practice can also open the next row when every character is Familiar in that skill. Course row checks use the separate first-answer rule above.`],
         ['Confident','Both Read and Recall are at least Familiar; one also meets: '+recallRule(2)],
         ['Mastered','Both Read and Recall meet: '+recallRule(3)],
         ['Mastered+',`Mastered, plus ${hand.correct} clean writes without a guide across ${hand.days} days. Handwriting is optional and has its own row progression.`],
@@ -25,15 +29,18 @@
         ['Earned progress','Milestones and unlocked rows stay earned. Overall accuracy and speed are reference measures. Earlier practice without review history uses accuracy and speed until new answers add that history.']
       ];
     }},
-    {id:'kanji',title:'Kanji levels & mastery',keywords:'N5 N4 N3 N2 N1 band pronunciation meaning unlocked recent',read:()=>[
-      ['Opening the next band','Recall each character’s reading and meaning without hints to complete it. Completing a band opens the next one. N5–N1 group content by approximate difficulty.'],
-      ['Building mastery','Practise readings and meanings without hints across several days. Your last 12 answers show what to revisit. Tap a character in the Mastery Map for its exact targets. Earned milestones stay saved.']
+    {id:'kanji',title:'Kanji course & mastery',keywords:'N5 N4 N3 N2 N1 band pronunciation meaning unlocked recent unit check first attempts review',read:()=>[
+      ['Your course','Small Foundations units connect a character’s shape and meaning to a useful word, its reading and its meaning. Continue moves from teaching to supported practice, independent retrieval and a unit check.'],
+      ['Checks & later review','A unit check needs correct first answers without hints for character meaning, word reading and word meaning. Corrections do not replace a missed first answer. Check passed and Reviewed later are separate: returning on a later day supplies retention evidence.'],
+      ['Explore & practise','Learning path shows your units. Custom practice configures drills. Character library contains the N5–N1 study bands and dictionary lessons; guided units currently cover Foundations. Early entry and a starting-point check remain available.'],
+      ['Earned progress','Reading and meaning have separate evidence. Band completion requires unassisted accuracy and due reviews across days, rather than a single successful lesson. Existing completions and unlocked bands stay earned. N5–N1 are approximate content groupings, not a proficiency certificate.']
     ]},
-    {id:'words',title:'Words & your personal bank',keywords:'vocabulary translation romaji English kana kanji course test',read:()=>[
-      ['Your course','Learn a few isolated words, practise them, then return when a review is due. The pool grows as you meet more characters. Kana + Kanji also checks that you have met the kanji in each word.'],
-      ['Different skills','Reading kana into romaji checks decoding. Recalling an English meaning and producing Japanese have separate records and schedules. New skills appear gradually; the course shows what opens them.'],
-      ['Your bank','Keep words you find yourself in My Word Bank. Its self-rated reviews stay separate from the course’s checked answers.'],
-      ['Tests','Tests check words you have learned in the selected skill. A result shows current performance; lasting knowledge comes from returning over time.']
+    {id:'words',title:'Words & your personal bank',keywords:'vocabulary translation romaji English kana kanji course test checkpoint collection phrases',read:()=>[
+      ['Two destinations','Learn words is the curated isolated-word course. Word Bank is your own collection, with Add word, search and Learn these words. Phrase lessons are a separate destination under Learn.'],
+      ['Your course','Continue resumes your unfinished set, reviews due skills or teaches a small new set. Kana uses characters and sound patterns you have met; Kana + Kanji also requires encountered kanji. Find spelling and response choices in Practice options.'],
+      ['Different skills','The course begins with kana → romaji, then introduces meaning and Japanese production gradually. Decoding, English meaning, English → romaji and English → kana have separate records and schedules. A decoding success does not prove translation knowledge.'],
+      ['Your bank','Learn selected entries or your collection in small batches. Complete missing readings or meanings before testing those skills. Personal meanings use Reveal and your own Remembered / Again judgement unless an accepted answer list is available; reading and listening are checked separately.'],
+      ['Checks & reviews','Guided checkpoints mix learned skills. A correction does not replace the first answer or award a checkpoint milestone. A custom one-skill test does not complete a mixed course checkpoint. Returning when reviews are due builds evidence beyond finishing a lesson.']
     ]},
     {id:'milestones',title:'Achievements & profile percentages',keywords:'count milestones ranks completion friends mastered locked',read:()=>[
       ['Achievements','Each rank is a milestone. Completion counts current study milestones across Atlas, Kana, Kanji and Words. Special rewards and retired milestones stay in your collection without affecting the percentage. Earned ranks stay earned.'],

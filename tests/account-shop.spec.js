@@ -127,10 +127,10 @@ test('large purchase preview keeps the item visible, retries errors and spends t
 for(const width of [320,393])test(`compact branch, wallet and About layout stays usable at ${width}px`,async({page})=>{
   await prepare(page,{width});
   await page.addInitScript(()=>{window.Capacitor.Plugins.ModeAtlasNative={setAppIcon:async()=>true};});
-  await page.goto('/kanji/');await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();await expect(page.locator('.ma-kanji-level')).toHaveCount(5);
-  const levels=await page.locator('.ma-kanji-level').evaluateAll(nodes=>nodes.map(node=>({width:node.clientWidth,scroll:node.scrollWidth,top:node.getBoundingClientRect().top})));
-  expect(levels.every(box=>box.scroll<=box.width+1)).toBe(true);expect(new Set(levels.map(box=>box.top)).size).toBe(1);
-  await expect(page.locator('.ma-kanji-course-summary')).toContainText('N5 · Foundations');
+  await page.goto('/kanji/');await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();
+  await expect(page.locator('.ma-kanji-current')).toContainText('Foundations');await page.getByRole('button',{name:'Character library',exact:true}).click();
+  const bands=page.getByRole('combobox',{name:'Study band',exact:true});await expect(bands.locator('option')).toHaveCount(5);await expect(bands).toHaveValue('5');
+  expect(await bands.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);await expect(bands.locator('option:checked')).toHaveText('N5 · Foundations');
   await expect(page.getByRole('button',{name:'How levels unlock',exact:true})).toHaveCount(0);
   await page.goto('/progress/?tab=rewards');const summary=page.locator('[data-reward-category=icons]>summary');await expect(summary.locator('img')).toBeVisible();
   const image=await summary.locator('img').boundingBox(),box=await summary.boundingBox();expect(image.y+image.height).toBeLessThanOrEqual(box.y+box.height);await summary.click();await expect(page.locator('.ma-atlas-icon-choice img').first()).toHaveAttribute('src','/assets/mode-atlas-icon.svg');

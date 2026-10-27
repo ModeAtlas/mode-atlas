@@ -80,7 +80,7 @@ test.describe('Phone and Tablet study UX', () => {
     await seedStableState(page);
   });
 
-  test('Phone navigation exposes Focus Mode and Kana Trainer opens as a disclosure before navigation', async ({ page }) => {
+  test('Phone navigation exposes Focus Mode and the Kana section link opens custom practice', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoApp(page, '/reading/');
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'phone');
@@ -127,6 +127,7 @@ test.describe('Phone and Tablet study UX', () => {
     // Exercise deliberate scroll travel on the long roadmap. The overview is
     // intentionally short and cannot scroll to this test's 420px checkpoint.
     await gotoApp(page, '/kana/?view=path');
+    await expect(page.locator('.ma-course-title')).toHaveText('Your learning path');
     await expect(page.locator('body')).toHaveAttribute('data-effective-display-mode', 'phone');
     const nav = page.locator('.ma-nav');
     await expect(nav).toBeVisible();
@@ -134,7 +135,7 @@ test.describe('Phone and Tablet study UX', () => {
     const topLayout = await page.evaluate(() => {
       const nav = document.querySelector('.ma-nav').getBoundingClientRect();
       const spacer = document.querySelector('[data-ma-nav-spacer]').getBoundingClientRect();
-      const hero = document.querySelector('.ma-kana-page-heading').getBoundingClientRect();
+      const hero = document.querySelector('.ma-course-header').getBoundingClientRect();
       return {
         navTop: nav.top,
         navBottom: nav.bottom,
@@ -202,7 +203,7 @@ test.describe('Phone and Tablet study UX', () => {
 
     const returnedTop = await page.evaluate(() => {
       const nav = document.querySelector('.ma-nav').getBoundingClientRect();
-      const hero = document.querySelector('.ma-kana-page-heading').getBoundingClientRect();
+      const hero = document.querySelector('.ma-course-header').getBoundingClientRect();
       return { navTop: nav.top, navBottom: nav.bottom, heroTop: hero.top };
     });
     expect(returnedTop.navTop).toBeGreaterThanOrEqual(0);

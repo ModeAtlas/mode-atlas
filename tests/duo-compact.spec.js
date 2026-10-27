@@ -35,7 +35,7 @@ async function shop(page){
 
 for(const theme of ['dark','light'])for(const [name,layout]of [['closed',closed],['landscape',landscape]]){
   test(`shop ${name} ${theme}: balances scroll away and products own the panel`,async({page},info)=>{
-    await prepare(page,layout,theme);await page.goto('/kana/?view=practice');await settle(page);await shop(page);
+    await prepare(page,layout,theme);await page.goto('/');await settle(page);await shop(page);
     const panel=page.locator('#maAccount-shop'),header=panel.locator('.ma-shop-header');
     await expect(panel.locator('[data-ma-coin-balance]')).toHaveText('250');
     expect((await header.boundingBox()).height).toBeLessThan(125);
@@ -51,18 +51,19 @@ for(const theme of ['dark','light'])for(const [name,layout]of [['closed',closed]
   });
 }
 for(const theme of ['dark','light'])for(const [name,layout]of [['right',landscape],['left',left]]){
-  test(`closed landscape ${name} ${theme}: rail and Kana Start fit together`,async({page},info)=>{
+  test(`closed landscape ${name} ${theme}: rail and Kana custom practice remain reachable`,async({page},info)=>{
     await prepare(page,layout,theme);await page.goto('/kana/?view=practice');await settle(page);
     await expect(page.locator('html')).toHaveAttribute('data-ma-navigation','rail');
     await expect(page.locator('html')).toHaveAttribute('data-ma-shared-bar','');
     await expect(page.locator('html')).toHaveAttribute('data-ma-compact-rail','');
     for(const link of await page.locator('.ma-ios-tab').all())await reachable(link,layout,52);
     for(const name of ['learn','progress','friends'])await expect(page.locator(`.ma-ios-tab[href="/${name}/"] use`)).toHaveAttribute('href',`/assets/mode-atlas-icons.svg#icon-nav-${name}`);
+    // This deliberate setup now owns its full page; scroll its fields before Start.
+    await page.getByRole('button',{name:'Start practice',exact:true}).scrollIntoViewIfNeeded();
     await reachable(page.getByRole('button',{name:'Start practice',exact:true}),layout);
-    expect((await page.locator('.ma-kana-navigation').boundingBox()).height).toBeLessThanOrEqual(52);
-    for(const element of await page.locator('.ma-kana-practice-intro,.ma-kana-session,.ma-kana-practice-skills button').all())expect(await element.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+    for(const element of await page.locator('.ma-course-header,.ma-kana-practice-form,.ma-kana-segments button').all())expect(await element.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
     await annotation(page,layout);await page.screenshot({path:info.outputPath('kana-landscape.png')});
-    await page.getByRole('button',{name:'Recall',exact:true}).click();await reachable(page.getByRole('button',{name:'Start practice',exact:true}),layout);
+    await page.getByRole('button',{name:'Recall',exact:true}).click();await page.getByRole('button',{name:'Start practice',exact:true}).scrollIntoViewIfNeeded();await reachable(page.getByRole('button',{name:'Start practice',exact:true}),layout);
     await page.getByRole('button',{name:'Start practice',exact:true}).click();await expect(page).toHaveURL(/\/writing\//);await expect(page.locator('body')).toHaveClass(/trainer-session-active/);
   });
 }
@@ -85,10 +86,10 @@ test('an explicitly clear native gutter hosts the rail; missing evidence keeps i
 });
 test('rotation preserves skill and hints while wide, tall and narrow layouts reflow',async({page},info)=>{
   await prepare(page,closed);await page.goto('/kana/?view=practice');await settle(page);
-  await page.getByRole('button',{name:'Read + Recall',exact:true}).click();await page.getByRole('button',{name:'Hints off',exact:true}).click();
+  await page.getByRole('button',{name:'Read + Recall',exact:true}).click();await page.getByLabel('Hints',{exact:true}).selectOption('on');
   for(const layout of [landscape,inner,portrait,closed]){
     await resize(page,layout);await expect(page.getByRole('button',{name:'Read + Recall',exact:true})).toHaveAttribute('aria-pressed','true');
-    await expect(page.getByRole('button',{name:'Hints on',exact:true})).toHaveAttribute('aria-pressed','true');
+    await expect(page.getByLabel('Hints',{exact:true})).toHaveValue('on');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
     await page.screenshot({path:info.outputPath(`kana-${layout.width}x${layout.height}.png`)});
   }
@@ -99,6 +100,8 @@ for(const [name,layout]of [['landscape',landscape],['narrow',{width:320,height:5
     await page.evaluate(()=>{document.documentElement.style.setProperty('--ma-ios-text-scale','1.5');document.documentElement.setAttribute('data-ma-large-text','');dispatchEvent(new Event('modeAtlasTextSizeChanged'));});
     await expect(page.locator('html')).toHaveAttribute('data-ma-navigation','bottom');
     const start=page.getByRole('button',{name:'Start practice',exact:true});await start.evaluate(el=>el.scrollIntoView({block:'center'}));await reachable(start,layout);
+    await page.getByRole('link',{name:'Atlas',exact:true}).click();await settle(page);
+    await page.evaluate(()=>{document.documentElement.style.setProperty('--ma-ios-text-scale','1.5');document.documentElement.setAttribute('data-ma-large-text','');dispatchEvent(new Event('modeAtlasTextSizeChanged'));});
     await page.locator('#profileOpenBtn').scrollIntoViewIfNeeded();await shop(page);
     const panel=page.locator('#maAccount-shop');
     for(const control of [panel.locator('[data-ma-purchase-coins]'),panel.getByRole('link',{name:'See full shop'})]){await control.evaluate(el=>el.scrollIntoView({block:'center'}));await reachable(control,layout);}
@@ -107,3 +110,17 @@ for(const [name,layout]of [['landscape',landscape],['narrow',{width:320,height:5
     await page.screenshot({path:info.outputPath('shop-large-text.png')});
   });
 }
+
+test('profile waits for its account handler before accepting the first tap',async({page})=>{
+  await prepare(page,landscape,'light');
+  let release,requested;
+  const gate=new Promise(resolve=>{release=resolve;}),seen=new Promise(resolve=>{requested=resolve;});
+  await page.route('**/assets/ui/mode-atlas-account-navigation.assets-*.js',async route=>{requested();await gate;await route.continue();});
+  await page.goto('/',{waitUntil:'commit'});await seen;
+  const profile=page.locator('#profileOpenBtn');
+  try{await expect(profile).toBeVisible();await expect(profile).toBeDisabled();}
+  finally{release();}
+  await page.waitForLoadState('domcontentloaded');await expect(profile).toBeEnabled();
+  await profile.click();await expect(page.getByRole('tab',{name:'Shop',exact:true})).toBeVisible();
+  await page.getByRole('tab',{name:'Shop',exact:true}).click();await expect(page.locator('#maAccount-shop .ma-shop-content')).toBeVisible();
+});

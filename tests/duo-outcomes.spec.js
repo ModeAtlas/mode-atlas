@@ -65,10 +65,13 @@ for(const theme of ['light','dark'])for(const scale of [1,1.5])test(`rewards tog
   await page.locator('.ma-reward-studio').scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath(`rewards-${theme}-${scale}.png`),animations:'disabled'});
 });
 
-for(const [label,g]of [['closed',closed],['landscape',landscape]])test(`Word Bank completion uses the taller safe area: ${label}`,async({page})=>{
+for(const [label,g]of [['closed',closed],['landscape',landscape]])test(`Word Bank completion uses the full-page safe area: ${label}`,async({page})=>{
   await prepare(page,g);await page.addInitScript(()=>localStorage.setItem('kanaWordBank',JSON.stringify([{id:'nihon',written:'日本',reading:'にほん',english:'Japan'}])));
   await page.goto('/wordbank/?view=bank');await settle(page);await page.getByRole('button',{name:'Review words',exact:true}).click();
-  const dialog=page.getByRole('dialog',{name:'Review your words'});await dialog.getByRole('button',{name:/^Meaning ·/}).click();await dialog.getByRole('button',{name:'Reveal',exact:true}).click();await dialog.getByRole('button',{name:'Remembered',exact:true}).click();
-  await expect(dialog).toContainText('Set complete');await centred(page,g);
-  await dialog.getByRole('button',{name:'Choose another skill',exact:true}).click();await expect(dialog.locator('[data-ma-session-complete]')).toHaveCount(0);
+  const course=page.locator('#maWordsFocus');await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByLabel('Your answer (kana or romaji)',{exact:true}).fill('nihon');await page.getByRole('button',{name:'Check reading',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await course.getByRole('button',{name:'Reveal',exact:true}).click();await course.getByRole('button',{name:'Remembered',exact:true}).click();await course.getByRole('button',{name:'Continue',exact:true}).click();await course.getByRole('button',{name:'Skip listening',exact:true}).click();
+  await expect(course).toContainText('Set complete');const done=course.getByRole('button',{name:'Back to Word Bank',exact:true});await expect(done).toBeInViewport({ratio:1});
+  const b=await done.boundingBox();expect(b.y).toBeGreaterThanOrEqual(g.safeArea.top);expect(b.y+b.height).toBeLessThanOrEqual(g.height-g.safeArea.bottom);expect(b.x+b.width).toBeLessThanOrEqual(g.width-g.safeArea.right);
+  expect(await course.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);await done.click();await expect(course).toBeHidden();await expect(page.locator('.wordbank-library')).toBeVisible();
 });

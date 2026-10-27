@@ -61,7 +61,9 @@
       const deleted = tombstones(a.deleted,b.deleted), field = name.endsWith('Tests') && name !== 'kanjiTests' ? 'primary' : 'items';
       const entries = value => field === 'primary' ? ['primary','backup','altPrimary','altBackup'].flatMap(k => Array.isArray(value[k]) ? value[k] : []) : value.items;
       const normalize = value => field === 'primary' ? testRecords(value, name === 'writingTests' ? 'writing' : 'reading') : name==='wordBank'?root.ModeAtlasWordBank.normalize(value):value;
-      const items=records(normalize(entries(a)),normalize(entries(b)),deleted);
+      const items=name==='wordBank'
+        ?root.ModeAtlasWordBank.mergeRecords(normalize(entries(a)),normalize(entries(b)),deleted)
+        :records(normalize(entries(a)),normalize(entries(b)),deleted);
       data = {[field]:name==='wordBank'?root.ModeAtlasWordBank.normalize(items):items, deleted};
       if(name==='wordBank')data.lessons=root.ModeAtlasWordLessonState.merge(a.lessons,b.lessons);
     } else {
