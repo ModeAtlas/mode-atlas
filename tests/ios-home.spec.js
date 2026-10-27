@@ -60,24 +60,28 @@ async function seedRecommendation(page,kind,{complete=false}={}){
   },{kind,complete});
 }
 
-for(const theme of ['dark','light'])test(`iOS ${theme}: returning suggestions and completed goals scroll behind a fixed dock`,async({page},testInfo)=>{
+for(const theme of ['dark','light'])test(`iOS ${theme}: course continuation and compact goals scroll behind a fixed dock`,async({page},testInfo)=>{
   await prepare(page,theme);
   await page.goto('/');
   await expect(page.locator('#maLoadingScreen')).toBeHidden();
   await page.evaluate(()=>document.fonts.ready);
-  const suggestions={'reading':'Build your reading','writing':'Build your recall',
-    'weak-reading':'Read tricky kana','weak-writing':'Recall tricky kana','cross-mode':'Try Recall','due':'Time to revisit'};
+  const histories=['reading','weak-writing','due'];
   // Keep the larger 59px notch inset on narrower phones and check real suggestions.
   for(const viewport of [{width:393,height:852},{width:390,height:844},{width:375,height:812},{width:430,height:932}]){
     await page.setViewportSize(viewport);
-    for(const [kind,title] of Object.entries(suggestions)){
+    for(const kind of histories){
       await seedRecommendation(page,kind);
-      await expect(page.locator('#homeContinueTitle')).toHaveText(title);
+      const next=await page.evaluate(()=>ModeAtlasBranches.nextAction());
+      await expect(page.locator('#homeContinueTitle')).toHaveText(next.title);
+      await expect(page.locator('#homeContinueAction')).toHaveAttribute('href',next.href);
       await expectHomeFlow(page);
     }
     await seedRecommendation(page,'weak-writing',{complete:true});
     await expect(page.locator('#homeCorrect')).toHaveText('123,456');
     await expect(page.locator('#homeGoals [data-complete="true"]')).toHaveCount(3);
+    await expect(page.locator('#homeGoals')).toHaveClass(/ma-routine-goals--compact/);
+    await expect(page.locator('#homeGoals a,#homeGoals button')).toHaveCount(0);
+    expect(await page.locator('#homeGoals .ma-routine-goal').evaluateAll(nodes=>nodes.every(node=>getComputedStyle(node).borderTopWidth==='0px'))).toBe(true);
     await expectHomeFlow(page);
     const fits=await page.evaluate(()=>[...document.querySelectorAll('.atlas-home-learning__copy,#homeContinueTitle,#homeContinueMeta,#homeContinueAction,.atlas-home-goals .ma-button,#homeGoals strong,#homeGoals span')].every(node=>node.scrollWidth<=node.clientWidth+1));
     expect(fits).toBe(true);
@@ -168,7 +172,8 @@ test('web home shows the full owned character, shared study data and a direct Sh
   await expect(page.locator('.atlas-home-character [data-ma-home-avatar]')).toHaveAttribute('data-character',/"outfit":"evergreen"/);
   await expect(page.locator('.atlas-home-character svg')).toHaveAttribute('viewBox','0 0 240 340');
   await expect(page.locator('#homeGoals .ma-routine-goal')).toHaveCount(3);
-  await expect(page.locator('.atlas-home .atlas-home-review-link')).toHaveText('Kana · Read1 due →');
+  await expect(page.locator('#homeReviewCount')).toHaveText('1 item ready');
+  await expect(page.locator('.atlas-home .atlas-home-review-link')).toHaveCount(0);
   await expect(page.locator('.atlas-home [data-ma-home-review-help]')).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:info.outputPath('web-personal-home.png'),fullPage:true});
@@ -178,4 +183,18 @@ test('web home shows the full owned character, shared study data and a direct Sh
   await page.locator('.atlas-home').getByRole('link',{name:'View recap →'}).click();await expect(page.locator('.ma-atlas-recap')).toBeVisible();
   const shop=page.locator('.ma-nav').getByRole('link',{name:'Shop',exact:true});await expect(shop).toBeVisible();await shop.click();await expect(page).toHaveURL(/\/shop\/$/);await expect(page.locator('.ma-nav a[aria-current="page"]')).toHaveText('Shop');
   expect(errors).toEqual([]);
+});
+
+for(const theme of ['dark','light'])for(const [width,height]of [[432,640],[640,432]])test(`Home next action clears the native side region ${width}x${height} ${theme}`,async({page},info)=>{
+  const native=require('./helpers/native-geometry'),layout={width,height,reservedRegionsAvailable:true,safeArea:{top:0,right:84,bottom:36,left:0},occlusions:[{x:width-74,y:12,width:52,height:136}]};
+  await native.prepare(page,layout,theme);await page.goto('/');await native.settle(page);
+  const action=page.locator('#homeContinueAction');
+  await expect(action).toBeInViewport({ratio:1});
+  expect(await action.evaluate((node,layout)=>{const r=node.getBoundingClientRect();return r.right<=innerWidth-layout.safeArea.right+1&&r.bottom<=innerHeight-layout.safeArea.bottom&&r.height>=44;},layout)).toBe(true);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.screenshot({path:info.outputPath('home-native-region.png')});
+  await page.evaluate(()=>{document.documentElement.style.fontSize='24px';document.documentElement.setAttribute('data-ma-large-text','');});
+  expect(await page.locator('.atlas-home-learning__copy,#homeGoals').evaluateAll(nodes=>nodes.every(node=>node.scrollWidth<=node.clientWidth+1))).toBe(true);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.screenshot({path:info.outputPath('home-native-region-large-text.png')});
 });

@@ -144,22 +144,28 @@ test('guided settings cannot take over Daily Challenge and Test Mode',async({pag
   expect(await page.evaluate(()=>sessionStats.study.count)).toBe(0);
 });
 
-for(const theme of ['light','dark'])test(`iOS ${theme}: recommendation reflects saved difficulties and guides the selected activity`,async({page},testInfo)=>{
+for(const theme of ['light','dark'])test(`iOS ${theme}: Home resumes the saved course task without another overview`,async({page},testInfo)=>{
   await prepare(page,{native:true,theme});
-  await page.addInitScript(()=>localStorage.setItem('charStats',JSON.stringify({'あ':{correct:3,wrong:5}})));
+  await page.addInitScript(()=>{
+    if(localStorage.getItem('homeCourseFixture'))return;
+    localStorage.setItem('modeAtlasKanaLearning',JSON.stringify({startedAt:1,startKind:'beginner'}));
+    localStorage.setItem('homeCourseFixture','true');
+  });
   await open(page,'/');
-  await expect(page.locator('#homeContinueTitle')).toHaveText('Read tricky kana');
-  await expect(page.locator('#homeContinueMeta')).toContainText('1 kana has');
-  await page.screenshot({path:testInfo.outputPath(`ios-${theme}-recommendation.png`)});
+  await expect(page.locator('#homeContinueAction')).toHaveAttribute('href','/kana/?view=course&script=hiragana');
   await page.locator('#homeContinueAction').click();
-  await expect(page.locator('#studyLength')).toHaveValue('10');
-  expect(await page.evaluate(()=>settings.focusWeak)).toBe(true);
-  await page.locator('#startBtn').click();
-  expect(await page.evaluate(()=>getEligiblePool())).toEqual(['あ']);
-  await page.locator('#skipKanaBtn').click();
-  await expect(page.locator('#studyFeedback')).toBeVisible();
+  await expect(page.locator('.ma-course-view')).toHaveAttribute('data-task','teach');
+  await page.getByRole('button',{name:'Continue',exact:true}).click();
+  const task=await page.locator('.ma-course-body').innerText(),position=await page.locator('.ma-course-position span').innerText();
+  expect(position).not.toMatch(/^0 /);
+  await page.getByRole('button',{name:'Save & exit',exact:true}).click();
+  await page.locator('.ma-ios-tabs').getByRole('link',{name:'Atlas',exact:true}).click();
+  await expect(page.locator('#homeContinueAction')).toHaveText('Continue session');
+  await page.locator('#homeContinueAction').click();
+  await expect(page.locator('.ma-course-body')).toHaveText(task,{useInnerText:true});
+  await expect(page.locator('.ma-course-position span')).toHaveText(position);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  await page.screenshot({path:testInfo.outputPath(`ios-${theme}-coaching.png`)});
+  await page.screenshot({path:testInfo.outputPath(`ios-${theme}-course-resume.png`)});
 });
 
 test('phone Reading keeps input focus through correct feedback and reflows teaching at larger text sizes',async({page},testInfo)=>{

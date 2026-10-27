@@ -32,7 +32,7 @@
   const BRANCH_PATHS=new Set(['/kana/','/reading/','/writing/','/results/','/wordbank/','/kanji/']);
   const onboardingComplete=()=>storeGet(K.complete)==='true'||storeGet(K.first)==='true';
   function branchDestination(raw){try{const u=new URL(raw||location.href,location.origin);return u.origin===location.origin&&BRANCH_PATHS.has(u.pathname)?u.pathname+u.search+u.hash:''}catch{return''}}
-  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Word Bank';if(p.startsWith('/kanji/'))return'Kanji';if(p.startsWith('/writing/'))return'Kana Recall';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Read';return'Kana'}
+  function destinationLabel(raw){const p=branchDestination(raw);if(p.startsWith('/wordbank/'))return'Words';if(p.startsWith('/kanji/'))return'Kanji';if(p.startsWith('/writing/'))return'Kana Recall';if(p.startsWith('/results/'))return'Kana Results';if(p.startsWith('/reading/'))return'Kana Read';return'Kana'}
   function needsSetup(raw){return !onboardingComplete()}
   function vEl(tag, className='', text=''){const el=document.createElement(tag);if(className)el.className=className;if(className==='ma-visit-title')el.id='maVisitTitle';if(text!=='')el.textContent=String(text);return el}
   function vBtn(className='', text=''){const btn=vEl('button',className,text);btn.type='button';return btn}
@@ -45,17 +45,16 @@
   // Activity is recorded by successful study/word-bank actions, never inferred
   // from a click, document load or background snapshot refresh.
   function recordActivity(kind){
-    if(!['reading','writing','handwriting','wordBank','kanji'].includes(kind))return;
-    const obj=kind==='handwriting'?{branchId:'kana',branch:'Kana',page:'Handwriting',href:'/kana/handwriting/',mode:'Handwriting'}:kind==='kanji'?{branchId:'kanji',branch:'Kanji',page:'Kanji',href:'/kanji/',mode:'Learn and recall'}:kind==='wordBank'
-      ? {branchId:'words',branch:'Word Bank',page:'Word Bank',href:'/wordbank/',mode:'Vocabulary Review'}
-      : {branchId:'kana',branch:'Kana Trainer',page:kind==='writing'?'Recall':'Read',href:kind==='writing'?'reverse.html':'default.html',mode:mode(kind)};
+    if(!['kana','reading','writing','handwriting','wordBank','kanji'].includes(kind))return;
+    const current=branchDestination(location.href);
+    const obj=kind==='handwriting'?{branchId:'kana',branch:'Kana',page:'Handwriting',href:'/kana/handwriting/',mode:'Handwriting'}:kind==='kanji'?{branchId:'kanji',branch:'Kanji',page:'Kanji',href:current.startsWith('/kanji/')?current:'/kanji/',mode:'Learn and recall'}:kind==='wordBank'
+      ? {branchId:'words',branch:'Words',page:'Words',href:location.pathname==='/wordbank/'?(branchDestination(location.href)||'/wordbank/'):'/wordbank/?view=bank',mode:'Vocabulary Review'}
+      : {branchId:'kana',branch:'Kana',page:kind==='kana'?'Kana course':kind==='writing'?'Recall':'Read',href:/^\/(kana|reading|writing)\//.test(current)?current:'/kana/',mode:kind==='kana'?'Course':mode(kind)};
     storeSet(K.lastStudied,String(Date.now()));
     storeSetJSON(K.lastMode,obj);
     window.dispatchEvent(new CustomEvent('modeAtlasActivityChanged'));
   }
   window.ModeAtlasVisitFlows=Object.freeze({recordActivity,showTour,ready:onboardingComplete});
-  const ROWS=[['あ row','あいうえお'],['か row','かきくけこ'],['さ row','さしすせそ'],['た row','たちつてと'],['な row','なにぬねの'],['は row','はひふへほ'],['ま row','まみむめも'],['や row','やゆよ'],['ら row','らりるれろ'],['わ row','わをん'],['ア row','アイウエオ'],['カ row','カキクケコ'],['サ row','サシスセソ'],['タ row','タチツテト'],['ナ row','ナニヌネノ']];
-  function suggestions(){const st=j('charStats',{}),tm=j('charTimes',{});const a=ROWS.map(([name,chars])=>{let c=0,w=0,ms=0,n=0;[...chars].forEach(ch=>{c+=Number(st[ch]?.correct||0);w+=Number(st[ch]?.wrong||0);if(tm[ch]?.avg&&tm[ch]?.count){ms+=tm[ch].avg*tm[ch].count;n+=tm[ch].count}});const total=c+w,acc=total?c/total:1;return{name,total,score:w*4+(1-acc)*50+Math.min((n?ms/n:0)/500,12)+(total?0:-100)}}).filter(r=>r.total>0).sort((a,b)=>b.score-a.score).slice(0,3);return a.length?a:[{name:'あ row'},{name:'か row'},{name:'さ row'}]}
   function name(){const u=window.KanaCloudSync?.getUser?.();const n=(u?.displayName||u?.email||'').trim();if(n)return n.split(/\s+/)[0].split('@')[0];for(const id of ['profileName','drawerName','studyProfileName','identityName']){const e=document.getElementById(id),t=(e?.textContent||'').trim();if(t&&!/guest/i.test(t))return t.split(/\s+/)[0]}return'there'}
   function appBasePath(){
     try { return new URL((window.ModeAtlasEnv && window.ModeAtlasEnv.baseUrl) || '/', location.origin).pathname; } catch {}
@@ -134,7 +133,7 @@
   function ret(){
     ensure();
     storeSet(K.return,studyDate());
-    const lm=j(K.lastMode,{page:'Reading Practice',mode:'Endless Mode',href:'default.html'}),s=suggestions(),st=streak();
+    const next=window.ModeAtlasBranches.nextAction(),st=streak();
     const c=document.getElementById('maVisitContent');
     c.replaceChildren(
       vEl('div','ma-visit-kicker','Daily return'),
@@ -150,25 +149,19 @@
       vEl('strong','',`${st} day${st===1?'':'s'}`)
     );
 
-    const reviewPanel=vEl('div','ma-card ma-card--soft ma-visit-panel');
-    reviewPanel.append(vEl('div','ma-visit-label','Suggested review'));
-    const reviewList=vEl('div','ma-visit-list');
-    s.forEach(r=>reviewList.append(vEl('span','ma-visit-chip',r.name)));
-    reviewPanel.append(reviewList);
-
     const resumePanel=vEl('div','ma-card ma-card--soft ma-visit-panel');
-    resumePanel.append(vEl('div','ma-visit-label','Resume'));
+    resumePanel.append(vEl('div','ma-visit-label',next.title));
     const resumeList=vEl('div','ma-visit-list');
-    resumeList.append(vEl('span','ma-visit-chip',`${lm.page||'Reading Practice'} · ${lm.mode||'Endless Mode'}`));
+    if(next.detail)resumeList.append(vEl('span','',next.detail));
     resumePanel.append(resumeList);
 
     const actions=vEl('div','ma-visit-actions');
-    actions.append(vLink('ma-button ma-button--primary ma-visit-btn','Resume',lm.href||'default.html'));
+    actions.append(vLink('ma-button ma-button--primary ma-visit-btn',next.label,next.href));
     const close=vBtn('ma-button ma-button--ghost ma-visit-btn','Not now');
     close.dataset.close='';
     actions.append(close);
 
-    c.append(copy,reviewPanel,resumePanel,actions);
+    c.append(copy,resumePanel,actions);
     close.addEventListener('click',()=>closeModal());
     openModal(false);
   }

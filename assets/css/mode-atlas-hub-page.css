@@ -8,6 +8,9 @@
 .ma-hub-header .ma-hub-eyebrow{margin:0 0 6px;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;font-weight:750;}
 #maHubContent{display:grid;gap:20px;min-width:0;}
 .ma-hub-note{color:var(--ma-muted);font-size:.85rem;line-height:1.6;}
+.ma-learn-secondary{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 16px;min-height:48px;padding:16px 0;border-top:1px solid var(--ma-border);color:var(--ma-text);font-weight:650;text-decoration:none;}
+.ma-learn-secondary span{font-size:.8rem;font-weight:400;color:var(--ma-muted);}
+.ma-learn-secondary:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:4px;}
 html[data-ma-runtime="ios"] .ma-hub-main{margin-top:8px;}
 html[data-ma-runtime="ios"] .ma-hub-page>.shell{padding:0 6px;}
 @media(max-width:760px){.ma-hub-page>.shell{padding:0 6px;}.ma-hub-main{margin-top:16px;}}

@@ -8,7 +8,25 @@
   const KEY='modeAtlasWordLessons';
   const phases=['meet','recall','apply','complete'];
   const DAY=86400000,INTERVALS=Object.freeze([DAY,7*DAY,14*DAY,30*DAY]);
+  const vocabularySkills=Object.freeze(['decode','meaning','produceRoman','produceKana']);
+  const eventPattern=/^[0-9a-z]+:[012]:[pt]:[0-9a-z-]{1,60}$/;
+  function events(value){return String(value||'').split(',').filter(v=>eventPattern.test(v)).map(v=>{const [at,q,kind,id]=v.split(':');return {at:parseInt(at,36),quality:Number(q),kind,id,encoded:v};});}
+  function mergeEvents(a,b){return [...new Map([...events(a),...events(b)].sort((a,b)=>a.encoded.localeCompare(b.encoded)).map(e=>[e.id,e])).values()].sort((a,b)=>a.at-b.at||a.id.localeCompare(b.id)).slice(-16).map(e=>e.encoded).join(',');}
+  function vocabulary(value){if(!value||typeof value!=='object')return null;return {learnedAt:count(value.learnedAt),formIntroducedAt:count(value.formIntroducedAt),...Object.fromEntries(vocabularySkills.map(k=>[k,mergeEvents(value[k],'')])),achieved:Object.fromEntries(vocabularySkills.map(k=>[k,count(value.achieved?.[k])])),schedules:Object.fromEntries(vocabularySkills.filter(k=>value.schedules?.[k]).map(k=>[k,{level:Math.min(5,count(value.schedules[k].level)),due:count(value.schedules[k].due),last:count(value.schedules[k].last)}]))};}
   const count=value=>Number.isFinite(Number(value))?Math.max(0,Math.floor(Number(value))):0;
+  // Both word courses keep their resumable task cursor in this existing synced
+  // section. It is not word mastery and never contributes to phrase completion.
+  function course(value){
+    if(!value||typeof value!=='object'||typeof value.id!=='string')return null;
+    const text=v=>typeof v==='string'?v.slice(0,128):'';
+    const task=t=>({id:text(t?.id),mode:text(t?.mode),snapshot:text(t?.snapshot),retry:t?.retry===true,assisted:t?.assisted===true});
+    const taskModes=new Set(['meet','teach',...vocabularySkills,'reading','listening']);
+    const tasks=(Array.isArray(value.tasks)?value.tasks:[]).slice(0,100).map(task).filter(t=>t.id&&taskModes.has(t.mode));
+    return {id:text(value.id),kind:text(value.kind),script:['mixed','personal'].includes(value.script)?value.script:'kana',wordIds:(Array.isArray(value.wordIds)?value.wordIds:[]).map(text).filter(Boolean).slice(0,50),selectionIds:(Array.isArray(value.selectionIds)?value.selectionIds:[]).map(text).filter(Boolean).slice(0,500),milestoneIds:(Array.isArray(value.milestoneIds)?value.milestoneIds:[]).map(text).filter(Boolean).slice(0,6),tasks,
+      cursor:Math.min(tasks.length,count(value.cursor)),phase:['active','task','feedback','complete'].includes(value.phase)?value.phase:'task',
+      results:(Array.isArray(value.results)?value.results:[]).slice(0,100).map(t=>({...task(t),correct:t?.correct===true})),
+      milestone:Math.min(512,count(value.milestone)),finalCheckpoint:value.finalCheckpoint===true,startedAt:count(value.startedAt),completedAt:count(value.completedAt),updatedAt:count(value.updatedAt)};
+  }
   function normalizeReview(row,completedAt=0){
     if(!completedAt)return null;
     return {dueAt:count(row?.dueAt)||completedAt+DAY,
@@ -18,11 +36,14 @@
   function normalize(input){
     return Object.fromEntries(Object.entries(input||{}).filter(([id,row])=>
       /^[a-z][a-z0-9-]{0,39}$/.test(id)&&!['constructor','prototype'].includes(id)&&row&&typeof row==='object'
-    ).slice(0,50).map(([id,row])=>[id,{
+    ).slice(0,512).map(([id,row])=>[id,{
       index:Math.min(50,count(row.index)),phase:phases.includes(row.phase)?row.phase:'meet',
       application:Math.min(20,count(row.application)),startedAt:count(row.startedAt),
       updatedAt:count(row.updatedAt),completedAt:count(row.completedAt),
-      review:normalizeReview(row.review,count(row.completedAt))
+      review:normalizeReview(row.review,count(row.completedAt)),
+      ...(vocabulary(row.vocabulary)?{vocabulary:vocabulary(row.vocabulary)}:{}),
+      ...(course(row.course)?{course:course(row.course)}:{}),
+      ...(row.preferences?{preferences:{script:row.preferences.script==='mixed'?'mixed':'kana',checkpointWords:count(row.preferences.checkpointWords),checkpointed:[...new Set((Array.isArray(row.preferences.checkpointed)?row.preferences.checkpointed:[]).filter(id=>typeof id==='string'&&id.length<=128))].slice(0,512).sort()}}:{})
     }]));
   }
   function read(){return normalize(root.ModeAtlasStorage.json(KEY,{}));}
@@ -33,6 +54,8 @@
       const newer=!old||row.updatedAt>old.updatedAt||(row.updatedAt===old.updatedAt&&JSON.stringify(row)>JSON.stringify(old));
       const reviews=[old?.review,row.review].filter(Boolean).sort((a,b)=>b.updatedAt-a.updatedAt||JSON.stringify(b).localeCompare(JSON.stringify(a)));
       out[id]={...(newer?row:old),completedAt:Math.max(old?.completedAt||0,row.completedAt),review:reviews[0]||null};
+      if(old?.preferences||row.preferences){const checkpointed=[...new Set([...(old?.preferences?.checkpointed||[]),...(row.preferences?.checkpointed||[])])].sort();out[id].preferences={...(out[id].preferences||old?.preferences||row.preferences),checkpointed,checkpointWords:Math.max(checkpointed.length,old?.preferences?.checkpointWords||0,row.preferences?.checkpointWords||0)};}
+      if(old?.vocabulary||row.vocabulary){const av=old?.vocabulary||{},bv=row.vocabulary||{};out[id].vocabulary={learnedAt:Math.min(av.learnedAt||bv.learnedAt||0,bv.learnedAt||av.learnedAt||0),formIntroducedAt:Math.min(av.formIntroducedAt||bv.formIntroducedAt||0,bv.formIntroducedAt||av.formIntroducedAt||0),...Object.fromEntries(vocabularySkills.map(k=>[k,mergeEvents(av[k],bv[k])])),achieved:Object.fromEntries(vocabularySkills.map(k=>[k,Math.max(av.achieved?.[k]||0,bv.achieved?.[k]||0)])),schedules:Object.fromEntries(vocabularySkills.map(k=>{const choices=[av.schedules?.[k],bv.schedules?.[k]].filter(Boolean).sort((a,b)=>b.last-a.last||JSON.stringify(b).localeCompare(JSON.stringify(a)));return [k,choices[0]];}).filter(([,v])=>v))};}
     }
     return normalize(out);
   }
@@ -74,5 +97,7 @@
       return saved.review;
     });
   }
-  return Object.freeze({KEY,INTERVALS,normalize,read,merge,checkpoint,next,due,review});
+  function vocabularyOverview(now=Date.now()){const rows=Object.values(read()).filter(row=>row.vocabulary?.learnedAt);return {introduced:rows.length,attempts:rows.reduce((n,row)=>n+vocabularySkills.reduce((s,k)=>s+events(row.vocabulary[k]).length,0),0),due:rows.filter(row=>vocabularySkills.some(k=>{const list=events(row.vocabulary[k]);return list.length&&(row.vocabulary.schedules?.[k]||vocabularySchedule(list)).due<=now;})).length};}
+  function vocabularySchedule(list){let level=0,due=0;for(const event of list){if(event.quality!==2){level=0;due=event.at+600000;}else if(!due||event.at>=due){level=Math.min(5,level+1);due=event.at+[0,86400000,259200000,604800000,1209600000,2592000000][level];}}return {level,due};}
+  return Object.freeze({KEY,INTERVALS,normalize,read,merge,checkpoint,next,due,review,vocabularySkills,events,mergeEvents,vocabularySchedule,vocabularyOverview});
 });

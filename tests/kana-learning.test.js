@@ -6,7 +6,7 @@ function load(){
   const localStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>{if(failed&&k==='modeAtlasKanaLearning'){failed=false;throw Error('Quota');}values.set(k,String(v));},removeItem:k=>values.delete(k),get length(){return values.size;},key:i=>[...values.keys()][i]??null};
   const root={setTimeout:()=>0,clearTimeout(){},Date:Clock,URLSearchParams,console,structuredClone,localStorage,sessionStorage:localStorage,crypto:{randomUUID:()=>String(++serial)},CustomEvent:class{},dispatchEvent(){},addEventListener(){},document:{addEventListener(){}},KanaCloudSync:{getUser:()=>uid==='guest'?null:{uid},scheduleSync(){},markSectionUpdated(){}}};root.window=root;
   const context=vm.createContext(root);
-  for(const file of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-review','data/mode-atlas-kana-data','app/mode-atlas-kana-learning','app/mode-atlas-kana-placement'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',file+'.js'),'utf8'),context);
+  for(const file of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-review','data/mode-atlas-kana-data','app/mode-atlas-kana-learning','app/mode-atlas-kana-placement','app/mode-atlas-japanese','data/mode-atlas-kana-coaching'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',file+'.js'),'utf8'),context);
   return {L:root.ModeAtlasKanaLearning,P:root.ModeAtlasKanaPlacement,root,values,advance:ms=>now+=ms,fail:()=>failed=true,owner:value=>uid=value};
 }
 test('fresh accounts choose an entry and each script/skill starts at its own A-row',()=>{
@@ -110,4 +110,103 @@ test('legacy and optional evidence is labelled honestly until new practice adds 
   let guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,5);assert.equal(guide.legacy,true);assert.equal(guide.checks.find(c=>c.id==='days').met,null);
   e.readingStats['あ'].correct=3;e.readingReview['あ']={reviewVersion:1,recent:[{id:'x',at:1,quality:2}]};
   guide=L.guidance('あ','reading',s,e);assert.equal(guide.target,4);assert.equal(guide.legacy,false);assert.equal(guide.checks.find(c=>c.id==='days').met,false);assert.equal(guide.checks.find(c=>c.id==='time').met,null);assert.equal(guide.checks.find(c=>c.id==='time').optional,true);
+});
+
+test('lesson checkpoints introduce characters without inventing recall or listening mastery',()=>{
+  const {L,values}=load();L.start();L.completeLessonCharacter('あ');L.completeLessonCharacter('い',{listened:true});
+  const state=L.read();assert.ok(state.lessonChecks['あ']);assert.ok(state.introduced['あ']);assert.equal(state.listeningChecks['あ'],undefined);assert.ok(state.listeningChecks['い']);
+  assert.equal(L.stage('あ'),1);assert.equal(L.path('hiragana','reading')[1].unlocked,false);assert.equal(values.has('charStats'),false);assert.equal(values.has('modeAtlasProgress'),false);
+  assert.equal(L.completeLessonCharacter('invalid'),false);assert.equal(L.introduceSound('invalid'),false);
+});
+test('guided journey balances each row before advancing and mixed practice excludes merely unlocked kana',()=>{
+  const {L}=load();let s=L.start();assert.equal(L.journey().phase,'learn');assert.deepEqual(plain(L.learnedPool()),[]);
+  for(const c of 'あいうえお')L.completeLessonCharacter(c);assert.equal(L.journey().phase,'reading');assert.equal(L.learnedPool().join(''),'あいうえお');
+  s=L.read();for(const c of 'あいうえお')s.earned.reading[c]=3;L.save(s);
+  assert.equal(L.path('hiragana','reading')[1].unlocked,true);assert.equal(L.learnedPool().includes('か'),false);assert.equal(L.journey().phase,'writing');assert.equal(L.journey().row.id,'hiragana:base:a');
+  for(const c of 'あいうえお')s.earned.writing[c]=3;L.save(s);assert.equal(L.journey().phase,'learn');assert.equal(L.journey().row.id,'hiragana:base:ka');
+});
+test('full-script assessments require familiar rows, while placed experience keeps its access',()=>{
+  const {L}=load(),s=L.start(),base=L.rows.filter(r=>r.script==='hiragana'&&r.group==='base');
+  for(const row of base.slice(0,-1))for(const c of row.chars)s.earned.reading[c]=3;L.save(s);
+  assert.ok(L.path('hiragana','reading').filter(r=>r.group==='base').every(r=>r.unlocked));assert.equal(L.testScripts('reading').includes('hiragana'),false);
+  L.place('reading',base.at(-1).id);assert.equal(L.testScripts('reading').includes('hiragana'),true);
+});
+test('lesson and sound introductions merge across devices without duplicate or foreign evidence',()=>{
+  const {L}=load(),a=L.normalize({lessonChecks:{'あ':8},listeningChecks:{'あ':9},sounds:{longVowels:10}}),b=L.normalize({lessonChecks:{'あ':7,'い':12},sounds:{sokuon:11,longVowels:15}});
+  const result=L.merge(a,b);assert.equal(result.lessonChecks['あ'],7);assert.equal(result.sounds.longVowels,10);assert.deepEqual(plain(result),plain(L.merge(b,a)));assert.deepEqual(plain(L.merge(result,result)),plain(result));
+  assert.deepEqual(plain(L.normalize({lessonChecks:{bad:1,'あ':{}},sounds:{unknown:3,sokuon:{}}}).sounds),{});
+});
+
+test('lesson sound checks accept chart aliases and spoken o for wo, without accepting copied kana',()=>{
+  const {root}=load(),grade=root.ModeAtlasKanaCoaching.matches;
+  for(const [char,answer]of [['を','o'],['ヲ','wo'],['し','si'],['ち','ti'],['ん','nn']])assert.equal(grade(char,answer),true);
+  assert.equal(grade('あ','あ'),false);assert.equal(grade('お','wo'),false);assert.equal(grade('し','chi'),false);
+});
+
+test('new course persists chunk tasks and only a balanced whole-row check opens the next row',()=>{
+  const {L,root}=load();L.start();const first=L.beginCourse();assert.equal(first.kind,'lesson');assert.equal(first.chars.join(''),'あいう');
+  const solve=()=>{let s=L.courseSession(),n=0;while(!s.complete){const t=s.queue[s.index],p=t.kind.startsWith('pattern')?L.patternTask(t):null;const value=t.kind==='read'?L.map[t.char]:p?.answer||t.char;L.answerCourse(value,{played:true});s=L.advanceCourse();assert.ok(++n<200);}return s;};
+  solve();assert.equal(L.courseRows('hiragana')[0].checked,false);assert.equal(L.path('hiragana','reading')[1].unlocked,false);
+  assert.equal(L.nextAction().kind,'lesson');assert.deepEqual(plain(L.nextAction().chars),['え','お']);
+  L.beginCourse();solve();assert.equal(L.nextAction().kind,'check');L.beginCourse();const check=solve();assert.equal(check.passed,true);assert.equal(L.courseRows('hiragana')[0].checked,true);assert.equal(L.path('hiragana','reading')[1].unlocked,true);
+  assert.equal(L.nextAction().row.id,'hiragana:base:ka');assert.equal(L.read().course.legacyEligible,false);assert.equal(L.courseStatus().kanjiReady,false);
+});
+test('course correction retains the first miss, revisits after intervening items and failed reviews remain actionable',()=>{
+  const {L}=load();L.start();let s=L.beginCourse();while(s.queue[s.index].kind==='teach'){L.answerCourse('');s=L.advanceCourse();}
+  const first=s.queue[s.index],index=s.index;L.answerCourse('wrong');s=L.advanceCourse();const retry=s.queue.findIndex((t,i)=>i>index&&t.repair&&t.char===first.char);assert.ok(retry>=index+3);assert.equal(L.read().course.records['writing:'+first.char][0].correct,false);
+  let n=0;while(!s.complete){const t=s.queue[s.index];L.answerCourse(t.kind==='teach'?'':'wrong',{played:true});s=L.advanceCourse();assert.ok(++n<100);}
+  assert.equal(L.nextAction().kind,'review');assert.match(L.nextAction().title,/tricky/);
+});
+test('correct repairs cannot turn failed first attempts into a row or checkpoint pass',()=>{
+  for(const kind of ['check','checkpoint']){
+    const {L}=load();L.start();for(const char of 'あいうえお')L.introduce(char);
+    let s=L.beginCourse({unit:'hiragana:base:a',kind:'check'});
+    if(kind==='checkpoint'){const state=L.read();state.course.session.kind='checkpoint';state.course.session.unit='hiragana:3';L.save(state);s=L.courseSession();}
+    let count=0;while(!s.complete){const task=s.queue[s.index];L.answerCourse(task.repair?(task.kind==='read'?L.map[task.char]:task.char):'wrong',{played:true});s=L.advanceCourse();assert.ok(++count<100);}
+    assert.equal(s.passed,false);assert.equal(L.courseRows('hiragana')[0].checked,false);assert.equal(L.path('hiragana','reading')[1].unlocked,false);assert.equal(L.courseStatus().kanjiReady,false);
+    assert.equal(L.nextAction().kind,kind);assert.match(L.nextAction().label,/fresh/);
+    for(const receipts of Object.values(L.read().course.records))for(const receipt of receipts)if(receipt.correct)assert.equal(receipt.assisted,true);
+    L.beginCourse();s=L.courseSession();while(!s.complete){const task=s.queue[s.index];L.answerCourse(task.kind==='read'?L.map[task.char]:task.char,{played:true});s=L.advanceCourse();}
+    assert.equal(s.passed,true);
+  }
+});
+test('a hinted original row-check answer still requires a fresh check after a correct repair',()=>{
+  const {L}=load();L.start();for(const char of 'あいうえお')L.introduce(char);let s=L.beginCourse({unit:'hiragana:base:a',kind:'check'});L.helpCourse();
+  while(!s.complete){const task=s.queue[s.index];L.answerCourse(task.kind==='read'?L.map[task.char]:task.char,{played:true});s=L.advanceCourse();}
+  assert.equal(s.passed,false);assert.equal(L.nextAction().kind,'check');assert.equal(L.courseRows('hiragana')[0].checked,false);
+});
+test('generated and repaired listening queues never repeat the previously exposed sound',()=>{
+  for(let seed=1;seed<=40;seed++){
+    const {L,root}=load();let rng=seed;root.Math=Object.create(Math);root.Math.random=()=>((rng=Math.imul(rng,1664525)+1013904223>>>0)/4294967296);
+    L.start();let s=L.beginCourse(),n=0;
+    while(!s.complete){for(let i=1;i<s.queue.length;i++)if(s.queue[i].kind==='listen')assert.notEqual(L.taskTarget(s.queue[i]),L.taskTarget(s.queue[i-1]),'seed '+seed+' step '+i);
+      const t=s.queue[s.index];L.answerCourse(n===5?'wrong':t.kind==='read'?L.map[t.char]:t.char,{played:true});s=L.advanceCourse();assert.ok(++n<90);
+    }
+  }
+});
+test('course state merges first-attempt evidence and rejects foreign or malformed resumptions',()=>{
+  const {L,owner}=load();L.start();L.beginCourse();const before=L.read();L.answerCourse('');const after=L.read();assert.deepEqual(plain(L.merge(before,after)),plain(L.merge(after,before)));assert.deepEqual(plain(L.merge(after,after)),plain(after));
+  owner('new-account');assert.equal(L.courseSession(),null);const invalid=L.normalizeCourse({session:{...after.course.session,owner:'x'.repeat(1000)},records:{'reading:あ':[{id:'<script>',at:1,correct:true}]}});assert.equal(invalid.session,null);assert.equal(invalid.records['reading:あ'].length,0);
+});
+test('offline authentication hydration preserves the last account course without changing its owner',()=>{
+  const {L,owner,values}=load();owner('returning-user');values.set('modeAtlasLastUserId','returning-user');L.start();L.beginCourse();L.answerCourse('');L.advanceCourse();const session=plain(L.courseSession());
+  owner('guest');assert.deepEqual(plain(L.courseSession()),session);assert.equal(L.nextAction().kind,'resume');assert.deepEqual(plain(L.beginCourse()),session);
+  owner('returning-user');assert.deepEqual(plain(L.courseSession()),session);owner('different-user');assert.equal(L.courseSession(),null);
+});
+test('pattern spelling progress stays separate from auditory evidence when audio is skipped',()=>{
+  const {L}=load();L.start();for(const p of L.patterns())for(const c of p.prerequisites)L.introduce(c);
+  L.beginCourse({unit:'longVowels'});let s=L.courseSession();while(!s.complete){const t=s.queue[s.index],p=L.patternTask(t);L.answerCourse(p.answer||'',{skipAudio:t.kind==='patternListen'});s=L.advanceCourse();}
+  assert.ok(L.read().sounds.longVowels);assert.equal(L.read().course.patternListening.longVowels,undefined);
+  L.beginCourse({unit:'longVowels'});s=L.courseSession();while(!s.complete){const t=s.queue[s.index],p=L.patternTask(t);L.answerCourse(p.answer||'',{played:true});s=L.advanceCourse();}
+  assert.ok(L.read().course.patternListening.longVowels);
+});
+test('pattern repairs do not award independent spelling or listening evidence',()=>{
+  const {L}=load();L.start();for(const c of L.patterns()[0].prerequisites)L.introduce(c);L.beginCourse({unit:'longVowels'});let s=L.courseSession();
+  while(!s.complete){const task=s.queue[s.index],p=L.patternTask(task);L.answerCourse(task.repair?p.answer||'':'wrong',{played:true});s=L.advanceCourse();}
+  assert.equal(s.passed,false);assert.equal(L.read().sounds.longVowels,undefined);assert.equal(L.read().course.patternListening.longVowels,undefined);assert.equal(L.nextAction().kind,'pattern');
+});
+test('guided habit records count original retrieval attempts and exclude teaching, supported matching, skipped audio and repairs',()=>{
+  const {L,root}=load(),receipts=[];root.ModeAtlasProgress={recordHabit:r=>receipts.push(r)};L.start();let s=L.beginCourse(),expected=[];
+  while(!s.complete){const task=s.queue[s.index],skip=task.kind==='listen';if(['read','recall'].includes(task.kind)&&!task.repair)expected.push(s.id+':'+s.index);L.answerCourse('wrong',{skipAudio:skip});s=L.advanceCourse();}
+  assert.deepEqual(receipts.map(r=>r.id),expected);assert.equal(new Set(receipts.map(r=>r.id)).size,receipts.length);assert.ok(receipts.every(r=>r.branch==='kana'));assert.ok(receipts.length>0);
 });

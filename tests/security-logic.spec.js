@@ -9,7 +9,7 @@ async function words(page,native,entries=[]){
     localStorage.setItem('modeAtlasSound','off');localStorage.setItem('maWhatsNewSeen','review');
     if(!sessionStorage.getItem('reviewSeeded')){localStorage.setItem('kanaWordBank',JSON.stringify(entries));sessionStorage.setItem('reviewSeeded','1');}
   },{native,entries});
-  await page.goto('/wordbank/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
+  await page.goto('/wordbank/?view=bank');await expect(page.locator('#maLoadingScreen')).toBeHidden();
 }
 async function add(page,value){
   await page.locator('#wordBankAddJumpBtn').click();await page.locator('#kanaInput').fill(value);await page.locator('#addWordBtn').click();
@@ -25,6 +25,7 @@ for(const native of [false,true]){
     if(!await row.evaluate(el=>el.open))await row.locator('summary').click();
     await row.locator('[data-field=english]').fill('Coffee');await row.locator('[data-field=notes]').fill('<img src=x onerror=alert(1)>');await row.locator('[data-action=save]').click();
     await row.locator('[data-action=favorite]').click();
+    await page.getByText('Filter & sort',{exact:true}).click();
     for(const [filter,count]of [['all',8],['favorites',1],['missingEnglish',7],['withNotes',1],['hiragana',5],['katakana',3],['mixed',0]]){
       await page.locator('#filterSelect').selectOption(filter);await expect(page.locator('.wordbank-entry')).toHaveCount(count);
     }
@@ -56,9 +57,11 @@ for(const native of [false,true])test(`Word recall ${native?'iOS':'web'} reveals
   await words(page,native,[{id:'nihon',written:'日本',reading:'にほん',english:'Japan'}]);
   await expect(page.getByRole('button',{name:'Review words',exact:true})).toHaveCount(1);
   await page.getByRole('button',{name:'Review words',exact:true}).click();
-  const dialog=page.getByRole('dialog',{name:'Review your words'});await dialog.getByRole('button',{name:/^Meaning ·/}).click();await expect(dialog.getByRole('heading',{name:'日本'})).toBeVisible();await expect(dialog).not.toContainText('Japan');
-  await dialog.getByRole('button',{name:'Reveal',exact:true}).click();await expect(dialog).toContainText('にほん');await expect(dialog).toContainText('Japan');
-  await dialog.getByRole('button',{name:'Remembered',exact:true}).click();await expect(dialog).toContainText('Set complete');
+  const course=page.locator('#maWordsFocus');await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByLabel('Your answer (kana or romaji)',{exact:true}).fill('nihon');await page.getByRole('button',{name:'Check reading',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
+  await expect(course.getByRole('heading',{name:'日本'})).toBeVisible();await expect(course).not.toContainText('Japan');
+  await course.getByRole('button',{name:'Reveal',exact:true}).click();await expect(course).toContainText('にほん');await expect(course).toContainText('Japan');
+  await course.getByRole('button',{name:'Remembered',exact:true}).click();await course.getByRole('button',{name:'Continue',exact:true}).click();await course.getByRole('button',{name:'Skip listening',exact:true}).click();await expect(course).toContainText('Set complete');
   expect(await page.evaluate(()=>ModeAtlasWordBank.read()[0].review.due)).toBeGreaterThan(Date.now());
   await page.reload();expect(await page.evaluate(()=>ModeAtlasWordBank.due(Date.now(),'meaning').length)).toBe(0);
 });

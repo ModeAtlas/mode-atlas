@@ -44,28 +44,22 @@ test('home and trainer share row selection including voiced combinations, with s
   assert.equal(plan.availableChars({hiraganaRows:[],katakanaRows:[]}).length,0);
 });
 
-test('recommendation explains observed difficulties without treating unseen or excluded kana as weak',()=>{
+test('evidence excludes unseen and invalid observations without owning course sequencing',()=>{
   const {ModeAtlasStudyPlan:plan} = load();
-  const settings={hiraganaRows:['h_a'],katakanaRows:[]};
-  const next=plan.recommend({readingSettings:settings,writingSettings:settings,readingStats:{'あ':{correct:2,wrong:3},'い':{correct:0,wrong:1},'か':{correct:0,wrong:50}}});
-  assert.equal(next.mode,'reading');assert.equal(next.focus,true);
-  assert.match(next.reason,/1 kana has/);
-  assert.match(next.href,/focusWeak=1/);
   assert.equal(plan.evidence(null,['あ']).answered,0);
   assert.equal(plan.evidence({'あ':{correct:Infinity,wrong:-4}},['あ']).answered,0);
+  assert.deepEqual(plain(plan.evidence({'あ':{correct:2,wrong:3},'か':{correct:0,wrong:50}},['あ']).weak.map(item=>item.kana)),['あ']);
 });
 
-test('recommendation starts gently, offers the other direction and respects meaningful last mode',()=>{
-  const {ModeAtlasStudyPlan:plan} = load();
-  assert.match(plan.recommend({}).href,/hints=on/);
-  const next=plan.recommend({readingStats:{'あ':{correct:40,wrong:0}}});
-  assert.equal(next.mode,'writing');assert.equal(next.title,'Try Recall');
-  const balanced={readingStats:{'あ':{correct:10,wrong:0}},writingStats:{'あ':{correct:10,wrong:0}},lastMode:'writing'};
-  assert.equal(plan.recommend(balanced).mode,'writing');
-  assert.equal(plan.recommend({readingSettings:{hiraganaRows:['h_ka']}}).href,'/reading/?practice=10');
-  assert.equal(plan.recommend({writingSettings:{hiraganaRows:['h_ka']}}).href,'/reading/?practice=10');
-  assert.equal(plan.recommend({writingStats:{'あ':{correct:20,wrong:0}}}).href,'/reading/?practice=10');
-  assert.equal(plan.recommend({writingStats:{'カ':{correct:20,wrong:0}}}).href,'/reading/?practice=10');
+test('Home delegates actual continuation to the Kana course without overriding it with due or weakness heuristics',()=>{
+ const root=load();
+ assert.equal(root.ModeAtlasStudyPlan.recommend().href,'/kana/');
+ let next={kind:'resume',title:'Continue your row',label:'Resume lesson',detail:'Your saved character check',href:'/kana/?view=course&script=katakana'};
+ root.ModeAtlasKanaLearning={nextAction:()=>next};
+ root.ModeAtlasReview={due:()=>['あ']};
+ assert.equal(root.ModeAtlasStudyPlan.recommend({readingReview:{あ:{}},readingStats:{あ:{wrong:99}}}),next);
+ next={kind:'review',title:'Review your row',label:'Review',detail:'',href:'/kana/?view=course&script=hiragana'};
+ assert.equal(root.ModeAtlasStudyPlan.recommend(),next);
 });
 
 test('summary keeps unique kana distinct from questions and retains corrected mistakes for follow-up',()=>{
@@ -78,8 +72,8 @@ test('every contrast uses canonical readings and combination coaching does not s
   const {ModeAtlasKanaCoaching:coach} = load();
   for(const contrast of coach.contrasts) for(const kana of contrast.chars) assert.ok(coach.reading(kana),kana);
   assert.equal(coach.reading('きゃ'),'kya');
-  assert.deepEqual(plain(coach.explain('きゃ').chars),['きゃ']);
-  assert.match(coach.explain('きゃ').note,/one unit/);
+  assert.deepEqual(plain(coach.explain('きゃ').chars),['きゃ','きや']);
+  assert.match(coach.explain('きゃ').note,/one beat/);
   assert.equal(coach.reading('<script>'),'');
 });
 

@@ -1,0 +1,120 @@
+{
+  "version": "3.1.0",
+  "build": 2080055,
+  "date": "2026-10-27",
+  "unit": {
+    "javascript": 319,
+    "python": 23,
+    "status": "passed"
+  },
+  "browserRuns": {
+    "3.1.0-polish": {
+      "startTime": "2026-10-27T04:33:24.218Z",
+      "duration": 507352.579,
+      "expected": 500,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "3.1.0-final": {
+      "startTime": "2026-10-27T04:36:51.248Z",
+      "duration": 46803.418,
+      "expected": 29,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "3.1.0-account-final": {
+      "startTime": "2026-10-27T04:39:40.578Z",
+      "duration": 34697.67,
+      "expected": 11,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "3.1.0-webkit": {
+      "startTime": "2026-10-27T04:33:47.723Z",
+      "duration": 111453.119,
+      "expected": 40,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "3.1.0-webkit-account-final": {
+      "startTime": "2026-10-27T04:40:16.185Z",
+      "duration": 40936.166,
+      "expected": 11,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "webkit-results": {
+      "startTime": "2026-10-27T04:33:07.252Z",
+      "duration": 6196.1810000000005,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "webkit-flow-results": {
+      "startTime": "2026-10-27T04:33:47.373Z",
+      "duration": 14119.407,
+      "expected": 3,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "3.1.0-migrations": {
+      "startTime": "2026-10-27T04:30:51.577Z",
+      "duration": 73954.25,
+      "expected": 48,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "distinctLatestPassingCases": {
+    "mobile-chromium": 24,
+    "desktop-chromium": 504,
+    "mobile-webkit": 48
+  },
+  "screenshots": [
+    {
+      "file": "screens/branch-invitations.png",
+      "sha256": "dbfa7ad8226310632ddd2e02a3a056332b317f4fd0502cf1a38259b3560cae62"
+    },
+    {
+      "file": "screens/kana-landscape-dark.png",
+      "sha256": "e44aba2aeb0ef6b914740585449a151da0adb271d33d78e955c965aa20df4ecc"
+    },
+    {
+      "file": "screens/kana-phone-light.png",
+      "sha256": "62416cf571c74aa80c1d676cc336a578e83cbd813c80a780c79960cb06107732"
+    },
+    {
+      "file": "screens/kana-wide-light.png",
+      "sha256": "c5c001427205612051d9080562aa07c5830614dc65c2aeba81e3bb14a26050f1"
+    },
+    {
+      "file": "screens/kanji-landscape-dark.png",
+      "sha256": "6c1f20654ca5374fd827a79b1bf5933e7cc52de687096c241ae9f35d8fc1403b"
+    },
+    {
+      "file": "screens/kanji-phone-light.png",
+      "sha256": "1a2a524ec2ae85ae70375a9b0ec060eabd443170782b242a74d943f5e2ab74f2"
+    },
+    {
+      "file": "screens/words-closed-light.png",
+      "sha256": "eefdb8fb33c81de7161efb1f4007241ffddb705c9bf628ba163980c5bafcf171"
+    },
+    {
+      "file": "screens/words-landscape-dark.png",
+      "sha256": "7cc4bf769d39136582f72bcf7aa4b536159b0bf5655262e4b95905947e8913da"
+    }
+  ],
+  "limits": [
+    "Browser fixtures simulate native geometry; no physical Duo run.",
+    "Content reviewed against references and automated checks, not independently certified by a Japanese educator.",
+    "Advanced Kanji authoring limits described in the handover."
+  ]
+}

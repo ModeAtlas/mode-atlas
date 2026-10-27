@@ -1,0 +1,109 @@
+/* Kana course overview, in-place path and teaching content. Focused task chrome
+   and button states belong to the shared course/component owners. */
+.ma-kana-page{margin:0;background:var(--ma-app-bg);color:var(--ma-text-strong);}
+.ma-kana-journey{max-width:1080px;margin:20px auto 40px;padding:0 16px;box-sizing:border-box;}
+.ma-kana-page-heading{margin:0 0 20px;}
+.ma-kana-page-heading h1{font:750 clamp(1.6rem,4vw,2.4rem)/1.2 var(--ma-font-display);letter-spacing:-.035em;margin:8px 0;}
+.ma-kana-page-heading p,.ma-kana-muted{color:var(--ma-muted);line-height:1.5;}
+.ma-kana-overview-heading{display:grid;grid-template-columns:minmax(0,1fr) 100px;column-gap:16px;align-items:center;max-width:740px;}
+.ma-kana-overview-heading>.ma-kicker,.ma-kana-overview-heading>h1{grid-column:1;}
+.ma-kana-course-art{grid-column:2;grid-row:1/3;display:block;width:100%;height:auto;max-height:84px;object-fit:contain;}
+.ma-kana-start-options,.ma-kana-course-links{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.ma-kana-start-options>.ma-button{min-height:48px;}
+.ma-kana-next-chars{font:500 clamp(1.8rem,6vw,3rem)/1.45 var(--ma-font-jp);letter-spacing:.04em;margin:16px 0;overflow-wrap:anywhere;}
+.ma-kana-course-next{display:grid;gap:16px;max-width:740px;padding:24px;border:1px solid var(--ma-border);border-radius:18px;background:var(--ma-card);}
+.ma-kana-course-next h2{font:750 clamp(1.35rem,3vw,1.8rem)/1.3 var(--ma-font-display);margin:0;letter-spacing:-.025em;}
+.ma-kana-course-next p{margin:0;}
+.ma-kana-course-next>.ma-button{justify-self:start;min-height:48px;min-width:180px;}
+.ma-kana-course-links{margin-top:18px;}
+.ma-kana-course-invite{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:20px;font-size:.88rem;}
+.ma-kana-segments{display:flex;gap:8px;flex-wrap:wrap;}
+.ma-kana-segments>.ma-button{min-height:44px;}
+.ma-kana-course-unit-group{display:grid;gap:0;margin:12px 0;}
+.ma-kana-course-unit-group>h2{margin:0 0 12px;}
+.ma-kana-course-unit{appearance:none;display:grid;grid-template-columns:minmax(95px,.7fr) minmax(100px,1fr) minmax(100px,.8fr);align-items:center;gap:14px;min-height:68px;text-align:left;padding:14px 16px;border:0;border-top:1px solid var(--ma-border);background:none;color:var(--ma-text-strong);font:inherit;cursor:pointer;}
+.ma-kana-course-unit:last-child{border-bottom:1px solid var(--ma-border);}
+.ma-kana-course-unit:hover{background:var(--ma-card);}
+.ma-kana-course-unit[aria-current]{background:var(--ma-control-active);box-shadow:inset 3px 0 var(--ma-atlas);}
+.ma-kana-course-unit:disabled{color:var(--ma-muted);cursor:default;}
+.ma-kana-course-unit strong{font-size:.95rem;}
+.ma-kana-course-unit-chars{font:500 1.1rem/1.6 var(--ma-font-jp);overflow-wrap:anywhere;}
+.ma-kana-course-unit small{font-size:.76rem;line-height:1.5;color:var(--ma-muted);}
+.ma-kana-pattern-unit{justify-self:start;min-height:44px;}
+.ma-kana-unit-progress{display:grid;gap:10px;padding-left:22px;margin:0;line-height:1.5;}
+.ma-kana-teaching{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:24px;align-items:center;}
+.ma-kana-teaching-visual{display:grid;justify-items:center;gap:10px;}
+.ma-kana-teaching-visual .ma-kana-task-glyph{font-size:clamp(64px,12vw,112px);}
+.ma-kana-task-glyph{font:500 clamp(4rem,12vw,7rem)/1.2 var(--ma-font-jp);text-align:center;margin:8px 0;overflow-wrap:anywhere;}
+.ma-kana-task-reading{display:block;text-align:center;font-size:1.55rem;line-height:1.3;}
+.ma-kana-teaching-copy{display:grid;gap:10px;line-height:1.5;}
+.ma-kana-teaching-copy>p{font-size:.94rem;color:var(--ma-muted);}
+.ma-kana-teaching-copy>p>strong{color:var(--ma-text-strong);}
+.ma-kana-teaching-copy>.ma-button{justify-self:start;margin-top:4px;min-height:44px;}
+.ma-kana-task-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px;width:100%;max-width:700px;margin:8px auto;}
+.ma-kana-task-choices>.ma-button{min-width:0;min-height:70px;font:500 2rem/1.3 var(--ma-font-jp);white-space:normal;overflow-wrap:anywhere;}
+.ma-kana-task-cue{font:500 1.2rem/1.5 var(--ma-font-jp);text-align:center;color:var(--ma-muted);padding:12px;background:var(--ma-card);border-radius:12px;}
+.ma-kana-task-prompt{font-size:1.1rem;}
+.ma-kana-task-form{display:grid;gap:12px;width:100%;max-width:520px;margin:auto;}
+.ma-kana-task-form label{font-weight:650;font-size:.88rem;}
+.ma-kana-task-form input{font-size:18px;min-height:48px;width:100%;padding:10px 12px;border:1px solid var(--ma-border);border-radius:10px;background:var(--ma-card);color:var(--ma-text-strong);}
+.ma-kana-task-form>.ma-button{min-height:48px;}
+.ma-kana-pattern-example{display:grid;gap:12px;padding:12px 0;border-bottom:1px solid var(--ma-border);}
+.ma-kana-pattern-spelling{font:500 1.5rem/1.5 var(--ma-font-jp);}
+.ma-kana-pattern-example .ma-pronunciation{justify-content:flex-start;}
+.ma-kana-page .ma-course-body>.ma-pronunciation{justify-content:center;}
+.ma-kana-test-row{display:grid;gap:12px;padding:18px 0;border-bottom:1px solid var(--ma-border);}
+/* The starting-point assessment remains a separate, optional entry flow. */
+.ma-kana-check{max-width:600px;margin:16px auto;text-align:center;}
+.ma-kana-check-prompt{font:500 clamp(3.5rem,12vw,5rem)/1.3 var(--ma-font-jp);margin:8px;}
+.ma-kana-placement-form{display:grid;gap:12px;}
+.ma-kana-placement-form input{width:100%;box-sizing:border-box;min-width:0;font-size:18px;min-height:48px;padding:12px;border:1px solid var(--ma-border);border-radius:10px;background:var(--ma-card);color:var(--ma-text-strong);}
+.ma-kana-check-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.ma-kana-check-actions>.ma-button{flex:1 1 160px;min-height:44px;}
+.ma-kana-placement-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0;}
+.ma-kana-placement-choices>.ma-button{min-height:64px;font:500 2rem/1.3 var(--ma-font-jp);}
+.ma-kana-check-feedback{line-height:1.5;}
+.ma-kana-placement-finish{display:block;margin:16px auto;min-height:44px;}
+.ma-kana-placement-keyboard{min-width:0;}
+.ma-kana-page :is(button,a,input,summary):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
+@media(max-width:600px){
+ .ma-kana-journey{padding:0 12px;margin-top:12px;}
+ .ma-kana-page-heading{margin-bottom:16px;}
+ .ma-kana-overview-heading{grid-template-columns:minmax(0,1fr) 72px;gap:0 12px;}
+ .ma-kana-course-next{padding:18px;gap:14px;}
+ .ma-kana-course-next>.ma-button{width:100%;}
+ .ma-kana-course-links>.ma-button{flex:1 1 130px;min-height:44px;}
+ .ma-kana-course-unit{grid-template-columns:minmax(80px,.7fr) minmax(0,1.3fr);gap:6px 10px;padding:12px;}
+ .ma-kana-course-unit small{grid-column:2;}
+ .ma-kana-teaching{grid-template-columns:1fr;gap:12px;}
+ .ma-kana-teaching-visual{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:6px;}
+ .ma-kana-teaching-visual .ma-kana-task-glyph{grid-row:1/3;font-size:72px;margin:0;}
+ .ma-kana-teaching-visual .ma-pronunciation{gap:6px;}
+ .ma-kana-teaching-visual .ma-pronunciation>.ma-button{padding:10px;}
+ .ma-kana-teaching-copy{gap:8px;}
+ .ma-kana-teaching-copy p{font-size:.88rem;}
+ .ma-kana-task-choices{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+ .ma-kana-task-choices>.ma-button{font-size:1.6rem;min-height:60px;padding:10px 8px;}
+}
+@media(max-height:520px) and (min-width:600px){
+ .ma-kana-page-heading h1{font-size:1.5rem;}
+ .ma-kana-overview-heading{margin-bottom:12px;}
+ .ma-kana-course-next{grid-template-columns:minmax(0,1fr) auto;padding:18px;gap:10px 18px;}
+ .ma-kana-course-next>:not(.ma-button){grid-column:1;}
+ .ma-kana-course-next>.ma-button{grid-column:2;grid-row:1/4;align-self:center;}
+ .ma-kana-course-links{margin-top:12px;}
+ .ma-kana-teaching{gap:20px;}
+ .ma-kana-teaching-visual{gap:6px;}
+ .ma-kana-teaching-visual .ma-kana-task-glyph{font-size:72px;margin:0;}
+ .ma-kana-teaching-visual .ma-kana-task-reading{font-size:1.2rem;}
+ .ma-kana-task-glyph{font-size:4rem;}
+ .ma-kana-teaching-copy{gap:6px;}
+ .ma-kana-teaching-copy p{font-size:.85rem;}
+ .ma-kana-task-choices>.ma-button{min-height:56px;}
+}
+html[data-ma-large-text] .ma-kana-course-unit{grid-template-columns:1fr;}
+html[data-ma-large-text] .ma-kana-course-unit small{grid-column:auto;}
+/* Explicit display preferences use the same course, at the chosen width. */
+body[data-effective-display-mode="phone"] .ma-kana-journey{max-width:640px;}
+body[data-effective-display-mode="tablet"] .ma-kana-journey{max-width:1080px;}
+body[data-effective-display-mode="phone"] .ma-kana-teaching{grid-template-columns:1fr;}

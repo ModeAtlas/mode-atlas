@@ -10,7 +10,7 @@ function load({experienced=true}={}){
   class Clock extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
   const root={setTimeout:()=>0,clearTimeout(){},Date:Clock,console,localStorage,sessionStorage:localStorage,structuredClone,TextEncoder,TextDecoder,Blob,CompressionStream,DecompressionStream,btoa,atob,crypto:{randomUUID:()=>`kanji-test-${++serial}`},CustomEvent:class{constructor(type){this.type=type;}},document:{addEventListener(){}},addEventListener:(type,cb)=>{const list=listeners.get(type)||[];list.push(cb);listeners.set(type,list);},dispatchEvent:event=>{for(const cb of listeners.get(event.type)||[])cb(event);},ModeAtlasWeekly:{start(){},answer(){},finish(){}}};root.window=root;root.self=root;
   const context=vm.createContext(root);
-  for(const name of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-reward-rules','app/mode-atlas-progress','data/mode-atlas-kana-data','app/mode-atlas-japanese','data/mode-atlas-kanji-curriculum','data/mode-atlas-kanji-data','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-content','app/mode-atlas-kanji-results','app/mode-atlas-kanji-teaching','app/mode-atlas-kanji-session'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',name+'.js'),'utf8'),context);
+  for(const name of ['app/mode-atlas-date','app/mode-atlas-storage','app/mode-atlas-reward-rules','app/mode-atlas-progress','data/mode-atlas-kana-data','app/mode-atlas-japanese','data/mode-atlas-kanji-curriculum','data/mode-atlas-kanji-course','data/mode-atlas-kanji-data','app/mode-atlas-kanji-state','app/mode-atlas-kanji-codec','app/mode-atlas-kanji-content','app/mode-atlas-kanji-results','app/mode-atlas-kanji-teaching','app/mode-atlas-kanji-session'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',name+'.js'),'utf8'),context);
   if(experienced){const s=root.ModeAtlasKanjiState.read();for(const c of root.ModeAtlasKanjiCurriculum[0].chars){s.lessons[c]=now;s.introductions[c]=now;}root.ModeAtlasKanjiState.save(s);}
   return {root,values,now:()=>now,advance:ms=>now+=ms,fail:()=>fail=true,state:root.ModeAtlasKanjiState,content:root.ModeAtlasKanjiContent,session:root.ModeAtlasKanjiSession,progress:root.ModeAtlasProgress};
 }
@@ -208,4 +208,111 @@ test('recent Kanji recall can recover after early mistakes and mastered mileston
   s.record({char:'水',skill:'meaning',runId:'missed-review',index:1,correct:false,at:e.now()});
   assert.equal(s.stage(s.read(),'水'),3);assert.ok(s.readiness(s.read(),'水')<3);
   assert.ok(s.read().recent['水'].meaning.split(',').length<=16);
+});
+
+
+
+
+function completeCourse(e,{wrongAt=-1,hintAt=-1}={}){
+  const s=e.session;let turns=0;
+  while(!s.current().finished){
+    if(++turns>200)throw Error('course did not finish');
+    const run=s.current(),task=run.tasks[run.index],entry=e.content.get(task.char);
+    if(task.kind==='teach'){s.next();continue;}
+    if(run.index===hintAt)s.hint();
+    const answer=task.skill==='pronunciation'?e.content.pronunciation(entry).answers[0]:task.skill==='wordMeaning'?e.content.wordMeanings(entry)[0]:entry.meanings[0];
+    s.answer(run.index===wrongAt?'wrong-answer':answer);s.next();
+  }
+  return s.current();
+}
+
+test('authored foundation units cover all 84 characters once with focused meanings and teaching cues',()=>{
+  const e=load(),course=e.root.ModeAtlasKanjiCourse,chars=course.units.flatMap(unit=>[...unit.chars]);
+  assert.equal(chars.length,84);assert.equal(new Set(chars).size,84);assert.deepEqual([...chars].sort(),[...e.root.ModeAtlasKanjiCurriculum[0].chars].sort());
+  for(const unit of course.units){assert.ok(unit.goal&&unit.title&&unit.chars.length<=4);for(const char of unit.chars){assert.ok(course.senses[char]);assert.ok(e.content.get(char).cue);assert.ok(e.content.grade(char,'wordMeaning',course.senses[char]));}}
+});
+
+test('course introduces a whole unit, checks three separate skills and advances without claiming retention',()=>{
+  const e=load({experienced:false}),s=e.session,state=e.state;state.enter('beginner');
+  s.startCourse({unitId:'first-numbers'});const first=completeCourse(e);assert.equal(first.mode,'course');assert.ok(state.courseStatus(e.root.ModeAtlasKanjiCourse.units[0]).introduced);assert.equal(state.nextAction().kind,'checkpoint');
+  assert.equal(e.progress.getXP(),0,'course does not mint unverified XP');
+  s.startCourse({unitId:'first-numbers',kind:'checkpoint'});completeCourse(e);
+  const status=state.courseStatus(e.root.ModeAtlasKanjiCourse.units[0]);assert.equal(status.checked,true);assert.equal(status.retained,false);assert.equal(state.nextAction().unitId,'people-size');
+  for(const skill of ['meaning','pronunciation','wordMeaning'])assert.ok(state.metrics(state.read(),'一',skill).independent>0);
+  assert.equal(state.completed(state.read(),'一'),false,'same-day retrieval is not retained character completion');
+});
+
+test('correction waits for intervening items, retains the failed first attempt and cannot pass the checkpoint',()=>{
+  const e=load({experienced:false}),s=e.session;e.state.enter('beginner');s.startCourse({unitId:'first-numbers'});completeCourse(e);
+  s.startCourse({unitId:'first-numbers',kind:'checkpoint'});const target=s.current().tasks[0];s.answer('wrong-answer');
+  const retry=s.current().tasks.findIndex(task=>task.char===target.char&&task.skill===target.skill&&task.retry);
+  assert.ok(retry>=3);assert.ok(s.current().tasks.slice(1,retry).every(task=>task.char!==target.char));s.next();completeCourse(e);
+  const run=s.current(),answers=run.answers.filter(answer=>answer.char===target.char&&answer.skill===target.skill);
+  assert.equal(answers[0].correct,false);assert.equal(answers[0].first,true);assert.equal(answers[1].assisted,true);assert.equal(answers[1].first,false);assert.equal(run.outcome.passed,false);assert.equal(e.state.nextAction().kind,'checkpoint');
+});
+
+test('delayed course review requires a later day and passing every target skill',()=>{
+  const e=load({experienced:false}),s=e.session;e.state.enter('beginner');s.startCourse({unitId:'first-numbers'});completeCourse(e);s.startCourse({unitId:'first-numbers',kind:'checkpoint'});completeCourse(e);
+  s.startCourse({unitId:'first-numbers',kind:'review'});completeCourse(e);assert.equal(e.state.courseStatus(e.root.ModeAtlasKanjiCourse.units[0]).retained,false);
+  e.advance(86400000);assert.equal(e.state.nextAction().kind,'review');s.startCourse({unitId:'first-numbers',kind:'review'});completeCourse(e);assert.equal(e.state.courseStatus(e.root.ModeAtlasKanjiCourse.units[0]).retained,true);
+});
+
+test('course checkpoint resumes with the same task and stays isolated between accounts',()=>{
+  const e=load({experienced:false}),s=e.session;e.state.enter('beginner');s.startCourse({unitId:'first-numbers'});s.next();s.pause();const saved=s.saved();assert.equal(saved.tasks[saved.index].char,'二');
+  s.resume();assert.equal(s.current().tasks[s.current().index].char,'二');
+  e.values.set('modeAtlasLastUserId','new-account');e.root.dispatchEvent(new e.root.CustomEvent('modeAtlasAccountWillChange'));assert.equal(s.saved(),null);
+});
+
+test('confident access permits assessment but cannot put unseen characters in ordinary practice',()=>{
+  const e=load({experienced:false});e.state.enter('confident',[5,4,3,2,1]);assert.throws(()=>e.session.start({mode:'meaning',count:5}),/Learn a few/);
+  assert.equal(e.session.start({mode:'meaning',test:true,count:20}).sequence.length,20);e.session.discard();e.state.introduction('水');assert.deepEqual(plain(e.session.start({mode:'meaning',count:5}).sequence),['水']);
+});
+
+test('course evidence merges and compresses without converting old earned markers into new checks',async()=>{
+  const e=load({experienced:false}),s=e.state;s.enter('beginner');e.session.startCourse({unitId:'first-numbers'});completeCourse(e);e.session.startCourse({unitId:'first-numbers',kind:'checkpoint'});completeCourse(e);
+  s.recordWriting('一',{mode:'write',assisted:false,errors:0,at:e.now()});const a=s.read(),b=s.normalize({version:3,completions:{'水':42}}),merged=s.merge(a,b);
+  assert.deepEqual(plain(s.merge(a,b)),plain(s.merge(b,a)));assert.equal(merged.completions['水'],42);assert.equal(merged.course.units.elements,undefined);
+  const unpacked=await e.root.ModeAtlasKanjiCodec.unpack(await e.root.ModeAtlasKanjiCodec.pack(merged));assert.deepEqual(plain(unpacked.course),plain(merged.course));assert.equal(unpacked.course.writing['一'].independentAt,e.now());
+});
+
+test('Home continuation uses the owned saved unit and rejects expired or malformed checkpoints',()=>{
+  const e=load({experienced:false});e.state.enter('beginner');e.session.startCourse({unitId:'first-numbers'});e.session.next();
+  assert.equal(e.state.nextAction().kind,'resume');assert.equal(e.state.nextAction().title,'One, two, three');
+  const saved=JSON.parse(e.values.get('modeAtlasKanjiCheckpoint'));e.values.set('modeAtlasKanjiCheckpoint',JSON.stringify({...saved,owner:'someone-else'}));assert.notEqual(e.state.nextAction().kind,'resume');
+  e.values.set('modeAtlasKanjiCheckpoint',JSON.stringify({...saved,mode:'invalid'}));assert.notEqual(e.state.nextAction().kind,'resume');
+  e.values.set('modeAtlasKanjiCheckpoint',JSON.stringify(saved));e.advance(8*86400000);assert.notEqual(e.state.nextAction().kind,'resume');
+});
+
+test('immediate repetitions cannot newly earn retained character completion',()=>{
+  const e=load({experienced:false}),s=e.state;s.enter('beginner');
+  for(let i=0;i<3;i++)for(const skill of s.skills)s.record({char:'水',skill,runId:'immediate-'+skill+'-'+i,index:1,correct:true,assisted:false,elapsed:500,at:e.now()+i});
+  assert.equal(s.completed(s.read(),'水'),false);assert.equal(s.metrics(s.read(),'水','meaning').reviews,0);assert.equal(s.metrics(s.read(),'水','meaning').days.length,1);
+});
+
+test('all authored foundation units are traversable and never mark companion kanji as introduced',()=>{
+  const e=load({experienced:false});e.state.enter('beginner');
+  for(const unit of e.root.ModeAtlasKanjiCourse.units){
+    e.session.startCourse({unitId:unit.id});completeCourse(e);e.session.startCourse({unitId:unit.id,kind:'checkpoint'});completeCourse(e);
+    assert.equal(e.state.courseStatus(unit).checked,true,unit.id);assert.equal(e.state.courseStatus(unit).retained,false,unit.id);
+  }
+  assert.equal(e.state.nextAction().kind,'complete');assert.equal(Object.keys(e.state.read().introductions).length,84);assert.equal(e.state.introduced(e.state.read(),'供'),false);assert.equal(e.state.introduced(e.state.read(),'夫'),false);assert.equal(e.state.introduced(e.state.read(),'達'),false);
+});
+
+test('focused word meanings are distinct from character meanings and cumulative checks repair earlier items',()=>{
+  const e=load({experienced:false});assert.equal(e.content.grade('学','meaning','student'),false);assert.equal(e.content.grade('学','wordMeaning','student'),true);
+  e.state.enter('beginner');e.session.startCourse({unitId:'first-numbers'});completeCourse(e);e.session.startCourse({unitId:'first-numbers',kind:'checkpoint'});completeCourse(e);e.session.startCourse({unitId:'people-size'});completeCourse(e);
+  e.session.startCourse({unitId:'people-size',kind:'checkpoint'});const previous=e.session.current().tasks.findIndex(t=>'一二三'.includes(t.char));assert.ok(previous>=0);completeCourse(e,{wrongAt:previous});assert.equal(e.session.current().outcome.passed,false);
+  const missed=e.session.current().answers.filter(a=>a.first&&!a.correct).map(a=>a.char);assert.ok(missed.length);assert.doesNotThrow(()=>e.session.startCourse({unitId:'people-size',chars:missed}));
+});
+
+test('original course retrieval records bounded study activity atomically without granting XP',()=>{
+  const e=load({experienced:false}),s=e.session;e.state.enter('beginner');s.startCourse({unitId:'first-numbers'});
+  while(s.current().tasks[s.current().index].kind!=='retrieve'){
+    const task=s.current().tasks[s.current().index];if(task.kind==='teach')s.next();else{s.answer(e.content.get(task.char).meanings[0]);s.next();}
+  }
+  assert.equal(Object.values(e.progress.readState().activity).flatMap(day=>day.practice.kanji).length,0,'teaching and recognition do not create study-day receipts');
+  const old=e.root.ModeAtlasProgress,before=e.state.read();e.root.ModeAtlasProgress={...old,recordHabit(){throw Error('habit storage unavailable');}};
+  assert.throws(()=>s.answer(e.content.get(s.current().tasks[s.current().index].char).meanings[0]),/habit storage/);assert.deepEqual(plain(e.state.read()),plain(before));assert.equal(s.current().feedback,null);
+  e.root.ModeAtlasProgress=old;completeCourse(e);
+  assert.equal(Object.values(e.progress.readState().activity).flatMap(day=>day.practice.kanji).length,5);assert.equal(e.progress.getXP(),0);
 });

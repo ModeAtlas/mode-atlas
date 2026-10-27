@@ -877,10 +877,14 @@ def main() -> int:
             fail(errors, f'shared visual vocabulary missing: {marker}')
 
     atlas_markup = text(ROOT / 'index.html')
-    if 'id="homeContinueAction"' not in atlas_markup or 'data-ma-branch-library' not in atlas_markup:
-        fail(errors, 'Atlas recommendation action or shared branch discovery owner missing')
+    home_page = text(ROOT / 'assets/pages/mode-atlas-home-page.js')
+    hub_page = text(ROOT / 'assets/pages/mode-atlas-hub-page.js')
+    if 'id="homeContinueAction"' not in atlas_markup or 'ModeAtlasBranches.nextAction()' not in home_page:
+        fail(errors, 'Atlas branch-owned continuation action missing')
+    if 'ModeAtlasBranchLibrary' not in hub_page or 'data-ma-branch-library' in atlas_markup:
+        fail(errors, 'Branch discovery must belong to Learn, not duplicate the Home continuation')
     kana_markup = text(ROOT / 'kana/index.html')
-    if 'id="maKanaLearning"' not in kana_markup or 'Take a starting-point test' not in kana_page:
+    if 'id="maKanaLearning"' not in kana_markup or 'Check my starting point' not in kana_page or 'function renderCourse()' not in kana_page:
         fail(errors, 'Kana entry or course owner is missing')
     trainer_ui_markup = text(ROOT / 'reading/index.html') + text(ROOT / 'writing/index.html')
     for marker in ('Practice setup', 'id="studySessionProgress"', 'Focus mode', 'Exit focus mode'):

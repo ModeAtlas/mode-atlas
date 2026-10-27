@@ -8,7 +8,7 @@
   const names=new Set(['Error','TypeError','ReferenceError','RangeError','SyntaxError','AbortError','TimeoutError','QuotaExceededError','SecurityError']);
   const codes=new Set(['permission-denied','unavailable','resource-exhausted','deadline-exceeded','failed-precondition','unauthenticated','offline','auth/network-request-failed','auth/user-token-expired']);
   const pages=new Set(['atlas','learn','progress','friends','shop','kana','handwriting','kanji','reading','writing','results','wordbank','privacy','terms','achievements']);
-  const labels=Object.freeze({atlas:'Atlas',learn:'Learn',progress:'Progress',friends:'Friends',shop:'Shop',kana:'Kana',handwriting:'Kana handwriting',kanji:'Kanji',reading:'Kana Read',writing:'Kana Recall',results:'Results',wordbank:'Word Bank',privacy:'Privacy Policy',terms:'Terms of Use',achievements:'Achievements',other:'Mode Atlas'});
+  const labels=Object.freeze({atlas:'Atlas',learn:'Learn',progress:'Progress',friends:'Friends',shop:'Shop',kana:'Kana',handwriting:'Kana handwriting',kanji:'Kanji',reading:'Kana Read',writing:'Kana Recall',results:'Results',wordbank:'Words',privacy:'Privacy Policy',terms:'Terms of Use',achievements:'Achievements',other:'Mode Atlas'});
   function screen(){
     const raw=root.ModeAtlasPageName?.()||location.pathname.split('/').filter(Boolean).at(-1)||'atlas';
     const name=({ 'index.html':'atlas','default.html':'reading','reverse.html':'writing','test.html':'results' })[raw]||raw.replace(/\.html$/,'');

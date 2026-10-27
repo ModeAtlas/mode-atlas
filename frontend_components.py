@@ -161,7 +161,8 @@ def render_navigation(config: NavConfig) -> str:
     for key, label, href in links:
         active = key == product_active
         classes = 'ma-nav__link' + (' is-active' if active else '')
-        current = ' aria-current="page"' if key == ('practice' if config.key in ('reading', 'writing', 'kanaHandwriting') else config.key) else ''
+        current_key = product_active if config.key == 'kana' else config.key
+        current = ' aria-current="page"' if key == current_key else ''
         link_markup.append(
             f'<a class="{classes}" data-ma-nav-scope="product" data-ma-nav-item="{_attr(key)}" href="{_attr(href)}"{current}><svg class="ma-icon ma-nav__destination-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-{DESTINATION_ICONS.get(key,"book")}"></use></svg><span>{html.escape(label)}</span></a>'
         )
@@ -173,11 +174,11 @@ def render_navigation(config: NavConfig) -> str:
             hide_action = '<button class="ma-nav__action ma-nav__action--quiet ma-nav__focus" id="studyNavHideBtn" type="button" aria-label="Enter focus mode" title="Focus mode"><svg class="ma-icon ma-icon--sm" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-focus"></use></svg><span class="ma-nav__action-label">Focus</span></button>'
         action_markup = f"""
       <div class="ma-nav__actions">
-        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open aria-haspopup="dialog" aria-controls="maAccountSheet" aria-expanded="false">
+        <button class="ma-nav__action ma-nav__profile" id="profileOpenBtn" type="button" data-profile-open data-ma-account-loading disabled aria-haspopup="dialog" aria-controls="maAccountSheet" aria-expanded="false">
           <span class="ma-nav__avatar" id="topProfileDot" aria-hidden="true">M</span>
           <span class="ma-nav__action-label">Profile</span>
         </button>
-        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open aria-haspopup="dialog" aria-controls="maAccountSheet" aria-expanded="false" aria-label="Open settings" title="Settings">
+        <button class="ma-nav__action ma-nav__settings" type="button" data-settings-open data-ma-account-loading disabled aria-haspopup="dialog" aria-controls="maAccountSheet" aria-expanded="false" aria-label="Open settings" title="Settings">
           <svg class="ma-icon ma-nav__settings-icon" aria-hidden="true"><use href="/assets/mode-atlas-icons.svg#icon-settings"></use></svg>
           <span class="ma-nav__action-label">Settings</span>
         </button>
@@ -185,7 +186,7 @@ def render_navigation(config: NavConfig) -> str:
       </div>"""
 
     branch_markup = ''
-    if kana_section:
+    if kana_section and config.key != 'kana':
         branch_markup = '<nav class="ma-kana-navigation" aria-label="Kana sections">' + ''.join(
             f'<a data-kana-section="{key}" href="{href}" aria-label="{label}"' + (' aria-current="page"' if key == ('practice' if config.key in ('reading', 'writing', 'kanaHandwriting') else config.key) else '') + f'>{label}</a>'
             for key, label, href in KANA_LINKS) + '</nav>'
@@ -271,6 +272,7 @@ INTERACTIVE_TAIL_STYLES = (
     'assets/css/mode-atlas-theme.css',
     'assets/css/mode-atlas-ios-theme.css',
     'assets/css/mode-atlas-components.css',
+    'assets/css/mode-atlas-course.css',
     'assets/css/mode-atlas-rewards.css',
     'assets/css/mode-atlas-shop.css',
     'assets/css/mode-atlas-avatar.css',
@@ -314,6 +316,7 @@ INTERACTIVE_SCRIPTS_BEFORE_STORAGE = (
     'assets/app/mode-atlas-storage.js',
 )
 INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
+    'assets/ui/mode-atlas-course-ui.js',
     'assets/app/mode-atlas-learning-events.js',
     'assets/app/mode-atlas-shop-catalogue.js',
     'assets/app/mode-atlas-date.js',
@@ -332,12 +335,16 @@ INTERACTIVE_SCRIPTS_AFTER_STORAGE = (
     'assets/app/mode-atlas-review.js',
     'assets/data/mode-atlas-kana-data.js',
     'assets/app/mode-atlas-japanese.js',
+    'assets/data/mode-atlas-kana-coaching.js',
     'assets/app/mode-atlas-wordbank.js',
     'assets/app/mode-atlas-word-lesson-state.js',
     'assets/app/mode-atlas-kana-learning.js',
     'assets/app/mode-atlas-kana-evidence.js',
     'assets/data/mode-atlas-kanji-curriculum.js',
+    'assets/data/mode-atlas-kanji-course.js',
     'assets/app/mode-atlas-kanji-state.js',
+    'assets/data/mode-atlas-vocabulary.js',
+    'assets/app/mode-atlas-vocabulary.js',
     'assets/app/mode-atlas-kanji-codec.js',
     'assets/app/mode-atlas-kanji-content.js',
     'assets/app/mode-atlas-kanji-results.js',
@@ -432,7 +439,7 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-kana-page.css','assets/css/mode-atlas-handwriting.css'),
         body_scripts=_interactive_scripts(
             include_presets=True,
-            page_scripts=('assets/app/mode-atlas-kana-placement.js','assets/data/mode-atlas-kana-coaching.js','assets/app/mode-atlas-stroke-matcher.js','assets/ui/mode-atlas-pronunciation.js','assets/ui/mode-atlas-handwriting.js','assets/platform/mode-atlas-ios-keyboard.js','assets/pages/mode-atlas-kana-page.js',),
+            page_scripts=('assets/app/mode-atlas-kana-placement.js','assets/app/mode-atlas-stroke-matcher.js','assets/ui/mode-atlas-pronunciation.js','assets/ui/mode-atlas-handwriting.js','assets/platform/mode-atlas-ios-keyboard.js','assets/pages/mode-atlas-kana-page.js',),
         ),
     ),
     'reading/index.html': FrontendAssetConfig(
@@ -445,7 +452,6 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
                 'assets/trainer/mode-atlas-practice-setup.js',
                 'assets/trainer/mode-atlas-trainer-core.js',
                 'assets/trainer/mode-atlas-trainer-shared.js',
-                'assets/data/mode-atlas-kana-coaching.js',
                 'assets/trainer/mode-atlas-session-recovery.js',
                 'assets/trainer/mode-atlas-study-session.js',
                 'assets/trainer/mode-atlas-trainer-controller.js',
@@ -467,7 +473,6 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
                 'assets/trainer/mode-atlas-practice-setup.js',
                 'assets/trainer/mode-atlas-trainer-core.js',
                 'assets/trainer/mode-atlas-trainer-shared.js',
-                'assets/data/mode-atlas-kana-coaching.js',
                 'assets/trainer/mode-atlas-session-recovery.js',
                 'assets/trainer/mode-atlas-study-session.js',
                 'assets/trainer/mode-atlas-trainer-controller.js',
@@ -505,7 +510,7 @@ PAGE_ASSETS: dict[str, FrontendAssetConfig] = {
     'wordbank/index.html': FrontendAssetConfig(
         styles=INTERACTIVE_STYLES + ('assets/css/mode-atlas-wordbank-page.css',),
         body_scripts=_interactive_scripts(
-            page_scripts=('assets/ui/mode-atlas-pronunciation.js','assets/data/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-review.js','assets/pages/mode-atlas-wordbank-page.js',),
+            page_scripts=('assets/ui/mode-atlas-vocabulary.js','assets/ui/mode-atlas-pronunciation.js','assets/data/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-lessons.js','assets/ui/mode-atlas-word-review.js','assets/pages/mode-atlas-wordbank-page.js',),
         ),
     ),
     'privacy/index.html': FrontendAssetConfig(styles=LEGAL_STYLES, body_scripts=LEGAL_BODY_SCRIPTS),

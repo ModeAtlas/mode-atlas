@@ -65,15 +65,14 @@ for(const [label,geometry]of views){
   test(`${label}: Kanji cards and their text stay inside their columns`,async({page},info)=>{
     await prepare(page,geometry);await page.goto('/kanji/');await settle(page);
     await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();
-    await reachable(page.getByRole('button',{name:'Start learning',exact:true}));
-    for(const selector of ['.ma-kanji-teaching','.ma-kanji-intro','.ma-kanji-first-ten']){
-      expect(await page.locator(selector).evaluate(el=>el.scrollWidth<=el.clientWidth+1),selector).toBe(true);
-    }
-    const intro=await page.locator('.ma-kanji-intro').boundingBox(),practice=await page.locator('.ma-kanji-first-ten').boundingBox();
-    expect(practice.x>=intro.x+intro.width||practice.y>=intro.y+intro.height).toBe(true);
+    const start=page.locator('.ma-kanji-current .ma-button--primary');await reachable(start);
+    expect(await page.locator('.ma-kanji-current').evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+    await start.click();await expect(page.locator('.ma-kanji-course-teaching')).toBeVisible();
+    for(const selector of ['.ma-kanji-course-teaching','.ma-kanji-shape','.ma-kanji-word'])expect(await page.locator(selector).evaluate(el=>el.scrollWidth<=el.clientWidth+1),selector).toBe(true);
+    const shape=await page.locator('.ma-kanji-shape').boundingBox(),word=await page.locator('.ma-kanji-word').boundingBox();
+    expect(word.x>=shape.x+shape.width-1||word.y>=shape.y+shape.height-1).toBe(true);
     await page.screenshot({path:info.outputPath(`kanji-${label}.png`)});
-    await page.getByRole('button',{name:'Start learning',exact:true}).click();await expect(page.locator('.ma-kanji-lesson')).toBeVisible();
-    for(const button of await page.locator('.ma-kanji-lesson-actions button').all())await reachable(button);
+    for(const button of await page.locator('.ma-course-actions button').all())await reachable(button);
   });
 }
 test('folding mid-answer preserves the question and keeps the complete frame above the keyboard',async({page})=>{
@@ -146,7 +145,9 @@ for(const route of routes)test('Duo content fits its columns: '+route,async({pag
 for(const [view,geometry]of views)for(const [skill,label,route]of [['reading','Read','reading'],['writing','Recall','writing'],['both','Read + Recall','reading']])test(`${view}: Kana starts the chosen ${label} session once`,async({page})=>{
   await prepare(page,geometry);await page.goto('/kana/?view=practice');await settle(page);
   await page.getByRole('button',{name:label,exact:true}).click();
-  await reachable(page.getByRole('button',{name:'Adjust this session',exact:true}));
+  await expect(page.getByRole('heading',{name:'Custom practice',exact:true})).toBeVisible();
+  await expect(page.getByLabel('Session',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Start practice',exact:true}).scrollIntoViewIfNeeded();
   await reachable(page.getByRole('button',{name:'Start practice',exact:true}));
   await page.getByRole('button',{name:'Start practice',exact:true}).click();
   await expect(page).toHaveURL(new RegExp('/'+route+'/$'));await expect(page.locator('body')).toHaveClass(/trainer-session-active/);

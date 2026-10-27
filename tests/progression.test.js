@@ -503,3 +503,41 @@ test('study habits count attempts and bounded cross-branch practice without answ
   const state=p.readState(),day=Object.keys(state.activity)[0];assert.equal(state.activity[day].practice.wordbank.length,5);
   const merged=p.mergeStates(state,state);assert.equal(p.studyDays(merged).length,1);assert.equal(p.getXP(merged),p.getXP(state));
 });
+
+test('guided Kana and Kanji retrieval count toward Home study days without inventing scored activity',()=>{
+  const e=load(),p=e.progress;
+  for(let index=0;index<3;index++)assert.equal(p.recordHabit({branch:'kana',id:'kana-course:'+index,at:e.now()}),true);
+  assert.equal(p.routine().todayUnits,3);assert.equal(p.studyDays().length,0);
+  for(let index=0;index<2;index++)assert.equal(p.recordHabit({branch:'kanji',id:'kanji-course:'+index,at:e.now()}),true);
+  const routine=p.routine(),recap=p.weeklyRecap();
+  assert.equal(routine.todayUnits,5);assert.equal(routine.streak,1);assert.equal(recap.studyDays,1);
+  for(const goal of routine.goals.filter(goal=>goal.metric==='study.days'))assert.equal(goal.value,1);
+  assert.equal(recap.reading,0);assert.equal(recap.writing,0);assert.equal(recap.kanji,0);
+  assert.equal(p.getXP(),0);assert.equal(p.getLifetimeCorrect(),0);
+  const saved=e.values.get('modeAtlasProgress');
+  assert.equal(p.recordHabit({branch:'kana',id:'kana-course:0',at:e.now()}),false);
+  assert.equal(e.values.get('modeAtlasProgress'),saved,'a resumed first attempt must not rewrite or double-count its receipt');
+  e.setNow(e.now()+86400000);
+  for(let index=0;index<5;index++)p.recordHabit({branch:'kanji',id:'tomorrow:'+index,at:e.now()});
+  assert.equal(p.routine().streak,2);assert.equal(p.weeklyRecap().studyDays,2);assert.equal(p.getXP(),0);
+});
+
+test('guided habit receipts merge across devices with legacy habits and remain bounded and idempotent',()=>{
+  const a=load(),b=load(),p=a.progress;
+  a.progress.recordHabit({branch:'wordbank',id:'legacy-word',at:a.now()});
+  a.progress.recordHabit({branch:'kana',id:'shared:0',at:a.now()});
+  a.progress.recordHabit({branch:'kana',id:'first-device:1',at:a.now()});
+  b.progress.recordHabit({branch:'kana',id:'shared:0',at:b.now()});
+  b.progress.recordHabit({branch:'kana',id:'second-device:1',at:b.now()});
+  b.progress.recordHabit({branch:'kanji',id:'kanji:0',at:b.now()});
+  const left=a.progress.readState(),right=b.progress.readState(),merged=p.mergeStates(left,right);
+  assert.deepEqual(plain(merged),plain(p.mergeStates(right,left)));
+  assert.deepEqual(plain(merged),plain(p.mergeStates(merged,merged)));
+  const practice=merged.activity['2026-09-30'].practice;
+  assert.equal(practice.kana.length,3);assert.equal(practice.kanji.length,1);assert.equal(practice.wordbank.length,1);
+  assert.equal(p.routine(merged).todayUnits,5);assert.equal(p.studyDays(merged).length,1);assert.equal(p.getXP(merged),0);
+  for(let index=0;index<20;index++)p.recordHabit({branch:'kana',id:'extra:'+index,at:a.now()});
+  assert.equal(p.readState().activity['2026-09-30'].practice.kana.length,5);
+  const legacy=p.normalizeState({legacySeeded:true,activity:{'2026-09-29':{practice:{wordbank:['one','two','three','four','five']}}}});
+  assert.equal(p.studyDays(legacy).length,1);assert.deepEqual(plain(legacy.activity['2026-09-29'].practice.kana),[]);
+});

@@ -214,21 +214,24 @@
         a.metrics[id]||={};for(const [key,n]of Object.entries(metrics))a.metrics[id][key]=Math.max(a.metrics[id][key]||0,n);
       }
       a.kana=[...new Set([...a.kana,...b.kana])].sort().slice(0,512);
-      for(const branch of ['wordbank','handwriting'])a.practice[branch]=[...new Set([...a.practice[branch],...b.practice[branch]])].sort().slice(0,5);
+      for(const branch of habitBranches)a.practice[branch]=[...new Set([...a.practice[branch],...b.practice[branch]])].sort().slice(0,5);
       a.goalVersion=Math.max(a.goalVersion,b.goalVersion);
       out[day]=a;
     }return out;
   }
-  function normalizePractice(input){return Object.fromEntries(['wordbank','handwriting'].map(branch=>[branch,[...new Set((Array.isArray(input?.[branch])?input[branch]:[]).filter(id=>typeof id==='string'&&/^[a-zA-Z0-9:_-]{1,160}$/.test(id)))].sort().slice(0,5)]));}
+  const habitBranches=Object.freeze(['wordbank','handwriting','kana','kanji']);
+  function normalizePractice(input){return Object.fromEntries(habitBranches.map(branch=>[branch,[...new Set((Array.isArray(input?.[branch])?input[branch]:[]).filter(id=>typeof id==='string'&&/^[a-zA-Z0-9:_-]{1,160}$/.test(id)))].sort().slice(0,5)]));}
   function emptyActivity(){return {sources:{},reviews:{reading:[],writing:[]},metrics:{},kana:[],practice:normalizePractice(),goalVersion:3};}
   function habitUnits(state,day){
     const totals=activityTotals(state,day),metrics=totals.metrics,practice=state.activity[day]?.practice;
-    return Math.max(correctAcrossBranches(totals),(metrics['kana.attempts']||0)+(metrics['kanji.attempts']||0))+(practice?.wordbank?.length||0)+(practice?.handwriting?.length||0);
+    return Math.max(correctAcrossBranches(totals),(metrics['kana.attempts']||0)+(metrics['kanji.attempts']||0))+habitBranches.reduce((sum,branch)=>sum+(practice?.[branch]?.length||0),0);
   }
   // Five meaningful attempts make a study day. These bounded, convergent
   // receipts grant no answer XP and are never sent as competitive receipts.
+  // Course owners submit only original retrieval attempts, excluding teaching,
+  // skipped audio and corrective retries. Existing trainers keep their counters.
   function recordHabit({branch,id,at=Date.now()}){
-    if(!['wordbank','handwriting'].includes(branch)||typeof id!=='string'||!/^[a-zA-Z0-9:_-]{1,160}$/.test(id))return false;
+    if(!habitBranches.includes(branch)||typeof id!=='string'||!/^[a-zA-Z0-9:_-]{1,160}$/.test(id))return false;
     const state=ensureSeeded({sync:false,emit:false}),day=dayKey(at),row=state.activity[day]||emptyActivity();
     if(row.practice[branch].includes(id)||row.practice[branch].length>=5)return false;
     row.practice[branch].push(id);row.practice[branch].sort();state.activity[day]=row;

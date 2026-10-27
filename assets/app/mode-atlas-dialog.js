@@ -229,6 +229,7 @@
     };
 
     requestAnimationFrame(() => {
+      if (active !== owner || panel.contains(document.activeElement)) return;
       const preferred = opts.kind === 'feature' ? close : (opts.kind === 'confirm' && opts.tone === 'danger' ? cancel : confirm);
       try { (preferred || confirm || close || panel).focus({ preventScroll: true }); } catch {}
     });

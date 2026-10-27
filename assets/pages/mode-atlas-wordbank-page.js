@@ -18,10 +18,6 @@ function refreshProfileShell() {
       sortSelect: document.getElementById('sortSelect'),
       filterSelect: document.getElementById('filterSelect'),
       clearAllBtn: document.getElementById('clearAllBtn'),
-      statTotal: document.getElementById('statTotal'),
-      statEnglish: document.getElementById('statEnglish'),
-      statFavorites: document.getElementById('statFavorites'),
-      statMissing: document.getElementById('statMissing'),
       addJumpBtn: document.getElementById('wordBankAddJumpBtn'),
       addPanel: document.getElementById('wordBankAddPanel'),
       actionsBtn: document.getElementById('wordBankActionsBtn'),
@@ -31,6 +27,54 @@ function refreshProfileShell() {
       resultsMeta: document.getElementById('wordBankResultsMeta')
     };
 
+    let activeSection='hub',sessionController=null;
+    const selectedEntries=new Set();
+    function showSection(section){
+      activeSection=['course','bank','phrases'].includes(section)?section:'hub';
+      document.querySelector('[data-words-hub]').hidden=activeSection!=='hub';
+      document.querySelector('[data-ma-vocabulary]').hidden=activeSection!=='course';
+      document.querySelector('[data-ma-word-lessons]').hidden=activeSection!=='phrases';
+      document.querySelector('.wordbank-library').hidden=activeSection!=='bank';
+      const titles={hub:'Words',course:'Learn words',bank:'Word Bank',phrases:'Phrase lessons'};
+      document.getElementById('wordBankTitle').textContent=titles[activeSection];document.title=titles[activeSection]+' · Mode Atlas';
+      const back=document.getElementById('maWordsBack');back.href=activeSection==='hub'||activeSection==='phrases'?'/learn/':'/wordbank/';back.textContent=activeSection==='hub'||activeSection==='phrases'?'‹ Learn':'‹ Words';
+      document.body.dataset.wordsView=activeSection;updateStats();
+    }
+    function leaveSession(){
+      if(history.state?.wordSession){history.back();return;}
+      const url=new URL(location.href);for(const key of ['session','sessionId','vocabulary','review'])url.searchParams.delete(key);url.searchParams.set('view',activeSection);
+      history.replaceState({},'',url);route();
+    }
+    function sessionRoute(kind,options={}){
+      if(sessionController)sessionController.close();
+      const focus=document.getElementById('maWordsFocus');document.getElementById('maWordsOverview').hidden=true;focus.hidden=false;
+      const onSession=saved=>{const url=new URL(location.href);url.searchParams.set('sessionId',saved.id);history.replaceState(history.state,'',url);};
+      sessionController=kind==='course'?window.ModeAtlasVocabularyUI.open({...options,mount:focus,onExit:leaveSession,onSession}):window.ModeAtlasWordReview.open({...options,mount:focus,onExit:leaveSession});
+      if(sessionController?.session)onSession(sessionController.session);
+      if(!sessionController){document.getElementById('maWordsOverview').hidden=false;focus.hidden=true;}
+      window.scrollTo({top:0,behavior:'instant'});
+    }
+    function startSession(kind,options={}){
+      const url=new URL(location.href);url.searchParams.set('view',kind==='course'?'course':'bank');url.searchParams.set('session',kind);url.searchParams.delete('sessionId');
+      history.pushState({wordSession:true},'',url);sessionRoute(kind,options);
+    }
+    function route(){
+      if(sessionController){sessionController.close();sessionController=null;}
+      wordBank=loadWordBank();renderEntries();
+      const params=new URLSearchParams(location.search);let view=params.get('view')||'hub';
+      if(['kana','mixed'].includes(params.get('script'))){
+        if(!window.ModeAtlasVocabulary.pending()&&window.ModeAtlasVocabulary.preference()!==params.get('script'))window.ModeAtlasVocabulary.setPreference(params.get('script'));
+        const cleanURL=new URL(location.href);cleanURL.searchParams.delete('script');history.replaceState(history.state,'',cleanURL);
+      }
+      if(params.has('lesson')||params.has('application'))view='phrases';
+      if(params.get('review')==='1')view='bank';if(params.get('vocabulary')==='review')view='course';
+      document.getElementById('maWordsOverview').hidden=false;document.getElementById('maWordsFocus').hidden=true;
+      showSection(view);window.ModeAtlasVocabularyUI.render(document.querySelector('[data-ma-vocabulary]'),{onStart:options=>startSession('course',options)});
+      if(window.ModeAtlasVisitFlows?.ready?.()!==false){
+        if(params.get('session')==='course'||params.get('vocabulary')==='review')sessionRoute('course',{sessionId:params.get('sessionId')});
+        else if(params.get('session')==='bank'||params.get('review')==='1')sessionRoute('bank',{kind:params.get('review')==='1'?'review':undefined});
+      }
+    }
     let wordBank = loadWordBank();
     let accountRevision = 0;
     const expandedEntries = new Set();
@@ -217,11 +261,6 @@ function refreshProfileShell() {
       const withEnglish = wordBank.filter(entry => String(entry.english || '').trim()).length;
       const favorites = wordBank.filter(entry => entry.favorite).length;
       const missingEnglish = total - withEnglish;
-      elements.statTotal.textContent = total;
-      elements.statEnglish.textContent = withEnglish;
-      elements.statFavorites.textContent = favorites;
-      elements.statMissing.textContent = missingEnglish;
-      [elements.statTotal, elements.statEnglish, elements.statFavorites, elements.statMissing].forEach(el => el?.classList.remove('ma-skeleton-text'));
       updateExperienceState({ total, favorites, missingEnglish });
     }
 
@@ -229,18 +268,19 @@ function refreshProfileShell() {
       const populated = total > 0;
       document.body?.classList?.toggle?.('ma-wordbank-populated', populated);
       if (document.body?.dataset) document.body.dataset.maWordBankExperience = populated ? 'collection' : 'empty';
-      document.querySelectorAll('.wordbank-overview,.wordbank-library,#wordBankReviewBtn,#wordBankActionsBtn').forEach(node=>{node.hidden=!populated;});
+      document.getElementById('wordBankLearnBtn').hidden=!populated;
+      document.getElementById('wordBankLearnBtn').textContent=selectedEntries.size?`Learn ${selectedEntries.size} selected`:'Learn these words';
+      document.querySelectorAll('#wordBankReviewBtn,#wordBankActionsBtn').forEach(node=>{node.hidden=!populated;});
       const lessons=document.querySelector('[data-ma-word-lessons]');
       if(lessons&&lessons.dataset.populated!==String(populated)){lessons.dataset.populated=String(populated);window.ModeAtlasWordLessons.render(lessons,{populated});}
       if (elements.introLead) {
-        elements.introLead.textContent = populated
-          ? `${total} saved word${total === 1 ? '' : 's'}${favorites ? ` · ${favorites} favourite${favorites === 1 ? '' : 's'}` : ''}${missingEnglish ? ` · ${missingEnglish} still need${missingEnglish === 1 ? 's' : ''} a meaning` : ''}.`
-          : 'Learn useful words or add your own.';
+        elements.introLead.textContent = ({hub:'',course:'',bank:'',phrases:'Everyday situations from your earlier lessons.'})[activeSection];
+        elements.introLead.hidden=!elements.introLead.textContent;
       }
       if (elements.libraryCount) {
         elements.libraryCount.textContent = populated
-          ? `${total} word${total === 1 ? '' : 's'} in your collection. Search, filter, or open a row to edit it.`
-          : 'Add your first word to start a searchable vocabulary collection.';
+          ? `${total} saved word${total === 1 ? '' : 's'}`
+          : 'Save a word you want to remember.';
       }
     }
 
@@ -350,7 +390,10 @@ function refreshProfileShell() {
 
       const toggle = createEl("div", "summary-toggle");
       toggle.append(createIcon("chevron", "ma-icon ma-icon--small"));
-      summary.append(main, typeCol, dateCol, toggle);
+      const selection=document.createElement('input');selection.type='checkbox';selection.className='wordbank-select';selection.dataset.selectWord=entryId;selection.checked=selectedEntries.has(entryId);selection.setAttribute('aria-label','Select '+entry.written);
+      selection.addEventListener('click',event=>event.stopPropagation());
+      selection.addEventListener('change',()=>{if(selection.checked)selectedEntries.add(entryId);else selectedEntries.delete(entryId);updateStats();});
+      summary.append(selection,main, typeCol, dateCol, toggle);
 
       const body = createEl("div", "card-body");
       const cardTop = createEl("div", "card-top ma-section-head");
@@ -495,7 +538,8 @@ function refreshProfileShell() {
       });
     }
 
-    document.getElementById('wordBankReviewBtn').addEventListener('click',()=>window.ModeAtlasWordReview.open());
+    document.getElementById('wordBankLearnBtn').addEventListener('click',()=>startSession('bank',{kind:'learn',ids:selectedEntries.size?[...selectedEntries]:getFilteredEntries().map(word=>word.id)}));
+    document.getElementById('wordBankReviewBtn').addEventListener('click',()=>startSession('bank',{kind:'review',ids:selectedEntries.size?[...selectedEntries]:undefined}));
     elements.addJumpBtn?.addEventListener('click', openAddWordDialog);
     elements.actionsBtn?.addEventListener('click', openCollectionActionsDialog);
 
@@ -576,7 +620,7 @@ function refreshProfileShell() {
 
     elements.clearAllBtn.addEventListener('click', clearAllWords);
 
-    renderEntries();
+    renderEntries();route();window.addEventListener('popstate',route);
     const requestedLesson=new URLSearchParams(location.search).get('lesson');
     const lesson=!requestedLesson?null:requestedLesson==='next'?window.ModeAtlasWordLessonState.next(window.ModeAtlasWordLessonsData):window.ModeAtlasWordLessonsData.find(unit=>unit.id===requestedLesson);
     const application=new URLSearchParams(location.search).get('application');
@@ -586,19 +630,21 @@ function refreshProfileShell() {
     if(window.ModeAtlasVisitFlows?.ready?.()!==false){
       if(reviewUnit)window.ModeAtlasWordLessons.review(reviewUnit);
       else if(lesson)window.ModeAtlasWordLessons.open(lesson);
-      else if(new URLSearchParams(location.search).get('review')==='1'&&wordBank.length)window.ModeAtlasWordReview.open();
     }
     window.addEventListener('modeAtlasWordLessonsChanged',()=>window.ModeAtlasWordLessons.render(document.querySelector('[data-ma-word-lessons]')));
 
     const refreshWordBankFromStorage = () => {
       wordBank = loadWordBank();
-      renderEntries();
+      renderEntries();window.ModeAtlasVocabularyUI.render();
       refreshProfileShell();
     };
 
     window.addEventListener('modeAtlasAccountWillChange',()=>{
       accountRevision++;
-      expandedEntries.clear();elements.kanaInput.value='';elements.searchInput.value='';clearStatus();
+      expandedEntries.clear();selectedEntries.clear();elements.kanaInput.value='';elements.searchInput.value='';clearStatus();
+      if(sessionController){sessionController.close();sessionController=null;}
+      const url=new URL(location.href);for(const key of ['session','sessionId','vocabulary','review'])url.searchParams.delete(key);history.replaceState({},'',url);
+      document.getElementById('maWordsFocus').hidden=true;document.getElementById('maWordsOverview').hidden=false;
       window.ModeAtlasDialog?.close?.(false);
     });
     window.addEventListener('modeAtlasDataCleared',refreshWordBankFromStorage);
@@ -606,6 +652,7 @@ function refreshProfileShell() {
     window.addEventListener('modeAtlasCloudDataChanged', (event) => {
       const sections = Array.isArray(event.detail?.sections) ? event.detail.sections : [];
       if (!sections.length || sections.includes('wordBank')) refreshWordBankFromStorage();
+      else if(sections.some(section=>['reading','writing','kanaLearning','kanji'].includes(section)))window.ModeAtlasVocabularyUI.render();
     });
     window.addEventListener('pageshow', (event) => {
       if (event.persisted === true) refreshWordBankFromStorage();

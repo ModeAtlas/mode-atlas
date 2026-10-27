@@ -67,36 +67,11 @@
   function kanjiReviews(){
     return (root.ModeAtlasKanjiState?.reviewSets()||[]).map(({level,skill,count})=>({due:count,label:`Kanji N${level} · ${skill==='pronunciation'?'Pronunciation':'Meaning'}`,href:'/kanji/?'+new URLSearchParams({level:String(level),practice:skill,focus:'due'})}));
   }
-  function recommend(input = {}){
-    const learning=root.ModeAtlasKanaLearning;
-    if(learning&&!learning.initialize().startedAt)return Object.freeze({mode:'reading',title:'Find your starting point',reason:'Take a short check or begin with the A-row.',focus:false,count:0,meta:'Kana · Your learning path',href:'/kana/'});
-    const reading = evidence(input.readingStats, availableChars(input.readingSettings));
-    const writing = evidence(input.writingStats, availableChars(input.writingSettings));
-    let mode = input.lastMode === 'writing' ? 'writing' : 'reading';
-    let focus = false, title = mode === 'writing' ? 'Build your recall' : 'Build your reading';
-    let reason = mode === 'writing' ? 'Match each sound to its kana.' : 'A short set with your current kana selection.';
-    if (!reading.answered && !writing.answered) {
-      mode = 'reading'; title = 'Start small'; reason = 'Start small. There is time to learn each answer.';
-    } else if (reading.weak.length || writing.weak.length) {
-      mode = writing.weak.length > reading.weak.length ? 'writing' : 'reading';
-      const count = (mode === 'writing' ? writing : reading).weak.length;
-      focus = true; title = mode === 'writing' ? 'Recall tricky kana' : 'Read tricky kana';
-      reason = `${count} ${count === 1 ? 'kana has' : 'kana have'} been tricky in your selected set. Give them another look.`;
-    } else if (reading.answered >= 20 && writing.answered < reading.answered / 4) {
-      mode = 'writing'; title = 'Try Recall'; reason = 'You have been reading kana. Try matching sounds back to characters.';
-    }
-    const readingDue=root.ModeAtlasReview?.due(input.readingReview||{})||[];
-    const writingDue=root.ModeAtlasReview?.due(input.writingReview||{})||[];
-    if(readingDue.length||writingDue.length){
-      mode=writingDue.length>readingDue.length?'writing':'reading';const count=(mode==='writing'?writingDue:readingDue).length;
-      return Object.freeze({mode,title:'Time to revisit',reason:`${count} kana ${count===1?'is':'are'} ready for a spaced review.`,focus:true,count:10,meta:'10 questions · Spaced recall',href:`/${mode}/?practice=10&due=1`});
-    }
-    const params = new URLSearchParams({practice: '10'});
-    const newLearner = !input.readingSettings && !input.writingSettings
-      && !Object.keys(input.readingStats || {}).length && !Object.keys(input.writingStats || {}).length;
-    if (newLearner && mode === 'reading') params.set('hints', 'on');
-    if (focus) params.set('focusWeak', '1');
-    return Object.freeze({mode, title, reason, focus, count: 10, meta: '10 questions · At your pace', href: `/${mode}/?${params}`});
+  function recommend(){
+    // The course owns lesson order, due work and interrupted-session priority.
+    // Home must not run a second policy over the same learning evidence.
+    const action=root.ModeAtlasKanaLearning?.nextAction?.();
+    return action||Object.freeze({kind:'start',title:'Find your starting point',label:'Choose where to start',detail:'Begin with Kana or check what you already know.',href:'/kana/'});
   }
   function summarise(answers = []){
     const rows = new Map();

@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "release": {
+    "version": "3.2.0",
+    "iosBuild": "2080056",
+    "scope": "Local release working tree; published-commit GitHub CI is recorded separately."
+  },
+  "localRelease": {
+    "javascript": {
+      "passed": 380,
+      "failed": 0
+    },
+    "python": {
+      "passed": 23,
+      "failed": 0
+    },
+    "sourceLog": "/tmp/ma320-release.log",
+    "sourceLogSha256": "0dae6afe8e7d003ff416a6e59169bb3c21c67d3111fee52dceaac21cfb81a2f7"
+  },
+  "browser": {
+    "deduplication": "Key = source file + browser project + full title (describe hierarchy included). Latest result startTime wins. Original run counts and failed outcomes remain below; follow-up results do not relabel a failed whole run as green.",
+    "originalExecutions": 786,
+    "latestUniqueCases": 701,
+    "latestOutcomes": {
+      "passed": 700,
+      "skipped": 1
+    },
+    "byProject": {
+      "desktop-chromium": {
+        "passed": 574
+      },
+      "mobile-chromium": {
+        "passed": 31
+      },
+      "mobile-webkit": {
+        "passed": 95,
+        "skipped": 1
+      }
+    },
+    "caseResults": "test-results.json",
+    "originalRuns": [
+      {
+        "id": "polish-final",
+        "source": ".build/reports/3.2.0-polish-final.json",
+        "sha256": "da885c64f70bac0d8d4e65db596544d5d272aad6d09e2ceaf3ab6c5df1465c73",
+        "originalStats": {
+          "startTime": "2026-10-27T08:40:00.709Z",
+          "duration": 537490.2119999999,
+          "expected": 538,
+          "skipped": 0,
+          "unexpected": 4,
+          "flaky": 0
+        },
+        "executions": 542,
+        "originalFailures": [
+          {
+            "file": "tests/duo-compact.spec.js",
+            "project": "desktop-chromium",
+            "title": "large text landscape: bottom fallback and shop content stay reachable",
+            "outcome": "timedOut",
+            "error": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+            "latestOutcome": "passed",
+            "latestRun": "shop-race-fixed"
+          },
+          {
+            "file": "tests/personal-words.spec.js",
+            "project": "desktop-chromium",
+            "title": "editing the current word resumes current content from Home without losing an independent answer",
+            "outcome": "failed",
+            "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m",
+            "latestOutcome": "passed",
+            "latestRun": "words-complete-chromium"
+          },
+          {
+            "file": "tests/vocabulary.spec.js",
+            "project": "desktop-chromium",
+            "title": "Words hub and focused course use landscape light with larger text",
+            "outcome": "failed",
+            "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m100.078125\u001b[39m\nReceived:    \u001b[31m63.078125\u001b[39m",
+            "latestOutcome": "passed",
+            "latestRun": "task-geometry"
+          },
+          {
+            "file": "tests/vocabulary.spec.js",
+            "project": "desktop-chromium",
+            "title": "Words hub and focused course use landscape dark with larger text",
+            "outcome": "failed",
+            "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m100.078125\u001b[39m\nReceived:    \u001b[31m63.078125\u001b[39m",
+            "latestOutcome": "passed",
+            "latestRun": "task-geometry"
+          }
+        ]
+      },
+      {
+        "id": "webkit-final",
+        "source": ".build/reports/3.2.0-webkit-final.json",
+        "sha256": "32d1608b0838e82630dcb321f8ecad5f3aca8766c6c6e5aa5a0c40a5c130e2c5",
+        "originalStats": {
+          "startTime": "2026-10-27T08:40:13.827Z",
+          "duration": 383031.338,
+          "expected": 92,
+          "skipped": 1,
+          "unexpected": 3,
+          "flaky": 0
+        },
+        "executions": 96,
+        "originalFailures": [
+          {
+            "file": "tests/personal-words.spec.js",
+            "project": "mobile-webkit",
+            "title": "editing the current word resumes current content from Home without losing an independent answer",
+            "outcome": "failed",
+            "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m",
+            "latestOutcome": "passed",
+            "latestRun": "words-complete-webkit"
+          },
+          {
+            "file": "tests/vocabulary.spec.js",
+            "project": "mobile-webkit",
+            "title": "Words hub and focused course use landscape light with larger text",
+            "outcome": "failed",
+            "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m100.0625\u001b[39m\nReceived:    \u001b[31m63.0625\u001b[39m",
+            "latestOutcome": "passed",
+            "latestRun": "task-geometry-webkit"
+          },
+          {
+            "file": "tests/vocabulary.spec.js",
+            "project": "mobile-webkit",
+            "title": "Words hub and focused course use landscape dark with larger text",
+            "outcome": "failed",
+            "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m100.0625\u001b[39m\nReceived:    \u001b[31m63.0625\u001b[39m",
+            "latestOutcome": "passed",
+            "latestRun": "task-geometry-webkit"
+          }
+        ]
+      },
+      {
+        "id": "words-complete-chromium",
+        "source": ".build/reports/3.2.0-words-complete-chromium.json",
+        "sha256": "cf43e826352f897a9f1c6298e425856ca331f3f935dd938c9bfbe5052cb7e9d1",
+        "originalStats": {
+          "startTime": "2026-10-27T08:51:57.674Z",
+          "duration": 56474.176,
+          "expected": 21,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "executions": 21,
+        "originalFailures": []
+      },
+      {
+        "id": "words-complete-webkit",
+        "source": ".build/reports/3.2.0-words-complete-webkit.json",
+        "sha256": "7106ea5037a6a0743685b05851ebe28a1053d45de70ab96f809680b5c9da8f4b",
+        "originalStats": {
+          "startTime": "2026-10-27T08:51:59.262Z",
+          "duration": 64300.227,
+          "expected": 21,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "executions": 21,
+        "originalFailures": []
+      },
+      {
+        "id": "shop-race-fixed",
+        "source": ".build/reports/3.2.0-shop-race-fixed.json",
+        "sha256": "e5f78f7539d0b13c1e8aed39cf9ebdd2dbf36c0237917dc78a36093c7ed3a72c",
+        "originalStats": {
+          "startTime": "2026-10-27T08:52:16.947Z",
+          "duration": 17772.796,
+          "expected": 10,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "executions": 10,
+        "originalFailures": []
+      },
+      {
+        "id": "smoke-shell",
+        "source": ".build/reports/3.2.0-smoke-shell.json",
+        "sha256": "eaa8211802c073a341bdb1f034748097823df6113817f51bf14a5a2397209558",
+        "originalStats": {
+          "startTime": "2026-10-27T08:40:15.645Z",
+          "duration": 79165.826,
+          "expected": 40,
+          "skipped": 0,
+          "unexpected": 2,
+          "flaky": 0
+        },
+        "executions": 42,
+        "originalFailures": [
+          {
+            "file": "tests/ios-shell.spec.js",
+            "project": "desktop-chromium",
+            "title": "native safe-area insets survive phone trainer styles and clear the dock after home scrolling",
+            "outcome": "failed",
+            "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 7500ms exceeded while waiting on the predicate",
+            "latestOutcome": "passed",
+            "latestRun": "shell-safearea"
+          },
+          {
+            "file": "tests/ios-shell.spec.js",
+            "project": "mobile-chromium",
+            "title": "native safe-area insets survive phone trainer styles and clear the dock after home scrolling",
+            "outcome": "failed",
+            "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 7500ms exceeded while waiting on the predicate",
+            "latestOutcome": "passed",
+            "latestRun": "shell-safearea"
+          }
+        ]
+      },
+      {
+        "id": "shell-safearea",
+        "source": ".build/reports/3.2.0-shell-safearea.json",
+        "sha256": "2cb627e6b017544cf2c09906e5b47fc46a92d69bfa92753173ec377ffe580e93",
+        "originalStats": {
+          "startTime": "2026-10-27T08:43:47.925Z",
+          "duration": 6694.932,
+          "expected": 2,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "executions": 2,
+        "originalFailures": []
+      },
+      {
+        "id": "phone-tablet",
+        "source": ".build/reports/3.2.0-phone-tablet.json",
+        "sha256": "7a0eeb856841f1dce64873027af151e9052e04a12f4e0e3d5f55311c8d18cd36",
+        "originalStats": {
+          "startTime": "2026-10-27T08:39:09.686Z",
+          "duration": 26132.976,
+          "expected": 20,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "executions": 20,
+        "originalFailures": []
+      },
+      {
+        "id": "task-geometry",
+        "source": ".build/reports/3.2.0-task-geometry.json",
+        "sha256": "4cbf8b6b5fc6f29deab58ce1b878a83cfa95f984275912403ca71c24e6ba0392",
+        "originalStats": {
+          "startTime": "2026-10-27T08:56:28.498Z",
+          "duration": 36377.003000000004,
+          "expected": 16,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "executions": 16,
+        "originalFailures": []
+      },
+      {
+        "id": "task-geometry-webkit",
+        "source": ".build/reports/3.2.0-task-geometry-webkit.json",
+        "sha256": "31a32e73ce810c9ac5bada59ed6f70c53a98d0700ae38246494f5e57ed6bb462",
+        "originalStats": {
+          "startTime": "2026-10-27T08:57:41.892Z",
+          "duration": 40838.221999999994,
+          "expected": 16,
+          "skipped": 0,
+          "unexpected": 0,
+          "flaky": 0
+        },
+        "executions": 16,
+        "originalFailures": []
+      }
+    ]
+  },
+  "scriptedVocabularyTraversal": {
+    "source": ".build/reports/3.2.0-words-course-traversal.json",
+    "classification": "Scripted model traversal with all Kana/Kanji/sound prerequisites introduced; not a human study or complete beginner browser journey.",
+    "sourceSha256": "85039385a2a85b4aa8f47cba71ff5eb71e1ce27362fbc13b669de97470872bd0",
+    "scope": "all curated vocabulary entries through guided model tasks",
+    "setup": "all character and sound prerequisites introduced; no seeded vocabulary introductions, answers or completions",
+    "catalogue": 146,
+    "sessions": 221,
+    "answers": 778,
+    "learned": 146,
+    "checkpointCovered": 146,
+    "finalPlan": "complete",
+    "durationMs": 126173,
+    "passed": true
+  },
+  "screenshots": [
+    {
+      "file": "screens/home-short-dark-large.png",
+      "source": ".build/tests/3.2.0-polish-final/ios-home-Home-next-action--e9961-ve-side-region-640x432-dark-desktop-chromium/home-native-region-large-text.png",
+      "description": "Home continuation at a short native window with larger text",
+      "width": 640,
+      "height": 432,
+      "sha256": "d1a83765145b7ba662e3c3df3896c13357c91732e43501b723e7d153ecdbee86",
+      "inspected": true
+    },
+    {
+      "file": "screens/kana-closed-light-large.png",
+      "source": ".build/tests/3.2.0-task-geometry/learning-redesign-first-ac-4fb6e--teaching-closed-light-1-5x-desktop-chromium/kana-teach-closed-light-1.5.png",
+      "description": "Kana teaching, 432×640, light, 150% text",
+      "width": 432,
+      "height": 640,
+      "sha256": "964428e9177974129fdfb5f3e4109879b7c9a077716df7cce66b281ab17ec08f",
+      "inspected": true
+    },
+    {
+      "file": "screens/kana-short-dark-large.png",
+      "source": ".build/tests/3.2.0-task-geometry/learning-redesign-first-actions-and-teaching-short-dark-1-5x-desktop-chromium/kana-teach-short-dark-1.5.png",
+      "description": "Kana teaching, 960×440, dark, 150% text",
+      "width": 960,
+      "height": 440,
+      "sha256": "576947b936fe6a77a7426f6e168052b26f48611cf33a74c8faa8cdba50908fa1",
+      "inspected": true
+    },
+    {
+      "file": "screens/kanji-closed-light-large.png",
+      "source": ".build/tests/3.2.0-task-geometry/learning-redesign-first-ac-4fb6e--teaching-closed-light-1-5x-desktop-chromium/kanji-teach-closed-light-1.5.png",
+      "description": "Kanji teaching without glyph/meaning overlap, 432×640, 150% text",
+      "width": 432,
+      "height": 640,
+      "sha256": "0b461cbaf34da148188464c34206984667840fb9ae0032768462ae57b61ff4c7",
+      "inspected": true
+    },
+    {
+      "file": "screens/kanji-short-dark-webkit.png",
+      "source": ".build/tests/3.2.0-task-geometry-webkit/learning-redesign-first-actions-and-teaching-short-dark-1-5x-mobile-webkit/kanji-teach-short-dark-1.5.png",
+      "description": "Kanji teaching, short/wide, dark, 150% text, WebKit",
+      "width": 960,
+      "height": 440,
+      "sha256": "04eba2d25854ef14e6db2e10d54358c8c174038291a07892984fe3a6e91b7af2",
+      "inspected": true
+    },
+    {
+      "file": "screens/words-hub-closed-light-large.png",
+      "source": ".build/tests/3.2.0-task-geometry/vocabulary-Words-hub-and-f-354f2-osed-light-with-larger-text-desktop-chromium/words-hub-closed-light.png",
+      "description": "Two-destination Words hub, closed window, light, larger text",
+      "width": 432,
+      "height": 640,
+      "sha256": "c512466d9537886374e60e74e35e571b84e54d758977fe6c4255127e0e173a47",
+      "inspected": true
+    },
+    {
+      "file": "screens/words-question-closed-light-large.png",
+      "source": ".build/tests/3.2.0-task-geometry/vocabulary-Words-hub-and-f-354f2-osed-light-with-larger-text-desktop-chromium/words-question-closed-light.png",
+      "description": "Words typed question, closed window, light, larger text",
+      "width": 432,
+      "height": 640,
+      "sha256": "095f2e5d203e8085eb41aa50cf95f295791d8911af52244823db7365c64cfb53",
+      "inspected": true
+    },
+    {
+      "file": "screens/words-question-landscape-webkit.png",
+      "source": ".build/tests/3.2.0-task-geometry-webkit/vocabulary-Words-hub-and-f-749bd-scape-dark-with-larger-text-mobile-webkit/words-question-landscape-dark.png",
+      "description": "Words typed question, short landscape, dark, larger text, WebKit",
+      "width": 640,
+      "height": 432,
+      "sha256": "85117fbcc64612b5e45e1a078a23ecf5c9d8fd5313c006fd45da39cd5bc43f1f",
+      "inspected": true
+    },
+    {
+      "file": "screens/personal-teaching-wide.png",
+      "source": ".build/tests/3.2.0-words-complete-chromium/personal-words-personal-wo-47540-rn-to-their-collection-wide-desktop-chromium/personal-teaching-wide.png",
+      "description": "Personal Word Bank teaching on a wide window",
+      "width": 960,
+      "height": 680,
+      "sha256": "886548155ed8378bf6511f50afae2a68818e04ba51c6eef34e348ad0044dff95",
+      "inspected": true
+    },
+    {
+      "file": "screens/personal-complete-short.png",
+      "source": ".build/tests/3.2.0-words-complete-chromium/personal-words-personal-wo-b1c6f-n-to-their-collection-short-desktop-chromium/personal-complete-short.png",
+      "description": "Personal Word Bank completion on a short window",
+      "width": 640,
+      "height": 432,
+      "sha256": "2a68579affa3f29b5c34ebc8ca9fffe3d967b426de924ef5d9f9f19f5891ba7c",
+      "inspected": true
+    }
+  ],
+  "limitations": [
+    "One WebKit handwriting browser case is explicitly skipped because it requires Chromium CDP touch-drag injection; Chromium browser coverage and stroke-matching unit tests remain.",
+    "Chromium and Linux WebKit simulate native geometry. They do not certify physical iPhone/Duo behavior or software-keyboard events.",
+    "Audio fixtures test requested text, playback gating and answer concealment, not installed voice acoustics or human listening outcomes.",
+    "Educational effectiveness, uncoached usability and long-term retention require learner observation; passing automated checks does not establish them.",
+    "Native builds, unsigned archive, hosted Firebase access rules and published-commit workflows are separate GitHub CI evidence."
+  ]
+}

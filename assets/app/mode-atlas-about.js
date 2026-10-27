@@ -12,13 +12,13 @@
   const OFFICIAL_SITE = 'mode-atlas.app';
   const PAGE = (window.ModeAtlasPageName ? window.ModeAtlasPageName() : (location.pathname.split('/').pop() || 'index.html')).toLowerCase();
   const WHATS_NEW_TITLE = 'What’s new';
-  const WHATS_NEW_COPY = 'More room to practise.';
+  const WHATS_NEW_COPY = 'A clearer path through Japanese.';
   const WHATS_NEW_SEEN_CONTENT_KEY = 'maWhatsNewSeenContentSignature';
   const WHATS_NEW_SEEN_AT_KEY = 'maWhatsNewSeenAt';
   const whatsNewItems = [
-    'Results and level-ups use the taller safe area on Duo. Wide results place learning and rewards side by side.',
-    'Rewards keep a consistent text size as you open and close categories.',
-    'Find explanations in Settings → Help. Save-file tools are restricted to the developer console.'
+    'Follow guided Kana and Kanji lessons, check each unit, and revisit what needs practice.',
+    'Words now has a guided course and a separate Word Bank for your own collection.',
+    'Continue your exact lesson from Home, with clearer layouts on small and wide screens.'
 
   ];
 

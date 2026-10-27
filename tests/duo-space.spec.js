@@ -49,7 +49,7 @@ for(const [name,layout] of [['right',outer],['left',left],['wide',inner]])for(co
   });
 }
 test('word lessons use a wider dialog and preserve an answer across folding',async({page},info)=>{
-  await prepare(page,outer);await page.goto('/wordbank/');await settle(page);
+  await prepare(page,outer);await page.goto('/wordbank/?view=phrases');await settle(page);
   await page.getByRole('button',{name:'Start lesson: Make a polite connection',exact:true}).click();
   const dialog=page.locator('.ma-dialog');expect((await dialog.boundingBox()).width).toBeGreaterThan(430);
   await clearOfSystem(dialog,outer);await systemIllustration(page,outer);await page.screenshot({path:info.outputPath('word-outer.png')});
@@ -86,8 +86,8 @@ test('starting Home fills its illustration column in the tall inner window',asyn
   await page.screenshot({path:info.outputPath('home-portrait.png')});
 });
 test('wide Kanji teaching pairs the character with its reading and example',async({page},info)=>{
-  await prepare(page,inner);await page.goto('/kanji/');await settle(page);await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();await page.getByRole('button',{name:'Start learning',exact:true}).click();
-  const hero=await page.locator('.ma-kanji-lesson-hero').boundingBox(),word=await page.locator('.ma-kanji-spoken-word').boundingBox();expect(word.x).toBeGreaterThanOrEqual(hero.x+hero.width);
+  await prepare(page,inner);await page.goto('/kanji/');await settle(page);await page.getByRole('button',{name:'Start as a beginner',exact:true}).click();await page.locator('.ma-kanji-current .ma-button--primary').click();
+  const hero=await page.locator('.ma-kanji-shape').boundingBox(),word=await page.locator('.ma-kanji-word').boundingBox();expect(word.x).toBeGreaterThanOrEqual(hero.x+hero.width);
   await page.screenshot({path:info.outputPath('kanji-wide.png')});
 });
 test('old shells and stale snapshots retain the safe boundary',async({page})=>{
@@ -128,14 +128,14 @@ test('a system-region change without window resizing preserves handwriting and c
 for(const [name,layout]of [['right',outer],['left',left]]){
   test(`${name}: first-use consent uses clear width and reaches the first lesson`,async({page},info)=>{
     await prepare(page,layout,'light',false,false);await page.goto('/');await settle(page);
-    await page.getByRole('link',{name:'Start learning →'}).click();
+    await page.getByRole('link',{name:'Choose where to start'}).click();
     const card=page.locator('.ma-visit-card');await clearOfSystem(card,layout);
     expect((await card.boundingBox()).width).toBeGreaterThan(430);
     await page.getByRole('checkbox',{name:'I agree to the Privacy Policy and Terms of Use.'}).check();
     await systemIllustration(page,layout);await page.screenshot({path:info.outputPath('welcome.png')});
     await page.getByRole('button',{name:'Continue to Kana',exact:true}).click();
     await page.getByRole('button',{name:/Start lesson/}).click();
-    await expect(page.locator('.ma-kana-lesson-shape')).toHaveText('あ');
+    await expect(page.locator('.ma-kana-task-glyph')).toHaveText('あ');
   });
   test(`${name}: tour stays below moving system UI and keeps its controls reachable`,async({page},info)=>{
     await prepare(page,layout);await page.goto('/');await settle(page);

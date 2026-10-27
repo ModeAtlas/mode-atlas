@@ -1,3 +1,14 @@
+## 3.2.0 — Learning course redesign
+
+- Replace the Kana/Kanji dashboards with focused guided courses and in-place learning paths; Home resumes the exact task and Learn owns branch discovery.
+- Teach all 240 Kana units with specific sound/shape guidance, independent audio contrasts, full-row checks and cumulative checkpoints. Corrected retries cannot pass a check.
+- Add 28 authored Kanji foundation units for 84 characters, focused word senses, separate retrieval skills and delayed reviews. Preserve the complete advanced library and custom scored practice.
+- Separate Learn words from Word Bank. Save guided sets, introduce four response skills gradually, teach newly encountered Kanji spellings, and check the actual new word sets. Custom drills cannot skip course checkpoints.
+- Teach and review selected personal entries; preserve selections across batches and safely rebuild sessions after content edits or deletion.
+- Make short-screen lesson actions reachable, retain useful teaching at larger text sizes, align selected/hover colours, and preserve input focus when dialogs open.
+- Count meaningful guided practice toward study days and streaks without minting unverified competitive XP. Preserve original saves, earned access, themes and developer-only manual save controls.
+- Version 3.2.0 / iOS build 2080056. Validation, scope limits and the Mac update command: `docs/development-3.2.0.md`.
+
 ## 3.0.2 — Gradual learning, saved lessons and adaptive layouts
 
 - Keep Home gradual after the first few answers, introduce one early practice commitment and preserve the separate Home/Learn/Kana roles.

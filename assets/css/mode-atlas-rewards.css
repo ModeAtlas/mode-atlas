@@ -77,7 +77,7 @@
 .ma-routine-goals--compact{grid-template-columns:1fr;gap:8px;}
 .ma-routine-goals--compact .ma-routine-goal{grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;border:0;border-radius:0;padding:0;background:transparent;}
 .ma-routine-goals--compact .ma-routine-goal strong,.ma-routine-goals--compact .ma-routine-goal span{font-size:.68rem;}
-.ma-routine-goals--compact progress{grid-column:1/-1;height:4px;}
+.ma-routine-goals--compact progress{grid-column:1/-1;width:100%;height:4px;}
 .ma-atlas-collection{display:grid;gap:8px;}
 .ma-atlas-landmark{display:flex;align-items:center;gap:14px;min-width:0;width:100%;padding:14px;text-align:left;font:inherit;color:var(--ma-text-strong);border:1px solid var(--ma-border);border-radius:18px;background:var(--ma-card);cursor:pointer;}
 .ma-atlas-landmark__copy{display:grid;gap:4px;flex:1;min-width:0;}
