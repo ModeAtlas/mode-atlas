@@ -78,8 +78,6 @@ button.ma-social-person{cursor:pointer;}
 .ma-social-branch__bar span{background:var(--stage-color);}
 .ma-social-branch__legend{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:9px;color:var(--ma-muted);font-size:.7rem;}
 .ma-social-branch__legend span::before{content:"";display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;background:var(--stage-color);}
-.ma-social-mastery-help{font-size:.76rem;color:var(--ma-muted);line-height:1.6;}
-.ma-social-mastery-help summary{cursor:pointer;color:var(--ma-text);}
 
 .ma-weekly-summary{display:grid;gap:10px;padding:12px 14px;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-card);min-width:0;}
 .ma-weekly-summary :is(h3,p){margin:0;}

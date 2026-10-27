@@ -14,7 +14,6 @@
   function report(error){root.ModeAtlasDialog.alert({title:'Couldn’t continue',message:error.message||String(error)});}
   function safely(action){try{action();}catch(error){report(error);}}
   function heading(text){const h=el('h2','',text);h.tabIndex=-1;return h;}
-  function help(){root.ModeAtlasDialog.alert({title:'Your Kanji path',message:'Recall each character’s reading and meaning without hints to complete it. Completing a band opens the next one. Regular reviews build mastery. N5–N1 group the content by approximate difficulty.',confirmLabel:'Got it'});}
   function select(label,options,value,change){
     const wrap=el('label','ma-kanji-select'),input=el('select');wrap.append(el('span','',label),input);
     for(const [key,text]of options){const option=el('option','',text);option.value=key;input.append(option);}input.value=value;
@@ -61,7 +60,7 @@
       path.append(b);
     }
     const summary=el('div','ma-kanji-course-summary'),summaryCopy=el('div');summaryCopy.append(el('strong','',`N${level} · ${band.name}`),el('p','',`${band.complete} of ${band.total} complete · ${band.mastered} mastered`));
-    const info=button('i',help,'ma-kanji-path-help');info.setAttribute('aria-label','How levels unlock');summary.append(summaryCopy,info);
+    summary.append(summaryCopy);
     host.append(path,summary);
     let firstTen=null;
     if(level===5&&!state.introReady(current)){

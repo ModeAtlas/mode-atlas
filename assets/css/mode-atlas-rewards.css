@@ -41,7 +41,10 @@
 .ma-reward-category__heading{display:grid;gap:4px;min-width:0;flex:1;}
 .ma-reward-category__mark{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:9px;background:var(--ma-control-active);color:var(--ma-atlas);font:650 1.1rem/1 var(--ma-font-jp);white-space:nowrap;}
 .ma-reward-category__mark img{display:block;width:28px;height:28px;object-fit:contain;}
-.ma-collection-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:14px;}
+.ma-collection-panel{
+  /* Opening a category changes its width. Keep WebKit text inflation from
+     persisting the expanded width’s scale after it closes; rem still follows Dynamic Type. */
+  -webkit-text-size-adjust:100%;text-size-adjust:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:14px;}
 .ma-collection-panel>:not(.ma-reward-category),.ma-collection-panel>.ma-reward-category[open]{grid-column:1/-1;}
 .ma-reward-studio{display:flex;align-items:center;gap:18px;min-width:0;padding:12px 18px;border:1px solid var(--ma-border);border-radius:16px;background:var(--ma-control-active);color:var(--ma-text-strong);text-align:left;font:inherit;cursor:pointer;}
 .ma-reward-studio:focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}

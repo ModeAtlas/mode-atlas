@@ -158,7 +158,6 @@ function applyAchievementVisuals(root = document) {
     const completed=window.ModeAtlasAchievements.completion(s);
     const wrap=achEl('div','ma-ach-collection'),hero=achEl('header','ma-ach-collection-hero'),copy=achEl('div');
     copy.append(achEl('p','ma-ach-eyebrow','Your collection'),achEl('h3','',`${completed.earned} milestones earned`),achEl('p','ma-ach-collection-total',`${completed.percent}% of study milestones`));
-    const help=achEl('details','ma-ach-definition');help.append(achEl('summary','','How milestones count'),achEl('p','','Each rank is a milestone. Completion counts current study milestones across Atlas, Kana, Kanji and Words. Special rewards and retired milestones stay in your collection without affecting the percentage. Earned ranks stay earned.'));copy.append(help);
     const art=achEl('img','ma-ach-collection-art');art.src=window.ModeAtlasVersionFile.appUrl('/assets/illustrations/achievement-scene.svg');art.alt='';hero.append(copy,art);wrap.append(hero);
     const controls=achEl('div','ma-ach-controls');
     for(const [key,label,options]of [

@@ -15,7 +15,6 @@
 .ma-kanji-level[aria-pressed="true"]{border-color:var(--ma-results);background:var(--ma-control-active);}.ma-kanji-level:disabled{opacity:.48;cursor:default;}
 .ma-kanji-course-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0 20px;font-size:.8rem;}
 .ma-kanji-course-summary strong{font-size:.85rem;}.ma-kanji-course-summary p{margin:4px 0 0;color:var(--ma-muted);font-size:.75rem;}
-.ma-kanji-path-help{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid var(--ma-border);border-radius:50%;color:var(--ma-muted);background:transparent;cursor:pointer;}
 .ma-kanji-course-layout{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:24px;align-items:start;margin-bottom:32px;}
 .ma-kanji-teaching{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;min-width:0;}
 .ma-kanji-practice{min-width:0;overflow-wrap:anywhere;}

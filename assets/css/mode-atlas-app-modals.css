@@ -30,6 +30,7 @@
 
 /* The end-of-session celebration has one owner for every learning branch. */
 .ma-level-up-card{display:grid;justify-items:center;text-align:center;gap:12px;padding:8px 8px 20px;isolation:isolate;}
+.ma-level-up-copy{display:grid;justify-items:center;gap:12px;min-width:0;}
 .ma-level-up-label{margin:0;font:800 .8rem/1.4 var(--ma-font-display);letter-spacing:.1em;color:var(--ma-muted);}
 .ma-level-up-emblem{position:relative;width:210px;height:234px;animation:ma-level-arrive .65s cubic-bezier(.18,.8,.25,1.2) both;}
 .ma-level-up-emblem::before,.ma-level-up-emblem::after{content:"";position:absolute;inset:22px -12px;border:2px solid var(--ma-accent);border-radius:50%;z-index:-1;opacity:0;animation:ma-level-ring 1.1s ease-out .15s both;}
@@ -40,10 +41,18 @@
 .ma-level-up-card p:not(.ma-level-up-label){max-width:360px;margin:0;color:var(--ma-muted);line-height:1.55;font-size:.88rem;}
 .ma-level-up-card .ma-level-up-unlocks{font-weight:700;color:var(--ma-text);}
 .ma-level-up-card .ma-level-up-next{font-size:.76rem;}
-.ma-level-up-card>.ma-button{margin-top:6px;min-width:160px;}
+.ma-level-up-copy>.ma-button{margin-top:6px;min-width:160px;}
 @keyframes ma-level-arrive{from{opacity:0;transform:translateY(26px) scale(.65) rotate(-9deg);}to{opacity:1;transform:none;}}
 @keyframes ma-level-ring{0%{opacity:.65;transform:scale(.6);}100%{opacity:0;transform:scale(1.35);}}
 @media(max-width:640px){.ma-install-prompt{align-items:stretch;flex-wrap:wrap}.ma-install-prompt>div{flex:1 0 100%}.ma-install-prompt .ma-button{flex:1}.ma-level-up-emblem{width:175px;height:195px;}.ma-level-up-number{bottom:29px;font-size:2.3rem;}}
+@media(max-height:540px){
+  @container dialog (min-width:26rem){
+    .ma-level-up-card{grid-template-columns:160px minmax(0,1fr);align-items:center;gap:18px;padding:0;}
+    .ma-level-up-emblem{width:145px;height:162px;}
+    .ma-level-up-number{bottom:24px;font-size:2rem;}
+    .ma-level-up-copy{gap:8px;}
+  }
+}
 @media(prefers-reduced-motion:reduce){.ma-level-up-emblem,.ma-level-up-emblem::before,.ma-level-up-emblem::after{animation:none;}}
 
 /* About uses the shared dialog owner, with compact information rows. */
@@ -120,6 +129,18 @@ html[data-ma-large-text] .ma-about-table>div{grid-template-columns:1fr;gap:4px;}
 .ma-help-consent{display:flex;align-items:center;gap:10px;min-height:44px;font-size:.9rem;line-height:1.5;}
 .ma-help-consent input{flex:none;width:22px;height:22px;accent-color:var(--ma-atlas);}
 .ma-help-diagnostics{min-width:0;font-size:.85rem;}
+.ma-help-browser{display:grid;gap:14px;min-width:0;}
+.ma-help-browser [hidden]{display:none;}
+.ma-help-browser input{box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--ma-border);border-radius:10px;background:var(--ma-surface-inset);color:var(--ma-text);font:inherit;}
+.ma-help-index{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:10px;}
+.ma-help-index .ma-button{justify-content:flex-start;text-align:left;min-height:52px;white-space:normal;}
+.ma-help-browser .ma-help-note:empty{display:none;}
+.ma-help-article{display:grid;gap:18px;line-height:1.5;overflow-wrap:anywhere;}
+.ma-help-article>.ma-button{justify-self:start;min-height:44px;}
+.ma-help-article :is(h3,h4,p){margin:0;}
+.ma-help-article h3{font-size:1.15rem;}.ma-help-article h4{font-size:.9rem;color:var(--ma-text-strong);}
+.ma-help-article p{margin-top:4px;font-size:.85rem;color:var(--ma-text-soft);}
+.ma-help-browser :is(input,button):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}
 .ma-help-diagnostics summary{padding:10px 0;cursor:pointer;}
 .ma-help-diagnostics pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;}
 .ma-help-form :is(input,textarea,select,summary):focus-visible{outline:3px solid var(--ma-focus-ring);outline-offset:3px;}

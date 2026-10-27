@@ -229,6 +229,10 @@ body.ma-study-feedback-open .ma-trainer-skip{display:none;}
 .ma-study-feedback__note{max-width:44ch;margin:0 auto;font-size:.88rem;line-height:1.5;color:var(--ma-text-soft);}
 .ma-study-feedback>.ma-button{justify-self:stretch;min-height:48px;}
 .ma-study-summary{display:grid;gap:16px;overflow-wrap:anywhere;}
+.ma-study-summary__learning{display:grid;gap:12px;min-width:0;align-content:start;}
+.ma-study-summary__reward{min-width:0;}
+.ma-study-summary__reward .ma-session-rewards{margin:0;}
+@container dialog (min-width:34rem){.ma-study-summary{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:start;}.ma-study-summary__actions{grid-column:1/-1;}}
 .ma-study-summary p,.ma-study-summary h3{margin:0;}
 .ma-study-summary__intro{color:var(--ma-text-soft);line-height:1.5;}
 .ma-study-summary__stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}

@@ -25,8 +25,6 @@
         record.append(checks);section.append(record);
         const action=el('a','ma-button ma-button--ghost',`Practise ${skill}`);action.href='/kanji/?'+new URLSearchParams({char,mode:skill});section.append(action);host.append(section);
       }
-      const guide=el('details');guide.append(el('summary','','How Kanji mastery works'),el('p','','Practise readings and meanings without hints across several days. Your last 12 answers show what to revisit. Earned milestones stay saved.'));
-      host.append(guide);
     }).catch(error=>{host.lastChild.textContent=error.message;});return host;
   }
   function render(selection,onChange,openDetail){

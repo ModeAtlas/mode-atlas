@@ -97,15 +97,15 @@ for(const route of ['/','/learn/','/kana/','/kanji/','/kana/handwriting/','/read
   await page.screenshot({path:info.outputPath('expanded.png'),fullPage:true});expect(errors).toEqual([]);
  });
 }
-test('fold, close, reload and backup preserve a lesson and its independent review',async({page})=>{
+test('fold, close, reload and cloud snapshot preserve a lesson and its independent review',async({page})=>{
  await setup(page);await page.goto('/wordbank/');await page.getByRole('button',{name:'Start lesson: Make a polite connection',exact:true}).click();
  await page.getByRole('button',{name:'Try remembering it'}).click();await page.getByLabel('Reading (kana or romaji)',{exact:true}).fill('sumimasen');
  for(const size of [{width:1040,height:780},{width:400,height:680}]){await page.setViewportSize(size);await expect(page.getByLabel('Reading (kana or romaji)',{exact:true})).toHaveValue('sumimasen');}
  await page.getByRole('button',{name:'Check answer',exact:true}).click();await page.getByRole('button',{name:'Continue',exact:true}).click();
  await expect(page.locator('.ma-word-lesson h2')).toHaveText('ありがとうございます');await page.locator('.ma-dialog__close').click();await page.reload();
  await page.getByRole('button',{name:'Continue lesson: Make a polite connection',exact:true}).click();await expect(page.locator('.ma-word-lesson h2')).toHaveText('ありがとうございます');
- const value=await page.evaluate(()=>({checkpoint:ModeAtlasWordLessonState.read().polite,backup:KanaCloudSync.createLearningBackup(),word:ModeAtlasWordBank.read()[0]}));
- expect(value.checkpoint.index).toBe(1);expect(value.word.readingReview.last).toBeGreaterThan(0);expect(value.backup.snapshot.sections.wordBank.data.lessons.polite.index).toBe(1);
+ const value=await page.evaluate(()=>({checkpoint:ModeAtlasWordLessonState.read().polite,snapshot:KanaCloudSync.debugLocalSnapshot(),word:ModeAtlasWordBank.read()[0]}));
+ expect(value.checkpoint.index).toBe(1);expect(value.word.readingReview.last).toBeGreaterThan(0);expect(value.snapshot.sections.wordBank.data.lessons.polite.index).toBe(1);
 });
 test('account UI is fetched on activation and respects either side safe area',async({page})=>{
  await setup(page);const requests=[];page.on('request',r=>requests.push(r.url()));await page.goto('/');await expect(page.locator('#maLoadingScreen')).toBeHidden();
@@ -148,8 +148,8 @@ test('a due situation survives resize, backs up its schedule and advances after 
  await page.setViewportSize({width:1040,height:780});await expect(input).toHaveValue('koohiー');
  await input.fill('こーひーをください');await page.getByRole('button',{name:'Check answer',exact:true}).click();
  await expect(page.getByText('Correct',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Done',exact:true}).click();
- const saved=await page.evaluate(()=>({review:ModeAtlasWordLessonState.read().drinks.review,backup:KanaCloudSync.createLearningBackup().snapshot.sections.wordBank.data.lessons.drinks.review,now:Date.now()}));
- expect(saved.review.dueAt-saved.now).toBeGreaterThan(6*86400000);expect(saved.review.variant).toBe(1);expect(saved.backup).toEqual(saved.review);
+ const saved=await page.evaluate(()=>({review:ModeAtlasWordLessonState.read().drinks.review,snapshot:KanaCloudSync.debugLocalSnapshot().sections.wordBank.data.lessons.drinks.review,now:Date.now()}));
+ expect(saved.review.dueAt-saved.now).toBeGreaterThan(6*86400000);expect(saved.review.variant).toBe(1);expect(saved.snapshot).toEqual(saved.review);
  await page.reload();await expect(page.getByRole('button',{name:'Use it again',exact:true})).toHaveCount(0);
  await page.goto('/wordbank/?application=drinks');await expect(page.getByRole('heading',{name:'At breakfast, ask for milk politely.'})).toBeVisible();
  await page.evaluate(()=>dispatchEvent(new Event('modeAtlasAccountWillChange')));await expect(input).toHaveCount(0);

@@ -69,6 +69,7 @@
     opts.confirmLabel = opts.confirmLabel || (opts.kind === 'confirm' ? 'Continue' : 'OK');
     opts.hideActions = opts.kind === 'feature' ? true : opts.hideActions === true;
     opts.size = ['wide', 'large'].includes(opts.size) ? opts.size : (opts.wide === true ? 'wide' : 'default');
+    opts.presentation = opts.presentation === 'outcome' ? 'outcome' : 'default';
     opts.cancelLabel = opts.cancelLabel || 'Cancel';
     opts.closeLabel = opts.closeLabel || 'Close';
     opts.closeAriaLabel = opts.closeAriaLabel || 'Close dialog';
@@ -119,6 +120,7 @@
     const close = layer.querySelector('.ma-dialog__close');
 
     layer.dataset.tone = opts.tone;
+    layer.dataset.presentation = opts.presentation;
     panel.classList.toggle('ma-dialog--wide', opts.size === 'wide');
     panel.classList.toggle('ma-dialog--large', opts.size === 'large');
     kicker.textContent = opts.kicker;
@@ -159,6 +161,7 @@
     close.classList.toggle('ma-dialog__close--icon', opts.closeIcon);
     close.hidden = opts.hideClose === true;
     layer.hidden = false;
+    panel.scrollTop = 0;
     requestAnimationFrame(() => layer.classList.add('is-open'));
 
     const previousFocus = document.activeElement;

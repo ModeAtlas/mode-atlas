@@ -90,6 +90,7 @@
       });
     }
     function finish(){
+      host.setAttribute('data-ma-session-complete','');
       checkpoint({phase:'complete',completedAt:Date.now()});completed=true;
       root.ModeAtlasLearningEvents?.emit('lessonCompleted','words');
       const next=state.next(root.ModeAtlasWordLessonsData),tip=el('details');tip.append(el('summary','','Usage tip'),el('p','',unit.note));
@@ -135,7 +136,7 @@
         if(!correct){
           const retry=el('button','ma-button ma-button--primary','Try again');retry.type='button';retry.addEventListener('click',question);host.append(retry);return;
         }
-        completed=true;root.ModeAtlasLearningEvents?.emit('reviewCompleted','words');
+        completed=true;host.setAttribute('data-ma-session-complete','');root.ModeAtlasLearningEvents?.emit('reviewCompleted','words');
         host.append(el('p','ma-muted','Use it again: '+nextDate(schedule.dueAt)));
         if(hinted)host.append(el('p','ma-muted','Try again without a hint next time.'));
         const due=state.due().find(id=>id!==unit.id),next=root.ModeAtlasWordLessonsData.find(item=>item.id===due);

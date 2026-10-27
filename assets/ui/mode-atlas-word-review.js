@@ -8,7 +8,7 @@
     const content=el('div','ma-word-review','');let index=0,skill='meaning',queue=[],active=true;
     function button(label,action){const node=el('button','ma-button ma-button--primary',label);node.type='button';node.addEventListener('click',()=>{if(active)action();});return node;}
     function choose(){
-      root.ModeAtlasPronunciation.stop();content.replaceChildren();
+      root.ModeAtlasPronunciation.stop();content.removeAttribute('data-ma-session-complete');content.replaceChildren();
       for(const [kind,label,description]of [['meaning','Meaning','Reveal and check your recall.'],['reading','Reading','Type the reading.'],['listening','Listening','Listen and type.']]){
         const due=model.due(Date.now(),kind),action=button(`${label} · ${due.length} due`,()=>{skill=kind;index=0;queue=due.slice(0,10);render();});
         action.disabled=!due.length;content.append(action,el('p','ma-muted',description));
@@ -36,8 +36,9 @@
       }
     }
     function render(){
-      root.ModeAtlasPronunciation.stop();content.replaceChildren();const word=queue[index];
+      root.ModeAtlasPronunciation.stop();content.removeAttribute('data-ma-session-complete');content.replaceChildren();const word=queue[index];
       if(!word){
+        content.setAttribute('data-ma-session-complete','');
         root.ModeAtlasLearningEvents?.emit('reviewCompleted','words');
         content.append(el('h2','','Set complete'),root.ModeAtlasSessionOutcome.render({skill:'Word Bank · '+skill,missed:queue.filter(word=>model.read().find(item=>item.id===word.id)?.[model.reviewKey(skill)].level===0).map(word=>word.written),due:model.read().filter(word=>queue.some(item=>item.id===word.id)).map(word=>word[model.reviewKey(skill)].due)}),button('Choose another skill',choose));return;
       }

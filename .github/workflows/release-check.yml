@@ -166,11 +166,41 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  webkit-check:
+    name: WebKit results, rewards, and Help
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies and WebKit
+        run: |
+          npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+          npx playwright install --with-deps webkit
+          python3 build_ios_fonts.py
+      - name: Check adaptive outcomes and reference help
+        env:
+          MODE_ATLAS_TEST_REPORT: .build/test-reports/webkit.json
+        run: npm run test:webkit -- --workers=2
+      - name: Upload WebKit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webkit-${{ github.sha }}
+          path: |
+            test-results/**/*.png
+            .build/test-reports/webkit.json
+          if-no-files-found: ignore
+          retention-days: 7
+
   release-check:
     # Preserve the existing required status. It cannot pass if any isolated
     # shard fails or is cancelled; publication continues to depend on this gate.
     name: Audit, regressions, browser smoke, and native web bundle
-    needs: [release-validation, polish-check]
+    needs: [release-validation, polish-check, webkit-check]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -179,7 +209,8 @@ jobs:
         env:
           VALIDATION: ${{ needs.release-validation.result }}
           POLISH: ${{ needs.polish-check.result }}
-        run: test "$VALIDATION" = success && test "$POLISH" = success
+          WEBKIT: ${{ needs.webkit-check.result }}
+        run: test "$VALIDATION" = success && test "$POLISH" = success && test "$WEBKIT" = success
 
   social-backend-check:
     name: Social backend, access rules, callable functions, and deletion triggers

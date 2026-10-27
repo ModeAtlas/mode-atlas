@@ -89,9 +89,10 @@
 
 body[data-effective-display-mode="phone"] .ma-kana-journey{max-width:560px;}
 
-.ma-kana-journey>.ma-kana-segments{max-width:540px;}
+.ma-kana-journey>.ma-kana-segments,.ma-kana-practice-intro>.ma-kana-segments{max-width:540px;}
 .ma-kana-workspace{display:grid;grid-template-columns:minmax(0,1fr);max-width:860px;align-items:start;gap:24px;margin-top:18px;}
 .ma-kana-learning-stage,.ma-kana-practice-stage{min-width:0;}
+.ma-kana-practice-intro{min-width:0;}
 .ma-kana-lesson-tiles{display:grid;grid-template-columns:repeat(var(--kana-tile-count,5),minmax(0,1fr));gap:10px;margin:20px 0;}
 .ma-kana-lesson-tile{display:grid;place-items:center;gap:7px;min-width:0;min-height:92px;padding:12px 3px;border:1px solid var(--ma-border);border-radius:12px;background:var(--ma-control-active);color:var(--ma-text);cursor:pointer;}
 .ma-kana-lesson-tile strong{font:550 2.2rem/1.2 var(--ma-font-jp);white-space:nowrap;overflow-wrap:normal;}.ma-kana-lesson-tile>span{font-size:.8rem;color:var(--ma-muted);}
@@ -169,6 +170,23 @@ html[data-ma-runtime="ios"] .ma-kana-journey{width:100%;max-width:1120px;contain
  html[data-ma-runtime="ios"] .ma-kana-session{padding:16px;}
  html[data-ma-runtime="ios"] .ma-kana-session h2{font-size:1.45rem;}
  html[data-ma-runtime="ios"] .ma-kana-instrument{height:124px;}
+}
+/* Short windows place the choices beside the task, leaving Start in view.
+   Container rem units return to one column when larger text needs the width. */
+@media(max-height:540px){
+ @container kana (min-width:28rem){
+  html[data-ma-runtime="ios"] .ma-kana-practice-layout{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:16px;align-items:start;}
+  html[data-ma-runtime="ios"] .ma-kana-practice-layout .ma-kana-workspace{margin-top:0;}
+  html[data-ma-runtime="ios"] .ma-kana-practice-skills{grid-template-columns:repeat(2,minmax(0,1fr));}
+  html[data-ma-runtime="ios"] .ma-kana-practice-skills .ma-button{min-width:0;white-space:normal;}
+  html[data-ma-runtime="ios"] .ma-kana-practice-layout .ma-kana-page-heading h1{font-size:1.35rem;}
+  html[data-ma-runtime="ios"] .ma-kana-session:has(.ma-kana-instrument){grid-template-columns:minmax(0,1fr) 52px;gap:8px;}
+  html[data-ma-runtime="ios"] .ma-kana-session h2{font-size:1.2rem;margin:6px 0;}
+  html[data-ma-runtime="ios"] .ma-kana-session .ma-kana-muted{margin:8px 0;}
+  html[data-ma-runtime="ios"] .ma-kana-instrument{height:100px;padding:8px 4px;gap:4px;}
+  html[data-ma-runtime="ios"] .ma-kana-instrument-glyph{font-size:2rem;}
+  html[data-ma-runtime="ios"] .ma-kana-instrument-answer{font-size:1rem;}
+ }
 }
 @container kana (min-width:740px){
  html[data-ma-runtime="ios"] .ma-kana-path-layout{grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:28px;}

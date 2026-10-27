@@ -427,8 +427,7 @@ for(const layout of [{native:true,theme:'dark',width:393},{native:true,theme:'li
       const label=tab.firstChild,range=document.createRange();range.selectNodeContents(label);return range.getClientRects().length;
     }));expect(tabLines).toEqual([1,1]);
     await fits(page);await page.screenshot({path:info.outputPath('weekly-large-text.png'),animations:'disabled'});
-    await page.getByText('Rules & prizes',{exact:true}).click();
-    await expect(page.getByText(/Everyone resets together on Monday/)).toBeVisible();await expect(page.getByText(/First place also earns 100 Atlas Coins/)).toBeVisible();await fits(page);
+    await expect(page.getByText('Rules & prizes',{exact:true})).toHaveCount(0);await fits(page);
     await page.getByRole('button',{name:'Leave weekly competition',exact:true}).click();
     await page.getByRole('button',{name:'Leave competition',exact:true}).click();
     await expect(page.getByRole('button',{name:'Join weekly competition',exact:true})).toBeVisible();
@@ -556,7 +555,7 @@ for(const native of [true,false])test(`account-wide friend insights distinguish 
   await expect(page.locator('.ma-social-insights')).toContainText('Daily goals');await expect(page.locator('.ma-social-insights')).toContainText('Weekly goals');
   await expect(page.locator('.ma-social-insights')).toContainText('32 of 96');await expect(page.locator('.ma-social-branch__title')).toHaveText(['Kana20% mastered','Kanji1% mastered']);
   await expect(page.locator('.ma-social-branch__legend').first()).toContainText('144 Confident');
-  await page.getByText('How mastery is counted',{exact:true}).click();await expect(page.locator('.ma-social-mastery-help')).toContainText('including locked characters');await fits(page);
+  await expect(page.locator('.ma-social-mastery-help')).toHaveCount(0);await fits(page);
   await page.screenshot({path:info.outputPath(`account-insights-${native?'ios':'web'}.png`),fullPage:true,animations:'disabled'});
 });
 

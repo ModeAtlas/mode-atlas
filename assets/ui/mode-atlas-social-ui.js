@@ -201,9 +201,8 @@
         const results=weekly.results||weekly.awards||[];
         if(!results.length)history.append(el('p','ma-social-note','Your place and score will appear here after your first weekly finish.'));
         for(const result of results)history.append(el('p','ma-social-note',`Week of ${result.week} · #${number(result.rank)} · ${number(result.score)} weekly XP${result.xp?` · +${number(result.xp)} personal XP${result.coins?` · +${number(result.coins)} Atlas Coins`:''}`:result.rewardStatus==='review'?' · Rewards under review':' · No prize'}`));
-        const details=el('details','ma-weekly-rules');details.append(el('summary','','Rules & prizes'),el('p','ma-social-note','Everyone resets together on Monday at 00:00 UTC. At least two learners must earn 100 weekly XP. First, second and third receive 500, 300 and 150 personal XP. First place also earns 100 Atlas Coins. Ties share the same place and prize.'),el('p','ma-social-note','Online Kana Read and Recall answers are checked by the server. Broader practice earns more as you cover different kana in a session; hints reduce the rate. Completion and goal bonuses, old saves and prizes count only towards personal XP. Submit before the reset; interrupted connections can retry within the same one-hour session. The daily safety limit is 20,000 weekly XP.'));
-        if(weekly.enabled)details.append(button('Leave weekly competition',()=>confirmAction('Leave the weekly competition?','Your profile will disappear from the weekly board. Your personal XP and Friends stay available. Rejoining this week restores your existing weekly score.','Leave competition','weeklyPreference',{enabled:false},home,home)));
-        const extra=el('div','ma-weekly-details');extra.append(details,history);
+        const extra=el('div','ma-weekly-details');extra.append(history);
+        if(weekly.enabled)extra.append(button('Leave weekly competition',()=>confirmAction('Leave the weekly competition?','Your profile will disappear from the weekly board. Your personal XP and Friends stay available. Rejoining this week restores your existing weekly score.','Leave competition','weeklyPreference',{enabled:false},home,home)));
         if(!weekly.enabled){
           card.append(el('p','','Join learners worldwide and compare this week with your friends. Your name, chosen avatar, level and weekly score will be visible to other participants.'),
             el('p','ma-social-note','Only new online Kana practice counts. Past XP, imports, developer adjustments and prizes never increase your weekly score.'),
@@ -284,8 +283,7 @@
       section.append(bar,legend);branches.append(section);
     }
     wrap.append(branches);
-    const help=el('details','ma-social-mastery-help');help.append(el('summary','','How mastery is counted'),el('p','','Only characters at Mastered or Mastered+ count toward the percentage. Confident and Building show the learning on the way there. Each branch uses its full current curriculum, including locked characters.'));
-    wrap.append(help);return wrap;
+    return wrap;
   }
   async function showProfile(uid){
     const ticket=screen();back(tab==='rankings'?'Rankings':'Friends',home);

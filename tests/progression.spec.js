@@ -341,10 +341,7 @@ for(const view of [{native:true,theme:'dark',width:393},{native:true,theme:'ligh
       await expect(page.getByRole('link',{name:'Review Read · 7 due',exact:true})).toBeVisible();
       await expect(page.getByRole('link',{name:'Review Recall · 2 due',exact:true})).toHaveAttribute('href','/writing/?practice=10&due=1');
       await expect(page.locator('.ma-toast')).toHaveCount(0);
-      const help=page.getByRole('button',{name:'About due reviews'});await help.click();
-      await expect(page.locator('.ma-dialog__message')).toContainText('Each skill has its own schedule');
-      await expect(page.locator('.ma-dialog__message')).toContainText('you do not need to clear every review');await expect(page.locator('.ma-dialog-layer')).toHaveCSS('opacity','1');await page.screenshot({path:testInfo.outputPath('review-help.png'),animations:'disabled'});
-      await page.keyboard.press('Escape');await expect(help).toBeFocused();
+      await expect(page.getByRole('button',{name:'About due reviews'})).toHaveCount(0);
       await page.evaluate(()=>{ModeAtlasStorage.writeModeJSON('reading','srs',{});dispatchEvent(new CustomEvent('modeAtlasProgressChanged'));});
       await expect(page.getByRole('link',{name:'Review Read · 7 due',exact:true})).toHaveCount(0);
       await page.locator('#profileOpenBtn').click();await page.getByRole('tab',{name:'Shop',exact:true}).click();
